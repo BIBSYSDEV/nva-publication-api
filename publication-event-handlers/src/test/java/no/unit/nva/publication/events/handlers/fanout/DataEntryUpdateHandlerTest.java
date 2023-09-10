@@ -120,15 +120,15 @@ public class DataEntryUpdateHandlerTest {
     }
     
     private static DynamodbStreamRecord createDynamoRecord(StreamRecord payload) {
-        var record = new DynamodbStreamRecord();
-        record.setEventName(randomElement(OperationType.values()));
-        record.setEventID(randomString());
-        record.setAwsRegion(AWS_REGION);
+        var streamRecord = new DynamodbStreamRecord();
+        streamRecord.setEventName(randomElement(OperationType.values()));
+        streamRecord.setEventID(randomString());
+        streamRecord.setAwsRegion(AWS_REGION);
         
-        record.setDynamodb(payload);
-        record.setEventSource(randomString());
-        record.setEventVersion(randomString());
-        return record;
+        streamRecord.setDynamodb(payload);
+        streamRecord.setEventSource(randomString());
+        streamRecord.setEventVersion(randomString());
+        return streamRecord;
     }
     
     private static StreamRecord createPayload(Publication oldImage, Publication newImage)
@@ -139,10 +139,10 @@ public class DataEntryUpdateHandlerTest {
     
     private static StreamRecord createPayload(Map<String, AttributeValue> oldImage,
                                               Map<String, AttributeValue> newImage) {
-        var record = new StreamRecord();
-        record.setOldImage(oldImage);
-        record.setNewImage(newImage);
-        return record;
+        var streamRecord = new StreamRecord();
+        streamRecord.setOldImage(oldImage);
+        streamRecord.setNewImage(newImage);
+        return streamRecord;
     }
     
     private static DynamoEntry toDynamoEntry(Publication publication) {

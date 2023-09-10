@@ -21,31 +21,31 @@ import java.util.Objects;
 public class ExpandedMessage implements JsonSerializable {
 
     public static final String TYPE = "Message";
-    public static final String TEXT_FIELD = "text";
-    public static final String IDENTIFIER = "identifier";
-    public static final String SENDER = "sender";
-    public static final String OWNER = "owner";
+    public static final String TEXT_JSON_NAME = "text";
+    public static final String IDENTIFIER_JSON_NAME = "identifier";
+    public static final String SENDER_JSON_NAME = "sender";
+    public static final String OWNER_JSON_NAME = "owner";
     public static final String CREATED_DATE = "createdDate";
-    public static final String CUSTOMER_ID = "customerId";
-    public static final String RESOURCE_IDENTIFIER = "resourceIdentifier";
-    public static final String TICKET_IDENTIFIER = "ticketIdentifier";
+    public static final String CUSTOMER_ID_JSON_NAME = "customerId";
+    public static final String RESOURCE_IDENTIFIER_JSON_NAME = "resourceIdentifier";
+    public static final String TICKET_IDENTIFIER_JSON_NAME = "ticketIdentifier";
     public static final String CREATED_TIME = "createdTime";
     public static final String MODIFIED_TIME = "modifiedTime";
     public static final String MODIFIED_DATE = "modifiedDate";
     public static final String RESOURCE_TITLE = "resourceTitle";
-    @JsonProperty(IDENTIFIER)
+    @JsonProperty(IDENTIFIER_JSON_NAME)
     private SortableIdentifier identifier;
-    @JsonProperty(OWNER)
+    @JsonProperty(OWNER_JSON_NAME)
     private User owner;
-    @JsonProperty(CUSTOMER_ID)
+    @JsonProperty(CUSTOMER_ID_JSON_NAME)
     private URI customerId;
-    @JsonProperty(SENDER)
+    @JsonProperty(SENDER_JSON_NAME)
     private ExpandedPerson sender;
-    @JsonProperty(RESOURCE_IDENTIFIER)
+    @JsonProperty(RESOURCE_IDENTIFIER_JSON_NAME)
     private SortableIdentifier resourceIdentifier;
-    @JsonProperty(TICKET_IDENTIFIER)
+    @JsonProperty(TICKET_IDENTIFIER_JSON_NAME)
     private SortableIdentifier ticketIdentifier;
-    @JsonProperty(TEXT_FIELD)
+    @JsonProperty(TEXT_JSON_NAME)
     private String text;
     //TODO: remove alias after migration
     @JsonAlias(CREATED_TIME)
@@ -60,6 +60,7 @@ public class ExpandedMessage implements JsonSerializable {
 
     @JacocoGenerated
     public ExpandedMessage() {
+        // NO-OP
     }
 
     public static ExpandedMessage createEntry(Message message,
@@ -170,7 +171,7 @@ public class ExpandedMessage implements JsonSerializable {
                 .withIdentifier(this.getIdentifier())
                 .withResourceIdentifier(getResourceIdentifier())
                 .withOwner(this.getOwner())
-                .withSender(this.getSender().getUsername())
+                .withSender(this.getSender().username())
                 .withText(this.getText())
                 .withResourceTitle(this.getResourceTitle())
                 .withModifiedDate(this.getModifiedDate())
@@ -187,8 +188,12 @@ public class ExpandedMessage implements JsonSerializable {
     @JacocoGenerated
     @Override
     public boolean equals(Object o) {
-        if (this == o) {return true;}
-        if (o == null || getClass() != o.getClass()) {return false;}
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         ExpandedMessage that = (ExpandedMessage) o;
         return Objects.equals(getIdentifier(), that.getIdentifier())
                 && Objects.equals(getOwner(), that.getOwner())

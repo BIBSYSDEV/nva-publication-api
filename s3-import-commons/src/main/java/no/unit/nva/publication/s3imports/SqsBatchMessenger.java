@@ -1,5 +1,6 @@
 package no.unit.nva.publication.s3imports;
 
+import static java.util.stream.Collectors.groupingBy;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
@@ -99,7 +100,7 @@ public class SqsBatchMessenger {
         Stream<SendMessageBatchRequestEntry> eventReferenceStream) {
         var counter = new AtomicInteger();
         return eventReferenceStream.collect(
-                Collectors.groupingBy(item -> counter.getAndIncrement() / MAX_NUMBER_OF_MESSAGES_PER_BATCH_ALLOWED_BY_AWS))
+                groupingBy(item -> counter.getAndIncrement() / MAX_NUMBER_OF_MESSAGES_PER_BATCH_ALLOWED_BY_AWS))
                    .values();
     }
 

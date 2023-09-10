@@ -1,9 +1,8 @@
 plugins{
-
 }
-configurations.testImplementation.canBeResolved = true
+
 tasks.register('copyNativeDeps', Copy) {
-    from(configurations.testImplementation) {
+    from(configurations.testRuntimeClasspath) {
         include "*.dylib"
         include "*.so"
         include "*.dll"

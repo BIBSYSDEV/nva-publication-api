@@ -7,7 +7,6 @@ import java.time.Clock;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
-import no.unit.nva.model.Publication;
 import no.unit.nva.publication.events.bodies.ResourceDraftedForDeletionEvent;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -52,7 +51,7 @@ public class DeleteDraftPublicationHandler
         }
         
         try {
-            UserInstance userInstance = fetchUserInformationForPublication(input);
+            var userInstance = fetchUserInformationForPublication(input);
             resourceService.deleteDraftPublication(userInstance, input.getIdentifier());
         } catch (NotFoundException | BadRequestException e) {
             throw new RuntimeException(e);
@@ -62,11 +61,13 @@ public class DeleteDraftPublicationHandler
     
     private UserInstance fetchUserInformationForPublication(ResourceDraftedForDeletionEvent input)
         throws NotFoundException {
-        Publication publication = resourceService.getPublicationByIdentifier(input.getIdentifier());
+        var publication = resourceService.getPublicationByIdentifier(input.getIdentifier());
         if (nonNull(publication.getDoi())) {
             throwPublicationHasDoiError();
         }
-        return UserInstance.create(publication.getResourceOwner().getOwner().getValue(), publication.getPublisher().getId());
+        var value = publication.getResourceOwner().getOwner().getValue();
+        var publisherId = publication.getPublisher().getId();
+        return UserInstance.create(value, publisherId);
     }
     
     private void throwPublicationHasDoiError() {

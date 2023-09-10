@@ -52,7 +52,6 @@ import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-import org.mockito.Mockito;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.ion.IonReader;
 import software.amazon.ion.IonWriter;
@@ -87,7 +86,7 @@ class FileEntriesEventEmitterTest {
     @Test
     void handlerSavesErrorReportOutsideInputFolderSoThatErrorReportWillNotBecomeInputInSubsequentImport()
         throws IOException {
-        var amazonSqsThrowingException = amazonSQSThatThrowsException();
+        var amazonSqsThrowingException = amazonSqsThatThrowsException();
         handler = new FileEntriesEventEmitter(s3Client, amazonSqsThrowingException);
         var fileUri = s3Driver.insertFile(randomPath(), SampleObject.random().toJsonString());
         var inputEvent = toInputStream(createInputEventForFile(fileUri));
@@ -258,7 +257,7 @@ class FileEntriesEventEmitterTest {
     
     @Test
     void handlerSavesErrorReportInS3WithPathImitatingTheInputPath() throws IOException {
-        var amazonSqsThrowingException = amazonSQSThatThrowsException();
+        var amazonSqsThrowingException = amazonSqsThatThrowsException();
         handler = new FileEntriesEventEmitter(s3Client, amazonSqsThrowingException);
         var filePath = randomPath();
         var fileUri = s3Driver.insertFile(filePath, SampleObject.random().toJsonString());
@@ -307,7 +306,7 @@ class FileEntriesEventEmitterTest {
     @Test
     void shouldSaveErrorReportContainingTheEventReferenceThatFailedToBeEmitted()
         throws IOException {
-        var amazonSqsThrowingException =  amazonSQSThatFailsToSendMessages();
+        var amazonSqsThrowingException =  amazonSqsThatFailsToSendMessages();
         handler = new FileEntriesEventEmitter(s3Client, amazonSqsThrowingException);
         var contents = SampleObject.random();
         var filePath = randomPath();
@@ -328,7 +327,7 @@ class FileEntriesEventEmitterTest {
     
     @Test
     void shouldSaveErrorReportImitatingInputFilePathWhenFailsToEmitTheWholeFileContents() throws IOException {
-        amazonSQS = amazonSQSThatThrowsException();
+        amazonSQS = amazonSqsThatThrowsException();
         handler = new FileEntriesEventEmitter(s3Client, amazonSQS);
         var filPath = randomPath();
         var fileUri = s3Driver.insertFile(filPath, SampleObject.random().toJsonString());
@@ -347,7 +346,7 @@ class FileEntriesEventEmitterTest {
     
     @Test
     void shouldOrganizeErrorReportsByTheTimeImportStarted() throws IOException {
-        amazonSQS = amazonSQSThatThrowsException();
+        amazonSQS = amazonSqsThatThrowsException();
         handler = new FileEntriesEventEmitter(s3Client, amazonSQS);
         var contents = SampleObject.random();
         var filePath = randomPath();
@@ -452,7 +451,7 @@ class FileEntriesEventEmitterTest {
                    .collect(Collectors.toList());
     }
 
-    private FakeAmazonSQS amazonSQSThatThrowsException() {
+    private FakeAmazonSQS amazonSqsThatThrowsException() {
         return new FakeAmazonSQS() {
             @Override
             public SendMessageBatchResult sendMessageBatch(SendMessageBatchRequest sendMessageBatchRequest) {
@@ -462,7 +461,7 @@ class FileEntriesEventEmitterTest {
         };
     }
 
-    private FakeAmazonSQS amazonSQSThatFailsToSendMessages() {
+    private FakeAmazonSQS amazonSqsThatFailsToSendMessages() {
         return new FakeAmazonSQS() {
             @Override
             public SendMessageBatchResult sendMessageBatch(SendMessageBatchRequest sendMessageBatchRequest) {

@@ -12,8 +12,8 @@ import static no.sikt.nva.scopus.conversion.PiaConnection.PIA_USERNAME_KEY;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.github.tomakehurst.wiremock.client.WireMock;
@@ -22,6 +22,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.net.HttpURLConnection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import no.sikt.nva.scopus.conversion.model.pia.Affiliation;
 import no.sikt.nva.scopus.utils.PiaResponseGenerator;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
@@ -32,7 +33,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @WireMockTest(httpsEnabled = true)
-public class PiaConnectionTest {
+class PiaConnectionTest {
 
     private static final String PIA_SECRET_NAME = "someSecretName";
     private static final String PIA_USERNAME_SECRET_KEY = "someUserNameKey";
@@ -44,9 +45,9 @@ public class PiaConnectionTest {
         var fakeSecretsManagerClient = new FakeSecretsManagerClient();
         fakeSecretsManagerClient.putSecret(PIA_SECRET_NAME, PIA_USERNAME_SECRET_KEY, randomString());
         fakeSecretsManagerClient.putSecret(PIA_SECRET_NAME, PIA_PASSWORD_SECRET_KEY, randomString());
-        var secretsReader = new SecretsReader(fakeSecretsManagerClient);
+        SecretsReader secretsReader = new SecretsReader(fakeSecretsManagerClient);
         piaConnection = new PiaConnection(WiremockHttpClient.create(), secretsReader,
-                                              createPiaConnectionEnvironment(wireMockRuntimeInfo));
+                                          createPiaConnectionEnvironment(wireMockRuntimeInfo));
     }
 
     @Test
@@ -64,12 +65,12 @@ public class PiaConnectionTest {
     }
 
     @Test
-    void shouldReturnNullWhenAffiliationListFromPiaIsEmpty() {
+    void shouldReturnOptionalEmptyWhenAffiliationListFromPiaIsEmpty() {
         var affiliationId = randomString();
         var response = PiaResponseGenerator.convertAffiliationsToJson(List.of());
         mockedPiaAffiliationIdSearch(affiliationId, response);
         var affiliationUri = piaConnection.getCristinOrganizationIdentifier(affiliationId);
-        assertThat(affiliationUri, is(nullValue()));
+        assertThat(affiliationUri, is(equalTo(Optional.empty())));
     }
 
     private void mockedPiaAffiliationIdSearch(String affiliationId, String response) {

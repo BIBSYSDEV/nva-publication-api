@@ -31,7 +31,7 @@ public class ArtisticFeatures {
     }
 
     @And("the Cristin result with both type_kunstneriskproduksjon and type_produkt present")
-    public void a_valid_cristin_result_with_both_type_kunstneriskproduksjon_and_type_produkt_present() {
+    public void validCristinResultWithBothTypeKunstneriskproduksjonAndTypeProduktPresent() {
         var artisticProduction = readArtisticProductionFromResource();
         var product = readProductFromResource();
         scenarioContext.getCristinEntry().setCristinArtisticProduction(artisticProduction);
@@ -39,7 +39,7 @@ public class ArtisticFeatures {
     }
 
     @Then("the NVA resources contains the data scraped from type_kunstneriskproduksjon")
-    public void theNVAResourcesContainsTheDataScrapedFromType_kunstneriskproduksjon() {
+    public void theNvaResourcesContainsTheDataScrapedFromTypeKunstneriskproduksjon() {
         var nvaResource = scenarioContext.getNvaEntry();
         var publicationInstance = nvaResource.getEntityDescription().getReference().getPublicationInstance();
         assertThat(publicationInstance, is(instanceOf(MovingPicture.class)));
@@ -51,9 +51,6 @@ public class ArtisticFeatures {
         var otherRelease = (OtherRelease) output;
         var publisher = (UnconfirmedPublisher) otherRelease.getPublisher();
         assertThat(publisher.getName(), is(equalTo("Landbruksfilm")));
-
-
-
     }
 
     private String readResourceFile(Path path) {
@@ -101,7 +98,8 @@ public class ArtisticFeatures {
 
     @Then("the Cristin Result contains a MovingPictureSubtypeEnum equal to {string}")
     public void theCristinResultContainsAMovingPictureSubtypeEnumEqualTo(String movingPictureSubtypeEnum) {
-        var publicationInstance = scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
+        var publicationInstance =
+            scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
         assertThat(publicationInstance, is(instanceOf(MovingPicture.class)));
         var movingPicture = (MovingPicture) publicationInstance;
         assertThat(movingPicture.getSubtype().getType().getType(), is(equalTo(movingPictureSubtypeEnum)));

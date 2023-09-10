@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -36,22 +37,28 @@ public class EventBridgePublisherTest {
     @Mock
     private EventPublisher failedEventPublisher;
     private EventPublisher publisher;
-    
+    private AutoCloseable closeable;
+
     /**
      * Set up environment for test.
      */
     @BeforeEach
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         
         publisher = new EventBridgePublisher(eventBridge, failedEventPublisher,
             EVENT_BUS,
             DYNAMODB_UPDATE_EVENT_TOPIC,
             Clock.fixed(NOW, ZoneId.systemDefault()));
     }
+
+    @AfterEach
+    void closeService() throws Exception {
+        closeable.close();
+    }
     
     @Test
-    public void publishCanPutEventsToEventBridge() {
+    void publishCanPutEventsToEventBridge() {
         DynamodbEvent event = createDynamodbEvent();
         prepareMocksWithSuccessfulPutEvents();
         
@@ -63,7 +70,7 @@ public class EventBridgePublisherTest {
     }
     
     @Test
-    public void publishFailedEventWhenPutEventsToEventBridgeHasFailures() {
+    void publishFailedEventWhenPutEventsToEventBridgeHasFailures() {
         
         prepareMocksWithFailingPutEventEntries();
         
@@ -104,10 +111,10 @@ public class EventBridgePublisherTest {
     }
     
     private DynamodbEvent.DynamodbStreamRecord createDynamodbStreamRecord(String eventName) {
-        DynamodbEvent.DynamodbStreamRecord record = new DynamodbEvent.DynamodbStreamRecord();
-        record.setEventSourceARN(EVENT_SOURCE_ARN);
-        record.setEventName(eventName);
-        return record;
+        DynamodbEvent.DynamodbStreamRecord streamRecord = new DynamodbEvent.DynamodbStreamRecord();
+        streamRecord.setEventSourceARN(EVENT_SOURCE_ARN);
+        streamRecord.setEventName(eventName);
+        return streamRecord;
     }
     
     private PutEventsRequest createPutEventsRequest() {
@@ -125,9 +132,9 @@ public class EventBridgePublisherTest {
     }
     
     private DynamodbEvent createDynamodbEvent() {
-        DynamodbEvent.DynamodbStreamRecord record = new DynamodbEvent.DynamodbStreamRecord();
-        record.setEventSourceARN(EVENT_SOURCE_ARN);
-        return createDynamodbEvent(record);
+        var streamRecord = new DynamodbEvent.DynamodbStreamRecord();
+        streamRecord.setEventSourceARN(EVENT_SOURCE_ARN);
+        return createDynamodbEvent(streamRecord);
     }
     
     private DynamodbEvent createDynamodbEvent(DynamodbStreamRecord... records) {

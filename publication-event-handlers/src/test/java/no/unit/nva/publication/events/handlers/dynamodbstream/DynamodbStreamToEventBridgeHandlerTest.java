@@ -30,6 +30,7 @@ import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -47,11 +48,12 @@ class DynamodbStreamToEventBridgeHandlerTest {
     private FakeContext context;
     private DynamodbStreamToEventBridgeHandler handler;
     private FakeEventBridgeClient eventBridgeClient;
-    
+    private FakeS3Client failingS3Client;
+
     @BeforeEach
     public void init() {
         this.s3Client = new FakeS3Client();
-        createFailingS3Client();
+        failingS3Client = createFailingS3Client();
         this.eventBridgeClient = new FakeEventBridgeClient();
         this.context = new FakeContext() {
             @Override
@@ -61,7 +63,12 @@ class DynamodbStreamToEventBridgeHandlerTest {
         };
         this.handler = new DynamodbStreamToEventBridgeHandler(s3Client, eventBridgeClient, DYNAMODB_UPDATE_EVENT_TOPIC);
     }
-    
+
+    @AfterEach
+    void closeS3Client() {
+        failingS3Client.close();
+    }
+
     @Test
     void shouldWriteEachDynamoRecordOfDynamoDbEventInS3() {
         var event = randomEventWithMultipleDynamoRecords();
@@ -123,21 +130,21 @@ class DynamodbStreamToEventBridgeHandlerTest {
     }
     
     private DynamodbEvent.DynamodbStreamRecord randomDynamoRecord() {
-        var record = new DynamodbStreamRecord();
-        record.setEventName(randomElement(OperationType.values()));
-        record.setEventID(randomString());
-        record.setAwsRegion(AWS_REGION);
-        record.setDynamodb(randomPayload());
-        record.setEventSource(randomString());
-        record.setEventVersion(randomString());
-        return record;
+        var streamRecord = new DynamodbStreamRecord();
+        streamRecord.setEventName(randomElement(OperationType.values()));
+        streamRecord.setEventID(randomString());
+        streamRecord.setAwsRegion(AWS_REGION);
+        streamRecord.setDynamodb(randomPayload());
+        streamRecord.setEventSource(randomString());
+        streamRecord.setEventVersion(randomString());
+        return streamRecord;
     }
     
     private StreamRecord randomPayload() {
-        var record = new StreamRecord();
-        record.setOldImage(randomDynamoPayload());
-        record.setNewImage(randomDynamoPayload());
-        return record;
+        var streamRecord = new StreamRecord();
+        streamRecord.setOldImage(randomDynamoPayload());
+        streamRecord.setNewImage(randomDynamoPayload());
+        return streamRecord;
     }
     
     private Map<String, AttributeValue> randomDynamoPayload() {

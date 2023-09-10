@@ -10,16 +10,16 @@ import no.unit.nva.commons.json.JsonSerializable;
 @Getter
 public class PublicationChannelResponse implements JsonSerializable {
 
-    public static final String HITS = "hits";
-    public static final String TOTAL_HITS = "totalHits";
-    @JsonProperty(TOTAL_HITS)
+    public static final String HITS_JSON_NAME = "hits";
+    public static final String TOTAL_HITS_JSON_NAME = "totalHits";
+    @JsonProperty(TOTAL_HITS_JSON_NAME)
     private final int totalHits;
-    @JsonProperty(HITS)
+    @JsonProperty(HITS_JSON_NAME)
     private final List<PublicationChannelHit> hits;
 
     @JsonCreator
-    public PublicationChannelResponse(@JsonProperty(TOTAL_HITS) int totalHits,
-                                      @JsonProperty(HITS) List<PublicationChannelHit> hits) {
+    public PublicationChannelResponse(@JsonProperty(TOTAL_HITS_JSON_NAME) int totalHits,
+                                      @JsonProperty(HITS_JSON_NAME) List<PublicationChannelHit> hits) {
         this.totalHits = totalHits;
         this.hits = hits;
     }
@@ -30,14 +30,14 @@ public class PublicationChannelResponse implements JsonSerializable {
     }
 
     @Getter
-    public static class PublicationChannelHit implements JsonSerializable{
+    public static class PublicationChannelHit implements JsonSerializable {
 
-        public static final String ID = "id";
-        @JsonProperty(ID)
+        public static final String ID_JSON_NAME = "id";
+        @JsonProperty(ID_JSON_NAME)
         private final URI id;
 
         @JsonCreator
-        public PublicationChannelHit(@JsonProperty(ID) URI id) {
+        public PublicationChannelHit(@JsonProperty(ID_JSON_NAME) URI id) {
             this.id = id;
         }
     }

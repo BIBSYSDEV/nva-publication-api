@@ -14,9 +14,8 @@ import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class DeleteImportCandidateEventHandler extends
-                                               DestinationsEventBridgeEventHandler<EventReference,
-                                                                                      DeleteImportCandidateEvent> {
+public class DeleteImportCandidateEventHandler
+    extends DestinationsEventBridgeEventHandler<EventReference, DeleteImportCandidateEvent> {
 
     private final S3Client s3Client;
 
@@ -31,9 +30,10 @@ public class DeleteImportCandidateEventHandler extends
     }
 
     @Override
-    protected DeleteImportCandidateEvent processInputPayload(EventReference input,
-                                                             AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
-                                                             Context context) {
+    protected DeleteImportCandidateEvent processInputPayload(
+        EventReference input,
+        AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
+        Context context) {
         var blob = readBlobFromS3(input);
         return new DeleteImportCandidateEvent(EVENT_TOPIC, blob.getOldData().getIdentifier());
     }

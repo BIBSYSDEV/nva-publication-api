@@ -27,20 +27,16 @@ dependencies {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
     }
 
-    implementation group: 'org.apache.tika', name: 'tika-core', version: '2.6.0'
+    implementation libs.tika.core
+    implementation libs.tika.langdetect.optimaize
 
-    implementation group: 'org.apache.tika', name: 'tika-langdetect-optimaize', version: '2.6.0'
     testImplementation project(path: ':publication-testing')
-
-
 }
 
 test {
-    useJUnitPlatform()
     environment "BRAGE_MIGRATION_ERROR_BUCKET_NAME", "some-migration-error-bucket"
     environment "NVA_PERSISTED_STORAGE_BUCKET_NAME", "some-bucket"
     environment "TABLE_NAME", "some-table-name"
     environment "DOMAIN_NAME", "test.nva.aws.unit.no"
     environment "EVENT_BUS_NAME", "eventBusName"
-
 }

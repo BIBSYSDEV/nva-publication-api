@@ -88,29 +88,29 @@ public class EventBridgePublisher implements EventPublisher {
                    .collect(Collectors.toList());
     }
     
-    private PutEventsRequestEntry createPutEventRequestEntry(DynamodbStreamRecord record) {
+    private PutEventsRequestEntry createPutEventRequestEntry(DynamodbStreamRecord streamRecord) {
         Instant time = Instant.now(clock);
         return PutEventsRequestEntry.builder()
                    .eventBusName(eventBusName)
                    .time(time)
                    .source(EVENT_SOURCE)
                    .detailType(eventDetailType)
-                   .detail(toString(record))
-                   .resources(record.getEventSourceARN())
+                   .detail(toString(streamRecord))
+                   .resources(streamRecord.getEventSourceARN())
                    .build();
     }
     
     private void publishFailedEvent(PutEventsRequestEntry entry) {
-        DynamodbEvent.DynamodbStreamRecord record = parseDynamodbStreamRecord(entry);
+        DynamodbEvent.DynamodbStreamRecord streamRecord = parseDynamodbStreamRecord(entry);
         DynamodbEvent failedEvent = new DynamodbEvent();
-        failedEvent.setRecords(Collections.singletonList(record));
+        failedEvent.setRecords(Collections.singletonList(streamRecord));
         failedEventPublisher.publish(failedEvent);
     }
     
     @JacocoGenerated
-    private String toString(DynamodbEvent.DynamodbStreamRecord record) {
+    private String toString(DynamodbEvent.DynamodbStreamRecord streamRecord) {
         try {
-            return objectMapper.writeValueAsString(record);
+            return objectMapper.writeValueAsString(streamRecord);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e.getMessage(), e);
         }

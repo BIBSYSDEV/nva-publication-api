@@ -83,17 +83,16 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     @Override
     public ExpandedDataEntry expandEntry(Entity dataEntry) throws JsonProcessingException, NotFoundException {
         var identifier = dataEntry.getIdentifier();
-        if (dataEntry instanceof Resource) {
-            logger.info("Expanding Resource: {}", identifier);
+        if (dataEntry instanceof Resource resource) {
+            logger.info("Expanding Resource: {}", resource.getIdentifier());
             var expandedResource = ExpandedResource.fromPublication(uriRetriever,
-                                                                 dataEntry.toPublication(resourceService));
+                                                                 resource.toPublication(resourceService));
             return NviCalculator.calculateNviType(expandedResource);
-        } else if (dataEntry instanceof TicketEntry) {
-            logger.info("Expanding TicketEntry: {}", identifier);
+        } else if (dataEntry instanceof TicketEntry ticketEntry) {
+            logger.info("Expanding TicketEntry: {}", ticketEntry.getIdentifier());
             return ExpandedTicket.create((TicketEntry) dataEntry, resourceService, this, ticketService);
-        } else if (dataEntry instanceof Message) {
+        } else if (dataEntry instanceof Message message) {
             logger.info("Expanding Message: {}", identifier);
-            var message = (Message) dataEntry;
             var ticket = ticketService.fetchTicketByIdentifier(message.getTicketIdentifier());
             return expandEntry(ticket);
         }
@@ -103,13 +102,12 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
     @Override
     public Set<URI> getOrganizationIds(Entity dataEntry) throws NotFoundException {
-        if (dataEntry instanceof TicketEntry) {
-            var resourceIdentifier = ((TicketEntry) dataEntry).getResourceIdentifier();
+        if (dataEntry instanceof TicketEntry ticketEntry) {
+            var resourceIdentifier = ticketEntry.getResourceIdentifier();
             var resource = resourceService.getResourceByIdentifier(resourceIdentifier);
             return Optional.ofNullable(resource.getResourceOwner().getOwnerAffiliation())
                     .stream()
-                    .map(
-                            this::retrieveAllHigherLevelOrgsInTheFutureWhenResourceOwnerAffiliationIsNotAlwaysTopLevelOrg)
+                    .map(this::retrieveAllHigherLevelOrgsInTheFutureWhenResourceOwnerAffiliationIsNotAlwaysTopLevelOrg)
                     .flatMap(Collection::stream)
                     .collect(Collectors.toSet());
         }

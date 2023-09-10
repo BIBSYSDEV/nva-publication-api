@@ -61,8 +61,8 @@ import java.util.stream.Collectors;
 
 public class FakeAmazonSQS implements AmazonSQS {
 
-    private List<String> messageBodies;
-    private List<String> queueUrls;
+    private final List<String> messageBodies;
+    private final List<String> queueUrls;
 
     public FakeAmazonSQS() {
         messageBodies = new ArrayList<>();
@@ -89,7 +89,7 @@ public class FakeAmazonSQS implements AmazonSQS {
     }
 
     @Override
-    public AddPermissionResult addPermission(String queueUrl, String label, List<String> aWSAccountIds,
+    public AddPermissionResult addPermission(String queueUrl, String label, List<String> awsAccountIds,
                                              List<String> actions) {
         throw new UnsupportedOperationException();
     }
@@ -119,8 +119,9 @@ public class FakeAmazonSQS implements AmazonSQS {
     }
 
     @Override
-    public ChangeMessageVisibilityBatchResult changeMessageVisibilityBatch(String queueUrl,
-                                                                           List<ChangeMessageVisibilityBatchRequestEntry> entries) {
+    public ChangeMessageVisibilityBatchResult changeMessageVisibilityBatch(
+        String queueUrl,
+        List<ChangeMessageVisibilityBatchRequestEntry> entries) {
         throw new UnsupportedOperationException();
     }
 

@@ -612,7 +612,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         doiRequest.setIdentifier(expandedDoiRequest.identifyExpandedEntry());
         doiRequest.setCustomerId(expandedDoiRequest.getCustomerId());
         doiRequest.setModifiedDate(expandedDoiRequest.getModifiedDate());
-        doiRequest.setOwner(expandedDoiRequest.getOwner().getUsername());
+        doiRequest.setOwner(expandedDoiRequest.getOwner().username());
         doiRequest.setResourceIdentifier(expandedDoiRequest.getPublication().getIdentifier());
         doiRequest.setResourceStatus(expandedDoiRequest.getPublication().getStatus());
         doiRequest.setStatus(getTicketStatus(expandedDoiRequest.getStatus()));
@@ -628,7 +628,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         ticketEntry.setIdentifier(extractIdentifier(expandedGeneralSupportRequest.getId()));
         ticketEntry.setResourceIdentifier(expandedGeneralSupportRequest.getPublication().getIdentifier());
         ticketEntry.setStatus(getTicketStatus(expandedGeneralSupportRequest.getStatus()));
-        ticketEntry.setOwner(expandedGeneralSupportRequest.getOwner().getUsername());
+        ticketEntry.setOwner(expandedGeneralSupportRequest.getOwner().username());
         ticketEntry.setAssignee(extractUsername(expandedGeneralSupportRequest.getAssignee()));
         return ticketEntry;
     }
@@ -638,7 +638,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         publishingRequest.setResourceIdentifier(expandedPublishingRequest.getPublication().getIdentifier());
         publishingRequest.setCustomerId(expandedPublishingRequest.getCustomerId());
         publishingRequest.setIdentifier(extractIdentifier(expandedPublishingRequest.getId()));
-        publishingRequest.setOwner(expandedPublishingRequest.getOwner().getUsername());
+        publishingRequest.setOwner(expandedPublishingRequest.getOwner().username());
         publishingRequest.setModifiedDate(expandedPublishingRequest.getModifiedDate());
         publishingRequest.setCreatedDate(expandedPublishingRequest.getCreatedDate());
         publishingRequest.setStatus(getTicketStatus(expandedPublishingRequest.getStatus()));
@@ -662,7 +662,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     private Username extractUsername(ExpandedPerson expandedPerson) {
         return Optional.ofNullable(expandedPerson)
-                   .map(ExpandedPerson::getUsername)
+                   .map(ExpandedPerson::username)
                    .map(User::toString)
                    .map(Username::new)
                    .orElse(null);

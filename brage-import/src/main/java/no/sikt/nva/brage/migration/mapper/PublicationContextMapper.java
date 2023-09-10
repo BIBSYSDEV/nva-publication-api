@@ -63,161 +63,161 @@ public final class PublicationContextMapper {
     }
 
     @SuppressWarnings({"PMD.NPathComplexity", "PMD.CognitiveComplexity"})
-    public static PublicationContext buildPublicationContext(Record record)
+    public static PublicationContext buildPublicationContext(Record brageRecord)
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
-        if (shouldBeMappedToBook(record)) {
-            return buildPublicationContextWhenBook(record);
+        if (shouldBeMappedToBook(brageRecord)) {
+            return buildPublicationContextWhenBook(brageRecord);
         }
-        if (isSupportedReportType(record)) {
-            return buildPublicationContextWhenReport(record);
+        if (isSupportedReportType(brageRecord)) {
+            return buildPublicationContextWhenReport(brageRecord);
         }
-        if (isUnconfirmedJournal(record) || isUnconfirmedScientificArticle(record)) {
-            return buildPublicationContextForUnconfirmedJournalArticle(record);
+        if (isUnconfirmedJournal(brageRecord) || isUnconfirmedScientificArticle(brageRecord)) {
+            return buildPublicationContextForUnconfirmedJournalArticle(brageRecord);
         }
-        if (isArticle(record)) {
-            return buildPublicationContextWhenJournalArticle(record);
+        if (isArticle(brageRecord)) {
+            return buildPublicationContextWhenJournalArticle(brageRecord);
         }
-        if (isDegree(record)) {
-            return buildPublicationContextWhenDegree(record);
+        if (isDegree(brageRecord)) {
+            return buildPublicationContextWhenDegree(brageRecord);
         }
-        if (isMap(record)) {
-            return buildPublicationContextWhenMap(record);
+        if (isMap(brageRecord)) {
+            return buildPublicationContextWhenMap(brageRecord);
         }
-        if (isChapter(record) || isScientificChapter(record)) {
+        if (isChapter(brageRecord) || isScientificChapter(brageRecord)) {
             return new Anthology();
         }
-        if (isLecture(record) || isConferencePoster(record) || isOtherPresentation(record)) {
+        if (isLecture(brageRecord) || isConferencePoster(brageRecord) || isOtherPresentation(brageRecord)) {
             return buildPublicationContextWhenEvent();
         }
-        if (isArtistic(record)) {
+        if (isArtistic(brageRecord)) {
             return new Artistic();
         }
-        if (isDataset(record)) {
-            return buildPublicationContextWhenDataSet(record);
+        if (isDataset(brageRecord)) {
+            return buildPublicationContextWhenDataSet(brageRecord);
         }
-        if (isInterview(record)) {
+        if (isInterview(brageRecord)) {
             return buildPublicationContextWhenMediaContribution();
         }
-        if (isReaderOpinion(record)) {
+        if (isReaderOpinion(brageRecord)) {
             return buildPublicationContextWhenReaderOpinion();
         } else {
-            throw new PublicationContextException(NOT_SUPPORTED_TYPE + record.getType().getNva());
+            throw new PublicationContextException(NOT_SUPPORTED_TYPE + brageRecord.getType().getNva());
         }
     }
 
-    private static boolean shouldBeMappedToBook(Record record) {
-        return isBook(record)
-               || isScientificMonograph(record)
-               || isOtherStudentWork(record)
-               || isStudentPaper(record)
-               || isAnthology(record)
-               || isTextbook(record);
+    private static boolean shouldBeMappedToBook(Record brageRecord) {
+        return isBook(brageRecord)
+               || isScientificMonograph(brageRecord)
+               || isOtherStudentWork(brageRecord)
+               || isStudentPaper(brageRecord)
+               || isAnthology(brageRecord)
+               || isTextbook(brageRecord);
     }
 
     private static PublicationContext buildPublicationContextWhenReaderOpinion() throws InvalidIssnException {
         return new UnconfirmedMediaContributionPeriodical(null, null, null);
     }
 
-    private static boolean isArtistic(Record record) {
-        return isDesignProduct(record)
-               || isMusic(record)
-               || isPlanOrBlueprint(record)
-               || isPerformingArts(record)
-               || isVisualArts(record);
+    private static boolean isArtistic(Record brageRecord) {
+        return isDesignProduct(brageRecord)
+               || isMusic(brageRecord)
+               || isPlanOrBlueprint(brageRecord)
+               || isPerformingArts(brageRecord)
+               || isVisualArts(brageRecord);
     }
 
-    public static boolean isPerformingArts(Record record) {
-        return NvaType.PERFORMING_ARTS.getValue().equals(record.getType().getNva());
+    public static boolean isPerformingArts(Record brageRecord) {
+        return NvaType.PERFORMING_ARTS.getValue().equals(brageRecord.getType().getNva());
     }
 
-        public static boolean isTextbook(Record record) {
-        return NvaType.TEXTBOOK.getValue().equals(record.getType().getNva());
+    public static boolean isTextbook(Record brageRecord) {
+        return NvaType.TEXTBOOK.getValue().equals(brageRecord.getType().getNva());
     }
 
-    private static boolean isArticle(Record record) {
-        return isJournalArticle(record)
-               || isScientificArticle(record)
-               || isFeatureArticle(record)
-               || isProfessionalArticle(record);
+    private static boolean isArticle(Record brageRecord) {
+        return isJournalArticle(brageRecord)
+               || isScientificArticle(brageRecord)
+               || isFeatureArticle(brageRecord)
+               || isProfessionalArticle(brageRecord);
     }
 
-    public static boolean isOtherPresentation(Record record) {
-        return NvaType.PRESENTATION_OTHER.getValue().equals(record.getType().getNva());
+    public static boolean isOtherPresentation(Record brageRecord) {
+        return NvaType.PRESENTATION_OTHER.getValue().equals(brageRecord.getType().getNva());
     }
 
-    public static boolean isSupportedReportType(Record record) {
-        return isReport(record)
-               || isResearchReport(record)
-               || isReportWorkingPaper(record)
-               || isConferenceReport(record);
+    public static boolean isSupportedReportType(Record brageRecord) {
+        return isReport(brageRecord)
+               || isResearchReport(brageRecord)
+               || isReportWorkingPaper(brageRecord)
+               || isConferenceReport(brageRecord);
     }
 
-    public static boolean isMusic(Record record) {
-        return NvaType.RECORDING_MUSICAL.getValue().equals(record.getType().getNva());
+    public static boolean isMusic(Record brageRecord) {
+        return NvaType.RECORDING_MUSICAL.getValue().equals(brageRecord.getType().getNva());
     }
 
-    public static boolean isStudentPaper(Record record) {
-        return NvaType.STUDENT_PAPER.getValue().equals(record.getType().getNva());
+    public static boolean isStudentPaper(Record brageRecord) {
+        return NvaType.STUDENT_PAPER.getValue().equals(brageRecord.getType().getNva());
     }
 
-    public static boolean isChapter(Record record) {
-        return NvaType.CHAPTER.getValue().equals(record.getType().getNva());
+    public static boolean isChapter(Record brageRecord) {
+        return NvaType.CHAPTER.getValue().equals(brageRecord.getType().getNva());
     }
 
-    public static boolean isFeatureArticle(Record record) {
-        return NvaType.CHRONICLE.getValue().equals(record.getType().getNva());
+    public static boolean isFeatureArticle(Record brageRecord) {
+        return NvaType.CHRONICLE.getValue().equals(brageRecord.getType().getNva());
     }
 
-    public static boolean isScientificMonograph(Record record) {
-        return NvaType.SCIENTIFIC_MONOGRAPH.getValue().equals(record.getType().getNva());
+    public static boolean isScientificMonograph(Record brageRecord) {
+        return NvaType.SCIENTIFIC_MONOGRAPH.getValue().equals(brageRecord.getType().getNva());
     }
 
-    public static boolean isOtherStudentWork(Record record) {
-        return NvaType.STUDENT_PAPER_OTHERS.getValue().equals(record.getType().getNva());
+    public static boolean isOtherStudentWork(Record brageRecord) {
+        return NvaType.STUDENT_PAPER_OTHERS.getValue().equals(brageRecord.getType().getNva());
     }
 
-    public static boolean isDataset(Record record) {
-        return NvaType.DATASET.getValue().equals(record.getType().getNva());
+    public static boolean isDataset(Record brageRecord) {
+        return NvaType.DATASET.getValue().equals(brageRecord.getType().getNva());
     }
 
-    public static boolean isResearchReport(Record record) {
-        return NvaType.RESEARCH_REPORT.getValue().equals(record.getType().getNva());
+    public static boolean isResearchReport(Record brageRecord) {
+        return NvaType.RESEARCH_REPORT.getValue().equals(brageRecord.getType().getNva());
     }
 
-    public static boolean isBook(Record record) {
-        return NvaType.BOOK.getValue().equals(record.getType().getNva());
+    public static boolean isBook(Record brageRecord) {
+        return NvaType.BOOK.getValue().equals(brageRecord.getType().getNva());
     }
 
-    public static boolean isScientificArticle(Record record) {
-        return NvaType.SCIENTIFIC_ARTICLE.getValue().equals(record.getType().getNva());
+    public static boolean isScientificArticle(Record brageRecord) {
+        return NvaType.SCIENTIFIC_ARTICLE.getValue().equals(brageRecord.getType().getNva());
     }
 
-    public static boolean isReportWorkingPaper(Record record) {
-        return NvaType.WORKING_PAPER.getValue().equals(record.getType().getNva());
+    public static boolean isReportWorkingPaper(Record brageRecord) {
+        return NvaType.WORKING_PAPER.getValue().equals(brageRecord.getType().getNva());
     }
 
-    public static boolean isLecture(Record record) {
-        return NvaType.LECTURE.getValue().equals(record.getType().getNva());
+    public static boolean isLecture(Record brageRecord) {
+        return NvaType.LECTURE.getValue().equals(brageRecord.getType().getNva());
     }
 
-    public static boolean isDesignProduct(Record record) {
-        return NvaType.DESIGN_PRODUCT.getValue().equals(record.getType().getNva());
+    public static boolean isDesignProduct(Record brageRecord) {
+        return NvaType.DESIGN_PRODUCT.getValue().equals(brageRecord.getType().getNva());
     }
 
-    public static boolean isScientificChapter(Record record) {
-        return NvaType.SCIENTIFIC_CHAPTER.getValue().equals(record.getType().getNva());
+    public static boolean isScientificChapter(Record brageRecord) {
+        return NvaType.SCIENTIFIC_CHAPTER.getValue().equals(brageRecord.getType().getNva());
     }
 
-    public static boolean isPlanOrBlueprint(Record record) {
-        return NvaType.PLAN_OR_BLUEPRINT.getValue().equals(record.getType().getNva());
+    public static boolean isPlanOrBlueprint(Record brageRecord) {
+        return NvaType.PLAN_OR_BLUEPRINT.getValue().equals(brageRecord.getType().getNva());
     }
 
-    public static boolean isConferencePoster(Record record) {
-        return NvaType.CONFERENCE_POSTER.getValue().equals(record.getType().getNva());
+    public static boolean isConferencePoster(Record brageRecord) {
+        return NvaType.CONFERENCE_POSTER.getValue().equals(brageRecord.getType().getNva());
     }
 
-    public static boolean isInterview(Record record) {
-        return NvaType.INTERVIEW.getValue().equals(record.getType().getNva());
+    public static boolean isInterview(Record brageRecord) {
+        return NvaType.INTERVIEW.getValue().equals(brageRecord.getType().getNva());
     }
 
     private static PublicationContext buildPublicationContextWhenMediaContribution() {
@@ -227,8 +227,8 @@ public final class PublicationContextMapper {
                    .build();
     }
 
-    private static boolean isReport(Record record) {
-        return NvaType.REPORT.getValue().equals(record.getType().getNva());
+    private static boolean isReport(Record brageRecord) {
+        return NvaType.REPORT.getValue().equals(brageRecord.getType().getNva());
     }
 
     private static PublicationContext buildPublicationContextWhenEvent() {
@@ -236,37 +236,37 @@ public final class PublicationContextMapper {
                    .build();
     }
 
-    private static boolean isUnconfirmedScientificArticle(Record record) {
-        return NvaType.SCIENTIFIC_ARTICLE.getValue().equals(record.getType().getNva())
-               && !hasJournalId(record);
+    private static boolean isUnconfirmedScientificArticle(Record brageRecord) {
+        return NvaType.SCIENTIFIC_ARTICLE.getValue().equals(brageRecord.getType().getNva())
+               && !hasJournalId(brageRecord);
     }
 
-    private static PublicationContext buildPublicationContextForUnconfirmedJournalArticle(Record record)
+    private static PublicationContext buildPublicationContextForUnconfirmedJournalArticle(Record brageRecord)
         throws InvalidIssnException {
-        var issnList = extractIssnList(record);
+        var issnList = extractIssnList(brageRecord);
         if (issnList.size() > SIZE_ONE) {
-            return new UnconfirmedJournal(extractJournalTitle(record), issnList.get(0), issnList.get(1));
+            return new UnconfirmedJournal(extractJournalTitle(brageRecord), issnList.get(0), issnList.get(1));
         } else {
             var issn = !issnList.isEmpty() ? issnList.get(0) : null;
-            return new UnconfirmedJournal(extractJournalTitle(record), issn, null);
+            return new UnconfirmedJournal(extractJournalTitle(brageRecord), issn, null);
         }
     }
 
-    private static List<String> extractIssnList(Record record) {
-        return Optional.ofNullable(record.getPublication())
+    private static List<String> extractIssnList(Record brageRecord) {
+        return Optional.ofNullable(brageRecord.getPublication())
                    .map(Publication::getIssnList)
-                   .orElse(null);
+                   .orElse(Collections.emptyList());
     }
 
-    private static String extractJournalTitle(Record record) {
-        return Optional.ofNullable(record.getPublication())
+    private static String extractJournalTitle(Record brageRecord) {
+        return Optional.ofNullable(brageRecord.getPublication())
                    .map(Publication::getJournal)
                    .orElse(null);
     }
 
-    private static boolean isUnconfirmedJournal(Record record) {
-        return NvaType.JOURNAL_ARTICLE.getValue().equals(record.getType().getNva())
-               && !hasJournalId(record);
+    private static boolean isUnconfirmedJournal(Record brageRecord) {
+        return NvaType.JOURNAL_ARTICLE.getValue().equals(brageRecord.getType().getNva())
+               && !hasJournalId(brageRecord);
     }
 
     private static URI readChannelRegistryPathFromEnvironment() {
@@ -274,21 +274,21 @@ public final class PublicationContextMapper {
         return UriWrapper.fromUri(HTTPS_PREFIX + basePath).addChild(PUBLICATION_CHANNELS_PATH).getUri();
     }
 
-    private static PublicationContext buildPublicationContextWhenJournalArticle(Record record) {
-        return extractJournal(record);
+    private static PublicationContext buildPublicationContextWhenJournalArticle(Record brageRecord) {
+        return extractJournal(brageRecord);
     }
 
-    private static boolean isJournalArticle(Record record) {
-        return NvaType.JOURNAL_ARTICLE.getValue().equals(record.getType().getNva())
-               && hasJournalId(record);
+    private static boolean isJournalArticle(Record brageRecord) {
+        return NvaType.JOURNAL_ARTICLE.getValue().equals(brageRecord.getType().getNva())
+               && hasJournalId(brageRecord);
     }
 
-    private static boolean hasJournalId(Record record) {
-        return nonNull(extractJournalId(record));
+    private static boolean hasJournalId(Record brageRecord) {
+        return nonNull(extractJournalId(brageRecord));
     }
 
-    private static String extractJournalId(Record record) {
-        return Optional.ofNullable(record.getPublication())
+    private static String extractJournalId(Record brageRecord) {
+        return Optional.ofNullable(brageRecord.getPublication())
                    .map(Publication::getPublicationContext)
                    .map(no.sikt.nva.brage.migration.record.PublicationContext::getJournal)
                    .map(no.sikt.nva.brage.migration.record.Journal::getId)
@@ -296,42 +296,42 @@ public final class PublicationContextMapper {
                    .orElse(null);
     }
 
-    private static PublicationContext buildPublicationContextWhenDataSet(Record record) {
-        return new ResearchData(extractPublisher(record));
+    private static PublicationContext buildPublicationContextWhenDataSet(Record brageRecord) {
+        return new ResearchData(extractPublisher(brageRecord));
     }
 
-    private static boolean isMap(Record record) {
-        return NvaType.MAP.getValue().equals(record.getType().getNva());
+    private static boolean isMap(Record brageRecord) {
+        return NvaType.MAP.getValue().equals(brageRecord.getType().getNva());
     }
 
-    private static PublicationContext buildPublicationContextWhenMap(Record record) {
-        return new GeographicalContent(extractPublisher(record));
+    private static PublicationContext buildPublicationContextWhenMap(Record brageRecord) {
+        return new GeographicalContent(extractPublisher(brageRecord));
     }
 
-    private static boolean isDegree(Record record) {
-        return NvaType.BACHELOR_THESIS.getValue().equals(record.getType().getNva())
-               || NvaType.MASTER_THESIS.getValue().equals(record.getType().getNva())
-               || NvaType.DOCTORAL_THESIS.getValue().equals(record.getType().getNva());
+    private static boolean isDegree(Record brageRecord) {
+        return NvaType.BACHELOR_THESIS.getValue().equals(brageRecord.getType().getNva())
+               || NvaType.MASTER_THESIS.getValue().equals(brageRecord.getType().getNva())
+               || NvaType.DOCTORAL_THESIS.getValue().equals(brageRecord.getType().getNva());
     }
 
-    private static PublicationContext buildPublicationContextWhenDegree(Record record)
+    private static PublicationContext buildPublicationContextWhenDegree(Record brageRecord)
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
         return new Degree.Builder()
-                   .withIsbnList(extractIsbnList(record))
-                   .withSeries(extractSeries(record))
-                   .withPublisher(extractPublisher(record))
-                   .withSeriesNumber(extractSeriesNumber(record))
+                   .withIsbnList(extractIsbnList(brageRecord))
+                   .withSeries(extractSeries(brageRecord))
+                   .withPublisher(extractPublisher(brageRecord))
+                   .withSeriesNumber(extractSeriesNumber(brageRecord))
                    .build();
     }
 
-    private static List<String> extractIsbnList(Record record) {
-        return Optional.ofNullable(record.getPublication())
+    private static List<String> extractIsbnList(Record brageRecord) {
+        return Optional.ofNullable(brageRecord.getPublication())
                    .map(Publication::getIsbnList)
                    .orElse(Collections.emptyList());
     }
 
-    private static String extractYear(Record record) {
-        return Optional.ofNullable(record.getEntityDescription())
+    private static String extractYear(Record brageRecord) {
+        return Optional.ofNullable(brageRecord.getEntityDescription())
                    .map(EntityDescription::getPublicationDate)
                    .map(PublicationDate::getNva)
                    .map(PublicationDateNva::getYear)
@@ -351,28 +351,28 @@ public final class PublicationContextMapper {
         return potentialSeriesNumber;
     }
 
-    private static PublicationContext buildPublicationContextWhenBook(Record record)
+    private static PublicationContext buildPublicationContextWhenBook(Record brageRecord)
         throws InvalidIsbnException, InvalidIssnException {
         return new Book.BookBuilder()
-                   .withPublisher(extractPublisher(record))
-                   .withSeries(extractSeries(record))
-                   .withIsbnList(extractIsbnList(record))
-                   .withSeriesNumber(extractSeriesNumber(record))
+                   .withPublisher(extractPublisher(brageRecord))
+                   .withSeries(extractSeries(brageRecord))
+                   .withIsbnList(extractIsbnList(brageRecord))
+                   .withSeriesNumber(extractSeriesNumber(brageRecord))
                    .build();
     }
 
-    private static PublicationContext buildPublicationContextWhenReport(Record record)
+    private static PublicationContext buildPublicationContextWhenReport(Record brageRecord)
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
         return new Report.Builder()
-                   .withPublisher(extractPublisher(record))
-                   .withSeries(extractSeries(record))
-                   .withIsbnList(extractIsbnList(record))
-                   .withSeriesNumber(extractSeriesNumber(record))
+                   .withPublisher(extractPublisher(brageRecord))
+                   .withSeries(extractSeries(brageRecord))
+                   .withIsbnList(extractIsbnList(brageRecord))
+                   .withSeriesNumber(extractSeriesNumber(brageRecord))
                    .build();
     }
 
-    private static String extractSeriesNumber(Record record) {
-        return Optional.ofNullable(record.getPublication())
+    private static String extractSeriesNumber(Record brageRecord) {
+        return Optional.ofNullable(brageRecord.getPublication())
                    .map(Publication::getPartOfSeries)
                    .map(PublicationContextMapper::extractPartOfSeriesValue)
                    .orElse(null);
@@ -393,51 +393,51 @@ public final class PublicationContextMapper {
     }
 
     @SuppressWarnings("PMD.NullAssignment")
-    private static BookSeries extractSeries(Record record) throws InvalidIssnException {
-        return Optional.ofNullable(record.getPublication().getPublicationContext())
+    private static BookSeries extractSeries(Record brageRecord) throws InvalidIssnException {
+        return Optional.ofNullable(brageRecord.getPublication().getPublicationContext())
                    .map(no.sikt.nva.brage.migration.record.PublicationContext::getSeries)
                    .map(no.sikt.nva.brage.migration.record.Series::getId)
-                   .map(id -> generateSeries(id, extractYear(record)))
-                   .orElse(isSupportedReportType(record) ? generateUnconfirmedSeries(record) : null);
+                   .map(id -> generateSeries(id, extractYear(brageRecord)))
+                   .orElse(isSupportedReportType(brageRecord) ? generateUnconfirmedSeries(brageRecord) : null);
     }
 
-    private static BookSeries generateUnconfirmedSeries(Record record) throws InvalidIssnException {
-        var issnList = extractIssnList(record);
+    private static BookSeries generateUnconfirmedSeries(Record brageRecord) throws InvalidIssnException {
+        var issnList = extractIssnList(brageRecord);
         if (issnList.size() > SIZE_ONE) {
-            return new UnconfirmedSeries(generateUnconfirmedSeriesTitle(record), issnList.get(0), issnList.get(1));
+            return new UnconfirmedSeries(generateUnconfirmedSeriesTitle(brageRecord), issnList.get(0), issnList.get(1));
         } else {
             var issn = !issnList.isEmpty() ? issnList.get(0) : null;
-            return new UnconfirmedSeries(generateUnconfirmedSeriesTitle(record), issn, null);
+            return new UnconfirmedSeries(generateUnconfirmedSeriesTitle(brageRecord), issn, null);
         }
     }
 
-    private static String generateUnconfirmedSeriesTitle(Record record) {
-        return Optional.ofNullable(record.getPublication())
+    private static String generateUnconfirmedSeriesTitle(Record brageRecord) {
+        return Optional.ofNullable(brageRecord.getPublication())
                    .map(Publication::getPartOfSeries)
                    .map(partOfSeriesValue -> partOfSeriesValue.split(";")[0])
                    .orElse(null);
     }
 
-    private static PublishingHouse extractPublisher(Record record) {
-        return Optional.ofNullable(record.getPublication().getPublicationContext())
+    private static PublishingHouse extractPublisher(Record brageRecord) {
+        return Optional.ofNullable(brageRecord.getPublication().getPublicationContext())
                    .map(no.sikt.nva.brage.migration.record.PublicationContext::getPublisher)
                    .map(no.sikt.nva.brage.migration.record.Publisher::getId)
-                   .map(id -> generatePublisher(id, extractYear(record)))
-                   .orElse(generateUnconfirmedPublisher(record));
+                   .map(id -> generatePublisher(id, extractYear(brageRecord)))
+                   .orElse(generateUnconfirmedPublisher(brageRecord));
     }
 
-    private static UnconfirmedPublisher generateUnconfirmedPublisher(Record record) {
-        return Optional.ofNullable(record.getPublication().getPublicationContext())
+    private static UnconfirmedPublisher generateUnconfirmedPublisher(Record brageRecord) {
+        return Optional.ofNullable(brageRecord.getPublication().getPublicationContext())
                    .map(no.sikt.nva.brage.migration.record.PublicationContext::getBragePublisher)
                    .map(UnconfirmedPublisher::new)
                    .orElse(null);
     }
 
-    private static Journal extractJournal(Record record) {
-        return Optional.ofNullable(record.getPublication().getPublicationContext())
+    private static Journal extractJournal(Record brageRecord) {
+        return Optional.ofNullable(brageRecord.getPublication().getPublicationContext())
                    .map(no.sikt.nva.brage.migration.record.PublicationContext::getJournal)
                    .map(no.sikt.nva.brage.migration.record.Journal::getId)
-                   .map(id -> generateJournal(id, extractYear(record))).orElse(null);
+                   .map(id -> generateJournal(id, extractYear(brageRecord))).orElse(null);
     }
 
     private static PublishingHouse generatePublisher(String publisherIdentifier, String year) {
