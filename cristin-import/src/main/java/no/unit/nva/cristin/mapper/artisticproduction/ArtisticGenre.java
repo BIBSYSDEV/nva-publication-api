@@ -1,15 +1,13 @@
 package no.unit.nva.cristin.mapper.artisticproduction;
 
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-
-@Data
 @Builder(
     builderClassName = "ArtisticGenreBuilder",
     toBuilder = true,
@@ -17,6 +15,8 @@ import lombok.Data;
     buildMethodName = "build",
     setterPrefix = "with"
 )
+@Getter
+@Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"sjangernavn", "sjangernavn_engelsk", "sjangernavn_nynorsk"})
 public class ArtisticGenre {

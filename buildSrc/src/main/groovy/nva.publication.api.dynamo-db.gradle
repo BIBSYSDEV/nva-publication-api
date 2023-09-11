@@ -1,0 +1,17 @@
+plugins{
+
+}
+configurations.testImplementation.canBeResolved = true
+tasks.register('copyNativeDeps', Copy) {
+    from(configurations.testImplementation) {
+        include "*.dylib"
+        include "*.so"
+        include "*.dll"
+    }
+    into 'build/dynamodb-local'
+}
+
+test {
+    dependsOn copyNativeDeps
+    systemProperty "java.library.path", 'build/dynamodb-local'
+}

@@ -60,7 +60,7 @@ class UpdateDoiStatusHandlerTest {
         logger = LogUtils.getTestingAppender(UpdateDoiStatusProcess.class);
         resourceService = mock(ResourceService.class);
         handler = new UpdateDoiStatusHandler(resourceService);
-        context = mock(Context.class);
+        context = null;
         outputStream = new ByteArrayOutputStream();
 
         when(resourceService.getPublicationByIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)).thenReturn(

@@ -1,3 +1,5 @@
+apply plugin: 'io.freefair.lombok'
+
 dependencies {
     implementation(project(':publication-commons'))
     implementation libs.nva.core

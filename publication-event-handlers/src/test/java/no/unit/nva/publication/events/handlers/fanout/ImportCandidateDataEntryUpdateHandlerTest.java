@@ -53,7 +53,7 @@ import org.mockito.Mockito;
 
 public class ImportCandidateDataEntryUpdateHandlerTest {
 
-    private final Context context = Mockito.mock(Context.class);
+    private final Context context = null;
     private OutputStream outputStream;
     private S3Driver s3Driver;
     private ImportCandidateDataEntryUpdateHandler handler;

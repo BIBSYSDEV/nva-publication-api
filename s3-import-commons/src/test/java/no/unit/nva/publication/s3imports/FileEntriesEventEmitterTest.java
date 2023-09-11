@@ -62,7 +62,7 @@ import software.amazon.ion.system.IonTextWriterBuilder;
 class FileEntriesEventEmitterTest {
 
     public static final String UNEXPECTED_TOPIC = "unexpected detail type";
-    private static final Context CONTEXT = Mockito.mock(Context.class);
+    private static final Context CONTEXT = null;
     private static final String SOME_BUCKETNAME = "someBucketname";
 
     public static final String UNEXPECTED_TOPIC1 = "Unexpected topic";

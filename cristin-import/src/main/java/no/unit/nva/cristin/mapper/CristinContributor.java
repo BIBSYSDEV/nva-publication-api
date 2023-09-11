@@ -15,7 +15,8 @@ import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import no.unit.nva.cristin.mapper.nva.exceptions.AffiliationWithoutRoleException;
 import no.unit.nva.cristin.mapper.nva.exceptions.ContributorWithoutAffiliationException;
 import no.unit.nva.model.Contributor;
@@ -27,9 +28,10 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 
-@Data
 @Builder(builderClassName = "CristinContributorBuilder", toBuilder = true, builderMethodName = "builder",
     buildMethodName = "build", setterPrefix = "with")
+@Getter
+@Setter
 @JsonIgnoreProperties({"identified_cristin_person"})
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class CristinContributor implements Comparable<CristinContributor> {

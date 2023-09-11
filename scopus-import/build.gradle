@@ -1,5 +1,7 @@
+apply plugin: 'io.freefair.lombok'
+
 dependencies {
-    api(libs.nva.datamodel.core) {
+    implementation(libs.nva.datamodel.core) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
     implementation group: 'org.apache.tika', name: 'tika-langdetect', version: '1.28.1'

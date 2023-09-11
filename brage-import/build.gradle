@@ -14,7 +14,6 @@ dependencies {
 
     implementation libs.bundles.logging
 
-    implementation libs.bundles.jackson
     implementation libs.nva.eventhandlers
 
     implementation libs.nva.s3
@@ -22,9 +21,7 @@ dependencies {
     implementation libs.nva.json
     implementation libs.nva.language
     implementation libs.nva.identifiers
-    implementation(libs.nva.datamodel.core) {
-        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
-    }
+    implementation(libs.nva.datamodel.core)
     implementation(libs.dynamodDbLocal) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'

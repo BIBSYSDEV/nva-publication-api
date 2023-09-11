@@ -308,7 +308,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         EventReference eventReference =
             new EventReference(EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC, eventUriInEventsBucket);
         var event = EventBridgeEventBuilder.sampleLambdaDestinationsEvent(eventReference);
-        handler.handleRequest(event, output, mock(Context.class));
+        handler.handleRequest(event, output, null);
         return objectMapper.readValue(output.toString(), EventReference.class);
     }
 

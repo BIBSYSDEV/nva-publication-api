@@ -3,7 +3,7 @@ dependencies {
     implementation libs.nva.core
     implementation libs.nva.json
     implementation libs.nva.identifiers
-    implementation libs.jackson.annotations
+    implementation libs.bundles.jackson
 
     testImplementation libs.nva.testutils
     testImplementation libs.nva.datamodel.testutils

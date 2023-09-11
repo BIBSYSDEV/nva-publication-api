@@ -22,7 +22,6 @@ dependencies {
     testImplementation libs.nva.datamodel.testutils
 
 
-    testImplementation libs.javafaker
     testImplementation libs.zalando
     testImplementation libs.nva.testutils
 }
