@@ -76,7 +76,7 @@ public final class BrageNvaMapper {
                               .withAdditionalIdentifiers(extractCristinIdentifier(record))
                               .withRightsHolder(record.getRightsholder())
                               .build();
-        if(!isCristinRecord(record)) {
+        if (!isCristinRecord(record)) {
             assertPublicationDoesNotHaveEmptyFields(publication);
         }
         return publication;
