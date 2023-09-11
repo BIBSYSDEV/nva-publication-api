@@ -82,7 +82,6 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
     @Override
     public ExpandedDataEntry expandEntry(Entity dataEntry) throws JsonProcessingException, NotFoundException {
-        var identifier = dataEntry.getIdentifier();
         if (dataEntry instanceof Resource resource) {
             logger.info("Expanding Resource: {}", resource.getIdentifier());
             var expandedResource = ExpandedResource.fromPublication(uriRetriever,
@@ -92,7 +91,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
             logger.info("Expanding TicketEntry: {}", ticketEntry.getIdentifier());
             return ExpandedTicket.create((TicketEntry) dataEntry, resourceService, this, ticketService);
         } else if (dataEntry instanceof Message message) {
-            logger.info("Expanding Message: {}", identifier);
+            logger.info("Expanding Message: {}", message.getIdentifier());
             var ticket = ticketService.fetchTicketByIdentifier(message.getTicketIdentifier());
             return expandEntry(ticket);
         }

@@ -59,12 +59,12 @@ public class EventBridgePublisherTest {
     
     @Test
     void publishCanPutEventsToEventBridge() {
-        DynamodbEvent event = createDynamodbEvent();
+        var event = createDynamodbEvent();
         prepareMocksWithSuccessfulPutEvents();
         
         publisher.publish(event);
         
-        PutEventsRequest expected = createPutEventsRequest();
+        var expected = createPutEventsRequest();
         verify(eventBridge).putEvents(expected);
         verifyNoMoreInteractions(failedEventPublisher);
     }
@@ -74,14 +74,14 @@ public class EventBridgePublisherTest {
         
         prepareMocksWithFailingPutEventEntries();
         
-        DynamodbEvent.DynamodbStreamRecord failedRecord = createDynamodbStreamRecord(FAILED_EVENT_NAME);
-        DynamodbEvent event = createDynamodbEvent(failedRecord);
+        var failedRecord = createDynamodbStreamRecord(FAILED_EVENT_NAME);
+        var event = createDynamodbEvent(failedRecord);
         
         publisher.publish(event);
         
-        PutEventsRequest partiallyFailingRequest = createFailingPutEventsRequest();
+        var partiallyFailingRequest = createFailingPutEventsRequest();
         verify(eventBridge).putEvents(partiallyFailingRequest);
-        DynamodbEvent failedEvent = createDynamodbEvent(failedRecord);
+        var failedEvent = createDynamodbEvent(failedRecord);
         verify(failedEventPublisher).publish(failedEvent);
     }
     
@@ -95,14 +95,14 @@ public class EventBridgePublisherTest {
     }
     
     private PutEventsRequest createFailingPutEventsRequest() {
-        String failedRecordString = String.format(RECORD_STRING_TEMPLATE, FAILED_EVENT_NAME, EVENT_SOURCE_ARN);
+        var failedRecordString = String.format(RECORD_STRING_TEMPLATE, FAILED_EVENT_NAME, EVENT_SOURCE_ARN);
         return PutEventsRequest.builder()
                    .entries(PUT_EVENT_REQUEST_BUILDER.detail(failedRecordString).build())
                    .build();
     }
     
     private List<PutEventsRequestEntry> createFailedEntries() {
-        String failedRecordString = String.format(RECORD_STRING_TEMPLATE, FAILED_EVENT_NAME,
+        var failedRecordString = String.format(RECORD_STRING_TEMPLATE, FAILED_EVENT_NAME,
             EventBridgePublisherTest.EVENT_SOURCE_ARN);
         return Collections.singletonList(
             PUT_EVENT_REQUEST_BUILDER
@@ -110,15 +110,15 @@ public class EventBridgePublisherTest {
                 .build());
     }
     
-    private DynamodbEvent.DynamodbStreamRecord createDynamodbStreamRecord(String eventName) {
-        DynamodbEvent.DynamodbStreamRecord streamRecord = new DynamodbEvent.DynamodbStreamRecord();
+    private DynamodbEvent.DynamodbStreamRecord createDynamodbStreamRecord(String    eventName) {
+        var streamRecord = new DynamodbEvent.DynamodbStreamRecord();
         streamRecord.setEventSourceARN(EVENT_SOURCE_ARN);
         streamRecord.setEventName(eventName);
         return streamRecord;
     }
     
     private PutEventsRequest createPutEventsRequest() {
-        String expectedDetail = String.format(EXPECTED_DETAIL_TEMPLATE, EVENT_SOURCE_ARN);
+        var expectedDetail = String.format(EXPECTED_DETAIL_TEMPLATE, EVENT_SOURCE_ARN);
         return PutEventsRequest.builder()
                    .entries(PutEventsRequestEntry.builder()
                                 .eventBusName(EVENT_BUS)
@@ -138,7 +138,7 @@ public class EventBridgePublisherTest {
     }
     
     private DynamodbEvent createDynamodbEvent(DynamodbStreamRecord... records) {
-        DynamodbEvent event = new DynamodbEvent();
+        var event = new DynamodbEvent();
         event.setRecords(Arrays.asList(records));
         return event;
     }
@@ -148,7 +148,7 @@ public class EventBridgePublisherTest {
     }
     
     private void prepareMocksWithFailingPutEventEntries() {
-        List<PutEventsRequestEntry> failedEntries = createFailedEntries();
+        var failedEntries = createFailedEntries();
         when(eventBridge.putEvents(any(PutEventsRequest.class))).thenReturn(failedEntries);
     }
 }
