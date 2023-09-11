@@ -46,7 +46,7 @@ public class DeleteEntriesEventEmitter implements RequestStreamHandler {
     }
 
     /**
-     * Method for emitting DeleteEntryEvents to DeletePublicationHandler
+     * Method for emitting DeleteEntryEvents to DeletePublicationHandler.
      *
      * @param input   EventReference containing S3 uri containing files with object keys corresponding to
      *                publication-identifier. Ex. Brage-migration report bucket and cristin-import bucket contains such

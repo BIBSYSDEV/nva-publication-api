@@ -75,12 +75,12 @@ public class DeleteImportCandidatesEventEmitterTest {
 
     @Test
     void shouldLogNotEmittedEvents() throws IOException {
-        var s3Event = createS3Event(RandomDataGenerator.randomString());
         eventBridgeClient = new DeleteImportCandidatesEventEmitterTest.FakeEventBridgeClientThatFailsAllPutEvents(
             ApplicationConstants.EVENT_BUS_NAME);
         s3Driver = new S3Driver(s3Client, "ignoredValue");
         handler = new DeleteImportCandidatesEventEmitter(s3Client, eventBridgeClient);
         var appender = LogUtils.getTestingAppenderForRootLogger();
+        var s3Event = createS3Event(RandomDataGenerator.randomString());
         handler.handleRequest(s3Event, CONTEXT);
         assertThat(appender.getMessages(), containsString("Not emitted events"));
     }
@@ -120,8 +120,9 @@ public class DeleteImportCandidatesEventEmitterTest {
         return eventBridgeClient.getRequestEntries()
                    .stream()
                    .map(PutEventsRequestEntry::detail)
-                   .map(event -> attempt(() ->JsonUtils.dtoObjectMapper.readValue(event,
-                                                                                ImportCandidateDeleteEvent.class)).orElseThrow())
+                   .map(event -> attempt(() -> JsonUtils.dtoObjectMapper.readValue(event,
+                                                                                  ImportCandidateDeleteEvent.class))
+                                     .orElseThrow())
                    .collect(Collectors.toList());
     }
 

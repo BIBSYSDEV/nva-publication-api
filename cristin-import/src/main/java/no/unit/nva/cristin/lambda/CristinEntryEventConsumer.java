@@ -271,6 +271,7 @@ public class CristinEntryEventConsumer
         try {
             Thread.sleep(sleepTime);
         } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
             throw new RuntimeException(exception);
         }
     }

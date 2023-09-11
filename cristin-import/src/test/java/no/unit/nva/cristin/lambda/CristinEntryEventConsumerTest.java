@@ -555,7 +555,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var bucket = inputFile.getHost();
         return bucket.addChild(ERRORS_FOLDER)
                    .addChild(exceptionName)
-                   .addChild(extractSecondLastPathElementAndFileName( inputFile.getPath()))
+                   .addChild(extractSecondLastPathElementAndFileName(inputFile.getPath()))
                    .addChild(errorReportFilename);
     }
 
