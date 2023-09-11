@@ -24,6 +24,7 @@ entityDescription.reference.publicationInstance.manifestations.performanceType
 entityDescription.reference.publicationInstance.manifestations.musicalWorks.title
 entityDescription.reference.publicationInstance.manifestations.trackList
 entityDescription.reference.publicationInstance.manifestations.catalogueNumber
+entityDescription.reference.publicationInstance.manifestations.publisher.name
 
 entityDescription.abstract
 entityDescription.tags

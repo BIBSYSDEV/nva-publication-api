@@ -8,10 +8,8 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import no.unit.nva.cristin.mapper.nva.MediaSubTypeBuilder;
 import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIsrcException;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
-import no.unit.nva.model.contexttypes.media.MediaSubType;
 import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
 import no.unit.nva.model.instancetypes.artistic.film.realization.MovingPictureOutput;
@@ -33,7 +31,6 @@ import nva.commons.core.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 import static no.unit.nva.model.instancetypes.artistic.music.MusicMediaType.COMPACT_DISC;
