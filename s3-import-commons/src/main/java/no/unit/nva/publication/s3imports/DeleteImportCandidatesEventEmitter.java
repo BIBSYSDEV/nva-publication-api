@@ -4,7 +4,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -49,19 +48,15 @@ public class DeleteImportCandidatesEventEmitter implements RequestHandler<S3Even
 
     @Override
     public Void handleRequest(S3Event input, Context context) {
-        Stream.of(readFile(input))
-            .map(this::extractIdentifiers)
-            .map(this::createEvents)
-            .map(list -> emitEvents(list, context))
-            .forEach(this::logWarningForNotEmittedEvents);
+        var events = extractIdentifiersFromEventBlob(input)
+                    .map(this::createEvent)
+                    .toList();
+        var putEventsResults = emitEvents(events, context);
+        logWarningForNotEmittedEvents(putEventsResults);
         return null;
     }
 
-    private static List<String> splitOnNewLine(String string) {
-        return Arrays.asList(string.split("\n"));
-    }
-
-    private static boolean isEmptyLine(String string) {
+    private static boolean isNotEmptyLine(String string) {
         return !string.isBlank() || !string.isEmpty();
     }
 
@@ -69,36 +64,30 @@ public class DeleteImportCandidatesEventEmitter implements RequestHandler<S3Even
         return new ImportCandidateDeleteEvent(ImportCandidateDeleteEvent.EVENT_TOPIC, id);
     }
 
-    private List<ImportCandidateDeleteEvent> createEvents(Stream<String> scopusIdentifiers) {
-        return scopusIdentifiers.map(this::createEvent)
-                   .collect(Collectors.toList());
-    }
-
     private List<PutEventsResult> emitEvents(List<ImportCandidateDeleteEvent> events, Context context) {
-        var batchEventEmitter = new BatchEventEmitter<ImportCandidateDeleteEvent>(
-            ImportCandidateDeleteEvent.class.getCanonicalName(),
-            context.getInvokedFunctionArn(),
-            eventBridgeClient);
-        logger.info("Events to emit: {}",
-                    events.stream().map(ImportCandidateDeleteEvent::toJsonString).collect(Collectors.toList()));
+        var batchEventEmitter = getBatchEventEmitter(context);
+        logger.info("Events to emit: {}", events.stream().map(ImportCandidateDeleteEvent::toJsonString).toList());
         batchEventEmitter.addEvents(events);
         return batchEventEmitter.emitEvents(NUMBER_OF_EMITTED_ENTRIES_PER_BATCH);
     }
 
-    private Stream<String> extractIdentifiers(String string) {
-        return splitOnNewLine(string).stream()
-                   .filter(DeleteImportCandidatesEventEmitter::isEmptyLine)
-                   .map(this::extractScopusIdentifier);
+    private BatchEventEmitter<ImportCandidateDeleteEvent> getBatchEventEmitter(Context context) {
+        return new BatchEventEmitter<>(ImportCandidateDeleteEvent.class.getCanonicalName(),
+                                       context.getInvokedFunctionArn(),
+                                       eventBridgeClient);
     }
 
     private String extractScopusIdentifier(String item) {
         return item.split(SCOPUS_IDENTIFIER_DELIMITER)[1];
     }
 
-    private String readFile(S3Event event) {
+    private Stream<String> extractIdentifiersFromEventBlob(S3Event event) {
         var s3Driver = new S3Driver(s3Client, extractBucketName(event));
         var fileUri = createS3BucketUri(event);
-        return s3Driver.getFile(UriWrapper.fromUri(fileUri).toS3bucketPath());
+        return s3Driver.getFile(UriWrapper.fromUri(fileUri).toS3bucketPath())
+                   .lines()
+                   .filter(DeleteImportCandidatesEventEmitter::isNotEmptyLine)
+                   .map(this::extractScopusIdentifier);
     }
 
     private String extractBucketName(S3Event event) {
@@ -118,7 +107,7 @@ public class DeleteImportCandidatesEventEmitter implements RequestHandler<S3Even
             String failedRequestsString = failedRequests
                                               .stream()
                                               .map(PutEventsResult::toString)
-                                              .collect(Collectors.joining("\n"));
+                                              .collect(Collectors.joining(System.lineSeparator()));
             logger.warn(NOT_EMITTED_EVENTS, failedRequestsString);
         }
     }
