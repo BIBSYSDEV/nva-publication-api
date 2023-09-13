@@ -25,7 +25,6 @@ import org.apache.jena.vocabulary.RDF;
 public class ExpandedParentPublication {
 
     public static final String FRAME = IoUtils.stringFromResources(Path.of("parentPublicationFrame.json"));
-    private static final String EMPTY_STRING = "";
     private static final String PUBLICATION_ONTOLOGY = "https://nva.sikt.no/ontology/publication#Publication";
     private final UriRetriever uriRetriever;
 
@@ -36,7 +35,7 @@ public class ExpandedParentPublication {
     public String getExpandedParentPublication(URI publicationId) {
         return fetch(publicationId)
                    .map(expandedPublication -> expandParent(publicationId, expandedPublication))
-                   .orElse(EMPTY_STRING);
+                   .orElse(null);
     }
 
     private static void removePublicationTypeFromResource(URI id, Model model) {

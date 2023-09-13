@@ -26,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -80,8 +81,8 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         return extractUris(contributorNodes(indexDocument),"id");
     }
 
-    public static URI extractPublicationContextUri(JsonNode indexDocument) {
-        return URI.create(indexDocument.at(PUBLICATION_CONTEXT_ID_JSON_PTR).asText());
+    public static Optional<URI> extractPublicationContextUri(JsonNode indexDocument) {
+        return Optional.of(URI.create(indexDocument.at(PUBLICATION_CONTEXT_ID_JSON_PTR).asText()));
     }
 
     public static boolean isPublicationContextTypeAnthology(JsonNode root) {
