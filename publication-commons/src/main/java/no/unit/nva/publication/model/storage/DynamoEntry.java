@@ -19,16 +19,28 @@ import no.unit.nva.publication.storage.model.exceptions.EmptyValueMapException;
     @JsonSubTypes.Type(UniquenessEntry.class)
 })
 public interface DynamoEntry {
-    
+
+    String CONTAINED_DATA_FIELD_NAME = "data";
+    boolean NO_WRAP = true;
+
     static <T> T parseAttributeValuesMap(Map<String, AttributeValue> valuesMap, Class<T> daoClass) {
         if (nonNull(valuesMap) && !valuesMap.isEmpty()) {
-            Item item = ItemUtils.toItem(valuesMap);
-            return attempt(() -> dynamoDbObjectMapper.readValue(item.toJSON(), daoClass)).orElseThrow();
+            if (hasByteArrayData(valuesMap)) {
+                return DataCompressor.decompressDao(valuesMap, daoClass);
+            } else {
+                Item item = ItemUtils.toItem(valuesMap);
+                return attempt(() -> dynamoDbObjectMapper.readValue(item.toJSON(), daoClass)).orElseThrow();
+            }
+
         } else {
             throw new EmptyValueMapException();
         }
     }
-    
+
+    private static boolean hasByteArrayData(Map<String, AttributeValue> valuesMap) {
+        return valuesMap.get(CONTAINED_DATA_FIELD_NAME) != null && valuesMap.get(CONTAINED_DATA_FIELD_NAME).getB() != null;
+    }
+
     @JsonIgnore
     SortableIdentifier getIdentifier();
     

@@ -1,6 +1,8 @@
 package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.publication.PublicationServiceConfig.RESULT_SET_SIZE_FOR_DYNAMODB_QUERIES;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
+import static no.unit.nva.publication.model.storage.DataCompressor.compressDao;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_PK_FORMAT;
@@ -46,15 +48,15 @@ public abstract class Dao
                WithByTypeCustomerStatusIndex {
     
     public static final String URI_PATH_SEPARATOR = "/";
-    public static final String CONTAINED_DATA_FIELD_NAME = "data";
     public static final String VERSION_FIELD = "version";
-    public static final String UNSUPORTED_SET_IDENTIFIER_ERROR =
-        "Daos cannot set their identifier. They get it from their contained data";
     public static final boolean SINGLE_THREADED = false;
     private Entity data;
     
     @JsonProperty(VERSION_FIELD)
     private UUID version;
+
+    @JsonProperty(IDENTIFIER_FIELD)
+    private SortableIdentifier identifier;
     
     protected Dao() {
     
@@ -174,14 +176,13 @@ public abstract class Dao
     public abstract URI getCustomerId();
     
     @Override
-    @JsonIgnore
     public SortableIdentifier getIdentifier() {
-        return getData().getIdentifier();
+        return this.identifier;
     }
     
     @JacocoGenerated
     public final void setIdentifier(SortableIdentifier identifier) {
-        throw new UnsupportedOperationException(UNSUPORTED_SET_IDENTIFIER_ERROR);
+        this.identifier = identifier;
     }
     
     public abstract TransactWriteItemsRequest createInsertionTransactionRequest();
@@ -248,4 +249,10 @@ public abstract class Dao
     private String customerIdentifier() {
         return orgUriToOrgIdentifier(getCustomerId());
     }
+
+    @Override
+    public Map<String, AttributeValue> toDynamoFormat() {
+        return attempt(() -> compressDao(this)).orElseThrow();
+    }
+
 }

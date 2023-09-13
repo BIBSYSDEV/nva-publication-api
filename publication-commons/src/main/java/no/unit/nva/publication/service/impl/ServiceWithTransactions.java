@@ -1,7 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
-import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
-import static no.unit.nva.publication.model.storage.Dao.CONTAINED_DATA_FIELD_NAME;
+import static no.unit.nva.publication.model.storage.DynamoEntry.CONTAINED_DATA_FIELD_NAME;
 import static no.unit.nva.publication.model.storage.JoinWithResource.Constants.DOI_REQUEST_INDEX_IN_QUERY_RESULT;
 import static no.unit.nva.publication.model.storage.JoinWithResource.Constants.RESOURCE_INDEX_IN_QUERY_RESULT;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
@@ -16,7 +15,6 @@ import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -96,11 +94,6 @@ public class ServiceWithTransactions {
             return (ResourceDao) daos.get(RESOURCE_INDEX_IN_QUERY_RESULT);
         }
         throw new BadRequestException(RESOURCE_NOT_FOUND_MESSAGE);
-    }
-
-    protected String nowAsString() {
-        String jsonString = attempt(() -> dtoObjectMapper.writeValueAsString(Instant.now())).orElseThrow();
-        return jsonString.replace(DOUBLE_QUOTES, EMPTY_STRING);
     }
 
     protected void sendTransactionWriteRequest(TransactWriteItemsRequest transactWriteItemsRequest) {

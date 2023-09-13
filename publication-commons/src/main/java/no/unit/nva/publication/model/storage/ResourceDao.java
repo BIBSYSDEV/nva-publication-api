@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -44,6 +46,17 @@ public class ResourceDao extends Dao
     public static final String CRISTIN_SOURCE = "Cristin";
     public static final String TYPE = "Resource";
     private static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "a";
+    private static final String STATUS_FIELD = "status";
+    private static final String MODIFIED_DATA_FIELD = "modifiedDate";
+    private static final String DOI_FIELD = "doi";
+
+    @JsonProperty(STATUS_FIELD)
+    private PublicationStatus status;
+
+    @JsonProperty(MODIFIED_DATA_FIELD)
+    private Instant modifiedDate;
+    @JsonProperty(DOI_FIELD)
+    private URI doi;
     
     public ResourceDao() {
         this(new Resource());
@@ -51,6 +64,10 @@ public class ResourceDao extends Dao
     
     public ResourceDao(Resource resource) {
         super(resource);
+        setIdentifier(resource.getIdentifier());
+        this.status = resource.getStatus();
+        this.modifiedDate = resource.getModifiedDate();
+        this.doi = resource.getDoi();
     }
     
     public static ResourceDao queryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
@@ -112,7 +129,31 @@ public class ResourceDao extends Dao
         ResourceDao that = (ResourceDao) o;
         return Objects.equals(getData(), that.getData());
     }
-    
+
+    public PublicationStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(PublicationStatus status) {
+        this.status = status;
+    }
+
+    public Instant getModifiedDate() {
+        return modifiedDate;
+    }
+
+    public void setModifiedDate(Instant modifiedDate) {
+        this.modifiedDate = modifiedDate;
+    }
+
+    public URI getDoi() {
+        return doi;
+    }
+
+    public void setDoi(URI doi) {
+        this.doi = doi;
+    }
+
     @Override
     protected User getOwner() {
         return getData().getOwner();

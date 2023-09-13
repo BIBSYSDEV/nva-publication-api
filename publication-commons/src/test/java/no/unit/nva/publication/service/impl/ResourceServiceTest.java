@@ -5,13 +5,17 @@ import static java.util.Collections.emptyList;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedLink;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
+import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
+import static no.unit.nva.publication.service.impl.UpdateResourceService.ILLEGAL_DELETE_WHEN_NOT_DRAFT;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
@@ -34,7 +38,6 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
-import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
@@ -55,10 +58,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -67,6 +73,8 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
@@ -627,13 +635,24 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void markPublicationForDeletionThrowsExceptionWhenDeletingSomeoneElsePublication() throws ApiGatewayException {
+        Publication resource = createPublishedResource();
+        var userInstance = UserInstance.create(randomString(), randomUri());
+        Executable action = () -> resourceService.markPublicationForDeletion(userInstance,
+                                                                             resource.getIdentifier());
+        BadRequestException exception = assertThrows(BadRequestException.class, action);
+        assertThat(exception.getMessage(), containsString(RESOURCE_NOT_FOUND_MESSAGE));
+        assertThat(exception.getMessage(), containsString(resource.getIdentifier().toString()));
+    }
+
+    @Test
     void markPublicationForDeletionLogsConditionExceptionWhenUpdateConditionFails() throws ApiGatewayException {
         TestAppender testAppender = LogUtils.getTestingAppender(ResourceService.class);
         Publication resource = createPublishedResource();
         Executable action = () -> resourceService.markPublicationForDeletion(UserInstance.fromPublication(resource),
                                                                              resource.getIdentifier());
         assertThrows(BadRequestException.class, action);
-        assertThat(testAppender.getMessages(), containsString(ConditionalCheckFailedException.class.getName()));
+        assertThat(testAppender.getMessages(), containsString(ILLEGAL_DELETE_WHEN_NOT_DRAFT));
     }
 
     @Test
@@ -912,6 +931,27 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThatFailedBatchScanLogsProperly(testAppender, userResources);
     }
 
+    @Test
+    void shouldReturnResourceWithContributorsWhenResourceHasManyContributions() throws BadRequestException,
+                                                                                       NotFoundException {
+        var publication = createPersistedPublicationWithManyContributions(4000);
+
+        var fetchedPublication = resourceService.getResourceByIdentifier(publication.getIdentifier());
+        var fetchedContributors = fetchedPublication.getEntityDescription().getContributors();
+        assertThat(fetchedContributors.size(), is(equalTo(4000)));
+    }
+
+    @Test
+    void shouldReturnResourceWithContributorsWhenResourceHasManyContributionsWithoutAffiliations() throws BadRequestException,
+                                                                                       NotFoundException {
+        var publication = createPersistedPublicationWithManyContributionsWithoutAffiliations(10000);
+
+        var fetchedPublication = resourceService.getResourceByIdentifier(publication.getIdentifier());
+        var fetchedContributors = fetchedPublication.getEntityDescription().getContributors();
+        assertThat(fetchedContributors.size(), is(equalTo(10000)));
+    }
+
+
     private static AssociatedArtifactList createEmptyArtifactList() {
         return new AssociatedArtifactList(emptyList());
     }
@@ -956,6 +996,47 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    .withAssociatedArtifacts(List.of())
                    .build();
     }
+
+    private Publication createPersistedPublicationWithManyContributions(int amount) throws BadRequestException {
+        var publication = randomPublication().copy().withDoi(null).build();
+        var contributions = IntStream
+                                .rangeClosed(1, amount)
+                                .mapToObj(i -> randomContributor())
+                                .collect(Collectors.toList());
+        publication.getEntityDescription().setContributors(contributions);
+        return Resource.fromPublication(publication)
+                   .persistNew(resourceService, UserInstance.fromPublication(publication));
+    }
+
+    private Publication createPersistedPublicationWithManyContributionsWithoutAffiliations(int amount) throws BadRequestException {
+        var publication = randomPublication().copy().withDoi(null).build();
+        var contributions = IntStream
+                                .rangeClosed(1, amount)
+                                .mapToObj(i -> randomContributorWithoutAffiliation())
+                                .collect(Collectors.toList());
+        publication.getEntityDescription().setContributors(contributions);
+        return Resource.fromPublication(publication)
+                   .persistNew(resourceService, UserInstance.fromPublication(publication));
+    }
+
+    private Contributor randomContributor() {
+        return new Contributor.Builder()
+                   .withIdentity(new Identity.Builder().withName(randomString()).build())
+                   .withRole(new RoleType(Role.ACTOR))
+                   .withSequence(randomInteger(10000))
+                   .withAffiliations(List.of(randomOrganization()))
+                   .build();
+    }
+
+    private Contributor randomContributorWithoutAffiliation() {
+        return new Contributor.Builder()
+                   .withIdentity(new Identity.Builder().withName(randomString()).build())
+                   .withRole(new RoleType(Role.ACTOR))
+                   .withSequence(randomInteger(10000))
+                   .withAffiliations(List.of())
+                   .build();
+    }
+
 
     private Publication draftPublicationWithoutDoiAndAssociatedLink() {
 

@@ -7,6 +7,7 @@ import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
@@ -24,13 +25,20 @@ public class MessageDao extends Dao
     
     public static final String TYPE = "Message";
     private static final String JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX = "z";
-    
+
+    private static final String TICKET_IDENTIFIER_FIELD_NAME = "ticketIdentifier";
+
+    @JsonProperty(TICKET_IDENTIFIER_FIELD_NAME)
+    private SortableIdentifier ticketIdentifier;
+
     public MessageDao() {
         super();
     }
     
     public MessageDao(Message message) {
         super(message);
+        this.setIdentifier(message.getIdentifier());
+        this.ticketIdentifier = message.getTicketIdentifier();
     }
     
     public static MessageDao queryObject(UserInstance owner, SortableIdentifier identifier) {
@@ -98,7 +106,15 @@ public class MessageDao extends Dao
         MessageDao that = (MessageDao) o;
         return Objects.equals(getData(), that.getData());
     }
-    
+
+    public SortableIdentifier getTicketIdentifier() {
+        return ticketIdentifier;
+    }
+
+    public void setTicketIdentifier(SortableIdentifier ticketIdentifier) {
+        this.ticketIdentifier = ticketIdentifier;
+    }
+
     @Override
     protected User getOwner() {
         return getData().getOwner();
@@ -113,12 +129,12 @@ public class MessageDao extends Dao
     public String joinByResourceOrderedType() {
         return joinByResourceOrderedContainedType();
     }
-    
+
     @Override
     public SortableIdentifier getResourceIdentifier() {
         return ((Message) getData()).getResourceIdentifier();
     }
-    
+
     private static TransactWriteItem transactionItem(DynamoEntry dynamoEntry) {
         var put = new Put()
                       .withTableName(RESOURCES_TABLE_NAME)

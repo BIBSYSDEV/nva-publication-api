@@ -52,7 +52,7 @@ public final class UntypedTicketQueryObject extends TicketDao {
     }
     
     @Override
-    protected User getOwner() {
+    public User getOwner() {
         return new User(owner.getUsername());
     }
     
@@ -69,12 +69,6 @@ public final class UntypedTicketQueryObject extends TicketDao {
     @JacocoGenerated
     @Override
     public String joinByResourceOrderedType() {
-        throw new UnsupportedOperationException();
-    }
-    
-    @JacocoGenerated
-    @Override
-    public SortableIdentifier getResourceIdentifier() {
         throw new UnsupportedOperationException();
     }
 }

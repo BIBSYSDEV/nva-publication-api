@@ -3,7 +3,6 @@ package no.unit.nva.publication.create;
 import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
-import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.COULD_NOT_IMPORT_PUBLICATION_MESSAGE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.IMPORT_CANDIDATES_TABLE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.IMPORT_PROCESS_WENT_WRONG;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.PUBLICATIONS_TABLE;
