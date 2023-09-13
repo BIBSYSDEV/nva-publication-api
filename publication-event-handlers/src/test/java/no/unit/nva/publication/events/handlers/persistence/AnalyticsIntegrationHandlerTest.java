@@ -190,7 +190,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
             () -> DTO_OBJECT_MAPPER.writeValueAsString(randomPublication(AcademicMonograph.class))).orElseThrow();
         var publicationNode = (ObjectNode) attempt(() -> DTO_OBJECT_MAPPER.readTree(publication)).orElseThrow();
 
-        String context = Publication.getJsonLdContext(URI.create(System.getenv("ID_NAMESPACE")));
+        var context = Publication.getJsonLdContext(URI.create(System.getenv("ID_NAMESPACE")));
         var contextNode = attempt(() -> DTO_OBJECT_MAPPER.readTree(context)).orElseThrow();
 
         publicationNode.set(JSONLD_CONTEXT, contextNode);
