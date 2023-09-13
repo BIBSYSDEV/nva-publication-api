@@ -87,7 +87,7 @@ public class IndexDocumentWrapperLinkedData {
     private List<InputStream> getInputStreams(JsonNode indexDocument) {
         final List<InputStream> inputStreams = new ArrayList<>();
         inputStreams.add(stringToStream(toJsonString(indexDocument)));
-        inputStreams.add(fetchAnthologyContent(indexDocument));
+        fetchAnthologyContent(indexDocument).ifPresent(inputStreams::add);
         inputStreams.addAll(fetchAllAffiliationContent(indexDocument));
         inputStreams.addAll(fetchAll(extractPublicationContextUris(indexDocument)));
         inputStreams.addAll(fetchFundingSources(indexDocument));
@@ -149,16 +149,19 @@ public class IndexDocumentWrapperLinkedData {
                    .collect(Collectors.toList());
     }
 
-    private InputStream fetchAnthologyContent(JsonNode indexDocument) {
+    private Optional<InputStream> fetchAnthologyContent(JsonNode indexDocument) {
         return isAcademicChapter(indexDocument) || isPublicationContextTypeAnthology(indexDocument)
-                   ? stringToStream(getAnthology(indexDocument))
-                   : null;
+                   ? getAnthology(indexDocument)
+                   : Optional.empty();
     }
 
-    private String getAnthology(JsonNode indexDocument) {
-        var anthologyUri = extractPublicationContextUri(indexDocument);
-        return new ExpandedParentPublication(uriRetriever).getExpandedParentPublication(anthologyUri);
+    private Optional<InputStream> getAnthology(JsonNode indexDocument) {
+        return extractPublicationContextUri(indexDocument)
+                   .map(uri -> new ExpandedParentPublication(uriRetriever)
+                        .getExpandedParentPublication(uri))
+                   .map(IoUtils::stringToStream);
     }
+
 
     private Stream<String> fetchContentRecursively(URI uri) {
         var affiliation = fetchOrganizations(uri);
