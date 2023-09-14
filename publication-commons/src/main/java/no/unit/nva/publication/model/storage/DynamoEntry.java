@@ -28,8 +28,7 @@ public interface DynamoEntry {
             if (hasByteArrayData(valuesMap)) {
                 return DataCompressor.decompressDao(valuesMap, daoClass);
             } else {
-                Item item = ItemUtils.toItem(valuesMap);
-                return attempt(() -> dynamoDbObjectMapper.readValue(item.toJSON(), daoClass)).orElseThrow();
+                return parseDecompressedAttributeValue(valuesMap, daoClass);
             }
 
         } else {
@@ -37,8 +36,14 @@ public interface DynamoEntry {
         }
     }
 
+    @Deprecated // Delete after we have migrated all data to compressed
+    private static <T> T parseDecompressedAttributeValue(Map<String, AttributeValue> valuesMap, Class<T> daoClass) {
+        Item item = ItemUtils.toItem(valuesMap);
+        return attempt(() -> dynamoDbObjectMapper.readValue(item.toJSON(), daoClass)).orElseThrow();
+    }
+
     private static boolean hasByteArrayData(Map<String, AttributeValue> valuesMap) {
-        return valuesMap.get(CONTAINED_DATA_FIELD_NAME) != null && valuesMap.get(CONTAINED_DATA_FIELD_NAME).getB() != null;
+        return nonNull(valuesMap.get(CONTAINED_DATA_FIELD_NAME)) && nonNull(valuesMap.get(CONTAINED_DATA_FIELD_NAME).getB());
     }
 
     @JsonIgnore

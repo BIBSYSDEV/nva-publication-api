@@ -111,7 +111,7 @@ class MigrationTests extends ResourcesLocalTest {
         assertThat(doiRequest.get(0).getCustomerId(), not(nullValue()));
         assertThat(doiRequest.get(0).getTicketIdentifier(), not(nullValue()));
 
-        var dbScan= client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
+        var dbScan = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
         var doiAttributeValue = dbScan.get(0);
         assertThat(doiAttributeValue.get("data").getB(), not(nullValue()));
         assertThat(doiAttributeValue.get("data").getM(), is(nullValue()));

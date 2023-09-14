@@ -64,6 +64,7 @@ class DaoTest extends ResourcesLocalTest {
     public static Stream<Class<?>> entityProvider() {
         return TypeProvider.listSubTypes(Entity.class);
     }
+
     public static Stream<Class<?>> ticketProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class);
     }

@@ -932,8 +932,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnResourceWithContributorsWhenResourceHasManyContributions() throws BadRequestException,
-                                                                                       NotFoundException {
+    void shouldReturnResourceWithContributorsWhenResourceHasManyContributions()
+        throws BadRequestException, NotFoundException {
         var publication = createPersistedPublicationWithManyContributions(4000);
 
         var fetchedPublication = resourceService.getResourceByIdentifier(publication.getIdentifier());
@@ -942,8 +942,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnResourceWithContributorsWhenResourceHasManyContributionsWithoutAffiliations() throws BadRequestException,
-                                                                                       NotFoundException {
+    void shouldReturnResourceWithContributorsWhenResourceHasManyContributionsWithoutAffiliations()
+        throws BadRequestException, NotFoundException {
         var publication = createPersistedPublicationWithManyContributionsWithoutAffiliations(10000);
 
         var fetchedPublication = resourceService.getResourceByIdentifier(publication.getIdentifier());

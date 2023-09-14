@@ -19,50 +19,45 @@ import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterOutputStream;
+import no.unit.nva.publication.model.business.Entity;
 import nva.commons.core.JacocoGenerated;
 
 public class DataCompressor {
 
-    private static boolean NO_WRAP = true;
-    private static int COMPRESSION_LEVEL = BEST_COMPRESSION;
+    private static final boolean NO_WRAP = true;
+    private static final int COMPRESSION_LEVEL = BEST_COMPRESSION;
 
     @JacocoGenerated
     public DataCompressor() {
     }
 
-    public static byte[] compress(byte[] uncompressedData) throws IOException {
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
+    private static byte[] compress(byte[] uncompressedData) throws IOException {
+        var byteArrayOutputStream = new ByteArrayOutputStream();
         var deflater = new Deflater(COMPRESSION_LEVEL, NO_WRAP);
-        try (DeflaterOutputStream dos = new DeflaterOutputStream(os, deflater)) {
-            dos.write(uncompressedData);
+        try (DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(byteArrayOutputStream, deflater)) {
+            deflaterOutputStream.write(uncompressedData);
         }
-        return os.toByteArray();
+        return byteArrayOutputStream.toByteArray();
     }
 
     public static byte[] decompress(byte[] compressedData) throws IOException {
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        var byteArrayOutputStream = new ByteArrayOutputStream();
         var inflater = new Inflater(NO_WRAP);
-        try (OutputStream ios = new InflaterOutputStream(os, inflater)) {
-            ios.write(compressedData);
+        try (OutputStream inflaterOutputStream = new InflaterOutputStream(byteArrayOutputStream, inflater)) {
+            inflaterOutputStream.write(compressedData);
         }
-        return os.toByteArray();
+        return byteArrayOutputStream.toByteArray();
     }
 
-    public static Map<String, AttributeValue> compressDao(Dao dao) {
-
-        var compressedDataBytes = attempt(() -> dynamoDbObjectMapper.convertValue(dao.getData(), JsonNode.class))
-                                      .map(JsonNode::toString)
-                                      .map(jsonStr -> jsonStr.getBytes(StandardCharsets.UTF_8))
-                                      .map(DataCompressor::compress)
-                                      .orElseThrow();
+    public static Map<String, AttributeValue> compressDaoData(Dao dao) {
 
         var attributeValue = attempt(
             () -> dynamoDbObjectMapper.convertValue(dao, JsonNode.class))
-                                           .map( json -> Item.fromJSON(dynamoDbObjectMapper.writeValueAsString(json)))
+                                            .map(json -> Item.fromJSON(dynamoDbObjectMapper.writeValueAsString(json)))
                                             .map(ItemUtils::toAttributeValues)
-                                           .orElseThrow();
+                                            .orElseThrow();
 
-        attributeValue.put(CONTAINED_DATA_FIELD_NAME, new AttributeValue().withB(ByteBuffer.wrap(compressedDataBytes)));
+        attributeValue.put(CONTAINED_DATA_FIELD_NAME, asBinaryAttributeValue(dao.getData()));
         return attributeValue;
     }
 
@@ -70,7 +65,7 @@ public class DataCompressor {
         var dataJson = attempt(() -> valuesMap.get(CONTAINED_DATA_FIELD_NAME).getB().array())
                            .map(DataCompressor::decompress)
                            .map(bytes -> new String(bytes, StandardCharsets.UTF_8))
-                           .map(json -> dynamoDbObjectMapper.readTree(json))
+                           .map(dynamoDbObjectMapper::readTree)
                            .orElseThrow();
 
         var objectNode = attempt(() -> ItemUtils.toItem(valuesMap))
@@ -80,6 +75,15 @@ public class DataCompressor {
         objectNode.put(CONTAINED_DATA_FIELD_NAME, dataJson);
 
         return attempt(() -> dynamoDbObjectMapper.readValue(objectNode.toString(), daoClass)).orElseThrow();
+    }
+
+    private static AttributeValue asBinaryAttributeValue(Entity dao) {
+        var compressedDataBytes = attempt(() -> dynamoDbObjectMapper.convertValue(dao, JsonNode.class))
+                                      .map(JsonNode::toString)
+                                      .map(jsonStr -> jsonStr.getBytes(StandardCharsets.UTF_8))
+                                      .map(DataCompressor::compress)
+                                      .orElseThrow();
+        return new AttributeValue().withB(ByteBuffer.wrap(compressedDataBytes));
     }
 
 

@@ -2,7 +2,7 @@ package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.publication.PublicationServiceConfig.RESULT_SET_SIZE_FOR_DYNAMODB_QUERIES;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
-import static no.unit.nva.publication.model.storage.DataCompressor.compressDao;
+import static no.unit.nva.publication.model.storage.DataCompressor.compressDaoData;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_PK_FORMAT;
@@ -252,7 +252,7 @@ public abstract class Dao
 
     @Override
     public Map<String, AttributeValue> toDynamoFormat() {
-        return attempt(() -> compressDao(this)).orElseThrow();
+        return attempt(() -> compressDaoData(this)).orElseThrow();
     }
 
 }
