@@ -67,7 +67,7 @@ import static org.mockito.Mockito.when;
 
 class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
-    public static final Context CONTEXT = mock(Context.class);
+    public static final Context CONTEXT = null;
     public static final String EXPECTED_ERROR_MESSAGE = "expected error message";
     public static final String IDENTIFIER_IN_RESOURCE_FILE = "017ca2670694-37f2c1a7-0105-452c-b7b3-1d90a44a11c0";
     public static final Clock CLOCK = Clock.systemDefaultZone();

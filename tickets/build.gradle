@@ -1,6 +1,3 @@
-plugins {
-    id 'org.unbroken-dome.test-sets' version '4.0.0'
-}
 
 dependencies {
     implementation project(":publication-commons")
@@ -33,18 +30,16 @@ dependencies {
     testImplementation project(':publication-testing')
     testImplementation libs.nva.testutils
     testImplementation project(path: ':tickets-test')
-    testImplementation(libs.javafaker) {
-        because('For generating test data in tests. Another alternative is jfairy')
-    }
     testImplementation libs.logutils
     testImplementation libs.wiremock
+    testImplementation libs.bundles.testing
+
 
     compileOnly libs.zalando
     compileOnly libs.aws.lambda.java.core
 }
 
 test {
-    useJUnitPlatform()
 
     environment "AWS_REGION", "eu-west-1"
     environment "COGNITO_HOST", "https://example.com"

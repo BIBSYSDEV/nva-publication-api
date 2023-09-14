@@ -7,6 +7,7 @@ import static com.google.common.net.MediaType.JSON_UTF_8;
 import java.util.Map;
 import nva.commons.core.JacocoGenerated;
 
+@SuppressWarnings({"PMD.TestClassWithoutTestCases"})
 @JacocoGenerated
 public class TestHeaders {
     

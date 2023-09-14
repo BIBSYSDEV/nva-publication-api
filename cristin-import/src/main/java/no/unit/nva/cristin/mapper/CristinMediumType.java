@@ -4,10 +4,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import nva.commons.core.JacocoGenerated;
 
-@Data
 @Builder(
     builderClassName = "CristinMediumTypeBuilder",
     toBuilder = true,
@@ -15,6 +15,8 @@ import nva.commons.core.JacocoGenerated;
     buildMethodName = "build",
     setterPrefix = "with"
 )
+@Getter
+@Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class CristinMediumType {
 

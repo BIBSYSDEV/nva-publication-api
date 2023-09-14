@@ -4,7 +4,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
-import com.google.gson.Gson;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,10 +20,10 @@ import org.jetbrains.annotations.NotNull;
 public class PiaResponseGenerator {
 
     private static final String SOURCE_CODE = "SCOPUS";
+    private static final ObjectMapper MAPPER = JsonUtils.dtoObjectMapper;
 
     public static String convertAuthorsToJson(List<Author> authors) {
-        Gson gson = new Gson();
-        return gson.toJson(authors);
+        return attempt(() -> MAPPER.writeValueAsString(authors)).orElseThrow();
     }
 
     public static String convertAffiliationsToJson(List<Affiliation> affiliations) {

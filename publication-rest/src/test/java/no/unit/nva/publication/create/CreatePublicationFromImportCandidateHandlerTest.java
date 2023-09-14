@@ -18,7 +18,7 @@ import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import com.amazonaws.services.lambda.runtime.Context;
@@ -64,9 +64,13 @@ import nva.commons.core.Environment;
 import org.apache.hc.core5.http.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.Problem;
 
-public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest {
+@ExtendWith(MockitoExtension.class)
+class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest {
 
     private ByteArrayOutputStream output;
     private Context context;
@@ -80,13 +84,12 @@ public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLo
     }
 
     @BeforeEach
-    public void setUp() {
+    public void setUp(@Mock Environment environment, @Mock Context context) {
         super.init(IMPORT_CANDIDATES_TABLE, PUBLICATIONS_TABLE);
-        Environment environment = mock(Environment.class);
-        when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
+        lenient().when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
         importCandidateService = new ResourceService(client, IMPORT_CANDIDATES_TABLE);
         publicationService = new ResourceService(client, PUBLICATIONS_TABLE);
-        context = mock(Context.class);
+        this.context = context;
         output = new ByteArrayOutputStream();
         handler = new CreatePublicationFromImportCandidateHandler(importCandidateService, publicationService);
     }
@@ -101,16 +104,18 @@ public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLo
         var updatedImportCandidate = importCandidateService.getImportCandidateByIdentifier(
                 importCandidate.getIdentifier());
 
-        assertThat(updatedImportCandidate.getImportStatus().getCandidateStatus(), is(equalTo( CandidateStatus.IMPORTED)));
+        assertThat(updatedImportCandidate.getImportStatus().getCandidateStatus(),
+                   is(equalTo(CandidateStatus.IMPORTED)));
         assertThat(publication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
     }
 
     @Test
-    void shouldReturnBadGatewayAndNotUpdateBothResourcesWhenPublicationPersistenceFails()
+    void shouldReturnBadGatewayAndNotUpdateBothResourcesWhenPublicationPersistenceFails(@Mock
+                                                                                        ResourceService resourceService)
             throws IOException, ApiGatewayException {
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);
-        publicationService = mock(ResourceService.class);
+        publicationService = resourceService;
         handler = new CreatePublicationFromImportCandidateHandler(importCandidateService, publicationService);
         when(publicationService.autoImportPublication(any())).thenThrow(
                 new TransactionFailedException(new Exception()));
@@ -125,11 +130,11 @@ public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLo
     }
 
     @Test
-    void shouldReturnBadGatewayWhenImportCandidatePersistenceFails()
+    void shouldReturnBadGatewayWhenImportCandidatePersistenceFails(@Mock ResourceService resourceService)
             throws IOException, ApiGatewayException {
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);
-        importCandidateService = mock(ResourceService.class);
+        importCandidateService = resourceService;
         handler = new CreatePublicationFromImportCandidateHandler(importCandidateService, publicationService);
         when(importCandidateService.updateImportStatus(any(), any()))
                 .thenThrow(new TransactionFailedException(new Exception()));
@@ -162,14 +167,13 @@ public class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLo
     }
 
     @Test
-    void shouldReturnBadGatewayWhenRollbackFails() throws NotFoundException, IOException {
+    void shouldReturnBadGatewayWhenRollbackFails(@Mock ResourceService resourceService)
+        throws NotFoundException, IOException {
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);
-        publicationService = mock(ResourceService.class);
-        importCandidateService = mock(ResourceService.class);
+        publicationService = resourceService;
+        importCandidateService = resourceService;
         handler = new CreatePublicationFromImportCandidateHandler(importCandidateService, publicationService);
-        when(publicationService.updatePublication(any()))
-                .thenThrow(new TransactionFailedException(new Exception()));
         when(importCandidateService.updateImportStatus(any(), any()))
                 .thenCallRealMethod()
                 .thenThrow(new NotFoundException(""));

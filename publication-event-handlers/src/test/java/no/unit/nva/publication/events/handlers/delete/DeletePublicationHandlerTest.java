@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 
 public class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
-    public static final Context context = mock(Context.class);
+    public static final Context context = null;
     private DeletePublicationHandler handler;
 
     private ResourceService resourceService;

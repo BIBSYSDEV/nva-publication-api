@@ -1,42 +1,18 @@
-plugins {
-    id 'nva-publication-api.java-library-conventions'
+plugins{
+    id 'nva.publication.api.rootplugin'
 }
 
-allprojects {
-    apply plugin: 'nva-publication-api.java-library-conventions'
+//workaround for jacoco-merge to work
+allprojects{
+    apply plugin: 'nva.publication.api.java-conventions'
+    apply plugin: 'nva.publication.api.dynamo-db'
+}
+
+tasks.withType(JavaCompile) {
+    sourceCompatibility = JavaVersion.VERSION_17
 }
 
 wrapper {
+    gradleVersion = '8.2.1'
     distributionType = Wrapper.DistributionType.ALL
-    gradleVersion = "7.2"
-}
-
-subprojects {
-    // For using DynamoDB locally
-    configurations.testImplementation.canBeResolved = true
-    task copyNativeDeps(type: Copy) {
-        from(configurations.testImplementation) {
-            include "*.dylib"
-            include "*.so"
-            include "*.dll"
-        }
-        into 'build/dynamodb-local'
-    }
-
-    test {
-        dependsOn copyNativeDeps
-        systemProperty "java.library.path", 'build/dynamodb-local'
-    }
-}
-
-build {
-    dependsOn jacocoRootReport
-}
-
-dependencies {
-    implementation 'com.github.bibsysdev:logutils:1.27.2'
-}
-
-repositories {
-    mavenCentral()
 }

@@ -141,22 +141,22 @@ public class NvaBrageMigrationDataGenerator {
     }
 
     private Record createRecord(Builder builder) {
-        var record = new Record();
-        record.setResourceOwner(builder.getResourceOwner());
-        record.setSpatialCoverage(builder.getSpatialCoverage());
-        record.setCustomer(builder.getCustomer());
-        record.setDoi(builder.getDoi());
-        record.setId(builder.getHandle());
-        record.setEntityDescription(createBrageEntityDescription(builder));
-        record.setType(builder.getType());
-        record.setBrageLocation(createRandomBrageLocation());
-        record.setContentBundle(builder.getResourceContent());
-        record.setPublication(builder.getPublication());
-        record.setPublishedDate(builder.getPublishedDate());
-        record.setCristinId(builder.getCristinIdentifier());
-        record.setRightsHolder(builder.getRightsHolder());
-        record.setLink(builder.getLink());
-        return record;
+        var brageRecord = new Record();
+        brageRecord.setResourceOwner(builder.getResourceOwner());
+        brageRecord.setSpatialCoverage(builder.getSpatialCoverage());
+        brageRecord.setCustomer(builder.getCustomer());
+        brageRecord.setDoi(builder.getDoi());
+        brageRecord.setId(builder.getHandle());
+        brageRecord.setEntityDescription(createBrageEntityDescription(builder));
+        brageRecord.setType(builder.getType());
+        brageRecord.setBrageLocation(createRandomBrageLocation());
+        brageRecord.setContentBundle(builder.getResourceContent());
+        brageRecord.setPublication(builder.getPublication());
+        brageRecord.setPublishedDate(builder.getPublishedDate());
+        brageRecord.setCristinId(builder.getCristinIdentifier());
+        brageRecord.setRightsHolder(builder.getRightsHolder());
+        brageRecord.setLink(builder.getLink());
+        return brageRecord;
     }
 
     private String createRandomBrageLocation() {
@@ -195,9 +195,8 @@ public class NvaBrageMigrationDataGenerator {
     }
 
     private Contributor createContributor() {
-        return new Contributor(new Identity("Ola", "123"), "Creator", "author", List.of(new Affiliation("12345",
-                                                                                                        "someAffiliation",
-                                                                                                        "handle")));
+        return new Contributor(new Identity("Ola", "123"), "Creator", "author",
+                               List.of(new Affiliation("12345", "someAffiliation", "handle")));
     }
 
     public static class Builder {
@@ -354,7 +353,7 @@ public class NvaBrageMigrationDataGenerator {
             if (nonNull(link) && isNull(associatedArtifacts)) {
                 return new AssociatedArtifactList(List.of(new AssociatedLink(link, null, null)));
             }
-            if(nonNull(link) && !associatedArtifacts.isEmpty()) {
+            if (nonNull(link) && !associatedArtifacts.isEmpty()) {
                 var list = new ArrayList<AssociatedArtifact>(associatedArtifacts);
                 list.add(new AssociatedLink(link, null, null));
                 return list;
@@ -682,17 +681,13 @@ public class NvaBrageMigrationDataGenerator {
 
         private Language randomLanguage1() {
             var someWeirdNess = randomInteger(3);
-            switch (someWeirdNess) {
-                case 0:
-                    return new Language(List.of("nob"),
-
-                                        UriWrapper.fromUri(LanguageMapper.LEXVO_URI_PREFIX + "nob").getUri());
-                case 1:
-                    return new Language(null, UriWrapper.fromUri(LanguageMapper.LEXVO_URI_UNDEFINED).getUri());
-                default:
-                    return new Language(List.of("norsk", "svensk"),
+            return switch (someWeirdNess) {
+                case 0 -> new Language(List.of("nob"),
+                                       UriWrapper.fromUri(LanguageMapper.LEXVO_URI_PREFIX + "nob").getUri());
+                case 1 -> new Language(null, UriWrapper.fromUri(LanguageMapper.LEXVO_URI_UNDEFINED).getUri());
+                default -> new Language(List.of("norsk", "svensk"),
                                         UriWrapper.fromUri(LanguageMapper.LEXVO_URI_UNDEFINED).getUri());
-            }
+            };
         }
 
         private no.sikt.nva.brage.migration.record.Publication createPublication() {

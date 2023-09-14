@@ -8,6 +8,7 @@ import static no.unit.nva.publication.service.impl.ResourceService.NOT_PUBLISHAB
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.apigateway.AccessRight.EDIT_OWN_INSTITUTION_RESOURCES;
 import static nva.commons.apigateway.AccessRight.PUBLISH_DEGREE;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
@@ -20,6 +21,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -48,6 +50,7 @@ import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.GatewayResponse;
@@ -58,10 +61,14 @@ import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.Problem;
 
+@ExtendWith(MockitoExtension.class)
 class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
     public static final String NVA_UNIT_NO = "nva.unit.no";
@@ -73,7 +80,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     private URI testOrgId;
     private CreatePublicationHandler handler;
     private ByteArrayOutputStream outputStream;
-    private Context context;
+    private final Context context = new FakeContext();
     private Publication samplePublication;
     private URI topLevelCristinOrgId;
 
@@ -85,22 +92,19 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
      * Setting up test environment.
      */
     @BeforeEach
-    public void setUp() throws NotFoundException {
+    public void setUp(@Mock Environment environmentMock,
+                      @Mock IdentityServiceClient identityServiceClient) throws NotFoundException {
         super.init();
         getExternalClientResponse = new GetExternalClientResponse(EXTERNAL_CLIENT_ID, "someone@123", randomUri(),
             randomUri());
-        var environmentMock = mock(Environment.class);
-        var identityServiceClient = mock(IdentityServiceClient.class);
 
-
-        when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
+        lenient().when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
         when(environmentMock.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
         when(environmentMock.readEnv(API_HOST)).thenReturn(NVA_UNIT_NO);
 
         ResourceService resourceService = new ResourceService(client, CLOCK);
         handler = new CreatePublicationHandler(resourceService, environmentMock, identityServiceClient);
         outputStream = new ByteArrayOutputStream();
-        context = mock(Context.class);
         samplePublication = randomPublication();
         testUserName = samplePublication.getResourceOwner().getOwner().getValue();
         testOrgId = samplePublication.getPublisher().getId();
@@ -426,7 +430,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
     private EntityDescription randomPublishableEntityDescription() {
         return new EntityDescription.Builder()
-            .withMainTitle(RandomDataGenerator.randomString())
+            .withMainTitle(randomString())
             .withReference(
                 new Reference.Builder()
                     .withDoi(RandomDataGenerator.randomDoi())
@@ -437,7 +441,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
     private EntityDescription thesisPublishableEntityDescription() {
         return new EntityDescription.Builder()
-            .withMainTitle(RandomDataGenerator.randomString())
+            .withMainTitle(randomString())
             .withReference(
                 new Reference.Builder()
                     .withDoi(RandomDataGenerator.randomDoi())

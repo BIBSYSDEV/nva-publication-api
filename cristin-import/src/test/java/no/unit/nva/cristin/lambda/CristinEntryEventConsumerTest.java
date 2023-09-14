@@ -22,7 +22,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
@@ -67,7 +66,7 @@ import org.junit.jupiter.api.Test;
 
 class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
-    public static final Context CONTEXT = mock(Context.class);
+    public static final Context CONTEXT = null;
     public static final Javers JAVERS = JaversBuilder.javers().build();
     public static final String RESOURCE_EXCEPTION_MESSAGE = "resourceExceptionMessage";
     public static final JavaType IMPORT_RESULT_JAVA_TYPE = constructImportResultJavaType();
@@ -556,7 +555,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var bucket = inputFile.getHost();
         return bucket.addChild(ERRORS_FOLDER)
                    .addChild(exceptionName)
-                   .addChild(extractSecondLastPathElementAndFileName( inputFile.getPath()))
+                   .addChild(extractSecondLastPathElementAndFileName(inputFile.getPath()))
                    .addChild(errorReportFilename);
     }
 

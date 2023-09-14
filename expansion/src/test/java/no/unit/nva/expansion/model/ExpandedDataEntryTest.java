@@ -123,7 +123,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
     @ParameterizedTest()
     @MethodSource("importCandidateContextTypeProvider")
-    public void shouldExpandImportCandidateSuccessfully(PublicationContext publicationContext) {
+    void shouldExpandImportCandidateSuccessfully(PublicationContext publicationContext) {
         var importCandidate = randomImportCandidate(publicationContext);
         when(authorizedBackendUriRetriever.getRawContent(any(), any())).thenReturn(Optional.of(randomString()));
         var expandedImportCandidate = ExpandedImportCandidate
@@ -242,7 +242,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     }
 
     private Contributor randomContributor() {
-        return new Contributor.Builder().withIdentity(new Identity.Builder().withId(randomUri()).withName(randomString()).build())
+        Identity identity = new Identity.Builder().withId(randomUri()).withName(randomString()).build();
+        return new Contributor.Builder().withIdentity(identity)
                    .withRole(new RoleType(Role.ACTOR))
                    .withAffiliations(List.of(new Organization.Builder().withId(randomUri()).build()))
                    .build();
@@ -296,7 +297,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         }
 
         public static ExpandedDataEntryWithAssociatedPublication create(Class<?> expandedDataEntryClass,
-                                                                        ResourceExpansionService resourceExpansionService,
+                                                                        ResourceExpansionService expansionService,
                                                                         ResourceService resourceService,
                                                                         MessageService messageService,
                                                                         TicketService ticketService,
@@ -312,15 +313,15 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                                                    publication.getIdentifier());
                 var publishedPublication = resourceService.getPublication(publication);
                 return new ExpandedDataEntryWithAssociatedPublication(
-                    randomDoiRequest(publishedPublication, resourceExpansionService, resourceService, messageService,
+                    randomDoiRequest(publishedPublication, expansionService, resourceService, messageService,
                                      ticketService));
             } else if (expandedDataEntryClass.equals(ExpandedPublishingRequest.class)) {
                 return new ExpandedDataEntryWithAssociatedPublication(
-                    createExpandedPublishingRequest(publication, resourceService, resourceExpansionService,
+                    createExpandedPublishingRequest(publication, resourceService, expansionService,
                                                     ticketService));
             } else if (expandedDataEntryClass.equals(ExpandedGeneralSupportRequest.class)) {
                 return new ExpandedDataEntryWithAssociatedPublication(
-                    createExpandedGeneralSupportRequest(publication, resourceService, resourceExpansionService,
+                    createExpandedGeneralSupportRequest(publication, resourceService, expansionService,
                                                         ticketService));
             } else {
                 throw new UnsupportedOperationException();
@@ -329,11 +330,11 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
         private static ExpandedDataEntry createExpandedGeneralSupportRequest(Publication publication,
                                                                              ResourceService resourceService,
-                                                                             ResourceExpansionService resourceExpansionService,
+                                                                             ResourceExpansionService expansionService,
                                                                              TicketService ticketService)
             throws NotFoundException, JsonProcessingException {
             var request = (GeneralSupportRequest) GeneralSupportRequest.fromPublication(publication);
-            return ExpandedGeneralSupportRequest.create(request, resourceService, resourceExpansionService,
+            return ExpandedGeneralSupportRequest.create(request, resourceService, expansionService,
                                                         ticketService);
         }
 
@@ -364,11 +365,11 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
         private static ExpandedDataEntry createExpandedPublishingRequest(Publication publication,
                                                                          ResourceService resourceService,
-                                                                         ResourceExpansionService resourceExpansionService,
+                                                                         ResourceExpansionService expansionService,
                                                                          TicketService ticketService)
             throws NotFoundException, JsonProcessingException {
             PublishingRequestCase requestCase = createPublishingRequestCase(publication);
-            return ExpandedPublishingRequest.create(requestCase, resourceService, resourceExpansionService,
+            return ExpandedPublishingRequest.create(requestCase, resourceService, expansionService,
                                                     ticketService);
         }
 

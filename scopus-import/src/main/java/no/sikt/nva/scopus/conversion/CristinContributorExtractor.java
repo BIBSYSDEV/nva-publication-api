@@ -2,9 +2,10 @@ package no.sikt.nva.scopus.conversion;
 
 import static java.util.Objects.nonNull;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.PersonalnameType;
 import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
@@ -31,11 +32,14 @@ public final class CristinContributorExtractor {
     private CristinContributorExtractor() {
     }
 
-    public static Contributor generateContributorFromCristin(Person person, AuthorTp authorTp,
-                                                             PersonalnameType correspondencePerson,
-                                                             no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
+    public static Contributor generateContributorFromCristin(
+        Person person,
+        AuthorTp authorTp,
+        PersonalnameType correspondencePerson,
+        no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
 
-        return new Contributor.Builder().withIdentity(generateContributorIdentityFromCristinPerson(person))
+        return new Contributor.Builder()
+                   .withIdentity(generateContributorIdentityFromCristinPerson(person))
                    .withAffiliations(generateOrganizations(person.getAffiliations(), organization))
                    .withRole(new RoleType(Role.CREATOR))
                    .withSequence(getSequenceNumber(authorTp))
@@ -59,26 +63,26 @@ public final class CristinContributorExtractor {
     }
 
     private static ContributorVerificationStatus generateVerificationStatus(Person cristinPerson) {
-        return cristinPerson.getVerified() ? ContributorVerificationStatus.VERIFIED
+        return Boolean.TRUE.equals(cristinPerson.getVerified())
+                   ? ContributorVerificationStatus.VERIFIED
                    : ContributorVerificationStatus.NOT_VERIFIED;
     }
 
-    private static List<Organization> generateOrganizations(Set<Affiliation> affiliations,
-                                                            no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
+    private static List<Organization> generateOrganizations(
+        Set<Affiliation> affiliations,
+        no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
 
         var organizations = createOrganizationsFromCristinPersonAffiliations(affiliations);
-        if (nonNull(organization)) {
-            organizations.add(createOrganizationFromAuthorGroupTpAffiliation(organization));
-            return organizations;
-        }
-        return organizations;
+        var organisationFromAuthorGroupTp = createOrganizationFromAuthorGroupTpAffiliation(organization);
+        return Stream.concat(organizations, organisationFromAuthorGroupTp)
+                   .filter(Objects::nonNull)
+                   .toList();
     }
 
     @NotNull
-    private static List<Organization> createOrganizationsFromCristinPersonAffiliations(Set<Affiliation> affiliations) {
-        return affiliations.stream()
-                   .map(CristinContributorExtractor::convertToOrganization)
-                   .collect(Collectors.toList());
+    private static Stream<Organization> createOrganizationsFromCristinPersonAffiliations(
+        Set<Affiliation> affiliations) {
+        return affiliations.stream().map(CristinContributorExtractor::convertToOrganization);
     }
 
     @NotNull
@@ -88,9 +92,9 @@ public final class CristinContributorExtractor {
                    .build();
     }
 
-    private static Organization createOrganizationFromAuthorGroupTpAffiliation(
+    private static Stream<Organization> createOrganizationFromAuthorGroupTpAffiliation(
         no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
-        return Optional.ofNullable(organization).map(CristinContributorExtractor::toOrganization).orElse(null);
+        return Stream.ofNullable(organization).map(CristinContributorExtractor::toOrganization);
     }
 
     private static Organization toOrganization(no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {

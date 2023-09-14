@@ -28,6 +28,8 @@ import org.hamcrest.beans.HasPropertyWithValue;
 import org.hamcrest.core.Every;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -36,6 +38,7 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
+@ExtendWith(MockitoExtension.class)
 public class DeleteEntriesEventEmitterTest {
 
     public static final Context context = mock(Context.class);
@@ -79,7 +82,7 @@ public class DeleteEntriesEventEmitterTest {
 
     @Test
     void shouldLogErrorWhenEmittingEventsFails() {
-        var appender = LogUtils.getTestingAppender(DeleteEntriesEventEmitter.class);
+        final var appender = LogUtils.getTestingAppender(DeleteEntriesEventEmitter.class);
         eventBridgeClient = new FakeEventBridgeClientThatFailsAllPutEvents(EVENT_BUS_NAME);
         handler = new DeleteEntriesEventEmitter(s3Client, eventBridgeClient);
         var identifiers = createRandomIdentifiers();

@@ -40,6 +40,7 @@ import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.IdentifierEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.s3.S3Driver;
+import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
 import nva.commons.core.paths.UnixPath;
@@ -49,11 +50,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.Mockito;
 
-public class ImportCandidateDataEntryUpdateHandlerTest {
+class ImportCandidateDataEntryUpdateHandlerTest {
 
-    private final Context context = Mockito.mock(Context.class);
+    private final Context context = new FakeContext();
     private OutputStream outputStream;
     private S3Driver s3Driver;
     private ImportCandidateDataEntryUpdateHandler handler;
@@ -153,15 +153,15 @@ public class ImportCandidateDataEntryUpdateHandlerTest {
     }
 
     private static DynamodbStreamRecord createDynamoRecord(StreamRecord payload, OperationType operationType) {
-        var record = new DynamodbStreamRecord();
-        record.setEventName(operationType);
-        record.setEventID(randomString());
-        record.setAwsRegion(AWS_REGION);
+        var streamRecord = new DynamodbStreamRecord();
+        streamRecord.setEventName(operationType);
+        streamRecord.setEventID(randomString());
+        streamRecord.setAwsRegion(AWS_REGION);
 
-        record.setDynamodb(payload);
-        record.setEventSource(randomString());
-        record.setEventVersion(randomString());
-        return record;
+        streamRecord.setDynamodb(payload);
+        streamRecord.setEventSource(randomString());
+        streamRecord.setEventVersion(randomString());
+        return streamRecord;
     }
 
     private static StreamRecord createPayload(ImportCandidate oldImage, ImportCandidate newImage)
@@ -172,10 +172,10 @@ public class ImportCandidateDataEntryUpdateHandlerTest {
 
     private static StreamRecord createPayload(Map<String, AttributeValue> oldImage,
                                               Map<String, AttributeValue> newImage) {
-        var record = new StreamRecord();
-        record.setOldImage(oldImage);
-        record.setNewImage(newImage);
-        return record;
+        var streamRecord = new StreamRecord();
+        streamRecord.setOldImage(oldImage);
+        streamRecord.setNewImage(newImage);
+        return streamRecord;
     }
 
     private static Map<String, AttributeValue> convertToAttributeValueMap(DynamoEntry payload)

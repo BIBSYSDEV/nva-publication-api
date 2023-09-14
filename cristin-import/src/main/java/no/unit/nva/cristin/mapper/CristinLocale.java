@@ -8,13 +8,13 @@ import java.util.Locale;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
-@Data
 @Builder(
     builderClassName = "CristinLocaleBuilder",
     toBuilder = true,
@@ -22,6 +22,8 @@ import nva.commons.core.paths.UriWrapper;
     buildMethodName = "build",
     setterPrefix = "with"
 )
+@Getter
+@Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"brukernavn_opprettet", "dato_opprettet", "brukernavn_siste_endring", "dato_siste_endring",
     "status_kontrollert", "brukernavn_kontrollert", "dato_kontrollert", "status_bekreftet_arkivsporsmal",

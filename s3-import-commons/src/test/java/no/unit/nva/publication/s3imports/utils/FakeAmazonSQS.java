@@ -6,6 +6,8 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.AddPermissionRequest;
 import com.amazonaws.services.sqs.model.AddPermissionResult;
+import com.amazonaws.services.sqs.model.CancelMessageMoveTaskRequest;
+import com.amazonaws.services.sqs.model.CancelMessageMoveTaskResult;
 import com.amazonaws.services.sqs.model.ChangeMessageVisibilityBatchRequest;
 import com.amazonaws.services.sqs.model.ChangeMessageVisibilityBatchRequestEntry;
 import com.amazonaws.services.sqs.model.ChangeMessageVisibilityBatchResult;
@@ -26,6 +28,8 @@ import com.amazonaws.services.sqs.model.GetQueueUrlRequest;
 import com.amazonaws.services.sqs.model.GetQueueUrlResult;
 import com.amazonaws.services.sqs.model.ListDeadLetterSourceQueuesRequest;
 import com.amazonaws.services.sqs.model.ListDeadLetterSourceQueuesResult;
+import com.amazonaws.services.sqs.model.ListMessageMoveTasksRequest;
+import com.amazonaws.services.sqs.model.ListMessageMoveTasksResult;
 import com.amazonaws.services.sqs.model.ListQueueTagsRequest;
 import com.amazonaws.services.sqs.model.ListQueueTagsResult;
 import com.amazonaws.services.sqs.model.ListQueuesRequest;
@@ -44,6 +48,8 @@ import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageResult;
 import com.amazonaws.services.sqs.model.SetQueueAttributesRequest;
 import com.amazonaws.services.sqs.model.SetQueueAttributesResult;
+import com.amazonaws.services.sqs.model.StartMessageMoveTaskRequest;
+import com.amazonaws.services.sqs.model.StartMessageMoveTaskResult;
 import com.amazonaws.services.sqs.model.TagQueueRequest;
 import com.amazonaws.services.sqs.model.TagQueueResult;
 import com.amazonaws.services.sqs.model.UntagQueueRequest;
@@ -55,8 +61,8 @@ import java.util.stream.Collectors;
 
 public class FakeAmazonSQS implements AmazonSQS {
 
-    private List<String> messageBodies;
-    private List<String> queueUrls;
+    private final List<String> messageBodies;
+    private final List<String> queueUrls;
 
     public FakeAmazonSQS() {
         messageBodies = new ArrayList<>();
@@ -83,8 +89,14 @@ public class FakeAmazonSQS implements AmazonSQS {
     }
 
     @Override
-    public AddPermissionResult addPermission(String queueUrl, String label, List<String> aWSAccountIds,
+    public AddPermissionResult addPermission(String queueUrl, String label, List<String> awsAccountIds,
                                              List<String> actions) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public CancelMessageMoveTaskResult cancelMessageMoveTask(
+        CancelMessageMoveTaskRequest cancelMessageMoveTaskRequest) {
         throw new UnsupportedOperationException();
     }
 
@@ -107,8 +119,9 @@ public class FakeAmazonSQS implements AmazonSQS {
     }
 
     @Override
-    public ChangeMessageVisibilityBatchResult changeMessageVisibilityBatch(String queueUrl,
-                                                                           List<ChangeMessageVisibilityBatchRequestEntry> entries) {
+    public ChangeMessageVisibilityBatchResult changeMessageVisibilityBatch(
+        String queueUrl,
+        List<ChangeMessageVisibilityBatchRequestEntry> entries) {
         throw new UnsupportedOperationException();
     }
 
@@ -175,6 +188,11 @@ public class FakeAmazonSQS implements AmazonSQS {
     @Override
     public ListDeadLetterSourceQueuesResult listDeadLetterSourceQueues(
         ListDeadLetterSourceQueuesRequest listDeadLetterSourceQueuesRequest) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ListMessageMoveTasksResult listMessageMoveTasks(ListMessageMoveTasksRequest listMessageMoveTasksRequest) {
         throw new UnsupportedOperationException();
     }
 
@@ -269,6 +287,11 @@ public class FakeAmazonSQS implements AmazonSQS {
     @Override
     public SetQueueAttributesResult setQueueAttributes(String queueUrl, Map<String, String> attributes) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public StartMessageMoveTaskResult startMessageMoveTask(StartMessageMoveTaskRequest startMessageMoveTaskRequest) {
+        return null;
     }
 
     @Override
