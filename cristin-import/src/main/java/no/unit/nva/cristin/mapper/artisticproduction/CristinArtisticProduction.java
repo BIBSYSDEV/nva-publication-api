@@ -16,11 +16,14 @@ import no.unit.nva.model.instancetypes.artistic.film.realization.MovingPictureOu
 import no.unit.nva.model.instancetypes.artistic.film.realization.OtherRelease;
 import no.unit.nva.model.instancetypes.artistic.music.AudioVisualPublication;
 import no.unit.nva.model.instancetypes.artistic.music.Concert;
+import no.unit.nva.model.instancetypes.artistic.music.InvalidIsmnException;
+import no.unit.nva.model.instancetypes.artistic.music.Ismn;
 import no.unit.nva.model.instancetypes.artistic.music.Isrc;
 import no.unit.nva.model.instancetypes.artistic.music.MusicMediaSubtype;
 import no.unit.nva.model.instancetypes.artistic.music.MusicMediaType;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformanceManifestation;
+import no.unit.nva.model.instancetypes.artistic.music.MusicScore;
 import no.unit.nva.model.instancetypes.artistic.music.MusicalWork;
 import no.unit.nva.model.instancetypes.artistic.music.MusicalWorkPerformance;
 import no.unit.nva.model.instancetypes.artistic.music.OtherPerformance;
@@ -172,7 +175,28 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
         manifestations.add(extractMusicPerformanceManifestation());
         var audioVisualPublication = extractAudioVisualPublication();
         audioVisualPublication.ifPresent(manifestations::add);
+        var musicScore = extractMusicScore();
+        musicScore.ifPresent(manifestations::add);
         return manifestations;
+    }
+
+    private Optional<MusicScore> extractMusicScore() {
+        if (StringUtils.isNotBlank(ismn) || StringUtils.isNotBlank(ensembleName)) {
+            return Optional.of(createMusicScore());
+        }
+        return Optional.empty();
+    }
+
+    private MusicScore createMusicScore() {
+        return attempt(() -> new MusicScore(ensembleName,
+            null, extractExtent(),
+            new UnconfirmedPublisher(publisherName),
+            extractIsmn()))
+            .orElseThrow();
+    }
+
+    private Ismn extractIsmn() throws InvalidIsmnException {
+        return StringUtils.isNotBlank(ismn) ? new Ismn(ismn) : null;
     }
 
     private Optional<AudioVisualPublication> extractAudioVisualPublication() {
@@ -191,7 +215,7 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     }
 
     private Isrc constructIsrc() {
-       return Optional.of(isrc).map(this::extractIsrc).orElse(null);
+        return Optional.of(isrc).map(this::extractIsrc).orElse(null);
     }
 
     private Isrc extractIsrc(String isrc) {

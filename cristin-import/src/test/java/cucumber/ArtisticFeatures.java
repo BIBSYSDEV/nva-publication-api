@@ -14,9 +14,12 @@ import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
 import no.unit.nva.model.instancetypes.artistic.film.realization.OtherRelease;
 import no.unit.nva.model.instancetypes.artistic.music.AudioVisualPublication;
 import no.unit.nva.model.instancetypes.artistic.music.Concert;
+import no.unit.nva.model.instancetypes.artistic.music.InvalidIsmnException;
 import no.unit.nva.model.instancetypes.artistic.music.InvalidIsrcException;
+import no.unit.nva.model.instancetypes.artistic.music.Ismn;
 import no.unit.nva.model.instancetypes.artistic.music.Isrc;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
+import no.unit.nva.model.instancetypes.artistic.music.MusicScore;
 import no.unit.nva.model.instancetypes.artistic.music.MusicalWork;
 import no.unit.nva.model.instancetypes.artistic.music.OtherPerformance;
 import no.unit.nva.model.time.Time;
@@ -259,5 +262,39 @@ public class ArtisticFeatures {
         assertThat(audioVisualManifestation.getIsrc(), is(equalTo(new Isrc(isrc))));
         var actualPublisher = (UnconfirmedPublisher) audioVisualManifestation.getPublisher();
         assertThat(actualPublisher.getName(), is(equalTo(unconfirmedPublisher)));
+    }
+
+    @And("the performance has a ISMN equal to {string}")
+    public void thePerformanceHasAISMNEqualTo(String ismn) {
+        scenarioContext.getCristinEntry().getCristinArtisticProduction().setIsmn(ismn);
+    }
+
+    @Then("the NVA resource has a MusicScore")
+    public void theNVAResourceHasAMusicScore() {
+        var musicalWorkPerformance = (MusicPerformance) scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
+        assertThat(musicalWorkPerformance.getManifestations(), hasItem(instanceOf(MusicScore.class)));
+    }
+
+    @And("the MusicScore has a ISMN equal to {string}")
+    public void theMusicScoreHasAISMNEqualTo(String ismn) throws InvalidIsmnException {
+        var musicalWorkPerformance = (MusicPerformance) scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
+        var musicScoreOptional = musicalWorkPerformance.getManifestations().stream().filter(manifestation -> manifestation instanceof MusicScore).findFirst();
+        assertThat(musicScoreOptional.isPresent(), is(equalTo(true)));
+        var musicScore = (MusicScore) musicScoreOptional.get();
+        assertThat(musicScore.getIsmn(), is(equalTo(new Ismn(ismn))));
+    }
+
+    @And("the performance has a ensemble name equal to {string}")
+    public void thePerformanceHasAEnsembleNameEqualTo(String ensembleName) {
+        scenarioContext.getCristinEntry().getCristinArtisticProduction().setEnsembleName(ensembleName);
+    }
+
+    @And("the MusicScore has ensemble equal to {string}")
+    public void theMusicScoreHasEnsembleEqualTo(String ensemble) {
+        var musicalWorkPerformance = (MusicPerformance) scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
+        var musicScoreOptional = musicalWorkPerformance.getManifestations().stream().filter(manifestation -> manifestation instanceof MusicScore).findFirst();
+        assertThat(musicScoreOptional.isPresent(), is(equalTo(true)));
+        var musicScore = (MusicScore) musicScoreOptional.get();
+        assertThat(musicScore.getEnsemble(), is(equalTo(ensemble)));
     }
 }
