@@ -16,12 +16,12 @@ import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingBuilder;
 import nva.commons.core.paths.UriWrapper;
 
-@Data
 @Builder(
     builderClassName = "CristinObjectBuilder",
     toBuilder = true,
@@ -29,6 +29,8 @@ import nva.commons.core.paths.UriWrapper;
     buildMethodName = "build",
     setterPrefix = "with"
 )
+@Getter
+@Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"belop"})
 public class CristinGrant {

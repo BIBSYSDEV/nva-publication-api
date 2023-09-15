@@ -31,11 +31,11 @@ public class SqsPublisherTest {
     }
     
     @Test
-    public void publishCanSendMessage() {
+    void publishCanSendMessage() {
         DynamodbEvent event = new DynamodbEvent();
-        DynamodbEvent.DynamodbStreamRecord record = new DynamodbEvent.DynamodbStreamRecord();
-        record.setEventName(EVENT_NAME);
-        event.setRecords(Collections.singletonList(record));
+        DynamodbEvent.DynamodbStreamRecord dynamoRecord = new DynamodbEvent.DynamodbStreamRecord();
+        dynamoRecord.setEventName(EVENT_NAME);
+        event.setRecords(Collections.singletonList(dynamoRecord));
         
         publisher.publish(event);
         

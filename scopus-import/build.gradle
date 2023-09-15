@@ -1,9 +1,12 @@
+apply plugin: 'io.freefair.lombok'
+
 dependencies {
-    api(libs.nva.datamodel.core) {
+    implementation(libs.nva.datamodel.core) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
-    implementation group: 'org.apache.tika', name: 'tika-langdetect', version: '1.28.1'
-
+    implementation libs.tika.core
+    implementation libs.tika.langdetect
+    implementation libs.tika.langdetect.optimaize
     implementation project(":scopus-generate")
     implementation libs.xsd2java.jakarta
     implementation libs.aws.sdk2.s3
@@ -29,7 +32,6 @@ dependencies {
     implementation project(path: ':publication-commons')
     implementation project(":s3-import-commons")
     implementation project(":expansion")
-
 
     testImplementation libs.nva.testutils
     testImplementation libs.nva.json

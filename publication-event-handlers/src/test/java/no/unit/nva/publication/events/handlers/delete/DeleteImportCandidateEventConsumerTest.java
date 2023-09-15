@@ -54,7 +54,7 @@ import org.junit.jupiter.api.Test;
 
 public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
 
-    public static final Context CONTEXT = mock(Context.class);
+    public static final Context CONTEXT = null;
     public static final int TWO_HITS = 2;
     public static final int SINGLE_HIT = 1;
     public static final int ZERO_HITS = 0;

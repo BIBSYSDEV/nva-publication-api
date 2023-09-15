@@ -6,9 +6,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static no.sikt.nva.scopus.conversion.CristinConnection.CRISTIN_ORGANIZATION_RESPONSE_ERROR;
 import static no.sikt.nva.scopus.conversion.CristinConnection.CRISTIN_PERSON_RESPONSE_ERROR;
-import static no.sikt.nva.scopus.conversion.PiaConnection.HTTPS_SCHEME;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -22,13 +20,13 @@ import java.net.URI;
 import no.sikt.nva.scopus.conversion.model.cristin.Organization;
 import no.sikt.nva.scopus.conversion.model.cristin.Person;
 import no.unit.nva.stubs.WiremockHttpClient;
+import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
-import org.apache.http.client.utils.URIBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @WireMockTest(httpsEnabled = true)
-public class CristinConnectionTest {
+class CristinConnectionTest {
 
     private CristinConnection cristinConnection;
 
@@ -92,12 +90,12 @@ public class CristinConnectionTest {
     }
 
     private static URI getRandomPersonUri(WireMockRuntimeInfo wireMockRuntimeInfo) {
-        return attempt(() -> new URIBuilder()
-                                 .setHost(wireMockRuntimeInfo.getHttpsBaseUrl().replace("https://", ""))
-                                 .setPath("cristin/person/" + randomString())
-                                 .setScheme(HTTPS_SCHEME)
-                                 .build())
-                   .orElseThrow();
+        var baseUri = wireMockRuntimeInfo.getHttpsBaseUrl();
+        return UriWrapper.fromUri(baseUri)
+                   .addChild("cristin")
+                   .addChild("person")
+                   .addChild(randomString())
+                   .getUri();
     }
 
     private Organization createExpectedOrganization(URI organizationId) {
@@ -109,12 +107,13 @@ public class CristinConnectionTest {
     }
 
     private URI getRandomOrganizationUri(WireMockRuntimeInfo wireMockRuntimeInfo) {
-        return attempt(() -> new URIBuilder()
-                                 .setHost(wireMockRuntimeInfo.getHttpsBaseUrl().replace("https://", ""))
-                                 .setPath("cristin/organization/" + randomString())
-                                 .setScheme(HTTPS_SCHEME)
-                                 .build())
-                   .orElseThrow();
+        var baseUri = wireMockRuntimeInfo.getHttpsBaseUrl();
+
+        return UriWrapper.fromUri(baseUri)
+                   .addChild("cristin")
+                   .addChild("organization")
+                   .addChild(randomString())
+                   .getUri();
     }
 
     private void mockCristinPerson(URI cristinPersonId, String response) {

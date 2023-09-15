@@ -124,7 +124,8 @@ public class CristinEntryEventConsumer
         }
     }
 
-    private static Stream<String> getDuplicatePublicationIdentifiers(List<Publication> duplicateCristinPublicationsInNva) {
+    private static Stream<String> getDuplicatePublicationIdentifiers(
+        List<Publication> duplicateCristinPublicationsInNva) {
         return duplicateCristinPublicationsInNva
             .stream()
             .map(Publication::getIdentifier)
@@ -271,6 +272,7 @@ public class CristinEntryEventConsumer
         try {
             Thread.sleep(sleepTime);
         } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
             throw new RuntimeException(exception);
         }
     }
@@ -306,7 +308,7 @@ public class CristinEntryEventConsumer
         return bucket
                    .addChild(ERRORS_FOLDER)
                    .addChild(exception.getClass().getSimpleName())
-                   .addChild( constructPathBasedOnSecondLastPart( fileUri.getPath()))
+                   .addChild(constructPathBasedOnSecondLastPart(fileUri.getPath()))
                    .addChild(createErrorReportFilename(event));
     }
 

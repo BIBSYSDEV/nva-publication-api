@@ -90,16 +90,16 @@ public class DoiRequestEventProducer
     private DoiMetadataUpdateEvent propagateEvent(DataEntryUpdateEvent input) {
         var newEntry = input.getNewData();
 
-        if (newEntry instanceof Resource && ((Resource) newEntry).toPublication().satisfiesFindableDoiRequirements()) {
-            return createDoiMetadataUpdateEvent((Resource) newEntry);
+        if (newEntry instanceof Resource resource && resource.toPublication().satisfiesFindableDoiRequirements()) {
+            return createDoiMetadataUpdateEvent(resource);
         }
-        if (newEntry instanceof DoiRequest) {
-            return createDoiMetadataUpdateEvent((DoiRequest) newEntry);
+        if (newEntry instanceof DoiRequest doiRequest) {
+            return createDoiMetadataUpdateEvent(doiRequest);
         }
         return EMPTY_EVENT;
     }
 
-    private DoiMetadataUpdateEvent createDoiMetadataUpdateEvent( DoiRequest newEntry) {
+    private DoiMetadataUpdateEvent createDoiMetadataUpdateEvent(DoiRequest newEntry) {
         if (isDoiRequestApproval(newEntry)
             && newEntry.toPublication(resourceService).satisfiesFindableDoiRequirements()) {
             return createEventForMakingDoiFindable(newEntry);
@@ -120,13 +120,13 @@ public class DoiRequestEventProducer
     }
 
     private boolean isDoiRequestApproval(DoiRequest newEntry) {
-        return matchStatus(newEntry, TicketStatus.COMPLETED);
+        return isCompleted(newEntry);
     }
 
-    private Boolean matchStatus(DoiRequest oldEntry, TicketStatus approved) {
+    private Boolean isCompleted(DoiRequest oldEntry) {
         return Optional.ofNullable(oldEntry)
                    .map(DoiRequest::getStatus)
-                   .map(approved::equals)
+                   .map(TicketStatus.COMPLETED::equals)
                    .orElse(false);
     }
 
@@ -159,8 +159,7 @@ public class DoiRequestEventProducer
     }
 
     private void validateDoiRequest(DataEntryUpdateEvent event) {
-        if (event.getNewData() instanceof DoiRequest) {
-            var doiRequest = (DoiRequest) event.getNewData();
+        if (event.getNewData() instanceof DoiRequest doiRequest) {
             if (eventCannotBeReferenced(doiRequest)) {
                 throw new IllegalStateException(DOI_REQUEST_HAS_NO_IDENTIFIER);
             }

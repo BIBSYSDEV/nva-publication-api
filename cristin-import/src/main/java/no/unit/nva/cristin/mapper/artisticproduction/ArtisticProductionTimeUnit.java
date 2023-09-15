@@ -3,15 +3,14 @@ package no.unit.nva.cristin.mapper.artisticproduction;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Locale;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import nva.commons.core.JacocoGenerated;
 
-import java.util.Locale;
-
-@Data
 @Builder(
     builderClassName = "ArtisticProductionTimeUnitBuilder",
     toBuilder = true,
@@ -19,6 +18,8 @@ import java.util.Locale;
     buildMethodName = "build",
     setterPrefix = "with"
 )
+@Getter
+@Setter
 @AllArgsConstructor(access = AccessLevel.PUBLIC)
 @JsonIgnoreProperties({"tidsenhetnavn", "tidsenhetnavn_nynorsk", "tidsenhetnavn_engelsk"})
 

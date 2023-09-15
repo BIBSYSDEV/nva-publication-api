@@ -17,15 +17,11 @@ dependencies {
     implementation libs.nva.apigateway
 
 
-    implementation libs.jackson.annotations
-    implementation libs.jackson.databind
+    implementation libs.bundles.jackson
 
     implementation libs.hamcrest.base
     implementation libs.nva.testutils
 
-    runtimeOnly libs.jackson.core
-    runtimeOnly libs.jackson.datatype.jsr310
-    runtimeOnly libs.jackson.datatype.jdk8
 
     implementation libs.aws.sdk.dynamodb
     implementation libs.aws.sdk.sqs
@@ -41,10 +37,10 @@ dependencies {
 
     testImplementation libs.nva.datamodel.testutils
     testImplementation project(":publication-testing")
-    testImplementation libs.javafaker
     testImplementation libs.nva.testutils
     testImplementation libs.logutils
     testImplementation libs.nva.identifiers
+    testImplementation libs.datafaker
     testImplementation(libs.javers) {
         because "For comparing java objects and detailing the differences in readable way"
     }
@@ -75,10 +71,6 @@ dependencies {
 }
 
 test {
-    useJUnitPlatform {
-        includeEngines 'junit-jupiter'
-        includeEngines 'junit-vintage'
-    }
     environment "MAX_SLEEP_TIME", "1"
     environment "SHOULD_CREATE_CONTRIBUTOR_ID", "true"
     environment "BATCH_EMISSION_INTERVAL_MILLIS", "0"

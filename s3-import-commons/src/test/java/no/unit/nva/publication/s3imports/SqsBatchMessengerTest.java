@@ -23,9 +23,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatcher;
 
-public class SqsBatchMessengerTest {
+class SqsBatchMessengerTest {
 
-    private final String QUEUE_URL = randomUri().toString();
+    private static final String QUEUE_URL = randomUri().toString();
     private AmazonSQS amazonSQS;
     private SqsBatchMessenger sqsBatchMessenger;
 
@@ -49,8 +49,7 @@ public class SqsBatchMessengerTest {
     }
 
     private SendMessageBatchResult convertArgumentToResponse(Object argument) {
-        if (argument instanceof SendMessageBatchRequest) {
-            var request = (SendMessageBatchRequest) argument;
+        if (argument instanceof SendMessageBatchRequest request) {
             var sendMessageResult = new SendMessageBatchResult();
             sendMessageResult.setSuccessful(request.getEntries().stream().map(this::createResponseEntry).collect(
                 Collectors.toList()));

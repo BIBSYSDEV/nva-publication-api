@@ -92,6 +92,7 @@ import no.unit.nva.publication.testing.http.FakeHttpClient;
 import no.unit.nva.publication.testing.http.FakeHttpResponse;
 import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
+import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.RandomDataGenerator;
@@ -127,7 +128,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
     private final GetExternalClientResponse getExternalClientResponse = mock(GetExternalClientResponse.class);
     private ResourceService publicationService;
-    private Context context;
+    private final Context context = new FakeContext();
     private ByteArrayOutputStream output;
     private UpdatePublicationHandler updatePublicationHandler;
     private Publication publication;
@@ -175,7 +176,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         publicationService = new ResourceService(client, Clock.systemDefaultZone());
         this.ticketService = new TicketService(client);
-        context = mock(Context.class);
 
         identityServiceClient = mock(IdentityServiceClient.class);
         when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);

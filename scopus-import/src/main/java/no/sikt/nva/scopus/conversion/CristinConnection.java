@@ -42,13 +42,11 @@ public class CristinConnection {
     }
 
     public Optional<Person> getCristinPersonByCristinId(URI cristinPersonId) {
-        return isNull(cristinPersonId)
-                   ? Optional.empty()
-                   : Optional.ofNullable(attempt(() -> createRequest(cristinPersonId))
+        return attempt(() -> createRequest(cristinPersonId))
                                              .map(this::getCristinResponse)
                                              .map(this::getBodyFromPersonResponse)
                                              .map(this::getCristinPersonResponse)
-                                             .orElse(failure -> null));
+                                             .toOptional();
     }
 
     public Organization getCristinOrganizationByCristinId(URI cristinOrgId) {

@@ -51,7 +51,7 @@ import org.junit.jupiter.api.Test;
 
 public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
 
-    public static final Context CONTEXT = mock(Context.class);
+    public static final Context CONTEXT = null;
     private ByteArrayOutputStream output;
     private ExpandImportCandidateHandler handler;
     private AuthorizedBackendUriRetriever uriRetriever;

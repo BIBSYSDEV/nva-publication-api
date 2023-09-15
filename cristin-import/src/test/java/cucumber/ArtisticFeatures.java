@@ -47,7 +47,7 @@ public class ArtisticFeatures {
     }
 
     @And("the Cristin result with both type_kunstneriskproduksjon and type_produkt present")
-    public void a_valid_cristin_result_with_both_type_kunstneriskproduksjon_and_type_produkt_present() {
+    public void validCristinResultWithBothTypeKunstneriskproduksjonAndTypeProduktPresent() {
         var artisticProduction = readArtisticProductionFromResource();
         var product = readProductFromResource();
         scenarioContext.getCristinEntry().setCristinArtisticProduction(artisticProduction);
@@ -55,7 +55,7 @@ public class ArtisticFeatures {
     }
 
     @Then("the NVA resources contains the data scraped from type_kunstneriskproduksjon")
-    public void theNVAResourcesContainsTheDataScrapedFromType_kunstneriskproduksjon() {
+    public void theNvaResourcesContainsTheDataScrapedFromTypeKunstneriskproduksjon() {
         var nvaResource = scenarioContext.getNvaEntry();
         var publicationInstance = nvaResource.getEntityDescription().getReference().getPublicationInstance();
         assertThat(publicationInstance, is(instanceOf(MovingPicture.class)));
@@ -92,7 +92,8 @@ public class ArtisticFeatures {
 
     @Then("the Cristin Result contains a MovingPictureSubtypeEnum equal to {string}")
     public void theCristinResultContainsAMovingPictureSubtypeEnumEqualTo(String movingPictureSubtypeEnum) {
-        var publicationInstance = scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
+        var publicationInstance =
+            scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
         assertThat(publicationInstance, is(instanceOf(MovingPicture.class)));
         var movingPicture = (MovingPicture) publicationInstance;
         assertThat(movingPicture.getSubtype().getType().getType(), is(equalTo(movingPictureSubtypeEnum)));
@@ -102,28 +103,6 @@ public class ArtisticFeatures {
     public void theCristinResultLackTheDurationInBothMetadataFields() {
         scenarioContext.getCristinEntry().getCristinArtisticProduction().setArtisticProductionTimeUnit(null);
         scenarioContext.getCristinEntry().getCristinProduct().setTimeUnit(null);
-    }
-
-    private String readResourceFile(Path path) {
-        return IoUtils.stringFromResources(path);
-    }
-
-    private CristinProduct readProductFromResource() {
-        var cristinProductString = readResourceFile(Path.of("type_produkt.json"));
-        return attempt(
-            () -> JsonUtils
-                .dtoObjectMapper
-                .readValue(cristinProductString, CristinProduct.class))
-            .orElseThrow();
-    }
-
-    private CristinArtisticProduction readArtisticProductionFromResource() {
-        var artisticProduction = readResourceFile(Path.of("type_kunstneriskproduksjon.json"));
-        return attempt(
-            () -> JsonUtils
-                .dtoObjectMapper
-                .readValue(artisticProduction, CristinArtisticProduction.class))
-            .orElseThrow();
     }
 
     @And("the performance type is equal to {string}")
@@ -163,14 +142,14 @@ public class ArtisticFeatures {
 
     @Then("the Nva Resource has a Concert announcements")
     public void theNvaResourceHasAConcertAnnouncements() {
-        var musicalWorkPerformance = (MusicPerformance) scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
+        var musicalWorkPerformance = extractMusicPerformance();
         assertThat(musicalWorkPerformance.getManifestations(), hasSize(1));
         assertThat(musicalWorkPerformance.getManifestations().get(0), instanceOf(Concert.class));
     }
 
     @And("the concert has a place {string}, date {string}, and duration {string} minutes")
     public void theConcertHasAPlaceDateAndDurationMinutes(String place, String time, String duration) {
-        var musicalWorkPerformance = (MusicPerformance) scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
+        var musicalWorkPerformance = extractMusicPerformance();
         var concert = (Concert) musicalWorkPerformance.getManifestations().get(0);
         var expectedPlace = new UnconfirmedPlace(place, null);
         assertThat(concert.getPlace(), is(equalTo(expectedPlace)));
@@ -183,7 +162,7 @@ public class ArtisticFeatures {
 
     @And("the concert has a program with title {string}, composer {string}, and is a premiere")
     public void theConcertHasAProgramWithTitleComposerAndIsAPremiere(String title, String composer) {
-        var musicalWorkPerformance = (MusicPerformance) scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
+        var musicalWorkPerformance = extractMusicPerformance();
         var concert = (Concert) musicalWorkPerformance.getManifestations().get(0);
         assertThat(concert.getConcertProgramme(), hasSize(1));
         var concertProgramme = concert.getConcertProgramme().get(0);
@@ -206,14 +185,14 @@ public class ArtisticFeatures {
 
     @Then("the Nva Resource has a OtherPerformance")
     public void theNvaResourceHasAOtherPerformance() {
-        var musicalWorkPerformance = (MusicPerformance) scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
+        var musicalWorkPerformance = extractMusicPerformance();
         assertThat(musicalWorkPerformance.getManifestations(), hasSize(1));
         assertThat(musicalWorkPerformance.getManifestations().get(0), instanceOf(OtherPerformance.class));
     }
 
     @And("the OtherPerformance has a place {string} and duration {string} minutes")
     public void theOtherPerformanceHasAPlaceDateAndDurationMinutes(String place, String duration) {
-        var musicalWorkPerformance = (MusicPerformance) scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
+        var musicalWorkPerformance = extractMusicPerformance();
         var otherPerformance = (OtherPerformance) musicalWorkPerformance.getManifestations().get(0);
         var expectedPlace = new UnconfirmedPlace(place, null);
         assertThat(otherPerformance.getPlace(), is(equalTo(expectedPlace)));
@@ -221,8 +200,8 @@ public class ArtisticFeatures {
     }
 
     @And("the OtherPerformance has a musicalWorkPerformance with title {string}, composer {string}")
-    public void theOtherPerformanceHasAMusicalWorkPerformanceWithTitleComposerThatIsAPremiere(String title, String composer) {
-        var musicalWorkPerformance = (MusicPerformance) scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
+    public void theOtherPerformanceHasAMusicalWPeWithTitleComposerThatIsAPremiere(String title, String composer) {
+        var musicalWorkPerformance = extractMusicPerformance();
         var otherPerformance = (OtherPerformance) musicalWorkPerformance.getManifestations().get(0);
         assertThat(otherPerformance.getMusicalWorks(), hasSize(1));
         assertThat(otherPerformance.getMusicalWorks().get(0), instanceOf(MusicalWork.class));
@@ -232,7 +211,7 @@ public class ArtisticFeatures {
     }
 
     @And("the performance has a ISRC equal to {string}")
-    public void thePerformanceHasAISRCEqualTo(String isrc) {
+    public void thePerformanceHasAnIsrcEqualTo(String isrc) {
         scenarioContext.getCristinEntry().getCristinArtisticProduction().setIsrc(isrc);
     }
 
@@ -248,37 +227,49 @@ public class ArtisticFeatures {
 
     @Then("the Nva resource has a AudioVisualPublication")
     public void theNvaResourceHasAAudioVisualPublication() {
-        var musicalWorkPerformance = (MusicPerformance) scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
+        var musicalWorkPerformance = extractMusicPerformance();
         assertThat(musicalWorkPerformance.getManifestations(), hasItem(instanceOf(AudioVisualPublication.class)));
     }
 
-    @And("the AudioVisualPublication has a mediaSubType equalTo {string}, ISRC equalTo {string}, unconfirmedPublisher name equal to {string}")
-    public void theAudiovisualPublicationHasAMediaSubTypeEqualToStringIsrtcEqualToStringUnconfirmedPublisherNameEqualToString(String mediaSubType, String isrc, String unconfirmedPublisher) throws InvalidIsrcException {
-        var musicalWorkPerformance = (MusicPerformance) scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
-        var audioVisualManifestationOptional = musicalWorkPerformance.getManifestations().stream().filter(manifestation -> manifestation instanceof AudioVisualPublication).findFirst();
+    @And("the AudioVisualPublication has a mediaSubType equalTo {string},"
+        + " ISRC equalTo {string}, unconfirmedPublisher name equal to {string}")
+    public void theAudiovisualPublicationHasAMediaSubTypeEqualToExpectedValues(
+        String expectedMediaSubType,
+        String expectedIsrc,
+        String expectedUnconfirmedPublisher) throws InvalidIsrcException {
+        var musicalWorkPerformance = extractMusicPerformance();
+        var audioVisualManifestationOptional = musicalWorkPerformance
+            .getManifestations()
+            .stream()
+            .filter(manifestation -> manifestation instanceof AudioVisualPublication)
+            .findFirst();
         assertThat(audioVisualManifestationOptional.isPresent(), is(equalTo(true)));
         var audioVisualManifestation = (AudioVisualPublication) audioVisualManifestationOptional.get();
-        assertThat(audioVisualManifestation.getMediaType().getType().getValue(), is(equalTo(mediaSubType)));
-        assertThat(audioVisualManifestation.getIsrc(), is(equalTo(new Isrc(isrc))));
+        assertThat(audioVisualManifestation.getMediaType().getType().getValue(), is(equalTo(expectedMediaSubType)));
+        assertThat(audioVisualManifestation.getIsrc(), is(equalTo(new Isrc(expectedIsrc))));
         var actualPublisher = (UnconfirmedPublisher) audioVisualManifestation.getPublisher();
-        assertThat(actualPublisher.getName(), is(equalTo(unconfirmedPublisher)));
+        assertThat(actualPublisher.getName(), is(equalTo(expectedUnconfirmedPublisher)));
     }
 
     @And("the performance has a ISMN equal to {string}")
-    public void thePerformanceHasAISMNEqualTo(String ismn) {
+    public void thePerformanceHasAIsmnEqualTo(String ismn) {
         scenarioContext.getCristinEntry().getCristinArtisticProduction().setIsmn(ismn);
     }
 
     @Then("the NVA resource has a MusicScore")
-    public void theNVAResourceHasAMusicScore() {
-        var musicalWorkPerformance = (MusicPerformance) scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
+    public void theNvaResourceHasAMusicScore() {
+        var musicalWorkPerformance = extractMusicPerformance();
         assertThat(musicalWorkPerformance.getManifestations(), hasItem(instanceOf(MusicScore.class)));
     }
 
     @And("the MusicScore has a ISMN equal to {string}")
-    public void theMusicScoreHasAISMNEqualTo(String ismn) throws InvalidIsmnException {
-        var musicalWorkPerformance = (MusicPerformance) scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
-        var musicScoreOptional = musicalWorkPerformance.getManifestations().stream().filter(manifestation -> manifestation instanceof MusicScore).findFirst();
+    public void theMusicScoreHasAnIsmnNEqualTo(String ismn) throws InvalidIsmnException {
+        var musicalWorkPerformance = extractMusicPerformance();
+        var musicScoreOptional = musicalWorkPerformance
+            .getManifestations()
+            .stream()
+            .filter(manifestation -> manifestation instanceof MusicScore)
+            .findFirst();
         assertThat(musicScoreOptional.isPresent(), is(equalTo(true)));
         var musicScore = (MusicScore) musicScoreOptional.get();
         assertThat(musicScore.getIsmn(), is(equalTo(new Ismn(ismn))));
@@ -291,10 +282,43 @@ public class ArtisticFeatures {
 
     @And("the MusicScore has ensemble equal to {string}")
     public void theMusicScoreHasEnsembleEqualTo(String ensemble) {
-        var musicalWorkPerformance = (MusicPerformance) scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
-        var musicScoreOptional = musicalWorkPerformance.getManifestations().stream().filter(manifestation -> manifestation instanceof MusicScore).findFirst();
+        var musicalWorkPerformance = extractMusicPerformance();
+        var musicScoreOptional = musicalWorkPerformance.getManifestations()
+            .stream()
+            .filter(manifestation -> manifestation instanceof MusicScore)
+            .findFirst();
         assertThat(musicScoreOptional.isPresent(), is(equalTo(true)));
         var musicScore = (MusicScore) musicScoreOptional.get();
         assertThat(musicScore.getEnsemble(), is(equalTo(ensemble)));
+    }
+
+    private String readResourceFile(Path path) {
+        return IoUtils.stringFromResources(path);
+    }
+
+    private CristinProduct readProductFromResource() {
+        var cristinProductString = readResourceFile(Path.of("type_produkt.json"));
+        return attempt(
+            () -> JsonUtils
+                .dtoObjectMapper
+                .readValue(cristinProductString, CristinProduct.class))
+            .orElseThrow();
+    }
+
+    private CristinArtisticProduction readArtisticProductionFromResource() {
+        var artisticProduction = readResourceFile(Path.of("type_kunstneriskproduksjon.json"));
+        return attempt(
+            () -> JsonUtils
+                .dtoObjectMapper
+                .readValue(artisticProduction, CristinArtisticProduction.class))
+            .orElseThrow();
+    }
+
+    private MusicPerformance extractMusicPerformance() {
+        return (MusicPerformance) scenarioContext
+            .getNvaEntry()
+            .getEntityDescription()
+            .getReference()
+            .getPublicationInstance();
     }
 }

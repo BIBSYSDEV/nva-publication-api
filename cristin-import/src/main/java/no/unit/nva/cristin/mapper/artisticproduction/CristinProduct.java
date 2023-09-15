@@ -1,24 +1,23 @@
 package no.unit.nva.cristin.mapper.artisticproduction;
 
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
+import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
 import no.unit.nva.model.instancetypes.artistic.film.realization.MovingPictureOutput;
 import no.unit.nva.model.instancetypes.artistic.film.realization.OtherRelease;
 
-import java.util.List;
-import java.util.Optional;
 
-
-/**
+/*
  * Cristin-categories containing this object:
  * ARKITEKTTEGNING
  * FILMPRODUKSJON
@@ -32,7 +31,6 @@ import java.util.Optional;
  * MUSIKK_INNSP
  */
 
-@Data
 @Builder(
     builderClassName = "CristinProductBuilder",
     toBuilder = true,
@@ -40,6 +38,8 @@ import java.util.Optional;
     buildMethodName = "build",
     setterPrefix = "with"
 )
+@Getter
+@Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"utbredelsesomrade", "status_bestilt"})
 public class CristinProduct implements DescriptionExtractor, MovingPictureExtractor {

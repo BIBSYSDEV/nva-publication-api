@@ -15,9 +15,9 @@ dependencies {
     testImplementation(project(':publication-testing'))
     testImplementation libs.nva.testutils
     testImplementation libs.jsonassert
-    testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
-}
 
-test {
-    useJUnitPlatform()
+    implementation(libs.dynamodDbLocal) {
+        exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
+        exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
+    }
 }

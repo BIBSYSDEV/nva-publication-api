@@ -31,7 +31,6 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UriWrapper;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -195,7 +194,6 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
         return persistInDatabase(importCandidate);
     }
 
-    @NotNull
     private Try<ImportCandidate> persistInDatabase(ImportCandidate importCandidate) {
         var attemptSave = tryPersistingInDatabase(importCandidate);
         for (int efforts = 0; shouldTryAgain(attemptSave, efforts); efforts++) {
@@ -210,6 +208,7 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
         try {
             Thread.sleep(sleepTime);
         } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
             throw new RuntimeException(exception);
         }
     }

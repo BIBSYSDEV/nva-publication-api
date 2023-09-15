@@ -4,6 +4,7 @@ import static no.sikt.nva.brage.migration.NvaType.ANTHOLOGY;
 import static no.sikt.nva.brage.migration.NvaType.PERFORMING_ARTS;
 import static no.sikt.nva.brage.migration.NvaType.PROFESSIONAL_ARTICLE;
 import static no.sikt.nva.brage.migration.NvaType.READER_OPINION;
+import static no.sikt.nva.brage.migration.NvaType.TEXTBOOK;
 import static no.sikt.nva.brage.migration.NvaType.VISUAL_ARTS;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.ERROR_BUCKET_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.HANDLE_REPORTS_PATH;
@@ -24,7 +25,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
 import com.amazonaws.services.kms.model.NotFoundException;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
@@ -95,7 +95,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     public static final String PART_OF_SERIES_VALUE_V6 = "NVE Rapport;";
     public static final String EXPECTED_SERIES_NUMBER = "42";
     public static final UUID UUID = java.util.UUID.randomUUID();
-    public static final Context CONTEXT = mock(Context.class);
+    public static final Context CONTEXT = null;
     public static final long SOME_FILE_SIZE = 100L;
     public static final Type TYPE_BOOK = new Type(List.of(NvaType.BOOK.getValue()), NvaType.BOOK.getValue());
     public static final Type TYPE_CONFERENCE_REPORT = new Type(List.of(NvaType.CONFERENCE_REPORT.getValue()),
@@ -110,6 +110,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                          READER_OPINION.getValue());
     public static final Type TYPE_ANTHOLOGY = new Type(List.of(ANTHOLOGY.getValue()),
                                                        ANTHOLOGY.getValue());
+    public static final Type TYPE_TEXTBOOK = new Type(List.of(TEXTBOOK.getValue()), TEXTBOOK.getValue());
     public static final Type TYPE_MUSIC = new Type(List.of(NvaType.RECORDING_MUSICAL.getValue()),
                                                    NvaType.RECORDING_MUSICAL.getValue());
     public static final Type TYPE_DESIGN_PRODUCT = new Type(List.of(NvaType.DESIGN_PRODUCT.getValue()),
@@ -199,7 +200,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     //Temporary compares associatedArtifacts based on contentLength. Has to be changed for proper comparison of
     // artifacts. See AssociatedArtifactComparator.
     @Test
-    void shouldNotAttachAssociatedArtifactsToExistingPublicationWhenAssociatedArtifactAlreadyExistsAndWhenCristinIdsMatch()
+    void shouldNotAttachAssociatedArtifactsToExistingPublicationWhenAssociatedArtifactAlreadyExistsAndCristinIdsMatch()
         throws IOException, NotFoundException {
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                  .withType(TYPE_REPORT_WORKING_PAPER)
@@ -245,12 +246,12 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Driver = new S3Driver(s3Client, persistedStorageBucket);
         var file = new java.io.File("src/test/resources/testFile.txt");
         putAssociatedArtifactsToResourceStorage(brageGenerator, s3Driver, file);
-        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var cristinPublication = copyPublication(brageGenerator);
         cristinPublication.getEntityDescription().setDescription(null);
         cristinPublication.getEntityDescription().setAbstract(null);
         cristinPublication.setHandle(null);
         resourceService.createPublicationFromImportedEntry(cristinPublication);
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
         assertThat(actualPublication.getEntityDescription().getDescription(),
                    is(equalTo(brageGenerator.getNvaPublication().getEntityDescription().getDescription())));
@@ -271,7 +272,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Driver = new S3Driver(s3Client, persistedStorageBucket);
         var file = new java.io.File("src/test/resources/testFile.txt");
         putAssociatedArtifactsToResourceStorage(brageGenerator, s3Driver, file);
-        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var cristinPublication = copyPublication(brageGenerator);
         var cristinDescription = randomString();
         var cristinAbstract = randomString();
@@ -279,6 +279,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         cristinPublication.getEntityDescription().setAbstract(cristinAbstract);
         cristinPublication.setHandle(null);
         resourceService.createPublicationFromImportedEntry(cristinPublication);
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
         assertThat(actualPublication.getEntityDescription().getDescription(),
                    is(equalTo(cristinDescription)));
@@ -689,6 +690,17 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldConvertTextbookToPublication() throws IOException {
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                 .withType(TYPE_TEXTBOOK)
+                                 .build();
+        var expectedPublication = brageGenerator.getNvaPublication();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThatPublicationsMatch(actualPublication, expectedPublication);
+    }
+
+    @Test
     void shouldThrowExceptionWhenTypeIsNotSupportedInPublicationContext() throws IOException {
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                  .withType(TYPE_SOFTWARE)
@@ -831,9 +843,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                  .withType(TYPE_BOOK)
                                                  .withCristinIdentifier(cristinIdentifier)
                                                  .build();
-        var existingPublication = persistPublicationWithCristinIdAndHandle(cristinIdentifier,
-                                                                           nvaBrageMigrationDataGenerator.getNvaPublication()
-                                                                               .getHandle());
+        var existingPublication = persistPublicationWithCristinIdAndHandle(
+            cristinIdentifier, nvaBrageMigrationDataGenerator.getNvaPublication().getHandle());
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         handler.handleRequest(s3Event, CONTEXT);
         var storedPublication = extractUpdateReportFromS3(s3Event, existingPublication.getIdentifier());
@@ -1073,8 +1084,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var fileUri = UriWrapper.fromUri(extractFilename(event));
         var timestamp = event.getRecords().get(0).getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
         return UriWrapper.fromUri(
-            ERROR_BUCKET_PATH + PATH_SEPERATOR + timestamp + PATH_SEPERATOR + exception.getClass().getSimpleName() +
-            PATH_SEPERATOR + fileUri.getLastPathElement());
+            ERROR_BUCKET_PATH + PATH_SEPERATOR + timestamp + PATH_SEPERATOR + exception.getClass().getSimpleName()
+            + PATH_SEPERATOR + fileUri.getLastPathElement());
     }
 
     private String extractFilename(S3Event event) {
@@ -1110,14 +1121,14 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         return createS3Event(uri);
     }
 
-    private S3Event createNewBrageRecordEvent(Record record) throws IOException {
-        var recordAsJson = JsonUtils.dtoObjectMapper.writeValueAsString(record);
+    private S3Event createNewBrageRecordEvent(Record brageRecord) throws IOException {
+        var recordAsJson = JsonUtils.dtoObjectMapper.writeValueAsString(brageRecord);
         var uri = s3Driver.insertFile(randomS3Path(), recordAsJson);
         return createS3Event(uri);
     }
 
-    private S3Event createNewBrageRecordEventWithSpecifiedObjectKey(Record record) throws IOException {
-        var recordAsJson = JsonUtils.dtoObjectMapper.writeValueAsString(record);
+    private S3Event createNewBrageRecordEventWithSpecifiedObjectKey(Record brageRecord) throws IOException {
+        var recordAsJson = JsonUtils.dtoObjectMapper.writeValueAsString(brageRecord);
         var uri = s3Driver.insertFile(UnixPath.of("my/path/some.json"), recordAsJson);
         return createS3Event(uri);
     }

@@ -6,6 +6,9 @@ import nva.commons.core.paths.UriWrapper;
 
 import java.util.Map;
 
+/**
+ * DO NOT DELETE. In use by Cucumber.
+ */
 public class CristinAssociatedUriTransformer {
 
 
@@ -14,6 +17,7 @@ public class CristinAssociatedUriTransformer {
 
     @DataTableType
     public static CristinAssociatedUri toCristinAssociatedUrl(Map<String, String> entry) {
-        return new CristinAssociatedUri(entry.get(URLTYPE_KODE_FIELD_NAME), UriWrapper.fromUri(entry.get(CRISTIN_URI_FIELD_NAME)).getUri());
+        return new CristinAssociatedUri(entry.get(URLTYPE_KODE_FIELD_NAME),
+                                        UriWrapper.fromUri(entry.get(CRISTIN_URI_FIELD_NAME)).getUri());
     }
 }

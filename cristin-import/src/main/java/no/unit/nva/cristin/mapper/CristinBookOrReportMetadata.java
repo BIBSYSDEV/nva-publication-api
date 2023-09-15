@@ -5,10 +5,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import nva.commons.core.JacocoGenerated;
 
-@Data
 @Builder(
     builderClassName = "CristinBookReportBuilder",
     toBuilder = true,
@@ -16,6 +16,8 @@ import nva.commons.core.JacocoGenerated;
     buildMethodName = "build",
     setterPrefix = "with"
 )
+@Getter
+@Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"utgave", "utgave_fra", "doi", "status_revidert", "status_elektronisk_publisert",
     "status_utgitt_av_forlag", "stedangivelse_utgiver", "landkode_utgiver", "institusjonsnr_utgiver",

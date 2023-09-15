@@ -11,11 +11,11 @@ import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import no.unit.nva.model.Organization;
 import nva.commons.core.paths.UriWrapper;
 
-@Data
 @Builder(
     builderClassName = "CristinContributorsAffiliationBuilder",
     toBuilder = true,
@@ -23,6 +23,8 @@ import nva.commons.core.paths.UriWrapper;
     buildMethodName = "build",
     setterPrefix = "with"
 )
+@Getter
+@Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"stednavn_opprinnelig", "avdelingsnavn_opprinnelig", "institusjonsnavn_opprinnelig",
     "stedkode_opprinnelig"})

@@ -45,7 +45,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class DeleteImportCandidateEventHandlerTest {
 
-    public static final Context CONTEXT = mock(Context.class);
+    public static final Context CONTEXT = null;
     private ByteArrayOutputStream output;
     private S3Client s3Client;
     private DeleteImportCandidateEventHandler handler;
