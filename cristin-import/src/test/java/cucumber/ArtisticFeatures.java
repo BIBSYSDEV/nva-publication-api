@@ -307,9 +307,7 @@ public class ArtisticFeatures {
 
     private CristinArtisticProduction readArtisticProductionFromResource() {
         var artisticProduction = readResourceFile(Path.of("type_kunstneriskproduksjon.json"));
-        return attempt(
-            () -> JsonUtils
-                .dtoObjectMapper
+        return attempt(() -> JsonUtils.dtoObjectMapper
                 .readValue(artisticProduction, CristinArtisticProduction.class))
             .orElseThrow();
     }
@@ -323,7 +321,7 @@ public class ArtisticFeatures {
     }
 
     @And("the AudioVisualPublication has a mediaSubType equalTo {string}")
-    public void theAudioVisualPublicationHasAMediaSubTypeEqualTo(String expectedMediaSubType) {
+    public void theAudioVisualPublicationHasAMediaSubTypeEqualTo(String expectedediaSubType) {
         var musicalWorkPerformance = extractMusicPerformance();
         var audioVisualManifestationOptional = musicalWorkPerformance
             .getManifestations()
@@ -332,6 +330,6 @@ public class ArtisticFeatures {
             .findFirst();
         assertThat(audioVisualManifestationOptional.isPresent(), is(equalTo(true)));
         var audioVisualManifestation = (AudioVisualPublication) audioVisualManifestationOptional.get();
-        assertThat(audioVisualManifestation.getMediaType().getType().getValue(), is(equalTo(expectedMediaSubType)));
+        assertThat(audioVisualManifestation.getMediaType().getType().getValue(), is(equalTo(expectedediaSubType)));
     }
 }

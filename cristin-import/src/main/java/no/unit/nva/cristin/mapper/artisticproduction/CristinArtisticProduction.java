@@ -222,7 +222,8 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     }
 
     private Isrc extractIsrc(String isrc) {
-        return attempt(() -> new Isrc(isrc)).orElseThrow(r -> new InvalidIsrcException(r.getException()));
+        return attempt(() -> new Isrc(isrc))
+            .orElseThrow(fail -> new InvalidIsrcException(fail.getException()));
     }
 
     private MusicMediaSubtype extractMediumType() {
@@ -316,10 +317,10 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     }
 
     private String extractExtent() {
-        var shouldExtractExtent = Optional.ofNullable(artisticProductionTimeUnit)
+        return Optional.ofNullable(artisticProductionTimeUnit)
             .map(ArtisticProductionTimeUnit::timeUnitIsInMinutes)
-            .orElse(false);
-        return shouldExtractExtent ? duration : null;
+            .map(timeIsInMinutes -> timeIsInMinutes ? duration : null)
+            .orElse(null);
     }
 
     private List<MusicalWorkPerformance> extractConcertProgrammes() {
