@@ -3,7 +3,9 @@ package no.unit.nva.cristin.mapper.artisticproduction;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.List;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -33,13 +35,14 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.instancetypes.artistic.music.MusicMediaType.COMPACT_DISC;
 import static no.unit.nva.model.instancetypes.artistic.music.MusicMediaType.DIGITAL_FILE;
 import static no.unit.nva.model.instancetypes.artistic.music.MusicMediaType.OTHER;
+import static no.unit.nva.model.instancetypes.artistic.music.MusicMediaType.STREAMING;
 import static no.unit.nva.model.instancetypes.artistic.music.MusicMediaType.VINYL;
 import static nva.commons.core.attempt.Try.attempt;
 
@@ -65,19 +68,9 @@ import static nva.commons.core.attempt.Try.attempt;
 @SuppressWarnings({"PMD.TooManyFields"})
 public class CristinArtisticProduction implements DescriptionExtractor, MovingPictureExtractor {
 
-    public static final String YES = "J";
     @JsonIgnore
-    private static final Map<String, MusicMediaType> CRISTIN_MEDIUM_TO_NVA_MEDIUM =
-        Map.of("CD", COMPACT_DISC,
-            "cd", COMPACT_DISC,
-            "CD og digitale plattformer", COMPACT_DISC,
-            "CD - Konsert", COMPACT_DISC,
-            "CD, strømming, nedlassting", COMPACT_DISC,
-            "Fonogram - CD", COMPACT_DISC,
-            "CD-innspilling", COMPACT_DISC,
-            "Plateinnspilling", VINYL,
-            "Digital singel", DIGITAL_FILE,
-            "Digitalt album", DIGITAL_FILE);
+    public static final String YES = "J";
+
     @JsonProperty("status_urframforing")
     private String premiere;
 
@@ -213,7 +206,7 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     }
 
     private boolean hasAudioVisialMedium() {
-        return nonNull(medium) && CRISTIN_MEDIUM_TO_NVA_MEDIUM.containsKey(medium);
+        return nonNull(medium);
     }
 
     private AudioVisualPublication createAudioVisualPublication() {
@@ -225,7 +218,7 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     }
 
     private Isrc constructIsrc() {
-        return Optional.of(isrc).map(this::extractIsrc).orElse(null);
+        return Optional.ofNullable(isrc).map(this::extractIsrc).orElse(null);
     }
 
     private Isrc extractIsrc(String isrc) {
@@ -237,8 +230,64 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     }
 
     private MusicMediaType convertCristinMediumToNvaMediumSubtype() {
-        return Optional.ofNullable(medium).map(CRISTIN_MEDIUM_TO_NVA_MEDIUM::get).orElse(OTHER);
+        return Optional.ofNullable(medium).map(this::convertToNvaMediaSubType).orElse(OTHER);
     }
+
+    private MusicMediaType convertToNvaMediaSubType(String medium) {
+        if (isCompactDisc(medium)) {
+            return COMPACT_DISC;
+        }
+        if (isVinyl(medium)) {
+            return VINYL;
+        }
+        if (isDigitalFile(medium)) {
+            return DIGITAL_FILE;
+        }
+        if (isStreaming(medium)) {
+            return STREAMING;
+        }
+        return OTHER;
+    }
+
+    @JsonIgnore
+    private boolean isStreaming(String medium) {
+        var pattern = Pattern.compile(
+            ".*((strøm)|(Spotify)|(Stream)|(YouTube)|(vimeo))+.*",
+            Pattern.CASE_INSENSITIVE);
+        var matcher = pattern.matcher(medium);
+        return matcher.matches();
+
+    }
+
+    @JsonIgnore
+    private boolean isDigitalFile(String medium) {
+        var pattern = Pattern.compile(
+            ".*((Digital)|(mp3)|(Lydfil))+.*",
+            Pattern.CASE_INSENSITIVE);
+        var matcher = pattern.matcher(medium);
+        return matcher.matches();
+
+    }
+
+    @JsonIgnore
+    private boolean isVinyl(String medium) {
+        var pattern = Pattern.compile(
+            ".*((Plateinnspilling)|(LP))+.*",
+            Pattern.CASE_INSENSITIVE);
+        var matcher = pattern.matcher(medium);
+        return matcher.matches();
+    }
+
+
+    @JsonIgnore
+    private boolean isCompactDisc(String medium) {
+        var pattern = Pattern.compile(
+            ".*((CD)|(Album))+.*",
+            Pattern.CASE_INSENSITIVE);
+        var matcher = pattern.matcher(medium);
+        return matcher.matches();
+    }
+
 
     private MusicPerformanceManifestation extractMusicPerformanceManifestation() {
         return isConcert()
@@ -261,6 +310,7 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
         return new MusicalWork(extractTitle(), originalComposer);
     }
 
+    @JsonIgnore
     private boolean isConcert() {
         return Optional.ofNullable(performance).map(Performance::isConcert).orElse(false);
     }

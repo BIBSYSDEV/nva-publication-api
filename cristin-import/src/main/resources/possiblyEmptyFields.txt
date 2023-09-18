@@ -28,6 +28,7 @@ entityDescription.reference.publicationInstance.manifestations.publisher.name
 entityDescription.reference.publicationInstance.manifestations.movements
 entityDescription.reference.publicationInstance.manifestations.ensemble
 entityDescription.reference.publicationInstance.manifestations.ismn
+entityDescription.reference.publicationInstance.manifestations.isrc
 
 entityDescription.abstract
 entityDescription.tags

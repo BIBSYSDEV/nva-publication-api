@@ -321,4 +321,17 @@ public class ArtisticFeatures {
             .getReference()
             .getPublicationInstance();
     }
+
+    @And("the AudioVisualPublication has a mediaSubType equalTo {string}")
+    public void theAudioVisualPublicationHasAMediaSubTypeEqualTo(String expectedMediaSubType) {
+        var musicalWorkPerformance = extractMusicPerformance();
+        var audioVisualManifestationOptional = musicalWorkPerformance
+            .getManifestations()
+            .stream()
+            .filter(manifestation -> manifestation instanceof AudioVisualPublication)
+            .findFirst();
+        assertThat(audioVisualManifestationOptional.isPresent(), is(equalTo(true)));
+        var audioVisualManifestation = (AudioVisualPublication) audioVisualManifestationOptional.get();
+        assertThat(audioVisualManifestation.getMediaType().getType().getValue(), is(equalTo(expectedMediaSubType)));
+    }
 }

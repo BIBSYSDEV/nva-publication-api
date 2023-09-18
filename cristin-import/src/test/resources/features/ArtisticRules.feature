@@ -48,7 +48,6 @@ Feature: Rules that apply for Artistic results
     Then the Cristin Result contains a MovingPictureSubtypeEnum equal to "MovingPictureOther"
 
 
-
   Scenario: Cristin musical performance result with Concert performance should be mapped to Nva-publication
     Given a valid Cristin Result with secondary category "MUSIKK_FRAMFORIN"
     And the performance type is equal to "KONSERT"
@@ -81,6 +80,28 @@ Feature: Rules that apply for Artistic results
     When the Cristin Result is converted to an NVA Resource
     Then the Nva resource has a AudioVisualPublication
     And the AudioVisualPublication has a mediaSubType equalTo "CompactDisc", ISRC equalTo "NOLCA1554010", unconfirmedPublisher name equal to "Austad Music"
+
+
+  Scenario Outline: Cristin musical performance that contains valid medium types shoul be mapped to AudioVisualProduction
+    Given a valid Cristin Result with secondary category "MUSIKK_FRAMFORIN"
+    And the performance has a medium equal to "<medium>"
+    When the Cristin Result is converted to an NVA Resource
+    Then the Nva resource has a AudioVisualPublication
+    And the AudioVisualPublication has a mediaSubType equalTo "<mediaSubType>"
+    Examples:
+      | medium            | mediaSubType    |
+      | cd-inpsilling     | CompactDisc     |
+      | plateinnspilling  | Vinyl           |
+      | digitalinspilling | DigitalFile     |
+      | Strømming         | Streaming       |
+      | album             | CompactDisc     |
+      | LP-inspilling     | Vinyl           |
+      | mp3               | DigitalFile     |
+      | spotify           | Streaming       |
+      | stream            | Streaming       |
+      | YouTube           | Streaming       |
+      | vimeo             | Streaming       |
+      | Lydfil            | DigitalFile     |
 
 
   Scenario: Cristin musical performance that contains an invalid ISRC should throw an exception
