@@ -168,7 +168,7 @@ public final class PublicationInstanceMapper {
         }
         if (isCristinRecord(brageRecord)) {
             return null;
-       } else {
+        } else {
             return buildPublicationInstanceWhenReport(brageRecord);
         }
     }
