@@ -78,147 +78,151 @@ public final class PublicationInstanceMapper {
     }
 
     @SuppressWarnings({"PMD.NPathComplexity", "PMD.CognitiveComplexity", "PMD.NcssCount"})
-    public static PublicationInstance<? extends Pages> buildPublicationInstance(Record record) {
-        if (isJournalArticle(record)) {
-            return buildPublicationInstanceWhenJournalArticle(record);
+    public static PublicationInstance<? extends Pages> buildPublicationInstance(Record brageRecord) {
+        if (isJournalArticle(brageRecord)) {
+            return buildPublicationInstanceWhenJournalArticle(brageRecord);
         }
-        if (isScientificArticle(record)) {
-            return buildPublicationInstanceWhenScientificArticle(record);
+        if (isScientificArticle(brageRecord)) {
+            return buildPublicationInstanceWhenScientificArticle(brageRecord);
         }
-        if (isFeatureArticle(record)) {
-            return buildPublicationInstanceWhenFeatureArticle(record);
+        if (isFeatureArticle(brageRecord)) {
+            return buildPublicationInstanceWhenFeatureArticle(brageRecord);
         }
-        if (isMap(record)) {
-            return buildPublicationInstanceWhenMap(record);
+        if (isMap(brageRecord)) {
+            return buildPublicationInstanceWhenMap(brageRecord);
         }
-        if (isDataset(record)) {
-            return buildPublicationInstanceWhenDataset(record);
+        if (isDataset(brageRecord)) {
+            return buildPublicationInstanceWhenDataset(brageRecord);
         }
-        if (isChapter(record)) {
-            return buildPublicationInstanceWhenChapter(record);
+        if (isChapter(brageRecord)) {
+            return buildPublicationInstanceWhenChapter(brageRecord);
         }
-        if (isScientificChapter(record)) {
-            return buildPublicationInstanceWhenScientificChapter(record);
+        if (isScientificChapter(brageRecord)) {
+            return buildPublicationInstanceWhenScientificChapter(brageRecord);
         }
-        if (isLecture(record)) {
+        if (isLecture(brageRecord)) {
             return new Lecture();
         }
-        if (isDesignProduct(record)) {
+        if (isDesignProduct(brageRecord)) {
             return buildPublicationInstanceWhenDesignProduct();
         }
-        if (isPlanOrBlueprint(record)) {
+        if (isPlanOrBlueprint(brageRecord)) {
             return buildPublicationInstanceWhenPlanOrBluePrint();
         }
-        if (isMusic(record)) {
+        if (isMusic(brageRecord)) {
             return buildPublicationInstanceWhenMusic();
         }
-        if (isBachelorThesis(record)) {
-            return buildPublicationInstanceWhenBachelorThesis(record);
+        if (isBachelorThesis(brageRecord)) {
+            return buildPublicationInstanceWhenBachelorThesis(brageRecord);
         }
-        if (isMasterThesis(record)) {
-            return buildPublicationInstanceWhenMasterThesis(record);
+        if (isMasterThesis(brageRecord)) {
+            return buildPublicationInstanceWhenMasterThesis(brageRecord);
         }
-        if (isDoctoralThesis(record)) {
-            return buildPublicationInstanceWhenDoctoralThesis(record);
+        if (isDoctoralThesis(brageRecord)) {
+            return buildPublicationInstanceWhenDoctoralThesis(brageRecord);
         }
-        if (isOtherStudentWork(record) || isStudentPaper(record)) {
-            return buildPublicationInstanceWhenOtherStudentWork(record);
+        if (isOtherStudentWork(brageRecord) || isStudentPaper(brageRecord)) {
+            return buildPublicationInstanceWhenOtherStudentWork(brageRecord);
         }
-        if (isBook(record)) {
-            return buildPublicationInstanceWhenBook(record);
+        if (isBook(brageRecord)) {
+            return buildPublicationInstanceWhenBook(brageRecord);
         }
-        if (isScientificMonograph(record)) {
-            return buildPublicationInstanceWhenScientificMonograph(record);
+        if (isScientificMonograph(brageRecord)) {
+            return buildPublicationInstanceWhenScientificMonograph(brageRecord);
         }
-        if (isResearchReport(record)) {
-            return buildPublicationInstanceWhenResearchReport(record);
+        if (isResearchReport(brageRecord)) {
+            return buildPublicationInstanceWhenResearchReport(brageRecord);
         }
-        if (isConferencePoster(record)) {
+        if (isConferencePoster(brageRecord)) {
             return buildPublicationInstanceWhenConferencePoster();
         }
-        if (isConferenceReport(record)) {
-            return buildPublicationInstanceWhenConferenceReport(record);
+        if (isConferenceReport(brageRecord)) {
+            return buildPublicationInstanceWhenConferenceReport(brageRecord);
         }
-        if (isReportWorkingPaper(record)) {
-            return buildPublicationInstanceWhenReportWorkingPaper(record);
+        if (isReportWorkingPaper(brageRecord)) {
+            return buildPublicationInstanceWhenReportWorkingPaper(brageRecord);
         }
-        if (isInterview(record)) {
+        if (isInterview(brageRecord)) {
             return buildPublicationInstanceWhenMediaInterview();
         }
-        if (isOtherPresentation(record)) {
-           return buildPublicationInstanceWhenOtherPresentation();
+        if (isOtherPresentation(brageRecord)) {
+            return buildPublicationInstanceWhenOtherPresentation();
         }
-        if (isProfessionalArticle(record)) {
-            return buildPublicationInstanceWhenProfessionalArticle(record);
+        if (isProfessionalArticle(brageRecord)) {
+            return buildPublicationInstanceWhenProfessionalArticle(brageRecord);
         }
-        if (isPerformingArts(record)) {
+        if (isPerformingArts(brageRecord)) {
             return buildPublicationInstanceWhenPerformingArts();
         }
-        if (isVisualArts(record)) {
+        if (isVisualArts(brageRecord)) {
             return buildPublicationInstanceWhenVisualArts();
         }
-        if (isReaderOpinion(record)) {
-            return buildPublicationInstanceWhenReaderOpinion(record);
+        if (isReaderOpinion(brageRecord)) {
+            return buildPublicationInstanceWhenReaderOpinion(brageRecord);
         }
-        if (isAnthology(record)) {
-            return buildPublicationInstanceWhenAnthology(record);
+        if (isAnthology(brageRecord)) {
+            return buildPublicationInstanceWhenAnthology(brageRecord);
         }
-        if (isTextbook(record)) {
-            return buildPublicationInstanceWhenTextbook(record);
+        if (isTextbook(brageRecord)) {
+            return buildPublicationInstanceWhenTextbook(brageRecord);
         }
-        if (isCristinRecord(record)) {
+        if (isCristinRecord(brageRecord)) {
             return null;
-        } else {
-            return buildPublicationInstanceWhenReport(record);
+       } else {
+            return buildPublicationInstanceWhenReport(brageRecord);
         }
     }
 
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenTextbook(Record record) {
-        return new Textbook(extractMonographPages(record));
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenTextbook(Record brageRecord) {
+        return new Textbook(extractMonographPages(brageRecord));
     }
 
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenAnthology(Record record) {
-        return new BookAnthology(extractMonographPages(record));
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenAnthology(Record brageRecord) {
+        return new BookAnthology(extractMonographPages(brageRecord));
     }
 
-    public static boolean isAnthology(Record record) {
-        return NvaType.ANTHOLOGY.getValue().equals(record.getType().getNva());
+    public static boolean isAnthology(Record brageRecord) {
+        return NvaType.ANTHOLOGY.getValue().equals(brageRecord.getType().getNva());
     }
 
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenReaderOpinion(Record record) {
-        return new MediaReaderOpinion(extractVolume(record), extractIssue(record), null, extractPages(record));
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenReaderOpinion(Record brageRecord) {
+        return new MediaReaderOpinion(extractVolume(brageRecord), extractIssue(brageRecord), null,
+                                      extractPages(brageRecord));
     }
 
-    public static boolean isReaderOpinion(Record record) {
-        return NvaType.READER_OPINION.getValue().equals(record.getType().getNva());
+    public static boolean isReaderOpinion(Record brageRecord) {
+        return NvaType.READER_OPINION.getValue().equals(brageRecord.getType().getNva());
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenVisualArts() {
         return new VisualArts(VisualArtsSubtype.createOther(null), null, Set.of());
     }
 
-    public static boolean isVisualArts(Record record) {
-        return NvaType.VISUAL_ARTS.getValue().equals(record.getType().getNva());
+    public static boolean isVisualArts(Record brageRecord) {
+        return NvaType.VISUAL_ARTS.getValue().equals(brageRecord.getType().getNva());
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenPerformingArts() {
         return new PerformingArts(PerformingArtsSubtype.createOther(null), null, List.of());
     }
 
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenProfessionalArticle(Record record) {
-        return new ProfessionalArticle(extractPages(record), extractVolume(record), extractIssue(record), null);
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenProfessionalArticle(
+        Record brageRecord) {
+        return new ProfessionalArticle(extractPages(brageRecord), extractVolume(brageRecord), extractIssue(brageRecord),
+                                       null);
     }
 
-    public static boolean isProfessionalArticle(Record record) {
-        return NvaType.PROFESSIONAL_ARTICLE.getValue().equals(record.getType().getNva());
+    public static boolean isProfessionalArticle(Record brageRecord) {
+        return NvaType.PROFESSIONAL_ARTICLE.getValue().equals(brageRecord.getType().getNva());
     }
 
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenConferenceReport(Record record) {
-        return new ConferenceReport(extractMonographPages(record));
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenConferenceReport(
+        Record brageRecord) {
+        return new ConferenceReport(extractMonographPages(brageRecord));
     }
 
-    public static boolean isConferenceReport(Record record) {
-        return NvaType.CONFERENCE_REPORT.getValue().equals(record.getType().getNva());
+    public static boolean isConferenceReport(Record brageRecord) {
+        return NvaType.CONFERENCE_REPORT.getValue().equals(brageRecord.getType().getNva());
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenOtherPresentation() {
@@ -238,8 +242,8 @@ public final class PublicationInstanceMapper {
                                 null, Collections.emptyList());
     }
 
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenChapter(Record record) {
-        return new NonFictionChapter(extractPages(record));
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenChapter(Record brageRecord) {
+        return new NonFictionChapter(extractPages(brageRecord));
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenMusic() {
@@ -251,73 +255,80 @@ public final class PublicationInstanceMapper {
                                   null, Collections.emptyList());
     }
 
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenScientificChapter(Record record) {
-        return new AcademicChapter(extractPages(record));
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenScientificChapter(
+        Record brageRecord) {
+        return new AcademicChapter(extractPages(brageRecord));
     }
 
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenFeatureArticle(Record record) {
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenFeatureArticle(Record brageRecord) {
         return new FeatureArticle.Builder()
-                   .withPages(extractPages(record))
-                   .withIssue(extractIssue(record))
-                   .withVolume(extractVolume(record))
+                   .withPages(extractPages(brageRecord))
+                   .withIssue(extractIssue(brageRecord))
+                   .withVolume(extractVolume(brageRecord))
                    .build();
     }
 
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenReportWorkingPaper(Record record) {
-        return new ReportWorkingPaper(extractMonographPages(record));
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenReportWorkingPaper(
+        Record brageRecord) {
+        return new ReportWorkingPaper(extractMonographPages(brageRecord));
     }
 
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenScientificArticle(Record record) {
-        return new AcademicArticle(extractPages(record), extractVolume(record), extractIssue(record), null);
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenScientificArticle(
+        Record brageRecord) {
+        return new AcademicArticle(extractPages(brageRecord), extractVolume(brageRecord), extractIssue(brageRecord),
+                                   null);
     }
 
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenScientificMonograph(Record record) {
-        return new AcademicMonograph(extractMonographPages(record));
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenScientificMonograph(
+        Record brageRecord) {
+        return new AcademicMonograph(extractMonographPages(brageRecord));
     }
 
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenOtherStudentWork(Record record) {
-        return new OtherStudentWork(extractMonographPages(record), extractPublicationDate(record));
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenOtherStudentWork(
+        Record brageRecord) {
+        return new OtherStudentWork(extractMonographPages(brageRecord), extractPublicationDate(brageRecord));
     }
 
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenResearchReport(Record record) {
-        return new ReportResearch(extractMonographPages(record));
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenResearchReport(Record brageRecord) {
+        return new ReportResearch(extractMonographPages(brageRecord));
     }
 
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenReport(Record record) {
-        return new ReportBasic(extractMonographPages(record));
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenReport(Record brageRecord) {
+        return new ReportBasic(extractMonographPages(brageRecord));
     }
 
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenBook(Record record) {
-        return new NonFictionMonograph(extractMonographPages(record));
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenBook(Record brageRecord) {
+        return new NonFictionMonograph(extractMonographPages(brageRecord));
     }
 
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenDataset(Record record) {
-        return new DataSet(false, new GeographicalDescription(String.join(", ", extractSpatialCoverage(record))),
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenDataset(Record brageRecord) {
+        return new DataSet(false, new GeographicalDescription(String.join(", ",
+                                                                          extractSpatialCoverage(brageRecord))),
                            null, null, null);
     }
 
-    private static String extractSpatialCoverage(Record record) {
-        return Optional.ofNullable(record.getSpatialCoverage())
+    private static String extractSpatialCoverage(Record brageRecord) {
+        return Optional.ofNullable(brageRecord.getSpatialCoverage())
                    .map(spatialCoverages -> String.join(", ", spatialCoverages))
                    .orElse(null);
     }
 
-    private static boolean isMap(Record record) {
-        return NvaType.MAP.getValue().equals(record.getType().getNva());
+    private static boolean isMap(Record brageRecord) {
+        return NvaType.MAP.getValue().equals(brageRecord.getType().getNva());
     }
 
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenMap(Record record) {
-        return new Map(extractDescription(record), extractMonographPages(record));
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenMap(Record brageRecord) {
+        return new Map(extractDescription(brageRecord), extractMonographPages(brageRecord));
     }
 
-    private static String extractPublicationYear(Record record) {
-        return Optional.ofNullable(record.getEntityDescription().getPublicationDate())
+    private static String extractPublicationYear(Record brageRecord) {
+        return Optional.ofNullable(brageRecord.getEntityDescription().getPublicationDate())
                    .map(PublicationInstanceMapper::generatePublicationYear)
                    .orElse(String.valueOf(DateTime.now().getYear()));
     }
 
-    private static String extractPublicationDay(Record record) {
-        return Optional.ofNullable(record.getEntityDescription().getPublicationDate())
+    private static String extractPublicationDay(Record brageRecord) {
+        return Optional.ofNullable(brageRecord.getEntityDescription().getPublicationDate())
                    .map(PublicationInstanceMapper::generatePublicationDay)
                    .orElse(null);
     }
@@ -360,93 +371,94 @@ public final class PublicationInstanceMapper {
         return pages.getPages();
     }
 
-    private static boolean isDoctoralThesis(Record record) {
-        return NvaType.DOCTORAL_THESIS.getValue().equals(record.getType().getNva());
+    private static boolean isDoctoralThesis(Record brageRecord) {
+        return NvaType.DOCTORAL_THESIS.getValue().equals(brageRecord.getType().getNva());
     }
 
-    private static boolean isBachelorThesis(Record record) {
-        return NvaType.BACHELOR_THESIS.getValue().equals(record.getType().getNva());
+    private static boolean isBachelorThesis(Record brageRecord) {
+        return NvaType.BACHELOR_THESIS.getValue().equals(brageRecord.getType().getNva());
     }
 
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenMasterThesis(Record record) {
-        return new DegreeMaster(extractMonographPages(record), extractPublicationDate(record));
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenMasterThesis(Record brageRecord) {
+        return new DegreeMaster(extractMonographPages(brageRecord), extractPublicationDate(brageRecord));
     }
 
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenBachelorThesis(Record record) {
-        return new DegreeBachelor(extractMonographPages(record), extractPublicationDate(record));
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenBachelorThesis(Record brageRecord) {
+        return new DegreeBachelor(extractMonographPages(brageRecord), extractPublicationDate(brageRecord));
     }
 
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenDoctoralThesis(Record record) {
-        return new DegreePhd(extractMonographPages(record), extractPublicationDate(record));
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenDoctoralThesis(Record brageRecord) {
+        return new DegreePhd(extractMonographPages(brageRecord), extractPublicationDate(brageRecord));
     }
 
-    private static MonographPages extractMonographPages(Record record) {
+    private static MonographPages extractMonographPages(Record brageRecord) {
         return new MonographPages.Builder()
-                   .withPages(extractPagesWhenMonographPages(record))
+                   .withPages(extractPagesWhenMonographPages(brageRecord))
                    .build();
     }
 
-    private static String extractPagesWhenMonographPages(Record record) {
-        return Optional.ofNullable(record.getEntityDescription().getPublicationInstance())
+    private static String extractPagesWhenMonographPages(Record brageRecord) {
+        return Optional.ofNullable(brageRecord.getEntityDescription().getPublicationInstance())
                    .map(no.sikt.nva.brage.migration.record.PublicationInstance::getPages)
                    .map(PublicationInstanceMapper::generatePages)
                    .orElse(null);
     }
 
-    private static PublicationDate extractPublicationDate(Record record) {
+    private static PublicationDate extractPublicationDate(Record brageRecord) {
         return new PublicationDate.Builder()
-                   .withYear(extractPublicationYear(record))
-                   .withMonth(extractPublicationMonth(record))
-                   .withDay(extractPublicationDay(record))
+                   .withYear(extractPublicationYear(brageRecord))
+                   .withMonth(extractPublicationMonth(brageRecord))
+                   .withDay(extractPublicationDay(brageRecord))
                    .build();
     }
 
-    private static String extractPublicationMonth(Record record) {
-        return Optional.ofNullable(record.getEntityDescription().getPublicationDate())
+    private static String extractPublicationMonth(Record brageRecord) {
+        return Optional.ofNullable(brageRecord.getEntityDescription().getPublicationDate())
                    .map(PublicationInstanceMapper::generatePublicationMonth)
                    .orElse(null);
     }
 
-    private static boolean isMasterThesis(Record record) {
-        return NvaType.MASTER_THESIS.getValue().equals(record.getType().getNva());
+    private static boolean isMasterThesis(Record brageRecord) {
+        return NvaType.MASTER_THESIS.getValue().equals(brageRecord.getType().getNva());
     }
 
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenJournalArticle(Record record) {
-        return new ProfessionalArticle(extractPages(record), extractVolume(record), extractIssue(record), null);
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenJournalArticle(Record brageRecord) {
+        return new ProfessionalArticle(extractPages(brageRecord), extractVolume(brageRecord), extractIssue(brageRecord),
+                                       null);
     }
 
-    private static String extractVolume(Record record) {
-        return Optional.ofNullable(record.getEntityDescription().getPublicationInstance())
+    private static String extractVolume(Record brageRecord) {
+        return Optional.ofNullable(brageRecord.getEntityDescription().getPublicationInstance())
                    .map(PublicationInstanceMapper::generateVolume)
                    .orElse(null);
     }
 
-    private static String extractIssue(Record record) {
-        return Optional.ofNullable(record.getEntityDescription().getPublicationInstance())
+    private static String extractIssue(Record brageRecord) {
+        return Optional.ofNullable(brageRecord.getEntityDescription().getPublicationInstance())
                    .map(PublicationInstanceMapper::generateIssue)
                    .orElse(null);
     }
 
-    private static Range extractPages(Record record) {
+    private static Range extractPages(Record brageRecord) {
         return new Range.Builder()
-                   .withBegin(extractBeginValue(record))
-                   .withEnd(extractEndValue(record))
+                   .withBegin(extractBeginValue(brageRecord))
+                   .withEnd(extractEndValue(brageRecord))
                    .build();
     }
 
-    private static String extractEndValue(Record record) {
-        return Optional.ofNullable(record.getEntityDescription().getPublicationInstance())
+    private static String extractEndValue(Record brageRecord) {
+        return Optional.ofNullable(brageRecord.getEntityDescription().getPublicationInstance())
                    .map(PublicationInstanceMapper::generateEnd)
                    .orElse(null);
     }
 
-    private static String extractBeginValue(Record record) {
-        return Optional.ofNullable(record.getEntityDescription().getPublicationInstance())
+    private static String extractBeginValue(Record brageRecord) {
+        return Optional.ofNullable(brageRecord.getEntityDescription().getPublicationInstance())
                    .map(PublicationInstanceMapper::generateBegin)
                    .orElse(null);
     }
 
-    private static boolean isJournalArticle(Record record) {
-        return NvaType.JOURNAL_ARTICLE.getValue().equals(record.getType().getNva());
+    private static boolean isJournalArticle(Record brageRecord) {
+        return NvaType.JOURNAL_ARTICLE.getValue().equals(brageRecord.getType().getNva());
     }
 }

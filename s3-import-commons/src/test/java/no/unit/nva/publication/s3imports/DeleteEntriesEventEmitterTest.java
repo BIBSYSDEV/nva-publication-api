@@ -82,7 +82,7 @@ public class DeleteEntriesEventEmitterTest {
 
     @Test
     void shouldLogErrorWhenEmittingEventsFails() {
-        var appender = LogUtils.getTestingAppender(DeleteEntriesEventEmitter.class);
+        final var appender = LogUtils.getTestingAppender(DeleteEntriesEventEmitter.class);
         eventBridgeClient = new FakeEventBridgeClientThatFailsAllPutEvents(EVENT_BUS_NAME);
         handler = new DeleteEntriesEventEmitter(s3Client, eventBridgeClient);
         var identifiers = createRandomIdentifiers();

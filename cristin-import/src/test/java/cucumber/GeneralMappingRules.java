@@ -529,12 +529,12 @@ public class GeneralMappingRules {
     }
 
     @Given("that Cristin Result has eierkode_opprett {string}")
-    public void thatCristinResultHasEierkode_opprett(String eierkode_opprettet) {
-        scenarioContext.getCristinEntry().setOwnerCodeCreated(eierkode_opprettet);
+    public void thatCristinResultHasEierkodeOpprett(String eierkodeOpprettet) {
+        scenarioContext.getCristinEntry().setOwnerCodeCreated(eierkodeOpprettet);
     }
 
     @And("the Cristin Result has vitenskapeligarbeid_lokal:")
-    public void theCristinResultHasVitenskapeligarbeid_lokal(List<CristinLocale> cristinLocales) {
+    public void theCristinResultHasVitenskapeligarbeidLokal(List<CristinLocale> cristinLocales) {
         scenarioContext.getCristinEntry().setCristinLocales(cristinLocales);
     }
 
@@ -548,7 +548,7 @@ public class GeneralMappingRules {
 
     @And("the cristin has institusjonsnr_opprettet equal to {string}, and avdnr, undavdnr and gruppenr equal to "
          + "{string}")
-    public void theCristinHasInstitusjonsnr_opprettetEqualToAndAvdnrUndavdnrAndGruppenrEqualTo(
+    public void theCristinHasInstitusjonsnrOpprettetEqualToAndAvdnrUndavdnrAndGruppenrEqualTo(
         String institutionIdentifierCreated,
         String partsIdentifier) {
         scenarioContext.getCristinEntry().setInstitutionIdentifierCreated(institutionIdentifierCreated);
@@ -574,12 +574,12 @@ public class GeneralMappingRules {
     }
 
     @Given("the Cristin Result has the following varbeid_url present:")
-    public void theCristinResultHasTheFollowingVarbeid_urlPresent(List<CristinAssociatedUri> cristinAssociatedUrls) {
+    public void theCristinResultHasTheFollowingVarbeidUrlPresent(List<CristinAssociatedUri> cristinAssociatedUrls) {
         scenarioContext.getCristinEntry().setCristinAssociatedUris(cristinAssociatedUrls);
     }
 
     @Then("the NVA Resource should have the archive handle set to {string}")
-    public void theNVAResourceShouldHaveTheArchiveHandleSet(String expectedHandleString) {
+    public void theNvaResourceShouldHaveTheArchiveHandleSet(String expectedHandleString) {
         var publication = scenarioContext.getNvaEntry();
         var actualHandle = publication.getHandle();
         var expectedHandle = UriWrapper.fromUri(expectedHandleString).getUri();
@@ -587,7 +587,7 @@ public class GeneralMappingRules {
     }
 
     @Then("the NVA Resource should have the handle set to null")
-    public void theNVAResourceShouldHaveTheHandleSetToNull() {
+    public void theNvaResourceShouldHaveTheHandleSetToNull() {
         var actualHandle = scenarioContext.getNvaEntry().getHandle();
         assertThat(actualHandle, is(nullValue()));
     }

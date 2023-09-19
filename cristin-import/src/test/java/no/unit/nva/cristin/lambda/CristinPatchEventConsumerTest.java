@@ -16,7 +16,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.mockito.Mockito.mock;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
@@ -63,6 +62,28 @@ import org.junit.jupiter.api.Test;
 public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
 
     public static final Context CONTEXT = null;
+    public static final String PUBLICATION_IDENTIFIER = "0189e3caa462-68be1d7f-fc6e-4aa1-97fd-38be735d9cac";
+    public static final String CRISTIN_IDENTIFIER = "817503";
+    public static final String S3_URI = "s3://cristin-import-750639270376/"
+                                        + "PUBLICATIONS_THAT_ARE_PART_OF_OTHER_PUBLICATIONS/subset_august/"
+                                        + PUBLICATION_IDENTIFIER;
+
+    private static final String JSON_INPUT_TEMPLATE = """
+        {
+          "topic": "PublicationService.DataImport.DataEntry",
+          "subtopic": "PublicationService.CristinData.PatchEntry",
+          "fileUri": "%s",
+          "timestamp": "2023-08-28T12:13:29.252151Z",
+          "contents": {
+            "nvapublicationidentifier": "%s",
+            "partof": {
+              "cristinid": "%s"
+            }
+          }
+        }
+        """;
+    private static final String JSON_INPUT = String.format(JSON_INPUT_TEMPLATE, S3_URI, PUBLICATION_IDENTIFIER,
+                                                           CRISTIN_IDENTIFIER);
 
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
@@ -71,18 +92,6 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
 
     private ResourceService resourceService;
 
-    private final String jsonInput = "{\n" +
-        "    \"topic\": \"PublicationService.DataImport.DataEntry\",\n" +
-        "    \"subtopic\": \"PublicationService.CristinData.PatchEntry\",\n" +
-        "    \"fileUri\": \"s3://cristin-import-750639270376/PUBLICATIONS_THAT_ARE_PART_OF_OTHER_PUBLICATIONS/subset_august/0189e3caa462-68be1d7f-fc6e-4aa1-97fd-38be735d9cac\",\n" +
-        "    \"timestamp\": \"2023-08-28T12:13:29.252151Z\",\n" +
-        "    \"contents\": {\n" +
-        "        \"nvapublicationidentifier\": \"0189e3caa462-68be1d7f-fc6e-4aa1-97fd-38be735d9cac\",\n" +
-        "        \"partof\": {\n" +
-        "            \"cristinid\": \"817503\"\n" +
-        "        }\n" +
-        "    }\n" +
-        "}";
 
     private static void removePartOfInPublicationContext(Publication publication) {
         if (publication.getEntityDescription().getReference().getPublicationContext() instanceof Anthology) {
@@ -102,12 +111,12 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldParseFileContents() {
-        var fileContents = FileContentsEvent.fromJson(jsonInput, NvaPublicationPartOfCristinPublication.class);
+        var fileContents = FileContentsEvent.fromJson(JSON_INPUT, NvaPublicationPartOfCristinPublication.class);
         var contents = fileContents.getContents();
         assertThat(contents.getNvaPublicationIdentifier(), is(notNullValue()));
-        assertThat(contents.getNvaPublicationIdentifier(), is(equalTo("0189e3caa462-68be1d7f-fc6e-4aa1-97fd-38be735d9cac")));
+        assertThat(contents.getNvaPublicationIdentifier(), is(equalTo(PUBLICATION_IDENTIFIER)));
         assertThat(contents.getPartOf(), is(notNullValue()));
-        assertThat(contents.getPartOf().getCristinId(), is(equalTo("817503")));
+        assertThat(contents.getPartOf().getCristinId(), is(equalTo(CRISTIN_IDENTIFIER)));
     }
 
     @Test
@@ -184,12 +193,13 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         var eventReference = createInputEventForFile(fileUri);
         var sqsEvent = createSqsEvent(eventReference);
         handler.handleRequest(sqsEvent, CONTEXT);
-        var actualUpdatedChildePublication = resourceService.getPublicationByIdentifier(childPublication.getIdentifier());
-        assertThat(actualUpdatedChildePublication.getEntityDescription().getReference().getPublicationContext(), hasProperty(
-            "id", is(equalTo(expectedChildPartOfURI))));
+        var actualUpdatedChildPublication =
+            resourceService.getPublicationByIdentifier(childPublication.getIdentifier());
+        assertThat(actualUpdatedChildPublication.getEntityDescription().getReference().getPublicationContext(),
+                   hasProperty("id", is(equalTo(expectedChildPartOfURI))));
 
-        var actualRepport = extractSuccessReportFromS3Client(eventReference, childPublication);
-        assertThat(actualRepport, containsString(parentPublication.getIdentifier().toString()));
+        var actualReport = extractSuccessReportFromS3Client(eventReference, childPublication);
+        assertThat(actualReport, containsString(parentPublication.getIdentifier().toString()));
     }
 
     @Test

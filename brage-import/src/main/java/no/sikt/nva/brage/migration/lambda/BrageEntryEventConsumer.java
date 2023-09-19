@@ -214,6 +214,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         try {
             Thread.sleep(sleepTime);
         } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
             throw new RuntimeException(exception);
         }
     }
@@ -263,8 +264,8 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         var fileUri = UriWrapper.fromUri(extractObjectKey(event));
         var timestamp = timePath(event);
         return UriWrapper.fromUri(ERROR_BUCKET_PATH + PATH_SEPERATOR
-                                  + timestamp + PATH_SEPERATOR + exception.getClass().getSimpleName() +
-                                  PATH_SEPERATOR + fileUri.getLastPathElement());
+                                  + timestamp + PATH_SEPERATOR + exception.getClass().getSimpleName()
+                                  + PATH_SEPERATOR + fileUri.getLastPathElement());
     }
 
     private String timePath(S3Event event) {
@@ -273,13 +274,13 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
     private Publication parseBrageRecord(S3Event event)
         throws JsonProcessingException, InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        var record = getBrageRecordFromS3(event);
-        return convertBrageRecordToNvaPublication(record);
+        var brageRecord = getBrageRecordFromS3(event);
+        return convertBrageRecordToNvaPublication(brageRecord);
     }
 
-    private Publication convertBrageRecordToNvaPublication(Record record)
+    private Publication convertBrageRecordToNvaPublication(Record brageRecord)
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        return BrageNvaMapper.toNvaPublication(record);
+        return BrageNvaMapper.toNvaPublication(brageRecord);
     }
 
     private Record getBrageRecordFromS3(S3Event event) throws JsonProcessingException {

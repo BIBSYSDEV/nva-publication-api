@@ -48,7 +48,9 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
         this(defaultS3Client(), defaultEventBridgeClient(), new Environment().readEnv(OUTPUT_EVENT_TOPIC));
     }
 
-    protected DynamodbStreamToEventBridgeHandler(S3Client s3Client, EventBridgeClient eventBridgeClient, String dynamoDbUpdateEventTopic) {
+    protected DynamodbStreamToEventBridgeHandler(S3Client s3Client,
+                                                 EventBridgeClient eventBridgeClient,
+                                                 String dynamoDbUpdateEventTopic) {
         this.s3Client = s3Client;
         this.eventBridgeClient = eventBridgeClient;
         this.dynamoDbUpdateEventTopic = dynamoDbUpdateEventTopic;

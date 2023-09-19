@@ -3,10 +3,9 @@ package no.sikt.nva.scopus.conversion;
 import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -24,33 +23,36 @@ import no.sikt.nva.scopus.conversion.model.pia.Author;
 import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UriWrapper;
 import nva.commons.secrets.SecretsReader;
-import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class PiaConnection {
-
-    public static final String CRISTIN_PERSON_PATH = "/cristin/person/";
+    public static final String CRISTIN_PATH = "cristin";
+    public static final String PERSON_PATH = "person";
     public static final int FALSE_IN_PIA_INTEGER = 0;
     public static final String PIA_REST_API_ENV_KEY = "PIA_REST_API";
     public static final String API_HOST = "API_HOST";
     public static final String PIA_USERNAME_KEY = "PIA_USERNAME_KEY";
     public static final String PIA_PASSWORD_KEY = "PIA_PASSWORD_KEY";
     public static final String PIA_SECRETS_NAME_ENV_KEY = "PIA_SECRETS_NAME";
-    public static final String PIA_AUTHORS_PATH = "/sentralimport/authors";
-    public static final String PIA_ORGS_PATH = "/sentralimport/orgs/matches";
+    public static final String PIA_PATH = "sentralimport";
+    public static final String PIA_AUTHORS_PATH = "authors";
+    public static final String PIA_ORGS_PATH = "orgs";
+    public static final String PIA_MATCHES_PATH = "matches";
     public static final String PIA_AUTHOR_ID_QUERY_PARAM = "author_id";
     public static final String PIA_AFFILIATION_ID_QUERY_PARAM = "affiliation_id";
     public static final String SCOPUS = "SCOPUS:";
-    public static final String HTTPS_SCHEME = "https";
-    public static final String CRISTIN_ORGANIZATION_PATH = "cristin/organization/";
     public static final String PIA_RESPONSE_ERROR = "Pia responded with status code";
     private static final String COULD_NOT_GET_ERROR_MESSAGE = "Could not get response from Pia for scopus id ";
     private static final String USERNAME_PASSWORD_DELIMITER = ":";
     private static final String AUTHORIZATION = "Authorization";
     private static final String BASIC_AUTHORIZATION = "Basic %s";
     private static final Logger logger = LoggerFactory.getLogger(PiaConnection.class);
+    public static final String HTTPS_SCHEME = "https://";
+    private static final String ORGANIZATION_PATH = "organization";
+    public static final ObjectMapper DTO_OBJECT_MAPPER = JsonUtils.dtoObjectMapper;
     private final HttpClient httpClient;
     private final transient String piaAuthorization;
     private final String piaHost;
@@ -72,19 +74,20 @@ public class PiaConnection {
              new Environment());
     }
 
-    public URI getCristinPersonIdentifier(String scopusAuthorIdentifier) {
+    public Optional<URI> getCristinPersonIdentifier(String scopusAuthorIdentifier) {
         return attempt(() -> getPiaAuthorResponse(scopusAuthorIdentifier))
                    .map(this::getCristinNumber)
                    .map(Optional::orElseThrow)
                    .map(this::createCristinUriFromCristinNumber)
-                   .orElse(failure -> null);
+                   .toOptional();
     }
 
-    public URI getCristinOrganizationIdentifier(String scopusAffiliationIdentifier) {
+    public Optional<URI> getCristinOrganizationIdentifier(String scopusAffiliationIdentifier) {
         return attempt(() -> fetchAffiliationList(scopusAffiliationIdentifier))
                    .map(this::selectOneAffiliation)
                    .map(this::createCristinUriFromCristinOrganization)
-                   .orElse(failure -> null);
+                   .map(Optional::get)
+                   .toOptional();
     }
 
     @JacocoGenerated
@@ -103,19 +106,18 @@ public class PiaConnection {
         return String.format(BASIC_AUTHORIZATION, Base64.getEncoder().encodeToString(loginPassword.getBytes()));
     }
 
-    private URI createCristinUriFromCristinOrganization(Affiliation affiliation) {
-        return nonNull(affiliation.getUnitIdentifier())
-                   ? constructUri(affiliation)
-                   : null;
+    private Optional<URI> createCristinUriFromCristinOrganization(Affiliation affiliation) {
+        return Optional.ofNullable(affiliation)
+            .filter(input -> nonNull(input.getUnitIdentifier()))
+            .map(this::constructUri);
     }
 
     private URI constructUri(Affiliation affiliation) {
-        return attempt(() -> new URIBuilder()
-                                 .setHost(cristinProxyHost)
-                                 .setPath(CRISTIN_ORGANIZATION_PATH + affiliation.getUnitIdentifier())
-                                 .setScheme(HTTPS_SCHEME)
-                                 .build())
-                   .orElseThrow();
+        return createUriWrapper(cristinProxyHost)
+                   .addChild(CRISTIN_PATH)
+                   .addChild(ORGANIZATION_PATH)
+                   .addChild(affiliation.getUnitIdentifier())
+                   .getUri();
     }
 
     private Affiliation selectOneAffiliation(List<Affiliation> affiliations) {
@@ -138,7 +140,7 @@ public class PiaConnection {
     }
 
     private List<Affiliation> fetchAffiliationList(String scopusAffiliationIdentifier) {
-        return attempt(() -> cosntructAffiliationUri(scopusAffiliationIdentifier))
+        return attempt(() -> constructAffiliationUri(scopusAffiliationIdentifier))
                    .map(this::getResponse)
                    .map(this::getBodyFromResponse)
                    .map(this::convertToAffiliations)
@@ -146,22 +148,19 @@ public class PiaConnection {
     }
 
     private List<Affiliation> convertToAffiliations(String body) throws JsonProcessingException {
-        return Arrays.asList(JsonUtils.dtoObjectMapper.readValue(body, Affiliation[].class));
+        return Arrays.asList(DTO_OBJECT_MAPPER.readValue(body, Affiliation[].class));
     }
 
     private URI createCristinUriFromCristinNumber(Integer cristinNumber) {
-        return nonNull(cristinNumber)
-                   ? constructUri(cristinNumber)
-                   : null;
+        return createUriWrapper(cristinProxyHost)
+                      .addChild(CRISTIN_PATH)
+                      .addChild(PERSON_PATH)
+                      .addChild(String.valueOf(cristinNumber))
+                      .getUri();
     }
 
-    private URI constructUri(Integer cristinNumber) {
-        return attempt(() -> new URIBuilder()
-                                 .setHost(cristinProxyHost)
-                                 .setPath(CRISTIN_PERSON_PATH + cristinNumber)
-                                 .setScheme(HTTPS_SCHEME)
-                                 .build())
-                   .orElseThrow();
+    private UriWrapper createUriWrapper(String hostString) {
+        return UriWrapper.fromUri(PiaConnection.HTTPS_SCHEME + hostString);
     }
 
     private HttpRequest createRequest(URI uri) {
@@ -173,7 +172,7 @@ public class PiaConnection {
     }
 
     private String getPiaJsonAsString(String scopusId) {
-        var uri = cosntructAuthorUri(scopusId);
+        var uri = constructAuthorUri(scopusId);
         return attempt(() -> getResponse(uri))
                    .map(this::getBodyFromResponse)
                    .orElseThrow(fail ->
@@ -181,30 +180,27 @@ public class PiaConnection {
                                                                      COULD_NOT_GET_ERROR_MESSAGE + scopusId));
     }
 
-    private URI cosntructAuthorUri(String scopusAuthorId) {
-        return attempt(() -> new URIBuilder()
-                                 .setHost(piaHost)
-                                 .setPath(PIA_AUTHORS_PATH)
-                                 .setParameter(PIA_AUTHOR_ID_QUERY_PARAM, SCOPUS + scopusAuthorId)
-                                 .setScheme(HTTPS_SCHEME)
-                                 .build())
-                   .orElseThrow();
+    private URI constructAuthorUri(String scopusAuthorId) {
+        return createUriWrapper(piaHost)
+                   .addChild(PIA_PATH)
+                   .addChild(PIA_AUTHORS_PATH)
+                   .addQueryParameter(PIA_AUTHOR_ID_QUERY_PARAM, SCOPUS + scopusAuthorId)
+                   .getUri();
     }
 
-    private URI cosntructAffiliationUri(String scopusAffiliationId) {
-        return attempt(() -> new URIBuilder()
-                                 .setHost(piaHost)
-                                 .setPath(PIA_ORGS_PATH)
-                                 .setParameter(PIA_AFFILIATION_ID_QUERY_PARAM, SCOPUS + scopusAffiliationId)
-                                 .setScheme(HTTPS_SCHEME)
-                                 .build())
-                   .orElseThrow();
+    private URI constructAffiliationUri(String scopusAffiliationId) {
+        return createUriWrapper(piaHost)
+                    .addChild(PIA_PATH)
+                    .addChild(PIA_ORGS_PATH)
+                    .addChild(PIA_MATCHES_PATH)
+                    .addQueryParameter(PIA_AFFILIATION_ID_QUERY_PARAM, SCOPUS + scopusAffiliationId)
+                    .getUri();
     }
 
     private RuntimeException logExceptionAndThrowRuntimeError(Exception exception, String message) {
         logger.info(message);
-        return exception instanceof RuntimeException
-                   ? (RuntimeException) exception
+        return exception instanceof RuntimeException runtimeException
+                   ? runtimeException
                    : new RuntimeException(exception);
     }
 
@@ -222,15 +218,15 @@ public class PiaConnection {
 
     private List<Author> getPiaAuthorResponse(String scopusID) {
         var piaResponse = getPiaJsonAsString(scopusID);
-        Type listType = new TypeToken<ArrayList<Author>>() {
-        }.getType();
-        var gson = new Gson();
-        return gson.fromJson(piaResponse, listType);
+        var type = new TypeReference<ArrayList<Author>>(){};
+        return attempt(() -> DTO_OBJECT_MAPPER.readValue(piaResponse, type)).orElseThrow();
     }
 
     private Optional<Integer> getCristinNumber(List<Author> authors) {
-        var optionalAuthWithCristinId = authors.stream().filter(this::hasCristinId).findFirst();
-        return optionalAuthWithCristinId.map(Author::getCristinId);
+        return authors.stream()
+                   .filter(this::hasCristinId)
+                   .findFirst()
+                   .map(Author::getCristinId);
     }
 
     private boolean hasCristinId(Author author) {
