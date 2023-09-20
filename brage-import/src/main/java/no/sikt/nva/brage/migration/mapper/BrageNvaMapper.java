@@ -16,6 +16,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.lambda.MappingConstants;
 import no.sikt.nva.brage.migration.lambda.MissingFieldsException;
 import no.sikt.nva.brage.migration.record.Affiliation;
@@ -75,12 +76,18 @@ public final class BrageNvaMapper {
                               .withAdditionalIdentifiers(extractCristinIdentifier(brageRecord))
                               .withRightsHolder(brageRecord.getRightsholder())
                               .build();
-        assertPublicationDoesNotHaveEmptyFields(publication);
+        if (!isCristinRecord(brageRecord)) {
+            assertPublicationDoesNotHaveEmptyFields(publication);
+        }
         return publication;
     }
 
-    public static String extractDescription(Record brageRecord) {
-        return Optional.ofNullable(brageRecord.getEntityDescription().getDescriptions())
+    private static boolean isCristinRecord(Record record) {
+        return NvaType.CRISTIN_RECORD.getValue().equals(record.getType().getNva());
+    }
+
+    public static String extractDescription(Record record) {
+        return Optional.ofNullable(record.getEntityDescription().getDescriptions())
                    .map(descriptions -> descriptions.isEmpty() ? null : mergeStringsByLineBreak(descriptions))
                    .orElse(null);
     }

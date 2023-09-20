@@ -100,18 +100,25 @@ public final class PublicationContextMapper {
         }
         if (isReaderOpinion(brageRecord)) {
             return buildPublicationContextWhenReaderOpinion();
+        }
+        if (isCristinRecord(brageRecord)) {
+            return null;
         } else {
             throw new PublicationContextException(NOT_SUPPORTED_TYPE + brageRecord.getType().getNva());
         }
     }
 
-    private static boolean shouldBeMappedToBook(Record brageRecord) {
-        return isBook(brageRecord)
-               || isScientificMonograph(brageRecord)
-               || isOtherStudentWork(brageRecord)
-               || isStudentPaper(brageRecord)
-               || isAnthology(brageRecord)
-               || isTextbook(brageRecord);
+    public static boolean isCristinRecord(Record record) {
+        return NvaType.CRISTIN_RECORD.getValue().equals(record.getType().getNva());
+    }
+
+    private static boolean shouldBeMappedToBook(Record record) {
+        return isBook(record)
+               || isScientificMonograph(record)
+               || isOtherStudentWork(record)
+               || isStudentPaper(record)
+               || isAnthology(record)
+               || isTextbook(record);
     }
 
     private static PublicationContext buildPublicationContextWhenReaderOpinion() throws InvalidIssnException {
