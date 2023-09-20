@@ -1797,7 +1797,6 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           BATCH_EMISSION_INTERVAL_MILLIS: 0
           DOMAIN_NAME: !Ref ApiDomain
-          SHOULD_CREATE_CONTRIBUTOR_ID: false
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
       Events:
         SqsEvent:

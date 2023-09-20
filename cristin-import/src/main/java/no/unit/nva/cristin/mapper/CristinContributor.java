@@ -4,7 +4,6 @@ import static java.util.Objects.isNull;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.CRISTIN_PATH;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.PERSON_PATH;
-import static no.unit.nva.cristin.lambda.constants.MappingConstants.SHOULD_CREATE_CONTRIBUTOR_ID;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
@@ -142,13 +141,11 @@ public class CristinContributor implements Comparable<CristinContributor> {
     }
 
     private URI constructId() {
-        return SHOULD_CREATE_CONTRIBUTOR_ID
-                   ? UriWrapper
-                         .fromUri(NVA_API_DOMAIN)
-                         .addChild(CRISTIN_PATH)
-                         .addChild(PERSON_PATH)
-                         .addChild(identifier.toString())
-                         .getUri()
-                   : null;
+        return UriWrapper
+            .fromUri(NVA_API_DOMAIN)
+            .addChild(CRISTIN_PATH)
+            .addChild(PERSON_PATH)
+            .addChild(identifier.toString())
+            .getUri();
     }
 }
