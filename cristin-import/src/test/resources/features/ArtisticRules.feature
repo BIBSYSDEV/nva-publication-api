@@ -11,7 +11,7 @@ Feature: Rules that apply for Artistic results
       | FILMPRODUKSJON    | MovingPicture    |
       | MUSIKK_FRAMFORIN  | MusicPerformance |
 #      | KUNST_OG_BILDE    | VisualArts             |
-#      | MUSIKK_KOMP       | MusicalWork            |
+      | MUSIKK_KOMP       | MusicPerformance |
 #      | ARKITEKTTEGNING   | Architecture           |
 #      | TEATERPRODUKSJON  | PerformingArts         |
 
