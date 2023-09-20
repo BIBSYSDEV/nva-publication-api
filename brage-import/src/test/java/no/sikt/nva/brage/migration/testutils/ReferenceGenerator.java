@@ -316,6 +316,13 @@ public final class ReferenceGenerator {
                            .withDoi(builder.getDoi())
                            .build();
             }
+            if (NvaType.CRISTIN_RECORD.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublicationInstance(null)
+                           .withPublishingContext(null)
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
             return new Reference.Builder().build();
         } catch (Exception e) {
             return new Reference.Builder().build();

@@ -4,6 +4,7 @@ import static no.sikt.nva.brage.migration.mapper.BrageNvaMapper.extractDescripti
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isBook;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isChapter;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isConferencePoster;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isCristinRecord;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isDataset;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isDesignProduct;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isFeatureArticle;
@@ -164,6 +165,9 @@ public final class PublicationInstanceMapper {
         }
         if (isTextbook(brageRecord)) {
             return buildPublicationInstanceWhenTextbook(brageRecord);
+        }
+        if (isCristinRecord(brageRecord)) {
+            return null;
         } else {
             return buildPublicationInstanceWhenReport(brageRecord);
         }
