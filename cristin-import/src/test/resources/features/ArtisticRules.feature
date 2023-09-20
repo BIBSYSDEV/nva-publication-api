@@ -53,23 +53,33 @@ Feature: Rules that apply for Artistic results
     And the performance type is equal to "KONSERT"
     And the performance is a premiere
     And the performance has a duration of "35" minutes
-    And the performance has an event start of "2018-02-03T00:00:00", title "Celebratory Concert of Swiss Philosophy Society", place equal to "Göttingen"
+    And the performance has an event with values:
+      | start               | title                                           | place     |
+      | 2018-02-03T00:00:00 | Celebratory Concert of Swiss Philosophy Society | Göttingen |
     And the performance has an original composer "Dániel Péter Biró"
     When the Cristin Result is converted to an NVA Resource
     Then the Nva Resource has a Concert announcements
-    And the concert has a place "Göttingen", date "2018-02-03T00:00:00", and duration "35" minutes
-    And the concert has a program with title "Celebratory Concert of Swiss Philosophy Society", composer "Dániel Péter Biró", and is a premiere
+    And the concert has a place "Göttingen"
+    And the concert has a date "2018-02-03T00:00:00"
+    And the concert has a duration of "35" minutes
+    And the concert has a program with title "Celebratory Concert of Swiss Philosophy Society"
+    And the concert has a program with composer "Dániel Péter Biró"
+    And the concert has a program that is a premiere
 
   Scenario: Cristin musical performance that is not a concert should be mapped to OtherPerformance
     Given a valid Cristin Result with secondary category "MUSIKK_FRAMFORIN"
     And the performance type is equal to "null"
     And the performance has a duration of "35" minutes
-    And the performance has an event start of "2018-02-03T00:00:00", title "Celebratory Concert of Swiss Philosophy Society", place equal to "Göttingen"
+    And the performance has an event with values:
+      | start               | title                                           | place     |
+      | 2018-02-03T00:00:00 | Celebratory Concert of Swiss Philosophy Society | Göttingen |
     And the performance has an original composer "Dániel Péter Biró"
     When the Cristin Result is converted to an NVA Resource
     Then the Nva Resource has a OtherPerformance
-    And the OtherPerformance has a place "Göttingen" and duration "35" minutes
-    And the OtherPerformance has a musicalWorkPerformance with title "Celebratory Concert of Swiss Philosophy Society", composer "Dániel Péter Biró"
+    And the OtherPerformance has a place "Göttingen"
+    And the OtherPerformance has a duration "35" minutes
+    And the OtherPerformance has a musicalWorkPerformance with title "Celebratory Concert of Swiss Philosophy Society"
+    And the OtherPerformance has a composer "Dániel Péter Biró"
 
   Scenario: Cristin musical performance that contains ISRC should be mapped to AudioVisualPublication
     Given a valid Cristin Result with secondary category "MUSIKK_FRAMFORIN"
@@ -91,19 +101,19 @@ Feature: Rules that apply for Artistic results
     Then the Nva resource has a AudioVisualPublication
     And the AudioVisualPublication has a mediaSubType equalTo "<mediaSubType>"
     Examples:
-      | medium            | mediaSubType    |
-      | cd-inpsilling     | CompactDisc     |
-      | plateinnspilling  | Vinyl           |
-      | digitalinspilling | DigitalFile     |
-      | Strømming         | Streaming       |
-      | album             | CompactDisc     |
-      | LP-inspilling     | Vinyl           |
-      | mp3               | DigitalFile     |
-      | spotify           | Streaming       |
-      | stream            | Streaming       |
-      | YouTube           | Streaming       |
-      | vimeo             | Streaming       |
-      | Lydfil            | DigitalFile     |
+      | medium            | mediaSubType |
+      | cd-inpsilling     | CompactDisc  |
+      | plateinnspilling  | Vinyl        |
+      | digitalinspilling | DigitalFile  |
+      | Strømming         | Streaming    |
+      | album             | CompactDisc  |
+      | LP-inspilling     | Vinyl        |
+      | mp3               | DigitalFile  |
+      | spotify           | Streaming    |
+      | stream            | Streaming    |
+      | YouTube           | Streaming    |
+      | vimeo             | Streaming    |
+      | Lydfil            | DigitalFile  |
 
 
   Scenario: Cristin musical performance that contains an invalid ISRC should throw an exception

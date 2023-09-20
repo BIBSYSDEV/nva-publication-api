@@ -96,7 +96,8 @@ public class ArtisticFeatures {
             scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
         assertThat(publicationInstance, is(instanceOf(MovingPicture.class)));
         var movingPicture = (MovingPicture) publicationInstance;
-        assertThat(movingPicture.getSubtype().getType().getType(), is(equalTo(movingPictureSubtypeEnum)));
+        assertThat(movingPicture.getSubtype().getType().getType(),
+            is(equalTo(movingPictureSubtypeEnum)));
     }
 
     @And("the cristin result lack the duration in both metadata fields")
@@ -147,40 +148,53 @@ public class ArtisticFeatures {
         assertThat(musicalWorkPerformance.getManifestations().get(0), instanceOf(Concert.class));
     }
 
-    @And("the concert has a place {string}, date {string}, and duration {string} minutes")
-    public void theConcertHasAPlaceDateAndDurationMinutes(String place, String time, String duration) {
-        var musicalWorkPerformance = extractMusicPerformance();
-        var concert = (Concert) musicalWorkPerformance.getManifestations().get(0);
+    @And("the concert has a place {string}")
+    public void theConcertHasAPlaceDateAndDurationMinutes(String place) {
+        var concert = getConcert();
         var expectedPlace = new UnconfirmedPlace(place, null);
         assertThat(concert.getPlace(), is(equalTo(expectedPlace)));
-        var expectedTime = new Instant(Time.convertToInstant(time));
-        var actualTime = concert.getTime();
-        assertThat(actualTime, instanceOf(Instant.class));
-        assertThat(actualTime, is(equalTo(expectedTime)));
-        assertThat(concert.getExtent(), is(equalTo(duration)));
     }
 
-    @And("the concert has a program with title {string}, composer {string}, and is a premiere")
-    public void theConcertHasAProgramWithTitleComposerAndIsAPremiere(String title, String composer) {
-        var musicalWorkPerformance = extractMusicPerformance();
-        var concert = (Concert) musicalWorkPerformance.getManifestations().get(0);
+    @And("the concert has a duration of {string} minutes")
+    public void theConcertHasADurationOfMinutes(String expectedDuration) {
+        var concert = getConcert();
+        assertThat(concert.getExtent(), is(equalTo(expectedDuration)));
+    }
+
+
+    @And("the concert has a date {string}")
+    public void theConcertHasADate(String time) {
+        var expectedTime = new Instant(Time.convertToInstant(time));
+        var concert = getConcert();
+        assertThat(concert.getTime(), instanceOf(Instant.class));
+        assertThat(concert.getTime(), is(equalTo(expectedTime)));
+    }
+
+    @And("the concert has a program with title {string}")
+    public void theConcertHasAProgramWithTitleComposerAndIsAPremiere(String title) {
+        var concert = getConcert();
         assertThat(concert.getConcertProgramme(), hasSize(1));
         var concertProgramme = concert.getConcertProgramme().get(0);
-        assertThat(concertProgramme.isPremiere(), is(equalTo(true)));
         assertThat(concertProgramme.getTitle(), is(equalTo(title)));
-        assertThat(concertProgramme.getComposer(), is(equalTo(composer)));
     }
 
-    @And("the performance has an event start of {string}, title {string}, place equal to {string}")
-    public void thePerformanceHasAnEventStartOfEventEndOfTitlePlaceEqualTo(String start, String title, String place) {
-        scenarioContext.getCristinEntry()
-            .getCristinArtisticProduction()
-            .setEvent(ArtisticEvent
-                .builder()
-                .withDateFrom(start)
-                .withTitle(title)
-                .withPlace(place)
-                .build());
+    @And("the concert has a program with composer {string}")
+    public void theConcertHasAProgramWithComposer(String expectedComposer) {
+        var concert = getConcert();
+        var concertProgramme = concert.getConcertProgramme().get(0);
+        assertThat(concertProgramme.getComposer(), is(equalTo(expectedComposer)));
+    }
+
+    @And("the concert has a program that is a premiere")
+    public void theConcertHasAProgramThatIsAPremiere() {
+        var concert = getConcert();
+        var concertProgramme = concert.getConcertProgramme().get(0);
+        assertThat(concertProgramme.isPremiere(), is(equalTo(true)));
+    }
+
+    @And("the performance has an event with values:")
+    public void thePerformanceHasAnEventWithValues(ArtisticEvent artisticEvent) {
+        scenarioContext.getCristinEntry().getCristinArtisticProduction().setEvent(artisticEvent);
     }
 
     @Then("the Nva Resource has a OtherPerformance")
@@ -190,24 +204,29 @@ public class ArtisticFeatures {
         assertThat(musicalWorkPerformance.getManifestations().get(0), instanceOf(OtherPerformance.class));
     }
 
-    @And("the OtherPerformance has a place {string} and duration {string} minutes")
-    public void theOtherPerformanceHasAPlaceDateAndDurationMinutes(String place, String duration) {
-        var musicalWorkPerformance = extractMusicPerformance();
-        var otherPerformance = (OtherPerformance) musicalWorkPerformance.getManifestations().get(0);
+    @And("the OtherPerformance has a place {string}")
+    public void theOtherPerformanceHasAPlaceDateAndDurationMinutes(String place) {
+        var otherPerformance = getOtherPerformance();
         var expectedPlace = new UnconfirmedPlace(place, null);
         assertThat(otherPerformance.getPlace(), is(equalTo(expectedPlace)));
-        assertThat(otherPerformance.getExtent(), is(equalTo(duration)));
     }
 
-    @And("the OtherPerformance has a musicalWorkPerformance with title {string}, composer {string}")
-    public void theOtherPerformanceHasAMusicalWPeWithTitleComposerThatIsAPremiere(String title, String composer) {
-        var musicalWorkPerformance = extractMusicPerformance();
-        var otherPerformance = (OtherPerformance) musicalWorkPerformance.getManifestations().get(0);
-        assertThat(otherPerformance.getMusicalWorks(), hasSize(1));
-        assertThat(otherPerformance.getMusicalWorks().get(0), instanceOf(MusicalWork.class));
-        var program = (MusicalWork) otherPerformance.getMusicalWorks().get(0);
-        assertThat(program.getComposer(), is(equalTo(composer)));
+    @And("the OtherPerformance has a duration {string} minutes")
+    public void theOtherPerformanceHasADurationMinutes(String expectedDurationInMinutes) {
+        var otherPerformance = getOtherPerformance();
+        assertThat(otherPerformance.getExtent(), is(equalTo(expectedDurationInMinutes)));
+    }
+
+    @And("the OtherPerformance has a musicalWorkPerformance with title {string}")
+    public void theOtherPerformanceHasAMusicalWPeWithTitleComposerThatIsAPremiere(String title) {
+        var program = getMusicalWork();
         assertThat(program.getTitle(), is(equalTo(title)));
+    }
+
+    @And("the OtherPerformance has a composer {string}")
+    public void theOtherPerformanceHasAComposer(String expectedComposer) {
+        var program = getMusicalWork();
+        assertThat(program.getComposer(), is(equalTo(expectedComposer)));
     }
 
     @And("the performance has a ISRC equal to {string}")
@@ -228,7 +247,8 @@ public class ArtisticFeatures {
     @Then("the Nva resource has a AudioVisualPublication")
     public void theNvaResourceHasAAudioVisualPublication() {
         var musicalWorkPerformance = extractMusicPerformance();
-        assertThat(musicalWorkPerformance.getManifestations(), hasItem(instanceOf(AudioVisualPublication.class)));
+        assertThat(musicalWorkPerformance.getManifestations(),
+            hasItem(instanceOf(AudioVisualPublication.class)));
     }
 
     @And("the performance has a ISMN equal to {string}")
@@ -295,6 +315,12 @@ public class ArtisticFeatures {
 
     }
 
+    private OtherPerformance getOtherPerformance() {
+        var musicalWorkPerformance = extractMusicPerformance();
+        var otherPerformance = (OtherPerformance) musicalWorkPerformance.getManifestations().get(0);
+        return otherPerformance;
+    }
+
 
     private AudioVisualPublication getAudioVisualPublication() {
         var musicalWorkPerformance = extractMusicPerformance();
@@ -333,5 +359,18 @@ public class ArtisticFeatures {
             .getEntityDescription()
             .getReference()
             .getPublicationInstance();
+    }
+
+    private MusicalWork getMusicalWork() {
+        var otherPerformance = getOtherPerformance();
+        assertThat(otherPerformance.getMusicalWorks(), hasSize(1));
+        assertThat(otherPerformance.getMusicalWorks().get(0), instanceOf(MusicalWork.class));
+        var program = (MusicalWork) otherPerformance.getMusicalWorks().get(0);
+        return program;
+    }
+
+    private Concert getConcert() {
+        var musicalWorkPerformance = extractMusicPerformance();
+        return (Concert) musicalWorkPerformance.getManifestations().get(0);
     }
 }
