@@ -301,7 +301,7 @@ public class ArtisticFeatures {
 
 
     @And("the AudioVisualPublication has ISRC equalTo {string},")
-    public void theAudioVisualPublicationHasISRCEqualTo(String expectedIsrc) throws InvalidIsrcException {
+    public void theAudioVisualPublicationHasIsrcEqualTo(String expectedIsrc) throws InvalidIsrcException {
         var audioVisualManifestation = getAudioVisualPublication();
         assertThat(audioVisualManifestation.getIsrc(),
             is(equalTo(new Isrc(expectedIsrc))));
