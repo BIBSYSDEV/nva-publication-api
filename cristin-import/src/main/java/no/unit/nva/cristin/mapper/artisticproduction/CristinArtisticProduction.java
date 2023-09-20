@@ -199,13 +199,13 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     }
 
     private Optional<AudioVisualPublication> extractAudioVisualPublication() {
-        if (StringUtils.isNotEmpty(isrc) || hasAudioVisialMedium()) {
+        if (StringUtils.isNotEmpty(isrc) || hasAudioVisualMedium()) {
             return Optional.of(createAudioVisualPublication());
         }
         return Optional.empty();
     }
 
-    private boolean hasAudioVisialMedium() {
+    private boolean hasAudioVisualMedium() {
         return nonNull(medium);
     }
 

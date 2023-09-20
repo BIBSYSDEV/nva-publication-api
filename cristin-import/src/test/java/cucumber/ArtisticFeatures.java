@@ -231,26 +231,6 @@ public class ArtisticFeatures {
         assertThat(musicalWorkPerformance.getManifestations(), hasItem(instanceOf(AudioVisualPublication.class)));
     }
 
-    @And("the AudioVisualPublication has a mediaSubType equalTo {string},"
-        + " ISRC equalTo {string}, unconfirmedPublisher name equal to {string}")
-    public void theAudiovisualPublicationHasAMediaSubTypeEqualToExpectedValues(
-        String expectedMediaSubType,
-        String expectedIsrc,
-        String expectedUnconfirmedPublisher) throws InvalidIsrcException {
-        var musicalWorkPerformance = extractMusicPerformance();
-        var audioVisualManifestationOptional = musicalWorkPerformance
-            .getManifestations()
-            .stream()
-            .filter(manifestation -> manifestation instanceof AudioVisualPublication)
-            .findFirst();
-        assertThat(audioVisualManifestationOptional.isPresent(), is(equalTo(true)));
-        var audioVisualManifestation = (AudioVisualPublication) audioVisualManifestationOptional.get();
-        assertThat(audioVisualManifestation.getMediaType().getType().getValue(), is(equalTo(expectedMediaSubType)));
-        assertThat(audioVisualManifestation.getIsrc(), is(equalTo(new Isrc(expectedIsrc))));
-        var actualPublisher = (UnconfirmedPublisher) audioVisualManifestation.getPublisher();
-        assertThat(actualPublisher.getName(), is(equalTo(expectedUnconfirmedPublisher)));
-    }
-
     @And("the performance has a ISMN equal to {string}")
     public void thePerformanceHasAIsmnEqualTo(String ismn) {
         scenarioContext.getCristinEntry().getCristinArtisticProduction().setIsmn(ismn);
@@ -292,6 +272,41 @@ public class ArtisticFeatures {
         assertThat(musicScore.getEnsemble(), is(equalTo(ensemble)));
     }
 
+    @And("the AudioVisualPublication has a mediaSubType equalTo {string}")
+    public void theAudioVisualPublicationHasAMediaSubTypeEqualTo(String expectedediaSubType) {
+        var audioVisualManifestation = getAudioVisualPublication();
+        assertThat(audioVisualManifestation.getMediaType().getType().getValue(),
+            is(equalTo(expectedediaSubType)));
+    }
+
+
+    @And("the AudioVisualPublication has ISRC equalTo {string},")
+    public void theAudioVisualPublicationHasISRCEqualTo(String expectedIsrc) throws InvalidIsrcException {
+        var audioVisualManifestation = getAudioVisualPublication();
+        assertThat(audioVisualManifestation.getIsrc(),
+            is(equalTo(new Isrc(expectedIsrc))));
+    }
+
+    @And("the AudioVisualPublication has an unconfirmedPublisher name equal to {string}")
+    public void theAudioVisualPublicationHasAnUnconfirmedPublisherNameEqualTo(String expectedUnconfirmedPublisher) {
+        var audioVisualManifestation = getAudioVisualPublication();
+        assertThat(audioVisualManifestation.getPublisher(),
+            is(equalTo(new UnconfirmedPublisher(expectedUnconfirmedPublisher))));
+
+    }
+
+
+    private AudioVisualPublication getAudioVisualPublication() {
+        var musicalWorkPerformance = extractMusicPerformance();
+        var audioVisualManifestationOptional = musicalWorkPerformance
+            .getManifestations()
+            .stream()
+            .filter(manifestation -> manifestation instanceof AudioVisualPublication)
+            .findFirst();
+        assertThat(audioVisualManifestationOptional.isPresent(), is(equalTo(true)));
+        return (AudioVisualPublication) audioVisualManifestationOptional.get();
+    }
+
     private String readResourceFile(Path path) {
         return IoUtils.stringFromResources(path);
     }
@@ -308,7 +323,7 @@ public class ArtisticFeatures {
     private CristinArtisticProduction readArtisticProductionFromResource() {
         var artisticProduction = readResourceFile(Path.of("type_kunstneriskproduksjon.json"));
         return attempt(() -> JsonUtils.dtoObjectMapper
-                .readValue(artisticProduction, CristinArtisticProduction.class))
+            .readValue(artisticProduction, CristinArtisticProduction.class))
             .orElseThrow();
     }
 
@@ -318,18 +333,5 @@ public class ArtisticFeatures {
             .getEntityDescription()
             .getReference()
             .getPublicationInstance();
-    }
-
-    @And("the AudioVisualPublication has a mediaSubType equalTo {string}")
-    public void theAudioVisualPublicationHasAMediaSubTypeEqualTo(String expectedediaSubType) {
-        var musicalWorkPerformance = extractMusicPerformance();
-        var audioVisualManifestationOptional = musicalWorkPerformance
-            .getManifestations()
-            .stream()
-            .filter(manifestation -> manifestation instanceof AudioVisualPublication)
-            .findFirst();
-        assertThat(audioVisualManifestationOptional.isPresent(), is(equalTo(true)));
-        var audioVisualManifestation = (AudioVisualPublication) audioVisualManifestationOptional.get();
-        assertThat(audioVisualManifestation.getMediaType().getType().getValue(), is(equalTo(expectedediaSubType)));
     }
 }

@@ -79,7 +79,9 @@ Feature: Rules that apply for Artistic results
     And the performance has a publisher name equal to "Austad Music"
     When the Cristin Result is converted to an NVA Resource
     Then the Nva resource has a AudioVisualPublication
-    And the AudioVisualPublication has a mediaSubType equalTo "CompactDisc", ISRC equalTo "NOLCA1554010", unconfirmedPublisher name equal to "Austad Music"
+    And the AudioVisualPublication has a mediaSubType equalTo "CompactDisc"
+    And the AudioVisualPublication has ISRC equalTo "NOLCA1554010",
+    And the AudioVisualPublication has an unconfirmedPublisher name equal to "Austad Music"
 
 
   Scenario Outline: Cristin musical performance that contains valid medium types shoul be mapped to AudioVisualProduction
