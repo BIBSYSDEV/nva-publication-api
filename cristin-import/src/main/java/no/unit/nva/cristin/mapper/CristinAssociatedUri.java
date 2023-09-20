@@ -3,7 +3,9 @@ package no.unit.nva.cristin.mapper;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.net.URI;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -41,8 +43,8 @@ public class CristinAssociatedUri {
 
     }
 
-    public URI toURI(){
-        return attempt(()-> UriWrapper.fromUri(url).getUri())
+    public URI toURI() {
+        return attempt(() -> UriWrapper.fromUri(url).getUri())
             .orElseThrow(fail -> new InvalidArchiveException(fail.getException()));
     }
 
