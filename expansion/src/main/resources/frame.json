@@ -178,6 +178,10 @@
       "@container": "@set",
       "@id": "venue"
     },
+    "topLevelOrganizations": {
+      "@container": "@set",
+      "@id": "topLevelOrganization"
+    },
     "nviType": {
       "@type": "@vocab",
       "@context": {
@@ -233,10 +237,6 @@
   "link": {
     "@embed": "@never",
     "@default": "@null"
-  },
-  "topLevelOrganization": {
-    "@container": "@set",
-    "@embed": "@always"
   },
   "resourceOwner": {
     "ownerAffiliation": {

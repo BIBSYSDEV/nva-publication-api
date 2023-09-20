@@ -654,7 +654,7 @@ class ExpandedResourceTest {
     }
 
     private Collection<URI> extractDistinctTopLevelIds(JsonNode framedResultNode) {
-        var topLevelAffiliations = framedResultNode.at("/topLevelOrganization");
+        var topLevelAffiliations = framedResultNode.at("/topLevelOrganizations");
         return StreamSupport.stream(topLevelAffiliations.spliterator(), false)
                    .map(node -> node.get("id").asText())
                    .map(URI::create)
