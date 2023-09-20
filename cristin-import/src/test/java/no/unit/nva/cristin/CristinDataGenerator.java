@@ -216,7 +216,7 @@ public final class CristinDataGenerator {
                 return randomTvOrMedia(category);
             case WRITTEN_INTERVIEW:
                 return randomWrittenInterview();
-                // case MUSICAL_PERFORMANCE:
+            case MUSICAL_PERFORMANCE:
                 // case VISUAL_ARTS:
             case FILM_PRODUCTION:
                 // case MUSICAL_PIECE:

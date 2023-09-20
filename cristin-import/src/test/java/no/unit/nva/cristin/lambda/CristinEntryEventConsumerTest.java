@@ -8,6 +8,7 @@ import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.JSON;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.SUCCESS_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.CHAPTER_ACADEMIC;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.MUSICAL_PERFORMANCE;
 import static no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException.ERROR_PARSING_MAIN_CATEGORY;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
@@ -483,6 +484,20 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var file = s3Driver.getFile(expectedErrorFileLocation);
         assertThat(file, is(not(emptyString())));
         assertThat(file, containsString("CristinIdAlreadyExistException"));
+    }
+
+    @Test
+    void shouldPersistIsrcExceptionWhenImportingCristinObjectWithInvalidIsrc() throws IOException {
+        var cristinObject = CristinDataGenerator.randomObject(MUSICAL_PERFORMANCE.getValue());
+        cristinObject.getCristinArtisticProduction().setIsrc("i_am_an_invalid_isrc");
+        var eventBody = createEventBody(cristinObject);
+        var eventReference = createEventReference(eventBody);
+        handler.handleRequest(eventReference, CONTEXT);
+        var expectedErrorFileLocation = constructExpectedErrorFilePaths(eventBody, "InvalidIsrcException");
+        var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
+        var file = s3Driver.getFile(expectedErrorFileLocation);
+        assertThat(file, is(not(emptyString())));
+
     }
 
     private SQSEvent createEventReferenceWithInvalidMessagesAlongWithValidEventBody(

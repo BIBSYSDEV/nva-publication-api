@@ -27,7 +27,7 @@ public class Ensemble {
     private String ensembleType;
 
     @JacocoGenerated
-    public Ensemble(){
+    public Ensemble() {
 
     }
 }

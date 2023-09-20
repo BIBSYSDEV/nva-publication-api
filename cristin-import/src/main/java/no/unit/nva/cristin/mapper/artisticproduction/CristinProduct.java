@@ -17,7 +17,7 @@ import no.unit.nva.model.instancetypes.artistic.film.realization.MovingPictureOu
 import no.unit.nva.model.instancetypes.artistic.film.realization.OtherRelease;
 
 
-/**
+/*
  * Cristin-categories containing this object:
  * ARKITEKTTEGNING
  * FILMPRODUKSJON

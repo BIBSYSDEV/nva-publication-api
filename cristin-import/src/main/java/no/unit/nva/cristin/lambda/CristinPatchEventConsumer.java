@@ -79,7 +79,7 @@ public class CristinPatchEventConsumer implements RequestHandler<SQSEvent, List<
         var eventBody = readEventBody(input);
         return attempt(() -> retrieveChildAndParentPublications(eventBody))
                    .map(CristinPatcher::updateChildPublication)
-                   .map( parentAndChild -> persistChangesInChild(parentAndChild, input))
+                   .map(parentAndChild -> persistChangesInChild(parentAndChild, input))
                    .orElseThrow(fail -> saveErrorReport(fail, input, eventBody));
     }
 
@@ -91,11 +91,16 @@ public class CristinPatchEventConsumer implements RequestHandler<SQSEvent, List<
             .orElseThrow();
     }
 
-    private Publication storeSuccessReport(Publication childPublication, Publication parentPublication, EventReference input) {
+    private Publication storeSuccessReport(
+        Publication childPublication,
+        Publication parentPublication,
+        EventReference input) {
         var successFileUriFileUri = constructSuccessFileUri(childPublication, input);
         var s3Driver = new S3Driver(s3Client, successFileUriFileUri.getUri().getHost());
         var reportContent = new ParentAndChild(childPublication, parentPublication);
-        attempt(() -> s3Driver.insertFile(successFileUriFileUri.toS3bucketPath(), reportContent.toJsonString())).orElseThrow();
+        attempt(() ->
+            s3Driver.insertFile(successFileUriFileUri.toS3bucketPath(), reportContent.toJsonString()))
+            .orElseThrow();
         return childPublication;
     }
 
