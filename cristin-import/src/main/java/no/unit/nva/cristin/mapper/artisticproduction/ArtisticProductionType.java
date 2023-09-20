@@ -18,7 +18,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"produksjonstypenavn", "produksjonstypenavn_engelsk", "produksjonstypenavn_nynorsk"})
+@JsonIgnoreProperties({"produkttypenavn", "produkttypenavn_engelsk", "produkttypenavn_nynorsk"})
 public class ArtisticProductionType {
 
     @JsonProperty("produkttypekode")
