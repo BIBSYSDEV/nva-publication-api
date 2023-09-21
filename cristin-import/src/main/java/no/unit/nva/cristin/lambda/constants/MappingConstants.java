@@ -5,13 +5,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import nva.commons.core.Environment;
-import nva.commons.core.JacocoGenerated;
 import nva.commons.core.ioutils.IoUtils;
 
 public final class MappingConstants {
 
     public static final Environment ENVIRONMENT = new Environment();
-    public static final boolean SHOULD_CREATE_CONTRIBUTOR_ID = createCristinContributorId();
     public static final Set<String>
         IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS = readAllIngnoredAndPossiblyEmptyFields();
 
@@ -131,12 +129,5 @@ public final class MappingConstants {
 
     private static String ignoredFieldsFile() {
         return ENVIRONMENT.readEnvOpt("IGNORED_FIELDS_FILE").orElse("ignoredFields.txt");
-    }
-
-    @JacocoGenerated
-    private static boolean createCristinContributorId() {
-        return ENVIRONMENT.readEnvOpt("SHOULD_CREATE_CONTRIBUTOR_ID")
-                   .map(Boolean::parseBoolean)
-                   .orElse(false);
     }
 }
