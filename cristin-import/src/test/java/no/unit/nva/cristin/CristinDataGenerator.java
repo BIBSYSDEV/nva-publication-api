@@ -204,7 +204,8 @@ public final class CristinDataGenerator {
                 // THEATRICAL_PRODUCTION:
                 randomArtisticProduction(category);
             default ->
-                throw new IllegalStateException(String.format("The secondary category %s is not covered", secondaryCategory));
+                throw new IllegalStateException(String.format("The secondary category %s is not covered",
+                    secondaryCategory));
         };
 
     }
