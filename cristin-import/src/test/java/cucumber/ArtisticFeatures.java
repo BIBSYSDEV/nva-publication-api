@@ -32,6 +32,7 @@ import static no.unit.nva.cristin.mapper.artisticproduction.ArtisticProductionTi
 import static no.unit.nva.model.instancetypes.artistic.film.MovingPictureSubtypeEnum.SHORT;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
@@ -313,6 +314,24 @@ public class ArtisticFeatures {
         assertThat(audioVisualManifestation.getPublisher(),
             is(equalTo(new UnconfirmedPublisher(expectedUnconfirmedPublisher))));
 
+    }
+
+
+    @And("the performance has a field besetning with value {string}")
+    public void thePerformanceHasAFieldBesetningWithValue(String crew) {
+        scenarioContext.getCristinEntry().getCristinArtisticProduction().setCrew(crew);
+    }
+
+
+    @And("the performance has a field medskapere with value {string}")
+    public void thePerformanceHasAFieldMedskapereWithValue(String medskapere) {
+        scenarioContext.getCristinEntry().getCristinArtisticProduction().setCoCreators(medskapere);
+    }
+
+    @Then("the NVA resource has a description field containing the value {string}")
+    public void theNvaResourceHasADescriptionFieldContainingTheValue(String descriptionPart) {
+        var description = scenarioContext.getNvaEntry().getEntityDescription().getDescription();
+        assertThat(description, is(containsString(descriptionPart)));
     }
 
     private OtherPerformance getOtherPerformance() {
