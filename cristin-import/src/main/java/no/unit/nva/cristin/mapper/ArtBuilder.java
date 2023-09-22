@@ -3,6 +3,7 @@ package no.unit.nva.cristin.mapper;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
+import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArts;
 import no.unit.nva.model.pages.Pages;
 
 import java.util.Set;
@@ -26,9 +27,15 @@ public class ArtBuilder extends AbstractPublicationInstanceBuilder {
             return createMovingPicture();
         } else if (isMusicalWork(secondaryCategory)) {
             return createMusicPerformance();
+        } else if (CristinSecondaryCategory.VISUAL_ARTS.equals(secondaryCategory)) {
+            return createVisualArts();
         } else {
             throw unknownSecondaryCategory();
         }
+    }
+
+    private VisualArts createVisualArts() {
+        return getCristinObject().getCristinProduct().toVisualArts();
     }
 
     private boolean isMusicalWork(CristinSecondaryCategory secondaryCategory) {

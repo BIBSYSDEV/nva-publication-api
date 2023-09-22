@@ -10,7 +10,7 @@ Feature: Rules that apply for Artistic results
       | secondaryCategory | contentType      |
       | FILMPRODUKSJON    | MovingPicture    |
       | MUSIKK_FRAMFORIN  | MusicPerformance |
-#      | KUNST_OG_BILDE    | VisualArts             |
+      | KUNST_OG_BILDE    | VisualArts       |
       | MUSIKK_KOMP       | MusicPerformance |
 #      | ARKITEKTTEGNING   | Architecture           |
 #      | TEATERPRODUKSJON  | PerformingArts         |

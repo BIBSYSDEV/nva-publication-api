@@ -57,6 +57,7 @@ import no.unit.nva.cristin.mapper.CristinTags;
 import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.cristin.mapper.CristinMediumTypeCode;
 import no.unit.nva.cristin.mapper.VerificationStatus;
+import no.unit.nva.cristin.mapper.artisticproduction.CristinProduct;
 
 public final class CristinDataGenerator {
 
@@ -199,10 +200,10 @@ public final class CristinDataGenerator {
             case MUSICAL_PERFORMANCE,
                 FILM_PRODUCTION,
                 MUSICAL_PIECE ->
-                // VISUAL_ARTS:
                 // ARCHITECT_DESIGN:
                 // THEATRICAL_PRODUCTION:
                 randomArtisticProduction(category);
+            case VISUAL_ARTS -> randomCristinProductWithSecondaryCategory(category);
             default ->
                 throw new IllegalStateException(String.format("The secondary category %s is not covered",
                     secondaryCategory));
@@ -576,6 +577,27 @@ public final class CristinDataGenerator {
             .withPublicationOwner(randomString())
             .withContributors(randomContributors())
             .withCristinArtisticProduction(randomCristinArtisticProduction())
+            .build();
+    }
+
+    private static CristinObject randomCristinProductWithSecondaryCategory(CristinSecondaryCategory category) {
+        return CristinObject.builder()
+            .withId(largeRandomNumber())
+            .withMainCategory(CristinMainCategory.ARTISTIC_PRODUCTION)
+            .withSecondaryCategory(category)
+            .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
+            .withEntryCreationDate(LocalDate.now())
+            .withPublicationYear(randomYear())
+            .withPublicationOwner(randomString())
+            .withContributors(randomContributors())
+            .withCristinProduct(randomCristinProduct())
+            .build();
+    }
+
+    private static CristinProduct randomCristinProduct() {
+        return CristinProduct
+            .builder()
+            .withPublisherName(randomString())
             .build();
     }
 
