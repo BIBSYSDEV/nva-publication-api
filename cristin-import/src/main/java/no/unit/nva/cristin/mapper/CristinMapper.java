@@ -32,6 +32,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import no.unit.nva.cristin.mapper.artisticproduction.CristinArtisticProduction;
 import no.unit.nva.cristin.mapper.nva.CristinMappingModule;
 import no.unit.nva.cristin.mapper.nva.ReferenceBuilder;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -62,6 +63,7 @@ public class CristinMapper extends CristinMappingModule {
     public static final String UNIT_INSTITUTION_CODE = "UNIT";
     public static final ResourceOwner SIKT_OWNER = new CristinLocale("SIKT", "20754", "0", "0",
                                                                      "0").toResourceOwner();
+    private static final String NEW_LINE = "\n";
 
     public CristinMapper(CristinObject cristinObject) {
         super(cristinObject);
@@ -270,16 +272,24 @@ public class CristinMapper extends CristinMappingModule {
 
     private EntityDescription generateEntityDescription() {
         return new EntityDescription.Builder()
-                   .withLanguage(extractLanguage())
-                   .withMainTitle(extractMainTitle())
-                   .withPublicationDate(extractPublicationDate())
-                   .withReference(new ReferenceBuilder(cristinObject).buildReference())
-                   .withContributors(extractContributors())
-                   .withNpiSubjectHeading(extractNpiSubjectHeading())
-                   .withAbstract(extractAbstract())
-                   .withTags(extractTags())
-                   .withAlternativeAbstracts(Collections.emptyMap())
-                   .build();
+            .withLanguage(extractLanguage())
+            .withMainTitle(extractMainTitle())
+            .withPublicationDate(extractPublicationDate())
+            .withReference(new ReferenceBuilder(cristinObject).buildReference())
+            .withContributors(extractContributors())
+            .withNpiSubjectHeading(extractNpiSubjectHeading())
+            .withAbstract(extractAbstract())
+            .withTags(extractTags())
+            .withAlternativeAbstracts(Collections.emptyMap())
+            .withDescription(extractDescription())
+            .build();
+    }
+
+    private String extractDescription() {
+        return Optional.ofNullable(cristinObject.getCristinArtisticProduction())
+            .map(CristinArtisticProduction::getDescriptionFields)
+            .map(descriptionList -> String.join(NEW_LINE, descriptionList))
+            .orElse(null);
     }
 
     private List<Contributor> extractContributors() {
