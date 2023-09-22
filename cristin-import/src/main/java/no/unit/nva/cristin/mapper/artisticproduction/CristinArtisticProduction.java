@@ -347,4 +347,9 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     private UnconfirmedPlace extractPlace() {
         return Optional.ofNullable(event).map(ArtisticEvent::toNvaPlace).orElse(null);
     }
+
+    @JsonIgnore
+    public String[] getDescriptionFields() {
+        return new String[]{crew, coCreators};
+    }
 }

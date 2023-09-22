@@ -141,3 +141,11 @@ Feature: Rules that apply for Artistic results
     And the performance has a ensemble name equal to "Koret og symfoniorkesteret ved Høgskulen i Volda"
     When the Cristin Result is converted to an NVA Resource
     And the MusicScore has ensemble equal to "Koret og symfoniorkesteret ved Høgskulen i Volda"
+
+  Scenario: certain fields from cristin artistic is mapped to nva description
+    Given a valid Cristin Result with secondary category "MUSIKK_FRAMFORIN"
+    And the performance has a field besetning with value "janitsjar"
+    And the performance has a field medskapere with value "Nordmann, Ola: vokal & keys"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA resource has a description field containing the value "janitsjar"
+    And the NVA resource has a description field containing the value "Nordmann, Ola: vokal & keys"
