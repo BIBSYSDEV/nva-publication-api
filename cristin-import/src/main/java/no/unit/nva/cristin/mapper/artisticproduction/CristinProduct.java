@@ -51,8 +51,6 @@ import nva.commons.core.StringUtils;
 @JsonIgnoreProperties({"utbredelsesomrade", "status_bestilt"})
 public class CristinProduct implements DescriptionExtractor, MovingPictureExtractor {
 
-    private static final String LINE_BREAK = "\n";
-
     @JsonProperty("utgivernavn")
     private String publisherName;
 
@@ -143,6 +141,6 @@ public class CristinProduct implements DescriptionExtractor, MovingPictureExtrac
 
     private String extractVisualArtsOtherSubtypeDescription() {
         var nonEmptyDescriptionFields = Arrays.stream(descriptionFields()).filter(StringUtils::isNotEmpty).toList();
-        return String.join(LINE_BREAK, nonEmptyDescriptionFields);
+        return String.join(System.lineSeparator(), nonEmptyDescriptionFields);
     }
 }
