@@ -329,7 +329,7 @@ public class ArtisticFeatures {
     }
 
     @Then("the NVA resource has a description field containing the value {string}")
-    public void theNVAResourceHasADescriptionFieldContainingTheValue(String descriptionPart) {
+    public void theNvaResourceHasADescriptionFieldContainingTheValue(String descriptionPart) {
         var description = scenarioContext.getNvaEntry().getEntityDescription().getDescription();
         assertThat(description, is(containsString(descriptionPart)));
     }
