@@ -40,6 +40,9 @@ public final class ExceptionHandling {
         if (exception instanceof  CristinIdAlreadyExistException) {
             return (CristinIdAlreadyExistException) exception;
         }
+        if (exception instanceof InvalidArchiveException) {
+            return (InvalidArchiveException) exception;
+        }
         if (exception instanceof RuntimeException) {
             return (RuntimeException) exception;
         }

@@ -3,13 +3,19 @@ package no.unit.nva.cristin.mapper;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.net.URI;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import no.unit.nva.cristin.mapper.nva.exceptions.InvalidArchiveException;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UriWrapper;
+
+import static nva.commons.core.attempt.Try.attempt;
 
 @Builder(
     builderClassName = "CristinAssociatedUriBuilder",
@@ -30,11 +36,16 @@ public class CristinAssociatedUri {
     private String urlType;
 
     @JsonProperty("url")
-    private URI url;
+    private String url;
 
     @JacocoGenerated
     public CristinAssociatedUri() {
 
+    }
+
+    public URI toURI() {
+        return attempt(() -> UriWrapper.fromUri(url).getUri())
+            .orElseThrow(fail -> new InvalidArchiveException(fail.getException()));
     }
 
 

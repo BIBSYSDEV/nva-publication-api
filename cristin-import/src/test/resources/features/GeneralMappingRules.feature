@@ -408,7 +408,14 @@ Feature: Mappings that hold for all types of Cristin Results
 
   Scenario: when brage-archive handles is not present the result is still mapped
     Given the Cristin Result has the following varbeid_url present:
-      | urltypekode | url                                  |
-      | FULLTEKST   | wwww.example.com                     |
+      | urltypekode | url              |
+      | FULLTEKST   | wwww.example.com |
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource should have the handle set to null
+
+  Scenario: when brage-archive is set to non-url, an exception is thrown
+    Given the Cristin Result has the following varbeid_url present:
+      | urltypekode | url                       |
+      | ARKIV       | Voyage Television, France |
+    When the Cristin Result is converted to an NVA Resource
+    Then an error is reported.
