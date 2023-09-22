@@ -63,7 +63,6 @@ public class CristinMapper extends CristinMappingModule {
     public static final String UNIT_INSTITUTION_CODE = "UNIT";
     public static final ResourceOwner SIKT_OWNER = new CristinLocale("SIKT", "20754", "0", "0",
                                                                      "0").toResourceOwner();
-    private static final String NEW_LINE = "\n";
 
     public CristinMapper(CristinObject cristinObject) {
         super(cristinObject);
@@ -288,7 +287,7 @@ public class CristinMapper extends CristinMappingModule {
     private String extractDescription() {
         return Optional.ofNullable(cristinObject.getCristinArtisticProduction())
             .map(CristinArtisticProduction::getDescriptionFields)
-            .map(descriptionList -> String.join(NEW_LINE, descriptionList))
+            .map(descriptionList -> String.join(System.lineSeparator(), descriptionList))
             .orElse(null);
     }
 
