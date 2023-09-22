@@ -27,7 +27,7 @@ public class ArtBuilder extends AbstractPublicationInstanceBuilder {
             return createMovingPicture();
         } else if (isMusicalWork(secondaryCategory)) {
             return createMusicPerformance();
-        }else if (CristinSecondaryCategory.VISUAL_ARTS.equals(secondaryCategory)) {
+        } else if (CristinSecondaryCategory.VISUAL_ARTS.equals(secondaryCategory)) {
             return createVisualArts();
         } else {
             throw unknownSecondaryCategory();

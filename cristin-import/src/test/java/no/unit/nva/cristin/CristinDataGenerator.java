@@ -203,16 +203,11 @@ public final class CristinDataGenerator {
                 // ARCHITECT_DESIGN:
                 // THEATRICAL_PRODUCTION:
                 randomArtisticProduction(category);
-            case VISUAL_ARTS -> randomCristinProduct(category);
+            case VISUAL_ARTS -> randomCristinProductWithSecondaryCategory(category);
             default ->
                 throw new IllegalStateException(String.format("The secondary category %s is not covered",
                     secondaryCategory));
         };
-
-    }
-
-    private static CristinObject randomCristinProduct(CristinSecondaryCategory category) {
-        return randomCristinProductWithSecondaryCategory(category);
 
     }
 
