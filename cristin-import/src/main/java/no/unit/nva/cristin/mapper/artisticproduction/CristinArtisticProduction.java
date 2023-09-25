@@ -30,6 +30,10 @@ import no.unit.nva.model.instancetypes.artistic.music.MusicScore;
 import no.unit.nva.model.instancetypes.artistic.music.MusicalWork;
 import no.unit.nva.model.instancetypes.artistic.music.MusicalWorkPerformance;
 import no.unit.nva.model.instancetypes.artistic.music.OtherPerformance;
+import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArts;
+import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArtsSubtype;
+import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArtsSubtypeEnum;
+import no.unit.nva.model.instancetypes.artistic.performingarts.realization.PerformingArtsOutput;
 import no.unit.nva.model.time.Instant;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
@@ -167,6 +171,21 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     @JsonIgnore
     public MusicPerformance toMusicPerformance() {
         return new MusicPerformance(extractMusicPerformanceManifestations());
+    }
+
+    @JsonIgnore
+    public PerformingArts toTheatricalPerformance() {
+        return new PerformingArts(PerformingArtsSubtype.create(PerformingArtsSubtypeEnum.THEATRICAL_PRODUCTION),
+            extractDescription(descriptionFields()),
+            extractTheatricalEvents());
+    }
+
+    private List<PerformingArtsOutput> extractTheatricalEvents() {
+        var performingArtsOutputs = new ArrayList<PerformingArtsOutput>();
+        var venueOptional = Optional.ofNullable(event)
+            .map(ArtisticEvent::toNvaPerformingArtsVenue);
+        venueOptional.ifPresent(performingArtsOutputs::add);
+        return performingArtsOutputs;
     }
 
     private List<MusicPerformanceManifestation> extractMusicPerformanceManifestations() {

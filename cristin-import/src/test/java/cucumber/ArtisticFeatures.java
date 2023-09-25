@@ -22,6 +22,9 @@ import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.artistic.music.MusicScore;
 import no.unit.nva.model.instancetypes.artistic.music.MusicalWork;
 import no.unit.nva.model.instancetypes.artistic.music.OtherPerformance;
+import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArts;
+import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArtsSubtypeEnum;
+import no.unit.nva.model.instancetypes.artistic.performingarts.realization.PerformingArtsVenue;
 import no.unit.nva.model.time.Time;
 import no.unit.nva.model.time.Instant;
 import nva.commons.core.ioutils.IoUtils;
@@ -334,6 +337,27 @@ public class ArtisticFeatures {
         assertThat(description, is(containsString(descriptionPart)));
     }
 
+    @And("the theatrical production has a PerformingArtsVenue with value:")
+    public void theTheatricalProductionHasAPerformingArtsVenueWithValue(
+        PerformingArtsVenue expectedPerformingArtsVenue) {
+        var performingArts = getPerformingArts();
+        var artsVenues = performingArts.getOutputs();
+        assertThat(artsVenues, hasSize(1));
+        assertThat(artsVenues.get(0), instanceOf(PerformingArtsVenue.class));
+        var performingArtsvenue = (PerformingArtsVenue) artsVenues.get(0);
+        assertThat(performingArtsvenue, is(equalTo(expectedPerformingArtsVenue)));
+    }
+
+
+
+    @And("the performingArts has a subtype {string}")
+    public void thePerformingArtsHasASubtype(String subtype) {
+        var expectedSubtype = PerformingArtsSubtypeEnum.valueOf(subtype);
+        var performingArts = getPerformingArts();
+        assertThat(performingArts.getSubtype().getType(),
+            is(equalTo(expectedSubtype)));
+    }
+
     private OtherPerformance getOtherPerformance() {
         var musicalWorkPerformance = extractMusicPerformance();
         var otherPerformance = (OtherPerformance) musicalWorkPerformance.getManifestations().get(0);
@@ -391,5 +415,13 @@ public class ArtisticFeatures {
     private Concert getConcert() {
         var musicalWorkPerformance = extractMusicPerformance();
         return (Concert) musicalWorkPerformance.getManifestations().get(0);
+    }
+
+    private PerformingArts getPerformingArts() {
+        return (PerformingArts) scenarioContext
+            .getNvaEntry()
+            .getEntityDescription()
+            .getReference()
+            .getPublicationInstance();
     }
 }
