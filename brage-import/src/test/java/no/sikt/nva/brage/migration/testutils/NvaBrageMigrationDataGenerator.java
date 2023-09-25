@@ -570,7 +570,7 @@ public class NvaBrageMigrationDataGenerator {
                 customer = new Customer("someCustomer", CUSTOMER_URi);
             }
             if (isNull(resourceOwner)) {
-                resourceOwner = new ResourceOwner("someOwner", RESOURCE_OWNER_URI);
+                resourceOwner = new ResourceOwner("institution@someOwner", RESOURCE_OWNER_URI);
             }
             if (isNull(alternativeTitlesMap)) {
                 alternativeTitlesMap = createCorrespondingMap();

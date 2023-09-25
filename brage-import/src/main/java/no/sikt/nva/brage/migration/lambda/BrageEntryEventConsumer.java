@@ -186,8 +186,13 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private UriWrapper constructResourcehandleFileUri(S3Event s3Event, Publication publication) {
         var timestamp = timePath(s3Event);
         return UriWrapper.fromUri(HANDLE_REPORTS_PATH)
+                   .addChild(extractInstitutionName(publication))
                    .addChild(timestamp)
                    .addChild(publication.getIdentifier().toString());
+    }
+
+    private static String extractInstitutionName(Publication publication) {
+        return publication.getResourceOwner().getOwner().getValue().split("@")[0];
     }
 
     private RuntimeException handleSavingError(Failure<Publication> fail, S3Event s3Event) {

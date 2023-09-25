@@ -1106,6 +1106,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var timestamp = s3Event.getRecords().get(0).getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
         return UriWrapper
                    .fromUri(HANDLE_REPORTS_PATH)
+                   .addChild(actualPublication.getResourceOwner().getOwner().getValue().split("@")[0])
                    .addChild(timestamp)
                    .addChild(actualPublication.getIdentifier().toString());
     }
