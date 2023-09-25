@@ -13,7 +13,7 @@ Feature: Rules that apply for Artistic results
       | KUNST_OG_BILDE    | VisualArts       |
       | MUSIKK_KOMP       | MusicPerformance |
 #      | ARKITEKTTEGNING   | Architecture           |
-#      | TEATERPRODUKSJON  | PerformingArts         |
+      | TEATERPRODUKSJON  | PerformingArts   |
 
 
 
@@ -54,8 +54,8 @@ Feature: Rules that apply for Artistic results
     And the performance is a premiere
     And the performance has a duration of "35" minutes
     And the performance has an event with values:
-      | start               | title                                           | place     |
-      | 2018-02-03T00:00:00 | Celebratory Concert of Swiss Philosophy Society | Göttingen |
+      | start               | title                                           | place     | end                 |
+      | 2018-02-03T00:00:00 | Celebratory Concert of Swiss Philosophy Society | Göttingen | 2020-02-03T00:00:00 |
     And the performance has an original composer "Dániel Péter Biró"
     When the Cristin Result is converted to an NVA Resource
     Then the Nva Resource has a Concert announcements
@@ -149,3 +149,22 @@ Feature: Rules that apply for Artistic results
     When the Cristin Result is converted to an NVA Resource
     Then the NVA resource has a description field containing the value "janitsjar"
     And the NVA resource has a description field containing the value "Nordmann, Ola: vokal & keys"
+
+  Scenario: A cristin theatrical production is mapped to a NVA theatrical production
+    Given a valid Cristin Result with secondary category "TEATERPRODUKSJON"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a Publication Instance of type "PerformingArts"
+    And the performingArts has a subtype "THEATRICAL_PRODUCTION"
+
+
+  Scenario: A cristin theatrical production events are mapped to NVA
+    Given a valid Cristin Result with secondary category "TEATERPRODUKSJON"
+    And the performance has an event with values:
+      | start               | title                                           | place     | end                 |
+      | 1996-11-19T00:00:00 | Celebratory Concert of Swiss Philosophy Society | Göttingen | 1996-12-01T00:00:00 |
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a Publication Instance of type "PerformingArts"
+    And the theatrical production has a PerformingArtsVenue with value:
+      | place     | to                  | from                | sequence |
+      | Göttingen | 1996-12-01T00:00:00 | 1996-11-19T00:00:00 | 0        |
+

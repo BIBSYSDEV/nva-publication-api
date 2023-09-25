@@ -199,9 +199,9 @@ public final class CristinDataGenerator {
             case WRITTEN_INTERVIEW -> randomWrittenInterview();
             case MUSICAL_PERFORMANCE,
                 FILM_PRODUCTION,
+                THEATRICAL_PRODUCTION,
                 MUSICAL_PIECE ->
                 // ARCHITECT_DESIGN:
-                // THEATRICAL_PRODUCTION:
                 randomArtisticProduction(category);
             case VISUAL_ARTS -> randomCristinProductWithSecondaryCategory(category);
             default ->

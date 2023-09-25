@@ -9,9 +9,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
+import no.unit.nva.model.instancetypes.artistic.performingarts.realization.PerformingArtsVenue;
 import no.unit.nva.model.time.Instant;
+import no.unit.nva.model.time.Period;
 import no.unit.nva.model.time.Time;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.StringUtils;
 
 
 @Data
@@ -27,6 +30,9 @@ import nva.commons.core.JacocoGenerated;
     "antall_nasjonale_deltakere", "landkode", "institusjonsnr_arrangor", "avdnr_arrangor", "undavdnr_arrangor",
     "gruppenr_arrangor", "utbredelsesomrade", "url", "personlopenr_arrangor"})
 public class ArtisticEvent {
+
+    @JsonIgnore
+    private static final int WILL_ALWAYS_BE_ONLY_ONE_PERFOMINGARTSVENUE = 0;
 
     @JsonProperty("arstall")
     private String year;
@@ -54,6 +60,23 @@ public class ArtisticEvent {
     }
 
     public Instant getNvaTime() {
+        return new Instant(Time.convertToInstant(dateFrom));
+    }
+
+
+    @JsonIgnore
+    public PerformingArtsVenue toNvaPerformingArtsVenue(){
+        return new PerformingArtsVenue(toNvaPlace(),
+            extractDate(),
+            WILL_ALWAYS_BE_ONLY_ONE_PERFOMINGARTSVENUE);
+    }
+
+
+    @JsonIgnore
+    private Time extractDate() {
+        if (StringUtils.isNotBlank(dateTo) && StringUtils.isNotBlank(dateFrom)) {
+            return new Period(Time.convertToInstant(dateFrom), Time.convertToInstant(dateTo));
+        }
         return new Instant(Time.convertToInstant(dateFrom));
     }
 }
