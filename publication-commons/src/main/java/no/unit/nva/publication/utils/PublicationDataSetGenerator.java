@@ -2,7 +2,9 @@ package no.unit.nva.publication.utils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 public class PublicationDataSetGenerator extends AbstractDataSetGenerator {
 
@@ -36,6 +38,8 @@ public class PublicationDataSetGenerator extends AbstractDataSetGenerator {
     private final FundingsDataSetGenerator fundingsDataSetGenerator = new FundingsDataSetGenerator();
     private final IdentifiersDataSetGenerator identifiersDataSetGenerator = new IdentifiersDataSetGenerator();
 
+    private final Set<String> exportedIds = new HashSet<>();
+
     public PublicationDataSetGenerator() {
         super("publications", COLUMNS_NAMES);
     }
@@ -44,6 +48,11 @@ public class PublicationDataSetGenerator extends AbstractDataSetGenerator {
     public void addEntry(JsonNode rootNode, String... references) {
         var url = rootNode.get("id").asText();
         var identifier = rootNode.get("identifier").asText();
+
+        if (exportedIds.contains(url)) {
+            System.err.printf("%s already exported!\n", url);
+            return;
+        }
         var title = rootNode.at("/entityDescription/mainTitle").asText();
         var category = rootNode.at("/entityDescription/reference/publicationInstance/type").asText();
         String publicationDate = extractPublicationDate(rootNode);
@@ -77,6 +86,8 @@ public class PublicationDataSetGenerator extends AbstractDataSetGenerator {
             channelPrintIssn,
             channelLevel,
             identifier});
+        exportedIds.add(url);
+        System.out.printf("Exported %s\n", url);
     }
 
     @Override
@@ -85,6 +96,8 @@ public class PublicationDataSetGenerator extends AbstractDataSetGenerator {
         this.contributorDataSetGenerator.exportToFile();
         this.fundingsDataSetGenerator.exportToFile();
         this.identifiersDataSetGenerator.exportToFile();
+
+        System.out.printf("Exported %d publications\n", exportedIds.size());
     }
 
     private void extractAdditionalIdentifiers(String url, String identifier, JsonNode rootNode) {

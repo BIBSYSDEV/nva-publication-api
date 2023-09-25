@@ -35,6 +35,7 @@ public class CsvGeneratorTestClient {
         int count;
         var allDocuments = new ArrayList<JsonNode>();
         do {
+            System.out.printf("From %d, %d%n", from, results);
             var documents = fetchPage(httpClient, from, results);
             allDocuments.addAll(documents);
             count = documents.size();
@@ -52,8 +53,8 @@ public class CsvGeneratorTestClient {
         var pageUri = UriWrapper.fromUri(baseUri)
                           .addQueryParameter("from", Integer.toString(from))
                           .addQueryParameter("results", Integer.toString(results))
-                          .addQueryParameter("orderBy", "modifiedDate")
-                          .addQueryParameter("sortOrder", "desc")
+//                          .addQueryParameter("orderBy", "modifiedDate")
+//                          .addQueryParameter("sortOrder", "desc")
                           .getUri();
         var httpRequest = HttpRequest.newBuilder(pageUri)
                               .GET()
@@ -68,7 +69,9 @@ public class CsvGeneratorTestClient {
             var iterator = hitsNode.elements();
             var documents = new ArrayList<JsonNode>();
             while (iterator.hasNext()) {
-                documents.add(iterator.next());
+                var document = iterator.next();
+                System.out.printf("Found %s\n", document.at("/id").asText());
+                documents.add(document);
             }
 
             return documents;

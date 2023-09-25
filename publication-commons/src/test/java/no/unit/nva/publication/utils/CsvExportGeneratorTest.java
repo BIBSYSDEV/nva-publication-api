@@ -1,6 +1,12 @@
 package no.unit.nva.publication.utils;
 
+import org.junit.jupiter.api.Test;
+
 public class CsvExportGeneratorTest {
+    @Test
+    void simpleTest() {
+        System.out.println();
+    }
 //
 //    private static final String DOUBLE_QUOTE = "\"";
 //    private static final String COLUMN_HEADERS = DOUBLE_QUOTE + COLUMN_NAME_URL + DOUBLE_QUOTE
