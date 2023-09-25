@@ -293,7 +293,7 @@ public class CristinEntryEventConsumer
         return castToCorrectRuntimeException(fail.getException());
     }
 
-    private FileContentsEvent<JsonNode> mergeEventReferenceAndFileContents (
+    private FileContentsEvent<JsonNode> mergeEventReferenceAndFileContents(
         final FileContentsEvent<JsonNode> eventBody,
         final EventReference eventReference) {
         return new FileContentsEvent<>(eventReference.getTopic(),
