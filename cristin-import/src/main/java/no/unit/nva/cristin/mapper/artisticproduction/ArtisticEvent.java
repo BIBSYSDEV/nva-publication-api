@@ -65,7 +65,7 @@ public class ArtisticEvent {
 
 
     @JsonIgnore
-    public PerformingArtsVenue toNvaPerformingArtsVenue(){
+    public PerformingArtsVenue toNvaPerformingArtsVenue() {
         return new PerformingArtsVenue(toNvaPlace(),
             extractDate(),
             WILL_ALWAYS_BE_ONLY_ONE_PERFOMINGARTSVENUE);

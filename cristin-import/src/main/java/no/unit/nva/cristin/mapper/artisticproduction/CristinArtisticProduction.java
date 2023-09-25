@@ -176,8 +176,8 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     @JsonIgnore
     public PerformingArts toTheatricalPerformance() {
         return new PerformingArts(PerformingArtsSubtype.create(PerformingArtsSubtypeEnum.THEATRICAL_PRODUCTION),
-            extractDescription(descriptionFields())
-            , extractTheatricalEvents());
+            extractDescription(descriptionFields()),
+            extractTheatricalEvents());
     }
 
     private List<PerformingArtsOutput> extractTheatricalEvents() {
