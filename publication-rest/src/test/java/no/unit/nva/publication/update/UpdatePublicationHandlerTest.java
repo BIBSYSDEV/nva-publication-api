@@ -48,6 +48,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -710,12 +711,13 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var contributorWithoutIdentity = new Contributor.Builder()
                 .withRole(new RoleType(Role.ARCHITECT))
                 .build();
-        publication.getEntityDescription().getContributors()
-                .addAll(List.of(contributorWithoutCristinId, contributorWithoutIdentity));
+        var contributors = new ArrayList<>(publication.getEntityDescription().getContributors());
+        contributors.addAll(List.of(contributorWithoutCristinId, contributorWithoutIdentity));
+        publication.getEntityDescription().setContributors(contributors);
     }
 
     private void injectContributor(Publication savedPublication, Contributor contributor) {
-        var contributors = savedPublication.getEntityDescription().getContributors();
+        var contributors = new ArrayList<>(savedPublication.getEntityDescription().getContributors());
         contributors.add(contributor);
         savedPublication.getEntityDescription().setContributors(contributors);
         publicationService.updatePublication(savedPublication);

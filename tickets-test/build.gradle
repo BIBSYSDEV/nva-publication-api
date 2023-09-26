@@ -19,5 +19,7 @@ dependencies {
     implementation(libs.dynamodDbLocal) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
+        exclude group: 'org.apache.commons', module: 'commons-lang3'
+        exclude group: 'com.google.guava', module: 'guava'
     }
 }

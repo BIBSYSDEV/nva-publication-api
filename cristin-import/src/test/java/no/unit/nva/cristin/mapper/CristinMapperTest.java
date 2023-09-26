@@ -77,7 +77,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
         "doi:10.1080/02699052.2017.1312145, https://doi.org/10.1080/02699052.2017.1312145",
         "10.1016/j.toxlet.2020.09.006, https://doi.org/10.1016/j.toxlet.2020.09.006"
     })
-    public void mapReturnsJournalWithDoiWhenInputIsJournalResultWithDoi(String inputDoi, String expectedDoiUri) {
+    void mapReturnsJournalWithDoiWhenInputIsJournalResultWithDoi(String inputDoi, String expectedDoiUri) {
         CristinObject cristinObject =
             CristinDataGenerator.randomObject(CristinSecondaryCategory.JOURNAL_ARTICLE.toString());
         cristinObject.getJournalPublication().setDoi(inputDoi);
@@ -86,7 +86,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     @Test
-    public void mapReturnsJournalWithDoiUriWhenInputIsANonExistingDoiAndOnlineValidationIsDisabled() {
+    void mapReturnsJournalWithDoiUriWhenInputIsANonExistingDoiAndOnlineValidationIsDisabled() {
         String inputDoi = "10.1234/non.existin.doi";
         URI expectedDoiUri = URI.create("https://doi.org/" + inputDoi);
         CristinObject cristinObject =

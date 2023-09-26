@@ -3,6 +3,7 @@ package no.sikt.nva.scopus.utils;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFieldsAndClasses;
+import static no.unit.nva.testutils.RandomDataGenerator.RANDOM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
@@ -260,11 +261,11 @@ public final class ScopusGenerator {
         return xmlWriter.toString();
     }
 
-    public AuthorTp randomAuthorTp() {
+    public AuthorTp randomAuthorTp(int sequence) {
         var authorTp = new AuthorTp();
         authorTp.setOrcid(randomOrcid());
         authorTp.setAuid(randomString());
-        authorTp.setSeq(generateSequenceNumber());
+        authorTp.setSeq(String.valueOf(sequence));
         PersonalnameType personalnameType = randomPersonalnameType();
         authorTp.setPreferredName(personalnameType);
         authorTp.setIndexedName(personalnameType.getIndexedName());
@@ -739,10 +740,14 @@ public final class ScopusGenerator {
 
     private List<?> randomAuthorOrCollaborations() {
         final int maxNumbersOfAuthors = 50;
-        return IntStream.range(0, randomInteger(maxNumbersOfAuthors) + 2)
+        int randomMax = RANDOM.nextInt(2, maxNumbersOfAuthors);
+        var authors =  IntStream.range(1, randomMax)
                    .boxed()
-                   .map(index -> randomAuthorOrCollaboration())
-                   .collect(Collectors.toList());
+                   .map(this::randomAuthorTp);
+        var collaborations = IntStream.range(randomMax, randomMax + 3)
+                                 .boxed()
+                                 .map(this::randomCollaborationTp);
+        return Stream.concat(authors, collaborations).collect(Collectors.toList());
     }
 
     private List<AffiliationTp> randomAffiliations() {
@@ -753,13 +758,6 @@ public final class ScopusGenerator {
                    .collect(Collectors.toList());
     }
 
-    private Object randomAuthorOrCollaboration() {
-        shouldReturnAuthorTyp = !shouldReturnAuthorTyp;
-        return shouldReturnAuthorTyp
-                   ? randomAuthorTp()
-                   : randomCollaborationTp();
-    }
-
     private String generateSequenceNumber() {
         final var maxGapInSequenceNumber = 200;
         var sequenceNumber = getMinimumSequenceNumber() + randomInteger(maxGapInSequenceNumber) + 1;
@@ -767,10 +765,10 @@ public final class ScopusGenerator {
         return Integer.toString(sequenceNumber);
     }
 
-    private CollaborationTp randomCollaborationTp() {
+    private CollaborationTp randomCollaborationTp(int sequence) {
         var collaborationTp = new CollaborationTp();
         collaborationTp.setIndexedName(randomString());
-        collaborationTp.setSeq(generateSequenceNumber());
+        collaborationTp.setSeq(String.valueOf(sequence));
         return collaborationTp;
     }
 

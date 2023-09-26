@@ -107,7 +107,7 @@ public final class CristinDataGenerator {
 
     public static CristinContributor randomContributor(Integer contributorIndex) {
         return CristinContributor.builder()
-                   .withContributorOrder(contributorIndex)
+                   .withContributorOrder(contributorIndex + 1)
                    .withIdentifier(contributorIndex)
                    .withGivenName(randomString())
                    .withFamilyName(randomString())
