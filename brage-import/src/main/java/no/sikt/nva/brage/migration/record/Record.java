@@ -6,15 +6,13 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import nva.commons.core.JacocoGenerated;
 
 @JsonPropertyOrder({"customer", "resourceOwner", "brageLocation", "id", "cristinId", "doi", "link", "publishedDate",
-    "publisherAuthority",
-    "rightsholder",
-    "type", "partOf", "hasPart", "publisherAuthority", "spatialCoverage", "date", "language", "publication",
-    "entityDescription",
-    "recordContent", "errors", "warnings"})
+    "publisherAuthority", "rightsholder", "type", "partOf", "hasPart", "publisherAuthority", "spatialCoverage", "date",
+    "language", "publication", "entityDescription", "recordContent", "errors", "warnings"})
 @SuppressWarnings("PMD.TooManyFields")
 public class Record {
 
@@ -37,9 +35,51 @@ public class Record {
     private String brageLocation;
     private List<ErrorDetails> errors;
     private List<WarningDetails> warnings;
+    private Set<URI> subjects;
 
     public Record() {
         // Default constructor
+    }
+
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(getResourceOwner(), getEntityDescription(), getCustomer(), getId(), getDoi(), getLink(),
+                            getType(), getPublisherAuthority(), getRightsholder(), getSpatialCoverage(), getPartOf(),
+                            getPart(), getPublication(), getContentBundle(), getPublishedDate(), getCristinId(),
+                            getBrageLocation(), getErrors(), getWarnings(), getSubjects());
+    }
+
+    @JacocoGenerated
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) {
+            return true;
+        }
+        if (object == null || getClass() != object.getClass()) {
+            return false;
+        }
+        Record record = (Record) object;
+        return Objects.equals(getResourceOwner(), record.getResourceOwner())
+               && Objects.equals(getEntityDescription(), record.getEntityDescription())
+               && Objects.equals(getCustomer(), record.getCustomer())
+               && Objects.equals(getId(), record.getId())
+               && Objects.equals(getDoi(), record.getDoi())
+               && Objects.equals(getLink(), record.getLink())
+               && Objects.equals(getType(), record.getType())
+               && Objects.equals(getPublisherAuthority(), record.getPublisherAuthority())
+               && Objects.equals(getRightsholder(), record.getRightsholder())
+               && Objects.equals(getSpatialCoverage(), record.getSpatialCoverage())
+               && Objects.equals(getPartOf(), record.getPartOf())
+               && Objects.equals(getPart(), record.getPart())
+               && Objects.equals(getPublication(), record.getPublication())
+               && Objects.equals(getContentBundle(), record.getContentBundle())
+               && Objects.equals(getPublishedDate(), record.getPublishedDate())
+               && Objects.equals(getCristinId(), record.getCristinId())
+               && Objects.equals(getBrageLocation(), record.getBrageLocation())
+               && Objects.equals(getErrors(), record.getErrors())
+               && Objects.equals(getWarnings(), record.getWarnings())
+               && Objects.equals(getSubjects(), record.getSubjects());
     }
 
     @JacocoGenerated
@@ -247,43 +287,12 @@ public class Record {
         this.entityDescription = entityDescription;
     }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getResourceOwner(), getEntityDescription(), getCustomer(), getId(), getDoi(), getType(),
-                            getPublisherAuthority(), getRightsholder(), getSpatialCoverage(),
-                            getPartOf(),
-                            getPart(), getPublication(), getContentBundle(), getPublishedDate(), getCristinId(),
-                            getBrageLocation(), getErrors(), getWarnings());
+    @JsonProperty("subjects")
+    public Set<URI> getSubjects() {
+        return subjects;
     }
 
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        Record brageRecord = (Record) o;
-        return Objects.equals(getResourceOwner(), brageRecord.getResourceOwner())
-               && Objects.equals(getEntityDescription(), brageRecord.getEntityDescription())
-               && Objects.equals(getCustomer(), brageRecord.getCustomer())
-               && Objects.equals(getId(), brageRecord.getId())
-               && Objects.equals(getDoi(), brageRecord.getDoi())
-               && Objects.equals(getType(), brageRecord.getType())
-               && Objects.equals(getPublisherAuthority(), brageRecord.getPublisherAuthority())
-               && Objects.equals(getRightsholder(), brageRecord.getRightsholder())
-               && Objects.equals(getSpatialCoverage(), brageRecord.getSpatialCoverage())
-               && Objects.equals(getPartOf(), brageRecord.getPartOf())
-               && Objects.equals(getPart(), brageRecord.getPart())
-               && Objects.equals(getPublication(), brageRecord.getPublication())
-               && Objects.equals(getContentBundle(), brageRecord.getContentBundle())
-               && Objects.equals(getPublishedDate(), brageRecord.getPublishedDate())
-               && Objects.equals(getCristinId(), brageRecord.getCristinId())
-               && Objects.equals(getBrageLocation(), brageRecord.getBrageLocation())
-               && Objects.equals(getErrors(), brageRecord.getErrors())
-               && Objects.equals(getWarnings(), brageRecord.getWarnings());
+    public void setSubjects(Set<URI> subjects) {
+        this.subjects = subjects;
     }
 }
