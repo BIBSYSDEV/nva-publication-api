@@ -106,7 +106,7 @@ public class CristinEntryEventConsumer
             .map(cristinObject -> generatePublicationRepresentations(cristinObject, eventBody))
             .map(this::persistNvaPublicationInDatabaseAndGetUpdatedPublicationIdentifier)
             .map(this::persistConversionReports)
-            .orElseThrow(fail -> handleSavingError(fail, eventBody));
+            .orElseThrow(fail -> handleSavingError(fail, eventBody, eventReference));
     }
 
     private CristinObject getCristinObject(FileContentsEvent<JsonNode> eventBody) {
@@ -283,14 +283,24 @@ public class CristinEntryEventConsumer
     }
 
     private RuntimeException handleSavingError(Failure<Publication> fail,
-                                               FileContentsEvent<JsonNode> eventBody) {
+                                               FileContentsEvent<JsonNode> eventBody,
+                                               EventReference eventReference) {
         String cristinObjectId = extractCristinObjectId(eventBody).orElse(DO_NOT_WRITE_ID_IN_EXCEPTION_MESSAGE);
         String errorMessage = ERROR_SAVING_CRISTIN_RESULT + cristinObjectId;
         logger.error(errorMessage, fail.getException());
-
-        saveReportToS3(fail, eventBody);
-
+        var updatedBody = mergeEventReferenceAndFileContents(eventBody, eventReference);
+        saveReportToS3(fail, updatedBody);
         return castToCorrectRuntimeException(fail.getException());
+    }
+
+    private FileContentsEvent<JsonNode> mergeEventReferenceAndFileContents(
+        final FileContentsEvent<JsonNode> eventBody,
+        final EventReference eventReference) {
+        return new FileContentsEvent<>(eventReference.getTopic(),
+            eventReference.getSubtopic(),
+            eventReference.getUri(),
+            eventReference.getTimestamp(),
+            eventBody.getContents());
     }
 
     private void saveReportToS3(Failure<Publication> fail,
@@ -308,14 +318,7 @@ public class CristinEntryEventConsumer
         return bucket
                    .addChild(ERRORS_FOLDER)
                    .addChild(exception.getClass().getSimpleName())
-                   .addChild(constructPathBasedOnSecondLastPart(fileUri.getPath()))
                    .addChild(createErrorReportFilename(event));
-    }
-
-    private static UnixPath constructPathBasedOnSecondLastPart(UnixPath path) {
-        var lastPart = path.getLastPathElement();
-        var secondLastPart = path.getPathElementByIndexFromEnd(1);
-        return UnixPath.of(secondLastPart, lastPart);
     }
 
     private String createErrorReportFilename(FileContentsEvent<JsonNode> eventBody) {
