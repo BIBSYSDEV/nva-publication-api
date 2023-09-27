@@ -12,8 +12,6 @@ import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreeMaster
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreePhd;
 import static no.unit.nva.cristin.mapper.nva.exceptions.ExceptionHandling.castToCorrectRuntimeException;
 import static nva.commons.core.attempt.Try.attempt;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 import java.net.URI;
 import java.util.Optional;
 import no.unit.nva.cristin.mapper.CristinJournalPublication;
@@ -40,15 +38,11 @@ import nva.commons.doi.DoiValidator;
 
 public class ReferenceBuilder extends CristinMappingModule {
 
-    private static final Config config = loadConfiguration();
-    private static final boolean VALIDATE_DOI_ONLINE = parseValidateDoiOnline();
-
     private final DoiConverter doiConverter;
 
     public ReferenceBuilder(CristinObject cristinObject) {
         super(cristinObject);
-        DoiValidator doiValidator = new DoiValidator();
-        doiConverter = new DoiConverter(doiUri -> validateDoi(doiValidator, doiUri));
+        doiConverter = new DoiConverter(DoiValidator::validateOffline);
     }
 
     public Reference buildReference() {
@@ -61,18 +55,6 @@ public class ReferenceBuilder extends CristinMappingModule {
                    .withPublishingContext(publicationContext)
                    .withDoi(extractDoi())
                    .build();
-    }
-
-    private static boolean validateDoi(DoiValidator doiValidator, URI doiUri) {
-        return VALIDATE_DOI_ONLINE ? doiValidator.validateOnline(doiUri) : DoiValidator.validateOffline(doiUri);
-    }
-
-    private static boolean parseValidateDoiOnline() {
-        return config.getBoolean("doi.validation.online");
-    }
-
-    private static Config loadConfiguration() {
-        return ConfigFactory.load(ConfigFactory.defaultApplication());
     }
 
     private PublicationContext buildPublicationContext()
