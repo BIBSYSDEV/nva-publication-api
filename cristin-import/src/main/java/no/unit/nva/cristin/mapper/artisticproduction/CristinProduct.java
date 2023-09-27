@@ -16,6 +16,8 @@ import lombok.Getter;
 import lombok.Setter;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
+import no.unit.nva.model.instancetypes.artistic.architecture.Architecture;
+import no.unit.nva.model.instancetypes.artistic.architecture.ArchitectureSubtype;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
 import no.unit.nva.model.instancetypes.artistic.film.realization.MovingPictureOutput;
 import no.unit.nva.model.instancetypes.artistic.film.realization.OtherRelease;
@@ -50,6 +52,9 @@ import nva.commons.core.StringUtils;
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"utbredelsesomrade", "status_bestilt"})
 public class CristinProduct implements DescriptionExtractor, MovingPictureExtractor {
+
+    @JsonIgnore
+    private static final String MIGRATED_FROM_CRISTIN_MESSAGE = "Migrert fra cristin";
 
     @JsonProperty("utgivernavn")
     private String publisherName;
@@ -142,5 +147,12 @@ public class CristinProduct implements DescriptionExtractor, MovingPictureExtrac
     private String extractVisualArtsOtherSubtypeDescription() {
         var nonEmptyDescriptionFields = Arrays.stream(descriptionFields()).filter(StringUtils::isNotEmpty).toList();
         return String.join(System.lineSeparator(), nonEmptyDescriptionFields);
+    }
+
+    public Architecture toArchitecture() {
+        return new Architecture(
+            ArchitectureSubtype.createOther(MIGRATED_FROM_CRISTIN_MESSAGE),
+            extractDescription(descriptionFields()),
+            List.of());
     }
 }

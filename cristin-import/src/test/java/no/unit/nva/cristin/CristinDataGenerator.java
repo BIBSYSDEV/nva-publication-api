@@ -201,9 +201,9 @@ public final class CristinDataGenerator {
                 FILM_PRODUCTION,
                 THEATRICAL_PRODUCTION,
                 MUSICAL_PIECE ->
-                // ARCHITECT_DESIGN:
                 randomArtisticProduction(category);
-            case VISUAL_ARTS -> randomCristinProductWithSecondaryCategory(category);
+            case VISUAL_ARTS,
+                ARCHITECT_DESIGN -> randomCristinProductWithSecondaryCategory(category);
             default ->
                 throw new IllegalStateException(String.format("The secondary category %s is not covered",
                     secondaryCategory));

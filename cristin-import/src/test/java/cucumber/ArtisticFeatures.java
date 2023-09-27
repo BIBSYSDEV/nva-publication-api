@@ -10,6 +10,8 @@ import no.unit.nva.cristin.mapper.artisticproduction.CristinProduct;
 import no.unit.nva.cristin.mapper.artisticproduction.Performance;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
+import no.unit.nva.model.instancetypes.artistic.architecture.Architecture;
+import no.unit.nva.model.instancetypes.artistic.architecture.ArchitectureSubtype;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
 import no.unit.nva.model.instancetypes.artistic.film.realization.OtherRelease;
 import no.unit.nva.model.instancetypes.artistic.music.AudioVisualPublication;
@@ -364,6 +366,13 @@ public class ArtisticFeatures {
         return otherPerformance;
     }
 
+    @And("the Architecture has a subtype other with descripion {string}")
+    public void theArchitectureHasASubtypeOtherWithDescripion(String expectedDescription) {
+        var architecture = getArchitecture();
+        assertThat(architecture.getSubtype(),
+            is(equalTo(ArchitectureSubtype.createOther(expectedDescription))));
+    }
+
 
     private AudioVisualPublication getAudioVisualPublication() {
         var musicalWorkPerformance = extractMusicPerformance();
@@ -419,6 +428,14 @@ public class ArtisticFeatures {
 
     private PerformingArts getPerformingArts() {
         return (PerformingArts) scenarioContext
+            .getNvaEntry()
+            .getEntityDescription()
+            .getReference()
+            .getPublicationInstance();
+    }
+
+    private Architecture getArchitecture() {
+        return  (Architecture) scenarioContext
             .getNvaEntry()
             .getEntityDescription()
             .getReference()
