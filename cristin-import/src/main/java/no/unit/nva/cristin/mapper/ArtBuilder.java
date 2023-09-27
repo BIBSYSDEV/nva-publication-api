@@ -5,6 +5,7 @@ import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArts;
 import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArts;
+import no.unit.nva.model.instancetypes.artistic.architecture.Architecture;
 import no.unit.nva.model.pages.Pages;
 
 import java.util.Set;
@@ -32,9 +33,16 @@ public class ArtBuilder extends AbstractPublicationInstanceBuilder {
             return createVisualArts();
         } else if (CristinSecondaryCategory.THEATRICAL_PRODUCTION.equals(secondaryCategory)) {
             return createTheatricalProduction();
-        } else {
+        } else if (CristinSecondaryCategory.ARCHITECT_DESIGN.equals(secondaryCategory)) {
+            return createArchitecture();
+        }
+        else {
             throw unknownSecondaryCategory();
         }
+    }
+
+    private Architecture createArchitecture() {
+        return getCristinObject().getCristinProduct().toArchitecture();
     }
 
     private PerformingArts createTheatricalProduction() {
