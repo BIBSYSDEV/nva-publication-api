@@ -35,8 +35,7 @@ public class ArtBuilder extends AbstractPublicationInstanceBuilder {
             return createTheatricalProduction();
         } else if (CristinSecondaryCategory.ARCHITECT_DESIGN.equals(secondaryCategory)) {
             return createArchitecture();
-        }
-        else {
+        } else {
             throw unknownSecondaryCategory();
         }
     }
