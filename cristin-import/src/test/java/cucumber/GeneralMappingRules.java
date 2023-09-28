@@ -71,26 +71,26 @@ public class GeneralMappingRules {
 
 
     @Given("a cristin result with a single contributor that is not verified")
-    public void aCristinResultWithASingleContributorThatIsNotVerified() {
+    public void cristinResultWithASingleContributorThatIsNotVerified() {
         var randomUnverifiedContributor = CristinDataGenerator.randomUnverifiedContributor(1);
         scenarioContext.getCristinEntry().setContributors(List.of(randomUnverifiedContributor));
     }
 
     @Then("the NVA contributor does not have an id")
-    public void theNVAContributorDoesNotHaveAnId() {
+    public void theNvaContributorDoesNotHaveAnId() {
         var contributor = getFirstContributor();
         assertThat(contributor.getIdentity().getId(), is(nullValue()));
     }
 
     @Given("a cristin result with a single contributor that is verified and has a cristin-id equal to {int}")
-    public void aCristinResultWithASingleContributorThatIsVerifiedAndHasACristinIdEqualTo(int cristinIdentifier) {
+    public void cristinResultWithASingleContributorThatIsVerifiedAndHasACristinIdEqualTo(int cristinIdentifier) {
         var contributor = CristinDataGenerator.randomContributor(1);
         contributor.setIdentifier(cristinIdentifier);
         scenarioContext.getCristinEntry().setContributors(List.of(contributor));
     }
 
     @Then("the NVA contributor has an id equal to {string}")
-    public void theNVAContributorHasAnIdEqualTo(String expectedId) {
+    public void theNvaContributorHasAnIdEqualTo(String expectedId) {
         var contributor = getFirstContributor();
         assertThat(contributor.getIdentity().getId(),
             is(UriWrapper.fromUri(expectedId).getUri()));
