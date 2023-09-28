@@ -10,6 +10,7 @@ import java.net.URI;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -63,18 +64,18 @@ public class CristinContributor implements Comparable<CristinContributor> {
 
         String fullName = constructFullName();
         Identity identity = new Identity.Builder()
-                                .withName(fullName)
-                                .withId(constructId())
-                                .withVerificationStatus(extractVerificationStatus())
-                                .build();
+            .withName(fullName)
+            .withId(constructId().orElse(null))
+            .withVerificationStatus(extractVerificationStatus())
+            .build();
 
         return new Contributor.Builder()
-                   .withIdentity(identity)
-                   .withCorrespondingAuthor(false)
-                   .withAffiliations(extractAffiliations())
-                   .withRole(extractRoles())
-                   .withSequence(contributorOrder)
-                   .build();
+            .withIdentity(identity)
+            .withCorrespondingAuthor(false)
+            .withAffiliations(extractAffiliations())
+            .withRole(extractRoles())
+            .withSequence(contributorOrder)
+            .build();
     }
 
     public void setContributorOrder(Integer orderNumber) {
@@ -140,12 +141,18 @@ public class CristinContributor implements Comparable<CristinContributor> {
                    .collect(Collectors.toList());
     }
 
-    private URI constructId() {
-        return UriWrapper
+    private Optional<URI> constructId() {
+        return isVerified()
+            ? Optional.of(UriWrapper
             .fromUri(NVA_API_DOMAIN)
             .addChild(CRISTIN_PATH)
             .addChild(PERSON_PATH)
             .addChild(identifier.toString())
-            .getUri();
+            .getUri())
+            : Optional.empty();
+    }
+
+    private boolean isVerified() {
+        return ContributorVerificationStatus.VERIFIED.equals(extractVerificationStatus());
     }
 }

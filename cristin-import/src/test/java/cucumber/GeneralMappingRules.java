@@ -69,6 +69,34 @@ public class GeneralMappingRules {
         this.scenarioContext = scenarioContext;
     }
 
+
+    @Given("a cristin result with a single contributor that is not verified")
+    public void aCristinResultWithASingleContributorThatIsNotVerified() {
+        var randomUnverifiedContributor = CristinDataGenerator.randomUnverifiedContributor(1);
+        scenarioContext.getCristinEntry().setContributors(List.of(randomUnverifiedContributor));
+    }
+
+    @Then("the NVA contributor does not have an id")
+    public void theNVAContributorDoesNotHaveAnId() {
+        var contributor = getFirstContributor();
+        assertThat(contributor.getIdentity().getId(), is(nullValue()));
+    }
+
+    @Given("a cristin result with a single contributor that is verified and has a cristin-id equal to {int}")
+    public void aCristinResultWithASingleContributorThatIsVerifiedAndHasACristinIdEqualTo(int cristinIdentifier) {
+        var contributor = CristinDataGenerator.randomContributor(1);
+        contributor.setIdentifier(cristinIdentifier);
+        scenarioContext.getCristinEntry().setContributors(List.of(contributor));
+    }
+
+    @Then("the NVA contributor has an id equal to {string}")
+    public void theNVAContributorHasAnIdEqualTo(String expectedId) {
+        var contributor = getFirstContributor();
+        assertThat(contributor.getIdentity().getId(),
+            is(UriWrapper.fromUri(expectedId).getUri()));
+
+    }
+
     @Given("a valid Cristin Result")
     public void validCristinEntry() {
         this.scenarioContext.newCristinEntry();
@@ -194,7 +222,7 @@ public class GeneralMappingRules {
                                                     .stream()
                                                     .map(CristinContributorTransformer::toContributor)
                                                     .map(CristinContributorBuilder::build)
-                                                    .collect(Collectors.toList());
+                                                    .toList();
 
         scenarioContext.getCristinEntry().setContributors(contributors);
     }
@@ -204,7 +232,7 @@ public class GeneralMappingRules {
         List<CristinContributor> contributors = dataTable.asMaps().stream()
                                                     .map(CristinContributorTransformer::toContributorWithOrdinalNumber)
                                                     .map(CristinContributorBuilder::build)
-                                                    .collect(Collectors.toList());
+                                                    .toList();
         scenarioContext.getCristinEntry().setContributors(contributors);
     }
 
@@ -267,7 +295,7 @@ public class GeneralMappingRules {
                                                   .stream()
                                                   .map(Contributor::getIdentity)
                                                   .map(Identity::getName)
-                                                  .collect(Collectors.toList());
+                                                  .toList();
 
         assertThat(actualContributorNames, contains(expectedContributorNames.toArray(String[]::new)));
     }
@@ -280,13 +308,13 @@ public class GeneralMappingRules {
                 .getContributors()
                 .stream()
                 .map(ContributorFlattenedDetails::extractNameAndSequence)
-                .collect(Collectors.toList());
+                .toList();
 
         List<ContributorFlattenedDetails> expectedContributors =
             table.asMaps()
                 .stream()
                 .map(ContributorFlattenedDetails::fromDataTableMapEntry)
-                .collect(Collectors.toList());
+                .toList();
 
         assertThat(actualContributors, containsInAnyOrder(expectedContributors.toArray(
             ContributorFlattenedDetails[]::new)));
@@ -299,12 +327,11 @@ public class GeneralMappingRules {
         List<ContributorFlattenedDetails> actualDetails =
             contributors.stream()
                 .map(ContributorFlattenedDetails::extractNameSequenceAndAffiliationUri)
-                .collect(Collectors.toList());
+                .toList();
         ContributorFlattenedDetails[] expectedDetails =
             dataTable.asMaps()
                 .stream()
                 .map(ContributorFlattenedDetails::fromDataTableMapEntry)
-                .collect(Collectors.toList())
                 .toArray(ContributorFlattenedDetails[]::new);
 
         assertThat(actualDetails, containsInAnyOrder(expectedDetails));
@@ -404,12 +431,12 @@ public class GeneralMappingRules {
 
     @Then("the NVA Resource has Research projects with the id values:")
     public void theNvaResourceHasResearchProjectsWithTheIdValues(List<String> stringUriList) {
-        List<URI> expectedUriList = stringUriList.stream().map(URI::create).collect(Collectors.toList());
+        List<URI> expectedUriList = stringUriList.stream().map(URI::create).toList();
         List<URI> actualUriList = scenarioContext.getNvaEntry()
                                       .getProjects()
                                       .stream()
                                       .map(ResearchProject::getId)
-                                      .collect(Collectors.toList());
+                                      .toList();
         assertThat(actualUriList, is(equalTo(expectedUriList)));
     }
 
@@ -590,5 +617,11 @@ public class GeneralMappingRules {
     public void theNvaResourceShouldHaveTheHandleSetToNull() {
         var actualHandle = scenarioContext.getNvaEntry().getHandle();
         assertThat(actualHandle, is(nullValue()));
+    }
+
+    private Contributor getFirstContributor() {
+        var contributors = scenarioContext.getNvaEntry().getEntityDescription().getContributors();
+        assertThat(contributors, hasSize(1));
+        return contributors.get(0);
     }
 }
