@@ -12,7 +12,7 @@ Feature: Rules that apply for Artistic results
       | MUSIKK_FRAMFORIN  | MusicPerformance |
       | KUNST_OG_BILDE    | VisualArts       |
       | MUSIKK_KOMP       | MusicPerformance |
-#      | ARKITEKTTEGNING   | Architecture           |
+      | ARKITEKTTEGNING   | Architecture     |
       | TEATERPRODUKSJON  | PerformingArts   |
 
 
@@ -168,3 +168,9 @@ Feature: Rules that apply for Artistic results
       | place     | to                  | from                | sequence |
       | Göttingen | 1996-12-01T00:00:00 | 1996-11-19T00:00:00 | 0        |
 
+
+  Scenario: A cristin Architecture should be mapped to NVA architecture with subtype other
+    Given a valid Cristin Result with secondary category "ARKITEKTTEGNING"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a Publication Instance of type "Architecture"
+    And the Architecture has a subtype other with descripion "Migrert fra cristin"
