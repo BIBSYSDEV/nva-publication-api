@@ -41,6 +41,7 @@ import nva.commons.core.StringUtils;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.instancetypes.artistic.music.MusicMediaType.COMPACT_DISC;
@@ -159,12 +160,11 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     }
 
     @JsonIgnore
-    private String[] descriptionFields() {
-        return new String[]{
-            ensembleName,
-            producer,
-            crew,
-            coCreators};
+    private Stream<Optional<String>> descriptionFields() {
+        return Stream.of(createInformativeDescription("Ensemble navn: %s", ensembleName),
+            createInformativeDescription("Produsent: %s", producer),
+            createInformativeDescription("Besetning: %s", crew),
+            createInformativeDescription("Medvirkende: %s", coCreators));
     }
 
 
