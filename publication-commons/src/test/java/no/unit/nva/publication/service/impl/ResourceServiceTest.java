@@ -1008,7 +1008,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    .persistNew(resourceService, UserInstance.fromPublication(publication));
     }
 
-    private Publication createPersistedPublicationWithManyContributionsWithoutAffiliations(int amount) throws BadRequestException {
+    private Publication createPersistedPublicationWithManyContributionsWithoutAffiliations(int amount)
+        throws BadRequestException {
         var publication = randomPublication().copy().withDoi(null).build();
         var contributions = IntStream
                                 .rangeClosed(1, amount)

@@ -43,7 +43,8 @@ public interface DynamoEntry {
     }
 
     private static boolean hasByteArrayData(Map<String, AttributeValue> valuesMap) {
-        return nonNull(valuesMap.get(CONTAINED_DATA_FIELD_NAME)) && nonNull(valuesMap.get(CONTAINED_DATA_FIELD_NAME).getB());
+        return nonNull(valuesMap.get(CONTAINED_DATA_FIELD_NAME))
+               && nonNull(valuesMap.get(CONTAINED_DATA_FIELD_NAME).getB());
     }
 
     @JsonIgnore
