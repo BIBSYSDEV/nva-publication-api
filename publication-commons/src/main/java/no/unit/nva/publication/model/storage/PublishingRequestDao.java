@@ -15,7 +15,6 @@ import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.core.JacocoGenerated;
 
@@ -97,18 +96,8 @@ public class PublishingRequestDao extends TicketDao implements JoinWithResource,
     }
     
     @Override
-    protected User getOwner() {
-        return getData().getOwner();
-    }
-    
-    @Override
     public String joinByResourceOrderedType() {
         return joinByResourceContainedOrderedType();
-    }
-    
-    @Override
-    public SortableIdentifier getResourceIdentifier() {
-        return getTicketEntry().getResourceIdentifier();
     }
     
     @Override

@@ -1,6 +1,7 @@
 package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.publication.model.business.PublishingRequestCase.assertThatPublicationHasMinimumMandatoryFields;
+import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.primaryKeyEqualityConditionAttributeValues;
@@ -53,6 +54,9 @@ public class UpdateResourceService extends ServiceWithTransactions {
     public static final String DELETION_IN_PROGRESS = "Deletion in progress. This may take a while";
     //TODO: fix affiliation update when updating owner
     private static final URI AFFILIATION_UPDATE_NOT_UPDATE_YET = null;
+    public static final String ILLEGAL_DELETE_WHEN_NOT_DRAFT =
+        "Attempting to update publication to DRAFT_FOR_DELETION when current status "
+        + "is not draft";
     private final String tableName;
     private final Clock clockForTimestamps;
     private final ReadResourceService readResourceService;
@@ -73,6 +77,17 @@ public class UpdateResourceService extends ServiceWithTransactions {
             return updatePublicationIncludingStatus(publication);
         }
         throw new IllegalStateException("Attempting to update publication status when it is not allowed");
+    }
+
+    public Publication updatePublicationDraftToDraftForDeletion(Publication publicationUpdate)
+        throws NotFoundException {
+        var persistedPublication = attempt(() -> fetchExistingPublication(publicationUpdate))
+                                       .orElseThrow(failure -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
+        if (persistedPublication.getStatus().equals(PublicationStatus.DRAFT)) {
+            publicationUpdate.setStatus(PublicationStatus.DRAFT_FOR_DELETION);
+            return updatePublicationIncludingStatus(publicationUpdate);
+        }
+        throw new IllegalStateException(ILLEGAL_DELETE_WHEN_NOT_DRAFT);
     }
 
     public Publication updatePublicationIncludingStatus(Publication publicationUpdate) {

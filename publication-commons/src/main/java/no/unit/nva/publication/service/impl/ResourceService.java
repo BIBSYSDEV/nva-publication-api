@@ -4,22 +4,18 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
 import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
+import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
-import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.BatchWriteItemRequest;
-import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.PutRequest;
-import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
-import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
 import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 import com.google.common.collect.Lists;
 import java.net.URI;
@@ -427,7 +423,6 @@ public class ResourceService extends ServiceWithTransactions {
     private List<Entity> extractDatabaseEntries(ScanResult response) {
         return response.getItems()
                    .stream()
-                   .map(CorrectParsingErrors::apply)
                    .map(value -> parseAttributeValuesMap(value, Dao.class))
                    .map(Dao::getData)
                    .map(Entity.class::cast)
@@ -520,7 +515,6 @@ public class ResourceService extends ServiceWithTransactions {
 
     private void applyDeleteResourceConditions(TransactWriteItem deleteResource) {
         Map<String, String> expressionAttributeNames = Map.of(
-            "#data", RESOURCE_FIELD_IN_RESOURCE_DAO,
             "#status", STATUS_FIELD_IN_RESOURCE,
             "#doi", DOI_FIELD_IN_RESOURCE
         );
@@ -529,23 +523,22 @@ public class ResourceService extends ServiceWithTransactions {
         );
 
         deleteResource.getDelete()
-            .withConditionExpression("#data.#status <> :publishedStatus AND attribute_not_exists(#data.#doi)")
+            .withConditionExpression("#status <> :publishedStatus AND attribute_not_exists(#doi)")
             .withExpressionAttributeNames(expressionAttributeNames)
             .withExpressionAttributeValues(expressionAttributeValues);
     }
 
     private Resource markResourceForDeletion(Resource resource)
         throws ApiGatewayException {
-        ResourceDao dao = new ResourceDao(resource);
-        UpdateItemRequest updateRequest = markForDeletionUpdateRequest(dao);
-        return attempt(() -> sendUpdateRequest(updateRequest))
+        return attempt(() -> updateResourceService.updatePublicationDraftToDraftForDeletion(resource.toPublication()))
+                   .map(Resource::fromPublication)
                    .orElseThrow(failure -> markForDeletionError(failure, resource));
     }
 
     private ApiGatewayException markForDeletionError(Failure<Resource> failure, Resource resource) {
         if (primaryKeyConditionFailed(failure.getException())) {
-            return new NotFoundException(ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE);
-        } else if (failure.getException() instanceof ConditionalCheckFailedException) {
+            return new BadRequestException(RESOURCE_NOT_FOUND_MESSAGE + resource.getIdentifier().toString());
+        } else if (failure.getException() instanceof IllegalStateException) {
             logger.warn(ExceptionUtils.stackTraceInSingleLine(failure.getException()));
             return new BadRequestException(RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE
                                            + resource.getIdentifier().toString());
@@ -554,52 +547,12 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private boolean primaryKeyConditionFailed(Exception exception) {
-        return exception instanceof AmazonServiceException
-               && messageRefersToInvalidPath(exception);
+        return exception instanceof NotFoundException
+               && messageRefersToResourceNotFound(exception);
     }
 
-    private boolean messageRefersToInvalidPath(Exception exception) {
-        return exception.getMessage().contains(INVALID_PATH_ERROR);
-    }
-
-    private UpdateItemRequest markForDeletionUpdateRequest(ResourceDao dao) {
-        String updateExpression = "SET "
-                                  + "#data.#status = :newStatus, "
-                                  + "#data.#modifiedDate = :modifiedDate";
-
-        String conditionExpression = "#data.#status = :expectedExistingStatus";
-
-        Map<String, AttributeValue> expressionValuesMap = Map.of(
-            ":newStatus", new AttributeValue(PublicationStatus.DRAFT_FOR_DELETION.getValue()),
-            ":modifiedDate", new AttributeValue(nowAsString()),
-            ":expectedExistingStatus", new AttributeValue(PublicationStatus.DRAFT.toString())
-        );
-
-        Map<String, String> expressionAttributeNames = Map.of(
-            "#status", STATUS_FIELD_IN_RESOURCE,
-            "#modifiedDate", MODIFIED_FIELD_IN_RESOURCE,
-            "#data", RESOURCE_FIELD_IN_RESOURCE_DAO);
-
-        UpdateItemRequest request = new UpdateItemRequest()
-                                        .withTableName(tableName)
-                                        .withKey(dao.primaryKey())
-                                        .withUpdateExpression(updateExpression)
-                                        .withConditionExpression(conditionExpression)
-                                        .withExpressionAttributeNames(expressionAttributeNames)
-                                        .withExpressionAttributeValues(expressionValuesMap)
-                                        .withReturnValues(ReturnValue.ALL_NEW);
-        logger.info("DeleteRequest:{}", request);
-        return request;
-    }
-
-    private Resource sendUpdateRequest(UpdateItemRequest updateRequest) {
-        UpdateItemResult requestResult = getClient().updateItem(updateRequest);
-        return Try.of(requestResult)
-                   .map(UpdateItemResult::getAttributes)
-                   .map(valuesMap -> parseAttributeValuesMap(valuesMap, ResourceDao.class))
-                   .map(ResourceDao::getData)
-                   .map(Resource.class::cast)
-                   .orElseThrow();
+    private boolean messageRefersToResourceNotFound(Exception exception) {
+        return exception.getMessage().contains(RESOURCE_NOT_FOUND_MESSAGE);
     }
 
     private TransactWriteItem createNewTransactionPutEntryForEnsuringUniqueIdentifier(Resource resource) {

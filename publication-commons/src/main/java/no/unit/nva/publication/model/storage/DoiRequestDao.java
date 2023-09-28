@@ -99,20 +99,9 @@ public class DoiRequestDao extends TicketDao implements JoinWithResource, JsonSe
     }
 
     @Override
-    protected User getOwner() {
-        return getData().getOwner();
-    }
-
-    @Override
     @JsonIgnore
     public String joinByResourceOrderedType() {
         return joinByResourceContainedOrderedType();
-    }
-
-    @Override
-    @JsonIgnore
-    public SortableIdentifier getResourceIdentifier() {
-        return getTicketEntry().getResourceIdentifier();
     }
 
     @Override

@@ -21,14 +21,19 @@ import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
+import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.User;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.SingletonCollector;
 
 @JsonSubTypes({
@@ -47,6 +52,25 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
     public static final String ALPHABETICALLY_ORDERED_LAST_TICKET_TYPE =
         GeneralSupportRequestDao.JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX;
     private static final String TICKET_IDENTIFIER_FIELD_NAME = "ticketIdentifier";
+
+
+    @JsonProperty(CREATED_DATE_FIELD)
+    private Instant createdAt;
+
+    @JsonProperty(MODIFIED_DATE_FIELD)
+    private Instant modifiedAt;
+
+    @JsonProperty(CUSTOMER_ID_FIELD)
+    private URI customerId;
+
+    @JsonProperty(TICKET_IDENTIFIER_FIELD_NAME)
+    private SortableIdentifier ticketIdentifier;
+
+    @JsonProperty(RESOURCE_IDENTIFIER_FIELD)
+    private SortableIdentifier resourceIdentifier;
+
+    @JsonProperty(OWNER_FIELD)
+    private User owner;
     
     protected TicketDao() {
         super();
@@ -54,6 +78,13 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
     
     protected TicketDao(TicketEntry ticketEntry) {
         super(ticketEntry);
+        this.setIdentifier(ticketEntry.getIdentifier());
+        this.createdAt = ticketEntry.getCreatedDate();
+        this.modifiedAt = ticketEntry.getModifiedDate();
+        this.customerId = ticketEntry.getCustomerId();
+        this.ticketIdentifier = ticketEntry.getIdentifier();
+        this.resourceIdentifier = ticketEntry.getResourceIdentifier();
+        this.owner = ticketEntry.getOwner();
     }
     
     public final Optional<TicketDao> fetchTicket(AmazonDynamoDB client) {
@@ -117,9 +148,65 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
     public void updateExistingEntry(AmazonDynamoDB client) {
         this.getData().setModifiedDate(Instant.now());
         var putItem = this.createPutItemRequest();
-        client.putItem(putItem);
+        try {
+            client.putItem(putItem);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
-    
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getModifiedAt() {
+        return modifiedAt;
+    }
+
+    public void setModifiedAt(Instant modifiedAt) {
+        this.modifiedAt = modifiedAt;
+    }
+
+    @Override
+    @JacocoGenerated
+    public URI getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(URI customerId) {
+        this.customerId = customerId;
+    }
+
+    public SortableIdentifier getTicketIdentifier() {
+        return ticketIdentifier;
+    }
+
+    public void setTicketIdentifier(SortableIdentifier ticketIdentifier) {
+        this.ticketIdentifier = ticketIdentifier;
+    }
+
+    @Override
+    public SortableIdentifier getResourceIdentifier() {
+        return resourceIdentifier;
+    }
+
+    public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
+        this.resourceIdentifier = resourceIdentifier;
+    }
+
+    @Override
+    public User getOwner() {
+        return owner;
+    }
+
+    public void setOwner(User owner) {
+        this.owner = owner;
+    }
+
     protected static <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T data) {
         Put put = new Put()
                       .withItem(data.toDynamoFormat())
@@ -132,10 +219,11 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
     protected TicketEntry getTicketEntry() {
         return (TicketEntry) getData();
     }
+
     
     private static class FetchMessagesQuery {
         
-        private static final String FILTER_EXPRESSION = "#data.#ticketIdentifier = :ticketIdentifier";
+        private static final String FILTER_EXPRESSION = "#ticketIdentifier = :ticketIdentifier";
         private static final String KEY_CONDITION_EXPRESSION =
             "#JoinByResourcePartitionKey = :PartitionKeyValue "
             + "AND begins_with(#JoinByResourceSortKey,:SortKeyValuePrefix)";
@@ -155,7 +243,6 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
         
         public Map<String, String> getExpressionAttributeNames() {
             return Map.of(
-                "#data", CONTAINED_DATA_FIELD_NAME,
                 "#ticketIdentifier", TICKET_IDENTIFIER_FIELD_NAME,
                 "#JoinByResourcePartitionKey", BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME,
                 "#JoinByResourceSortKey", BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME);
@@ -195,7 +282,6 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
         private void createCondition(TicketDao dao) {
             var entryUpdate = (TicketEntry) dao.getData();
             this.expressionAttributeNames = Map.of(
-                "#data", CONTAINED_DATA_FIELD_NAME,
                 "#createdDate", CREATED_DATE_FIELD,
                 "#customerId", CUSTOMER_ID_FIELD,
                 "#identifier", IDENTIFIER_FIELD,
@@ -217,12 +303,12 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
                 );
             
             this.conditionExpression =
-                "#data.#createdDate = :createdDate "
-                + "AND #data.#customerId = :customerId "
-                + "AND #data.#identifier = :identifier "
-                + "AND #data.#modifiedDate <> :modifiedDate "
-                + "AND #data.#owner = :owner "
-                + "AND #data.#resourceIdentifier = :resourceIdentifier "
+                "#createdDate = :createdDate "
+                + "AND #customerId = :customerId "
+                + "AND #identifier = :identifier "
+                + "AND #modifiedDate <> :modifiedDate "
+                + "AND #owner = :owner "
+                + "AND #resourceIdentifier = :resourceIdentifier "
                 + "AND #version <> :version ";
         }
         
