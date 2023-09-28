@@ -107,19 +107,24 @@ public final class CristinDataGenerator {
 
     public static CristinContributor randomContributor(Integer contributorIndex) {
         return CristinContributor.builder()
-                   .withContributorOrder(contributorIndex)
-                   .withIdentifier(contributorIndex)
-                   .withGivenName(randomString())
-                   .withFamilyName(randomString())
-                   .withVerificationStatus(randomVerificationStatus())
-                   .withAffiliations(randomAffiliations())
-                   .build();
+            .withContributorOrder(contributorIndex)
+            .withIdentifier(contributorIndex)
+            .withGivenName(randomString())
+            .withFamilyName(randomString())
+            .withVerificationStatus(VerificationStatus.VERIFIED)
+            .withAffiliations(randomAffiliations())
+            .build();
     }
 
-    private static VerificationStatus randomVerificationStatus() {
-        return new Random().nextBoolean()
-                   ? VerificationStatus.VERIFIED
-                   : VerificationStatus.NOT_VERIFIED;
+    public static CristinContributor randomUnverifiedContributor(Integer contributorIndex) {
+        return CristinContributor.builder()
+            .withContributorOrder(contributorIndex)
+            .withIdentifier(contributorIndex)
+            .withGivenName(randomString())
+            .withFamilyName(randomString())
+            .withVerificationStatus(VerificationStatus.NOT_VERIFIED)
+            .withAffiliations(randomAffiliations())
+            .build();
     }
 
     public static CristinPresentationalWork randomPresentationalWork() {
@@ -744,13 +749,13 @@ public final class CristinDataGenerator {
 
     private static CristinContributor creatContributor(Integer contributorIndex, CristinContributorRoleCode roleCode) {
         return CristinContributor.builder()
-                   .withContributorOrder(contributorIndex)
-                   .withVerificationStatus(randomVerificationStatus())
-                   .withIdentifier(contributorIndex)
-                   .withGivenName(randomString())
-                   .withFamilyName(randomString())
-                   .withAffiliations(List.of(createAffiliation(roleCode)))
-                   .build();
+            .withContributorOrder(contributorIndex)
+            .withVerificationStatus(VerificationStatus.VERIFIED)
+            .withIdentifier(contributorIndex)
+            .withGivenName(randomString())
+            .withFamilyName(randomString())
+            .withAffiliations(List.of(createAffiliation(roleCode)))
+            .build();
     }
 
     private static String randomDoiString() {

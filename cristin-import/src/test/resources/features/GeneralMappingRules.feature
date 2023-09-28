@@ -175,6 +175,16 @@ Feature: Mappings that hold for all types of Cristin Results
       | SecondGiven SecondFamily | 2              | https://api.test.nva.aws.unit.no/cristin/organization/194.66.32.15 |
       | ThirdGiven ThirdFamily   | 3              | https://api.test.nva.aws.unit.no/cristin/organization/0.0.0.0      |
 
+  Scenario: unverified cristin contributors does not get their contributor identifiers mapped to NVA
+    Given a cristin result with a single contributor that is not verified
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA contributor does not have an id
+
+  Scenario: verified cristin contributors with id get their contributor identifiers mapped to NVA
+    Given a cristin result with a single contributor that is verified and has a cristin-id equal to 1234
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA contributor has an id equal to "https://api.test.nva.aws.unit.no/cristin/person/1234"
+
   Scenario Outline: Mapping of Cristin Contributor roles is done based on hard-coded rules described here.
     Given that the Cristin Result has a Contributor with role "<CristinRole>"
     When the Cristin Result is converted to an NVA Resource
