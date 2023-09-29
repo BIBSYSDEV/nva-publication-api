@@ -21,13 +21,25 @@ public class ImportStatus implements JsonSerializable {
     private final String comment;
 
     @ConstructorProperties({"candidateStatus", "modifiedDate", "setBy", "nvaPublicationId", "comment"})
-    public ImportStatus(CandidateStatus candidateStatus, Instant modifiedDate, Username setBy,
-                        URI nvaPublicationId, String comment) {
+    public ImportStatus(CandidateStatus candidateStatus, Instant modifiedDate, Username setBy, URI nvaPublicationId,
+                        String comment) {
         this.candidateStatus = candidateStatus;
         this.modifiedDate = modifiedDate;
         this.setBy = setBy;
         this.nvaPublicationId = nvaPublicationId;
         this.comment = comment;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public Builder copy() {
+        return builder().withNvaPublicationId(nvaPublicationId)
+                   .withComment(comment)
+                   .withSetBy(setBy)
+                   .withModifiedDate(modifiedDate)
+                   .withCandidateStatus(candidateStatus);
     }
 
     public CandidateStatus getCandidateStatus() {
@@ -62,14 +74,54 @@ public class ImportStatus implements JsonSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ImportStatus)) {
+        if (!(o instanceof ImportStatus that)) {
             return false;
         }
-        ImportStatus that = (ImportStatus) o;
         return getCandidateStatus() == that.getCandidateStatus()
                && Objects.equals(getSetBy(), that.getSetBy())
                && Objects.equals(getModifiedDate(), that.getModifiedDate())
                && Objects.equals(getNvaPublicationId(), that.getNvaPublicationId())
                && Objects.equals(getComment(), that.getComment());
+    }
+
+    public static final class Builder {
+
+        private CandidateStatus candidateStatus;
+        private Username setBy;
+        private Instant modifiedDate;
+        private URI nvaPublicationId;
+        private String comment;
+
+        private Builder() {
+        }
+
+        public Builder withCandidateStatus(CandidateStatus candidateStatus) {
+            this.candidateStatus = candidateStatus;
+            return this;
+        }
+
+        public Builder withSetBy(Username setBy) {
+            this.setBy = setBy;
+            return this;
+        }
+
+        public Builder withModifiedDate(Instant modifiedDate) {
+            this.modifiedDate = modifiedDate;
+            return this;
+        }
+
+        public Builder withNvaPublicationId(URI nvaPublicationId) {
+            this.nvaPublicationId = nvaPublicationId;
+            return this;
+        }
+
+        public Builder withComment(String comment) {
+            this.comment = comment;
+            return this;
+        }
+
+        public ImportStatus build() {
+            return new ImportStatus(candidateStatus, modifiedDate, setBy, nvaPublicationId, comment);
+        }
     }
 }

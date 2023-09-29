@@ -16,6 +16,7 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -174,6 +175,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         throws NotFoundException {
         var importCandidate = readResourceService.getResourceByIdentifier(identifier).toImportCandidate();
         importCandidate.setImportStatus(status);
+        importCandidate.setModifiedDate(Instant.now());
         var resource = Resource.fromImportCandidate(importCandidate);
         var updateResourceTransactionItem = updateResource(resource);
         var request = new TransactWriteItemsRequest().withTransactItems(updateResourceTransactionItem);
