@@ -291,9 +291,10 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         s3Client = new FakeS3ClientThrowingException(expectedMessage);
         scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
                                           resourceService, scopusUpdater);
-        var appender = LogUtils.getTestingAppenderForRootLogger();
+        final var appender = LogUtils.getTestingAppenderForRootLogger();
         assertThrows(RuntimeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
+        appender.stop();
     }
 
     @Test
@@ -634,9 +635,11 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.X);
         var expectedMessage = String.format(UNSUPPORTED_SOURCE_TYPE, scopusData.getDocument().getMeta().getEid());
         var s3Event = createNewScopusPublicationEvent();
-        var appender = LogUtils.getTestingAppenderForRootLogger();
+        final var appender = LogUtils.getTestingAppenderForRootLogger();
         assertThrows(UnsupportedSrcTypeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
+        appender.stop();
+
     }
 
     @Test
@@ -838,9 +841,11 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var eid = scopusData.getDocument().getMeta().getEid();
         var s3Event = createNewScopusPublicationEvent();
         var expectedMessage = String.format(PublicationInstanceCreator.UNSUPPORTED_CITATION_TYPE_MESSAGE, eid);
-        var appender = LogUtils.getTestingAppenderForRootLogger();
+        final var appender = LogUtils.getTestingAppenderForRootLogger();
         assertThrows(UnsupportedCitationTypeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
+        appender.stop();
+
     }
 
     @Test
@@ -1084,19 +1089,23 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldHandlePiaConnectionException() throws IOException {
         mockedPiaException();
-        var appender = LogUtils.getTestingAppenderForRootLogger();
+        final var appender = LogUtils.getTestingAppenderForRootLogger();
         var s3Event = createNewScopusPublicationEvent();
         scopusHandler.handleRequest(s3Event, CONTEXT);
         assertThat(appender.getMessages(), containsString(PiaConnection.PIA_RESPONSE_ERROR));
+        appender.stop();
+
     }
 
     @Test
     void shouldHandlePiaBadRequest() throws IOException {
         mockedPiaBadRequest();
-        var appender = LogUtils.getTestingAppenderForRootLogger();
+        final var appender = LogUtils.getTestingAppenderForRootLogger();
         var s3Event = createNewScopusPublicationEvent();
         scopusHandler.handleRequest(s3Event, CONTEXT);
         assertThat(appender.getMessages(), containsString(PiaConnection.PIA_RESPONSE_ERROR));
+        appender.stop();
+
     }
 
     @Test
