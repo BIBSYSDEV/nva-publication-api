@@ -1505,7 +1505,7 @@ Resources:
           Properties:
             Stream: !GetAtt NvaResourcesTable.StreamArn
             StartingPosition: TRIM_HORIZON
-            BatchSize: 10
+            BatchSize: 1
             Enabled: true
 
   ImportCandidateDynamodbStreamToEventBridgeHandler:
@@ -1534,7 +1534,7 @@ Resources:
           Properties:
             Stream: !GetAtt NvaImportCandidatesTable.StreamArn
             StartingPosition: TRIM_HORIZON
-            BatchSize: 10
+            BatchSize: 1
             Enabled: true
 
 
