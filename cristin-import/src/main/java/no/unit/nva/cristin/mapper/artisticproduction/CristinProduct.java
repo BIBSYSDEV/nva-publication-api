@@ -4,10 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -16,12 +16,13 @@ import lombok.Getter;
 import lombok.Setter;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
+import no.unit.nva.model.instancetypes.artistic.architecture.Architecture;
+import no.unit.nva.model.instancetypes.artistic.architecture.ArchitectureSubtype;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
 import no.unit.nva.model.instancetypes.artistic.film.realization.MovingPictureOutput;
 import no.unit.nva.model.instancetypes.artistic.film.realization.OtherRelease;
 import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArts;
 import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArtsSubtype;
-import nva.commons.core.StringUtils;
 
 
 /*
@@ -50,6 +51,24 @@ import nva.commons.core.StringUtils;
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"utbredelsesomrade", "status_bestilt"})
 public class CristinProduct implements DescriptionExtractor, MovingPictureExtractor {
+
+    @JsonIgnore
+    private static final String PUBLISHER_NAME_DESCRIPTION = "Publisert av: %s";
+
+    @JsonIgnore
+    private static final String PUBLISHER_PLACE = "Publiseringssted: %s";
+
+    @JsonIgnore
+    private static final String ENSEMBLE_NAME_DESCRIPTION = "Ensemble navn: %s";
+
+    @JsonIgnore
+    private static final String PRODUCTION_TYPE_DESCRIPTION = "Produksjons type: %s";
+
+    @JsonIgnore
+    private static final String FORMAT_DESCRIPTION = "Format: %s";
+
+    @JsonIgnore
+    private static final String MIGRATED_FROM_CRISTIN_MESSAGE = "Migrert fra cristin";
 
     @JsonProperty("utgivernavn")
     private String publisherName;
@@ -113,14 +132,14 @@ public class CristinProduct implements DescriptionExtractor, MovingPictureExtrac
 
 
     @JsonIgnore
-    private String[] descriptionFields() {
-        return new String[]{
-            publisherName,
-            publisherPlace,
-            ensembleName,
-            extractProductionTypeCode(),
-            extractFormatCode()
-        };
+    private Stream<Optional<String>> descriptionFields() {
+        return Stream.of(
+            createInformativeDescription(PUBLISHER_NAME_DESCRIPTION, publisherName),
+            createInformativeDescription(PUBLISHER_PLACE, publisherPlace),
+            createInformativeDescription(ENSEMBLE_NAME_DESCRIPTION, ensembleName),
+            createInformativeDescription(PRODUCTION_TYPE_DESCRIPTION, extractProductionTypeCode()),
+            createInformativeDescription(FORMAT_DESCRIPTION, extractFormatCode())
+        );
     }
 
     private String extractFormatCode() {
@@ -140,7 +159,13 @@ public class CristinProduct implements DescriptionExtractor, MovingPictureExtrac
     }
 
     private String extractVisualArtsOtherSubtypeDescription() {
-        var nonEmptyDescriptionFields = Arrays.stream(descriptionFields()).filter(StringUtils::isNotEmpty).toList();
-        return String.join(System.lineSeparator(), nonEmptyDescriptionFields);
+        return extractDescription(descriptionFields());
+    }
+
+    public Architecture toArchitecture() {
+        return new Architecture(
+            ArchitectureSubtype.createOther(MIGRATED_FROM_CRISTIN_MESSAGE),
+            extractDescription(descriptionFields()),
+            List.of());
     }
 }

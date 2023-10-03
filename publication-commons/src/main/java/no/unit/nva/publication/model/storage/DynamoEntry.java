@@ -19,16 +19,34 @@ import no.unit.nva.publication.storage.model.exceptions.EmptyValueMapException;
     @JsonSubTypes.Type(UniquenessEntry.class)
 })
 public interface DynamoEntry {
-    
+
+    String CONTAINED_DATA_FIELD_NAME = "data";
+    boolean NO_WRAP = true;
+
     static <T> T parseAttributeValuesMap(Map<String, AttributeValue> valuesMap, Class<T> daoClass) {
         if (nonNull(valuesMap) && !valuesMap.isEmpty()) {
-            Item item = ItemUtils.toItem(valuesMap);
-            return attempt(() -> dynamoDbObjectMapper.readValue(item.toJSON(), daoClass)).orElseThrow();
+            if (hasByteArrayData(valuesMap)) {
+                return DataCompressor.decompressDao(valuesMap, daoClass);
+            } else {
+                return parseDecompressedAttributeValue(valuesMap, daoClass);
+            }
+
         } else {
             throw new EmptyValueMapException();
         }
     }
-    
+
+    @Deprecated // Delete after we have migrated all data to compressed
+    private static <T> T parseDecompressedAttributeValue(Map<String, AttributeValue> valuesMap, Class<T> daoClass) {
+        Item item = ItemUtils.toItem(valuesMap);
+        return attempt(() -> dynamoDbObjectMapper.readValue(item.toJSON(), daoClass)).orElseThrow();
+    }
+
+    private static boolean hasByteArrayData(Map<String, AttributeValue> valuesMap) {
+        return nonNull(valuesMap.get(CONTAINED_DATA_FIELD_NAME))
+               && nonNull(valuesMap.get(CONTAINED_DATA_FIELD_NAME).getB());
+    }
+
     @JsonIgnore
     SortableIdentifier getIdentifier();
     

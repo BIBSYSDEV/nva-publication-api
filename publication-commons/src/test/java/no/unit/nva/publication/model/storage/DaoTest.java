@@ -29,6 +29,7 @@ import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.SingletonCollector;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -62,6 +63,10 @@ class DaoTest extends ResourcesLocalTest {
 
     public static Stream<Class<?>> entityProvider() {
         return TypeProvider.listSubTypes(Entity.class);
+    }
+
+    public static Stream<Class<?>> ticketProvider() {
+        return TypeProvider.listSubTypes(TicketEntry.class);
     }
     
     public static Publication draftPublicationWithoutDoi() {
@@ -238,11 +243,10 @@ class DaoTest extends ResourcesLocalTest {
         assertThat(dao2.getVersion(), is(not(nullValue())));
         assertThat(dao.getVersion(), is(not(equalTo(dao2.getVersion()))));
     }
-    
+
     @ParameterizedTest(name = "Dao type:{0}")
-    @DisplayName("dao has only type, data, version, PK, and SK fields")
-    @MethodSource("entityProvider")
-    void daoOnlyHasOnlyTypeDataVersionPKAndSKFields(Class<?> entityType)
+    @MethodSource("ticketProvider")
+    void ticketsShouldHaveAllDesiredFieldsInDao(Class<?> entityType)
         throws JsonProcessingException, ConflictException {
         var entity = (Entity) generateEntity(entityType);
         var dao = entity.toDao();
@@ -252,11 +256,44 @@ class DaoTest extends ResourcesLocalTest {
         List<String> fieldNameList = new ArrayList<>();
         fieldNames.forEachRemaining(fieldNameList::add);
         assertThat(fieldNameList, everyItem(anyOf(
-            startsWith("PK"),
-            startsWith("SK"),
-            startsWith("data"),
-            startsWith("type"),
-            startsWith("version")))
+                       startsWith("PK"),
+                       startsWith("SK"),
+                       equalTo("identifier"),
+                       equalTo("data"),
+                       equalTo("type"),
+                       equalTo("version"),
+                       equalTo("status"),
+                       equalTo("owner"),
+                       equalTo("createdDate"),
+                       equalTo("modifiedDate"),
+                       equalTo("customerId"),
+                       equalTo("ticketIdentifier"),
+                       equalTo("resourceIdentifier")
+                   ))
+        );
+    }
+
+    @Test
+    void resourceShouldHaveAllDesiredFieldsInDao()
+        throws JsonProcessingException, ConflictException {
+        var entity = (Entity) generateEntity(Resource.class);
+        var dao = entity.toDao();
+        String stringValue = dynamoDbObjectMapper.writeValueAsString(dao);
+        ObjectNode jsonNode = (ObjectNode) dynamoDbObjectMapper.readTree(stringValue);
+        Iterator<String> fieldNames = jsonNode.fieldNames();
+        List<String> fieldNameList = new ArrayList<>();
+        fieldNames.forEachRemaining(fieldNameList::add);
+        assertThat(fieldNameList, everyItem(anyOf(
+                       startsWith("PK"),
+                       startsWith("SK"),
+                       equalTo("identifier"),
+                       equalTo("data"),
+                       equalTo("type"),
+                       equalTo("version"),
+                       equalTo("status"),
+                       equalTo("doi"),
+                       equalTo("modifiedDate")
+                   ))
         );
     }
     
