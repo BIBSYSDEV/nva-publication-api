@@ -9,7 +9,7 @@ awsSdk = { strictly = '1.12.544' }
 awsSdk2 = { strictly = '2.20.141' }
 log4j = { strictly = '2.18.0' }
 # slf4j takes "require", not "strictly" as wiremock has multiple versions
-slf4j = { require = '2.0.5' }
+slf4j = { require = '2.0.9' }
 zalandoProblem = { strictly = '0.27.1' }
 awsLambdaCore = { strictly = '1.2.2' }
 awsLambdaEvents = { strictly = '3.11.2' }

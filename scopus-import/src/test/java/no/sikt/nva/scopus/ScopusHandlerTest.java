@@ -192,9 +192,11 @@ import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.TestAppender;
 import nva.commons.secrets.SecretsReader;
 import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -249,6 +251,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private UriRetriever uriRetriever;
     private AuthorizedBackendUriRetriever authorizedBackendUriRetriever;
 
+    private TestAppender appender;
+
     public static Stream<Arguments> providedLanguagesAndExpectedOutput() {
         return Stream.concat(LanguageConstants.ALL_LANGUAGES.stream().map(ScopusHandlerTest::createArguments),
                              addLanguageEdgeCases());
@@ -261,6 +265,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     @BeforeEach
     public void init(WireMockRuntimeInfo wireMockRuntimeInfo) {
         super.init();
+        appender = LogUtils.getTestingAppenderForRootLogger();
+        appender.start();
         var fakeSecretsManagerClient = new FakeSecretsManagerClient();
         fakeSecretsManagerClient.putSecret(PIA_SECRET_NAME, PIA_USERNAME_SECRET_KEY, randomString());
         fakeSecretsManagerClient.putSecret(PIA_SECRET_NAME, PIA_PASSWORD_SECRET_KEY, randomString());
@@ -283,6 +289,11 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData = new ScopusGenerator();
     }
 
+    @AfterEach
+    void tearDown() {
+        appender.stop();
+    }
+
     @Test
     void shouldLogExceptionMessageWhenExceptionOccurs() {
         createEmptyPiaMock();
@@ -291,10 +302,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         s3Client = new FakeS3ClientThrowingException(expectedMessage);
         scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
                                           resourceService, scopusUpdater);
-        final var appender = LogUtils.getTestingAppenderForRootLogger();
         assertThrows(RuntimeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
-        appender.stop();
     }
 
     @Test
@@ -357,6 +366,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldExtractContributorAffiliation() throws IOException {
         createEmptyPiaMock();
+
         var authorsGroups = scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getAuthorGroup();
         var authors = keepOnlyTheAuthors();
         var s3Event = createNewScopusPublicationEvent();
@@ -635,11 +645,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.X);
         var expectedMessage = String.format(UNSUPPORTED_SOURCE_TYPE, scopusData.getDocument().getMeta().getEid());
         var s3Event = createNewScopusPublicationEvent();
-        final var appender = LogUtils.getTestingAppenderForRootLogger();
         assertThrows(UnsupportedSrcTypeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
-        appender.stop();
-
     }
 
     @Test
@@ -841,11 +848,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var eid = scopusData.getDocument().getMeta().getEid();
         var s3Event = createNewScopusPublicationEvent();
         var expectedMessage = String.format(PublicationInstanceCreator.UNSUPPORTED_CITATION_TYPE_MESSAGE, eid);
-        final var appender = LogUtils.getTestingAppenderForRootLogger();
         assertThrows(UnsupportedCitationTypeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
-        appender.stop();
-
     }
 
     @Test
@@ -1089,23 +1093,17 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldHandlePiaConnectionException() throws IOException {
         mockedPiaException();
-        final var appender = LogUtils.getTestingAppenderForRootLogger();
         var s3Event = createNewScopusPublicationEvent();
         scopusHandler.handleRequest(s3Event, CONTEXT);
         assertThat(appender.getMessages(), containsString(PiaConnection.PIA_RESPONSE_ERROR));
-        appender.stop();
-
     }
 
     @Test
     void shouldHandlePiaBadRequest() throws IOException {
         mockedPiaBadRequest();
-        final var appender = LogUtils.getTestingAppenderForRootLogger();
         var s3Event = createNewScopusPublicationEvent();
         scopusHandler.handleRequest(s3Event, CONTEXT);
         assertThat(appender.getMessages(), containsString(PiaConnection.PIA_RESPONSE_ERROR));
-        appender.stop();
-
     }
 
     @Test
