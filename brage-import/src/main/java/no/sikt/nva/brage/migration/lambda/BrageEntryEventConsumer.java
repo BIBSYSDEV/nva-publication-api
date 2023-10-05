@@ -56,6 +56,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private static final Logger logger = LoggerFactory.getLogger(BrageEntryEventConsumer.class);
     public static final String CRISTIN_RECORD_EXCEPTION =
         "Cristin record has not been merged with existing publication: ";
+    public static final String LINE_BREAK = "\n";
     private final S3Client s3Client;
     private final ResourceService resourceService;
     private String brageRecordFile;
@@ -289,7 +290,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private Record getBrageRecordFromS3(S3Event event) throws JsonProcessingException {
-        brageRecordFile = readFileFromS3(event);
+        brageRecordFile = readFileFromS3(event).replaceAll(LINE_BREAK, StringUtils.EMPTY_STRING);
         return parseBrageRecordJson(brageRecordFile);
     }
 
