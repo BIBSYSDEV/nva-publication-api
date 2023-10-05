@@ -91,8 +91,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
-    public static final URI ORGANIZATION = URI.create(
-        "https://api.dev.nva.aws.unit.no/cristin/person/myCristinId/myOrganization");
+    public static final URI ORGANIZATION =
+        URI.create("https://api.dev.nva.aws.unit.no/cristin/person/myCristinId/myOrganization");
     public static final UserInstance USER = UserInstance.create(new User("12345"), ORGANIZATION);
     public static final ObjectMapper objectMapper = JsonUtils.dtoObjectMapper;
     private static final Clock CLOCK = Clock.systemDefaultZone();
@@ -400,7 +400,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldReturnExpandedResourceWithContributorForPublicationWithContributorWithoutIdOrAffiliation()
         throws JsonProcessingException, NotFoundException {
         var contributorWithoutIdOrAffiliation = createContributor(randomElement(Role.values()), null, randomString(),
-                                                                  Collections.emptyList());
+                                                                  Collections.emptyList(), 1);
         var entityDescription = createEntityDescriptionWithContributor(contributorWithoutIdOrAffiliation);
         var publication = PublicationGenerator.randomPublication()
                               .copy()
@@ -496,17 +496,27 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     private Publication getPublicationWithSamePersonInDifferentContributorRoles(URI id) throws JsonProcessingException {
         var publication = getSamplePublication();
-        var contributors = publication.getEntityDescription().getContributors();
+        var contributors = new ArrayList<>(publication.getEntityDescription().getContributors());
         var name = randomString();
-        contributors.add(createContributor(randomElement(Role.values()), id, name, List.of(randomOrganization())));
-        contributors.add(createContributor(randomElement(Role.values()), id, name, List.of(randomOrganization())));
+        contributors.add(createContributor(randomElement(Role.values()), id, name, List.of(randomOrganization()), 1));
+        contributors.add(createContributor(randomElement(Role.values()), id, name, List.of(randomOrganization()), 2));
+        publication.getEntityDescription().setContributors(contributors);
         return publication;
     }
 
-    private Contributor createContributor(Role role, URI id, String name, List<Organization> affiliations) {
-        return new Contributor.Builder().withIdentity(new Identity.Builder().withName(name).withId(id).build())
+    private Contributor createContributor(Role role,
+                                          URI id,
+                                          String name,
+                                          List<Organization> affiliations,
+                                          int sequence) {
+        return new Contributor.Builder()
+                   .withIdentity(new Identity.Builder()
+                                     .withName(name)
+                                     .withId(id)
+                                     .build())
                    .withRole(new RoleType(role))
                    .withAffiliations(affiliations)
+                   .withSequence(sequence)
                    .build();
     }
 
@@ -530,16 +540,12 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         publication.setEntityDescription(new EntityDescription());
         var ticket = TicketTestUtils.createPersistedTicket(publication, GeneralSupportRequest.class, ticketService);
 
-        switch (type) {
-            case "Resource":
-                return Resource.fromPublication(publication);
-            case "TicketEntry":
-                return ticket;
-            case "Message":
-                return messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
-            default:
-                throw new IllegalArgumentException("Unknown Entity type");
-        }
+        return switch (type) {
+            case "Resource" -> Resource.fromPublication(publication);
+            case "TicketEntry" -> ticket;
+            case "Message" -> messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
+            default -> throw new IllegalArgumentException("Unknown Entity type");
+        };
     }
 
     private TicketEntry ticketWithAssignee(Class<? extends TicketEntry> ticketType, Publication publication)

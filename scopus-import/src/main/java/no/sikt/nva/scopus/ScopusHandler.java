@@ -82,7 +82,8 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
 
     @Override
     public ImportCandidate handleRequest(S3Event event, Context context) {
-        return attempt(() -> createImportCandidate(event)).map(this::updateExistingIfNeeded)
+        return attempt(() -> createImportCandidate(event))
+                   .map(this::updateExistingIfNeeded)
                    .flatMap(this::persistOrUpdateInDatabase)
                    .map(publication -> storeSuccessReport(publication, event))
                    .orElseThrow(fail -> handleSavingError(fail, event));
