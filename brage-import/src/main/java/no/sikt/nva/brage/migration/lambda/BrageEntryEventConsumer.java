@@ -7,6 +7,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Iterables;
 import java.net.URI;
 import java.util.List;
@@ -252,7 +253,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                                 S3Event event) {
         var errorFileUri = constructErrorFileUri(event, fail.getException());
         var s3Driver = new S3Driver(s3Client, new Environment().readEnv(BRAGE_MIGRATION_ERROR_BUCKET_NAME));
-        var content = determineBestEventReference(event);
+        var content = attempt(() -> JsonUtils.dtoObjectMapper.readTree(determineBestEventReference(event))).orElseThrow();
         var reportContent = ImportResult.reportFailure(content, fail.getException());
         attempt(() -> s3Driver.insertFile(errorFileUri.toS3bucketPath(), reportContent.toJsonString())).orElseThrow();
     }
@@ -290,7 +291,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private Record getBrageRecordFromS3(S3Event event) throws JsonProcessingException {
-        brageRecordFile = readFileFromS3(event).replaceAll(LINE_BREAK, StringUtils.EMPTY_STRING);
+        brageRecordFile = readFileFromS3(event);
         return parseBrageRecordJson(brageRecordFile);
     }
 
