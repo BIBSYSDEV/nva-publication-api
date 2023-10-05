@@ -2,6 +2,7 @@ package no.sikt.nva.brage.migration.lambda;
 
 import static no.sikt.nva.brage.migration.NvaType.ANTHOLOGY;
 import static no.sikt.nva.brage.migration.NvaType.CRISTIN_RECORD;
+import static no.sikt.nva.brage.migration.NvaType.FILM;
 import static no.sikt.nva.brage.migration.NvaType.PERFORMING_ARTS;
 import static no.sikt.nva.brage.migration.NvaType.PROFESSIONAL_ARTICLE;
 import static no.sikt.nva.brage.migration.NvaType.READER_OPINION;
@@ -117,6 +118,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     public static final Type TYPE_CRISTIN_RECORD = new Type(List.of(CRISTIN_RECORD.getValue()),
                                                        CRISTIN_RECORD.getValue());
     public static final Type TYPE_TEXTBOOK = new Type(List.of(TEXTBOOK.getValue()), TEXTBOOK.getValue());
+    public static final Type TYPE_FILM = new Type(List.of(FILM.getValue()), FILM.getValue());
     public static final Type TYPE_MUSIC = new Type(List.of(NvaType.RECORDING_MUSICAL.getValue()),
                                                    NvaType.RECORDING_MUSICAL.getValue());
     public static final Type TYPE_DESIGN_PRODUCT = new Type(List.of(NvaType.DESIGN_PRODUCT.getValue()),
@@ -699,6 +701,30 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     void shouldConvertTextbookToPublication() throws IOException {
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                  .withType(TYPE_TEXTBOOK)
+                                 .build();
+        var expectedPublication = brageGenerator.getNvaPublication();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThatPublicationsMatch(actualPublication, expectedPublication);
+    }
+
+    @Test
+    void shouldConvertFilmToPublication() throws IOException {
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                 .withType(TYPE_FILM)
+                                 .build();
+        var expectedPublication = brageGenerator.getNvaPublication();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThatPublicationsMatch(actualPublication, expectedPublication);
+    }
+
+    @Test
+    void shouldConvertToPublicationWithUnconfirmedJournalWhenJournalIdIsNotPresent() throws IOException {
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                 .withType(TYPE_FEATURE_ARTICLE)
+                                 .withJournalTitle("Some Very Popular Journal")
+                                 .withIssn(List.of(randomIssn()))
                                  .build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());

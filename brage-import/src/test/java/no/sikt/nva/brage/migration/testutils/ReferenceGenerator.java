@@ -38,6 +38,8 @@ import no.unit.nva.model.instancetypes.artistic.architecture.Architecture;
 import no.unit.nva.model.instancetypes.artistic.architecture.ArchitectureSubtype;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesign;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtype;
+import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
+import no.unit.nva.model.instancetypes.artistic.film.MovingPictureSubtype;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArts;
 import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArtsSubtype;
@@ -158,12 +160,12 @@ public final class ReferenceGenerator {
                            .withDoi(builder.getDoi())
                            .build();
             }
-            if (NvaType.CHRONICLE.getValue().equals(builder.getType().getNva()) && hasJournalId(builder)) {
+            if (NvaType.CHRONICLE.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
-                           .withPublishingContext(generateJournal(builder))
-                           .withPublicationInstance(generatePublicationInstanceForFeatureArticle(builder))
-                           .withDoi(builder.getDoi())
-                           .build();
+                                      .withPublishingContext(generateJournal(builder))
+                                      .withPublicationInstance(generatePublicationInstanceForFeatureArticle(builder))
+                                      .withDoi(builder.getDoi())
+                                      .build();
             }
             if (NvaType.JOURNAL_ARTICLE.getValue().equals(builder.getType().getNva()) && !hasJournalId(builder)) {
                 return new Reference.Builder()
@@ -316,6 +318,14 @@ public final class ReferenceGenerator {
                            .withDoi(builder.getDoi())
                            .build();
             }
+            if (NvaType.FILM.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublicationInstance(new MovingPicture(MovingPictureSubtype.createOther(null), null,
+                                                                      List.of()))
+                           .withPublishingContext(new Artistic())
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
             if (NvaType.CRISTIN_RECORD.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
                            .withPublicationInstance(null)
@@ -452,7 +462,15 @@ public final class ReferenceGenerator {
         }
     }
 
-    private static Journal generateJournal(Builder builder) {
+    private static PublicationContext generateJournal(Builder builder) throws InvalidIssnException {
+        if(nonNull(builder.getJournalId())) {
+            return createJournal(builder);
+        } else {
+            return generateUnconfirmedJournal(builder);
+        }
+    }
+
+    private static PublicationContext createJournal(Builder builder) {
         return new Journal(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
                                .addChild(ChannelType.JOURNAL.getType())
                                .addChild(builder.getJournalId())
