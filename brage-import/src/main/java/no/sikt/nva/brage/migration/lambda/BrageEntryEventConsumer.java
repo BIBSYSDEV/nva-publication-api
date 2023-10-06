@@ -251,7 +251,8 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                                 S3Event event) {
         var errorFileUri = constructErrorFileUri(event, fail.getException());
         var s3Driver = new S3Driver(s3Client, new Environment().readEnv(BRAGE_MIGRATION_ERROR_BUCKET_NAME));
-        var content = determineBestEventReference(event);
+        var content = attempt(() -> JsonUtils.dtoObjectMapper.readTree(determineBestEventReference(event)))
+                          .orElseThrow();
         var reportContent = ImportResult.reportFailure(content, fail.getException());
         attempt(() -> s3Driver.insertFile(errorFileUri.toS3bucketPath(), reportContent.toJsonString())).orElseThrow();
     }

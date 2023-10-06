@@ -883,8 +883,9 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         Executable action = () -> handler.handleRequest(s3Event, CONTEXT);
         var exception = assertThrows(RuntimeException.class, action);
         var actualReport = extractActualReportFromS3Client(s3Event, exception);
-        var input = actualReport.get("input").asText();
+        var input = actualReport.get("input").toPrettyString();
         var actualErrorReportBrageRecord = JsonUtils.dtoObjectMapper.readValue(input, Record.class);
+
         assertThat(actualErrorReportBrageRecord,
                    is(equalTo(nvaBrageMigrationDataGenerator.getBrageRecord())));
     }
