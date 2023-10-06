@@ -187,7 +187,7 @@ public final class BrageNvaMapper {
                    .buildPublishedFile();
     }
 
-    private static java.time.Instant extractEmbargoDate(ContentFile file) {
+    private static Instant extractEmbargoDate(ContentFile file) {
         return Optional.ofNullable(file)
                    .map(ContentFile::getEmbargoDate)
                    .map(Instant::parse)
