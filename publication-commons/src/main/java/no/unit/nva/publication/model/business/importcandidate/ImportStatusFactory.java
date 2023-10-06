@@ -13,25 +13,27 @@ public final class ImportStatusFactory {
     }
 
     public static ImportStatus createNotImported() {
-        return new ImportStatus(CandidateStatus.NOT_IMPORTED,
-                                Instant.now(),
-                                null,
-                                null,
-                                null);
+        return ImportStatus.builder()
+                   .withCandidateStatus(CandidateStatus.NOT_IMPORTED)
+                   .withModifiedDate(Instant.now())
+                   .build();
     }
 
     public static ImportStatus createImported(Username setBy, URI nvaPublicationUri) {
-        return new ImportStatus(CandidateStatus.IMPORTED,
-                                Instant.now(), setBy,
-                                nvaPublicationUri,
-                                null);
+        return ImportStatus.builder()
+                   .withCandidateStatus(CandidateStatus.IMPORTED)
+                   .withSetBy(setBy)
+                   .withNvaPublicationId(nvaPublicationUri)
+                   .withModifiedDate(Instant.now())
+                   .build();
     }
 
     public static ImportStatus createNotApplicable(Username setBy, String comment) {
-        return new ImportStatus(CandidateStatus.NOT_APPLICABLE,
-                                Instant.now(),
-                                setBy,
-                                null,
-                                comment);
+        return ImportStatus.builder()
+                   .withCandidateStatus(CandidateStatus.NOT_APPLICABLE)
+                   .withSetBy(setBy)
+                   .withModifiedDate(Instant.now())
+                   .withComment(comment)
+                   .build();
     }
 }

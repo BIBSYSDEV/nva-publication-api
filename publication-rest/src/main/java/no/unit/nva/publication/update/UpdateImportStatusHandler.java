@@ -2,10 +2,12 @@ package no.unit.nva.publication.update;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
+import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Username;
+import no.unit.nva.publication.ImportStatusDto;
 import no.unit.nva.publication.exception.NotAuthorizedException;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -14,7 +16,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
-public class UpdateImportStatusHandler extends ApiGatewayHandler<ImportStatus, ImportCandidate> {
+public class UpdateImportStatusHandler extends ApiGatewayHandler<ImportStatusDto, ImportCandidate> {
 
     public static final String IMPORT_CANDIDATE_IDENTIFIER_PATH_PARAMETER = "importCandidateIdentifier";
     public static final String TABLE_NAME = new Environment().readEnv("TABLE_NAME");
@@ -26,20 +28,24 @@ public class UpdateImportStatusHandler extends ApiGatewayHandler<ImportStatus, I
     }
 
     public UpdateImportStatusHandler(ResourceService importCandidateService) {
-        super(ImportStatus.class);
+        super(ImportStatusDto.class);
         this.importCandidateService = importCandidateService;
     }
 
     @Override
-    protected ImportCandidate processInput(ImportStatus input, RequestInfo requestInfo, Context context)
+    protected ImportCandidate processInput(ImportStatusDto input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
         validateAccessRights(requestInfo);
         var identifier = getIdentifier(requestInfo);
-        return importCandidateService.updateImportStatus(identifier, input);
+        var importStatus = input.toImportStatus().copy()
+                               .withSetBy(new Username(requestInfo.getUserName()))
+                               .withModifiedDate(Instant.now())
+                               .build();
+        return importCandidateService.updateImportStatus(identifier, importStatus);
     }
 
     @Override
-    protected Integer getSuccessStatusCode(ImportStatus input, ImportCandidate output) {
+    protected Integer getSuccessStatusCode(ImportStatusDto input, ImportCandidate output) {
         return HttpURLConnection.HTTP_OK;
     }
 

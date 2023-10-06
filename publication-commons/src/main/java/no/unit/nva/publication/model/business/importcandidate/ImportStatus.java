@@ -1,5 +1,7 @@
 package no.unit.nva.publication.model.business.importcandidate;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.beans.ConstructorProperties;
 import java.net.URI;
 import java.time.Instant;
@@ -8,52 +10,31 @@ import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.model.Username;
 import nva.commons.core.JacocoGenerated;
 
-public class ImportStatus implements JsonSerializable {
-
-    private final CandidateStatus candidateStatus;
-
-    private final Username setBy;
-
-    private final Instant modifiedDate;
-
-    private final URI nvaPublicationId;
-
-    private final String comment;
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
+@JsonSerialize
+public record ImportStatus(CandidateStatus candidateStatus, Instant modifiedDate, Username setBy, URI nvaPublicationId,
+                           String comment) implements JsonSerializable {
 
     @ConstructorProperties({"candidateStatus", "modifiedDate", "setBy", "nvaPublicationId", "comment"})
-    public ImportStatus(CandidateStatus candidateStatus, Instant modifiedDate, Username setBy,
-                        URI nvaPublicationId, String comment) {
-        this.candidateStatus = candidateStatus;
-        this.modifiedDate = modifiedDate;
-        this.setBy = setBy;
-        this.nvaPublicationId = nvaPublicationId;
-        this.comment = comment;
+    public ImportStatus {
     }
 
-    public CandidateStatus getCandidateStatus() {
-        return candidateStatus;
+    public static Builder builder() {
+        return new Builder();
     }
 
-    public Username getSetBy() {
-        return setBy;
-    }
-
-    public Instant getModifiedDate() {
-        return modifiedDate;
-    }
-
-    public URI getNvaPublicationId() {
-        return nvaPublicationId;
-    }
-
-    public String getComment() {
-        return comment;
+    public Builder copy() {
+        return builder().withNvaPublicationId(nvaPublicationId)
+                   .withComment(comment)
+                   .withSetBy(setBy)
+                   .withModifiedDate(modifiedDate)
+                   .withCandidateStatus(candidateStatus);
     }
 
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getCandidateStatus(), getSetBy(), getModifiedDate(), getNvaPublicationId(), getComment());
+        return Objects.hash(candidateStatus(), setBy(), modifiedDate(), nvaPublicationId(), comment());
     }
 
     @JacocoGenerated
@@ -62,14 +43,54 @@ public class ImportStatus implements JsonSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ImportStatus)) {
+        if (!(o instanceof ImportStatus that)) {
             return false;
         }
-        ImportStatus that = (ImportStatus) o;
-        return getCandidateStatus() == that.getCandidateStatus()
-               && Objects.equals(getSetBy(), that.getSetBy())
-               && Objects.equals(getModifiedDate(), that.getModifiedDate())
-               && Objects.equals(getNvaPublicationId(), that.getNvaPublicationId())
-               && Objects.equals(getComment(), that.getComment());
+        return candidateStatus() == that.candidateStatus()
+               && Objects.equals(setBy(), that.setBy())
+               && Objects.equals(modifiedDate(), that.modifiedDate())
+               && Objects.equals(nvaPublicationId(), that.nvaPublicationId())
+               && Objects.equals(comment(), that.comment());
+    }
+
+    public static final class Builder {
+
+        private CandidateStatus candidateStatus;
+        private Username setBy;
+        private Instant modifiedDate;
+        private URI nvaPublicationId;
+        private String comment;
+
+        private Builder() {
+        }
+
+        public Builder withCandidateStatus(CandidateStatus candidateStatus) {
+            this.candidateStatus = candidateStatus;
+            return this;
+        }
+
+        public Builder withSetBy(Username setBy) {
+            this.setBy = setBy;
+            return this;
+        }
+
+        public Builder withModifiedDate(Instant modifiedDate) {
+            this.modifiedDate = modifiedDate;
+            return this;
+        }
+
+        public Builder withNvaPublicationId(URI nvaPublicationId) {
+            this.nvaPublicationId = nvaPublicationId;
+            return this;
+        }
+
+        public Builder withComment(String comment) {
+            this.comment = comment;
+            return this;
+        }
+
+        public ImportStatus build() {
+            return new ImportStatus(candidateStatus, modifiedDate, setBy, nvaPublicationId, comment);
+        }
     }
 }

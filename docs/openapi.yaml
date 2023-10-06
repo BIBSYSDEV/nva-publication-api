@@ -892,10 +892,6 @@ components:
             - IMPORTED
             - NOT_IMPORTED
             - NOT_APPLICABLE
-        setBy:
-          type: string
-        modifiedDate:
-          type: string
         nvaPublicationId:
           type: string
         comment:

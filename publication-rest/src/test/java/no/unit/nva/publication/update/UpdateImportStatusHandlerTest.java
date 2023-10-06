@@ -8,6 +8,8 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
@@ -31,6 +33,7 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import no.unit.nva.publication.ImportStatusDto;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
@@ -87,7 +90,11 @@ public class UpdateImportStatusHandlerTest extends ResourcesLocalTest {
         var request = request(importCandidate, notApplicableImportStatus(), AccessRight.PROCESS_IMPORT_CANDIDATE);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, ImportCandidate.class);
+        var updatedImportCandidate = importCandidateService
+                                         .getImportCandidateByIdentifier(importCandidate.getIdentifier());
 
+        assertThat(updatedImportCandidate.getImportStatus().modifiedDate(), is(not(nullValue())));
+        assertThat(updatedImportCandidate.getImportStatus().setBy(), is(not(nullValue())));
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_OK)));
     }
 
@@ -98,15 +105,20 @@ public class UpdateImportStatusHandlerTest extends ResourcesLocalTest {
     private InputStream request(ImportCandidate importCandidate, ImportStatus importStatus, AccessRight accessRight)
         throws JsonProcessingException {
         Map<String, String> pathParameters = Map.of(IDENTIFIER, importCandidate.getIdentifier().toString());
-
         var customerId = importCandidate.getPublisher().getId();
-        return new HandlerRequestBuilder<ImportStatus>(restApiMapper)
+        return new HandlerRequestBuilder<ImportStatusDto>(restApiMapper)
                    .withUserName(importCandidate.getResourceOwner().getOwner().getValue())
                    .withCurrentCustomer(customerId)
-                   .withBody(importStatus)
+                   .withBody(toImportStatusDto(importStatus))
                    .withAccessRights(customerId, accessRight.name())
                    .withPathParameters(pathParameters)
                    .build();
+    }
+
+    private static ImportStatusDto toImportStatusDto(ImportStatus importStatus) {
+        return new ImportStatusDto(importStatus.candidateStatus(),
+                                   importStatus.nvaPublicationId(),
+                                   importStatus.comment());
     }
 
     private ImportCandidate createPersistedImportCandidate() throws NotFoundException {

@@ -53,7 +53,7 @@ public class ImportCandidateTest {
         var randomImportCandidate = randomImportCandidate();
         var expectedPublication = createExpectedPublication(randomImportCandidate);
         var actualImportedPublication = randomImportCandidate.toPublication();
-        assertThat(randomImportCandidate.getImportStatus().getCandidateStatus(), is(equalTo(CandidateStatus.NOT_IMPORTED)));
+        assertThat(randomImportCandidate.getImportStatus().candidateStatus(), is(equalTo(CandidateStatus.NOT_IMPORTED)));
         assertThat(actualImportedPublication, is(equalTo(expectedPublication)));
     }
 
@@ -66,7 +66,7 @@ public class ImportCandidateTest {
                 .build();
 
         var importCandidateCastedToPublication = Resource.fromPublication(importCandidate).toPublication();
-        assertThat(importCandidate.getImportStatus().getCandidateStatus(), is(equalTo(CandidateStatus.NOT_IMPORTED)));
+        assertThat(importCandidate.getImportStatus().candidateStatus(), is(equalTo(CandidateStatus.NOT_IMPORTED)));
         assertThat(importCandidateCastedToPublication, is(equalTo(randomPublication)));
     }
 

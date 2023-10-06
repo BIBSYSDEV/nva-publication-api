@@ -80,7 +80,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     }
 
     private static SortableIdentifier extractPublicationId(ImportCandidate importCandidate) {
-        var identifier = UriWrapper.fromUri(importCandidate.getImportStatus().getNvaPublicationId())
+        var identifier = UriWrapper.fromUri(importCandidate.getImportStatus().nvaPublicationId())
                                      .getLastPathElement();
         return new SortableIdentifier(identifier);
     }
@@ -115,7 +115,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     }
 
     private void validateImportCandidate(ImportCandidate importCandidate) throws BadRequestException {
-        if (CandidateStatus.IMPORTED.equals(importCandidate.getImportStatus().getCandidateStatus())) {
+        if (CandidateStatus.IMPORTED.equals(importCandidate.getImportStatus().candidateStatus())) {
             throw new BadRequestException(RESOURCE_HAS_ALREADY_BEEN_IMPORTED_ERROR_MESSAGE);
         }
         if (isNull(getScopusIdentifier(importCandidate))) {
