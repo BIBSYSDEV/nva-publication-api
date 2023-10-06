@@ -7,6 +7,7 @@ import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.HTTPS_
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static org.hamcrest.MatcherAssert.assertThat;
 import java.net.URI;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -68,8 +69,8 @@ public final class BrageNvaMapper {
         var publication = new Publication.Builder()
                               .withHandle(extractHandle(brageRecord))
                               .withEntityDescription(extractEntityDescription(brageRecord))
-                              .withCreatedDate(extractPublishedDate(brageRecord))
-                              .withPublishedDate(extractPublishedDate(brageRecord))
+                              .withCreatedDate(ZonedDateTime.now().toInstant())
+                              .withPublishedDate(ZonedDateTime.now().toInstant())
                               .withPublisher(extractPublisher(brageRecord))
                               .withAssociatedArtifacts(extractAssociatedArtifacts(brageRecord))
                               .withResourceOwner(extractResourceOwner(brageRecord))
@@ -195,12 +196,6 @@ public final class BrageNvaMapper {
 
     private static Organization generateOrganization(URI customerUri) {
         return new Organization.Builder().withId(customerUri).build();
-    }
-
-    private static java.time.Instant extractPublishedDate(Record brageRecord) {
-        return Optional.ofNullable(brageRecord.getPublishedDate())
-                   .map(date -> Instant.parse(brageRecord.getPublishedDate().getNvaDate()).toDate().toInstant())
-                   .orElse(null);
     }
 
     private static URI extractHandle(Record brageRecord) {

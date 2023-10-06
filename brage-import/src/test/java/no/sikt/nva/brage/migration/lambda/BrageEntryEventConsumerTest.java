@@ -726,6 +726,19 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldNotThrowExceptionWhenPublicationWithoutContributors() throws IOException {
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                 .withType(TYPE_TEXTBOOK)
+                                 .withNoContributors(true)
+                                 .build();
+        var expectedPublication = brageGenerator.getNvaPublication();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+
+        assertThatPublicationsMatch(actualPublication, expectedPublication);
+    }
+
+    @Test
     void shouldThrowExceptionWhenConvertingCristinRecordAndPublicationWithMatchingCristinIdDoesExist()
         throws IOException, BadRequestException {
         var existingPublication = randomPublication().copy().withAdditionalIdentifiers(Set.of()).build();

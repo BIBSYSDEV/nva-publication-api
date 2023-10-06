@@ -26,7 +26,7 @@ entityDescription.reference.publicationContext.linkedContext
 entityDescription.reference.publicationContext.title
 entityDescription.reference.publicationContext.id
 
-entityDescription.contributors.identity.verificationStatus
+entityDescription.contributors
 
 entityDescription.publicationDate
 entityDescription.abstract
