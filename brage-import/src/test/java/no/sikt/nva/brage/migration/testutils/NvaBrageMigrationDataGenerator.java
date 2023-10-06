@@ -54,6 +54,7 @@ import nva.commons.core.language.LanguageMapper;
 import nva.commons.core.paths.UriWrapper;
 import org.jetbrains.annotations.NotNull;
 import org.joda.time.Instant;
+import org.joda.time.format.ISODateTimeFormat;
 
 public class NvaBrageMigrationDataGenerator {
 
@@ -125,8 +126,9 @@ public class NvaBrageMigrationDataGenerator {
     }
 
     private EntityDescription createEntityDescription(Builder builder) {
-        return new EntityDescription.Builder().withLanguage(builder.getLanguage().getNva())
-                   .withContributors(List.of(createCorrespondingContributor()))
+        return new EntityDescription.Builder()
+                   .withLanguage(builder.getLanguage().getNva())
+                   .withContributors(builder.noContributors ? List.of() : List.of(createCorrespondingContributor()))
                    .withReference(ReferenceGenerator.generateReference(builder))
                    .withDescription(builder.getDescriptionsForPublication())
                    .withAbstract(builder.getEntityAbstractsForPublication())
@@ -162,8 +164,9 @@ public class NvaBrageMigrationDataGenerator {
 
     private no.unit.nva.model.Contributor createCorrespondingContributor() {
         var contributor = createContributor();
-        String name = contributor.getIdentity().getName();
-        return new no.unit.nva.model.Contributor.Builder().withIdentity(createIdentity(name))
+        var name = contributor.getIdentity().getName();
+        return new no.unit.nva.model.Contributor.Builder()
+                   .withIdentity(createIdentity(name))
                    .withAffiliations(createAffiliationList())
                    .withRole(new RoleType(Role.parse(contributor.getRole())))
                    .build();
@@ -173,7 +176,7 @@ public class NvaBrageMigrationDataGenerator {
         var entityDescription = new no.sikt.nva.brage.migration.record.EntityDescription();
         entityDescription.setMainTitle(builder.getMainTitle());
         entityDescription.setAlternativeTitles(builder.getAlternativeTitles());
-        entityDescription.setContributors(List.of(createContributor()));
+        entityDescription.setContributors(builder.noContributors ? List.of() : List.of(createContributor()));
         entityDescription.setDescriptions(builder.getDescriptions());
         entityDescription.setAbstracts(builder.getAbstracts());
         entityDescription.setAlternativeTitles(builder.getAlternativeTitles());
@@ -199,6 +202,7 @@ public class NvaBrageMigrationDataGenerator {
         public static final URI CUSTOMER_URi = URI.create(
             "https://dev.nva.sikt.no/registration/0184ebf2c2ad" + "-0b4cd833-2f8c-4bd6-b11b-7b9cb15e9c05/edit");
         public static final URI RESOURCE_OWNER_URI = URI.create("https://api.nva.unit.no/customer/test");
+        private boolean noContributors;
         public ResourceOwner resourceOwner;
         private URI handle;
         private boolean handleShouldBeNull;
@@ -283,6 +287,11 @@ public class NvaBrageMigrationDataGenerator {
 
         public Builder withIssn(List<String> issn) {
             this.issnList = issn;
+            return this;
+        }
+
+        public Builder withNoContributors(boolean noContributors) {
+            this.noContributors = noContributors;
             return this;
         }
 

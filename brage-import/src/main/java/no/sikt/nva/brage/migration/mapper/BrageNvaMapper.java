@@ -5,8 +5,10 @@ import static java.util.Objects.nonNull;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.SOURCE_CRISTIN;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.HTTPS_PREFIX;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import java.net.URI;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -51,7 +53,6 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
-import org.joda.time.Instant;
 
 @SuppressWarnings("PMD.GodClass")
 public final class BrageNvaMapper {
@@ -83,6 +84,12 @@ public final class BrageNvaMapper {
             assertPublicationDoesNotHaveEmptyFields(publication);
         }
         return publication;
+    }
+
+    private static Instant extractPublishedDate(Record brageRecord) {
+        return attempt(() -> brageRecord.getPublishedDate().getNvaDate())
+                   .map(Instant::parse)
+                   .orElse(failure -> Instant.now());
     }
 
     private static List<URI> extractSubjects(Record brageRecord) {
@@ -180,10 +187,10 @@ public final class BrageNvaMapper {
                    .buildPublishedFile();
     }
 
-    private static java.time.Instant extractEmbargoDate(ContentFile file) {
+    private static Instant extractEmbargoDate(ContentFile file) {
         return Optional.ofNullable(file)
                    .map(ContentFile::getEmbargoDate)
-                   .map(date -> Instant.parse(date).toDate().toInstant())
+                   .map(Instant::parse)
                    .orElse(null);
     }
 
@@ -206,12 +213,6 @@ public final class BrageNvaMapper {
 
     private static Organization generateOrganization(URI customerUri) {
         return new Organization.Builder().withId(customerUri).build();
-    }
-
-    private static java.time.Instant extractPublishedDate(Record brageRecord) {
-        return Optional.ofNullable(brageRecord.getPublishedDate())
-                   .map(date -> Instant.parse(brageRecord.getPublishedDate().getNvaDate()).toDate().toInstant())
-                   .orElse(null);
     }
 
     private static URI extractHandle(Record brageRecord) {
