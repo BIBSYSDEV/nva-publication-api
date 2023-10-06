@@ -8,6 +8,7 @@ import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isCris
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isDataset;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isDesignProduct;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isFeatureArticle;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isFilm;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isInterview;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isLecture;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isMusic;
@@ -37,6 +38,8 @@ import no.unit.nva.model.instancetypes.artistic.architecture.ArchitectureSubtype
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesign;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtype;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtypeEnum;
+import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
+import no.unit.nva.model.instancetypes.artistic.film.MovingPictureSubtype;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArts;
 import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArtsSubtype;
@@ -69,6 +72,7 @@ import no.unit.nva.model.instancetypes.researchdata.GeographicalDescription;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
+import org.jetbrains.annotations.NotNull;
 import org.joda.time.DateTime;
 
 @SuppressWarnings("PMD.GodClass")
@@ -166,11 +170,19 @@ public final class PublicationInstanceMapper {
         if (isTextbook(brageRecord)) {
             return buildPublicationInstanceWhenTextbook(brageRecord);
         }
+        if (isFilm(brageRecord)) {
+            return buildPublicationInstanceWhenFilm();
+        }
         if (isCristinRecord(brageRecord)) {
             return null;
         } else {
             return buildPublicationInstanceWhenReport(brageRecord);
         }
+    }
+
+    @NotNull
+    private static MovingPicture buildPublicationInstanceWhenFilm() {
+        return new MovingPicture(MovingPictureSubtype.createOther(null), null, List.of());
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenTextbook(Record brageRecord) {
