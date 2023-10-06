@@ -8,6 +8,7 @@ import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues
 import static org.hamcrest.MatcherAssert.assertThat;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.lambda.MappingConstants;
 import no.sikt.nva.brage.migration.lambda.MissingFieldsException;
@@ -75,11 +77,20 @@ public final class BrageNvaMapper {
                               .withResourceOwner(extractResourceOwner(brageRecord))
                               .withAdditionalIdentifiers(extractCristinIdentifier(brageRecord))
                               .withRightsHolder(brageRecord.getRightsholder())
+                              .withSubjects(extractSubjects(brageRecord))
                               .build();
         if (!isCristinRecord(brageRecord)) {
             assertPublicationDoesNotHaveEmptyFields(publication);
         }
         return publication;
+    }
+
+    private static List<URI> extractSubjects(Record brageRecord) {
+        return Optional.ofNullable(brageRecord)
+                   .map(Record::getSubjects)
+                   .map(Collection::stream)
+                   .map(Stream::toList)
+                   .orElse(List.of());
     }
 
     private static boolean isCristinRecord(Record record) {

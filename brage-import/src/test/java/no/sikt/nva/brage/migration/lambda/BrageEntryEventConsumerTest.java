@@ -21,6 +21,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -952,6 +953,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         assertThat(actualPublication.getHandle(), is(equalTo(expectedPublication.getHandle())));
         assertThat(actualPublication.getHandle(), is(equalTo(expectedPublication.getHandle())));
         assertThat(actualPublication.getLink(), is(equalTo(expectedPublication.getLink())));
+        assertThat(actualPublication.getSubjects(), containsInAnyOrder(expectedPublication.getSubjects().toArray()));
     }
 
     private Publication createPublicationWithAssociatedArtifacts(Publication publication,
