@@ -1,5 +1,7 @@
 package no.unit.nva.publication.model.business.importcandidate;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.beans.ConstructorProperties;
 import java.net.URI;
 import java.time.Instant;
@@ -8,6 +10,8 @@ import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.model.Username;
 import nva.commons.core.JacocoGenerated;
 
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
+@JsonSerialize
 public record ImportStatus(CandidateStatus candidateStatus, Instant modifiedDate, Username setBy, URI nvaPublicationId,
                            String comment) implements JsonSerializable {
 
