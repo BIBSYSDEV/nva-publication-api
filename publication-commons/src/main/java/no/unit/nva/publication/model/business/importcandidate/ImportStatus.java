@@ -8,26 +8,11 @@ import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.model.Username;
 import nva.commons.core.JacocoGenerated;
 
-public class ImportStatus implements JsonSerializable {
-
-    private final CandidateStatus candidateStatus;
-
-    private final Username setBy;
-
-    private final Instant modifiedDate;
-
-    private final URI nvaPublicationId;
-
-    private final String comment;
+public record ImportStatus(CandidateStatus candidateStatus, Instant modifiedDate, Username setBy, URI nvaPublicationId,
+                           String comment) implements JsonSerializable {
 
     @ConstructorProperties({"candidateStatus", "modifiedDate", "setBy", "nvaPublicationId", "comment"})
-    public ImportStatus(CandidateStatus candidateStatus, Instant modifiedDate, Username setBy, URI nvaPublicationId,
-                        String comment) {
-        this.candidateStatus = candidateStatus;
-        this.modifiedDate = modifiedDate;
-        this.setBy = setBy;
-        this.nvaPublicationId = nvaPublicationId;
-        this.comment = comment;
+    public ImportStatus {
     }
 
     public static Builder builder() {
@@ -42,30 +27,10 @@ public class ImportStatus implements JsonSerializable {
                    .withCandidateStatus(candidateStatus);
     }
 
-    public CandidateStatus getCandidateStatus() {
-        return candidateStatus;
-    }
-
-    public Username getSetBy() {
-        return setBy;
-    }
-
-    public Instant getModifiedDate() {
-        return modifiedDate;
-    }
-
-    public URI getNvaPublicationId() {
-        return nvaPublicationId;
-    }
-
-    public String getComment() {
-        return comment;
-    }
-
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getCandidateStatus(), getSetBy(), getModifiedDate(), getNvaPublicationId(), getComment());
+        return Objects.hash(candidateStatus(), setBy(), modifiedDate(), nvaPublicationId(), comment());
     }
 
     @JacocoGenerated
@@ -77,11 +42,11 @@ public class ImportStatus implements JsonSerializable {
         if (!(o instanceof ImportStatus that)) {
             return false;
         }
-        return getCandidateStatus() == that.getCandidateStatus()
-               && Objects.equals(getSetBy(), that.getSetBy())
-               && Objects.equals(getModifiedDate(), that.getModifiedDate())
-               && Objects.equals(getNvaPublicationId(), that.getNvaPublicationId())
-               && Objects.equals(getComment(), that.getComment());
+        return candidateStatus() == that.candidateStatus()
+               && Objects.equals(setBy(), that.setBy())
+               && Objects.equals(modifiedDate(), that.modifiedDate())
+               && Objects.equals(nvaPublicationId(), that.nvaPublicationId())
+               && Objects.equals(comment(), that.comment());
     }
 
     public static final class Builder {

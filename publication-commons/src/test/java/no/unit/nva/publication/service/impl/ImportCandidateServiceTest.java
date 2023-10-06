@@ -52,7 +52,7 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
         resourceService.updateImportStatus(importCandidate.getIdentifier(),
                                            ImportStatusFactory.createImported(null, null));
         var fetchedPublication = resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
-        assertThat(fetchedPublication.getImportStatus().getCandidateStatus(), equalTo(IMPORTED));
+        assertThat(fetchedPublication.getImportStatus().candidateStatus(), equalTo(IMPORTED));
     }
 
     @Test

@@ -184,7 +184,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     private static boolean isNotImported(ImportCandidate importCandidate) {
-        return !importCandidate.getImportStatus().getCandidateStatus().equals(CandidateStatus.IMPORTED);
+        return !importCandidate.getImportStatus().candidateStatus().equals(CandidateStatus.IMPORTED);
     }
 
     private static boolean publicationIsPublished(Publication publication) {

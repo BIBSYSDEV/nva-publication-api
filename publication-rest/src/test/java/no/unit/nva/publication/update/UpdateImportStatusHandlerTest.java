@@ -90,10 +90,11 @@ public class UpdateImportStatusHandlerTest extends ResourcesLocalTest {
         var request = request(importCandidate, notApplicableImportStatus(), AccessRight.PROCESS_IMPORT_CANDIDATE);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, ImportCandidate.class);
-        var updatedImportCandidate = importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
+        var updatedImportCandidate = importCandidateService
+                                         .getImportCandidateByIdentifier(importCandidate.getIdentifier());
 
-        assertThat(updatedImportCandidate.getImportStatus().getModifiedDate(), is(not(nullValue())));
-        assertThat(updatedImportCandidate.getImportStatus().getSetBy(), is(not(nullValue())));
+        assertThat(updatedImportCandidate.getImportStatus().modifiedDate(), is(not(nullValue())));
+        assertThat(updatedImportCandidate.getImportStatus().setBy(), is(not(nullValue())));
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_OK)));
     }
 
@@ -115,9 +116,9 @@ public class UpdateImportStatusHandlerTest extends ResourcesLocalTest {
     }
 
     private static ImportStatusDto toImportStatusDto(ImportStatus importStatus) {
-        return new ImportStatusDto(importStatus.getCandidateStatus(),
-                                   importStatus.getNvaPublicationId(),
-                                   importStatus.getComment());
+        return new ImportStatusDto(importStatus.candidateStatus(),
+                                   importStatus.nvaPublicationId(),
+                                   importStatus.comment());
     }
 
     private ImportCandidate createPersistedImportCandidate() throws NotFoundException {

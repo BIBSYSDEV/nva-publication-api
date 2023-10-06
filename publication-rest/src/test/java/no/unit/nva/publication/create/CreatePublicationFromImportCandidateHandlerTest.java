@@ -104,7 +104,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         var updatedImportCandidate = importCandidateService.getImportCandidateByIdentifier(
                 importCandidate.getIdentifier());
 
-        assertThat(updatedImportCandidate.getImportStatus().getCandidateStatus(),
+        assertThat(updatedImportCandidate.getImportStatus().candidateStatus(),
                    is(equalTo(CandidateStatus.IMPORTED)));
         assertThat(publication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
     }
@@ -125,7 +125,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                 importCandidate.getIdentifier());
 
         assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_GATEWAY)));
-        assertThat(notUpdatedImportCandidate.getImportStatus().getCandidateStatus(), is(equalTo(CandidateStatus.NOT_IMPORTED)));
+        assertThat(notUpdatedImportCandidate.getImportStatus().candidateStatus(), is(equalTo(CandidateStatus.NOT_IMPORTED)));
         assertThat(response.getBodyObject(Problem.class).getDetail(), containsString(IMPORT_PROCESS_WENT_WRONG));
     }
 
