@@ -9,6 +9,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomLocalDate;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -75,15 +76,11 @@ public class NvaBrageMigrationDataGenerator {
     }
 
     private static java.time.Instant convertPublishedDateToInstant(Builder builder) {
-        return Instant.parse((builder.publishedDate.getNvaDate())).toDate()
-                   .toInstant();
+        return Instant.parse((builder.publishedDate.getNvaDate())).toDate().toInstant();
     }
 
     private static no.unit.nva.model.ResourceOwner getResourceOwnerIfPresent(Builder builder) {
-        return Optional.ofNullable(builder)
-                   .map(Builder::getResourceOwner)
-                   .map(generateResourceOwner())
-                   .orElse(null);
+        return Optional.ofNullable(builder).map(Builder::getResourceOwner).map(generateResourceOwner()).orElse(null);
     }
 
     private static Function<ResourceOwner, no.unit.nva.model.ResourceOwner> generateResourceOwner() {
@@ -101,21 +98,20 @@ public class NvaBrageMigrationDataGenerator {
 
     @NotNull
     private static List<Organization> createAffiliationList() {
-        return List.of(new Organization.Builder().withId(
-            URI.create("https://test.nva.aws.unit.no/cristin/organization/12345")).build());
+        return List.of(
+            new Organization.Builder().withId(URI.create("https://test.nva.aws.unit.no/cristin/organization/12345"))
+                .build());
     }
 
     @NotNull
     private static no.unit.nva.model.Identity createIdentity(String name) {
-        return new no.unit.nva.model.Identity.Builder()
-                   .withName(name)
+        return new no.unit.nva.model.Identity.Builder().withName(name)
                    .withId(URI.create("https://test.nva.aws.unit.no/cristin/person/123"))
                    .build();
     }
 
     private Publication createCorrespondingNvaPublication(Builder builder) {
-        return new Publication.Builder()
-                   .withHandle(builder.getHandle())
+        return new Publication.Builder().withHandle(builder.getHandle())
                    .withEntityDescription(createEntityDescription(builder))
                    .withCreatedDate(convertPublishedDateToInstant(builder))
                    .withPublishedDate(convertPublishedDateToInstant(builder))
@@ -125,6 +121,7 @@ public class NvaBrageMigrationDataGenerator {
                    .withResourceOwner(getResourceOwnerIfPresent(builder))
                    .withAdditionalIdentifiers(generateCristinIdentifier(builder))
                    .withRightsHolder(builder.getRightsHolder())
+                   .withSubjects(builder.subjects.stream().toList())
                    .build();
     }
 
@@ -157,6 +154,7 @@ public class NvaBrageMigrationDataGenerator {
         brageRecord.setCristinId(builder.getCristinIdentifier());
         brageRecord.setRightsHolder(builder.getRightsHolder());
         brageRecord.setLink(builder.getLink());
+        brageRecord.setSubjects(builder.getSubjects());
         return brageRecord;
     }
 
@@ -174,8 +172,7 @@ public class NvaBrageMigrationDataGenerator {
                    .build();
     }
 
-    private no.sikt.nva.brage.migration.record.EntityDescription createBrageEntityDescription(
-        Builder builder) {
+    private no.sikt.nva.brage.migration.record.EntityDescription createBrageEntityDescription(Builder builder) {
         var entityDescription = new no.sikt.nva.brage.migration.record.EntityDescription();
         entityDescription.setMainTitle(builder.getMainTitle());
         entityDescription.setAlternativeTitles(builder.getAlternativeTitles());
@@ -202,8 +199,8 @@ public class NvaBrageMigrationDataGenerator {
 
     public static class Builder {
 
-        public static final URI CUSTOMER_URi = URI.create("https://dev.nva.sikt.no/registration/0184ebf2c2ad"
-                                                          + "-0b4cd833-2f8c-4bd6-b11b-7b9cb15e9c05/edit");
+        public static final URI CUSTOMER_URi = URI.create(
+            "https://dev.nva.sikt.no/registration/0184ebf2c2ad" + "-0b4cd833-2f8c-4bd6-b11b-7b9cb15e9c05/edit");
         public static final URI RESOURCE_OWNER_URI = URI.create("https://api.nva.unit.no/customer/test");
         private boolean noContributors;
         public ResourceOwner resourceOwner;
@@ -242,6 +239,7 @@ public class NvaBrageMigrationDataGenerator {
         private String cristinIdentifier;
         private String rightsHolder;
         private URI link;
+        private Set<URI> subjects;
 
         public static URI randomHandle() {
             return UriWrapper.fromUri("http://hdl.handle.net/11250/" + randomInteger()).getUri();
@@ -540,6 +538,11 @@ public class NvaBrageMigrationDataGenerator {
             return this;
         }
 
+        public Builder withSubjects(Set<URI> subjects) {
+            this.subjects = subjects;
+            return this;
+        }
+
         public Builder withPublicationDate(PublicationDate publicationDate) {
             this.publicationDate = publicationDate;
             return this;
@@ -618,6 +621,9 @@ public class NvaBrageMigrationDataGenerator {
             if (isNull(publication)) {
                 publication = createPublication();
             }
+            if (isNull(subjects) || subjects.isEmpty()) {
+                subjects = Set.of(randomUri(), randomUri());
+            }
             return new NvaBrageMigrationDataGenerator(this);
         }
 
@@ -629,10 +635,13 @@ public class NvaBrageMigrationDataGenerator {
             return link;
         }
 
+        public Set<URI> getSubjects() {
+            return subjects;
+        }
+
         private static no.unit.nva.model.PublicationDate createPublicationDateForPublication(
             PublicationDate publicationDate) {
-            return new no.unit.nva.model.PublicationDate.Builder()
-                       .withYear(publicationDate.getNva().getYear())
+            return new no.unit.nva.model.PublicationDate.Builder().withYear(publicationDate.getNva().getYear())
                        .withMonth(publicationDate.getNva().getMonth())
                        .withDay(publicationDate.getNva().getDay())
                        .build();
@@ -647,9 +656,7 @@ public class NvaBrageMigrationDataGenerator {
         }
 
         private PublicationDate createPublicationDate() {
-            return new PublicationDate("2020",
-                                       new PublicationDateNva.Builder()
-                                           .withYear("2020").build());
+            return new PublicationDate("2020", new PublicationDateNva.Builder().withYear("2020").build());
         }
 
         private PublishedDate createRandomPublishedDate() {
@@ -660,21 +667,14 @@ public class NvaBrageMigrationDataGenerator {
         }
 
         private Map<String, String> createCorrespondingMap() {
-            return Map.of("no", "Noe på norsk språk",
-                          "en", "Something in English",
-                          "fr", "Une chose en Francais",
-                          "lv", "Labdien, mans nezināmais draugs",
-                          "de", "Ein ding aus Deutsch",
-                          "is", "Mér likar þessir hestar");
+            return Map.of("no", "Noe på norsk språk", "en", "Something in English", "fr", "Une chose en Francais", "lv",
+                          "Labdien, mans nezināmais draugs", "de", "Ein ding aus Deutsch", "is",
+                          "Mér likar þessir hestar");
         }
 
         private List<String> notRandomAlternativeTitle() {
-            return List.of("Noe på norsk språk",
-                           "Something in English",
-                           "One more title in English",
-                           "Une chose en Francais",
-                           "Labdien, mans nezināmais draugs",
-                           "Ein ding aus Deutsch",
+            return List.of("Noe på norsk språk", "Something in English", "One more title in English",
+                           "Une chose en Francais", "Labdien, mans nezināmais draugs", "Ein ding aus Deutsch",
                            "Mér likar þessir hestar");
         }
 
@@ -689,8 +689,8 @@ public class NvaBrageMigrationDataGenerator {
         private Language randomLanguage1() {
             var someWeirdNess = randomInteger(3);
             return switch (someWeirdNess) {
-                case 0 -> new Language(List.of("nob"),
-                                       UriWrapper.fromUri(LanguageMapper.LEXVO_URI_PREFIX + "nob").getUri());
+                case 0 ->
+                    new Language(List.of("nob"), UriWrapper.fromUri(LanguageMapper.LEXVO_URI_PREFIX + "nob").getUri());
                 case 1 -> new Language(null, UriWrapper.fromUri(LanguageMapper.LEXVO_URI_UNDEFINED).getUri());
                 default -> new Language(List.of("norsk", "svensk"),
                                         UriWrapper.fromUri(LanguageMapper.LEXVO_URI_UNDEFINED).getUri());

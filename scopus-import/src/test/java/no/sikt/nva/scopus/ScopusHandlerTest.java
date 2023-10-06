@@ -192,9 +192,11 @@ import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.TestAppender;
 import nva.commons.secrets.SecretsReader;
 import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -222,13 +224,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     public static final String INVALID_ISSN = "096042";
     public static final String VALID_ISSN = "0960-4286";
     public static final String LANGUAGE_ENG = "eng";
-    public static final URI TEMPORARY_HARDCODED_PUBLISHER_URI = URI.create(
-        "https://api.nva.unit.no/publication-channels/publisher/11111/2018");
     public static final String RESOURCE_EXCEPTION_MESSAGE = "resourceExceptionMessage";
-    private static final URI TEMPORARY_HARDCODE_SERIES_URI = URI.create(
-        "https://api.nva.unit.no/publication-channels/journal/1111/2019");
-    private static final URI TEMPORARY_HARDCODE_JOURNAL_URI = URI.create(
-        "https://api.nva.unit.no/publication-channels/journal/1111/2019");
     private static final String EXPECTED_RESULTS_PATH = "expectedResults";
     private static final String HARDCODED_EXPECTED_KEYWORD_1 = "<sup>64</sup>Cu";
     private static final String HARDCODED_EXPECTED_KEYWORD_2 = "excretion";
@@ -255,6 +251,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private UriRetriever uriRetriever;
     private AuthorizedBackendUriRetriever authorizedBackendUriRetriever;
 
+    private TestAppender appender;
+
     public static Stream<Arguments> providedLanguagesAndExpectedOutput() {
         return Stream.concat(LanguageConstants.ALL_LANGUAGES.stream().map(ScopusHandlerTest::createArguments),
                              addLanguageEdgeCases());
@@ -267,6 +265,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     @BeforeEach
     public void init(WireMockRuntimeInfo wireMockRuntimeInfo) {
         super.init();
+        appender = LogUtils.getTestingAppenderForRootLogger();
+        appender.start();
         var fakeSecretsManagerClient = new FakeSecretsManagerClient();
         fakeSecretsManagerClient.putSecret(PIA_SECRET_NAME, PIA_USERNAME_SECRET_KEY, randomString());
         fakeSecretsManagerClient.putSecret(PIA_SECRET_NAME, PIA_PASSWORD_SECRET_KEY, randomString());
@@ -289,6 +289,11 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData = new ScopusGenerator();
     }
 
+    @AfterEach
+    void tearDown() {
+        appender.stop();
+    }
+
     @Test
     void shouldLogExceptionMessageWhenExceptionOccurs() {
         createEmptyPiaMock();
@@ -297,7 +302,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         s3Client = new FakeS3ClientThrowingException(expectedMessage);
         scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
                                           resourceService, scopusUpdater);
-        var appender = LogUtils.getTestingAppenderForRootLogger();
         assertThrows(RuntimeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
     }
@@ -362,6 +366,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldExtractContributorAffiliation() throws IOException {
         createEmptyPiaMock();
+
         var authorsGroups = scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getAuthorGroup();
         var authors = keepOnlyTheAuthors();
         var s3Event = createNewScopusPublicationEvent();
@@ -640,7 +645,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.X);
         var expectedMessage = String.format(UNSUPPORTED_SOURCE_TYPE, scopusData.getDocument().getMeta().getEid());
         var s3Event = createNewScopusPublicationEvent();
-        var appender = LogUtils.getTestingAppenderForRootLogger();
         assertThrows(UnsupportedSrcTypeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
     }
@@ -844,7 +848,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var eid = scopusData.getDocument().getMeta().getEid();
         var s3Event = createNewScopusPublicationEvent();
         var expectedMessage = String.format(PublicationInstanceCreator.UNSUPPORTED_CITATION_TYPE_MESSAGE, eid);
-        var appender = LogUtils.getTestingAppenderForRootLogger();
         assertThrows(UnsupportedCitationTypeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
     }
@@ -856,7 +859,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var s3Event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualContributors = publication.getEntityDescription().getContributors();
-        authors.forEach(author -> checkAuthorOrcidAndSequenceNumber(author, actualContributors));
+        authors.forEach(author -> assertIsSameAuthor(author, actualContributors));
     }
 
     @Test
@@ -1090,7 +1093,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldHandlePiaConnectionException() throws IOException {
         mockedPiaException();
-        var appender = LogUtils.getTestingAppenderForRootLogger();
         var s3Event = createNewScopusPublicationEvent();
         scopusHandler.handleRequest(s3Event, CONTEXT);
         assertThat(appender.getMessages(), containsString(PiaConnection.PIA_RESPONSE_ERROR));
@@ -1099,7 +1101,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldHandlePiaBadRequest() throws IOException {
         mockedPiaBadRequest();
-        var appender = LogUtils.getTestingAppenderForRootLogger();
         var s3Event = createNewScopusPublicationEvent();
         scopusHandler.handleRequest(s3Event, CONTEXT);
         assertThat(appender.getMessages(), containsString(PiaConnection.PIA_RESPONSE_ERROR));
@@ -1272,7 +1273,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     private List<Object> randomAuthorTpList() {
-        return IntStream.range(0, 5).boxed().map(i -> scopusData.randomAuthorTp()).collect(Collectors.toList());
+        return IntStream.range(1, 6).boxed().map(i -> scopusData.randomAuthorTp(i)).collect(Collectors.toList());
     }
 
     private AffiliationTp randomAffiliation() {
@@ -1624,21 +1625,26 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         return organization;
     }
 
-    private void checkAuthorOrcidAndSequenceNumber(AuthorTp authorTp, List<Contributor> contributors) {
+    private void assertIsSameAuthor(AuthorTp authorTp, List<Contributor> contributors) {
         if (nonNull(authorTp.getOrcid())) {
             var orcidAsUriString = getOrcidAsUriString(authorTp);
             var optionalContributor = findContributorByOrcid(orcidAsUriString, contributors);
             assertTrue(optionalContributor.isPresent());
             var contributor = optionalContributor.get();
-            assertEquals(authorTp.getSeq(), contributor.getSequence().toString());
+            assertThat(contributor.getIdentity().getName(), containsString(authorTp.getSurname()));
         }
     }
 
     private void checkContributor(AuthorTp authorTp, List<Contributor> contributors) {
-        var optionalContributor = findContributorBySequence(authorTp.getSeq(), contributors);
-        assertEquals(1, optionalContributor.size());
-        var contributor = optionalContributor.get(0);
+        var contributor = findContributorByName(authorTp.getGivenName(), contributors);
         assertEquals(getExpectedFullAuthorName(authorTp), contributor.getIdentity().getName());
+    }
+
+    private Contributor findContributorByName(String givenName, List<Contributor> contributors) {
+        return contributors.stream()
+                   .filter(contributor -> contributor.getIdentity().getName().contains(givenName))
+                   .findAny()
+                   .orElseThrow();
     }
 
     private void checkCollaborationName(CollaborationTp collaboration, List<Contributor> contributors) {
@@ -1650,7 +1656,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
     private List<Contributor> findContributorBySequence(String sequence, List<Contributor> contributors) {
         return contributors.stream()
-                   .filter(contributor -> sequence.equals(Integer.toString(contributor.getSequence())))
+                   .filter(contributor -> sequence.equals(String.valueOf(contributor.getSequence())))
                    .collect(Collectors.toList());
     }
 

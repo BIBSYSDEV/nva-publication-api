@@ -72,7 +72,7 @@ public final class PublicationContextMapper {
             return buildPublicationContextWhenReport(brageRecord);
         }
         if (isUnconfirmedJournal(brageRecord) || isUnconfirmedScientificArticle(brageRecord)) {
-            return buildPublicationContextForUnconfirmedJournalArticle(brageRecord);
+            return buildPublicationContextForUnconfirmedJournal(brageRecord);
         }
         if (isArticle(brageRecord)) {
             return buildPublicationContextWhenJournalArticle(brageRecord);
@@ -112,25 +112,8 @@ public final class PublicationContextMapper {
         return NvaType.CRISTIN_RECORD.getValue().equals(record.getType().getNva());
     }
 
-    private static boolean shouldBeMappedToBook(Record record) {
-        return isBook(record)
-               || isScientificMonograph(record)
-               || isOtherStudentWork(record)
-               || isStudentPaper(record)
-               || isAnthology(record)
-               || isTextbook(record);
-    }
-
-    private static PublicationContext buildPublicationContextWhenReaderOpinion() throws InvalidIssnException {
-        return new UnconfirmedMediaContributionPeriodical(null, null, null);
-    }
-
-    private static boolean isArtistic(Record brageRecord) {
-        return isDesignProduct(brageRecord)
-               || isMusic(brageRecord)
-               || isPlanOrBlueprint(brageRecord)
-               || isPerformingArts(brageRecord)
-               || isVisualArts(brageRecord);
+    public static boolean isFilm(Record brageRecord) {
+        return NvaType.FILM.getValue().equals(brageRecord.getType().getNva());
     }
 
     public static boolean isPerformingArts(Record brageRecord) {
@@ -139,13 +122,6 @@ public final class PublicationContextMapper {
 
     public static boolean isTextbook(Record brageRecord) {
         return NvaType.TEXTBOOK.getValue().equals(brageRecord.getType().getNva());
-    }
-
-    private static boolean isArticle(Record brageRecord) {
-        return isJournalArticle(brageRecord)
-               || isScientificArticle(brageRecord)
-               || isFeatureArticle(brageRecord)
-               || isProfessionalArticle(brageRecord);
     }
 
     public static boolean isOtherPresentation(Record brageRecord) {
@@ -227,9 +203,37 @@ public final class PublicationContextMapper {
         return NvaType.INTERVIEW.getValue().equals(brageRecord.getType().getNva());
     }
 
+    private static boolean shouldBeMappedToBook(Record record) {
+        return isBook(record)
+               || isScientificMonograph(record)
+               || isOtherStudentWork(record)
+               || isStudentPaper(record)
+               || isAnthology(record)
+               || isTextbook(record);
+    }
+
+    private static PublicationContext buildPublicationContextWhenReaderOpinion() throws InvalidIssnException {
+        return new UnconfirmedMediaContributionPeriodical(null, null, null);
+    }
+
+    private static boolean isArtistic(Record brageRecord) {
+        return isDesignProduct(brageRecord)
+               || isMusic(brageRecord)
+               || isPlanOrBlueprint(brageRecord)
+               || isPerformingArts(brageRecord)
+               || isVisualArts(brageRecord)
+               || isFilm(brageRecord);
+    }
+
+    private static boolean isArticle(Record brageRecord) {
+        return isJournalArticle(brageRecord)
+               || isScientificArticle(brageRecord)
+               || isFeatureArticle(brageRecord)
+               || isProfessionalArticle(brageRecord);
+    }
+
     private static PublicationContext buildPublicationContextWhenMediaContribution() {
-        return new MediaContribution.Builder()
-                   .withFormat(MediaFormat.TEXT)
+        return new MediaContribution.Builder().withFormat(MediaFormat.TEXT)
                    .withMedium(MediaSubType.create(MediaSubTypeEnum.OTHER))
                    .build();
     }
@@ -239,16 +243,15 @@ public final class PublicationContextMapper {
     }
 
     private static PublicationContext buildPublicationContextWhenEvent() {
-        return new Event.Builder()
-                   .build();
+        return new Event.Builder().build();
     }
 
     private static boolean isUnconfirmedScientificArticle(Record brageRecord) {
-        return NvaType.SCIENTIFIC_ARTICLE.getValue().equals(brageRecord.getType().getNva())
-               && !hasJournalId(brageRecord);
+        return NvaType.SCIENTIFIC_ARTICLE.getValue().equals(brageRecord.getType().getNva()) && !hasJournalId(
+            brageRecord);
     }
 
-    private static PublicationContext buildPublicationContextForUnconfirmedJournalArticle(Record brageRecord)
+    private static PublicationContext buildPublicationContextForUnconfirmedJournal(Record brageRecord)
         throws InvalidIssnException {
         var issnList = extractIssnList(brageRecord);
         if (issnList.size() > SIZE_ONE) {
@@ -266,14 +269,11 @@ public final class PublicationContextMapper {
     }
 
     private static String extractJournalTitle(Record brageRecord) {
-        return Optional.ofNullable(brageRecord.getPublication())
-                   .map(Publication::getJournal)
-                   .orElse(null);
+        return Optional.ofNullable(brageRecord.getPublication()).map(Publication::getJournal).orElse(null);
     }
 
     private static boolean isUnconfirmedJournal(Record brageRecord) {
-        return NvaType.JOURNAL_ARTICLE.getValue().equals(brageRecord.getType().getNva())
-               && !hasJournalId(brageRecord);
+        return NvaType.JOURNAL_ARTICLE.getValue().equals(brageRecord.getType().getNva()) && !hasJournalId(brageRecord);
     }
 
     private static URI readChannelRegistryPathFromEnvironment() {
@@ -281,13 +281,13 @@ public final class PublicationContextMapper {
         return UriWrapper.fromUri(HTTPS_PREFIX + basePath).addChild(PUBLICATION_CHANNELS_PATH).getUri();
     }
 
-    private static PublicationContext buildPublicationContextWhenJournalArticle(Record brageRecord) {
+    private static PublicationContext buildPublicationContextWhenJournalArticle(Record brageRecord)
+        throws InvalidIssnException {
         return extractJournal(brageRecord);
     }
 
     private static boolean isJournalArticle(Record brageRecord) {
-        return NvaType.JOURNAL_ARTICLE.getValue().equals(brageRecord.getType().getNva())
-               && hasJournalId(brageRecord);
+        return NvaType.JOURNAL_ARTICLE.getValue().equals(brageRecord.getType().getNva()) && hasJournalId(brageRecord);
     }
 
     private static boolean hasJournalId(Record brageRecord) {
@@ -323,8 +323,7 @@ public final class PublicationContextMapper {
 
     private static PublicationContext buildPublicationContextWhenDegree(Record brageRecord)
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
-        return new Degree.Builder()
-                   .withIsbnList(extractIsbnList(brageRecord))
+        return new Degree.Builder().withIsbnList(extractIsbnList(brageRecord))
                    .withSeries(extractSeries(brageRecord))
                    .withPublisher(extractPublisher(brageRecord))
                    .withSeriesNumber(extractSeriesNumber(brageRecord))
@@ -360,8 +359,7 @@ public final class PublicationContextMapper {
 
     private static PublicationContext buildPublicationContextWhenBook(Record brageRecord)
         throws InvalidIsbnException, InvalidIssnException {
-        return new Book.BookBuilder()
-                   .withPublisher(extractPublisher(brageRecord))
+        return new Book.BookBuilder().withPublisher(extractPublisher(brageRecord))
                    .withSeries(extractSeries(brageRecord))
                    .withIsbnList(extractIsbnList(brageRecord))
                    .withSeriesNumber(extractSeriesNumber(brageRecord))
@@ -370,8 +368,7 @@ public final class PublicationContextMapper {
 
     private static PublicationContext buildPublicationContextWhenReport(Record brageRecord)
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
-        return new Report.Builder()
-                   .withPublisher(extractPublisher(brageRecord))
+        return new Report.Builder().withPublisher(extractPublisher(brageRecord))
                    .withSeries(extractSeries(brageRecord))
                    .withIsbnList(extractIsbnList(brageRecord))
                    .withSeriesNumber(extractSeriesNumber(brageRecord))
@@ -440,11 +437,12 @@ public final class PublicationContextMapper {
                    .orElse(null);
     }
 
-    private static Journal extractJournal(Record brageRecord) {
+    private static PublicationContext extractJournal(Record brageRecord) throws InvalidIssnException {
         return Optional.ofNullable(brageRecord.getPublication().getPublicationContext())
                    .map(no.sikt.nva.brage.migration.record.PublicationContext::getJournal)
                    .map(no.sikt.nva.brage.migration.record.Journal::getId)
-                   .map(id -> generateJournal(id, extractYear(brageRecord))).orElse(null);
+                   .map(id -> generateJournal(id, extractYear(brageRecord)))
+                   .orElse(buildPublicationContextForUnconfirmedJournal(brageRecord));
     }
 
     private static PublishingHouse generatePublisher(String publisherIdentifier, String year) {
@@ -459,7 +457,7 @@ public final class PublicationContextMapper {
         return String.valueOf(DateTime.now().getYear());
     }
 
-    private static Journal generateJournal(String journalIdentifier, String year) {
+    private static PublicationContext generateJournal(String journalIdentifier, String year) {
         return new Journal(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
                                .addChild(ChannelType.JOURNAL.getType())
                                .addChild(journalIdentifier)

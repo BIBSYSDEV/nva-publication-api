@@ -7,6 +7,7 @@ dependencies {
     implementation libs.nva.auth
     implementation libs.nva.secrets
     implementation libs.nva.clients
+    implementation libs.guava
 
 
     implementation(libs.nva.datamodel.core) {

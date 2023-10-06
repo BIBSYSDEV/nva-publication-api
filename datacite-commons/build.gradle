@@ -25,7 +25,9 @@ dependencies {
 
     testImplementation project(":publication-testing")
     testImplementation libs.bundles.testing
-    testImplementation libs.wiremock
+    testImplementation(libs.wiremock) {
+        exclude group: 'org.apache.commons', module: 'commons-lang3'
+    }
 }
 
 

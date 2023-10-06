@@ -5,10 +5,12 @@ import static java.util.Objects.nonNull;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.SOURCE_CRISTIN;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.HTTPS_PREFIX;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import java.net.URI;
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +19,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.lambda.MappingConstants;
 import no.sikt.nva.brage.migration.lambda.MissingFieldsException;
@@ -50,7 +53,6 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
-import org.joda.time.Instant;
 
 @SuppressWarnings("PMD.GodClass")
 public final class BrageNvaMapper {
@@ -69,18 +71,33 @@ public final class BrageNvaMapper {
         var publication = new Publication.Builder()
                               .withHandle(extractHandle(brageRecord))
                               .withEntityDescription(extractEntityDescription(brageRecord))
-                              .withCreatedDate(ZonedDateTime.now().toInstant())
-                              .withPublishedDate(ZonedDateTime.now().toInstant())
+                              .withCreatedDate(extractPublishedDate(brageRecord))
+                              .withPublishedDate(extractPublishedDate(brageRecord))
                               .withPublisher(extractPublisher(brageRecord))
                               .withAssociatedArtifacts(extractAssociatedArtifacts(brageRecord))
                               .withResourceOwner(extractResourceOwner(brageRecord))
                               .withAdditionalIdentifiers(extractCristinIdentifier(brageRecord))
                               .withRightsHolder(brageRecord.getRightsholder())
+                              .withSubjects(extractSubjects(brageRecord))
                               .build();
         if (!isCristinRecord(brageRecord)) {
             assertPublicationDoesNotHaveEmptyFields(publication);
         }
         return publication;
+    }
+
+    private static Instant extractPublishedDate(Record brageRecord) {
+        return attempt(() -> brageRecord.getPublishedDate().getNvaDate())
+                   .map(Instant::parse)
+                   .orElse(failure -> Instant.now());
+    }
+
+    private static List<URI> extractSubjects(Record brageRecord) {
+        return Optional.ofNullable(brageRecord)
+                   .map(Record::getSubjects)
+                   .map(Collection::stream)
+                   .map(Stream::toList)
+                   .orElse(List.of());
     }
 
     private static boolean isCristinRecord(Record record) {
@@ -173,7 +190,7 @@ public final class BrageNvaMapper {
     private static java.time.Instant extractEmbargoDate(ContentFile file) {
         return Optional.ofNullable(file)
                    .map(ContentFile::getEmbargoDate)
-                   .map(date -> Instant.parse(date).toDate().toInstant())
+                   .map(Instant::parse)
                    .orElse(null);
     }
 

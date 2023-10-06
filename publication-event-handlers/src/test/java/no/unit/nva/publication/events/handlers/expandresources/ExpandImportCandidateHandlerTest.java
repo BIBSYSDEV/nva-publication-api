@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -138,8 +139,9 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
 
     private ImportCandidate importCandidateWithMultipleContributors() {
         var importCandidate = randomImportCandidate();
-        importCandidate.getEntityDescription().getContributors()
-            .addAll(List.of(randomContributor(), randomContributor(), randomContributor()));
+        var contributors = new ArrayList<>(importCandidate.getEntityDescription().getContributors());
+        contributors.addAll(List.of(randomContributor(), randomContributor(), randomContributor()));
+        importCandidate.getEntityDescription().setContributors(contributors);
         return importCandidate;
     }
 

@@ -50,30 +50,4 @@ public class PublishedDate {
     public void setNvaDate(String nvaDate) {
         this.nvaDate = nvaDate;
     }
-
-    public static final class Builder {
-
-        private List<String> brageDates;
-        private String nvaDate;
-
-        public Builder() {
-        }
-
-        public Builder withBrageDates(List<String> brageDates) {
-            this.brageDates = brageDates;
-            return this;
-        }
-
-        public Builder withNvaDate(String nvaDate) {
-            this.nvaDate = nvaDate;
-            return this;
-        }
-
-        public PublishedDate build() {
-            PublishedDate publishedDate = new PublishedDate();
-            publishedDate.setBrageDates(brageDates);
-            publishedDate.setNvaDate(nvaDate);
-            return publishedDate;
-        }
-    }
 }

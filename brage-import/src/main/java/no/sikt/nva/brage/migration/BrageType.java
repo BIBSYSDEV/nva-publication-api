@@ -52,7 +52,8 @@ public enum BrageType {
     NON_FICTION_MONOGRAPH("Non-fiction monograph"),
     NON_FICTION_CHAPTER("Non-fiction chapter"),
     REPORT_CHAPTER("Report chapter"),
-    PEER_REVIEWED("Peer reviewed");
+    PEER_REVIEWED("Peer reviewed"),
+    FILM("Film");
     private final String value;
 
     BrageType(String type) {

@@ -2,6 +2,7 @@ package no.sikt.nva.brage.migration.lambda;
 
 import static no.sikt.nva.brage.migration.NvaType.ANTHOLOGY;
 import static no.sikt.nva.brage.migration.NvaType.CRISTIN_RECORD;
+import static no.sikt.nva.brage.migration.NvaType.FILM;
 import static no.sikt.nva.brage.migration.NvaType.PERFORMING_ARTS;
 import static no.sikt.nva.brage.migration.NvaType.PROFESSIONAL_ARTICLE;
 import static no.sikt.nva.brage.migration.NvaType.READER_OPINION;
@@ -21,6 +22,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -117,6 +119,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     public static final Type TYPE_CRISTIN_RECORD = new Type(List.of(CRISTIN_RECORD.getValue()),
                                                        CRISTIN_RECORD.getValue());
     public static final Type TYPE_TEXTBOOK = new Type(List.of(TEXTBOOK.getValue()), TEXTBOOK.getValue());
+    public static final Type TYPE_FILM = new Type(List.of(FILM.getValue()), FILM.getValue());
     public static final Type TYPE_MUSIC = new Type(List.of(NvaType.RECORDING_MUSICAL.getValue()),
                                                    NvaType.RECORDING_MUSICAL.getValue());
     public static final Type TYPE_DESIGN_PRODUCT = new Type(List.of(NvaType.DESIGN_PRODUCT.getValue()),
@@ -707,6 +710,30 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldConvertFilmToPublication() throws IOException {
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                 .withType(TYPE_FILM)
+                                 .build();
+        var expectedPublication = brageGenerator.getNvaPublication();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThatPublicationsMatch(actualPublication, expectedPublication);
+    }
+
+    @Test
+    void shouldConvertToPublicationWithUnconfirmedJournalWhenJournalIdIsNotPresent() throws IOException {
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                 .withType(TYPE_FEATURE_ARTICLE)
+                                 .withJournalTitle("Some Very Popular Journal")
+                                 .withIssn(List.of(randomIssn()))
+                                 .build();
+        var expectedPublication = brageGenerator.getNvaPublication();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThatPublicationsMatch(actualPublication, expectedPublication);
+    }
+
+    @Test
     void shouldConvertCristinRecordToPublicationAndMergeWithExistingPublicationWithTheSameCristinId()
         throws IOException, BadRequestException {
         var cristinIdentifier = randomString();
@@ -965,6 +992,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         assertThat(actualPublication.getHandle(), is(equalTo(expectedPublication.getHandle())));
         assertThat(actualPublication.getHandle(), is(equalTo(expectedPublication.getHandle())));
         assertThat(actualPublication.getLink(), is(equalTo(expectedPublication.getLink())));
+        assertThat(actualPublication.getSubjects(), containsInAnyOrder(expectedPublication.getSubjects().toArray()));
     }
 
     private Publication createPublicationWithAssociatedArtifacts(Publication publication,
