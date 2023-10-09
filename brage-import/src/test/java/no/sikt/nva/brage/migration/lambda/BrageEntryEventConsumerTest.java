@@ -10,7 +10,6 @@ import static no.sikt.nva.brage.migration.NvaType.TEXTBOOK;
 import static no.sikt.nva.brage.migration.NvaType.VISUAL_ARTS;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.ERROR_BUCKET_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.HANDLE_REPORTS_PATH;
-import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.PATH_SEPERATOR;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.UPDATE_REPORTS_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM_DD_HH_FORMAT;
 import static no.sikt.nva.brage.migration.merger.AssociatedArtifactMover.COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE;
@@ -67,7 +66,6 @@ import no.sikt.nva.brage.migration.testutils.FakeS3ClientThrowingExceptionWhenCo
 import no.sikt.nva.brage.migration.testutils.FakeS3cClientWithCopyObjectSupport;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -105,19 +103,17 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     public static final long SOME_FILE_SIZE = 100L;
     public static final Type TYPE_BOOK = new Type(List.of(NvaType.BOOK.getValue()), NvaType.BOOK.getValue());
     public static final Type TYPE_CONFERENCE_REPORT = new Type(List.of(NvaType.CONFERENCE_REPORT.getValue()),
-                                                              NvaType.CONFERENCE_REPORT.getValue());
+                                                               NvaType.CONFERENCE_REPORT.getValue());
     public static final Type TYPE_PROFESSIONAL_ARTICLE = new Type(List.of(PROFESSIONAL_ARTICLE.getValue()),
-                                                               PROFESSIONAL_ARTICLE.getValue());
+                                                                  PROFESSIONAL_ARTICLE.getValue());
     public static final Type TYPE_PERFORMING_ARTS = new Type(List.of(PERFORMING_ARTS.getValue()),
-                                                                  PERFORMING_ARTS.getValue());
-    public static final Type TYPE_VISUAL_ARTS = new Type(List.of(VISUAL_ARTS.getValue()),
-                                                             VISUAL_ARTS.getValue());
+                                                             PERFORMING_ARTS.getValue());
+    public static final Type TYPE_VISUAL_ARTS = new Type(List.of(VISUAL_ARTS.getValue()), VISUAL_ARTS.getValue());
     public static final Type TYPE_READER_OPINION = new Type(List.of(READER_OPINION.getValue()),
-                                                         READER_OPINION.getValue());
-    public static final Type TYPE_ANTHOLOGY = new Type(List.of(ANTHOLOGY.getValue()),
-                                                       ANTHOLOGY.getValue());
+                                                            READER_OPINION.getValue());
+    public static final Type TYPE_ANTHOLOGY = new Type(List.of(ANTHOLOGY.getValue()), ANTHOLOGY.getValue());
     public static final Type TYPE_CRISTIN_RECORD = new Type(List.of(CRISTIN_RECORD.getValue()),
-                                                       CRISTIN_RECORD.getValue());
+                                                            CRISTIN_RECORD.getValue());
     public static final Type TYPE_TEXTBOOK = new Type(List.of(TEXTBOOK.getValue()), TEXTBOOK.getValue());
     public static final Type TYPE_FILM = new Type(List.of(FILM.getValue()), FILM.getValue());
     public static final Type TYPE_MUSIC = new Type(List.of(NvaType.RECORDING_MUSICAL.getValue()),
@@ -156,23 +152,19 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     public static final Type TYPE_SCIENTIFIC_ARTICLE = new Type(List.of(NvaType.SCIENTIFIC_ARTICLE.getValue()),
                                                                 NvaType.SCIENTIFIC_ARTICLE.getValue());
     public static final String EMBARGO_DATE = "2019-05-16T11:56:24Z";
-    public static final PublicationDate PUBLICATION_DATE =
-        new PublicationDate("2020",
-                            new PublicationDateNva.Builder().withYear(
-                                "2020").build());
-    public static final Organization TEST_ORGANIZATION =
-        new Organization.Builder().withId(URI.create(
-            "https://api.nva.unit.no/customer/test")).build();
+    public static final PublicationDate PUBLICATION_DATE = new PublicationDate("2020",
+                                                                               new PublicationDateNva.Builder().withYear(
+                                                                                   "2020").build());
+    public static final Organization TEST_ORGANIZATION = new Organization.Builder().withId(
+        URI.create("https://api.nva.unit.no/customer/test")).build();
     public static final String FILENAME = "filename";
     public static final String HARD_CODED_CRISTIN_IDENTIFIER = "12345";
     public static final String RESOURCE_EXCEPTION_MESSAGE = "resourceExceptionMessage";
     public static final URI LICENSE_URI = URI.create("http://creativecommons.org/licenses/by-nc/4.0/");
     private static final Type TYPE_REPORT_WORKING_PAPER = new Type(List.of(NvaType.WORKING_PAPER.getValue()),
                                                                    NvaType.WORKING_PAPER.getValue());
-    private static final Type TYPE_LECTURE = new Type(List.of(NvaType.LECTURE.getValue()),
-                                                      NvaType.LECTURE.getValue());
-    private static final Type TYPE_CHAPTER = new Type(List.of(NvaType.CHAPTER.getValue()),
-                                                      NvaType.CHAPTER.getValue());
+    private static final Type TYPE_LECTURE = new Type(List.of(NvaType.LECTURE.getValue()), NvaType.LECTURE.getValue());
+    private static final Type TYPE_CHAPTER = new Type(List.of(NvaType.CHAPTER.getValue()), NvaType.CHAPTER.getValue());
     private static final Type TYPE_SCIENTIFIC_CHAPTER = new Type(List.of(NvaType.SCIENTIFIC_CHAPTER.getValue()),
                                                                  NvaType.SCIENTIFIC_CHAPTER.getValue());
     private static final Type TYPE_FEATURE_ARTICLE = new Type(List.of(NvaType.CHRONICLE.getValue()),
@@ -211,8 +203,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     @Test
     void shouldNotAttachAssociatedArtifactsToExistingPublicationWhenAssociatedArtifactAlreadyExistsAndCristinIdsMatch()
         throws IOException, NotFoundException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_REPORT_WORKING_PAPER)
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_REPORT_WORKING_PAPER)
                                  .withCristinIdentifier("123456")
                                  .withResourceContent(createResourceContent())
                                  .withAssociatedArtifacts(createCorrespondingAssociatedArtifacts())
@@ -226,8 +217,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     @Test
     void shouldAttachAssociatedArtifactsToExistingPublicationWhenNewAssociatedArtifactAndWhenCristinIdsMatch()
         throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_REPORT_WORKING_PAPER)
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_REPORT_WORKING_PAPER)
                                  .withCristinIdentifier("123456")
                                  .withResourceContent(createResourceContent())
                                  .build();
@@ -245,8 +235,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     void shouldAttachCertainMetadataFieldsToExistingPublicationWhenExistingPublicationDoesNotHaveThoseFields()
         throws IOException {
         // The metadata fields are currently Description, Abstract and handle
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_REPORT_WORKING_PAPER)
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_REPORT_WORKING_PAPER)
                                  .withCristinIdentifier("123456")
                                  .withDescription(List.of("My description"))
                                  .withAbstracts(List.of("My abstract"))
@@ -272,8 +261,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     @Test
     void shouldPrioritizeCristinImportedMetadataWhenMergingPublications() throws IOException {
         // The metadata fields are currently Description, Abstract and handle
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_REPORT_WORKING_PAPER)
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_REPORT_WORKING_PAPER)
                                  .withCristinIdentifier("123456")
                                  .withDescription(List.of("My description"))
                                  .withAbstracts(List.of("My abstract"))
@@ -290,17 +278,14 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         resourceService.createPublicationFromImportedEntry(cristinPublication);
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThat(actualPublication.getEntityDescription().getDescription(),
-                   is(equalTo(cristinDescription)));
-        assertThat(actualPublication.getEntityDescription().getAbstract(),
-                   is(equalTo(cristinAbstract)));
+        assertThat(actualPublication.getEntityDescription().getDescription(), is(equalTo(cristinDescription)));
+        assertThat(actualPublication.getEntityDescription().getAbstract(), is(equalTo(cristinAbstract)));
     }
 
     @Test
     void shouldCreateNewPublicationWhenPublicationHasCristinIdWhichIsNotPresentInNva()
         throws IOException, NotFoundException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_REPORT_WORKING_PAPER)
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_REPORT_WORKING_PAPER)
                                  .withCristinIdentifier("123456")
                                  .withResourceContent(createResourceContent())
                                  .withAssociatedArtifacts(createCorrespondingAssociatedArtifacts())
@@ -313,9 +298,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldCreateNewPublicationWhenPublicationHasNoCristinId() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_REPORT_WORKING_PAPER)
-                                 .build();
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_REPORT_WORKING_PAPER).build();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
         assertThatPublicationsMatch(actualPublication, brageGenerator.getNvaPublication());
@@ -329,8 +312,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest(name = "shouldConvertBookToNvaPublication")
-    @ValueSource(strings = {PART_OF_SERIES_VALUE_V1, PART_OF_SERIES_VALUE_V2,
-        PART_OF_SERIES_VALUE_V3, PART_OF_SERIES_VALUE_V4, PART_OF_SERIES_VALUE_V5})
+    @ValueSource(strings = {PART_OF_SERIES_VALUE_V1, PART_OF_SERIES_VALUE_V2, PART_OF_SERIES_VALUE_V3,
+        PART_OF_SERIES_VALUE_V4, PART_OF_SERIES_VALUE_V5})
     void shouldConvertBookToNvaPublication(String seriesNumber) throws IOException {
         var brageGenerator = buildGeneratorForBook(seriesNumber);
         var expectedPublication = brageGenerator.getNvaPublication();
@@ -386,9 +369,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertReportWorkingPaperToNvaPublication() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_REPORT_WORKING_PAPER)
-                                 .build();
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_REPORT_WORKING_PAPER).build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -460,8 +441,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertScientificArticleToNvaPublication() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_SCIENTIFIC_ARTICLE)
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_SCIENTIFIC_ARTICLE)
                                  .withJournalTitle("Journal")
                                  .withJournalId("id")
                                  .build();
@@ -473,8 +453,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertFeatureArticleToNvaPublication() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_FEATURE_ARTICLE)
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_FEATURE_ARTICLE)
                                  .withJournalId("journal")
                                  .build();
         var expectedPublication = brageGenerator.getNvaPublication();
@@ -485,9 +464,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertLectureToNvaPublication() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_LECTURE)
-                                 .build();
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_LECTURE).build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -496,9 +473,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertChapterToNvaPublication() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_CHAPTER)
-                                 .build();
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_CHAPTER).build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -507,9 +482,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertScientificChapterToNvaPublication() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_SCIENTIFIC_CHAPTER)
-                                 .build();
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_SCIENTIFIC_CHAPTER).build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -518,9 +491,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertStudentPaperToNvaPublication() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_STUDENT_PAPER_OTHERS)
-                                 .build();
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_STUDENT_PAPER_OTHERS).build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -529,9 +500,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertOtherStudentWorkToNvaPublication() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_OTHER_STUDENT_WORK)
-                                 .build();
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_OTHER_STUDENT_WORK).build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -540,9 +509,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertConferencePosterToNvaPublication() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_CONFERENCE_POSTER)
-                                 .build();
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_CONFERENCE_POSTER).build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -551,9 +518,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertDesignProductToNvaPublication() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_DESIGN_PRODUCT)
-                                 .build();
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_DESIGN_PRODUCT).build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -562,9 +527,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertPlanOrBluePrintToNvaPublication() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_PLAN_OR_BLUEPRINT)
-                                 .build();
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_PLAN_OR_BLUEPRINT).build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -573,9 +536,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertMusicToNvaPublication() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_MUSIC)
-                                 .build();
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_MUSIC).build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -584,9 +545,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertScientificMonographToNvaPublication() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_SCIENTIFIC_MONOGRAPH)
-                                 .build();
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_SCIENTIFIC_MONOGRAPH).build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -595,9 +554,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertInterviewToNvaPublication() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_INTERVIEW)
-                                 .build();
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_INTERVIEW).build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -606,9 +563,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertPresentationOtherToPublication() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_PRESENTATION_OTHER)
-                                 .build();
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_PRESENTATION_OTHER).build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -617,8 +572,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertWhenPublicationContextIsNull() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withPublishedDate(null)
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withPublishedDate(null)
                                  .withIsbn(randomIsbn10())
                                  .withType(TYPE_BOOK)
                                  .build();
@@ -630,8 +584,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertWhenConferenceReport() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withPublishedDate(null)
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withPublishedDate(null)
                                  .withIsbn(randomIsbn10())
                                  .withType(TYPE_CONFERENCE_REPORT)
                                  .build();
@@ -643,8 +596,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertProfessionalArticleToPublication() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withJournalTitle("Journal")
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withJournalTitle("Journal")
                                  .withJournalId("id")
                                  .withType(TYPE_PROFESSIONAL_ARTICLE)
                                  .build();
@@ -656,9 +608,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertPerformingArtsToPublication() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_PERFORMING_ARTS)
-                                 .build();
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_PERFORMING_ARTS).build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -667,9 +617,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertVisualArtsToPublication() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_VISUAL_ARTS)
-                                 .build();
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_VISUAL_ARTS).build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -678,9 +626,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertReaderOpinionToPublication() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_READER_OPINION)
-                                 .build();
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_READER_OPINION).build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -689,9 +635,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertAnthologyToPublication() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_ANTHOLOGY)
-                                 .build();
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_ANTHOLOGY).build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -700,9 +644,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertTextbookToPublication() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_TEXTBOOK)
-                                 .build();
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_TEXTBOOK).build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -711,9 +653,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertFilmToPublication() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_FILM)
-                                 .build();
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_FILM).build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -722,8 +662,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertToPublicationWithUnconfirmedJournalWhenJournalIdIsNotPresent() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_FEATURE_ARTICLE)
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_FEATURE_ARTICLE)
                                  .withJournalTitle("Some Very Popular Journal")
                                  .withIssn(List.of(randomIssn()))
                                  .build();
@@ -737,13 +676,13 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     void shouldConvertCristinRecordToPublicationAndMergeWithExistingPublicationWithTheSameCristinId()
         throws IOException, BadRequestException {
         var cristinIdentifier = randomString();
-        var existingPublication =
-            randomPublication().copy().withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(
-                "Cristin", cristinIdentifier))).build();
-        Resource.fromPublication(existingPublication).persistNew(resourceService,
-                                                                 UserInstance.fromPublication(existingPublication));
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_CRISTIN_RECORD)
+        var existingPublication = randomPublication().copy()
+                                      .withAdditionalIdentifiers(
+                                          Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)))
+                                      .build();
+        Resource.fromPublication(existingPublication)
+            .persistNew(resourceService, UserInstance.fromPublication(existingPublication));
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_CRISTIN_RECORD)
                                  .withCristinIdentifier(cristinIdentifier)
                                  .build();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
@@ -754,8 +693,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldNotThrowExceptionWhenPublicationWithoutContributors() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_TEXTBOOK)
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_TEXTBOOK)
                                  .withNoContributors(true)
                                  .build();
         var expectedPublication = brageGenerator.getNvaPublication();
@@ -769,10 +707,9 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     void shouldThrowExceptionWhenConvertingCristinRecordAndPublicationWithMatchingCristinIdDoesExist()
         throws IOException, BadRequestException {
         var existingPublication = randomPublication().copy().withAdditionalIdentifiers(Set.of()).build();
-        Resource.fromPublication(existingPublication).persistNew(resourceService,
-                                                                 UserInstance.fromPublication(existingPublication));
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_CRISTIN_RECORD)
+        Resource.fromPublication(existingPublication)
+            .persistNew(resourceService, UserInstance.fromPublication(existingPublication));
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_CRISTIN_RECORD)
                                  .withCristinIdentifier(randomString())
                                  .build();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
@@ -782,18 +719,14 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldThrowExceptionWhenTypeIsNotSupportedInPublicationContext() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_SOFTWARE)
-                                 .build();
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_SOFTWARE).build();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
     }
 
     @Test
     void shouldThrowExceptionWhenTypeIsNotSupportedInPublicationInstance() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withType(TYPE_SOFTWARE)
-                                 .build();
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_SOFTWARE).build();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
     }
@@ -806,15 +739,13 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldPersistPublicationInDatabase() throws IOException, nva.commons.apigateway.exceptions.NotFoundException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withPublishedDate(null)
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withPublishedDate(null)
                                  .withType(TYPE_BOOK)
                                  .build();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(
-            resourceService.getPublicationByIdentifier(actualPublication.getIdentifier()),
-            brageGenerator.getNvaPublication());
+        assertThatPublicationsMatch(resourceService.getPublicationByIdentifier(actualPublication.getIdentifier()),
+                                    brageGenerator.getNvaPublication());
     }
 
     @Test
@@ -822,8 +753,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         throws IOException {
         var fakeResourceServiceThrowingException = resourceServiceThrowingExceptionWhenSavingResource();
         this.handler = new BrageEntryEventConsumer(s3Client, fakeResourceServiceThrowingException);
-        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                                 .withPublishedDate(null)
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder().withPublishedDate(null)
                                                  .withType(TYPE_BOOK)
                                                  .build();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
@@ -835,8 +765,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         this.s3Client = new FakeS3ClientThrowingExceptionWhenCopying();
         this.s3Driver = new S3Driver(s3Client, INPUT_BUCKET_NAME);
         this.handler = new BrageEntryEventConsumer(s3Client, resourceService);
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withPublishedDate(null)
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withPublishedDate(null)
                                  .withType(TYPE_BOOK)
                                  .withResourceContent(createResourceContent())
                                  .withAssociatedArtifacts(createCorrespondingAssociatedArtifacts())
@@ -850,13 +779,11 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldCopyAssociatedArtifactsToResourceStorage() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                 .withPublishedDate(null)
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withPublishedDate(null)
                                  .withResourceContent(createResourceContent())
                                  .withType(TYPE_BOOK)
                                  .build();
-        var s3Event = createNewBrageRecordEventWithSpecifiedObjectKey(brageGenerator.getBrageRecord()
-        );
+        var s3Event = createNewBrageRecordEventWithSpecifiedObjectKey(brageGenerator.getBrageRecord());
         var objectKey = UUID;
         var expectedDopyObjRequest = CopyObjectRequest.builder()
                                          .sourceBucket(INPUT_BUCKET_NAME)
@@ -874,8 +801,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void throwErrorWhenMandatoryFieldsAreMissing() throws IOException {
-        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                                 .withType(TYPE_BOOK)
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_BOOK)
                                                  .withIsbn(randomIsbn10())
                                                  .withNullHandle()
                                                  .build();
@@ -887,26 +813,24 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     void shouldSaveErrorReportInS3ContainingTheOriginalInputData() throws IOException {
         resourceService = resourceServiceThrowingExceptionWhenSavingResource();
         this.handler = new BrageEntryEventConsumer(s3Client, resourceService);
-        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                                 .withPublishedDate(null)
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder().withPublishedDate(null)
                                                  .withType(TYPE_BOOK)
                                                  .build();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
 
         Executable action = () -> handler.handleRequest(s3Event, CONTEXT);
         var exception = assertThrows(RuntimeException.class, action);
-        var actualReport = extractActualReportFromS3Client(s3Event, exception);
+        var actualReport = extractActualReportFromS3Client(s3Event, exception,
+                                                           nvaBrageMigrationDataGenerator.getBrageRecord());
         var input = actualReport.get("input").toPrettyString();
         var actualErrorReportBrageRecord = JsonUtils.dtoObjectMapper.readValue(input, Record.class);
 
-        assertThat(actualErrorReportBrageRecord,
-                   is(equalTo(nvaBrageMigrationDataGenerator.getBrageRecord())));
+        assertThat(actualErrorReportBrageRecord, is(equalTo(nvaBrageMigrationDataGenerator.getBrageRecord())));
     }
 
     @Test
     void shouldSaveHandleAndResourceIdentifierReportInS3() throws IOException {
-        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                                 .withPublishedDate(null)
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder().withPublishedDate(null)
                                                  .withType(TYPE_BOOK)
                                                  .build();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
@@ -919,16 +843,16 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     @Test
     void shouldSavePublicationBeforeUpdateInS3() throws IOException, BadRequestException {
         var cristinIdentifier = randomString();
-        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                                 .withPublishedDate(null)
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder().withPublishedDate(null)
                                                  .withType(TYPE_BOOK)
                                                  .withCristinIdentifier(cristinIdentifier)
                                                  .build();
-        var existingPublication = persistPublicationWithCristinIdAndHandle(
-            cristinIdentifier, nvaBrageMigrationDataGenerator.getNvaPublication().getHandle());
+        var existingPublication = persistPublicationWithCristinIdAndHandle(cristinIdentifier,
+                                                                           nvaBrageMigrationDataGenerator.getNvaPublication()
+                                                                               .getHandle());
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         handler.handleRequest(s3Event, CONTEXT);
-        var storedPublication = extractUpdateReportFromS3(s3Event, existingPublication.getIdentifier());
+        var storedPublication = extractUpdateReportFromS3(s3Event, existingPublication);
         assertThat(storedPublication, is(equalTo(existingPublication.toString())));
     }
 
@@ -940,7 +864,9 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     private static void putAssociatedArtifactsToResourceStorage(NvaBrageMigrationDataGenerator dataGenerator,
                                                                 S3Driver s3Driver, java.io.File file) {
-        dataGenerator.getNvaPublication().getAssociatedArtifacts().stream()
+        dataGenerator.getNvaPublication()
+            .getAssociatedArtifacts()
+            .stream()
             .filter(artifact -> artifact instanceof File)
             .map(artifact -> (File) artifact)
             .map(File::getIdentifier)
@@ -955,18 +881,20 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     private Publication persistPublicationWithCristinIdAndHandle(String cristinIdentifier, URI handle)
         throws BadRequestException {
-        var publication =
-            randomPublication().copy()
-                .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)))
-                .withHandle(handle)
-                .build();
-        return Resource.fromPublication(publication).persistNew(resourceService,
-                                                                UserInstance.fromPublication(publication));
+        var publication = randomPublication().copy()
+                              .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)))
+                              .withHandle(handle)
+                              .build();
+        return Resource.fromPublication(publication)
+                   .persistNew(resourceService, UserInstance.fromPublication(publication));
     }
 
-    private String extractUpdateReportFromS3(S3Event s3Event, SortableIdentifier identifier) {
+    private String extractUpdateReportFromS3(S3Event s3Event, Publication publication) {
         var timestamp = s3Event.getRecords().get(0).getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
-        var uri = UriWrapper.fromUri(UPDATE_REPORTS_PATH).addChild(timestamp).addChild(String.valueOf(identifier));
+        var uri = UriWrapper.fromUri(UPDATE_REPORTS_PATH)
+                      .addChild("institution")
+                      .addChild(timestamp)
+                      .addChild(String.valueOf(publication.getIdentifier()));
         S3Driver s3Driver = new S3Driver(s3Client, new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
         return s3Driver.getFile(uri.toS3bucketPath());
     }
@@ -980,8 +908,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         };
     }
 
-    private void assertThatPublicationsMatch(Publication actualPublication,
-                                             Publication expectedPublication) {
+    private void assertThatPublicationsMatch(Publication actualPublication, Publication expectedPublication) {
         assertThat(actualPublication.getEntityDescription(), is(equalTo(expectedPublication.getEntityDescription())));
         assertThat(actualPublication.getAssociatedArtifacts(),
                    is(equalTo(expectedPublication.getAssociatedArtifacts())));
@@ -1002,15 +929,15 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     private void persistMultiplePublicationWithSameCristinId() {
-        IntStream.range(0, 5).boxed()
+        IntStream.range(0, 5)
+            .boxed()
             .map(i -> buildGeneratorObjectWithCristinId())
             .map(NvaBrageMigrationDataGenerator::getNvaPublication)
             .forEach(publication -> resourceService.createPublicationFromImportedEntry(publication));
     }
 
     private NvaBrageMigrationDataGenerator buildGeneratorForJournalArticleWithoutId() {
-        return new NvaBrageMigrationDataGenerator.Builder()
-                   .withType(TYPE_JOURNAL_ARTICLE)
+        return new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_JOURNAL_ARTICLE)
                    .withSpatialCoverage(List.of("Norway"))
                    .withJournalTitle("Some Very Popular Journal")
                    .withIssn(List.of(randomIssn(), randomIssn()))
@@ -1018,8 +945,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     private NvaBrageMigrationDataGenerator buildGeneratorForJournalArticleWithUnconfirmedJournal() {
-        return new NvaBrageMigrationDataGenerator.Builder()
-                   .withType(TYPE_JOURNAL_ARTICLE)
+        return new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_JOURNAL_ARTICLE)
                    .withSpatialCoverage(List.of("Norway"))
                    .withJournalTitle("Some Very Popular Journal")
                    .withIssn(List.of(randomIssn()))
@@ -1027,73 +953,65 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     private NvaBrageMigrationDataGenerator buildGeneratorForJournalArticle() {
-        return new NvaBrageMigrationDataGenerator.Builder()
-                   .withType(TYPE_JOURNAL_ARTICLE)
+        return new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_JOURNAL_ARTICLE)
                    .withJournalId("someId")
                    .withSpatialCoverage(List.of("Norway"))
                    .build();
     }
 
     private NvaBrageMigrationDataGenerator buildGeneratorForDataset() {
-        return new NvaBrageMigrationDataGenerator.Builder()
-                   .withType(TYPE_DATASET)
+        return new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_DATASET)
                    .withPublisherId("someId")
-                   .withPublicationDate(new PublicationDate("03-08",
-                                                            new PublicationDateNva.Builder().withYear(null).withDay(
-                                                                "03").withMonth("08").build()))
-                   .withPublicationDateForPublication(
-                       new no.unit.nva.model.PublicationDate.Builder().withYear(null).withDay(
-                           "03").withMonth("08").build())
+                   .withPublicationDate(new PublicationDate("03-08", new PublicationDateNva.Builder().withYear(null)
+                                                                         .withDay("03")
+                                                                         .withMonth("08")
+                                                                         .build()))
+                   .withPublicationDateForPublication(new no.unit.nva.model.PublicationDate.Builder().withYear(null)
+                                                          .withDay("03")
+                                                          .withMonth("08")
+                                                          .build())
                    .withSpatialCoverage(List.of("Norway"))
                    .build();
     }
 
     private NvaBrageMigrationDataGenerator buildGeneratorForPhd() {
-        return new NvaBrageMigrationDataGenerator.Builder()
-                   .withType(TYPE_PHD)
+        return new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_PHD)
                    .withPublicationDate(PUBLICATION_DATE)
                    .build();
     }
 
     private NvaBrageMigrationDataGenerator buildGeneratorForMaster() {
-        return new NvaBrageMigrationDataGenerator.Builder()
-                   .withType(TYPE_MASTER)
+        return new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_MASTER)
                    .withPublicationDate(PUBLICATION_DATE)
                    .build();
     }
 
     private NvaBrageMigrationDataGenerator buildGeneratorForBachelor() {
-        return new NvaBrageMigrationDataGenerator.Builder()
-                   .withType(TYPE_BACHELOR)
+        return new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_BACHELOR)
                    .withPublicationDate(PUBLICATION_DATE)
                    .build();
     }
 
     private NvaBrageMigrationDataGenerator buildGeneratorObjectWithCristinId() {
-        return new NvaBrageMigrationDataGenerator.Builder()
-                   .withType(TYPE_BACHELOR)
+        return new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_BACHELOR)
                    .withPublicationDate(PUBLICATION_DATE)
                    .withCristinIdentifier(HARD_CODED_CRISTIN_IDENTIFIER)
                    .build();
     }
 
     private NvaBrageMigrationDataGenerator buildGeneratorForResearchReport() {
-        return new NvaBrageMigrationDataGenerator.Builder()
-                   .withType(TYPE_RESEARCH_REPORT)
-                   .build();
+        return new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_RESEARCH_REPORT).build();
     }
 
     private NvaBrageMigrationDataGenerator buildGeneratorForReport() {
-        return new NvaBrageMigrationDataGenerator.Builder()
-                   .withType(TYPE_REPORT)
+        return new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_REPORT)
                    .withSeries("someSeries;42")
                    .withIssn(List.of(randomIssn()))
                    .build();
     }
 
     private NvaBrageMigrationDataGenerator buildGeneratorForReportWithUnconfirmedSeries() {
-        return new NvaBrageMigrationDataGenerator.Builder()
-                   .withType(TYPE_REPORT)
+        return new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_REPORT)
                    .withSeriesNumberRecord("series;42")
                    .withSeriesNumberPublication("42")
                    .withSeriesTitle("series")
@@ -1102,15 +1020,11 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     private NvaBrageMigrationDataGenerator buildGeneratorForMap() {
-        return new NvaBrageMigrationDataGenerator.Builder()
-                   .withType(TYPE_MAP)
-                   .withPublisherId("someId")
-                   .build();
+        return new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_MAP).withPublisherId("someId").build();
     }
 
     private NvaBrageMigrationDataGenerator buildGeneratorForBookWithoutValidSeriesNumber() {
-        return new NvaBrageMigrationDataGenerator.Builder()
-                   .withType(TYPE_BOOK)
+        return new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_BOOK)
                    .withSeriesNumberRecord(PART_OF_SERIES_VALUE_V6)
                    .withSeriesNumberPublication(null)
                    .withPublicationDate(PUBLICATION_DATE)
@@ -1119,8 +1033,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     private NvaBrageMigrationDataGenerator buildGeneratorForBook(String seriesNumber) {
-        return new NvaBrageMigrationDataGenerator.Builder()
-                   .withType(TYPE_BOOK)
+        return new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_BOOK)
                    .withSeriesNumberRecord(seriesNumber)
                    .withSeriesNumberPublication(EXPECTED_SERIES_NUMBER)
                    .withPublicationDate(PUBLICATION_DATE)
@@ -1129,8 +1042,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     private NvaBrageMigrationDataGenerator buildGeneratorForRecord() {
-        return new NvaBrageMigrationDataGenerator.Builder()
-                   .withType(TYPE_BOOK)
+        return new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_BOOK)
                    .withIsbn(randomIsbn10())
                    .withResourceContent(createResourceContent())
                    .withAssociatedArtifacts(createCorrespondingAssociatedArtifacts())
@@ -1146,29 +1058,28 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     private UriWrapper constructHandleReportFileUri(S3Event s3Event, Publication actualPublication) {
         var timestamp = s3Event.getRecords().get(0).getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
-        return UriWrapper
-                   .fromUri(HANDLE_REPORTS_PATH)
+        return UriWrapper.fromUri(HANDLE_REPORTS_PATH)
                    .addChild(actualPublication.getResourceOwner().getOwner().getValue().split("@")[0])
                    .addChild(timestamp)
                    .addChild(actualPublication.getIdentifier().toString());
     }
 
-    private JsonNode extractActualReportFromS3Client(
-        S3Event s3Event,
-        Exception exception) throws JsonProcessingException {
-        UriWrapper errorFileUri = constructErrorFileUri(s3Event, exception);
+    private JsonNode extractActualReportFromS3Client(S3Event s3Event, Exception exception, Record brageRecord)
+        throws JsonProcessingException {
+        UriWrapper errorFileUri = constructErrorFileUri(s3Event, exception, brageRecord);
         S3Driver s3Driver = new S3Driver(s3Client, new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
         String content = s3Driver.getFile(errorFileUri.toS3bucketPath());
         return JsonUtils.dtoObjectMapper.readTree(content);
     }
 
-    private UriWrapper constructErrorFileUri(S3Event event,
-                                             Exception exception) {
+    private UriWrapper constructErrorFileUri(S3Event event, Exception exception, Record brageRecord) {
         var fileUri = UriWrapper.fromUri(extractFilename(event));
         var timestamp = event.getRecords().get(0).getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
-        return UriWrapper.fromUri(
-            ERROR_BUCKET_PATH + PATH_SEPERATOR + timestamp + PATH_SEPERATOR + exception.getClass().getSimpleName()
-            + PATH_SEPERATOR + fileUri.getLastPathElement());
+        return UriWrapper.fromUri(ERROR_BUCKET_PATH)
+                   .addChild(brageRecord.getResourceOwner().getOwner().split("@")[0])
+                   .addChild(timestamp)
+                   .addChild(exception.getClass().getSimpleName())
+                   .addChild(fileUri.getLastPathElement());
     }
 
     private String extractFilename(S3Event event) {
@@ -1176,12 +1087,17 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     private ResourceContent createResourceContent() {
-        var file = new ContentFile(FILENAME,
-                                   BundleType.ORIGINAL,
-                                   "description",
-                                   UUID,
-                                   new License("someLicense", new NvaLicense(URI.create("https://creativecommons"
-                                                                                        + ".org/licenses/by-nc/4.0"))),
+        var file = new ContentFile(FILENAME, BundleType.ORIGINAL, "description", UUID, new License("someLicense",
+                                                                                                   new NvaLicense(
+                                                                                                       URI.create(
+                                                                                                           "https"
+                                                                                                           +
+                                                                                                           "://creativecommons"
+                                                                                                           + ".org"
+                                                                                                           +
+                                                                                                           "/licenses"
+                                                                                                           + "/by-nc"
+                                                                                                           + "/4.0"))),
                                    EMBARGO_DATE);
 
         return new ResourceContent(Collections.singletonList(file));
@@ -1225,15 +1141,10 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     private S3Event createS3Event(String expectedObjectKey) {
-        var eventNotification = new S3EventNotificationRecord(randomString(),
-                                                              randomString(),
-                                                              randomString(),
-                                                              randomDate(),
-                                                              randomString(),
-                                                              EMPTY_REQUEST_PARAMETERS,
+        var eventNotification = new S3EventNotificationRecord(randomString(), randomString(), randomString(),
+                                                              randomDate(), randomString(), EMPTY_REQUEST_PARAMETERS,
                                                               EMPTY_RESPONSE_ELEMENTS,
-                                                              createS3Entity(expectedObjectKey),
-                                                              EMPTY_USER_IDENTITY);
+                                                              createS3Entity(expectedObjectKey), EMPTY_USER_IDENTITY);
         return new S3Event(List.of(eventNotification));
     }
 
@@ -1243,10 +1154,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     private S3Entity createS3Entity(String expectedObjectKey) {
         var bucket = new S3BucketEntity(INPUT_BUCKET_NAME, EMPTY_USER_IDENTITY, randomString());
-        var object = new S3ObjectEntity(expectedObjectKey,
-                                        SOME_FILE_SIZE,
-                                        randomString(),
-                                        randomString(),
+        var object = new S3ObjectEntity(expectedObjectKey, SOME_FILE_SIZE, randomString(), randomString(),
                                         randomString());
         var schemaVersion = randomString();
         return new S3Entity(randomString(), bucket, object, schemaVersion);

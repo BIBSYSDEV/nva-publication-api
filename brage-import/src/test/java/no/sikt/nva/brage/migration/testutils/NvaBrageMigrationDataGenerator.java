@@ -577,7 +577,7 @@ public class NvaBrageMigrationDataGenerator {
                 abstracts = List.of(randomString());
             }
             if (isNull(customer)) {
-                customer = new Customer("someCustomer", CUSTOMER_URi);
+                customer = new Customer("institution", CUSTOMER_URi);
             }
             if (isNull(resourceOwner)) {
                 resourceOwner = new ResourceOwner("institution@someOwner", RESOURCE_OWNER_URI);
