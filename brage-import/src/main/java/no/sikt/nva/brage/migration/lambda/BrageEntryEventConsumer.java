@@ -137,6 +137,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
     private UriWrapper updateResourceFilePath(Publication publication, S3Event s3Event) {
         return UriWrapper.fromUri(UPDATE_REPORTS_PATH)
+                   .addChild(extractInstitutionName(s3Event))
                    .addChild(timePath(s3Event))
                    .addChild(publication.getIdentifier().toString());
     }
@@ -186,13 +187,9 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private UriWrapper constructResourcehandleFileUri(S3Event s3Event, Publication publication) {
         var timestamp = timePath(s3Event);
         return UriWrapper.fromUri(HANDLE_REPORTS_PATH)
-                   .addChild(extractInstitutionName(publication))
+                   .addChild(extractInstitutionName(s3Event))
                    .addChild(timestamp)
                    .addChild(publication.getIdentifier().toString());
-    }
-
-    private static String extractInstitutionName(Publication publication) {
-        return publication.getResourceOwner().getOwner().getValue().split("@")[0];
     }
 
     private RuntimeException handleSavingError(Failure<Publication> fail, S3Event s3Event) {
@@ -267,11 +264,11 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
     private UriWrapper constructErrorFileUri(S3Event event,
                                              Exception exception) {
-        var fileUri = UriWrapper.fromUri(extractObjectKey(event));
-        var timestamp = timePath(event);
-        return UriWrapper.fromUri(ERROR_BUCKET_PATH + PATH_SEPERATOR
-                                  + timestamp + PATH_SEPERATOR + exception.getClass().getSimpleName()
-                                  + PATH_SEPERATOR + fileUri.getLastPathElement());
+        return UriWrapper.fromUri(ERROR_BUCKET_PATH)
+                   .addChild(extractInstitutionName(event))
+                   .addChild(timePath(event))
+                   .addChild(exception.getClass().getSimpleName())
+                   .addChild(UriWrapper.fromUri(extractObjectKey(event)).getLastPathElement());
     }
 
     private String timePath(S3Event event) {
@@ -306,6 +303,10 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
     private URI createS3BucketUri(S3Event s3Event) {
         return URI.create(String.format(S3_URI_TEMPLATE, extractBucketName(s3Event), extractObjectKey(s3Event)));
+    }
+
+    private String extractInstitutionName(S3Event event) {
+        return event.getRecords().get(SINGLE_EXPECTED_RECORD).getS3().getObject().getKey().split("/")[0];
     }
 
     private String extractObjectKey(S3Event event) {
