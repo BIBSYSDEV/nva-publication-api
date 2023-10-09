@@ -153,8 +153,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                                 NvaType.SCIENTIFIC_ARTICLE.getValue());
     public static final String EMBARGO_DATE = "2019-05-16T11:56:24Z";
     public static final PublicationDate PUBLICATION_DATE = new PublicationDate("2020",
-                                                                               new PublicationDateNva.Builder().withYear(
-                                                                                   "2020").build());
+                                                                               new PublicationDateNva.Builder()
+                                                                                   .withYear("2020").build());
     public static final Organization TEST_ORGANIZATION = new Organization.Builder().withId(
         URI.create("https://api.nva.unit.no/customer/test")).build();
     public static final String FILENAME = "filename";
@@ -848,8 +848,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                  .withCristinIdentifier(cristinIdentifier)
                                                  .build();
         var existingPublication = persistPublicationWithCristinIdAndHandle(cristinIdentifier,
-                                                                           nvaBrageMigrationDataGenerator.getNvaPublication()
-                                                                               .getHandle());
+                                                                           nvaBrageMigrationDataGenerator
+                                                                               .getNvaPublication().getHandle());
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         handler.handleRequest(s3Event, CONTEXT);
         var storedPublication = extractUpdateReportFromS3(s3Event, existingPublication);
@@ -1066,9 +1066,9 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     private JsonNode extractActualReportFromS3Client(S3Event s3Event, Exception exception, Record brageRecord)
         throws JsonProcessingException {
-        UriWrapper errorFileUri = constructErrorFileUri(s3Event, exception, brageRecord);
-        S3Driver s3Driver = new S3Driver(s3Client, new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
-        String content = s3Driver.getFile(errorFileUri.toS3bucketPath());
+        var errorFileUri = constructErrorFileUri(s3Event, exception, brageRecord);
+        var s3Driver = new S3Driver(s3Client, new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
+        var content = s3Driver.getFile(errorFileUri.toS3bucketPath());
         return JsonUtils.dtoObjectMapper.readTree(content);
     }
 
@@ -1087,18 +1087,12 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     private ResourceContent createResourceContent() {
-        var file = new ContentFile(FILENAME, BundleType.ORIGINAL, "description", UUID, new License("someLicense",
-                                                                                                   new NvaLicense(
-                                                                                                       URI.create(
-                                                                                                           "https"
-                                                                                                           +
-                                                                                                           "://creativecommons"
-                                                                                                           + ".org"
-                                                                                                           +
-                                                                                                           "/licenses"
-                                                                                                           + "/by-nc"
-                                                                                                           + "/4.0"))),
-                                   EMBARGO_DATE);
+        var file = new ContentFile(FILENAME,
+                                   BundleType.ORIGINAL,
+                                   "description",
+                                   UUID,
+                                   new License("someLicense", new NvaLicense(
+                                       URI.create("https://creativecommons.org/licenses/by-nc/4.0"))), EMBARGO_DATE);
 
         return new ResourceContent(Collections.singletonList(file));
     }
