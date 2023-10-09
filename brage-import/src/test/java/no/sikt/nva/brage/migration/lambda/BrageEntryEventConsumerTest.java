@@ -1116,7 +1116,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     private S3Event createNewBrageRecordEvent(Record brageRecord) throws IOException {
         var recordAsJson = JsonUtils.dtoObjectMapper.writeValueAsString(brageRecord);
-        var uri = s3Driver.insertFile(randomS3Path(), recordAsJson);
+        var uri = s3Driver.insertFile(UnixPath.of("institution/" + randomString()), recordAsJson);
         return createS3Event(uri);
     }
 

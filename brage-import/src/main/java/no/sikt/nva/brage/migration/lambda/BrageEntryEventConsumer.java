@@ -137,7 +137,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
     private UriWrapper updateResourceFilePath(Publication publication, S3Event s3Event) {
         return UriWrapper.fromUri(UPDATE_REPORTS_PATH)
-                   .addChild(extractInstitutionNameFromRecord())
+                   .addChild(extractInstitutionName(s3Event))
                    .addChild(timePath(s3Event))
                    .addChild(publication.getIdentifier().toString());
     }
@@ -187,7 +187,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private UriWrapper constructResourcehandleFileUri(S3Event s3Event, Publication publication) {
         var timestamp = timePath(s3Event);
         return UriWrapper.fromUri(HANDLE_REPORTS_PATH)
-                   .addChild(extractInstitutionNameFromRecord())
+                   .addChild(extractInstitutionName(s3Event))
                    .addChild(timestamp)
                    .addChild(publication.getIdentifier().toString());
     }
@@ -265,15 +265,10 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private UriWrapper constructErrorFileUri(S3Event event,
                                              Exception exception) {
         return UriWrapper.fromUri(ERROR_BUCKET_PATH)
-                   .addChild(extractInstitutionNameFromRecord())
+                   .addChild(extractInstitutionName(event))
                    .addChild(timePath(event))
                    .addChild(exception.getClass().getSimpleName())
                    .addChild(UriWrapper.fromUri(extractObjectKey(event)).getLastPathElement());
-    }
-
-    private String extractInstitutionNameFromRecord() {
-        var record = attempt(() -> parseBrageRecordJson(brageRecordFile)).orElseThrow();
-        return record.getCustomer().getName();
     }
 
     private String timePath(S3Event event) {
@@ -308,6 +303,10 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
     private URI createS3BucketUri(S3Event s3Event) {
         return URI.create(String.format(S3_URI_TEMPLATE, extractBucketName(s3Event), extractObjectKey(s3Event)));
+    }
+
+    private String extractInstitutionName(S3Event event) {
+        return event.getRecords().get(SINGLE_EXPECTED_RECORD).getS3().getObject().getKey().split("/")[0];
     }
 
     private String extractObjectKey(S3Event event) {
