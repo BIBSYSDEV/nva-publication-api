@@ -151,7 +151,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     public static final Type TYPE_SCIENTIFIC_ARTICLE = new Type(List.of(NvaType.SCIENTIFIC_ARTICLE.getValue()),
                                                                 NvaType.SCIENTIFIC_ARTICLE.getValue());
-    public static final String EMBARGO_DATE = "2019-05-16T11:56:24Z";
+    public static final Instant EMBARGO_DATE = Instant.now();
     public static final PublicationDate PUBLICATION_DATE = new PublicationDate("2020",
                                                                                new PublicationDateNva.Builder()
                                                                                    .withYear("2020").build());
@@ -1104,7 +1104,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                            .withName(FILENAME)
                            .withSize(FakeS3cClientWithCopyObjectSupport.SOME_CONTENT_LENGTH)
                            .withMimeType(FakeS3cClientWithCopyObjectSupport.APPLICATION_PDF_MIMETYPE)
-                           .withEmbargoDate(Instant.parse(EMBARGO_DATE))
+                           .withEmbargoDate(EMBARGO_DATE)
                            .buildPublishedFile());
     }
 
