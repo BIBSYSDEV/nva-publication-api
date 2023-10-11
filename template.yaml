@@ -1135,6 +1135,7 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler::handleRequest
       Runtime: java17
+      Timeout: 200
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 64
       Environment:
