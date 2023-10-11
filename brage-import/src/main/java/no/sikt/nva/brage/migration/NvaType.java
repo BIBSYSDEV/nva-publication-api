@@ -40,6 +40,7 @@ public enum NvaType {
     FILM("Film"),
     EXHIBITION_CATALOGUE("Exhibition catalogue"),
     LITERARY_ARTS("Literary arts"),
+    EDITORIAL("Editorial"),
     POPULAR_SCIENCE_MONOGRAPH("Popular science monograph"),
     CRISTIN_RECORD("CristinRecord");
 

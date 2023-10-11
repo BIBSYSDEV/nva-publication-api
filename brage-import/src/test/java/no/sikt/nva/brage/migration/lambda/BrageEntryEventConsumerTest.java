@@ -2,6 +2,7 @@ package no.sikt.nva.brage.migration.lambda;
 
 import static no.sikt.nva.brage.migration.NvaType.ANTHOLOGY;
 import static no.sikt.nva.brage.migration.NvaType.CRISTIN_RECORD;
+import static no.sikt.nva.brage.migration.NvaType.EDITORIAL;
 import static no.sikt.nva.brage.migration.NvaType.EXHIBITION_CATALOGUE;
 import static no.sikt.nva.brage.migration.NvaType.FILM;
 import static no.sikt.nva.brage.migration.NvaType.LITERARY_ARTS;
@@ -124,6 +125,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                                   EXHIBITION_CATALOGUE.getValue());
     public static final Type TYPE_POPULAR_SCIENCE_MONOGRAPH = new Type(List.of(POPULAR_SCIENCE_MONOGRAPH.getValue()),
                                                                        POPULAR_SCIENCE_MONOGRAPH.getValue());
+    public static final Type TYPE_EDITORIAL = new Type(List.of(EDITORIAL.getValue()),
+                                                       EDITORIAL.getValue());
     public static final Type TYPE_MUSIC = new Type(List.of(NvaType.RECORDING_MUSICAL.getValue()),
                                                    NvaType.RECORDING_MUSICAL.getValue());
     public static final Type TYPE_DESIGN_PRODUCT = new Type(List.of(NvaType.DESIGN_PRODUCT.getValue()),
@@ -690,6 +693,18 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     void shouldConvertPopularScienceMonographToPublication() throws IOException {
         var brageGenerator =
             new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_POPULAR_SCIENCE_MONOGRAPH).build();
+        var expectedPublication = brageGenerator.getNvaPublication();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThatPublicationsMatch(actualPublication, expectedPublication);
+    }
+
+    @Test
+    void shouldConvertEditorialToPublication() throws IOException {
+        var brageGenerator =
+            new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_EDITORIAL)
+                .withJournalTitle(randomString())
+                .withVolume(randomString()).build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);

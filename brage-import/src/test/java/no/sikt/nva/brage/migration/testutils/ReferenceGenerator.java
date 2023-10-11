@@ -41,7 +41,6 @@ import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtype;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPictureSubtype;
 import no.unit.nva.model.instancetypes.artistic.literaryarts.LiteraryArts;
-import no.unit.nva.model.instancetypes.artistic.literaryarts.LiteraryArtsSubtype;
 import no.unit.nva.model.instancetypes.artistic.literaryarts.LiteraryArtsSubtypeOther;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArts;
@@ -67,6 +66,7 @@ import no.unit.nva.model.instancetypes.event.OtherPresentation;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.instancetypes.media.MediaInterview;
 import no.unit.nva.model.instancetypes.media.MediaReaderOpinion;
@@ -320,6 +320,17 @@ public final class ReferenceGenerator {
                 return new Reference.Builder().withPublicationInstance(
                         new PopularScienceMonograph(generateMonographPages(builder)))
                            .withPublishingContext(generatePublicationContextForBook(builder))
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
+            if (NvaType.EDITORIAL.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublicationInstance(new JournalLeader(builder.getVolume(), builder.getIssue(),
+                                                                      builder.getArticleNumber(),
+                                                                      generateRange(builder)))
+                           .withPublishingContext(new UnconfirmedJournal(builder.getJournalTitle(),
+                                                                         builder.getIssnList().get(0),
+                                                                         builder.getIssnList().get(1)))
                            .withDoi(builder.getDoi())
                            .build();
             }

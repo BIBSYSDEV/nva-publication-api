@@ -63,6 +63,7 @@ import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.event.OtherPresentation;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
+import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.instancetypes.media.MediaInterview;
 import no.unit.nva.model.instancetypes.media.MediaReaderOpinion;
@@ -185,11 +186,27 @@ public final class PublicationInstanceMapper {
         if (isPopularScienceMonograph(brageRecord)) {
             return buildPublicationInstanceWhenExhibitionCatalog(brageRecord);
         }
+        if (isEditorial(brageRecord)) {
+            return buildPublicationInstanceWhenEditorial(brageRecord);
+        }
         if (isCristinRecord(brageRecord)) {
             return null;
         } else {
             return buildPublicationInstanceWhenReport(brageRecord);
         }
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenEditorial(Record brageRecord) {
+        return new JournalLeader(extractVolume(brageRecord), extractIssue(brageRecord), extractArticleNumber(brageRecord),
+                                 extractPages(brageRecord));
+    }
+
+    private static String extractArticleNumber(Record brageRecord) {
+        return brageRecord.getEntityDescription().getPublicationInstance().getArticleNumber();
+    }
+
+    public static boolean isEditorial(Record brageRecord) {
+        return NvaType.EDITORIAL.getValue().equals(brageRecord.getType().getNva());
     }
 
     public static boolean isPopularScienceMonograph(Record brageRecord) {

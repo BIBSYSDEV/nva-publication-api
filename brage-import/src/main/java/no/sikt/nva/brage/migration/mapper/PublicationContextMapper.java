@@ -3,6 +3,7 @@ package no.sikt.nva.brage.migration.mapper;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isAnthology;
 import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isConferenceReport;
+import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isEditorial;
 import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isExhibitionCatalog;
 import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isLiteraryArts;
 import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isPopularScienceMonograph;
@@ -235,7 +236,8 @@ public final class PublicationContextMapper {
         return isJournalArticle(brageRecord)
                || isScientificArticle(brageRecord)
                || isFeatureArticle(brageRecord)
-               || isProfessionalArticle(brageRecord);
+               || isProfessionalArticle(brageRecord)
+               || isEditorial(brageRecord);
     }
 
     private static PublicationContext buildPublicationContextWhenMediaContribution() {

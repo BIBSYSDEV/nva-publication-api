@@ -57,6 +57,7 @@ public enum BrageType {
     EXHIBITION_CATALOGUE("Exhibition catalogue"),
     LITERARY_ARTS("Literary arts"),
     POPULAR_SCIENCE_MONOGRAPH("Popular science monograph"),
+    EDITORIAL("Editorial"),
     FILM("Film");
     private final String value;
 
