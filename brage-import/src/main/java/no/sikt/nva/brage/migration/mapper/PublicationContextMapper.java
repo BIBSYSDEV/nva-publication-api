@@ -3,6 +3,9 @@ package no.sikt.nva.brage.migration.mapper;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isAnthology;
 import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isConferenceReport;
+import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isExhibitionCatalog;
+import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isLiteraryArts;
+import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isPopularScienceMonograph;
 import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isProfessionalArticle;
 import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isReaderOpinion;
 import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isVisualArts;
@@ -209,7 +212,9 @@ public final class PublicationContextMapper {
                || isOtherStudentWork(record)
                || isStudentPaper(record)
                || isAnthology(record)
-               || isTextbook(record);
+               || isTextbook(record)
+               || isExhibitionCatalog(record)
+               || isPopularScienceMonograph(record);
     }
 
     private static PublicationContext buildPublicationContextWhenReaderOpinion() throws InvalidIssnException {
@@ -222,7 +227,8 @@ public final class PublicationContextMapper {
                || isPlanOrBlueprint(brageRecord)
                || isPerformingArts(brageRecord)
                || isVisualArts(brageRecord)
-               || isFilm(brageRecord);
+               || isFilm(brageRecord)
+               || isLiteraryArts(brageRecord);
     }
 
     private static boolean isArticle(Record brageRecord) {

@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 public class AssociatedArtifactMover {
 
     public static final String COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE =
-        "Could not copy associated artefact";
+        "Could not copy associated artifact: ";
     private final S3Client s3Client;
     private final S3Event s3Event;
     private final String persistedStorageBucket;
@@ -68,7 +68,7 @@ public class AssociatedArtifactMover {
                 return associatedArtifact;
             }
         } catch (Exception e) {
-            throw new AssociatedArtifactException(COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE, e);
+            throw new AssociatedArtifactException(COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE + associatedArtifact, e);
         }
     }
 

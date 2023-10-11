@@ -2,8 +2,11 @@ package no.sikt.nva.brage.migration.lambda;
 
 import static no.sikt.nva.brage.migration.NvaType.ANTHOLOGY;
 import static no.sikt.nva.brage.migration.NvaType.CRISTIN_RECORD;
+import static no.sikt.nva.brage.migration.NvaType.EXHIBITION_CATALOGUE;
 import static no.sikt.nva.brage.migration.NvaType.FILM;
+import static no.sikt.nva.brage.migration.NvaType.LITERARY_ARTS;
 import static no.sikt.nva.brage.migration.NvaType.PERFORMING_ARTS;
+import static no.sikt.nva.brage.migration.NvaType.POPULAR_SCIENCE_MONOGRAPH;
 import static no.sikt.nva.brage.migration.NvaType.PROFESSIONAL_ARTICLE;
 import static no.sikt.nva.brage.migration.NvaType.READER_OPINION;
 import static no.sikt.nva.brage.migration.NvaType.TEXTBOOK;
@@ -116,6 +119,11 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                             CRISTIN_RECORD.getValue());
     public static final Type TYPE_TEXTBOOK = new Type(List.of(TEXTBOOK.getValue()), TEXTBOOK.getValue());
     public static final Type TYPE_FILM = new Type(List.of(FILM.getValue()), FILM.getValue());
+    public static final Type TYPE_LITERARY_ARTS = new Type(List.of(LITERARY_ARTS.getValue()), LITERARY_ARTS.getValue());
+    public static final Type TYPE_EXHIBITION_CATALOGUE = new Type(List.of(EXHIBITION_CATALOGUE.getValue()),
+                                                                  EXHIBITION_CATALOGUE.getValue());
+    public static final Type TYPE_POPULAR_SCIENCE_MONOGRAPH = new Type(List.of(POPULAR_SCIENCE_MONOGRAPH.getValue()),
+                                                                       POPULAR_SCIENCE_MONOGRAPH.getValue());
     public static final Type TYPE_MUSIC = new Type(List.of(NvaType.RECORDING_MUSICAL.getValue()),
                                                    NvaType.RECORDING_MUSICAL.getValue());
     public static final Type TYPE_DESIGN_PRODUCT = new Type(List.of(NvaType.DESIGN_PRODUCT.getValue()),
@@ -153,8 +161,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                                 NvaType.SCIENTIFIC_ARTICLE.getValue());
     public static final Instant EMBARGO_DATE = Instant.now();
     public static final PublicationDate PUBLICATION_DATE = new PublicationDate("2020",
-                                                                               new PublicationDateNva.Builder()
-                                                                                   .withYear("2020").build());
+                                                                               new PublicationDateNva.Builder().withYear(
+                                                                                   "2020").build());
     public static final Organization TEST_ORGANIZATION = new Organization.Builder().withId(
         URI.create("https://api.nva.unit.no/customer/test")).build();
     public static final String FILENAME = "filename";
@@ -661,6 +669,34 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldConvertLiteraryArtsToPublication() throws IOException {
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_LITERARY_ARTS).build();
+        var expectedPublication = brageGenerator.getNvaPublication();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThatPublicationsMatch(actualPublication, expectedPublication);
+    }
+
+    @Test
+    void shouldConvertExhibitionCatalogueToPublication() throws IOException {
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_EXHIBITION_CATALOGUE).build();
+        var expectedPublication = brageGenerator.getNvaPublication();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThatPublicationsMatch(actualPublication, expectedPublication);
+    }
+
+    @Test
+    void shouldConvertPopularScienceMonographToPublication() throws IOException {
+        var brageGenerator =
+            new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_POPULAR_SCIENCE_MONOGRAPH).build();
+        var expectedPublication = brageGenerator.getNvaPublication();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThatPublicationsMatch(actualPublication, expectedPublication);
+    }
+
+    @Test
     void shouldConvertToPublicationWithUnconfirmedJournalWhenJournalIdIsNotPresent() throws IOException {
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_FEATURE_ARTICLE)
                                  .withJournalTitle("Some Very Popular Journal")
@@ -848,8 +884,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                  .withCristinIdentifier(cristinIdentifier)
                                                  .build();
         var existingPublication = persistPublicationWithCristinIdAndHandle(cristinIdentifier,
-                                                                           nvaBrageMigrationDataGenerator
-                                                                               .getNvaPublication().getHandle());
+                                                                           nvaBrageMigrationDataGenerator.getNvaPublication()
+                                                                               .getHandle());
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         handler.handleRequest(s3Event, CONTEXT);
         var storedPublication = extractUpdateReportFromS3(s3Event, existingPublication);
@@ -1087,12 +1123,13 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     private ResourceContent createResourceContent() {
-        var file = new ContentFile(FILENAME,
-                                   BundleType.ORIGINAL,
-                                   "description",
-                                   UUID,
-                                   new License("someLicense", new NvaLicense(
-                                       URI.create("https://creativecommons.org/licenses/by-nc/4.0"))), EMBARGO_DATE);
+        var file = new ContentFile(FILENAME, BundleType.ORIGINAL, "description", UUID, new License("someLicense",
+                                                                                                   new NvaLicense(
+                                                                                                       URI.create(
+                                                                                                           "https"
+                                                                                                           +
+                                                                                                           "://creativecommons.org/licenses/by-nc/4.0"))),
+                                   EMBARGO_DATE);
 
         return new ResourceContent(Collections.singletonList(file));
     }

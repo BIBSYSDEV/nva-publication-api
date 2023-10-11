@@ -36,9 +36,12 @@ public enum NvaType {
     SCIENTIFIC_CHAPTER("Vitenskapelig kapittel"),
     SCIENTIFIC_ARTICLE("Vitenskapelig artikkel"),
     TEXTBOOK("Textbook"),
-    CRISTIN_RECORD("CristinRecord"),
+    CONFERENCE_REPORT("ConferenceReport"),
     FILM("Film"),
-    CONFERENCE_REPORT("ConferenceReport");
+    EXHIBITION_CATALOGUE("Exhibition catalogue"),
+    LITERARY_ARTS("Literary arts"),
+    POPULAR_SCIENCE_MONOGRAPH("Popular science monograph"),
+    CRISTIN_RECORD("CristinRecord");
 
     private final String value;
 

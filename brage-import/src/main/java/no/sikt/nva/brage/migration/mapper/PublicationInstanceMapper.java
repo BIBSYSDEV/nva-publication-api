@@ -40,6 +40,8 @@ import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtype;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtypeEnum;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPictureSubtype;
+import no.unit.nva.model.instancetypes.artistic.literaryarts.LiteraryArts;
+import no.unit.nva.model.instancetypes.artistic.literaryarts.LiteraryArtsSubtypeOther;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArts;
 import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArtsSubtype;
@@ -47,6 +49,7 @@ import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArts;
 import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArtsSubtype;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
+import no.unit.nva.model.instancetypes.book.ExhibitionCatalog;
 import no.unit.nva.model.instancetypes.book.NonFictionMonograph;
 import no.unit.nva.model.instancetypes.book.Textbook;
 import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
@@ -173,11 +176,41 @@ public final class PublicationInstanceMapper {
         if (isFilm(brageRecord)) {
             return buildPublicationInstanceWhenFilm();
         }
+        if (isLiteraryArts(brageRecord)) {
+            return buildPublicationInstanceWhenLiteraryArts();
+        }
+        if (isExhibitionCatalog(brageRecord)) {
+            return buildPublicationInstanceWhenExhibitionCatalog(brageRecord);
+        }
+        if (isPopularScienceMonograph(brageRecord)) {
+            return buildPublicationInstanceWhenExhibitionCatalog(brageRecord);
+        }
         if (isCristinRecord(brageRecord)) {
             return null;
         } else {
             return buildPublicationInstanceWhenReport(brageRecord);
         }
+    }
+
+    public static boolean isPopularScienceMonograph(Record brageRecord) {
+        return NvaType.POPULAR_SCIENCE_MONOGRAPH.getValue().equals(brageRecord.getType().getNva());
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenExhibitionCatalog(
+        Record brageRecord) {
+        return new ExhibitionCatalog(extractMonographPages(brageRecord));
+    }
+
+    public static boolean isExhibitionCatalog(Record brageRecord) {
+        return NvaType.EXHIBITION_CATALOGUE.getValue().equals(brageRecord.getType().getNva());
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenLiteraryArts() {
+        return new LiteraryArts(LiteraryArtsSubtypeOther.createOther(null), List.of(), null);
+    }
+
+    public static boolean isLiteraryArts(Record brageRecord) {
+        return NvaType.LITERARY_ARTS.getValue().equals(brageRecord.getType().getNva());
     }
 
     @NotNull
