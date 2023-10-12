@@ -162,9 +162,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     public static final Type TYPE_SCIENTIFIC_ARTICLE = new Type(List.of(NvaType.SCIENTIFIC_ARTICLE.getValue()),
                                                                 NvaType.SCIENTIFIC_ARTICLE.getValue());
     public static final Instant EMBARGO_DATE = Instant.now();
-    public static final PublicationDate PUBLICATION_DATE = new PublicationDate("2020",
-                                                                               new PublicationDateNva.Builder().withYear(
-                                                                                   "2020").build());
+    public static final PublicationDate PUBLICATION_DATE =
+        new PublicationDate("2020", new PublicationDateNva.Builder().withYear("2020").build());
     public static final Organization TEST_ORGANIZATION = new Organization.Builder().withId(
         URI.create("https://api.nva.unit.no/customer/test")).build();
     public static final String FILENAME = "filename";
@@ -897,9 +896,9 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                  .withType(TYPE_BOOK)
                                                  .withCristinIdentifier(cristinIdentifier)
                                                  .build();
-        var existingPublication = persistPublicationWithCristinIdAndHandle(cristinIdentifier,
-                                                                           nvaBrageMigrationDataGenerator.getNvaPublication()
-                                                                               .getHandle());
+        var existingPublication =
+            persistPublicationWithCristinIdAndHandle(cristinIdentifier,
+                                                     nvaBrageMigrationDataGenerator.getNvaPublication().getHandle());
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         handler.handleRequest(s3Event, CONTEXT);
         var storedPublication = extractUpdateReportFromS3(s3Event, existingPublication);
@@ -1137,12 +1136,12 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     private ResourceContent createResourceContent() {
-        var file = new ContentFile(FILENAME, BundleType.ORIGINAL, "description", UUID, new License("someLicense",
-                                                                                                   new NvaLicense(
-                                                                                                       URI.create(
-                                                                                                           "https"
-                                                                                                           +
-                                                                                                           "://creativecommons.org/licenses/by-nc/4.0"))),
+        var file = new ContentFile(FILENAME,
+                                   BundleType.ORIGINAL,
+                                   "description",
+                                   UUID,
+                                   new License("someLicense", new NvaLicense(
+                                       URI.create("https://creativecommons.org/licenses/by-nc/4.0"))),
                                    EMBARGO_DATE);
 
         return new ResourceContent(Collections.singletonList(file));
