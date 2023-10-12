@@ -2,6 +2,7 @@ package no.sikt.nva.brage.migration.record.content;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 import no.sikt.nva.brage.migration.record.content.ResourceContent.BundleType;
@@ -15,7 +16,7 @@ public class ContentFile {
     private String description;
     private UUID identifier;
     private License license;
-    private String embargoDate;
+    private Instant embargoDate;
 
     @JacocoGenerated
     public ContentFile() {
@@ -28,7 +29,7 @@ public class ContentFile {
                        @JsonProperty("description") String description,
                        @JsonProperty("identifier") UUID identifier,
                        @JsonProperty("license") License license,
-                       @JsonProperty("embargoDate") String embargoDate) {
+                       @JsonProperty("embargoDate") Instant embargoDate) {
         this.filename = filename;
         this.bundleType = bundleType;
         this.description = description;
@@ -38,12 +39,12 @@ public class ContentFile {
     }
 
     @JsonProperty("embargoDate")
-    public String getEmbargoDate() {
+    public Instant getEmbargoDate() {
         return embargoDate;
     }
 
     @JacocoGenerated
-    public void setEmbargoDate(String embargoDate) {
+    public void setEmbargoDate(Instant embargoDate) {
         this.embargoDate = embargoDate;
     }
 

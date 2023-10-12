@@ -54,7 +54,6 @@ import nva.commons.core.language.LanguageMapper;
 import nva.commons.core.paths.UriWrapper;
 import org.jetbrains.annotations.NotNull;
 import org.joda.time.Instant;
-import org.joda.time.format.ISODateTimeFormat;
 
 public class NvaBrageMigrationDataGenerator {
 
@@ -189,6 +188,9 @@ public class NvaBrageMigrationDataGenerator {
     private PublicationInstance createPublicationInstance(Builder builder) {
         var publicationInstance = new PublicationInstance();
         publicationInstance.setPageNumber(builder.getPages());
+        publicationInstance.setVolume(builder.volume);
+        publicationInstance.setIssue(builder.issue);
+        publicationInstance.setArticleNumber(builder.articleNumber);
         return publicationInstance;
     }
 
@@ -240,6 +242,9 @@ public class NvaBrageMigrationDataGenerator {
         private String rightsHolder;
         private URI link;
         private Set<URI> subjects;
+        private String volume;
+        private String issue;
+        private String articleNumber;
 
         public static URI randomHandle() {
             return UriWrapper.fromUri("http://hdl.handle.net/11250/" + randomInteger()).getUri();
@@ -272,7 +277,7 @@ public class NvaBrageMigrationDataGenerator {
             return this;
         }
 
-        public String getJournal() {
+        public String getJournalTitle() {
             return journal;
         }
 
@@ -377,6 +382,11 @@ public class NvaBrageMigrationDataGenerator {
 
         public Builder withAbstracts(List<String> abstracts) {
             this.abstracts = abstracts;
+            return this;
+        }
+
+        public Builder withArticleNumber(String articleNumber) {
+            this.articleNumber = articleNumber;
             return this;
         }
 
@@ -538,6 +548,12 @@ public class NvaBrageMigrationDataGenerator {
             return this;
         }
 
+        public Builder withVolume(String volume) {
+            this.volume = volume;
+            return this;
+        }
+
+
         public Builder withSubjects(Set<URI> subjects) {
             this.subjects = subjects;
             return this;
@@ -555,6 +571,11 @@ public class NvaBrageMigrationDataGenerator {
 
         public Builder withType(Type type) {
             this.type = type;
+            return this;
+        }
+
+        public Builder withIssue(String issue) {
+            this.issue = issue;
             return this;
         }
 
@@ -637,6 +658,18 @@ public class NvaBrageMigrationDataGenerator {
 
         public Set<URI> getSubjects() {
             return subjects;
+        }
+
+        public String getVolume() {
+            return volume;
+        }
+
+        public String getIssue() {
+            return issue;
+        }
+
+        public String getArticleNumber() {
+            return articleNumber;
         }
 
         private static no.unit.nva.model.PublicationDate createPublicationDateForPublication(

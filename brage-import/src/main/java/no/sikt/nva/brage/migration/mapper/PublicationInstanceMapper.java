@@ -40,6 +40,8 @@ import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtype;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtypeEnum;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPictureSubtype;
+import no.unit.nva.model.instancetypes.artistic.literaryarts.LiteraryArts;
+import no.unit.nva.model.instancetypes.artistic.literaryarts.LiteraryArtsSubtypeOther;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArts;
 import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArtsSubtype;
@@ -47,6 +49,7 @@ import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArts;
 import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArtsSubtype;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
+import no.unit.nva.model.instancetypes.book.ExhibitionCatalog;
 import no.unit.nva.model.instancetypes.book.NonFictionMonograph;
 import no.unit.nva.model.instancetypes.book.Textbook;
 import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
@@ -60,6 +63,7 @@ import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.event.OtherPresentation;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
+import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.instancetypes.media.MediaInterview;
 import no.unit.nva.model.instancetypes.media.MediaReaderOpinion;
@@ -173,11 +177,77 @@ public final class PublicationInstanceMapper {
         if (isFilm(brageRecord)) {
             return buildPublicationInstanceWhenFilm();
         }
+        if (isLiteraryArts(brageRecord)) {
+            return buildPublicationInstanceWhenLiteraryArts();
+        }
+        if (isExhibitionCatalog(brageRecord)) {
+            return buildPublicationInstanceWhenExhibitionCatalog(brageRecord);
+        }
+        if (isPopularScienceMonograph(brageRecord)) {
+            return buildPublicationInstanceWhenExhibitionCatalog(brageRecord);
+        }
+        if (isEditorial(brageRecord)) {
+            return buildPublicationInstanceWhenEditorial(brageRecord);
+        }
         if (isCristinRecord(brageRecord)) {
             return null;
         } else {
             return buildPublicationInstanceWhenReport(brageRecord);
         }
+    }
+
+    public static boolean isEditorial(Record brageRecord) {
+        return NvaType.EDITORIAL.getValue().equals(brageRecord.getType().getNva());
+    }
+
+    public static boolean isPopularScienceMonograph(Record brageRecord) {
+        return NvaType.POPULAR_SCIENCE_MONOGRAPH.getValue().equals(brageRecord.getType().getNva());
+    }
+
+    public static boolean isExhibitionCatalog(Record brageRecord) {
+        return NvaType.EXHIBITION_CATALOGUE.getValue().equals(brageRecord.getType().getNva());
+    }
+
+    public static boolean isLiteraryArts(Record brageRecord) {
+        return NvaType.LITERARY_ARTS.getValue().equals(brageRecord.getType().getNva());
+    }
+
+    public static boolean isAnthology(Record brageRecord) {
+        return NvaType.ANTHOLOGY.getValue().equals(brageRecord.getType().getNva());
+    }
+
+    public static boolean isReaderOpinion(Record brageRecord) {
+        return NvaType.READER_OPINION.getValue().equals(brageRecord.getType().getNva());
+    }
+
+    public static boolean isVisualArts(Record brageRecord) {
+        return NvaType.VISUAL_ARTS.getValue().equals(brageRecord.getType().getNva());
+    }
+
+    public static boolean isProfessionalArticle(Record brageRecord) {
+        return NvaType.PROFESSIONAL_ARTICLE.getValue().equals(brageRecord.getType().getNva());
+    }
+
+    public static boolean isConferenceReport(Record brageRecord) {
+        return NvaType.CONFERENCE_REPORT.getValue().equals(brageRecord.getType().getNva());
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenEditorial(Record brageRecord) {
+        return new JournalLeader(extractVolume(brageRecord), extractIssue(brageRecord),
+                                 extractArticleNumber(brageRecord), extractPages(brageRecord));
+    }
+
+    private static String extractArticleNumber(Record brageRecord) {
+        return brageRecord.getEntityDescription().getPublicationInstance().getArticleNumber();
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenExhibitionCatalog(
+        Record brageRecord) {
+        return new ExhibitionCatalog(extractMonographPages(brageRecord));
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenLiteraryArts() {
+        return new LiteraryArts(LiteraryArtsSubtypeOther.createOther(null), List.of(), null);
     }
 
     @NotNull
@@ -193,25 +263,13 @@ public final class PublicationInstanceMapper {
         return new BookAnthology(extractMonographPages(brageRecord));
     }
 
-    public static boolean isAnthology(Record brageRecord) {
-        return NvaType.ANTHOLOGY.getValue().equals(brageRecord.getType().getNva());
-    }
-
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenReaderOpinion(Record brageRecord) {
         return new MediaReaderOpinion(extractVolume(brageRecord), extractIssue(brageRecord), null,
                                       extractPages(brageRecord));
     }
 
-    public static boolean isReaderOpinion(Record brageRecord) {
-        return NvaType.READER_OPINION.getValue().equals(brageRecord.getType().getNva());
-    }
-
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenVisualArts() {
         return new VisualArts(VisualArtsSubtype.createOther(null), null, Set.of());
-    }
-
-    public static boolean isVisualArts(Record brageRecord) {
-        return NvaType.VISUAL_ARTS.getValue().equals(brageRecord.getType().getNva());
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenPerformingArts() {
@@ -224,17 +282,9 @@ public final class PublicationInstanceMapper {
                                        null);
     }
 
-    public static boolean isProfessionalArticle(Record brageRecord) {
-        return NvaType.PROFESSIONAL_ARTICLE.getValue().equals(brageRecord.getType().getNva());
-    }
-
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenConferenceReport(
         Record brageRecord) {
         return new ConferenceReport(extractMonographPages(brageRecord));
-    }
-
-    public static boolean isConferenceReport(Record brageRecord) {
-        return NvaType.CONFERENCE_REPORT.getValue().equals(brageRecord.getType().getNva());
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenOtherPresentation() {
@@ -250,8 +300,8 @@ public final class PublicationInstanceMapper {
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenPlanOrBluePrint() {
-        return new Architecture(ArchitectureSubtype.create(ArchitectureSubtypeEnum.OTHER),
-                                null, Collections.emptyList());
+        return new Architecture(ArchitectureSubtype.create(ArchitectureSubtypeEnum.OTHER), null,
+                                Collections.emptyList());
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenChapter(Record brageRecord) {
@@ -263,8 +313,8 @@ public final class PublicationInstanceMapper {
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenDesignProduct() {
-        return new ArtisticDesign(ArtisticDesignSubtype.create(ArtisticDesignSubtypeEnum.OTHER),
-                                  null, Collections.emptyList());
+        return new ArtisticDesign(ArtisticDesignSubtype.create(ArtisticDesignSubtypeEnum.OTHER), null,
+                                  Collections.emptyList());
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenScientificChapter(
@@ -273,8 +323,7 @@ public final class PublicationInstanceMapper {
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenFeatureArticle(Record brageRecord) {
-        return new FeatureArticle.Builder()
-                   .withPages(extractPages(brageRecord))
+        return new FeatureArticle.Builder().withPages(extractPages(brageRecord))
                    .withIssue(extractIssue(brageRecord))
                    .withVolume(extractVolume(brageRecord))
                    .build();
@@ -314,8 +363,7 @@ public final class PublicationInstanceMapper {
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenDataset(Record brageRecord) {
-        return new DataSet(false, new GeographicalDescription(String.join(", ",
-                                                                          extractSpatialCoverage(brageRecord))),
+        return new DataSet(false, new GeographicalDescription(String.join(", ", extractSpatialCoverage(brageRecord))),
                            null, null, null);
     }
 
@@ -404,9 +452,7 @@ public final class PublicationInstanceMapper {
     }
 
     private static MonographPages extractMonographPages(Record brageRecord) {
-        return new MonographPages.Builder()
-                   .withPages(extractPagesWhenMonographPages(brageRecord))
-                   .build();
+        return new MonographPages.Builder().withPages(extractPagesWhenMonographPages(brageRecord)).build();
     }
 
     private static String extractPagesWhenMonographPages(Record brageRecord) {
@@ -417,8 +463,7 @@ public final class PublicationInstanceMapper {
     }
 
     private static PublicationDate extractPublicationDate(Record brageRecord) {
-        return new PublicationDate.Builder()
-                   .withYear(extractPublicationYear(brageRecord))
+        return new PublicationDate.Builder().withYear(extractPublicationYear(brageRecord))
                    .withMonth(extractPublicationMonth(brageRecord))
                    .withDay(extractPublicationDay(brageRecord))
                    .build();
@@ -452,8 +497,7 @@ public final class PublicationInstanceMapper {
     }
 
     private static Range extractPages(Record brageRecord) {
-        return new Range.Builder()
-                   .withBegin(extractBeginValue(brageRecord))
+        return new Range.Builder().withBegin(extractBeginValue(brageRecord))
                    .withEnd(extractEndValue(brageRecord))
                    .build();
     }

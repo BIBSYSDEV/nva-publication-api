@@ -190,7 +190,6 @@ public final class BrageNvaMapper {
     private static Instant extractEmbargoDate(ContentFile file) {
         return Optional.ofNullable(file)
                    .map(ContentFile::getEmbargoDate)
-                   .map(Instant::parse)
                    .orElse(null);
     }
 

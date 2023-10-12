@@ -40,6 +40,8 @@ import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesign;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesignSubtype;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPictureSubtype;
+import no.unit.nva.model.instancetypes.artistic.literaryarts.LiteraryArts;
+import no.unit.nva.model.instancetypes.artistic.literaryarts.LiteraryArtsSubtypeOther;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArts;
 import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArtsSubtype;
@@ -48,7 +50,9 @@ import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArtsSubtype;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
+import no.unit.nva.model.instancetypes.book.ExhibitionCatalog;
 import no.unit.nva.model.instancetypes.book.NonFictionMonograph;
+import no.unit.nva.model.instancetypes.book.PopularScienceMonograph;
 import no.unit.nva.model.instancetypes.book.Textbook;
 import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
 import no.unit.nva.model.instancetypes.chapter.NonFictionChapter;
@@ -62,6 +66,7 @@ import no.unit.nva.model.instancetypes.event.OtherPresentation;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.instancetypes.media.MediaInterview;
 import no.unit.nva.model.instancetypes.media.MediaReaderOpinion;
@@ -294,6 +299,38 @@ public final class ReferenceGenerator {
                 return new Reference.Builder().withPublicationInstance(
                         new MovingPicture(MovingPictureSubtype.createOther(null), null, List.of()))
                            .withPublishingContext(new Artistic())
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
+            if (NvaType.LITERARY_ARTS.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder().withPublicationInstance(
+                    new LiteraryArts(LiteraryArtsSubtypeOther.createOther(null), null, null))
+                           .withPublishingContext(new Artistic())
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
+            if (NvaType.EXHIBITION_CATALOGUE.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder().withPublicationInstance(
+                        new ExhibitionCatalog(generateMonographPages(builder)))
+                           .withPublishingContext(generatePublicationContextForBook(builder))
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
+            if (NvaType.POPULAR_SCIENCE_MONOGRAPH.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder().withPublicationInstance(
+                        new PopularScienceMonograph(generateMonographPages(builder)))
+                           .withPublishingContext(generatePublicationContextForBook(builder))
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
+            if (NvaType.EDITORIAL.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublicationInstance(new JournalLeader(builder.getVolume(), builder.getIssue(),
+                                                                      builder.getArticleNumber(),
+                                                                      generateRange(builder)))
+                           .withPublishingContext(new UnconfirmedJournal(builder.getJournalTitle(),
+                                                                         builder.getIssnList().get(0),
+                                                                         builder.getIssnList().get(1)))
                            .withDoi(builder.getDoi())
                            .build();
             }
