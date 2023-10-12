@@ -19,8 +19,8 @@ import java.util.stream.Collectors;
 
 public class AssociatedArtifactMover {
 
-    public static final String COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE =
-        "Could not copy associated artifact: ";
+    public static final String COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE = "Could not copy associated "
+                                                                                      + "artifact: ";
     private final S3Client s3Client;
     private final S3Event s3Event;
     private final String persistedStorageBucket;
@@ -37,11 +37,10 @@ public class AssociatedArtifactMover {
     }
 
     private AssociatedArtifactList pushAssociatedArtefactsToPersistedStorageAndGetMetadata(Publication publication) {
-        var associatedArtifacts =
-            publication.getAssociatedArtifacts()
-                .stream()
-                .map(this::pushAssociatedArtifactToPersistedStorage)
-                .collect(Collectors.toList());
+        var associatedArtifacts = publication.getAssociatedArtifacts()
+                                      .stream()
+                                      .map(this::pushAssociatedArtifactToPersistedStorage)
+                                      .collect(Collectors.toList());
         return new AssociatedArtifactList(associatedArtifacts);
     }
 
@@ -57,18 +56,19 @@ public class AssociatedArtifactMover {
                 logger.info("sourceKey {}", objectKeyPath + objectKey);
                 logger.info("destinationKey {}", objectKey);
                 var copyObjRequest = CopyObjectRequest.builder()
-                    .sourceBucket(sourceBucket)
-                    .destinationBucket(persistedStorageBucket)
-                    .sourceKey(objectKeyPath + objectKey)
-                    .destinationKey(objectKey)
-                    .build();
+                                         .sourceBucket(sourceBucket)
+                                         .destinationBucket(persistedStorageBucket)
+                                         .sourceKey(objectKeyPath + objectKey)
+                                         .destinationKey(objectKey)
+                                         .build();
                 s3Client.copyObject(copyObjRequest);
                 return extractMimeTypeAndSize(file, objectKey);
             } else {
                 return associatedArtifact;
             }
         } catch (Exception e) {
-            throw new AssociatedArtifactException(COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE + associatedArtifact, e);
+            throw new AssociatedArtifactException(
+                COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE + associatedArtifact, e);
         }
     }
 
@@ -78,22 +78,18 @@ public class AssociatedArtifactMover {
         var mimeType = headObjectResponse.contentType();
 
         return File.builder()
-            .withName(file.getName())
-            .withIdentifier(file.getIdentifier())
-            .withLicense(file.getLicense())
-            .withPublisherAuthority(file.isPublisherAuthority())
-            .withEmbargoDate(file.getEmbargoDate().orElse(null))
-            .withMimeType(mimeType)
-            .withSize(size)
-            .buildPublishedFile();
+                   .withName(file.getName())
+                   .withIdentifier(file.getIdentifier())
+                   .withLicense(file.getLicense())
+                   .withPublisherAuthority(file.isPublisherAuthority())
+                   .withEmbargoDate(file.getEmbargoDate().orElse(null))
+                   .withMimeType(mimeType)
+                   .withSize(size)
+                   .buildPublishedFile();
     }
 
     private HeadObjectRequest createHeadObjectRequest(String objectKey) {
-        return HeadObjectRequest
-            .builder()
-            .bucket(persistedStorageBucket)
-            .key(objectKey)
-            .build();
+        return HeadObjectRequest.builder().bucket(persistedStorageBucket).key(objectKey).build();
     }
 
     private String getSourceBucket() {
@@ -101,11 +97,8 @@ public class AssociatedArtifactMover {
     }
 
     private String getObjectKeyPath() {
-        var directory = UnixPath.of(getRecordObjectKey())
-            .getParent();
-        return directory
-            .map(unixPath -> unixPath + "/")
-            .orElse(StringUtils.EMPTY_STRING);
+        var directory = UnixPath.of(getRecordObjectKey()).getParent();
+        return directory.map(unixPath -> unixPath + "/").orElse(StringUtils.EMPTY_STRING);
     }
 
     private String getRecordObjectKey() {
