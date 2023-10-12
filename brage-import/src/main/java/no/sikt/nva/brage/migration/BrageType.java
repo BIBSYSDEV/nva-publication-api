@@ -54,6 +54,10 @@ public enum BrageType {
     REPORT_CHAPTER("Report chapter"),
     PEER_REVIEWED("Peer reviewed"),
     FEATURE_ARTICLE("Feature article"),
+    EXHIBITION_CATALOGUE("Exhibition catalogue"),
+    LITERARY_ARTS("Literary arts"),
+    POPULAR_SCIENCE_MONOGRAPH("Popular science monograph"),
+    EDITORIAL("Editorial"),
     FILM("Film");
     private final String value;
 
