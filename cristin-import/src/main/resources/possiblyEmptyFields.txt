@@ -20,6 +20,7 @@ entityDescription.reference.publicationContext.printIssn
 entityDescription.reference.publicationContext.level
 entityDescription.reference.publicationContext.url
 entityDescription.reference.publicationContext.linkedContext
+entityDescription.reference.publicationContext.additionalIdentifiers
 
 entityDescription.reference.publicationInstance.manifestations.concertSeries
 entityDescription.reference.publicationInstance.manifestations.performanceType
@@ -39,6 +40,7 @@ entityDescription.npiSubjectHeading
 entityDescription.reference.doi
 entityDescription.alternativeAbstracts
 
+publicationNotes
 subjects
 projects
 fundings

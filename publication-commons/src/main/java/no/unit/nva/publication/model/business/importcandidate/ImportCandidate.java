@@ -13,6 +13,7 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationNote;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
@@ -54,6 +55,7 @@ public class ImportCandidate extends Publication implements JsonSerializable {
                    .withAssociatedArtifacts(getAssociatedArtifacts())
                    .withSubjects(getSubjects())
                    .withFundings(getFundings())
+                   .withPublicationNotes(getPublicationNotes())
                    .withRightsHolder(getRightsHolder());
     }
 
@@ -130,6 +132,7 @@ public class ImportCandidate extends Publication implements JsonSerializable {
             importCandidate.setSubjects(publication.getSubjects());
             importCandidate.setResourceOwner(publication.getResourceOwner());
             importCandidate.setRightsHolder(publication.getRightsHolder());
+            importCandidate.setPublicationNotes(publication.getPublicationNotes());
             return this;
         }
 
@@ -220,6 +223,11 @@ public class ImportCandidate extends Publication implements JsonSerializable {
 
         public Builder withResourceOwner(ResourceOwner randomResourceOwner) {
             importCandidate.setResourceOwner(randomResourceOwner);
+            return this;
+        }
+
+        public Builder withPublicationNotes(List<PublicationNote> publicationNotes) {
+            this.importCandidate.setPublicationNotes(publicationNotes);
             return this;
         }
 

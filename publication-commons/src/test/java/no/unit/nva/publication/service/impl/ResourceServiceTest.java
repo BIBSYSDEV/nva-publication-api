@@ -67,6 +67,7 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationNote;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
@@ -904,6 +905,16 @@ class ResourceServiceTest extends ResourcesLocalTest {
         resourceService.updateImportStatus(importCandidate.getIdentifier(), expectedStatus);
         var fetchedPublication = resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
         assertThat(fetchedPublication.getImportStatus(), is(equalTo(expectedStatus)));
+    }
+
+    @Test
+    void shouldProvidePublicationNotesWhenTheyAreSet() throws BadRequestException, NotFoundException {
+        var publication = randomPublication();
+        publication.setPublicationNotes(List.of(new PublicationNote(randomString())));
+        var result =  Resource.fromPublication(publication).persistNew(resourceService,
+                                                                UserInstance.fromPublication(publication));
+        var storedPublication = resourceService.getPublication(result);
+        assertThat(storedPublication.getPublicationNotes(), is(equalTo(publication.getPublicationNotes())));
     }
 
     private Username randomPerson() {

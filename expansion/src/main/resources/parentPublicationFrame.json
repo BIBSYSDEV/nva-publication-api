@@ -28,6 +28,10 @@
       "@container": "@set",
       "@id": "additionalIdentifier"
     },
+    "publicationNotes": {
+      "@id": "publicationNote",
+      "@container": "@set"
+    },
     "affiliations": {
       "@container": "@set",
       "@id": "affiliation"

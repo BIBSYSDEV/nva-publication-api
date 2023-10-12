@@ -34,6 +34,7 @@ java {
 
 repositories {
     mavenCentral()
+    mavenLocal()
     maven { url 'https://jitpack.io' }
     maven { url "https://s3.eu-central-1.amazonaws.com/dynamodb-local-frankfurt/release" }
 }
@@ -43,7 +44,7 @@ tasks.named('test') {
     useJUnitPlatform {
         excludeTags "RemoteTest", "integrationTest", "KarateTest"
     }
-    failFast = true
+    failFast = false
     testLogging {
         events 'skipped', 'passed', 'failed'
         showCauses true

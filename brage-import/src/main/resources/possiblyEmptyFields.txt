@@ -35,6 +35,7 @@ entityDescription.npiSubjectHeading
 entityDescription.reference.doi
 entityDescription.alternativeAbstracts
 
+publicationNotes
 subjects
 projects
 fundings

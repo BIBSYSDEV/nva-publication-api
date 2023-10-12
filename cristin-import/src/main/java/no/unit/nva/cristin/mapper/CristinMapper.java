@@ -42,11 +42,13 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Publication.Builder;
 import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.PublicationNote;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.funding.Funding;
 import nva.commons.core.SingletonCollector;
+import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.language.LanguageMapper;
 import nva.commons.core.paths.UriWrapper;
@@ -73,36 +75,33 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     public Publication generatePublication() {
-        Publication publication = new Builder()
-            .withHandle(extractHandle())
-            .withAdditionalIdentifiers(extractAdditionalIdentifiers())
-            .withEntityDescription(generateEntityDescription())
-            .withCreatedDate(extractDate())
-            .withModifiedDate(extractEntryLastModifiedDate())
-            .withPublishedDate(extractDate())
-            .withPublisher(extractOrganization())
-            .withResourceOwner(extractResourceOwner())
-            .withStatus(PublicationStatus.PUBLISHED)
-            .withProjects(extractProjects())
-            .withSubjects(generateNvaHrcsCategoriesAndActivities())
-            .withFundings(extractFundings())
-            .build();
+        Publication publication =
+            new Builder()
+                .withHandle(extractHandle())
+                .withAdditionalIdentifiers(extractAdditionalIdentifiers())
+                .withEntityDescription(generateEntityDescription())
+                .withCreatedDate(extractDate())
+                .withModifiedDate(extractEntryLastModifiedDate())
+                .withPublishedDate(extractDate())
+                .withPublisher(extractOrganization())
+                .withResourceOwner(extractResourceOwner())
+                .withStatus(PublicationStatus.PUBLISHED)
+                .withProjects(extractProjects())
+                .withSubjects(generateNvaHrcsCategoriesAndActivities())
+                .withFundings(extractFundings())
+                .withPublicationNotes(extractPublicationNotes())
+                .build();
         assertPublicationDoesNotHaveEmptyFields(publication);
         return publication;
     }
 
-    private URI extractHandle() {
-        return Optional.ofNullable(cristinObject.getCristinAssociatedUris())
-            .flatMap(CristinMapper::extractArchiveUri)
-            .orElse(null);
-    }
-
     private static Optional<URI> extractArchiveUri(List<CristinAssociatedUri> associatedUris) {
         return associatedUris
-            .stream()
-            .filter(CristinAssociatedUri::isArchive)
-            .findFirst() // Analysis of the cristin dataset shows that there is either 0 or 1 archive uri present.
-            .map(CristinAssociatedUri::toURI);
+                   .stream()
+                   .filter(CristinAssociatedUri::isArchive)
+                   .findFirst() // Analysis of the cristin dataset shows that there is either 0 or 1 archive uri
+                   // present.
+                   .map(CristinAssociatedUri::toURI);
     }
 
     private static void addContributorNumberIfMissing(List<CristinContributor> cristinContributors) {
@@ -136,6 +135,20 @@ public class CristinMapper extends CristinMappingModule {
         return cristinContributors.stream()
                    .sorted(Comparator.nullsLast(Comparator.naturalOrder()))
                    .collect(Collectors.toList());
+    }
+
+    private List<PublicationNote> extractPublicationNotes() {
+        return hasPublicationNote() ? List.of(new PublicationNote(cristinObject.getNote())) : List.of();
+    }
+
+    private boolean hasPublicationNote() {
+        return StringUtils.isNotBlank(cristinObject.getNote());
+    }
+
+    private URI extractHandle() {
+        return Optional.ofNullable(cristinObject.getCristinAssociatedUris())
+                   .flatMap(CristinMapper::extractArchiveUri)
+                   .orElse(null);
     }
 
     private ResourceOwner extractResourceOwner() {
@@ -271,24 +284,24 @@ public class CristinMapper extends CristinMappingModule {
 
     private EntityDescription generateEntityDescription() {
         return new EntityDescription.Builder()
-            .withLanguage(extractLanguage())
-            .withMainTitle(extractMainTitle())
-            .withPublicationDate(extractPublicationDate())
-            .withReference(new ReferenceBuilder(cristinObject).buildReference())
-            .withContributors(extractContributors())
-            .withNpiSubjectHeading(extractNpiSubjectHeading())
-            .withAbstract(extractAbstract())
-            .withTags(extractTags())
-            .withAlternativeAbstracts(Collections.emptyMap())
-            .withDescription(extractDescription())
-            .build();
+                   .withLanguage(extractLanguage())
+                   .withMainTitle(extractMainTitle())
+                   .withPublicationDate(extractPublicationDate())
+                   .withReference(new ReferenceBuilder(cristinObject).buildReference())
+                   .withContributors(extractContributors())
+                   .withNpiSubjectHeading(extractNpiSubjectHeading())
+                   .withAbstract(extractAbstract())
+                   .withTags(extractTags())
+                   .withAlternativeAbstracts(Collections.emptyMap())
+                   .withDescription(extractDescription())
+                   .build();
     }
 
     private String extractDescription() {
         return Optional.ofNullable(cristinObject.getCristinArtisticProduction())
-            .map(CristinArtisticProduction::getDescriptionFields)
-            .map(descriptionList -> String.join(System.lineSeparator(), descriptionList))
-            .orElse(null);
+                   .map(CristinArtisticProduction::getDescriptionFields)
+                   .map(descriptionList -> String.join(System.lineSeparator(), descriptionList))
+                   .orElse(null);
     }
 
     private List<Contributor> extractContributors() {

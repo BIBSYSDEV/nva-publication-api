@@ -18,6 +18,7 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationNote;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
@@ -79,6 +80,9 @@ public class Resource implements Entity {
     @JsonProperty
     private ImportStatus importStatus;
 
+    @JsonProperty
+    private List<PublicationNote> publicationNotes;
+
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         return emptyResource(userInstance.getUser(), userInstance.getOrganizationUri(),
                              resourceIdentifier);
@@ -110,6 +114,8 @@ public class Resource implements Entity {
         return Optional.ofNullable(publication).map(Resource::convertToResource).orElse(null);
     }
 
+
+
     private static Resource convertToResource(Publication publication) {
         return Resource.builder()
                    .withIdentifier(publication.getIdentifier())
@@ -130,6 +136,7 @@ public class Resource implements Entity {
                    .withSubjects(publication.getSubjects())
                    .withFundings(publication.getFundings())
                    .withRightsHolder(publication.getRightsHolder())
+                   .withPublicationNotes(publication.getPublicationNotes())
                    .build();
     }
 
@@ -155,6 +162,7 @@ public class Resource implements Entity {
                 .withFundings(importCandidate.getFundings())
                 .withRightsHolder(importCandidate.getRightsHolder())
                 .withImportStatus(importCandidate.getImportStatus())
+                .withPublicationNotes(importCandidate.getPublicationNotes())
                 .build();
     }
 
@@ -210,6 +218,13 @@ public class Resource implements Entity {
         this.importStatus = importStatus;
     }
 
+    public List<PublicationNote> getPublicationNotes(){
+        return nonNull(publicationNotes) ? publicationNotes : List.of();
+    }
+    public void setPublicationNotes(List<PublicationNote> publicationNotes) {
+        this.publicationNotes = publicationNotes;
+    }
+
     @Override
     public Publication toPublication(ResourceService resourceService) {
         return toPublication();
@@ -235,6 +250,7 @@ public class Resource implements Entity {
                    .withSubjects(getSubjects())
                    .withFundings(getFundings())
                    .withRightsHolder(getRightsHolder())
+                   .withPublicationNotes(getPublicationNotes())
                    .build();
     }
 
@@ -259,6 +275,7 @@ public class Resource implements Entity {
                 .withFundings(getFundings())
                 .withRightsHolder(getRightsHolder())
                 .withImportStatus(getImportStatus().orElse(null))
+                .withPublicationNotes(getPublicationNotes())
                 .build();
     }
 
@@ -412,6 +429,7 @@ public class Resource implements Entity {
                    .withAdditionalIdentifiers(getAdditionalIdentifiers())
                    .withSubjects(getSubjects())
                    .withFundings(getFundings())
+                   .withPublicationNotes(getPublicationNotes())
                    .withRightsHolder(getRightsHolder());
     }
 
@@ -450,7 +468,7 @@ public class Resource implements Entity {
         return Objects.hash(getIdentifier(), getStatus(), getResourceOwner(), getPublisher(), getCreatedDate(),
                             getModifiedDate(), getPublishedDate(), getIndexedDate(), getLink(),
                             getProjects(), getEntityDescription(), getDoi(), getHandle(), getAdditionalIdentifiers(),
-                            getSubjects(), getFundings(), getAssociatedArtifacts());
+                            getSubjects(), getFundings(), getAssociatedArtifacts(), getPublicationNotes());
     }
 
     /**
@@ -485,6 +503,7 @@ public class Resource implements Entity {
                && Objects.equals(getAdditionalIdentifiers(), resource.getAdditionalIdentifiers())
                && Objects.equals(getAssociatedArtifacts(), resource.getAssociatedArtifacts())
                && Objects.equals(getFundings(), resource.getFundings())
+               && Objects.equals(getPublicationNotes(), resource.getPublicationNotes())
                && Objects.equals(getSubjects(), resource.getSubjects());
     }
 
