@@ -9,6 +9,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import no.unit.nva.model.UnconfirmedOrganization;
+import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
 import no.unit.nva.model.time.Period;
 import no.unit.nva.model.time.Time;
 import nva.commons.core.JacocoGenerated;
@@ -25,9 +27,9 @@ import nva.commons.core.StringUtils;
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"arstall", "titteltekst", "antall_deltakere",
-    "antall_internasjonale_deltakere", "antall_nasjonale_deltakere", "arrangornavn", "landkode",
+    "antall_internasjonale_deltakere", "antall_nasjonale_deltakere",
     "institusjonsnr_arrangor", "avdnr_arrangor", "undavdnr_arrangor", "gruppenr_arrangor",
-    "stedangivelse", "utbredelsesomrade", "url", "personlopenr_arrangor"})
+    "utbredelsesomrade", "url", "personlopenr_arrangor"})
 public class ExhibitionEvent {
 
     @JsonProperty("hendelsestype")
@@ -38,6 +40,15 @@ public class ExhibitionEvent {
 
     @JsonProperty("dato_fra")
     private String dateFrom;
+
+    @JsonProperty("arrangornavn")
+    private String organizerName;
+
+    @JsonProperty("stedangivelse")
+    private String placeDescription;
+
+    @JsonProperty("landkode")
+    private String countryCode;
 
     @JacocoGenerated
     public ExhibitionEvent() {
@@ -50,6 +61,14 @@ public class ExhibitionEvent {
 
     public boolean isInfiniteEvent() {
         return StringUtils.isBlank(dateTo);
+    }
+
+    public UnconfirmedPlace extractPlace() {
+        return new UnconfirmedPlace(placeDescription, countryCode);
+    }
+
+    public UnconfirmedOrganization extractOrganisation() {
+        return new UnconfirmedOrganization(organizerName);
     }
 
     private Instant extractToDate() {

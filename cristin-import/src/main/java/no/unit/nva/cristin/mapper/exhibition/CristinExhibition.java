@@ -78,11 +78,11 @@ public class CristinExhibition {
     }
 
     private UnconfirmedOrganization extractOrganisation() {
-        return new UnconfirmedOrganization(null);
+        return exhibitionEvent.extractOrganisation();
     }
 
     private UnconfirmedPlace extractPlace() {
-        return new UnconfirmedPlace(null, null);
+        return exhibitionEvent.extractPlace();
     }
 
     private Period extractPeriod() {

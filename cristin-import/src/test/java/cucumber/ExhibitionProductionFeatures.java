@@ -2,14 +2,19 @@ package cucumber;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import no.unit.nva.cristin.mapper.exhibition.MuseumEventCategory;
+import no.unit.nva.model.UnconfirmedOrganization;
+import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
 import no.unit.nva.model.instancetypes.exhibition.ExhibitionProduction;
 import no.unit.nva.model.instancetypes.exhibition.ExhibitionProductionSubtype;
 import no.unit.nva.model.instancetypes.exhibition.ExhibitionProductionSubtypeEnum;
+import no.unit.nva.model.instancetypes.exhibition.manifestations.ExhibitionBasic;
+import no.unit.nva.model.time.Time;
 
 public class ExhibitionProductionFeatures {
 
@@ -33,10 +38,7 @@ public class ExhibitionProductionFeatures {
 
     @Then("the NVA resource has an instance type exhibition production with a {string}")
     public void theNvaResourceHasAnInstanceTypeExhibitionProductionWithAExhibitionBasic(String type) {
-        var publicationInstance =
-            scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
-        assertThat(publicationInstance, instanceOf(ExhibitionProduction.class));
-        var exhibition = (ExhibitionProduction) publicationInstance;
+        var exhibition = getExhibitionProduction();
         assertThat(exhibition.getSubtype(),
                    is(equalTo(new ExhibitionProductionSubtype(ExhibitionProductionSubtypeEnum.valueOf(type)))));
     }
@@ -57,5 +59,66 @@ public class ExhibitionProductionFeatures {
     public void theCristinExhibitHasAEventEndOf(String date) {
         var exhibitionEvent = scenarioContext.getCristinEntry().getCristinExhibition().getExhibitionEvent();
         exhibitionEvent.setDateTo(date);
+    }
+
+    @And("the exhibition manifestation has a period with date start equal to {string}")
+    public void theExhibitionManifestationHasAPeriodWithDateStartEqualTo(String dateStart) {
+        var basicManifestation = getExhibitionBasic();
+        var period = basicManifestation.getDate();
+        assertThat(period.getFrom(), is(equalTo(Time.convertToInstant(dateStart))));
+    }
+
+    @And("the exhibition manifestation has a period with date end equal to {string}")
+    public void theExhibitionManifestationHasAPeriodWithDateEndEqualTo(String dateEnd) {
+        var basicManifestation = getExhibitionBasic();
+        var period = basicManifestation.getDate();
+        assertThat(period.getTo(), is(equalTo(Time.convertToInstant(dateEnd))));
+    }
+
+    @And("the cristin exhibition event has an organizer equal to {string}")
+    public void theCristinExhibitionEventHasAnOrganizerEqualTo(String organizer) {
+        var exhibitionEvent = scenarioContext.getCristinEntry().getCristinExhibition().getExhibitionEvent();
+        exhibitionEvent.setOrganizerName(organizer);
+    }
+
+    @And("the cristin exhibition event has an place description equal to {string}")
+    public void theCristinExhibitionEventHasAnPlaceDescriptionEqualTo(String placeDescription) {
+        var exhibitionEvent = scenarioContext.getCristinEntry().getCristinExhibition().getExhibitionEvent();
+        exhibitionEvent.setPlaceDescription(placeDescription);
+    }
+
+    @And("the cristin exhibition event has a country code equal to {string}")
+    public void theCristinExhibitionEventHasACountryCodeEqualTo(String countryCode) {
+        var exhibitionEvent = scenarioContext.getCristinEntry().getCristinExhibition().getExhibitionEvent();
+        exhibitionEvent.setCountryCode(countryCode);
+    }
+
+    @Then("the exhibition manifestation has an unconfirmed place with label equal to {string} and country equal to "
+          + "{string}")
+    public void theExhibitionManifestationHasAnUnconfirmedPlaceWithLabelEqualToAndCountryEqualTo(String label,
+                                                                                                 String country) {
+        var exhibitionBasic = getExhibitionBasic();
+        assertThat(exhibitionBasic.getPlace(), is(equalTo(new UnconfirmedPlace(label, country))));
+    }
+
+    @And("the exhibition manifestation has a organization equal to {string}")
+    public void theExhibitionManifestationHasAOrganizationEqualTo(String organization) {
+        var exhibitionBasic = getExhibitionBasic();
+        assertThat(exhibitionBasic.getOrganization(), is(equalTo(new UnconfirmedOrganization(organization))));
+    }
+
+    private ExhibitionBasic getExhibitionBasic() {
+        var exhibition = getExhibitionProduction();
+        var manifestations = exhibition.getManifestations();
+        assertThat(manifestations, hasSize(1));
+        assertThat(manifestations.get(0), instanceOf(ExhibitionBasic.class));
+        return (ExhibitionBasic) manifestations.get(0);
+    }
+
+    private ExhibitionProduction getExhibitionProduction() {
+        var publicationInstance =
+            scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
+        assertThat(publicationInstance, instanceOf(ExhibitionProduction.class));
+        return (ExhibitionProduction) publicationInstance;
     }
 }
