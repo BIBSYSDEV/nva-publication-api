@@ -16,8 +16,8 @@ import lombok.Setter;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.cristin.mapper.artisticproduction.CristinArtisticProduction;
 import no.unit.nva.cristin.mapper.artisticproduction.CristinProduct;
+import no.unit.nva.cristin.mapper.exhibition.CristinExhibition;
 import no.unit.nva.model.Publication;
-
 
 @Builder(
     builderClassName = "CristinObjectBuilder",
@@ -127,6 +127,9 @@ public class CristinObject implements JsonSerializable {
     private CristinProduct cristinProduct;
 
     private String publicationOwner;
+
+    @JsonProperty("type_utstilling")
+    private CristinExhibition cristinExhibition;
 
     public CristinObject() {
     }

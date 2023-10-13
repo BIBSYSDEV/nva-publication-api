@@ -12,6 +12,7 @@ public enum CristinMainCategory {
     REPORT("RAPPORT", "REPORT"),
     CHAPTER("BOKRAPPORTDEL", "CHAPTER"),
     EVENT("FOREDRAG", "EVENT"),
+    EXHIBITION("UTSTILLING", "EXHIBITION"),
     MEDIA_CONTRIBUTION("MEDIEBIDRAG", "MEDIA_CONTRIBUTION"),
     ARTISTIC_PRODUCTION("KUNST_PRODUKSJON", "ARTISTIC_PRODUCTION"),
     UNMAPPED;
@@ -53,6 +54,10 @@ public enum CristinMainCategory {
 
     public static boolean isArt(CristinObject cristinObject) {
         return CristinMainCategory.ARTISTIC_PRODUCTION.equals(cristinObject.getMainCategory());
+    }
+
+    public static boolean isExhibition(CristinObject cristinObject) {
+        return CristinMainCategory.EXHIBITION.equals(cristinObject.getMainCategory());
     }
 
     public static boolean isMediaContribution(CristinObject cristinObject) {

@@ -4,6 +4,7 @@ import static no.unit.nva.cristin.mapper.CristinMainCategory.isArt;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isChapter;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isEvent;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isExhibition;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isJournal;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isMediaContribution;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
@@ -23,6 +24,7 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Artistic;
 import no.unit.nva.model.contexttypes.Event;
+import no.unit.nva.model.contexttypes.ExhibitionContent;
 import no.unit.nva.model.contexttypes.MediaContribution;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.media.MediaFormat;
@@ -57,6 +59,7 @@ public class ReferenceBuilder extends CristinMappingModule {
                    .build();
     }
 
+    @SuppressWarnings({"PMD.NPathComplexity"})
     private PublicationContext buildPublicationContext()
         throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
         if (isBook(cristinObject)) {
@@ -76,6 +79,9 @@ public class ReferenceBuilder extends CristinMappingModule {
         }
         if (isMediaContribution(cristinObject)) {
             return buildMediaContributionForPublicationContext();
+        }
+        if (isExhibition(cristinObject)) {
+            return new ExhibitionContent();
         }
         if (isArt(cristinObject)) {
             return new Artistic();
