@@ -11,6 +11,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import no.unit.nva.cristin.mapper.DescriptionExtractor;
 import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIsrcException;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;

@@ -32,6 +32,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.unit.nva.cristin.mapper.artisticproduction.CristinArtisticProduction;
 import no.unit.nva.cristin.mapper.exhibition.CristinExhibition;
 import no.unit.nva.cristin.mapper.nva.CristinMappingModule;
@@ -48,6 +49,7 @@ import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.funding.Funding;
 import nva.commons.core.SingletonCollector;
+import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.language.LanguageMapper;
 import nva.commons.core.paths.UriWrapper;
@@ -286,14 +288,20 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     private String extractDescription() {
-        var description = "";
-        var artisticDescription =
-         Optional.ofNullable(cristinObject.getCristinArtisticProduction())
-            .map(CristinArtisticProduction::getDescriptionFields)
-            .map(descriptionList -> String.join(System.lineSeparator(), descriptionList));
-        var museumExhibitDescription =
-            Optional.ofNullable(cristinObject.getCristinExhibition()).map(CristinExhibition::getDescription);
-        return "";
+        return getArtisticDescription()
+                   .orElseGet( ()-> getMuseumExhibitDescription()
+                                        .orElse(StringUtils.EMPTY_STRING));
+    }
+
+    private Optional<String> getArtisticDescription() {
+        var artisticDescription = getArtisticDescription();
+        var exhibitionDescription = getMuseumExhibitDescription();
+        return
+            Stream.of(artisticDescription, exhibitionDescription).flatMap(Optional::stream).reduce(String::concat);
+    }
+
+    private Optional<String> getMuseumExhibitDescription() {
+        return Optional.ofNullable(cristinObject.getCristinExhibition()).map(CristinExhibition::getDescription);
     }
 
     private List<Contributor> extractContributors() {

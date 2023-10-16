@@ -1,4 +1,4 @@
-package no.unit.nva.cristin.mapper.artisticproduction;
+package no.unit.nva.cristin.mapper;
 
 import nva.commons.core.StringUtils;
 
