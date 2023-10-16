@@ -72,7 +72,7 @@ import static nva.commons.core.attempt.Try.attempt;
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"status_bestilt", "produkttype"})
 @SuppressWarnings({"PMD.TooManyFields"})
-public class CristinArtisticProduction implements MovingPictureExtractor {
+public class CristinArtisticProduction implements DescriptionExtractor, MovingPictureExtractor {
 
     @JsonIgnore
     public static final String YES = "J";
@@ -144,7 +144,7 @@ public class CristinArtisticProduction implements MovingPictureExtractor {
     @JsonIgnore
     public MovingPicture toMovingPicture() {
         return new MovingPicture(extractSubType(artisticProductionTimeUnit, duration),
-            DescriptionExtractor.extractDescription(descriptionFields()),
+            extractDescription(descriptionFields()),
             extractOutPuts());
     }
 
@@ -162,10 +162,10 @@ public class CristinArtisticProduction implements MovingPictureExtractor {
 
     @JsonIgnore
     private Stream<Optional<String>> descriptionFields() {
-        return Stream.of(DescriptionExtractor.createInformativeDescription("Ensemble navn: %s", ensembleName),
-            DescriptionExtractor.createInformativeDescription("Produsent: %s", producer),
-            DescriptionExtractor.createInformativeDescription("Besetning: %s", crew),
-            DescriptionExtractor.createInformativeDescription("Medvirkende: %s", coCreators));
+        return Stream.of(createInformativeDescription("Ensemble navn: %s", ensembleName),
+            createInformativeDescription("Produsent: %s", producer),
+            createInformativeDescription("Besetning: %s", crew),
+            createInformativeDescription("Medvirkende: %s", coCreators));
     }
 
 
@@ -177,7 +177,7 @@ public class CristinArtisticProduction implements MovingPictureExtractor {
     @JsonIgnore
     public PerformingArts toTheatricalPerformance() {
         return new PerformingArts(PerformingArtsSubtype.create(PerformingArtsSubtypeEnum.THEATRICAL_PRODUCTION),
-            DescriptionExtractor.extractDescription(descriptionFields()),
+            extractDescription(descriptionFields()),
             extractTheatricalEvents());
     }
 
@@ -370,7 +370,7 @@ public class CristinArtisticProduction implements MovingPictureExtractor {
 
     @JsonIgnore
     public String getDescription() {
-        return DescriptionExtractor.extractDescription(Stream.of(Optional.ofNullable(crew),
+        return extractDescription(Stream.of(Optional.ofNullable(crew),
                                                                  Optional.ofNullable(coCreators)));
     }
 }

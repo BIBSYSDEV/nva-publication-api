@@ -1,7 +1,5 @@
 package no.unit.nva.cristin.mapper.exhibition;
 
-import static no.unit.nva.cristin.mapper.DescriptionExtractor.createInformativeDescription;
-import static no.unit.nva.cristin.mapper.DescriptionExtractor.extractDescription;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -12,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import no.unit.nva.cristin.mapper.DescriptionExtractor;
 import no.unit.nva.cristin.mapper.nva.exceptions.CristinMuseumCategoryException;
 import no.unit.nva.model.UnconfirmedOrganization;
 import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
@@ -34,7 +33,7 @@ import nva.commons.core.JacocoGenerated;
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"varbeidlopenr", "utstillingstype"})
-public class CristinExhibition {
+public class CristinExhibition implements DescriptionExtractor {
 
     private static final String BUDGET_INFORMATION = "Beløp: %.1f NOK";
     private static final String AREA_INFORMATION = "Brukt areal: %.1f m2";

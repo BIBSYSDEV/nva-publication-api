@@ -51,7 +51,7 @@ import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArtsSubtype;
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"utbredelsesomrade", "status_bestilt"})
-public class CristinProduct implements MovingPictureExtractor {
+public class CristinProduct implements DescriptionExtractor, MovingPictureExtractor {
 
     @JsonIgnore
     private static final String PUBLISHER_NAME_DESCRIPTION = "Publisert av: %s";
@@ -102,12 +102,26 @@ public class CristinProduct implements MovingPictureExtractor {
 
     }
 
-
     @JsonIgnore
     public MovingPicture toMovingPicture() {
         return new MovingPicture(extractSubType(timeUnit, duration),
-            DescriptionExtractor.extractDescription(descriptionFields()),
-            extractOutPuts());
+                                 extractDescription(descriptionFields()),
+                                 extractOutPuts());
+    }
+
+    @JsonIgnore
+    public VisualArts toVisualArts() {
+        return new VisualArts(
+            VisualArtsSubtype.createOther(extractVisualArtsOtherSubtypeDescription()),
+            null,
+            Set.of());
+    }
+
+    public Architecture toArchitecture() {
+        return new Architecture(
+            ArchitectureSubtype.createOther(MIGRATED_FROM_CRISTIN_MESSAGE),
+            extractDescription(descriptionFields()),
+            List.of());
     }
 
     @JsonIgnore
@@ -118,28 +132,27 @@ public class CristinProduct implements MovingPictureExtractor {
     @JsonIgnore
     private OtherRelease extractOutPut() {
         return new OtherRelease(getProductDescription(),
-            new UnconfirmedPlace(publisherPlace, null),
-            new UnconfirmedPublisher(publisherName),
-            null,
-            1);
+                                new UnconfirmedPlace(publisherPlace, null),
+                                new UnconfirmedPublisher(publisherName),
+                                null,
+                                1);
     }
 
     @JsonIgnore
     private String getProductDescription() {
         return Optional.of(format)
-            .map(CristinFormat::getFormatCode)
-            .orElse(null);
+                   .map(CristinFormat::getFormatCode)
+                   .orElse(null);
     }
-
 
     @JsonIgnore
     private Stream<Optional<String>> descriptionFields() {
         return Stream.of(
-            DescriptionExtractor.createInformativeDescription(PUBLISHER_NAME_DESCRIPTION, publisherName),
-            DescriptionExtractor.createInformativeDescription(PUBLISHER_PLACE, publisherPlace),
-            DescriptionExtractor.createInformativeDescription(ENSEMBLE_NAME_DESCRIPTION, ensembleName),
-            DescriptionExtractor.createInformativeDescription(PRODUCTION_TYPE_DESCRIPTION, extractProductionTypeCode()),
-            DescriptionExtractor.createInformativeDescription(FORMAT_DESCRIPTION, extractFormatCode())
+            createInformativeDescription(PUBLISHER_NAME_DESCRIPTION, publisherName),
+            createInformativeDescription(PUBLISHER_PLACE, publisherPlace),
+            createInformativeDescription(ENSEMBLE_NAME_DESCRIPTION, ensembleName),
+            createInformativeDescription(PRODUCTION_TYPE_DESCRIPTION, extractProductionTypeCode()),
+            createInformativeDescription(FORMAT_DESCRIPTION, extractFormatCode())
         );
     }
 
@@ -151,22 +164,7 @@ public class CristinProduct implements MovingPictureExtractor {
         return Optional.ofNullable(productionType).map(ArtisticProductionType::getProductTypeCode).orElse(null);
     }
 
-    @JsonIgnore
-    public VisualArts toVisualArts() {
-        return new VisualArts(
-            VisualArtsSubtype.createOther(extractVisualArtsOtherSubtypeDescription()),
-            null,
-            Set.of());
-    }
-
     private String extractVisualArtsOtherSubtypeDescription() {
-        return DescriptionExtractor.extractDescription(descriptionFields());
-    }
-
-    public Architecture toArchitecture() {
-        return new Architecture(
-            ArchitectureSubtype.createOther(MIGRATED_FROM_CRISTIN_MESSAGE),
-            DescriptionExtractor.extractDescription(descriptionFields()),
-            List.of());
+        return extractDescription(descriptionFields());
     }
 }
