@@ -34,8 +34,7 @@ import no.unit.nva.model.Publication;
 @JsonIgnoreProperties({"brukernavn_opprettet", "peerreviewed",
     "brukernavn_siste_endring", "publiseringstatuskode", "merknadtekst_godkjenning",
     "finansiering_varbeid",
-    "kildepostid", "arkivpost",
-    "type_utstilling", "pubidnr", "eierkode_siste_endring",
+    "kildepostid", "arkivpost", "pubidnr", "eierkode_siste_endring",
     "varbeid_vdisiplin", "arkivfil", "merknadtekst", "h_dbh_forskres_publikasjon"})
 @SuppressWarnings({"PMD.TooManyFields"})
 public class CristinObject implements JsonSerializable {

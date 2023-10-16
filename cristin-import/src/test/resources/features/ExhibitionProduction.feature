@@ -89,7 +89,7 @@ Feature: Mapping rules for exhibition production
     And the NVA publication has a description containing "Beløp: 56.5 NOK"
     And the NVA publication has a description containing "Brukt areal: 345.4 m2"
     And the NVA publication has a description containing "Antall besøkende: 3"
-    And the NVA publication has a description containing "Antall egne gjenstander: 56"
+    And the NVA publication has a description containing "Andel egne gjenstander: 56.0%"
     And the NVA publication has a description containing "Antall gjenstander: 26"
 
 

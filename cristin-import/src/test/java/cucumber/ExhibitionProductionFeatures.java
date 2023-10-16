@@ -151,10 +151,10 @@ public class ExhibitionProductionFeatures {
         exhibition.setNumberOfObjectsInExhibit(numberOfObjects);
     }
 
-    @And("the exhibition has {int} number of own objects")
-    public void theExhibitionHasNumberOfOwnObjects(int ownedObjects) {
+    @And("the exhibition has {double} number of own objects")
+    public void theExhibitionHasNumberOfOwnObjects(double percantageOwnedObjects) {
         var exhibition = scenarioContext.getCristinEntry().getCristinExhibition();
-        exhibition.setNumberOfownedObjectsInExhibit(ownedObjects);
+        exhibition.setPercantageOfownedObjectsInExhibit(percantageOwnedObjects);
     }
 
     private ExhibitionBasic getExhibitionBasic() {

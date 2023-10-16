@@ -33,6 +33,8 @@ import nva.commons.core.StringUtils;
 // antall_internasjonale_deltakere, antall_nasjonale_deltakere, antall_deltakere, url are always null
 public class ExhibitionEvent {
 
+    private static final String RE_OCCURING_REDUNDANT_TITLE = "utstilling";
+
     @JsonProperty("hendelsestype")
     private MuseumEventCategory museumEventCategory;
 
@@ -81,7 +83,7 @@ public class ExhibitionEvent {
     }
 
     private static boolean isNotRedundantDescription(String titleText) {
-        return !"utstilling".equalsIgnoreCase(titleText);
+        return !RE_OCCURING_REDUNDANT_TITLE.equalsIgnoreCase(titleText);
     }
 
     private Instant extractToDate() {

@@ -39,7 +39,7 @@ public class CristinExhibition {
     public static final String BUDGET_INFORMATION = "Beløp: %.1f NOK";
     public static final String AREA_INFORMATION = "Brukt areal: %.1f m2";
     public static final String NUMBER_OF_OBJECTS_INFORMATION = "Antall gjenstander: %d";
-    public static final String NUMBER_OF_OWNED_OBJECTS_INFORMATION = "Antall egne gjenstander: %d";
+    public static final String NUMBER_OF_OWNED_OBJECTS_INFORMATION = "Andel egne gjenstander: %.1f%%";
     public static final String NUMBER_OF_VISITORS_INFORMATION = "Antall besøkende: %d";
     @JsonIgnore
     private static final String YES = "J";
@@ -55,8 +55,8 @@ public class CristinExhibition {
     @JsonProperty("tall_brukt_areal")
     private Double area;
 
-    @JsonProperty("tall_andel_egne_gjenstander")
-    private Integer numberOfownedObjectsInExhibit;
+    @JsonProperty("andel_egne_gjenstander")
+    private Double percantageOfownedObjectsInExhibit;
 
     @JsonProperty("antall_gjenstander")
     private Integer numberOfObjectsInExhibit;
@@ -87,7 +87,7 @@ public class CristinExhibition {
                                 createInformativeDescription(NUMBER_OF_OBJECTS_INFORMATION,
                                                              numberOfObjectsInExhibit),
                                 createInformativeDescription(NUMBER_OF_OWNED_OBJECTS_INFORMATION,
-                                                             numberOfownedObjectsInExhibit),
+                                                             percantageOfownedObjectsInExhibit),
                                 createInformativeDescription(NUMBER_OF_VISITORS_INFORMATION,
                                                              numberOfVisitors)
         );
