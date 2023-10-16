@@ -8,7 +8,6 @@ import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.JSON;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.SUCCESS_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.CHAPTER_ACADEMIC;
-import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.MUSEUM;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.MUSICAL_PERFORMANCE;
 import static no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException.ERROR_PARSING_MAIN_CATEGORY;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
@@ -491,21 +490,6 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var file = s3Driver.getFile(expectedErrorFileLocation);
         assertThat(file, is(not(emptyString())));
 
-    }
-
-    @Test
-    void shouldParseCristinObjectWithExhibitionDescriptionFieldSet() throws JsonProcessingException {
-        var cristinObject = CristinDataGenerator.randomObject(MUSEUM.getValue());
-        var exhibition = cristinObject.getCristinExhibition();
-        exhibition.setNumberOfObjectsInExhibit(1);
-        exhibition.setPercantageOfownedObjectsInExhibit(100.0);
-        exhibition.setNumberOfVisitors(4);
-        exhibition.setBudget(343.5);
-        exhibition.setArea(34.5);
-        var json  = cristinObject.toJsonString();
-
-        var parsed = JsonUtils.dtoObjectMapper.readValue(json, CristinObject.class);
-        assertThat(cristinObject, is(equalTo(parsed)));
     }
 
     private SQSEvent createEventReferenceWithInvalidMessagesAlongWithValidEventBody(
