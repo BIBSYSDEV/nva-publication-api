@@ -9,6 +9,8 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
+import no.unit.nva.cristin.mapper.exhibition.CristinExhibition;
+import no.unit.nva.cristin.mapper.exhibition.ExhibitionEvent;
 import no.unit.nva.cristin.mapper.exhibition.MuseumEventCategory;
 import no.unit.nva.model.UnconfirmedOrganization;
 import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
@@ -28,13 +30,13 @@ public class ExhibitionProductionFeatures {
 
     @And("the cristin result has a museum category of {string}")
     public void theCristinResultHasAMuseumCategoryOf(String category) {
-        var museumEvent = scenarioContext.getCristinEntry().getCristinExhibition().getExhibitionEvent();
+        var museumEvent = getExhibitionEvent();
         museumEvent.setMuseumEventCategory(MuseumEventCategory.builder().withEventCode(category).build());
     }
 
     @And("the cristin museum exhibits is permanent")
     public void theCristinMuseumExhibitsIsPermanent() {
-        var exhibition = scenarioContext.getCristinEntry().getCristinExhibition();
+        var exhibition = getCristinExhibition();
         exhibition.setStatusPermanent("J");
     }
 
@@ -47,19 +49,19 @@ public class ExhibitionProductionFeatures {
 
     @And("the cristin exhibition event has a to date equal to null")
     public void theCristinExhibitionEventHasAToDateEqualToNull() {
-        var exhibitionEvent = scenarioContext.getCristinEntry().getCristinExhibition().getExhibitionEvent();
+        var exhibitionEvent = getExhibitionEvent();
         exhibitionEvent.setDateTo(null);
     }
 
     @And("the cristin exhibit has a event start of {string}")
     public void theCristinExhibitHasAEventStartOf(String date) {
-        var exhibitionEvent = scenarioContext.getCristinEntry().getCristinExhibition().getExhibitionEvent();
+        var exhibitionEvent = getExhibitionEvent();
         exhibitionEvent.setDateFrom(date);
     }
 
     @And("the cristin exhibit has a event end of {string}")
     public void theCristinExhibitHasAEventEndOf(String date) {
-        var exhibitionEvent = scenarioContext.getCristinEntry().getCristinExhibition().getExhibitionEvent();
+        var exhibitionEvent = getExhibitionEvent();
         exhibitionEvent.setDateTo(date);
     }
 
@@ -79,19 +81,19 @@ public class ExhibitionProductionFeatures {
 
     @And("the cristin exhibition event has an organizer equal to {string}")
     public void theCristinExhibitionEventHasAnOrganizerEqualTo(String organizer) {
-        var exhibitionEvent = scenarioContext.getCristinEntry().getCristinExhibition().getExhibitionEvent();
+        var exhibitionEvent = getExhibitionEvent();
         exhibitionEvent.setOrganizerName(organizer);
     }
 
     @And("the cristin exhibition event has an place description equal to {string}")
     public void theCristinExhibitionEventHasAnPlaceDescriptionEqualTo(String placeDescription) {
-        var exhibitionEvent = scenarioContext.getCristinEntry().getCristinExhibition().getExhibitionEvent();
+        var exhibitionEvent = getExhibitionEvent();
         exhibitionEvent.setPlaceDescription(placeDescription);
     }
 
     @And("the cristin exhibition event has a country code equal to {string}")
     public void theCristinExhibitionEventHasACountryCodeEqualTo(String countryCode) {
-        var exhibitionEvent = scenarioContext.getCristinEntry().getCristinExhibition().getExhibitionEvent();
+        var exhibitionEvent = getExhibitionEvent();
         exhibitionEvent.setCountryCode(countryCode);
     }
 
@@ -111,7 +113,7 @@ public class ExhibitionProductionFeatures {
 
     @And("the cristin exhibition event has a title {string}")
     public void theCristinExhibitionEventHasATitle(String exhibitionTitle) {
-        var exhibitionEvent = scenarioContext.getCristinEntry().getCristinExhibition().getExhibitionEvent();
+        var exhibitionEvent = getExhibitionEvent();
         exhibitionEvent.setTitleText(exhibitionTitle);
     }
 
@@ -129,32 +131,40 @@ public class ExhibitionProductionFeatures {
 
     @And("the exhibition has a budget of {double} NOK")
     public void theExhibitionHasABudgetOfNOK(double budget) {
-        var exhibition = scenarioContext.getCristinEntry().getCristinExhibition();
+        var exhibition = getCristinExhibition();
         exhibition.setBudget(budget);
     }
 
     @And("the exhibition has an area of {double}")
     public void theExhibitionHasAnAreaOfM(double area) {
-        var exhibition = scenarioContext.getCristinEntry().getCristinExhibition();
+        var exhibition = getCristinExhibition();
         exhibition.setArea(area);
     }
 
     @And("the exhibition has {int} visitors")
     public void theExhibitionHasVisitors(int visitors) {
-        var exhibition = scenarioContext.getCristinEntry().getCristinExhibition();
+        var exhibition = getCristinExhibition();
         exhibition.setNumberOfVisitors(visitors);
     }
 
     @And("the exhibition has {int} number of total objects")
     public void theExhibitionHasNumberOfTotalObjects(int numberOfObjects) {
-        var exhibition = scenarioContext.getCristinEntry().getCristinExhibition();
+        var exhibition = getCristinExhibition();
         exhibition.setNumberOfObjectsInExhibit(numberOfObjects);
     }
 
     @And("the exhibition has {double} number of own objects")
     public void theExhibitionHasNumberOfOwnObjects(double percantageOwnedObjects) {
-        var exhibition = scenarioContext.getCristinEntry().getCristinExhibition();
+        var exhibition = getCristinExhibition();
         exhibition.setPercantageOfownedObjectsInExhibit(percantageOwnedObjects);
+    }
+
+    private ExhibitionEvent getExhibitionEvent() {
+        return scenarioContext.getCristinEntry().getCristinExhibition().getExhibitionEvent();
+    }
+
+    private CristinExhibition getCristinExhibition() {
+        return scenarioContext.getCristinEntry().getCristinExhibition();
     }
 
     private ExhibitionBasic getExhibitionBasic() {
