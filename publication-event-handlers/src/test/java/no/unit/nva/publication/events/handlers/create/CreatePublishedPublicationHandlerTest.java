@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Clock;
 import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
@@ -127,6 +128,6 @@ class CreatePublishedPublicationHandlerTest extends ResourcesLocalTest {
     }
     
     private PublicationResponse parseResponse(String responseString) throws JsonProcessingException {
-        return JsonUtils.dtoObjectMapper.readValue(responseString, PublicationResponse.class);
+        return JsonUtils.dtoObjectMapper.readValue(responseString, PublicationResponseElevatedUser.class);
     }
 }
