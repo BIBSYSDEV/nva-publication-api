@@ -218,9 +218,10 @@ public class Resource implements Entity {
         this.importStatus = importStatus;
     }
 
-    public List<PublicationNote> getPublicationNotes(){
+    public List<PublicationNote> getPublicationNotes() {
         return nonNull(publicationNotes) ? publicationNotes : List.of();
     }
+
     public void setPublicationNotes(List<PublicationNote> publicationNotes) {
         this.publicationNotes = publicationNotes;
     }

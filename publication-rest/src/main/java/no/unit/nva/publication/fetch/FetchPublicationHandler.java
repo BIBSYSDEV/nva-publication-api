@@ -166,7 +166,8 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     }
 
     private String createPublicationResponse(RequestInfo requestInfo, Publication publication) {
-        //TODO: when the userIsCuratorOrOwner is properlyImplementedAgain, then only those should get the PublicationResponseElevatedUser
+        //TODO: when the userIsCuratorOrOwner is properlyImplementedAgain,
+        // then only those should get the PublicationResponseElevatedUser
         //Regular users should receive PublicationResponse.class
         var publicationResponse = PublicationMapper.convertValue(publication, PublicationResponseElevatedUser.class);
         return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(publicationResponse)).orElseThrow();
