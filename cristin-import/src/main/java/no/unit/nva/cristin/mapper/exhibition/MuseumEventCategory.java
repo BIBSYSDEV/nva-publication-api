@@ -25,8 +25,9 @@ import nva.commons.core.JacocoGenerated;
     "hendelsestypenavn_nynorsk"})
 public class MuseumEventCategory {
 
-    public static final String SUPPORTED_MUSEUM_TYPE = "UTSTILLING";
-    private static final Set<String> SUPPORTED_MUSEUM_TYPES = Set.of("UTSTILLING");
+    private static final String EXHIBITION = "UTSTILLING";
+    private static final Set<String> SUPPORTED_MUSEUM_TYPES = Set.of(EXHIBITION);
+
     @JsonProperty("hendelsestypekode")
     private String eventCode;
 

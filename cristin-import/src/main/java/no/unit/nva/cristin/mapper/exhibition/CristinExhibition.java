@@ -36,13 +36,13 @@ import nva.commons.core.JacocoGenerated;
 @JsonIgnoreProperties({"varbeidlopenr", "utstillingstype"})
 public class CristinExhibition {
 
-    public static final String BUDGET_INFORMATION = "Beløp: %.1f NOK";
-    public static final String AREA_INFORMATION = "Brukt areal: %.1f m2";
-    public static final String NUMBER_OF_OBJECTS_INFORMATION = "Antall gjenstander: %d";
-    public static final String NUMBER_OF_OWNED_OBJECTS_INFORMATION = "Andel egne gjenstander: %.1f%%";
-    public static final String NUMBER_OF_VISITORS_INFORMATION = "Antall besøkende: %d";
-    @JsonIgnore
+    private static final String BUDGET_INFORMATION = "Beløp: %.1f NOK";
+    private static final String AREA_INFORMATION = "Brukt areal: %.1f m2";
+    private static final String NUMBER_OF_OBJECTS_INFORMATION = "Antall gjenstander: %d";
+    private static final String NUMBER_OF_OWNED_OBJECTS_INFORMATION = "Andel egne gjenstander: %.1f%%";
+    private static final String NUMBER_OF_VISITORS_INFORMATION = "Antall besøkende: %d";
     private static final String YES = "J";
+
     @JsonProperty("hendelse")
     private ExhibitionEvent exhibitionEvent;
 
@@ -80,6 +80,7 @@ public class CristinExhibition {
         return new ExhibitionProduction(extractExhibitionSubtype(), extractExhibitionManifestation());
     }
 
+    @JsonIgnore
     public String getDescription() {
         var streams = Stream.of(exhibitionEvent.getDescription(),
                                 createInformativeDescription(BUDGET_INFORMATION, budget),
