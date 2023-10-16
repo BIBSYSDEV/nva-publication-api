@@ -115,7 +115,7 @@ public class ExhibitionProductionFeatures {
         exhibitionEvent.setTitleText(exhibitionTitle);
     }
 
-    @And("the NVA publication has a description containing {string}")
+    @Then("the NVA publication has a description containing {string}")
     public void theNvaPublicationHasADescriptionContaining(String description) {
         var actualDescription = scenarioContext.getNvaEntry().getEntityDescription().getDescription();
         assertThat(actualDescription, containsString(description));
@@ -125,6 +125,36 @@ public class ExhibitionProductionFeatures {
     public void theNvaPublicationDoesNotHaveADescriptionContaining(String description) {
         var actualDescription = scenarioContext.getNvaEntry().getEntityDescription().getDescription();
         assertThat(actualDescription, not(containsString(description)));
+    }
+
+    @And("the exhibition has a budget of {double} NOK")
+    public void theExhibitionHasABudgetOfNOK(double budget) {
+        var exhibition = scenarioContext.getCristinEntry().getCristinExhibition();
+        exhibition.setBudget(budget);
+    }
+
+    @And("the exhibition has an area of {double}")
+    public void theExhibitionHasAnAreaOfM(double area) {
+        var exhibition = scenarioContext.getCristinEntry().getCristinExhibition();
+        exhibition.setArea(area);
+    }
+
+    @And("the exhibition has {int} visitors")
+    public void theExhibitionHasVisitors(int visitors) {
+        var exhibition = scenarioContext.getCristinEntry().getCristinExhibition();
+        exhibition.setNumberOfVisitors(visitors);
+    }
+
+    @And("the exhibition has {int} number of total objects")
+    public void theExhibitionHasNumberOfTotalObjects(int numberOfObjects) {
+        var exhibition = scenarioContext.getCristinEntry().getCristinExhibition();
+        exhibition.setNumberOfObjectsInExhibit(numberOfObjects);
+    }
+
+    @And("the exhibition has {int} number of own objects")
+    public void theExhibitionHasNumberOfOwnObjects(int ownedObjects) {
+        var exhibition = scenarioContext.getCristinEntry().getCristinExhibition();
+        exhibition.setNumberOfownedObjectsInExhibit(ownedObjects);
     }
 
     private ExhibitionBasic getExhibitionBasic() {

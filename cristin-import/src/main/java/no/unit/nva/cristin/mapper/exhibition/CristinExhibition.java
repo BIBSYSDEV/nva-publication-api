@@ -1,5 +1,7 @@
 package no.unit.nva.cristin.mapper.exhibition;
 
+import static no.unit.nva.cristin.mapper.DescriptionExtractor.createInformativeDescription;
+import static no.unit.nva.cristin.mapper.DescriptionExtractor.extractDescription;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -10,7 +12,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-import no.unit.nva.cristin.mapper.DescriptionExtractor;
 import no.unit.nva.cristin.mapper.nva.exceptions.CristinMuseumCategoryException;
 import no.unit.nva.model.UnconfirmedOrganization;
 import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
@@ -32,18 +33,36 @@ import nva.commons.core.JacocoGenerated;
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"varbeidlopenr", "utstillingstype", "antall_besokende", "antall_gjenstander",
-    "tall_andel_egne_gjenstander", "tall_brukt_areal", "belop_budsjett"})
+@JsonIgnoreProperties({"varbeidlopenr", "utstillingstype"})
 public class CristinExhibition {
 
+    public static final String BUDGET_INFORMATION = "Beløp: %.1f NOK";
+    public static final String AREA_INFORMATION = "Brukt areal: %.1f m2";
+    public static final String NUMBER_OF_OBJECTS_INFORMATION = "Antall gjenstander: %d";
+    public static final String NUMBER_OF_OWNED_OBJECTS_INFORMATION = "Antall egne gjenstander: %d";
+    public static final String NUMBER_OF_VISITORS_INFORMATION = "Antall besøkende: %d";
     @JsonIgnore
     private static final String YES = "J";
-
     @JsonProperty("hendelse")
     private ExhibitionEvent exhibitionEvent;
 
     @JsonProperty("status_permanent")
     private String statusPermanent;
+
+    @JsonProperty("belop_budsjett")
+    private Double budget;
+
+    @JsonProperty("tall_brukt_areal")
+    private Double area;
+
+    @JsonProperty("tall_andel_egne_gjenstander")
+    private Integer numberOfownedObjectsInExhibit;
+
+    @JsonProperty("antall_gjenstander")
+    private Integer numberOfObjectsInExhibit;
+
+    @JsonProperty("antall_besokende")
+    private Integer numberOfVisitors;
 
     @JacocoGenerated
     public CristinExhibition() {
@@ -62,8 +81,17 @@ public class CristinExhibition {
     }
 
     public String getDescription() {
-        var streams = Stream.of(exhibitionEvent.getDescription());
-        return DescriptionExtractor.extractDescription(streams);
+        var streams = Stream.of(exhibitionEvent.getDescription(),
+                                createInformativeDescription(BUDGET_INFORMATION, budget),
+                                createInformativeDescription(AREA_INFORMATION, area),
+                                createInformativeDescription(NUMBER_OF_OBJECTS_INFORMATION,
+                                                             numberOfObjectsInExhibit),
+                                createInformativeDescription(NUMBER_OF_OWNED_OBJECTS_INFORMATION,
+                                                             numberOfownedObjectsInExhibit),
+                                createInformativeDescription(NUMBER_OF_VISITORS_INFORMATION,
+                                                             numberOfVisitors)
+        );
+        return extractDescription(streams);
     }
 
     @JsonIgnore
