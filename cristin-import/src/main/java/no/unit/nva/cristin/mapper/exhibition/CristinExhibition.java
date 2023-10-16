@@ -34,7 +34,7 @@ import nva.commons.core.JacocoGenerated;
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"varbeidlopenr", "utstillingstype", "antall_besokende", "antall_gjenstander",
     "tall_andel_egne_gjenstander", "tall_brukt_areal", "belop_budsjett"})
-public class CristinExhibition implements DescriptionExtractor {
+public class CristinExhibition {
 
     @JsonIgnore
     private static final String YES = "J";
@@ -63,7 +63,7 @@ public class CristinExhibition implements DescriptionExtractor {
 
     public String getDescription() {
         var streams = Stream.of(exhibitionEvent.getDescription());
-        return extractDescription(streams);
+        return DescriptionExtractor.extractDescription(streams);
     }
 
     @JsonIgnore

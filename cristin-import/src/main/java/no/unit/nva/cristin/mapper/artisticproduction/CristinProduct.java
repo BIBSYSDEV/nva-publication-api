@@ -51,7 +51,7 @@ import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArtsSubtype;
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"utbredelsesomrade", "status_bestilt"})
-public class CristinProduct implements DescriptionExtractor, MovingPictureExtractor {
+public class CristinProduct implements MovingPictureExtractor {
 
     @JsonIgnore
     private static final String PUBLISHER_NAME_DESCRIPTION = "Publisert av: %s";
@@ -106,7 +106,7 @@ public class CristinProduct implements DescriptionExtractor, MovingPictureExtrac
     @JsonIgnore
     public MovingPicture toMovingPicture() {
         return new MovingPicture(extractSubType(timeUnit, duration),
-            extractDescription(descriptionFields()),
+            DescriptionExtractor.extractDescription(descriptionFields()),
             extractOutPuts());
     }
 
@@ -135,11 +135,11 @@ public class CristinProduct implements DescriptionExtractor, MovingPictureExtrac
     @JsonIgnore
     private Stream<Optional<String>> descriptionFields() {
         return Stream.of(
-            createInformativeDescription(PUBLISHER_NAME_DESCRIPTION, publisherName),
-            createInformativeDescription(PUBLISHER_PLACE, publisherPlace),
-            createInformativeDescription(ENSEMBLE_NAME_DESCRIPTION, ensembleName),
-            createInformativeDescription(PRODUCTION_TYPE_DESCRIPTION, extractProductionTypeCode()),
-            createInformativeDescription(FORMAT_DESCRIPTION, extractFormatCode())
+            DescriptionExtractor.createInformativeDescription(PUBLISHER_NAME_DESCRIPTION, publisherName),
+            DescriptionExtractor.createInformativeDescription(PUBLISHER_PLACE, publisherPlace),
+            DescriptionExtractor.createInformativeDescription(ENSEMBLE_NAME_DESCRIPTION, ensembleName),
+            DescriptionExtractor.createInformativeDescription(PRODUCTION_TYPE_DESCRIPTION, extractProductionTypeCode()),
+            DescriptionExtractor.createInformativeDescription(FORMAT_DESCRIPTION, extractFormatCode())
         );
     }
 
@@ -160,13 +160,13 @@ public class CristinProduct implements DescriptionExtractor, MovingPictureExtrac
     }
 
     private String extractVisualArtsOtherSubtypeDescription() {
-        return extractDescription(descriptionFields());
+        return DescriptionExtractor.extractDescription(descriptionFields());
     }
 
     public Architecture toArchitecture() {
         return new Architecture(
             ArchitectureSubtype.createOther(MIGRATED_FROM_CRISTIN_MESSAGE),
-            extractDescription(descriptionFields()),
+            DescriptionExtractor.extractDescription(descriptionFields()),
             List.of());
     }
 }
