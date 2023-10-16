@@ -369,7 +369,7 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     }
 
     @JsonIgnore
-    public String[] getDescriptionFields() {
-        return new String[]{crew, coCreators};
+    public String getDescription() {
+        return extractDescription(Stream.of(Optional.ofNullable(crew),  Optional.ofNullable(coCreators)));
     }
 }

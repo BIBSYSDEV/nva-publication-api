@@ -4,13 +4,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.function.Predicate;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-import no.unit.nva.cristin.mapper.DescriptionExtractor;
 import no.unit.nva.model.UnconfirmedOrganization;
 import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
 import no.unit.nva.model.time.Period;
@@ -79,11 +77,11 @@ public class ExhibitionEvent {
 
     public Optional<String> getDescription() {
         return Optional.ofNullable(titleText)
-                   .filter(ExhibitionEvent::redundantDescriptions);
+                   .filter(ExhibitionEvent::isNotRedundantDescription);
     }
 
-    private static boolean redundantDescriptions(String titleText) {
-        return "utstilling".equalsIgnoreCase(titleText);
+    private static boolean isNotRedundantDescription(String titleText) {
+        return !"utstilling".equalsIgnoreCase(titleText);
     }
 
     private Instant extractToDate() {
