@@ -1,10 +1,12 @@
 package cucumber;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import no.unit.nva.cristin.mapper.exhibition.MuseumEventCategory;
@@ -105,6 +107,24 @@ public class ExhibitionProductionFeatures {
     public void theExhibitionManifestationHasAOrganizationEqualTo(String organization) {
         var exhibitionBasic = getExhibitionBasic();
         assertThat(exhibitionBasic.getOrganization(), is(equalTo(new UnconfirmedOrganization(organization))));
+    }
+
+    @And("the cristin exhibition event has a title {string}")
+    public void theCristinExhibitionEventHasATitle(String exhibitionTitle) {
+        var exhibitionEvent = scenarioContext.getCristinEntry().getCristinExhibition().getExhibitionEvent();
+        exhibitionEvent.setTitleText(exhibitionTitle);
+    }
+
+    @And("the NVA publication has a description containing {string}")
+    public void theNvaPublicationHasADescriptionContaining(String description) {
+        var actualDescription = scenarioContext.getNvaEntry().getEntityDescription().getDescription();
+        assertThat(actualDescription, containsString(description));
+    }
+
+    @And("the NVA publication does not have a description containing {string}")
+    public void theNvaPublicationDoesNotHaveADescriptionContaining(String description) {
+        var actualDescription = scenarioContext.getNvaEntry().getEntityDescription().getDescription();
+        assertThat(actualDescription, not(containsString(description)));
     }
 
     private ExhibitionBasic getExhibitionBasic() {

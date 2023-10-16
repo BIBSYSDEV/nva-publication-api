@@ -33,6 +33,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.cristin.mapper.artisticproduction.CristinArtisticProduction;
+import no.unit.nva.cristin.mapper.exhibition.CristinExhibition;
 import no.unit.nva.cristin.mapper.nva.CristinMappingModule;
 import no.unit.nva.cristin.mapper.nva.ReferenceBuilder;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -285,10 +286,14 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     private String extractDescription() {
-        return Optional.ofNullable(cristinObject.getCristinArtisticProduction())
+        var description = "";
+        var artisticDescription =
+         Optional.ofNullable(cristinObject.getCristinArtisticProduction())
             .map(CristinArtisticProduction::getDescriptionFields)
-            .map(descriptionList -> String.join(System.lineSeparator(), descriptionList))
-            .orElse(null);
+            .map(descriptionList -> String.join(System.lineSeparator(), descriptionList));
+        var museumExhibitDescription =
+            Optional.ofNullable(cristinObject.getCristinExhibition()).map(CristinExhibition::getDescription);
+        return "";
     }
 
     private List<Contributor> extractContributors() {

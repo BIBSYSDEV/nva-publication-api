@@ -3,7 +3,7 @@ package no.unit.nva.cristin.mapper.exhibition;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
-import java.util.Objects;
+import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,10 +26,11 @@ import nva.commons.core.StringUtils;
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"arstall", "titteltekst", "antall_deltakere",
+@JsonIgnoreProperties({"arstall", "antall_deltakere",
     "antall_internasjonale_deltakere", "antall_nasjonale_deltakere",
     "institusjonsnr_arrangor", "avdnr_arrangor", "undavdnr_arrangor", "gruppenr_arrangor",
     "utbredelsesomrade", "url", "personlopenr_arrangor"})
+// antall_internasjonale_deltakere, antall_nasjonale_deltakere, antall_deltakere, url are always null
 public class ExhibitionEvent {
 
     @JsonProperty("hendelsestype")
@@ -49,6 +50,9 @@ public class ExhibitionEvent {
 
     @JsonProperty("landkode")
     private String countryCode;
+
+    @JsonProperty("titteltekst")
+    private String titleText;
 
     @JacocoGenerated
     public ExhibitionEvent() {
@@ -71,9 +75,15 @@ public class ExhibitionEvent {
         return new UnconfirmedOrganization(organizerName);
     }
 
+    public String getDescription() {
+        return Optional.ofNullable(titleText)
+                   .filter("utstilling"::equalsIgnoreCase)
+                   .orElse(null);
+    }
+
     private Instant extractToDate() {
-        return Objects.nonNull(dateTo)
-                   ? Time.convertToInstant(dateTo)
-                   : null;
+        return Optional.ofNullable(dateTo)
+                   .map(Time::convertToInstant)
+                   .orElse(null);
     }
 }

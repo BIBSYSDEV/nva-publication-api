@@ -59,6 +59,11 @@ public class CristinExhibition {
         return new ExhibitionProduction(extractExhibitionSubtype(), extractExhibitionManifestation());
     }
 
+    public String getDescription() {
+        return exhibitionEvent.getDescription();
+
+    }
+
     @JsonIgnore
     private String getCategory() {
         return exhibitionEvent.getMuseumEventCategory().getEventCode();

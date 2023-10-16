@@ -60,4 +60,21 @@ Feature: Mapping rules for exhibition production
     Then the exhibition manifestation has an unconfirmed place with label equal to "Nasjonalmuseet" and country equal to "NO"
     And the exhibition manifestation has a organization equal to "Nasjonalmuseet for kunst, arkitektur og design i samarbeid med UiO"
 
+  Scenario: Cristin museum exhibit event are used for generating nva description
+    Given a valid Cristin Result with secondary category "MUSEUM"
+    Given a valid Cristin Result with secondary category "MUSEUM"
+    And the cristin result has a museum category of "UTSTILLING"
+    And the cristin exhibition event has a title "Spor. Norsk samtidsarkitektur 2005-2010"
+    When the Cristin Result is converted to an NVA Resource
+    And the NVA publication has a description containing "Spor. Norsk samtidsarkitektur 2005-2010"
+
+  Scenario: Cristin museum exhibit event title "Utstilling" is not mapped to description
+  (Loads of cristin museum have a title text only containing "Utstilling", this is redundant information)
+    Given a valid Cristin Result with secondary category "MUSEUM"
+    Given a valid Cristin Result with secondary category "MUSEUM"
+    And the cristin result has a museum category of "UTSTILLING"
+    And the cristin exhibition event has a title "Utstilling"
+    When the Cristin Result is converted to an NVA Resource
+    And the NVA publication does not have a description containing "Utstilling"
+
 
