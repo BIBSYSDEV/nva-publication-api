@@ -8,6 +8,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
+import no.unit.nva.model.PublicationNote;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
@@ -36,6 +37,7 @@ public final class ResourceBuilder {
     private List<Funding> fundings;
     private String rightsHolder;
     private ImportStatus importStatus;
+    private List<PublicationNote> publicationNotes;
 
     ResourceBuilder() {
     }
@@ -135,6 +137,11 @@ public final class ResourceBuilder {
         return this;
     }
 
+    public ResourceBuilder withPublicationNotes(List<PublicationNote> publicationNotes) {
+        this.publicationNotes = publicationNotes;
+        return this;
+    }
+
     public Resource build() {
         Resource resource = new Resource();
         resource.setIdentifier(identifier);
@@ -156,6 +163,7 @@ public final class ResourceBuilder {
         resource.setFundings(fundings);
         resource.setRightsHolder(rightsHolder);
         resource.setImportStatus(importStatus);
+        resource.setPublicationNotes(publicationNotes);
         return resource;
     }
 }

@@ -18,7 +18,6 @@ import no.unit.nva.cristin.mapper.artisticproduction.CristinArtisticProduction;
 import no.unit.nva.cristin.mapper.artisticproduction.CristinProduct;
 import no.unit.nva.model.Publication;
 
-
 @Builder(
     builderClassName = "CristinObjectBuilder",
     toBuilder = true,
@@ -36,7 +35,7 @@ import no.unit.nva.model.Publication;
     "finansiering_varbeid",
     "kildepostid", "arkivpost",
     "type_utstilling", "pubidnr", "eierkode_siste_endring",
-    "varbeid_vdisiplin", "arkivfil", "merknadtekst", "h_dbh_forskres_publikasjon"})
+    "varbeid_vdisiplin", "arkivfil", "h_dbh_forskres_publikasjon"})
 @SuppressWarnings({"PMD.TooManyFields"})
 public class CristinObject implements JsonSerializable {
 
@@ -127,6 +126,9 @@ public class CristinObject implements JsonSerializable {
     private CristinProduct cristinProduct;
 
     private String publicationOwner;
+
+    @JsonProperty("merknadtekst")
+    private String note;
 
     public CristinObject() {
     }

@@ -244,12 +244,6 @@ public final class CristinDataGenerator {
         return cristinObject;
     }
 
-    public static JsonNode objectWithInvalidIsbn() throws JsonProcessingException {
-        CristinObject cristinObject = randomBook();
-        cristinObject.getBookOrReportMetadata().setIsbn("123");
-        return cristinObjectAsObjectNode(cristinObject);
-    }
-
     public static JsonNode objectWithTags() throws JsonProcessingException {
         var cristingTagsList = List.of(CristinTags.builder()
                                            .withBokmal(randomString())
@@ -689,7 +683,7 @@ public final class CristinDataGenerator {
             Set.of(PUBLICATION_OWNER_FIELD, ENTRY_PUBLISHED_DATE, JOURNAL_PUBLICATION_FIELD, CRISTIN_TAGS,
                    SOURCE_RECORD_IDENTIFIER, SUB_DEPARTMEND_IDENTIFIER_CREATED, OWNER_CODE_CREATED,
                    INSTITUTION_IDENTIFIER_CREATED, GROUP_IDENTIFIER_CREATED, DEPARTMENT_IDENTIFIER_CREATED,
-                   CRISTIN_LOCALES,CRISTIN_ASSOCIATED_URIS, "cristinProduct", "cristinArtisticProduction",
+                   CRISTIN_LOCALES,CRISTIN_ASSOCIATED_URIS, "cristinProduct","note", "cristinArtisticProduction",
                    SOURCE_CODE, CRISTIN_PRESENTATIONAL_WORK, CRISTIN_SUBJECT_FIELD, BOOK_OR_REPORT_METADATA_FIELD,
                    BOOK_OR_REPORT_PART_METADATA, HRCS_CATEGORIES_AND_ACTIVITIES, CRISTIN_MODIFIED_DATE,
                    LECTURE_OR_POSTER_METADATA, YEAR_REPORTED, CRISTIN_GRANTS, CRISTIN_SOURCES, MEDIA_CONTRIBUTION)));

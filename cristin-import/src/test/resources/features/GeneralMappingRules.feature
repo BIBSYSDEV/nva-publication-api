@@ -429,3 +429,15 @@ Feature: Mappings that hold for all types of Cristin Results
       | ARKIV       | Voyage Television, France |
     When the Cristin Result is converted to an NVA Resource
     Then an error is reported.
+
+  Scenario: Cristin notes should be mapped to NVA notes
+    Given a valid Cristin Result
+    And the cristin result has a note equal to "Dette er ikke en merknad, men en artikkel 5/3-18 SH"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA resource has a notes field equal to "Dette er ikke en merknad, men en artikkel 5/3-18 SH"
+
+  Scenario: Cristin result without notes should be mapped to empty list
+    Given a valid Cristin Result
+    And the cristin result has a note equal to ""
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA resource has a empty list as publicationNotes

@@ -12,6 +12,7 @@ import no.unit.nva.WithContext;
 import no.unit.nva.WithMetadata;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.PublicationNote;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.Publication;
@@ -32,6 +33,8 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
     private String rightsHolder;
     private PublicationStatus status;
 
+    private List<PublicationNote> publicationNotes;
+
     public static CreatePublicationRequest fromPublication(Publication publication) {
         CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
         createPublicationRequest.setEntityDescription(publication.getEntityDescription());
@@ -42,6 +45,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
         createPublicationRequest.setFundings(publication.getFundings());
         createPublicationRequest.setRightsHolder(publication.getRightsHolder());
         createPublicationRequest.setStatus(publication.getStatus());
+        createPublicationRequest.setPublicationNotes(publication.getPublicationNotes());
         return createPublicationRequest;
     }
     
@@ -63,6 +67,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
         publication.setFundings(getFundings());
         publication.setRightsHolder(getRightsHolder());
         publication.setStatus(getStatus());
+        publication.setPublicationNotes(getPublicationNotes());
         return publication;
     }
 
@@ -158,6 +163,14 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
         this.status = status;
     }
 
+    public List<PublicationNote> getPublicationNotes() {
+        return publicationNotes;
+    }
+
+    public void setPublicationNotes(List<PublicationNote> publicationNotes) {
+        this.publicationNotes = publicationNotes;
+    }
+
     @JacocoGenerated
     @Override
     public int hashCode() {
@@ -167,6 +180,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
                             getProjects(),
                             getSubjects(),
                             getAdditionalIdentifiers(),
+                            getPublicationNotes(),
                             getStatus());
     }
 
@@ -186,6 +200,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
                && Objects.equals(getProjects(), that.getProjects())
                && Objects.equals(getSubjects(), that.getSubjects())
                && Objects.equals(getAdditionalIdentifiers(), that.getAdditionalIdentifiers())
+               && Objects.equals(getPublicationNotes(), that.getPublicationNotes())
                && Objects.equals(getStatus(), that.getStatus());
     }
 

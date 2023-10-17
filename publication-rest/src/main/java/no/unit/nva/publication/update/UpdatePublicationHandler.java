@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -65,7 +65,8 @@ import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
 
 @SuppressWarnings("PMD.GodClass")
-public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicationRequest, PublicationResponse> {
+public class UpdatePublicationHandler
+    extends ApiGatewayHandler<UpdatePublicationRequest, PublicationResponseElevatedUser> {
 
     public static final String IDENTIFIER_MISMATCH_ERROR_MESSAGE = "Identifiers in path and in body, do not match";
     public static final String CONTENT_TYPE = "application/json";
@@ -113,8 +114,10 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     }
 
     @Override
-    protected PublicationResponse processInput(UpdatePublicationRequest input, RequestInfo requestInfo, Context context)
-            throws ApiGatewayException {
+    protected PublicationResponseElevatedUser processInput(UpdatePublicationRequest input,
+                                                           RequestInfo requestInfo,
+                                                           Context context)
+        throws ApiGatewayException {
 
         SortableIdentifier identifierInPath = RequestUtil.getIdentifier(requestInfo);
         validateRequest(identifierInPath, input);
@@ -124,11 +127,11 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
             createPublishingRequestOnFileUpdate(publicationUpdate);
         }
         Publication updatedPublication = resourceService.updatePublication(publicationUpdate);
-        return PublicationResponse.fromPublication(updatedPublication);
+        return PublicationResponseElevatedUser.fromPublication(updatedPublication);
     }
 
     @Override
-    protected Integer getSuccessStatusCode(UpdatePublicationRequest input, PublicationResponse output) {
+    protected Integer getSuccessStatusCode(UpdatePublicationRequest input, PublicationResponseElevatedUser output) {
         return HttpStatus.SC_OK;
     }
 
@@ -195,14 +198,17 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
                 .isEmpty();
     }
 
-    private boolean userCanEditOtherPeoplesPublicationsInTheirOwnInstitution(RequestInfo requestInfo, UserInstance userInstance, Publication existingPublication) {
+    private boolean userCanEditOtherPeoplesPublicationsInTheirOwnInstitution(RequestInfo requestInfo,
+                                                                             UserInstance userInstance,
+                                                                             Publication existingPublication) {
 
         var accessRight = EDIT_OWN_INSTITUTION_RESOURCES.name();
         return !requestInfo.clientIsThirdParty() && requestInfo.userIsAuthorized(accessRight)
                 && userIsFromSameOrganizationAsPublication(userInstance, existingPublication);
     }
 
-    private boolean userIsFromSameOrganizationAsPublication(UserInstance userInstance, Publication existingPublication) {
+    private boolean userIsFromSameOrganizationAsPublication(UserInstance userInstance,
+                                                            Publication existingPublication) {
         return userInstance.getOrganizationUri().equals(getCustomerId(existingPublication));
     }
 
@@ -253,7 +259,8 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
                 : getNonDegreePublication(publication, requestInfo);
     }
 
-    private Publication getNonDegreePublication(Publication publication, RequestInfo requestInfo) throws ApiGatewayException {
+    private Publication getNonDegreePublication(Publication publication,
+                                                RequestInfo requestInfo) throws ApiGatewayException {
 
         if (userCanEditAllNonDegreePublications(requestInfo)) {
             return publication;
@@ -276,9 +283,11 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
 
     }
 
-    private Publication getPublicationIfUserCanEditThesis(Publication publication, RequestInfo requestInfo) throws ApiGatewayException {
+    private Publication getPublicationIfUserCanEditThesis(Publication publication,
+                                                          RequestInfo requestInfo) throws ApiGatewayException {
         var userInstance = createUserInstanceFromRequest(requestInfo);
-        if (userUnauthorizedToPublishThesisAndIsNotExternalClient(requestInfo) && !userIsPublicationOwner(userInstance, publication)) {
+        if (userUnauthorizedToPublishThesisAndIsNotExternalClient(requestInfo)
+            && !userIsPublicationOwner(userInstance, publication)) {
             throw new ForbiddenException();
         }
         return publication;

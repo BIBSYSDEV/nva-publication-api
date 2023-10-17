@@ -22,7 +22,7 @@ import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 import no.unit.nva.PublicationMapper;
-import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.doi.DataCiteMetadataDtoMapper;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -166,7 +166,10 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     }
 
     private String createPublicationResponse(RequestInfo requestInfo, Publication publication) {
-        var publicationResponse = PublicationMapper.convertValue(publication, PublicationResponse.class);
+        //TODO: when the userIsCuratorOrOwner is properlyImplementedAgain,
+        // then only those should get the PublicationResponseElevatedUser
+        //Regular users should receive PublicationResponse.class
+        var publicationResponse = PublicationMapper.convertValue(publication, PublicationResponseElevatedUser.class);
         return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(publicationResponse)).orElseThrow();
     }
 
