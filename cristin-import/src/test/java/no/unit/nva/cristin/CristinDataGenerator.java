@@ -7,6 +7,7 @@ import static no.unit.nva.cristin.mapper.CristinObject.SECONDARY_CATEGORY_FIELD;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.ENCYCLOPEDIA;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.JOURNAL_ARTICLE;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.MONOGRAPH;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.MUSEUM;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.NON_FICTION_BOOK;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.POPULAR_BOOK;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.REFERENCE_MATERIAL;
@@ -15,6 +16,7 @@ import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.WRITTEN_INTERV
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -58,6 +60,9 @@ import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.cristin.mapper.CristinMediumTypeCode;
 import no.unit.nva.cristin.mapper.VerificationStatus;
 import no.unit.nva.cristin.mapper.artisticproduction.CristinProduct;
+import no.unit.nva.cristin.mapper.exhibition.CristinExhibition;
+import no.unit.nva.cristin.mapper.exhibition.ExhibitionEvent;
+import no.unit.nva.cristin.mapper.exhibition.MuseumEventCategory;
 
 public final class CristinDataGenerator {
 
@@ -79,6 +84,7 @@ public final class CristinDataGenerator {
     public static final String GROUP_IDENTIFIER_CREATED = "groupIdentifierCreated";
     public static final String DEPARTMENT_IDENTIFIER_CREATED = "departmentIdentifierCreated";
     public static final String CRISTIN_LOCALES = "cristinLocales";
+    public static final String CRISTIN_ASSOCIATED_URIS = "cristinAssociatedUris";
     private static final String ENTRY_PUBLISHED_DATE = "entryPublishedDate";
     private static final List<String> LANGUAGE_CODES = List.of("nb", "no", "en");
     private static final int NUMBER_OF_KNOWN_MAIN_CATEGORIES = 1;
@@ -95,7 +101,6 @@ public final class CristinDataGenerator {
     private static final String MEDIA_CONTRIBUTION = "mediaContribution";
     private static final CristinSecondaryCategory[] BOOK_SECONDARY_CATEGORIES = new CristinSecondaryCategory[]{
         MONOGRAPH, TEXTBOOK, NON_FICTION_BOOK, ENCYCLOPEDIA, POPULAR_BOOK, REFERENCE_MATERIAL};
-    public static final String CRISTIN_ASSOCIATED_URIS = "cristinAssociatedUris";
 
     private CristinDataGenerator() {
 
@@ -107,24 +112,24 @@ public final class CristinDataGenerator {
 
     public static CristinContributor randomContributor(Integer contributorIndex) {
         return CristinContributor.builder()
-            .withContributorOrder(contributorIndex + 1)
-            .withIdentifier(contributorIndex)
-            .withGivenName(randomString())
-            .withFamilyName(randomString())
-            .withVerificationStatus(VerificationStatus.VERIFIED)
-            .withAffiliations(randomAffiliations())
-            .build();
+                   .withContributorOrder(contributorIndex + 1)
+                   .withIdentifier(contributorIndex)
+                   .withGivenName(randomString())
+                   .withFamilyName(randomString())
+                   .withVerificationStatus(VerificationStatus.VERIFIED)
+                   .withAffiliations(randomAffiliations())
+                   .build();
     }
 
     public static CristinContributor randomUnverifiedContributor(Integer contributorIndex) {
         return CristinContributor.builder()
-            .withContributorOrder(contributorIndex)
-            .withIdentifier(contributorIndex)
-            .withGivenName(randomString())
-            .withFamilyName(randomString())
-            .withVerificationStatus(VerificationStatus.NOT_VERIFIED)
-            .withAffiliations(randomAffiliations())
-            .build();
+                   .withContributorOrder(contributorIndex)
+                   .withIdentifier(contributorIndex)
+                   .withGivenName(randomString())
+                   .withFamilyName(randomString())
+                   .withVerificationStatus(VerificationStatus.NOT_VERIFIED)
+                   .withAffiliations(randomAffiliations())
+                   .build();
     }
 
     public static CristinPresentationalWork randomPresentationalWork() {
@@ -162,58 +167,56 @@ public final class CristinDataGenerator {
         CristinSecondaryCategory category = CristinSecondaryCategory.fromString(secondaryCategory);
         return switch (category) {
             case MONOGRAPH,
-                TEXTBOOK,
-                NON_FICTION_BOOK,
-                ENCYCLOPEDIA,
-                POPULAR_BOOK,
-                REFERENCE_MATERIAL,
-                ACADEMIC_COMMENTARY -> randomBook(category);
+                     TEXTBOOK,
+                     NON_FICTION_BOOK,
+                     ENCYCLOPEDIA,
+                     POPULAR_BOOK,
+                     REFERENCE_MATERIAL,
+                     ACADEMIC_COMMENTARY -> randomBook(category);
             case ANTHOLOGY -> randomBookAnthology();
             case FEATURE_ARTICLE -> randomFeatureArticle();
             case JOURNAL_LETTER,
-                READER_OPINION -> randomJournalLetter(category);
+                     READER_OPINION -> randomJournalLetter(category);
             case JOURNAL_REVIEW -> randomJournalReview();
             case JOURNAL_LEADER -> randomJournalLeader();
             case JOURNAL_CORRIGENDUM -> randomJournalCorrigendum();
             case JOURNAL_ARTICLE,
-                ARTICLE,
-                POPULAR_ARTICLE,
-                ACADEMIC_REVIEW,
-                SHORT_COMMUNICATION -> randomJournalArticle(category);
+                     ARTICLE,
+                     POPULAR_ARTICLE,
+                     ACADEMIC_REVIEW,
+                     SHORT_COMMUNICATION -> randomJournalArticle(category);
             case RESEARCH_REPORT -> randomResearchReport();
             case DEGREE_PHD, MAGISTER_THESIS -> randomDegreePhd(category);
             case DEGREE_LICENTIATE -> randomDegreeLicentiate();
             case DEGREE_MASTER,
-                SECOND_DEGREE_THESIS,
-                MEDICAL_THESIS -> randomDegreeMaster(category);
+                     SECOND_DEGREE_THESIS,
+                     MEDICAL_THESIS -> randomDegreeMaster(category);
             case CHAPTER_ACADEMIC,
-                CHAPTER,
-                POPULAR_CHAPTER_ARTICLE,
-                FOREWORD,
-                INTRODUCTION,
-                LEXICAL_IMPORT -> randomChapterArticle(category);
+                     CHAPTER,
+                     POPULAR_CHAPTER_ARTICLE,
+                     FOREWORD,
+                     INTRODUCTION,
+                     LEXICAL_IMPORT -> randomChapterArticle(category);
             case EXHIBITION_CATALOG -> randomExhibitCatalogue();
             case CONFERENCE_LECTURE,
-                CONFERENCE_POSTER,
-                POPULAR_SCIENTIFIC_LECTURE,
-                LECTURE,
-                OTHER_PRESENTATION,
-                INTERNET_EXHIBIT -> randomEvent(category);
+                     CONFERENCE_POSTER,
+                     POPULAR_SCIENTIFIC_LECTURE,
+                     LECTURE,
+                     OTHER_PRESENTATION,
+                     INTERNET_EXHIBIT -> randomEvent(category);
             case INTERVIEW, PROGRAM_MANAGEMENT -> randomMedia(category);
             case PROGRAM_PARTICIPATION -> randomTvOrMedia(category);
             case WRITTEN_INTERVIEW -> randomWrittenInterview();
             case MUSICAL_PERFORMANCE,
-                FILM_PRODUCTION,
-                THEATRICAL_PRODUCTION,
-                MUSICAL_PIECE ->
-                randomArtisticProduction(category);
+                     FILM_PRODUCTION,
+                     THEATRICAL_PRODUCTION,
+                     MUSICAL_PIECE -> randomArtisticProduction(category);
             case VISUAL_ARTS,
-                ARCHITECT_DESIGN -> randomCristinProductWithSecondaryCategory(category);
-            default ->
-                throw new IllegalStateException(String.format("The secondary category %s is not covered",
-                    secondaryCategory));
+                     ARCHITECT_DESIGN -> randomCristinProductWithSecondaryCategory(category);
+            case MUSEUM -> randomCristinMuseum();
+            default -> throw new IllegalStateException(String.format("The secondary category %s is not covered",
+                                                                     secondaryCategory));
         };
-
     }
 
     public static CristinObject randomBookAnthology() {
@@ -331,6 +334,39 @@ public final class CristinDataGenerator {
         var json = JsonUtils.dtoObjectMapper.convertValue(object, ObjectNode.class);
         json.put(propertyName, randomString());
         return json;
+    }
+
+    private static CristinObject randomCristinMuseum() {
+        return CristinObject.builder()
+                   .withId(largeRandomNumber())
+                   .withMainCategory(CristinMainCategory.EXHIBITION)
+                   .withSecondaryCategory(MUSEUM)
+                   .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
+                   .withEntryCreationDate(LocalDate.now())
+                   .withPublicationYear(randomYear())
+                   .withPublicationOwner(randomString())
+                   .withContributors(randomContributors())
+                   .withCristinExhibition(randomCristinExhibition())
+                   .build();
+    }
+
+    private static CristinExhibition randomCristinExhibition() {
+        return CristinExhibition.builder()
+                   .withExhibitionEvent(randomExhibitionEvent())
+                   .build();
+    }
+
+    private static ExhibitionEvent randomExhibitionEvent() {
+        return ExhibitionEvent.builder()
+                   .withMuseumEventCategory(randomMuseumCategory())
+                   .withDateFrom(randomInstant().toString())
+                   .build();
+    }
+
+    private static MuseumEventCategory randomMuseumCategory() {
+        return MuseumEventCategory.builder()
+                   .withEventCode(randomString())
+                   .build();
     }
 
     private static CristinObject randomWrittenInterview() {
@@ -567,48 +603,49 @@ public final class CristinDataGenerator {
 
     private static CristinObject randomArtisticProduction(CristinSecondaryCategory secondaryCategory) {
         return CristinObject.builder()
-            .withId(largeRandomNumber())
-            .withMainCategory(CristinMainCategory.ARTISTIC_PRODUCTION)
-            .withSecondaryCategory(secondaryCategory)
-            .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
-            .withEntryCreationDate(LocalDate.now())
-            .withPublicationYear(randomYear())
-            .withPublicationOwner(randomString())
-            .withContributors(randomContributors())
-            .withCristinArtisticProduction(randomCristinArtisticProduction())
-            .build();
+                   .withId(largeRandomNumber())
+                   .withMainCategory(CristinMainCategory.ARTISTIC_PRODUCTION)
+                   .withSecondaryCategory(secondaryCategory)
+                   .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
+                   .withEntryCreationDate(LocalDate.now())
+                   .withPublicationYear(randomYear())
+                   .withPublicationOwner(randomString())
+                   .withContributors(randomContributors())
+                   .withCristinArtisticProduction(randomCristinArtisticProduction())
+                   .build();
     }
 
     private static CristinObject randomCristinProductWithSecondaryCategory(CristinSecondaryCategory category) {
         return CristinObject.builder()
-            .withId(largeRandomNumber())
-            .withMainCategory(CristinMainCategory.ARTISTIC_PRODUCTION)
-            .withSecondaryCategory(category)
-            .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
-            .withEntryCreationDate(LocalDate.now())
-            .withPublicationYear(randomYear())
-            .withPublicationOwner(randomString())
-            .withContributors(randomContributors())
-            .withCristinProduct(randomCristinProduct())
-            .build();
+                   .withId(largeRandomNumber())
+                   .withMainCategory(CristinMainCategory.ARTISTIC_PRODUCTION)
+                   .withSecondaryCategory(category)
+                   .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
+                   .withEntryCreationDate(LocalDate.now())
+                   .withPublicationYear(randomYear())
+                   .withPublicationOwner(randomString())
+                   .withContributors(randomContributors())
+                   .withCristinProduct(randomCristinProduct())
+                   .build();
     }
 
     private static CristinProduct randomCristinProduct() {
         return CristinProduct
-            .builder()
-            .withPublisherName(randomString())
-            .build();
+                   .builder()
+                   .withPublisherName(randomString())
+                   .build();
     }
 
     private static CristinArtisticProduction randomCristinArtisticProduction() {
         return CristinArtisticProduction.builder()
-            .withArtisticGenre(ArtisticGenre.builder().withGenreCode(randomString()).build())
-            .withArtisticProductionTimeUnit(ArtisticProductionTimeUnit.builder().withTimeUnitCode("MINUTT").build())
-            .withDuration("6")
-            .withOriginalComposer(randomString())
-            .withCoCreators(randomString())
-            .withCrew(randomString())
-            .build();
+                   .withArtisticGenre(ArtisticGenre.builder().withGenreCode(randomString()).build())
+                   .withArtisticProductionTimeUnit(
+                       ArtisticProductionTimeUnit.builder().withTimeUnitCode("MINUTT").build())
+                   .withDuration("6")
+                   .withOriginalComposer(randomString())
+                   .withCoCreators(randomString())
+                   .withCrew(randomString())
+                   .build();
     }
 
     private static CristinObject newCristinObject(Integer index) {
@@ -683,7 +720,8 @@ public final class CristinDataGenerator {
             Set.of(PUBLICATION_OWNER_FIELD, ENTRY_PUBLISHED_DATE, JOURNAL_PUBLICATION_FIELD, CRISTIN_TAGS,
                    SOURCE_RECORD_IDENTIFIER, SUB_DEPARTMEND_IDENTIFIER_CREATED, OWNER_CODE_CREATED,
                    INSTITUTION_IDENTIFIER_CREATED, GROUP_IDENTIFIER_CREATED, DEPARTMENT_IDENTIFIER_CREATED,
-                   CRISTIN_LOCALES,CRISTIN_ASSOCIATED_URIS, "cristinProduct","note", "cristinArtisticProduction",
+                   CRISTIN_LOCALES, CRISTIN_ASSOCIATED_URIS, "cristinProduct","note", "cristinArtisticProduction",
+                   "cristinExhibition",
                    SOURCE_CODE, CRISTIN_PRESENTATIONAL_WORK, CRISTIN_SUBJECT_FIELD, BOOK_OR_REPORT_METADATA_FIELD,
                    BOOK_OR_REPORT_PART_METADATA, HRCS_CATEGORIES_AND_ACTIVITIES, CRISTIN_MODIFIED_DATE,
                    LECTURE_OR_POSTER_METADATA, YEAR_REPORTED, CRISTIN_GRANTS, CRISTIN_SOURCES, MEDIA_CONTRIBUTION)));
@@ -743,13 +781,13 @@ public final class CristinDataGenerator {
 
     private static CristinContributor creatContributor(Integer contributorIndex, CristinContributorRoleCode roleCode) {
         return CristinContributor.builder()
-            .withContributorOrder(contributorIndex)
-            .withVerificationStatus(VerificationStatus.VERIFIED)
-            .withIdentifier(contributorIndex)
-            .withGivenName(randomString())
-            .withFamilyName(randomString())
-            .withAffiliations(List.of(createAffiliation(roleCode)))
-            .build();
+                   .withContributorOrder(contributorIndex)
+                   .withVerificationStatus(VerificationStatus.VERIFIED)
+                   .withIdentifier(contributorIndex)
+                   .withGivenName(randomString())
+                   .withFamilyName(randomString())
+                   .withAffiliations(List.of(createAffiliation(roleCode)))
+                   .build();
     }
 
     private static String randomDoiString() {

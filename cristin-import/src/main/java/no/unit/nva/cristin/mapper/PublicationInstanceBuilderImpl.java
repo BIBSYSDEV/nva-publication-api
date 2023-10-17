@@ -4,6 +4,7 @@ import static no.unit.nva.cristin.mapper.CristinMainCategory.isArt;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isChapter;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isEvent;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isExhibition;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isJournal;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isMediaContribution;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
@@ -42,6 +43,8 @@ public class PublicationInstanceBuilderImpl {
             return new MediaContributionBuilder(cristinObject).build();
         } else if (isArt(cristinObject)) {
             return new ArtBuilder(cristinObject).build();
+        } else if (isExhibition(cristinObject)) {
+            return new ExhibitionProductionBuilder(cristinObject).build();
         } else if (cristinObject.getMainCategory().isUnknownCategory()) {
             throw new UnsupportedMainCategoryException();
         } else if (cristinObject.getSecondaryCategory().isUnknownCategory()) {

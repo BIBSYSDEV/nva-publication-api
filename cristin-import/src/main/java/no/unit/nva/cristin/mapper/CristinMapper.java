@@ -32,7 +32,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.unit.nva.cristin.mapper.artisticproduction.CristinArtisticProduction;
+import no.unit.nva.cristin.mapper.exhibition.CristinExhibition;
 import no.unit.nva.cristin.mapper.nva.CristinMappingModule;
 import no.unit.nva.cristin.mapper.nva.ReferenceBuilder;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -137,18 +139,18 @@ public class CristinMapper extends CristinMappingModule {
                    .collect(Collectors.toList());
     }
 
+    private URI extractHandle() {
+        return Optional.ofNullable(cristinObject.getCristinAssociatedUris())
+                   .flatMap(CristinMapper::extractArchiveUri)
+                   .orElse(null);
+    }
+
     private List<PublicationNote> extractPublicationNotes() {
         return hasPublicationNote() ? List.of(new PublicationNote(cristinObject.getNote())) : List.of();
     }
 
     private boolean hasPublicationNote() {
         return StringUtils.isNotBlank(cristinObject.getNote());
-    }
-
-    private URI extractHandle() {
-        return Optional.ofNullable(cristinObject.getCristinAssociatedUris())
-                   .flatMap(CristinMapper::extractArchiveUri)
-                   .orElse(null);
     }
 
     private ResourceOwner extractResourceOwner() {
@@ -284,24 +286,36 @@ public class CristinMapper extends CristinMappingModule {
 
     private EntityDescription generateEntityDescription() {
         return new EntityDescription.Builder()
-                   .withLanguage(extractLanguage())
-                   .withMainTitle(extractMainTitle())
-                   .withPublicationDate(extractPublicationDate())
-                   .withReference(new ReferenceBuilder(cristinObject).buildReference())
-                   .withContributors(extractContributors())
-                   .withNpiSubjectHeading(extractNpiSubjectHeading())
-                   .withAbstract(extractAbstract())
-                   .withTags(extractTags())
-                   .withAlternativeAbstracts(Collections.emptyMap())
-                   .withDescription(extractDescription())
-                   .build();
+            .withLanguage(extractLanguage())
+            .withMainTitle(extractMainTitle())
+            .withPublicationDate(extractPublicationDate())
+            .withReference(new ReferenceBuilder(cristinObject).buildReference())
+            .withContributors(extractContributors())
+            .withNpiSubjectHeading(extractNpiSubjectHeading())
+            .withAbstract(extractAbstract())
+            .withTags(extractTags())
+            .withAlternativeAbstracts(Collections.emptyMap())
+            .withDescription(extractDescription())
+            .build();
     }
 
     private String extractDescription() {
+        var artisticDescription = getArtisticDescription();
+        var exhibitionDescription = getMuseumExhibitDescription();
+        return
+            Stream.of(artisticDescription, exhibitionDescription)
+                .flatMap(Optional::stream)
+                .reduce(String::concat)
+                .orElse(null);
+    }
+
+    private Optional<String> getArtisticDescription() {
         return Optional.ofNullable(cristinObject.getCristinArtisticProduction())
-                   .map(CristinArtisticProduction::getDescriptionFields)
-                   .map(descriptionList -> String.join(System.lineSeparator(), descriptionList))
-                   .orElse(null);
+                   .map(CristinArtisticProduction::getDescription);
+    }
+
+    private Optional<String> getMuseumExhibitDescription() {
+        return Optional.ofNullable(cristinObject.getCristinExhibition()).map(CristinExhibition::getDescription);
     }
 
     private List<Contributor> extractContributors() {

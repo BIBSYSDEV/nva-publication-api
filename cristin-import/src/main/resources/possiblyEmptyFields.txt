@@ -33,6 +33,7 @@ entityDescription.reference.publicationInstance.manifestations.movements
 entityDescription.reference.publicationInstance.manifestations.ensemble
 entityDescription.reference.publicationInstance.manifestations.ismn
 entityDescription.reference.publicationInstance.manifestations.isrc
+entityDescription.reference.publicationInstance.manifestations.date.to
 
 entityDescription.abstract
 entityDescription.tags

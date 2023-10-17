@@ -14,6 +14,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import no.unit.nva.cristin.mapper.DescriptionExtractor;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
 import no.unit.nva.model.instancetypes.artistic.architecture.Architecture;
@@ -101,12 +102,26 @@ public class CristinProduct implements DescriptionExtractor, MovingPictureExtrac
 
     }
 
-
     @JsonIgnore
     public MovingPicture toMovingPicture() {
         return new MovingPicture(extractSubType(timeUnit, duration),
+                                 extractDescription(descriptionFields()),
+                                 extractOutPuts());
+    }
+
+    @JsonIgnore
+    public VisualArts toVisualArts() {
+        return new VisualArts(
+            VisualArtsSubtype.createOther(extractVisualArtsOtherSubtypeDescription()),
+            null,
+            Set.of());
+    }
+
+    public Architecture toArchitecture() {
+        return new Architecture(
+            ArchitectureSubtype.createOther(MIGRATED_FROM_CRISTIN_MESSAGE),
             extractDescription(descriptionFields()),
-            extractOutPuts());
+            List.of());
     }
 
     @JsonIgnore
@@ -117,19 +132,18 @@ public class CristinProduct implements DescriptionExtractor, MovingPictureExtrac
     @JsonIgnore
     private OtherRelease extractOutPut() {
         return new OtherRelease(getProductDescription(),
-            new UnconfirmedPlace(publisherPlace, null),
-            new UnconfirmedPublisher(publisherName),
-            null,
-            1);
+                                new UnconfirmedPlace(publisherPlace, null),
+                                new UnconfirmedPublisher(publisherName),
+                                null,
+                                1);
     }
 
     @JsonIgnore
     private String getProductDescription() {
         return Optional.of(format)
-            .map(CristinFormat::getFormatCode)
-            .orElse(null);
+                   .map(CristinFormat::getFormatCode)
+                   .orElse(null);
     }
-
 
     @JsonIgnore
     private Stream<Optional<String>> descriptionFields() {
@@ -150,22 +164,7 @@ public class CristinProduct implements DescriptionExtractor, MovingPictureExtrac
         return Optional.ofNullable(productionType).map(ArtisticProductionType::getProductTypeCode).orElse(null);
     }
 
-    @JsonIgnore
-    public VisualArts toVisualArts() {
-        return new VisualArts(
-            VisualArtsSubtype.createOther(extractVisualArtsOtherSubtypeDescription()),
-            null,
-            Set.of());
-    }
-
     private String extractVisualArtsOtherSubtypeDescription() {
         return extractDescription(descriptionFields());
-    }
-
-    public Architecture toArchitecture() {
-        return new Architecture(
-            ArchitectureSubtype.createOther(MIGRATED_FROM_CRISTIN_MESSAGE),
-            extractDescription(descriptionFields()),
-            List.of());
     }
 }

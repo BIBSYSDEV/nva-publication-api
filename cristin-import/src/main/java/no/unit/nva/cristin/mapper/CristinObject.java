@@ -16,6 +16,7 @@ import lombok.Setter;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.cristin.mapper.artisticproduction.CristinArtisticProduction;
 import no.unit.nva.cristin.mapper.artisticproduction.CristinProduct;
+import no.unit.nva.cristin.mapper.exhibition.CristinExhibition;
 import no.unit.nva.model.Publication;
 
 @Builder(
@@ -33,8 +34,7 @@ import no.unit.nva.model.Publication;
 @JsonIgnoreProperties({"brukernavn_opprettet", "peerreviewed",
     "brukernavn_siste_endring", "publiseringstatuskode", "merknadtekst_godkjenning",
     "finansiering_varbeid",
-    "kildepostid", "arkivpost",
-    "type_utstilling", "pubidnr", "eierkode_siste_endring",
+    "kildepostid", "arkivpost", "pubidnr", "eierkode_siste_endring",
     "varbeid_vdisiplin", "arkivfil", "h_dbh_forskres_publikasjon"})
 @SuppressWarnings({"PMD.TooManyFields"})
 public class CristinObject implements JsonSerializable {
@@ -129,6 +129,9 @@ public class CristinObject implements JsonSerializable {
 
     @JsonProperty("merknadtekst")
     private String note;
+
+    @JsonProperty("type_utstilling")
+    private CristinExhibition cristinExhibition;
 
     public CristinObject() {
     }
