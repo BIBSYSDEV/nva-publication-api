@@ -153,12 +153,6 @@ public class CristinMapper extends CristinMappingModule {
         return StringUtils.isNotBlank(cristinObject.getNote());
     }
 
-    private URI extractHandle() {
-        return Optional.ofNullable(cristinObject.getCristinAssociatedUris())
-                   .flatMap(CristinMapper::extractArchiveUri)
-                   .orElse(null);
-    }
-
     private ResourceOwner extractResourceOwner() {
         var cristinLocales = getValidCristinLocales();
         if (shouldUseOwnerCodeCreated(cristinLocales)) {
