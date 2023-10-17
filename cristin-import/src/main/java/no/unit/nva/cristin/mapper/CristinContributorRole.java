@@ -27,7 +27,7 @@ public class CristinContributorRole {
     @JsonIgnore
     private static Map<CristinContributorRoleCode, Role> cristinRoleToNvaRoles = Map.ofEntries(
         new SimpleEntry<>(CristinContributorRoleCode.CREATOR, Role.CREATOR),
-        new SimpleEntry<>(CristinContributorRoleCode.CONSERTVATOR, Role.CONSERVATOR),
+        new SimpleEntry<>(CristinContributorRoleCode.CONSERVATOR, Role.CONSERVATOR),
         new SimpleEntry<>(CristinContributorRoleCode.EDITOR, Role.EDITOR),
         new SimpleEntry<>(CristinContributorRoleCode.SUPERVISOR, Role.SUPERVISOR),
         new SimpleEntry<>(CristinContributorRoleCode.PROGRAMME_PARTICIPANT, Role.PROGRAMME_PARTICIPANT),
