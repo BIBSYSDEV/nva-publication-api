@@ -6,10 +6,8 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.expansion.ResourceExpansionService;
-import no.unit.nva.expansion.WithOrganizationScope;
 import no.unit.nva.expansion.utils.ExpandedTicketStatusMapper;
 import no.unit.nva.expansion.utils.ExpansionUtil;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -23,7 +21,7 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonTypeName(ExpandedDoiRequest.TYPE)
 @SuppressWarnings("PMD.TooManyFields")
-public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrganizationScope {
+public final class ExpandedDoiRequest extends ExpandedTicket {
 
     public static final String TYPE = "DoiRequest";
 
@@ -38,8 +36,6 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
     private URI customerId;
     @JsonProperty("doi")
     private URI doi;
-    @JsonProperty(ORGANIZATION_IDS_FIELD)
-    private Set<URI> organizationIds;
 
     public static ExpandedDoiRequest createEntry(DoiRequest doiRequest,
                                                  ResourceExpansionService expansionService,
@@ -47,7 +43,7 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
                                                  TicketService ticketService)
         throws NotFoundException {
         var expandedDoiRequest = ExpandedDoiRequest.fromDoiRequest(doiRequest, resourceService, expansionService);
-        expandedDoiRequest.setOrganizationIds(fetchOrganizationIdsForViewingScope(doiRequest, expansionService));
+        expandedDoiRequest.setOrganization(expansionService.getOrganization(doiRequest));
         expandedDoiRequest.setMessages(expandMessages(doiRequest.fetchMessages(ticketService), expansionService));
         expandedDoiRequest.setOwner(expansionService.expandPerson(doiRequest.getOwner()));
         expandedDoiRequest.setAssignee(ExpansionUtil.expandPerson(doiRequest.getAssignee(), expansionService));
@@ -96,18 +92,6 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         this.doi = doi;
     }
 
-    @JacocoGenerated
-    @Override
-    public Set<URI> getOrganizationIds() {
-        return organizationIds;
-    }
-
-    @JacocoGenerated
-    @Override
-    public void setOrganizationIds(Set<URI> organizationIds) {
-        this.organizationIds = organizationIds;
-    }
-
     @Override
     @JacocoGenerated
     public ExpandedTicketStatus getStatus() {
@@ -129,12 +113,6 @@ public final class ExpandedDoiRequest extends ExpandedTicket implements WithOrga
         return messages.stream()
             .map(expansionService::expandMessage)
             .collect(Collectors.toList());
-    }
-
-    private static Set<URI> fetchOrganizationIdsForViewingScope(DoiRequest doiRequest,
-                                                                ResourceExpansionService resourceExpansionService)
-        throws NotFoundException {
-        return resourceExpansionService.getOrganizationIds(doiRequest);
     }
 
     // should not become public. An ExpandedDoiRequest needs an Expansion service to be complete

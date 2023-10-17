@@ -25,6 +25,7 @@ import static org.hamcrest.collection.IsIn.in;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -82,6 +83,8 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
+import org.hamcrest.core.Is;
+import org.hamcrest.core.IsNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -104,7 +107,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private MessageService messageService;
     private TicketService ticketService;
-    private UriRetriever uriRetriever;
+    private UriRetriever personRetriever;
+    private UriRetriever orgRetriever;
 
     public static Stream<Class<?>> ticketTypeProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class);
@@ -118,13 +122,13 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldReturnExpandedTicketContainingTheOrganizationIdOfTheOwnersAffiliationAsIs(
+    void shouldReturnExpandedTicketContainingTheOrganizationOfTheOwnersAffiliationAsIs(
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws Exception {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var userAffiliation = publication.getResourceOwner().getOwnerAffiliation();
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
-        assertThat(userAffiliation, is(in(expandedTicket.getOrganizationIds())));
+        assertThat(userAffiliation, is(equalTo(expandedTicket.getOrganization().id())));
     }
 
     @ParameterizedTest
@@ -247,28 +251,44 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldGetAllOrganizationIdsForAffiliations(Class<? extends TicketEntry> ticketType, PublicationStatus status)
+    void shouldGetOrganizationIdsForAffiliations(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
 
-        var expectedOrgIds = Set.of(publication.getResourceOwner().getOwnerAffiliation());
-        var orgIds = expansionService.getOrganizationIds(ticket);
+        var expectedOrgId = publication.getResourceOwner().getOwnerAffiliation();
+        var orgIds = expansionService.getOrganization(ticket).id();
 
-        assertThat(orgIds, is(equalTo(expectedOrgIds)));
+        assertThat(orgIds, is(equalTo(expectedOrgId)));
+    }
+
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldGetOrganizationPartOfsForAffiliations(Class<? extends TicketEntry> ticketType,
+                                                       PublicationStatus status)
+        throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+
+        var expectedPartOf = List.of(
+            URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0")
+        );
+        var partOf = expansionService.getOrganization(ticket).partOf();
+
+        assertThat(partOf, is(equalTo(expectedPartOf)));
     }
 
     @Test
-    void shouldReturnEmptySetIfNotTicketEntry() throws NotFoundException {
+    void shouldReturnNullIfNotTicketEntry() throws NotFoundException {
         var message = Message.builder()
                           .withResourceIdentifier(SortableIdentifier.next())
                           .withTicketIdentifier(SortableIdentifier.next())
                           .withIdentifier(SortableIdentifier.next())
                           .build();
 
-        var actual = expansionService.getOrganizationIds(message);
+        var actual = expansionService.getOrganization(message);
 
-        assertThat(actual, is(equalTo(Collections.emptySet())));
+        assertThat(actual, is(nullValue()));
     }
 
     @ParameterizedTest
@@ -490,7 +510,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     private void mockOrganizationResponse(URI organization) {
-        when(uriRetriever.getRawContent(any(), any())).thenReturn(
+        when(personRetriever.getRawContent(any(), any())).thenReturn(
             Optional.of(stringFromResources(Path.of("cristin_org.json"))));
     }
 
@@ -556,10 +576,13 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     private ResourceExpansionService mockedExpansionService() {
-        uriRetriever = mock(UriRetriever.class);
-        when(uriRetriever.getRawContent(any(), any())).thenReturn(
+        personRetriever = mock(UriRetriever.class);
+        orgRetriever = mock(UriRetriever.class);
+        when(personRetriever.getRawContent(any(), any())).thenReturn(
             Optional.of(stringFromResources(Path.of("cristin_person.json"))));
-        return new ResourceExpansionServiceImpl(resourceService, ticketService, uriRetriever);
+        when(orgRetriever.getRawContent(any(), any())).thenReturn(
+            Optional.of(stringFromResources(Path.of("organizations/20754.6.0.0.json"))));
+        return new ResourceExpansionServiceImpl(resourceService, ticketService, personRetriever, orgRetriever);
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -585,8 +608,15 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         resourceService = new ResourceService(client, CLOCK);
         messageService = new MessageService(client);
         ticketService = new TicketService(client);
-        uriRetriever = mock(UriRetriever.class);
-        expansionService = new ResourceExpansionServiceImpl(resourceService, ticketService, uriRetriever);
+        personRetriever = mock(UriRetriever.class);
+        orgRetriever = mock(UriRetriever.class);
+        expansionService = new ResourceExpansionServiceImpl(resourceService,
+                                                            ticketService,
+                                                            personRetriever,
+                                                            orgRetriever);
+
+        when(orgRetriever.getRawContent(any(), any())).thenReturn(
+            Optional.of(stringFromResources(Path.of("organizations/20754.6.0.0.json"))));
     }
 
     private Publication persistDraftPublicationWithoutDoi() throws BadRequestException {

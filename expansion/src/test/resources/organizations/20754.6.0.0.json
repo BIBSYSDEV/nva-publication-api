@@ -1,0 +1,19 @@
+{
+  "@context" : "https://bibsysdev.github.io/src/organization-context.json",
+  "type" : "Organization",
+  "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0",
+  "labels" : {
+    "en" : "The Customer and Communication Department",
+    "nb" : "Avdeling for kunde og kommunikasjon",
+    "nn" : "Avdeling for kunde og kommunikasjon"
+  },
+  "country" : "NO",
+  "partOf" : [ {
+    "type" : "Organization",
+    "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0",
+    "labels" : {
+      "en" : "Sikt - Norwegian Agency for Shared Services in Education and Research",
+      "nb" : "Sikt – Kunnskapssektorens tjenesteleverandør"
+    }
+  } ]
+}

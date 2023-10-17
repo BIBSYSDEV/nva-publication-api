@@ -1,11 +1,9 @@
 package no.unit.nva.expansion.model;
 
-import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -48,7 +46,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         throws NotFoundException {
 
         var publication = fetchPublication(publishingRequestCase, resourceService);
-        var organizationIds = resourceExpansionService.getOrganizationIds(publishingRequestCase);
+        var organization = resourceExpansionService.getOrganization(publishingRequestCase);
         var messages = expandMessages(publishingRequestCase.fetchMessages(ticketService), resourceExpansionService);
         var workflow = publishingRequestCase.getWorkflow();
         var owner = resourceExpansionService.expandPerson(publishingRequestCase.getOwner());
@@ -56,7 +54,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         var finalizedBy = ExpansionUtil.expandPerson(publishingRequestCase.getFinalizedBy(), resourceExpansionService);
         var viewedBy = ExpansionUtil.expandPersonViewedBy(publishingRequestCase.getViewedBy(),
                                                           resourceExpansionService);
-        return createRequest(publishingRequestCase, publication, organizationIds, messages, workflow, owner, assignee,
+        return createRequest(publishingRequestCase, publication, organization, messages, workflow, owner, assignee,
                              finalizedBy, viewedBy);
     }
 
@@ -69,15 +67,6 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
     @Override
     public SortableIdentifier identifyExpandedEntry() {
         return extractIdentifier(getId());
-    }
-
-    @Override
-    public Set<URI> getOrganizationIds() {
-        return nonNull(organizationIds) ? organizationIds : Collections.emptySet();
-    }
-
-    public void setOrganizationIds(Set<URI> organizationIds) {
-        this.organizationIds = organizationIds;
     }
 
     @Override
@@ -128,7 +117,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
 
     private static ExpandedPublishingRequest createRequest(PublishingRequestCase dataEntry,
                                                            Publication publication,
-                                                           Set<URI> organizationIds,
+                                                           ExpandedOrganization organization,
                                                            List<ExpandedMessage> messages,
                                                            PublishingWorkflow workflow,
                                                            ExpandedPerson owner,
@@ -139,7 +128,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         var entry = new ExpandedPublishingRequest();
         entry.setId(generateId(publicationSummary.getPublicationId(), dataEntry.getIdentifier()));
         entry.setPublication(publicationSummary);
-        entry.setOrganizationIds(organizationIds);
+        entry.setOrganization(organization);
         entry.setStatus(ExpandedTicketStatusMapper.getExpandedTicketStatus(dataEntry));
         entry.setCustomerId(dataEntry.getCustomerId());
         entry.setCreatedDate(dataEntry.getCreatedDate());

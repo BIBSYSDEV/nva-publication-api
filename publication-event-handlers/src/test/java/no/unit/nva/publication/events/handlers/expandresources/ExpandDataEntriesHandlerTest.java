@@ -8,6 +8,7 @@ import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedMessage;
+import no.unit.nva.expansion.model.ExpandedOrganization;
 import no.unit.nva.expansion.model.ExpandedPerson;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -27,6 +28,7 @@ import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -262,7 +264,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
             }
 
             @Override
-            public Set<URI> getOrganizationIds(Entity dataEntry) {
+            public ExpandedOrganization getOrganization(Entity dataEntry) {
                 return null;
             }
 

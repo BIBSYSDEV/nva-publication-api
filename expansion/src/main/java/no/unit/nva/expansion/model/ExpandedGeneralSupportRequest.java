@@ -36,7 +36,7 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
         var entry = new ExpandedGeneralSupportRequest();
         var publicationSummary = PublicationSummary.create(publication);
         entry.setPublication(publicationSummary);
-        entry.setOrganizationIds(resourceExpansionService.getOrganizationIds(dataEntry));
+        entry.setOrganization(resourceExpansionService.getOrganization(dataEntry));
         entry.setStatus(ExpandedTicketStatusMapper.getExpandedTicketStatus(dataEntry));
         entry.setOwner(resourceExpansionService.expandPerson(dataEntry.getOwner()));
         entry.setModifiedDate(dataEntry.getModifiedDate());
@@ -61,15 +61,6 @@ public class ExpandedGeneralSupportRequest extends ExpandedTicket {
     @Override
     public SortableIdentifier identifyExpandedEntry() {
         return new SortableIdentifier(UriWrapper.fromUri(getId()).getLastPathElement());
-    }
-
-    @Override
-    public Set<URI> getOrganizationIds() {
-        return this.organizationIds;
-    }
-
-    public void setOrganizationIds(Set<URI> organizationIds) {
-        this.organizationIds = organizationIds;
     }
 
     @Override
