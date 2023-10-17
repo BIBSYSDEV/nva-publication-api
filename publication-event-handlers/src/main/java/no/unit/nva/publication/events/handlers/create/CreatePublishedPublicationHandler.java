@@ -6,7 +6,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -22,7 +22,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class CreatePublishedPublicationHandler extends EventHandler<EventReference, PublicationResponse> {
+public class CreatePublishedPublicationHandler extends EventHandler<EventReference, PublicationResponseElevatedUser> {
     
     private final S3Client s3Client;
     private final ResourceService resourceService;
@@ -39,7 +39,7 @@ public class CreatePublishedPublicationHandler extends EventHandler<EventReferen
     }
     
     @Override
-    protected PublicationResponse processInput(EventReference eventDetail,
+    protected PublicationResponseElevatedUser processInput(EventReference eventDetail,
                                                AwsEventBridgeEvent<EventReference> event,
                                                Context context) {
         var input = readEventBodyFromS3(eventDetail);
@@ -48,7 +48,7 @@ public class CreatePublishedPublicationHandler extends EventHandler<EventReferen
                    .map(CreatePublicationRequest::toPublication)
                    .map(this::addOwnerAndPublisher)
                    .map(this::storeAsPublishedPublication)
-                   .map(PublicationResponse::fromPublication)
+                   .map(PublicationResponseElevatedUser::fromPublication)
                    .orElseThrow();
     }
     

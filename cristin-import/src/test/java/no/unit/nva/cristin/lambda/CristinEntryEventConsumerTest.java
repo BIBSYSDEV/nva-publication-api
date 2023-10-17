@@ -43,7 +43,6 @@ import no.unit.nva.cristin.mapper.NvaPublicationPartOf;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
 import no.unit.nva.cristin.mapper.nva.exceptions.AffiliationWithoutRoleException;
 import no.unit.nva.cristin.mapper.nva.exceptions.ContributorWithoutAffiliationException;
-import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIsbnRuntimeException;
 import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIssnRuntimeException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryException;
@@ -269,19 +268,6 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                                                            UnsupportedSecondaryCategoryException.class.getSimpleName());
         assertThat(actualReport.getException(),
                    containsString(UnsupportedSecondaryCategoryException.ERROR_PARSING_SECONDARY_CATEGORY));
-    }
-
-    @Test
-    void shouldStoreInvalidIsbnRuntimeExceptionWhenTheIsbnIsInvalid() throws IOException {
-        var cristinObjectWithInvalidIsbn = CristinDataGenerator.objectWithInvalidIsbn();
-        var eventBody = createEventBody(cristinObjectWithInvalidIsbn);
-        var sqsEvent = createSqsEvent(eventBody);
-
-        handler.handleRequest(sqsEvent, CONTEXT);
-
-        var actualReport = extractActualReportFromS3Client(eventBody,
-                                                            InvalidIsbnRuntimeException.class.getSimpleName());
-        assertThat(actualReport.getException(), notNullValue());
     }
 
     @Test

@@ -4,7 +4,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
@@ -12,6 +11,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Clock;
 import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
@@ -128,6 +128,6 @@ class CreatePublishedPublicationHandlerTest extends ResourcesLocalTest {
     }
     
     private PublicationResponse parseResponse(String responseString) throws JsonProcessingException {
-        return JsonUtils.dtoObjectMapper.readValue(responseString, PublicationResponse.class);
+        return JsonUtils.dtoObjectMapper.readValue(responseString, PublicationResponseElevatedUser.class);
     }
 }

@@ -584,6 +584,25 @@ public class GeneralMappingRules {
         scenarioContext.getCristinEntry().setGroupIdentifierCreated(partsIdentifier);
     }
 
+    @And("the cristin result has a note equal to {string}")
+    public void theCristinResultHasANoteEqualTo(String note) {
+        scenarioContext.getCristinEntry().setNote(note);
+    }
+
+    @Then("the NVA resource has a notes field equal to {string}")
+    public void theNvaResourceHasANotesFieldEqualTo(String expectedNote) {
+        var actualNotes = scenarioContext.getNvaEntry().getPublicationNotes();
+        assertThat(actualNotes, hasSize(1));
+        var publicationNote = actualNotes.get(0);
+        assertThat(publicationNote.publicationNoteMessage(), equalTo(expectedNote));
+    }
+
+    @Then("the NVA resource has a empty list as publicationNotes")
+    public void theNvaResourceHasAEmptyListAsPublicationNotes() {
+        var actualNotes = scenarioContext.getNvaEntry().getPublicationNotes();
+        assertThat(actualNotes, hasSize(0));
+    }
+
     private void injectAffiliationsIntoContributors(List<CristinContributorsAffiliation> desiredInjectedAffiliations,
                                                     List<CristinContributor> contributors) {
         for (int contributorsIndex = 0; contributorsIndex < contributors.size(); contributorsIndex++) {

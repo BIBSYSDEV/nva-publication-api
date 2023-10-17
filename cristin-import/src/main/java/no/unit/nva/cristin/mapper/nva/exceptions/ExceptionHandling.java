@@ -1,6 +1,5 @@
 package no.unit.nva.cristin.mapper.nva.exceptions;
 
-import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import nva.commons.core.JacocoGenerated;
 
@@ -15,12 +14,6 @@ public final class ExceptionHandling {
     public static RuntimeException castToCorrectRuntimeException(Exception exception) {
         if (exception instanceof InvalidIssnRuntimeException) {
             return (InvalidIssnRuntimeException) exception;
-        }
-        if (exception instanceof InvalidIsbnRuntimeException) {
-            return (InvalidIsbnRuntimeException) exception;
-        }
-        if (exception instanceof InvalidIsbnException) {
-            return new InvalidIsbnRuntimeException(exception);
         }
         if (exception instanceof HrcsException) {
             return (HrcsException) exception;
@@ -52,9 +45,6 @@ public final class ExceptionHandling {
     public static RuntimeException handlePublicationContextFailure(Exception exception) {
         if (exception instanceof InvalidIssnException) {
             return new InvalidIssnRuntimeException(exception);
-        }
-        if (exception instanceof InvalidIsbnException) {
-            return new InvalidIsbnRuntimeException(exception);
         }
         if (exception instanceof RuntimeException) {
             return (RuntimeException) exception;
