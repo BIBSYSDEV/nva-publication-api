@@ -37,7 +37,6 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.amazonaws.services.kms.model.NotFoundException;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
@@ -330,11 +329,10 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         assertThat(actualPublication, is(nullValue()));
         var actualErrorReport =
             extractActualReportFromS3Client(s3Event,
-                                                                DuplicatePublicationException.class.getSimpleName(),
-                                                                record);
+                                            DuplicatePublicationException.class.getSimpleName(),
+                                            record);
         var exception = actualErrorReport.get("exception").asText();
         assertThat(exception, containsString(DUPLICATE_PUBLICATIONS_MESSAGE));
-
     }
 
     @ParameterizedTest(name = "shouldConvertBookToNvaPublication")
@@ -796,7 +794,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Event = createNewBrageRecordEvent(record);
         var publication = handler.handleRequest(s3Event, CONTEXT);
         assertThat(publication, is(nullValue()));
-        var errorReport = extractActualReportFromS3Client(s3Event, PublicationContextException.class.getSimpleName(),
+        var errorReport = extractActualReportFromS3Client(s3Event,
+                                                          PublicationContextException.class.getSimpleName(),
                                                           record);
         var exception = errorReport.get("exception").asText();
         assertThat(exception, containsString(NOT_SUPPORTED_TYPE));
@@ -809,15 +808,14 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var publication = handler.handleRequest(s3Event, CONTEXT);
         assertThat(publication, is(nullValue()));
         var errorReport = extractActualReportFromS3ClientForInvalidRecord(s3Event,
-                                                                     NullPointerException.class.getSimpleName());
+                                                                          NullPointerException.class.getSimpleName());
         var exception = errorReport.get("exception").asText();
         assertThat(exception, containsString("NullPointerException"));
     }
 
-
-
     @Test
-    void shouldPersistPublicationInDatabase() throws IOException, nva.commons.apigateway.exceptions.NotFoundException {
+    void shouldPersistPublicationInDatabase()
+        throws IOException, nva.commons.apigateway.exceptions.NotFoundException {
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withPublishedDate(null)
                                  .withType(TYPE_BOOK)
                                  .build();
@@ -840,7 +838,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var publication = handler.handleRequest(s3Event, CONTEXT);
         assertThat(publication, is(nullValue()));
         assertThat(fakeResourceServiceThrowingException.getNumberOfAttempts(), is(greaterThan(1)));
-
     }
 
     @Test
@@ -913,7 +910,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var publication = handler.handleRequest(s3Event, CONTEXT);
         assertThat(publication, is(nullValue()));
 
-        var actualReport = extractActualReportFromS3Client(s3Event,RuntimeException.class.getSimpleName(),
+        var actualReport = extractActualReportFromS3Client(s3Event, RuntimeException.class.getSimpleName(),
                                                            nvaBrageMigrationDataGenerator.getBrageRecord());
         var input = actualReport.get("input").toPrettyString();
         var actualErrorReportBrageRecord = JsonUtils.dtoObjectMapper.readValue(input, Record.class);
@@ -975,7 +972,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private Publication persistPublicationWithCristinIdAndHandle(String cristinIdentifier, URI handle)
         throws BadRequestException {
         var publication = randomPublication().copy()
-                              .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)))
+                              .withAdditionalIdentifiers(
+                                  Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)))
                               .withHandle(handle)
                               .build();
         return Resource.fromPublication(publication)
@@ -988,13 +986,16 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                       .addChild("institution")
                       .addChild(timestamp)
                       .addChild(String.valueOf(publication.getIdentifier()));
-        S3Driver s3Driver = new S3Driver(s3Client, new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
+        S3Driver s3Driver = new S3Driver(s3Client,
+                                         new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
         return s3Driver.getFile(uri.toS3bucketPath());
     }
 
-    private JsonNode extractActualReportFromS3ClientForInvalidRecord(S3Event s3Event, String simpleName) throws JsonProcessingException {
+    private JsonNode extractActualReportFromS3ClientForInvalidRecord(S3Event s3Event, String simpleName)
+        throws JsonProcessingException {
         var errorFileUri = constructErrorFileUriForInvalidBrageRecord(s3Event, simpleName);
-        var s3Driver = new S3Driver(s3Client, new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
+        var s3Driver = new S3Driver(s3Client,
+                                    new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
         var content = s3Driver.getFile(errorFileUri.toS3bucketPath());
         return JsonUtils.dtoObjectMapper.readTree(content);
     }
@@ -1173,7 +1174,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                    .addChild(fileUri.getLastPathElement());
     }
 
-    private UriWrapper constructErrorFileUriForInvalidBrageRecord(S3Event event, String exceptionSimpleName){
+    private UriWrapper constructErrorFileUriForInvalidBrageRecord(S3Event event, String exceptionSimpleName) {
         var fileUri = UriWrapper.fromUri(extractFilename(event));
         var timestamp = event.getRecords().get(0).getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
         return UriWrapper.fromUri(ERROR_BUCKET_PATH)

@@ -52,13 +52,13 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     public static final String UPDATE_REPORTS_PATH = "UPDATE_REPORTS";
     public static final String CRISTIN_RECORD_EXCEPTION =
         "Cristin record has not been merged with existing publication: ";
+    public static final String DUPLICATE_PUBLICATIONS_MESSAGE =
+        "More than one publication with this cristin identifier already exists";
     private static final int MAX_SLEEP_TIME = 100;
     private static final int SINGLE_EXPECTED_RECORD = 0;
     private static final String S3_URI_TEMPLATE = "s3://%s/%s";
     private static final String ERROR_SAVING_BRAGE_IMPORT = "Error saving brage import for record with object key: ";
     private static final Logger logger = LoggerFactory.getLogger(BrageEntryEventConsumer.class);
-    public static final String DUPLICATE_PUBLICATIONS_MESSAGE =
-        "More than one publication with this cristin identifier already exists";
     private final S3Client s3Client;
     private final ResourceService resourceService;
     private String brageRecordFile;
@@ -85,9 +85,10 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private static Publication getOnlyElement(List<Publication> publications) {
-        return attempt(()->Iterables.getOnlyElement(publications)).orElseThrow(
-            fail -> new DuplicatePublicationException(DUPLICATE_PUBLICATIONS_MESSAGE,
-                                                      fail.getException()))  ;
+        return attempt(() -> Iterables.getOnlyElement(publications))
+                   .orElseThrow(fail -> new DuplicatePublicationException(
+                       DUPLICATE_PUBLICATIONS_MESSAGE,
+                       fail.getException()));
     }
 
     private boolean publicationWithCristinIdentifierAlreadyExists(Publication publication) {
