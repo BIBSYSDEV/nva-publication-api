@@ -16,7 +16,10 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UriWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DeleteImportCandidateEventConsumer
     extends EventHandler<ImportCandidateDeleteEvent, Void> {
@@ -31,6 +34,8 @@ public class DeleteImportCandidateEventConsumer
     public static final int UNIQUE_HIT_FROM_SEARCH_API = 0;
     public static final String COULD_NOT_FETCH_UNIQUE_IMPORT_CANDIDATE_MESSAGE = "Could not fetch unique import "
                                                                                  + "candidate";
+    public static final String NO_IMPORT_CANDIDATE_FOUND = "No import candidate found with scopus identifier %s";
+    private static final Logger logger = LoggerFactory.getLogger(DeleteImportCandidateEventConsumer.class);
     private final ResourceService resourceService;
     private final UriRetriever uriRetriever;
 
@@ -50,7 +55,11 @@ public class DeleteImportCandidateEventConsumer
                                 Context context) {
         attempt(input::getScopusIdentifier)
             .map(this::fetchImportCandidate)
-            .forEach(resourceService::deleteImportCandidate)
+            .forEach(importCandidate -> {
+                if (importCandidate != null) {
+                    resourceService.deleteImportCandidate(importCandidate);
+                }
+            })
             .orElseThrow();
         return null;
     }
@@ -83,13 +92,24 @@ public class DeleteImportCandidateEventConsumer
     }
 
     private ImportCandidate fetchImportCandidate(String scopusIdentifier) {
-        return attempt(() -> constructUri(scopusIdentifier))
-                   .map(this::getResponseBody)
-                   .map(Optional::get)
-                   .map(DeleteImportCandidateEventConsumer::toSearchApiResponse)
-                   .map(DeleteImportCandidateEventConsumer::toExpandedImportCandidate)
-                   .map(DeleteImportCandidateEventConsumer::toImportCandidate)
-                   .orElseThrow();
+        var searchApiResponse = attempt(() -> constructUri(scopusIdentifier))
+                                    .map(this::getResponseBody)
+                                    .map(Optional::get)
+                                    .map(DeleteImportCandidateEventConsumer::toSearchApiResponse);
+
+        if (isEmpty(searchApiResponse)) {
+            logger.info(String.format(NO_IMPORT_CANDIDATE_FOUND, scopusIdentifier));
+            return null;
+        } else {
+            return searchApiResponse
+                       .map(DeleteImportCandidateEventConsumer::toExpandedImportCandidate)
+                       .map(DeleteImportCandidateEventConsumer::toImportCandidate)
+                       .orElseThrow();
+        }
+    }
+
+    private static boolean isEmpty(Try<ImportCandidateSearchApiResponse> searchApiResponse) {
+        return searchApiResponse.get().getHits().isEmpty();
     }
 
     private Optional<String> getResponseBody(URI uri) {
