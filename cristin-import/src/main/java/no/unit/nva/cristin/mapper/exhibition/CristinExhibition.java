@@ -54,7 +54,7 @@ public class CristinExhibition implements DescriptionExtractor {
     @JsonProperty("tall_brukt_areal")
     private Double area;
 
-    @JsonProperty("andel_egne_gjenstander")
+    @JsonProperty("tall_andel_egne_gjenstander")
     private Double percantageOfownedObjectsInExhibit;
 
     @JsonProperty("antall_gjenstander")
