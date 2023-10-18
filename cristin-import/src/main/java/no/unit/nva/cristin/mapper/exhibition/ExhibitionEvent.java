@@ -35,7 +35,7 @@ public class ExhibitionEvent {
 
     private static final String RE_OCCURING_REDUNDANT_TITLE = "utstilling";
 
-    @JsonProperty("hendelsestype")
+    @JsonProperty("hendelsetype")
     private MuseumEventCategory museumEventCategory;
 
     @JsonProperty("dato_til")
