@@ -4,6 +4,7 @@ import static no.unit.nva.cristin.CristinDataGenerator.largeRandomNumber;
 import static no.unit.nva.cristin.CristinDataGenerator.randomAffiliation;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import static no.unit.nva.cristin.mapper.CristinObject.IDENTIFIER_ORIGIN;
+import static no.unit.nva.cristin.mapper.CristinPresentationalWork.PROSJEKT;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -51,6 +52,7 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -61,6 +63,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 class CristinMapperTest extends AbstractCristinImportTest {
 
     public static final int NUMBER_OF_OBJECTS = 100;
+    public static final String EMPTY_STRING = "";
     private List<CristinObject> cristinObjects;
 
     @BeforeEach
@@ -465,6 +468,21 @@ class CristinMapperTest extends AbstractCristinImportTest {
     void mapThrowsMissingFieldsExceptionWhenNonIgnoredFieldIsMissing() {
         //re-use the test for the author's name
         mapSetsNameToNullWhenBothFamilyNameAndGivenNameAreMissing();
+    }
+
+    @Test
+    void shouldSetEmptyProjectNameWhenGeneratingPublication() {
+        var cristinObject = CristinDataGenerator.randomObject();
+        cristinObject.setPresentationalWork(
+            List.of(CristinDataGenerator.randomPresentationalWork(PROSJEKT))
+        );
+
+        var publication = cristinObject.toPublication();
+        var projects = publication.getProjects();
+        Assertions.assertFalse(projects.isEmpty());
+
+        var projectName = projects.get(0).getName();
+        assertThat(projectName, is(equalTo(EMPTY_STRING)));
     }
 
     private static List<Contributor> getContributors(CristinObject singleCristinObject) {
