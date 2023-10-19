@@ -14,6 +14,8 @@ import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.BadGatewayException;
+import nva.commons.apigateway.exceptions.BadMethodException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
@@ -53,27 +55,27 @@ public class DeleteImportCandidateEventConsumer
     @Override
     protected Void processInput(ImportCandidateDeleteEvent input, AwsEventBridgeEvent<ImportCandidateDeleteEvent> event,
                                 Context context) {
-        attempt(input::getScopusIdentifier)
-            .map(this::fetchImportCandidate)
-            .forEach(importCandidate -> {
-                if (importCandidate != null) {
-                    resourceService.deleteImportCandidate(importCandidate);
-                }
-            })
-            .orElseThrow();
+        attempt(() -> deleteImportCandidate(input)).orElseThrow();
         return null;
     }
 
-    private static ExpandedImportCandidate toExpandedImportCandidate(ImportCandidateSearchApiResponse response)
-        throws BadGatewayException {
-        if (containsSingleHit(response)) {
-            return response.getHits().get(UNIQUE_HIT_FROM_SEARCH_API);
-        }
-        throw new BadGatewayException(COULD_NOT_FETCH_UNIQUE_IMPORT_CANDIDATE_MESSAGE);
-    }
+    private Void deleteImportCandidate(ImportCandidateDeleteEvent input)
+            throws BadGatewayException, BadMethodException, NotFoundException {
+        var scopusIdentifier = input.getScopusIdentifier();
+        var importCandidateSearchApiResponse = fetchImportCandidateSearchApiResponse(scopusIdentifier);
+        var importCandidateTotalHits = importCandidateSearchApiResponse.getTotal();
 
-    private static boolean containsSingleHit(ImportCandidateSearchApiResponse response) {
-        return response.getTotal() == 1;
+        if (importCandidateTotalHits == 0) {
+            logger.info(String.format(NO_IMPORT_CANDIDATE_FOUND, scopusIdentifier));
+        } else if (importCandidateTotalHits > 1) {
+            throw new BadGatewayException(COULD_NOT_FETCH_UNIQUE_IMPORT_CANDIDATE_MESSAGE);
+        } else {
+            var ic = importCandidateSearchApiResponse.getHits().get(UNIQUE_HIT_FROM_SEARCH_API);
+            var importCandidate = toImportCandidate(ic);
+            resourceService.deleteImportCandidate(importCandidate);
+        }
+
+        return null;
     }
 
     private static ImportCandidateSearchApiResponse toSearchApiResponse(String response) {
@@ -91,25 +93,12 @@ public class DeleteImportCandidateEventConsumer
         return new SortableIdentifier(UriWrapper.fromUri(expandedImportCandidate.getIdentifier()).getLastPathElement());
     }
 
-    private ImportCandidate fetchImportCandidate(String scopusIdentifier) {
-        var searchApiResponse = attempt(() -> constructUri(scopusIdentifier))
-                                    .map(this::getResponseBody)
-                                    .map(Optional::get)
-                                    .map(DeleteImportCandidateEventConsumer::toSearchApiResponse);
-
-        if (isEmpty(searchApiResponse)) {
-            logger.info(String.format(NO_IMPORT_CANDIDATE_FOUND, scopusIdentifier));
-            return null;
-        } else {
-            return searchApiResponse
-                       .map(DeleteImportCandidateEventConsumer::toExpandedImportCandidate)
-                       .map(DeleteImportCandidateEventConsumer::toImportCandidate)
-                       .orElseThrow();
-        }
-    }
-
-    private static boolean isEmpty(Try<ImportCandidateSearchApiResponse> searchApiResponse) {
-        return searchApiResponse.get().getHits().isEmpty();
+    private ImportCandidateSearchApiResponse fetchImportCandidateSearchApiResponse(String scopusIdentifier) {
+        return attempt(() -> constructUri(scopusIdentifier))
+                   .map(this::getResponseBody)
+                   .map(Optional::get)
+                   .map(DeleteImportCandidateEventConsumer::toSearchApiResponse)
+                   .orElseThrow();
     }
 
     private Optional<String> getResponseBody(URI uri) {
