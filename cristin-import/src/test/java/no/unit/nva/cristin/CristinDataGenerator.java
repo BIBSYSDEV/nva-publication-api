@@ -139,6 +139,13 @@ public final class CristinDataGenerator {
                    .build();
     }
 
+    public static CristinPresentationalWork randomPresentationalWork(String presentationType) {
+        return CristinPresentationalWork.builder()
+                   .withPresentationType(presentationType)
+                   .withIdentifier(smallRandomNumber())
+                   .build();
+    }
+
     public static List<CristinContributorsAffiliation> randomAffiliations() {
         return smallSample().map(ignored -> randomAffiliation()).collect(Collectors.toList());
     }
