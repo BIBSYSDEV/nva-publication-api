@@ -37,8 +37,8 @@ public class DeleteImportCandidateEventConsumer
                                                                                  + "candidate";
     public static final String NO_IMPORT_CANDIDATE_FOUND = "No import candidate found with scopus identifier %s";
     private static final Logger logger = LoggerFactory.getLogger(DeleteImportCandidateEventConsumer.class);
-    public static final int ZERO_HITS = 0;
-    public static final int ONE_HIT = 1;
+    private static final int ZERO_HITS = 0;
+    private static final int ONE_HIT = 1;
     private final ResourceService resourceService;
     private final UriRetriever uriRetriever;
 
