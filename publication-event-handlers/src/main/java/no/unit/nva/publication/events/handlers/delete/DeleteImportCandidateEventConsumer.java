@@ -18,7 +18,6 @@ import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +37,8 @@ public class DeleteImportCandidateEventConsumer
                                                                                  + "candidate";
     public static final String NO_IMPORT_CANDIDATE_FOUND = "No import candidate found with scopus identifier %s";
     private static final Logger logger = LoggerFactory.getLogger(DeleteImportCandidateEventConsumer.class);
+    public static final int ZERO_HITS = 0;
+    public static final int ONE_HIT = 1;
     private final ResourceService resourceService;
     private final UriRetriever uriRetriever;
 
@@ -65,9 +66,9 @@ public class DeleteImportCandidateEventConsumer
         var importCandidateSearchApiResponse = fetchImportCandidateSearchApiResponse(scopusIdentifier);
         var importCandidateTotalHits = importCandidateSearchApiResponse.getTotal();
 
-        if (importCandidateTotalHits == 0) {
+        if (importCandidateTotalHits == ZERO_HITS) {
             logger.info(String.format(NO_IMPORT_CANDIDATE_FOUND, scopusIdentifier));
-        } else if (importCandidateTotalHits > 1) {
+        } else if (importCandidateTotalHits > ONE_HIT) {
             throw new BadGatewayException(COULD_NOT_FETCH_UNIQUE_IMPORT_CANDIDATE_MESSAGE);
         } else {
             var ic = importCandidateSearchApiResponse.getHits().get(UNIQUE_HIT_FROM_SEARCH_API);
