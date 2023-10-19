@@ -1,6 +1,7 @@
 package no.unit.nva.publication.events.handlers.delete;
 
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.SCOPUS_IDENTIFIER;
+import static no.unit.nva.publication.events.handlers.delete.DeleteImportCandidateEventConsumer.NO_IMPORT_CANDIDATE_FOUND;
 import static no.unit.nva.publication.service.impl.ResourceService.IMPORT_CANDIDATE_HAS_BEEN_DELETED_MESSAGE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -13,15 +14,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
-import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.model.ExpandedImportCandidate;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -42,12 +39,9 @@ import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.s3.S3Driver;
-import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.paths.UnixPath;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -59,7 +53,6 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
     public static final int SINGLE_HIT = 1;
     public static final int ZERO_HITS = 0;
     private ResourceService resourceService;
-    private S3Driver s3Driver;
     private ByteArrayOutputStream output;
     private DeleteImportCandidateEventConsumer handler;
     private UriRetriever uriRetriever;
@@ -68,18 +61,16 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
     public void init() {
         super.init("import-candidates");
         this.output = new ByteArrayOutputStream();
-        var eventsBucket = new FakeS3Client();
         uriRetriever = mock(UriRetriever.class);
-        s3Driver = new S3Driver(eventsBucket, "eventsBucket");
         resourceService = new ResourceService(client, "import-candidates");
         this.handler = new DeleteImportCandidateEventConsumer(resourceService, uriRetriever);
     }
 
     @Test
-    void shouldDeleteImportCandidateSuccessfully() throws NotFoundException, IOException {
+    void shouldDeleteImportCandidateSuccessfully() throws NotFoundException {
         var appender = LogUtils.getTestingAppenderForRootLogger();
         var importCandidate = persistedImportCandidate();
-        var event = emulateEventEmittedByImportCandidateUpdateHandler(getScopusIdentifier(importCandidate));
+        var event = emulateImportCandidateDeleteEvent(getScopusIdentifier(importCandidate));
         when(uriRetriever.getRawContent(any(), any())).thenReturn(
             toResponse(ExpandedImportCandidate.fromImportCandidate(importCandidate, null),
                        SINGLE_HIT));
@@ -91,9 +82,9 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldThrowBadGatewayExceptionWhenMultipleHitsInResponseFetchingUniqueImportCandidate()
-        throws NotFoundException, IOException {
+        throws NotFoundException {
         var importCandidate = persistedImportCandidate();
-        var event = emulateEventEmittedByImportCandidateUpdateHandler(getScopusIdentifier(importCandidate));
+        var event = emulateImportCandidateDeleteEvent(getScopusIdentifier(importCandidate));
         when(uriRetriever.getRawContent(any(), any())).thenReturn(
             toResponse(ExpandedImportCandidate.fromImportCandidate(importCandidate, null),
                        TWO_HITS));
@@ -101,12 +92,13 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenEmptyZeroHitsInResponseFetchingUniqueImportCandidate()
-        throws NotFoundException, IOException {
-        var importCandidate = persistedImportCandidate();
-        var event = emulateEventEmittedByImportCandidateUpdateHandler(getScopusIdentifier(importCandidate));
+    void shouldLogScopusIdentifierWhenZeroHitsInResponseFetchingUniqueImportCandidate() {
+        var appender = LogUtils.getTestingAppenderForRootLogger();
+        var scopusIdentifier = randomString();
+        var event = emulateImportCandidateDeleteEvent(scopusIdentifier);
         when(uriRetriever.getRawContent(any(), any())).thenReturn(emptyResponse());
-        assertThrows(RuntimeException.class, () -> handler.handleRequest(event, output, CONTEXT));
+        handler.handleRequest(event, output, CONTEXT);
+        assertThat(appender.getMessages(), containsString(String.format(NO_IMPORT_CANDIDATE_FOUND, scopusIdentifier)));
     }
 
     private static Optional<String> toResponse(ExpandedImportCandidate importCandidate, int hits) {
@@ -134,17 +126,9 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
         return resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
     }
 
-    private InputStream emulateEventEmittedByImportCandidateUpdateHandler(String scopusIdentifier)
-        throws IOException {
-        var blobUri = createSampleBlob(scopusIdentifier);
-        var event = new EventReference("ImportCandidates.Resource.Update", blobUri);
-        return EventBridgeEventBuilder.sampleLambdaDestinationsEvent(event);
-    }
-
-    private URI createSampleBlob(String scopusIdentifier) throws IOException {
+    private InputStream emulateImportCandidateDeleteEvent(String scopusIdentifier) {
         var event = new ImportCandidateDeleteEvent("ImportCandidates.Scopus.Delete", scopusIdentifier);
-        var filePath = UnixPath.of(UUID.randomUUID().toString());
-        return s3Driver.insertFile(filePath, event.toJsonString());
+        return EventBridgeEventBuilder.sampleEvent(event);
     }
 
     private ImportCandidate createImportCandidate() {

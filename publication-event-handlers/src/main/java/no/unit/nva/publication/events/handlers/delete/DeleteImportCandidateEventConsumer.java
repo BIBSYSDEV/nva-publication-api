@@ -14,9 +14,13 @@ import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.BadGatewayException;
+import nva.commons.apigateway.exceptions.BadMethodException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DeleteImportCandidateEventConsumer
     extends EventHandler<ImportCandidateDeleteEvent, Void> {
@@ -31,6 +35,10 @@ public class DeleteImportCandidateEventConsumer
     public static final int UNIQUE_HIT_FROM_SEARCH_API = 0;
     public static final String COULD_NOT_FETCH_UNIQUE_IMPORT_CANDIDATE_MESSAGE = "Could not fetch unique import "
                                                                                  + "candidate";
+    public static final String NO_IMPORT_CANDIDATE_FOUND = "No import candidate found with scopus identifier %s";
+    private static final Logger logger = LoggerFactory.getLogger(DeleteImportCandidateEventConsumer.class);
+    private static final int ZERO_HITS = 0;
+    private static final int ONE_HIT = 1;
     private final ResourceService resourceService;
     private final UriRetriever uriRetriever;
 
@@ -48,23 +56,27 @@ public class DeleteImportCandidateEventConsumer
     @Override
     protected Void processInput(ImportCandidateDeleteEvent input, AwsEventBridgeEvent<ImportCandidateDeleteEvent> event,
                                 Context context) {
-        attempt(input::getScopusIdentifier)
-            .map(this::fetchImportCandidate)
-            .forEach(resourceService::deleteImportCandidate)
-            .orElseThrow();
+        attempt(() -> deleteImportCandidate(input)).orElseThrow();
         return null;
     }
 
-    private static ExpandedImportCandidate toExpandedImportCandidate(ImportCandidateSearchApiResponse response)
-        throws BadGatewayException {
-        if (containsSingleHit(response)) {
-            return response.getHits().get(UNIQUE_HIT_FROM_SEARCH_API);
-        }
-        throw new BadGatewayException(COULD_NOT_FETCH_UNIQUE_IMPORT_CANDIDATE_MESSAGE);
-    }
+    private Void deleteImportCandidate(ImportCandidateDeleteEvent input)
+            throws BadGatewayException, BadMethodException, NotFoundException {
+        var scopusIdentifier = input.getScopusIdentifier();
+        var importCandidateSearchApiResponse = fetchImportCandidateSearchApiResponse(scopusIdentifier);
+        var importCandidateTotalHits = importCandidateSearchApiResponse.getTotal();
 
-    private static boolean containsSingleHit(ImportCandidateSearchApiResponse response) {
-        return response.getTotal() == 1;
+        if (importCandidateTotalHits == ZERO_HITS) {
+            logger.info(String.format(NO_IMPORT_CANDIDATE_FOUND, scopusIdentifier));
+        } else if (importCandidateTotalHits > ONE_HIT) {
+            throw new BadGatewayException(COULD_NOT_FETCH_UNIQUE_IMPORT_CANDIDATE_MESSAGE);
+        } else {
+            var ic = importCandidateSearchApiResponse.getHits().get(UNIQUE_HIT_FROM_SEARCH_API);
+            var importCandidate = toImportCandidate(ic);
+            resourceService.deleteImportCandidate(importCandidate);
+        }
+
+        return null;
     }
 
     private static ImportCandidateSearchApiResponse toSearchApiResponse(String response) {
@@ -82,13 +94,11 @@ public class DeleteImportCandidateEventConsumer
         return new SortableIdentifier(UriWrapper.fromUri(expandedImportCandidate.getIdentifier()).getLastPathElement());
     }
 
-    private ImportCandidate fetchImportCandidate(String scopusIdentifier) {
+    private ImportCandidateSearchApiResponse fetchImportCandidateSearchApiResponse(String scopusIdentifier) {
         return attempt(() -> constructUri(scopusIdentifier))
                    .map(this::getResponseBody)
                    .map(Optional::get)
                    .map(DeleteImportCandidateEventConsumer::toSearchApiResponse)
-                   .map(DeleteImportCandidateEventConsumer::toExpandedImportCandidate)
-                   .map(DeleteImportCandidateEventConsumer::toImportCandidate)
                    .orElseThrow();
     }
 
