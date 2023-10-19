@@ -18,6 +18,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.net.URI;
 import java.nio.file.Path;
@@ -63,7 +64,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 class CristinMapperTest extends AbstractCristinImportTest {
 
     public static final int NUMBER_OF_OBJECTS = 100;
-    public static final String EMPTY_STRING = "";
     private List<CristinObject> cristinObjects;
 
     @BeforeEach
@@ -471,7 +471,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldSetEmptyProjectNameWhenGeneratingPublication() {
+    void shouldSetNullValueForProjectNameWhenGeneratingPublication() {
         var cristinObject = CristinDataGenerator.randomObject();
         cristinObject.setPresentationalWork(
             List.of(CristinDataGenerator.randomPresentationalWork(PROSJEKT))
@@ -482,7 +482,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
         Assertions.assertFalse(projects.isEmpty());
 
         var projectName = projects.get(0).getName();
-        assertThat(projectName, is(equalTo(EMPTY_STRING)));
+        assertNull(projectName);
     }
 
     private static List<Contributor> getContributors(CristinObject singleCristinObject) {
