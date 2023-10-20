@@ -17,7 +17,7 @@ Feature: Rules that apply for merging of existing publication in nva with brage-
     And the nva publication has a file with values:
       | filename | identifier                           | mimeType | size | lisense | publisherAuthority | embargoDate | publishedDate                  |
       | b.pdf    | 12234567-36ee-467b-b145-12bc5b3b9d9e | pdf      | 1232 | null    | false              | null        | 2019-02-20T11:48:59.131046060Z |
-    When the nva publicationsNN are merged
+    When the nva publications are merged
     Then the merged nva publication has a file with values:
       | filename | identifier                           | mimeType                                                                  | size | lisense | publisherAuthority | embargoDate | publishedDate                  |
       | a.pptx   | 9ba7b547-36ee-467b-b145-12bc5b3b9d9e | application/vnd.openxmlformats-officedocument.presentationml.presentation | 123  | null    | false              | null        | 2023-10-20T11:48:59.131046060Z |
