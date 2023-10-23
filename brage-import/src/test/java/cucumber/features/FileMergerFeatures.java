@@ -88,6 +88,12 @@ public class FileMergerFeatures {
         nvaPublication.setAssociatedArtifacts(new AssociatedArtifactList());
     }
 
+    @And("the brage publication has no associated artifacts")
+    public void theBragePublicationHasNoAssociatedArtifacts() {
+        var bragePublication = scenarioContext.getBragePublication();
+        bragePublication.setAssociatedArtifacts(new AssociatedArtifactList());
+    }
+
     private static URI createHandleFromCandidate(String candidate) {
         return candidateIsNull(candidate) ? null : UriWrapper.fromUri(candidate).getUri();
     }
