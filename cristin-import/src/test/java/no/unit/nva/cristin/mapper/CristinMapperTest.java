@@ -4,6 +4,7 @@ import static no.unit.nva.cristin.CristinDataGenerator.largeRandomNumber;
 import static no.unit.nva.cristin.CristinDataGenerator.randomAffiliation;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import static no.unit.nva.cristin.mapper.CristinObject.IDENTIFIER_ORIGIN;
+import static no.unit.nva.cristin.mapper.CristinPresentationalWork.PROSJEKT;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -17,6 +18,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.net.URI;
 import java.nio.file.Path;
@@ -51,6 +53,7 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -465,6 +468,21 @@ class CristinMapperTest extends AbstractCristinImportTest {
     void mapThrowsMissingFieldsExceptionWhenNonIgnoredFieldIsMissing() {
         //re-use the test for the author's name
         mapSetsNameToNullWhenBothFamilyNameAndGivenNameAreMissing();
+    }
+
+    @Test
+    void shouldSetNullValueForProjectNameWhenGeneratingPublication() {
+        var cristinObject = CristinDataGenerator.randomObject();
+        cristinObject.setPresentationalWork(
+            List.of(CristinDataGenerator.randomPresentationalWork(PROSJEKT))
+        );
+
+        var publication = cristinObject.toPublication();
+        var projects = publication.getProjects();
+        Assertions.assertFalse(projects.isEmpty());
+
+        var projectName = projects.get(0).getName();
+        assertNull(projectName);
     }
 
     private static List<Contributor> getContributors(CristinObject singleCristinObject) {

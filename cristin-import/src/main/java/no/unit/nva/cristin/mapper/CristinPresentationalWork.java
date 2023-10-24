@@ -28,7 +28,7 @@ import nva.commons.core.paths.UriWrapper;
 public class CristinPresentationalWork {
     
     private static final String PROJECT = "project";
-    private static final String PROSJEKT = "PROSJEKT";
+    public static final String PROSJEKT = "PROSJEKT";
 
     @JsonProperty("presentasjonslopenr")
     private Integer identifier;
