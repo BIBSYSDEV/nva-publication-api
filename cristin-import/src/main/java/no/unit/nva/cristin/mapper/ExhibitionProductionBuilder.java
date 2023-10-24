@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isMuseum;
 import java.util.Set;
 import no.unit.nva.model.instancetypes.exhibition.ExhibitionProduction;
 
@@ -11,7 +12,11 @@ public class ExhibitionProductionBuilder extends AbstractPublicationInstanceBuil
 
     @Override
     public ExhibitionProduction build() {
-        return super.getCristinObject().getCristinExhibition().toExhibitionProduction();
+        if (isMuseum(getCristinObject())) {
+            return super.getCristinObject().getCristinExhibition().toExhibitionProduction();
+        } else {
+            throw unknownSecondaryCategory();
+        }
     }
 
     @Override
