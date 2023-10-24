@@ -26,41 +26,41 @@ public class FileMergerFeatures {
     }
 
     @Given("a brage publication with cristin identifier {string}")
-    public void aBragePublicationWithCristinIdentifier(String identifier) {
+    public void bragePublicationWithCristinIdentifier(String identifier) {
         scenarioContext.newBragePublication(identifier);
     }
 
     @And("a nva publication with cristin identifier {string}")
-    public void aNvaPublicationWithCristinIdentifier(String identifier) {
+    public void nvaPublicationWithCristinIdentifier(String identifier) {
         scenarioContext.newNvaPublication(identifier);
     }
 
     @Given("a brage publication with handle {string}")
-    public void aBragePublicationWithHandle(String handle) {
+    public void bragePublicationWithHandle(String handle) {
         var bragePublication = scenarioContext.getBragePublication();
         bragePublication.setHandle(createHandleFromCandidate(handle));
     }
 
     @And("the nva publication has main handle {string}")
-    public void theNvaPublicationHasMainHandle(String handle) {
+    public void nvaPublicationHasMainHandle(String handle) {
         var nvaPublication = scenarioContext.getNvaPublication();
         nvaPublication.setHandle(createHandleFromCandidate(handle));
     }
 
     @And("the brage publication has a file with values:")
-    public void theBragePublicationHasAFileWithValues(PublishedFile publishedFile) {
+    public void bragePublicationHasAFileWithValues(PublishedFile publishedFile) {
         var bragePublication = scenarioContext.getBragePublication();
         bragePublication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(publishedFile)));
     }
 
     @And("the nva publication has a file with values:")
-    public void theNvaPublicationHasAFileWithValues(PublishedFile publishedFile) {
+    public void nvaPublicationHasAFileWithValues(PublishedFile publishedFile) {
         var nvaPublication = scenarioContext.getNvaPublication();
         nvaPublication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(publishedFile)));
     }
 
     @Then("the merged nva publication has a file with values:")
-    public void theMergedNvaPublicationHasAFileWithValues(PublishedFile publishedFile) {
+    public void mergedNvaPublicationHasAFileWithValues(PublishedFile publishedFile) {
         var mergedPublication = scenarioContext.getMergedPublication();
         var associatedArtifacts = mergedPublication.getAssociatedArtifacts();
         assertThat(associatedArtifacts, hasSize(1));
@@ -71,25 +71,25 @@ public class FileMergerFeatures {
     }
 
     @And("the nva publication has a handle {string}")
-    public void theNvaPublicationHasAHandle(String handle) {
+    public void nvaPublicationHasAHandle(String handle) {
         var nvaPublication = scenarioContext.getNvaPublication();
         nvaPublication.setHandle(createHandleFromCandidate(handle));
     }
 
     @And("the merged nva publication has a handle equal to {string}")
-    public void theMergedNvaPublicationHasAHandleEqualTo(String handle) {
+    public void mergedNvaPublicationHasAHandleEqualTo(String handle) {
         var mergedPublication = scenarioContext.getMergedPublication();
         assertThat(mergedPublication.getHandle(), is(equalTo(UriWrapper.fromUri(handle).getUri())));
     }
 
     @And("the nva publication has no associatedArtifacts")
-    public void theNvaPublicationHasNoAssociatedArtifacts() {
+    public void nvaPublicationHasNoAssociatedArtifacts() {
         var nvaPublication = scenarioContext.getNvaPublication();
         nvaPublication.setAssociatedArtifacts(new AssociatedArtifactList());
     }
 
     @And("the brage publication has no associated artifacts")
-    public void theBragePublicationHasNoAssociatedArtifacts() {
+    public void bragePublicationHasNoAssociatedArtifacts() {
         var bragePublication = scenarioContext.getBragePublication();
         bragePublication.setAssociatedArtifacts(new AssociatedArtifactList());
     }
