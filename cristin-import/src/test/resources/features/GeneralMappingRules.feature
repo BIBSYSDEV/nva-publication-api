@@ -266,7 +266,7 @@ Feature: Mappings that hold for all types of Cristin Results
       | PROSJEKT | 1234       |
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has Research projects with the id values:
-      | https://api.test.nva.aws.unit.no/project/1234 |
+      | https://api.test.nva.aws.unit.no/cristin/project/1234 |
 
   Scenario: Other PresentationWork metadata is ignored
     Given that the Cristin Result has PresentationalWork objects with the values:
@@ -277,8 +277,8 @@ Feature: Mappings that hold for all types of Cristin Results
       | GRUPPE   | 0000       |
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has Research projects with the id values:
-      | https://api.test.nva.aws.unit.no/project/1234 |
-      | https://api.test.nva.aws.unit.no/project/5678 |
+      | https://api.test.nva.aws.unit.no/cristin/project/1234 |
+      | https://api.test.nva.aws.unit.no/cristin/project/5678 |
 
   Scenario: Mapping does not fail when there is no ResearchProject
     Given that the Cristin Result has a ResearchProject set to null
