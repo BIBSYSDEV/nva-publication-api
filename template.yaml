@@ -1485,6 +1485,9 @@ Resources:
 
   DynamodbStreamToEventBridgeHandler:
     Type: AWS::Serverless::Function
+    DependsOn:
+      - LambdaRole
+      - DatabaseAccessLambdaPermissions
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler::handleRequest
@@ -2084,8 +2087,8 @@ Resources:
                   - s3:ListBucket
                   - s3:PutObject
                 Resource:
-                 - !Sub "arn:aws:s3:::cristin-import-${AWS::AccountId}/*"
-                 - !Sub "arn:aws:s3:::brage-migration-input-files-${AWS::AccountId}//*"
+                  - !Sub "arn:aws:s3:::cristin-import-${AWS::AccountId}/*"
+                  - !Sub "arn:aws:s3:::brage-migration-input-files-${AWS::AccountId}//*"
 
 
   #==========================BI=============================================================================
