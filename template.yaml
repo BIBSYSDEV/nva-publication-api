@@ -411,6 +411,10 @@ Resources:
 
   DatabaseAccessLambdaPermissions:
     Type: AWS::IAM::Policy
+    DependsOn:
+      - LambdaRole
+      - DeleteDraftPublicationLambdaRole
+      - UpdateDoiStatusLambdaRole
     Properties:
       PolicyName: !Sub DatabaseAccessLambdaPermissions-${AWS::StackName}
       Roles:
