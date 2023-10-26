@@ -464,6 +464,7 @@ public final class PublicationContextMapper {
     private static String getCurrentYear() {
         return String.valueOf(DateTime.now().getYear());
     }
+
     private static PublicationContext generateJournal(String journalPid, String year) {
         return new Journal(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY_V_2)
                                .addChild(ChannelType.JOURNAL.getType())
@@ -471,6 +472,7 @@ public final class PublicationContextMapper {
                                .addChild(nonNull(year) ? year : CURRENT_YEAR)
                                .getUri());
     }
+
     private static BookSeries generateSeries(String seriesPid, String year) {
         return new Series(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY_V_2)
                               .addChild(ChannelType.JOURNAL.getType())
