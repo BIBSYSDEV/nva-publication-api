@@ -2,6 +2,7 @@ package no.unit.nva.publication.events.handlers.persistence;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -70,6 +71,7 @@ import static no.unit.nva.publication.events.handlers.persistence.PersistedDocum
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.TICKETS_INDEX;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -99,10 +101,14 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         resourceService = new ResourceService(client, clock);
         ticketService = new TicketService(client);
 
-        var mockUriRetriever = mock(UriRetriever.class);
-        when(mockUriRetriever.getRawContent(any(), any())).thenReturn(Optional.empty());
+        var mockPersonRetriever = mock(UriRetriever.class);
+        var mockOrganizationRetriever = mock(UriRetriever.class);
+        when(mockPersonRetriever.getRawContent(any(), any())).thenReturn(Optional.empty());
+        when(mockOrganizationRetriever.getRawContent(any(), any())).thenReturn(
+            Optional.of("{}"));
 
-        resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService, mockUriRetriever);
+        resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService,
+                                                                    mockPersonRetriever, mockOrganizationRetriever);
     }
 
     @BeforeEach

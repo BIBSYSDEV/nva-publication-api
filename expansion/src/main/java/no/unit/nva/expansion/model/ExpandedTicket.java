@@ -30,7 +30,7 @@ import nva.commons.core.paths.UriWrapper;
 public abstract class ExpandedTicket implements ExpandedDataEntry {
 
     public static final String PUBLICATION_FIELD = "publication";
-    public static final String ORGANIZATION_IDS_FIELD = "organizationIds";
+    public static final String ORGANIZATION_FIELD = "organization";
     public static final String ID_FIELD = "id";
     public static final String VIEWED_BY_FIELD = "viewedBy";
     public static final String ASSIGNEE_FIELD = "assignee";
@@ -51,6 +51,8 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
     private ExpandedPerson owner;
     @JsonProperty(ASSIGNEE_FIELD)
     private ExpandedPerson assignee;
+    @JsonProperty(ORGANIZATION_FIELD)
+    private ExpandedOrganization organization;
 
     public static ExpandedDataEntry create(TicketEntry ticketEntry,
                                            ResourceService resourceService,
@@ -111,10 +113,14 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
         this.publication = publication;
     }
 
-    //public abstract TicketEntry toTicketEntry();
+    @JsonProperty(ORGANIZATION_FIELD)
+    public ExpandedOrganization getOrganization() {
+        return this.organization;
+    }
 
-    @JsonProperty(ORGANIZATION_IDS_FIELD)
-    public abstract Set<URI> getOrganizationIds();
+    public void setOrganization(ExpandedOrganization organization) {
+        this.organization = organization;
+    }
 
     @JsonProperty(ID_FIELD)
     public final URI getId() {
