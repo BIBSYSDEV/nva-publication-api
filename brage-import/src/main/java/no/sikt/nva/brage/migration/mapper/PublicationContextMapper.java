@@ -54,10 +54,10 @@ import org.joda.time.DateTime;
 @SuppressWarnings("PMD.GodClass")
 public final class PublicationContextMapper {
 
-    public static final String PUBLICATION_CHANNELS_PATH = "publication-channels";
+    public static final String PUBLICATION_CHANNELS_V_2 = "publication-channels-v2";
     public static final String DOMAIN_NAME_ENVIRONMENT_VARIABLE_NAME = "DOMAIN_NAME";
     public static final String HTTPS_PREFIX = "https://";
-    public static final URI CHANNEL_REGISTRY = readChannelRegistryPathFromEnvironment();
+    public static final URI CHANNEL_REGISTRY_V_2 = readChannelRegistryPathFromEnvironment();
     public static final String NOT_SUPPORTED_TYPE = "Not supported type for creating publication context: ";
     public static final int HAS_BOTH_SERIES_TITLE_AND_SERIES_NUMBER = 2;
     public static final String CURRENT_YEAR = getCurrentYear();
@@ -286,7 +286,7 @@ public final class PublicationContextMapper {
 
     private static URI readChannelRegistryPathFromEnvironment() {
         var basePath = new Environment().readEnv(DOMAIN_NAME_ENVIRONMENT_VARIABLE_NAME);
-        return UriWrapper.fromUri(HTTPS_PREFIX + basePath).addChild(PUBLICATION_CHANNELS_PATH).getUri();
+        return UriWrapper.fromUri(HTTPS_PREFIX + basePath).addChild(PUBLICATION_CHANNELS_V_2).getUri();
     }
 
     private static PublicationContext buildPublicationContextWhenJournalArticle(Record brageRecord)
@@ -306,7 +306,7 @@ public final class PublicationContextMapper {
         return Optional.ofNullable(brageRecord.getPublication())
                    .map(Publication::getPublicationContext)
                    .map(no.sikt.nva.brage.migration.record.PublicationContext::getJournal)
-                   .map(no.sikt.nva.brage.migration.record.Journal::getId)
+                   .map(no.sikt.nva.brage.migration.record.Journal::getPid)
                    .map(String::toString)
                    .orElse(null);
     }
@@ -366,7 +366,7 @@ public final class PublicationContextMapper {
     }
 
     private static PublicationContext buildPublicationContextWhenBook(Record brageRecord)
-        throws InvalidIsbnException, InvalidIssnException {
+        throws InvalidIssnException {
         return new Book.BookBuilder().withPublisher(extractPublisher(brageRecord))
                    .withSeries(extractSeries(brageRecord))
                    .withIsbnList(extractIsbnList(brageRecord))
@@ -375,7 +375,7 @@ public final class PublicationContextMapper {
     }
 
     private static PublicationContext buildPublicationContextWhenReport(Record brageRecord)
-        throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
+        throws InvalidUnconfirmedSeriesException, InvalidIssnException {
         return new Report.Builder().withPublisher(extractPublisher(brageRecord))
                    .withSeries(extractSeries(brageRecord))
                    .withIsbnList(extractIsbnList(brageRecord))
@@ -408,8 +408,8 @@ public final class PublicationContextMapper {
     private static BookSeries extractSeries(Record brageRecord) throws InvalidIssnException {
         return Optional.ofNullable(brageRecord.getPublication().getPublicationContext())
                    .map(no.sikt.nva.brage.migration.record.PublicationContext::getSeries)
-                   .map(no.sikt.nva.brage.migration.record.Series::getId)
-                   .map(id -> generateSeries(id, extractYear(brageRecord)))
+                   .map(no.sikt.nva.brage.migration.record.Series::getPid)
+                   .map(pid -> generateSeries(pid, extractYear(brageRecord)))
                    .orElse(isSupportedReportType(brageRecord) ? generateUnconfirmedSeries(brageRecord) : null);
     }
 
@@ -433,8 +433,8 @@ public final class PublicationContextMapper {
     private static PublishingHouse extractPublisher(Record brageRecord) {
         return Optional.ofNullable(brageRecord.getPublication().getPublicationContext())
                    .map(no.sikt.nva.brage.migration.record.PublicationContext::getPublisher)
-                   .map(no.sikt.nva.brage.migration.record.Publisher::getId)
-                   .map(id -> generatePublisher(id, extractYear(brageRecord)))
+                   .map(no.sikt.nva.brage.migration.record.Publisher::getPid)
+                   .map(pid -> generatePublisher(pid, extractYear(brageRecord)))
                    .orElse(generateUnconfirmedPublisher(brageRecord));
     }
 
@@ -448,15 +448,15 @@ public final class PublicationContextMapper {
     private static PublicationContext extractJournal(Record brageRecord) throws InvalidIssnException {
         return Optional.ofNullable(brageRecord.getPublication().getPublicationContext())
                    .map(no.sikt.nva.brage.migration.record.PublicationContext::getJournal)
-                   .map(no.sikt.nva.brage.migration.record.Journal::getId)
-                   .map(id -> generateJournal(id, extractYear(brageRecord)))
+                   .map(no.sikt.nva.brage.migration.record.Journal::getPid)
+                   .map(pid -> generateJournal(pid, extractYear(brageRecord)))
                    .orElse(buildPublicationContextForUnconfirmedJournal(brageRecord));
     }
 
-    private static PublishingHouse generatePublisher(String publisherIdentifier, String year) {
-        return new Publisher(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
+    private static PublishingHouse generatePublisher(String publisherPid, String year) {
+        return new Publisher(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY_V_2)
                                  .addChild(ChannelType.PUBLISHER.getType())
-                                 .addChild(publisherIdentifier)
+                                 .addChild(publisherPid)
                                  .addChild(nonNull(year) ? year : CURRENT_YEAR)
                                  .getUri());
     }
@@ -464,19 +464,17 @@ public final class PublicationContextMapper {
     private static String getCurrentYear() {
         return String.valueOf(DateTime.now().getYear());
     }
-
-    private static PublicationContext generateJournal(String journalIdentifier, String year) {
-        return new Journal(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
+    private static PublicationContext generateJournal(String journalPid, String year) {
+        return new Journal(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY_V_2)
                                .addChild(ChannelType.JOURNAL.getType())
-                               .addChild(journalIdentifier)
+                               .addChild(journalPid)
                                .addChild(nonNull(year) ? year : CURRENT_YEAR)
                                .getUri());
     }
-
-    private static BookSeries generateSeries(String seriesIdentifier, String year) {
-        return new Series(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
+    private static BookSeries generateSeries(String seriesPid, String year) {
+        return new Series(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY_V_2)
                               .addChild(ChannelType.JOURNAL.getType())
-                              .addChild(seriesIdentifier)
+                              .addChild(seriesPid)
                               .addChild(nonNull(year) ? year : CURRENT_YEAR)
                               .getUri());
     }
