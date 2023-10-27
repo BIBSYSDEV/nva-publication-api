@@ -92,7 +92,3 @@ Feature: Mapping rules for exhibition production
     And the NVA publication has a description containing "Andel egne gjenstander: 56.0%"
     And the NVA publication has a description containing "Antall gjenstander: 26"
 
-
-
-
-

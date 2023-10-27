@@ -95,7 +95,6 @@ import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
@@ -183,8 +182,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private static final Type TYPE_CHAPTER = new Type(List.of(NvaType.CHAPTER.getValue()), NvaType.CHAPTER.getValue());
     private static final Type TYPE_SCIENTIFIC_CHAPTER = new Type(List.of(NvaType.SCIENTIFIC_CHAPTER.getValue()),
                                                                  NvaType.SCIENTIFIC_CHAPTER.getValue());
-    private static final Type TYPE_FEATURE_ARTICLE = new Type(List.of(NvaType.CHRONICLE.getValue()),
-                                                              NvaType.CHRONICLE.getValue());
+    private static final Type TYPE_MEDIA_FEATURE_ARTICLE = new Type(List.of(NvaType.MEDIA_FEATURE_ARTICLE.getValue()),
+                                                                    NvaType.MEDIA_FEATURE_ARTICLE.getValue());
     private static final Type TYPE_SOFTWARE = new Type(List.of(NvaType.SOFTWARE.getValue()),
                                                        NvaType.SOFTWARE.getValue());
     private static final RequestParametersEntity EMPTY_REQUEST_PARAMETERS = null;
@@ -476,8 +475,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldConvertFeatureArticleToNvaPublication() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_FEATURE_ARTICLE)
+    void shouldConvertMediaFeatureArticleToNvaPublication() throws IOException {
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_MEDIA_FEATURE_ARTICLE)
                                  .withJournalId("journal")
                                  .build();
         var expectedPublication = brageGenerator.getNvaPublication();
@@ -726,7 +725,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertToPublicationWithUnconfirmedJournalWhenJournalIdIsNotPresent() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_FEATURE_ARTICLE)
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_MEDIA_FEATURE_ARTICLE)
                                  .withJournalTitle("Some Very Popular Journal")
                                  .withIssn(List.of(randomIssn()))
                                  .build();

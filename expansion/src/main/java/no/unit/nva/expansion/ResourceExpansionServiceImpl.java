@@ -1,9 +1,11 @@
 package no.unit.nva.expansion;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.InputStream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedMessage;
+import no.unit.nva.expansion.model.ExpandedOrganization;
 import no.unit.nva.expansion.model.ExpandedPerson;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedTicket;
@@ -20,18 +22,21 @@ import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.RDFNode;
+import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.riot.RiotException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
+import static java.util.Objects.isNull;
 import static nva.commons.core.attempt.Try.attempt;
+import static nva.commons.core.ioutils.IoUtils.stringToStream;
 
 public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
@@ -48,15 +53,18 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     public static final String PREFERRED_FIRST_NAME_CRISTIN_TYPE = "PreferredFirstName";
     public static final String LAST_NAME_CRISTIN_TYPE = "LastName";
     public static final String PREFERRED_LAST_NAME_CRISTIN_TYPE = "PreferredLastName";
+    private static final String PART_OF_PROPERTY = "https://nva.sikt.no/ontology/publication#partOf";
     private final ResourceService resourceService;
     private final TicketService ticketService;
-    private final UriRetriever uriRetriever;
+    private final UriRetriever personRetriever;
+    private final UriRetriever organizationRetriever;
 
     public ResourceExpansionServiceImpl(ResourceService resourceService,
                                         TicketService ticketService) {
         this.resourceService = resourceService;
         this.ticketService = ticketService;
-        this.uriRetriever = new UriRetriever();
+        this.personRetriever = new UriRetriever();
+        this.organizationRetriever = new UriRetriever();
     }
 
     public ResourceExpansionServiceImpl(ResourceService resourceService,
@@ -64,7 +72,18 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
                                         UriRetriever uriRetriever) {
         this.resourceService = resourceService;
         this.ticketService = ticketService;
-        this.uriRetriever = uriRetriever;
+        this.personRetriever = uriRetriever;
+        this.organizationRetriever = uriRetriever;
+    }
+
+    public ResourceExpansionServiceImpl(ResourceService resourceService,
+                                        TicketService ticketService,
+                                        UriRetriever personRetriever,
+                                        UriRetriever organizationRetriever) {
+        this.resourceService = resourceService;
+        this.ticketService = ticketService;
+        this.personRetriever = personRetriever;
+        this.organizationRetriever = organizationRetriever;
     }
 
     private ExpandedPerson toExpandedPerson(String response, User owner) throws JsonProcessingException {
@@ -84,8 +103,8 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     public ExpandedDataEntry expandEntry(Entity dataEntry) throws JsonProcessingException, NotFoundException {
         if (dataEntry instanceof Resource resource) {
             logger.info("Expanding Resource: {}", resource.getIdentifier());
-            var expandedResource = ExpandedResource.fromPublication(uriRetriever,
-                                                                 resource.toPublication(resourceService));
+            var expandedResource = ExpandedResource.fromPublication(personRetriever,
+                                                                    resource.toPublication(resourceService));
             return NviCalculator.calculateNviType(expandedResource);
         } else if (dataEntry instanceof TicketEntry ticketEntry) {
             logger.info("Expanding TicketEntry: {}", ticketEntry.getIdentifier());
@@ -100,29 +119,31 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     }
 
     @Override
-    public Set<URI> getOrganizationIds(Entity dataEntry) throws NotFoundException {
+    public ExpandedOrganization getOrganization(Entity dataEntry) throws NotFoundException {
         if (dataEntry instanceof TicketEntry ticketEntry) {
             var resourceIdentifier = ticketEntry.getResourceIdentifier();
             var resource = resourceService.getResourceByIdentifier(resourceIdentifier);
-            return Optional.ofNullable(resource.getResourceOwner().getOwnerAffiliation())
-                    .stream()
-                    .map(this::retrieveAllHigherLevelOrgsInTheFutureWhenResourceOwnerAffiliationIsNotAlwaysTopLevelOrg)
-                    .flatMap(Collection::stream)
-                    .collect(Collectors.toSet());
-        }
-        return Collections.emptySet();
-    }
+            var organizationIds = resource.getResourceOwner().getOwnerAffiliation();
 
-    //TODO: does not do what the name says it does?
-    private List<URI> retrieveAllHigherLevelOrgsInTheFutureWhenResourceOwnerAffiliationIsNotAlwaysTopLevelOrg(
-            URI affiliation) {
-        return List.of(affiliation);
+            var partOf = attempt(() -> this.organizationRetriever.getRawContent(organizationIds, CONTENT_TYPE)).map(
+                    Optional::orElseThrow)
+                       .map(str -> createModel(stringToStream(str)))
+                       .map(model -> model.listObjectsOfProperty(model.createProperty(PART_OF_PROPERTY)))
+                       .map(nodeIterator -> nodeIterator.toList()
+                                                .stream().map(RDFNode::toString).map(URI::create).toList())
+                       .orElseThrow();
+
+
+            return new ExpandedOrganization(organizationIds, partOf);
+
+        }
+        return null;
     }
 
     @Override
     public ExpandedPerson expandPerson(User owner) {
         return attempt(() -> constructUri(owner))
-                .map(uri -> uriRetriever.getRawContent(uri, CONTENT_TYPE))
+                .map(uri -> personRetriever.getRawContent(uri, CONTENT_TYPE))
                 .map(response -> toExpandedPerson(response.orElse(null), owner))
                 .orElse(failure -> getDefaultExpandedPerson(owner));
     }
@@ -147,5 +168,19 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
     private static String extractCristinId(User owner) {
         return owner.toString().split(CRISTIN_ID_DELIMITER)[0];
+    }
+
+    private Model createModel(InputStream inputStream) {
+        var model = ModelFactory.createDefaultModel();
+
+        if (isNull(inputStream)) {
+            return model;
+        }
+        try {
+            RDFDataMgr.read(model, inputStream, Lang.JSONLD);
+        } catch (RiotException e) {
+            logger.warn("Invalid JSON LD input encountered: ", e);
+        }
+        return model;
     }
 }

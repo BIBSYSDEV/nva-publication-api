@@ -4,6 +4,7 @@ import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_RES
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.net.URI;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,9 +27,10 @@ import nva.commons.core.paths.UriWrapper;
 @JsonIgnoreProperties({"personlopenr"})
 
 public class CristinPresentationalWork {
-    
-    private static final String PROJECT = "project";
+
     public static final String PROSJEKT = "PROSJEKT";
+    private static final String PROJECT = "project";
+    private static final String CRISTIN_PATH = "cristin";
 
     @JsonProperty("presentasjonslopenr")
     private Integer identifier;
@@ -50,11 +52,17 @@ public class CristinPresentationalWork {
     }
 
     public ResearchProject toNvaResearchProject() {
-
-        UriWrapper idUri = UriWrapper.fromUri(NVA_API_DOMAIN).addChild(PROJECT, identifier.toString());
         return new ResearchProject.Builder()
-                   .withId(idUri.getUri())
+                   .withId(constructId())
                    .withName(HARDCODED_RESEARCH_PROJECT_NAME)
                    .build();
+    }
+
+    private URI constructId() {
+        return UriWrapper.fromUri(NVA_API_DOMAIN)
+                   .addChild(CRISTIN_PATH,
+                             PROJECT,
+                             identifier.toString())
+                   .getUri();
     }
 }

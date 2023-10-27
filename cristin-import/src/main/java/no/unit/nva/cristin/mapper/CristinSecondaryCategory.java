@@ -147,6 +147,10 @@ public enum CristinSecondaryCategory {
                || CristinSecondaryCategory.WRITTEN_INTERVIEW.equals(cristinObject.getSecondaryCategory());
     }
 
+    public static boolean isMuseum(CristinObject cristinObject) {
+        return CristinSecondaryCategory.MUSEUM.equals(cristinObject.getSecondaryCategory());
+    }
+
     public static boolean isProgramParticipation(CristinObject cristinObject) {
         return CristinSecondaryCategory.PROGRAM_PARTICIPATION.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.PROGRAM_MANAGEMENT.equals(cristinObject.getSecondaryCategory());

@@ -82,9 +82,11 @@ public class ExpandDataEntriesHandler
 
     @JacocoGenerated
     private static ResourceExpansionService defaultResourceExpansionService() {
+        var uriRetriever = new UriRetriever();
         return new ResourceExpansionServiceImpl(defaultResourceService(),
                                                 TicketService.defaultService(),
-                                                new UriRetriever());
+                                                uriRetriever,
+                                                uriRetriever);
     }
 
     @JacocoGenerated
