@@ -322,7 +322,8 @@ public final class PublicationInstanceMapper {
         return new AcademicChapter(extractPages(brageRecord));
     }
 
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenMediaFeatureArticle(Record brageRecord) {
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenMediaFeatureArticle(
+        Record brageRecord) {
         return new MediaFeatureArticle(extractVolume(brageRecord), extractIssue(brageRecord),
                                        extractArticleNumber(brageRecord), extractPages(brageRecord));
     }
