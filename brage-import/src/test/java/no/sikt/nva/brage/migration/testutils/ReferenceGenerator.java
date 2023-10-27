@@ -156,7 +156,7 @@ public final class ReferenceGenerator {
                            .withDoi(builder.getDoi())
                            .build();
             }
-            if (NvaType.CHRONICLE.getValue().equals(builder.getType().getNva())) {
+            if (NvaType.MEDIA_FEATURE_ARTICLE.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder().withPublishingContext(generateJournal(builder))
                            .withPublicationInstance(generatePublicationInstanceForFeatureArticle(builder))
                            .withDoi(builder.getDoi())

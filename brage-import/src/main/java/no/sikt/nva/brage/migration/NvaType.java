@@ -18,7 +18,7 @@ public enum NvaType {
     STUDENT_PAPER_OTHERS("Other student thesis"),
     RESEARCH_REPORT("ReportResearch"),
     DESIGN_PRODUCT("Design"),
-    CHRONICLE("Feature article"),
+    MEDIA_FEATURE_ARTICLE("MediaFeatureArticle"),
     SOFTWARE("Programvare"),
     LECTURE("Lecture"),
     RECORDING_MUSICAL("Music"),
