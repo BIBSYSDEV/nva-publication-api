@@ -151,8 +151,8 @@ public final class PublicationContextMapper {
         return NvaType.CHAPTER.getValue().equals(brageRecord.getType().getNva());
     }
 
-    public static boolean isFeatureArticle(Record brageRecord) {
-        return NvaType.CHRONICLE.getValue().equals(brageRecord.getType().getNva());
+    public static boolean isMediaFeatureArticle(Record brageRecord) {
+        return NvaType.MEDIA_FEATURE_ARTICLE.getValue().equals(brageRecord.getType().getNva());
     }
 
     public static boolean isScientificMonograph(Record brageRecord) {
@@ -235,7 +235,7 @@ public final class PublicationContextMapper {
     private static boolean isArticle(Record brageRecord) {
         return isJournalArticle(brageRecord)
                || isScientificArticle(brageRecord)
-               || isFeatureArticle(brageRecord)
+               || isMediaFeatureArticle(brageRecord)
                || isProfessionalArticle(brageRecord)
                || isEditorial(brageRecord);
     }

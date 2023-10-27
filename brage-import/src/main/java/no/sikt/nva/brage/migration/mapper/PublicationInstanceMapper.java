@@ -7,7 +7,7 @@ import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isConf
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isCristinRecord;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isDataset;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isDesignProduct;
-import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isFeatureArticle;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isMediaFeatureArticle;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isFilm;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isInterview;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isLecture;
@@ -62,9 +62,9 @@ import no.unit.nva.model.instancetypes.event.ConferencePoster;
 import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.event.OtherPresentation;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
-import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
+import no.unit.nva.model.instancetypes.media.MediaFeatureArticle;
 import no.unit.nva.model.instancetypes.media.MediaInterview;
 import no.unit.nva.model.instancetypes.media.MediaReaderOpinion;
 import no.unit.nva.model.instancetypes.report.ConferenceReport;
@@ -93,8 +93,8 @@ public final class PublicationInstanceMapper {
         if (isScientificArticle(brageRecord)) {
             return buildPublicationInstanceWhenScientificArticle(brageRecord);
         }
-        if (isFeatureArticle(brageRecord)) {
-            return buildPublicationInstanceWhenFeatureArticle(brageRecord);
+        if (isMediaFeatureArticle(brageRecord)) {
+            return buildPublicationInstanceWhenMediaFeatureArticle(brageRecord);
         }
         if (isMap(brageRecord)) {
             return buildPublicationInstanceWhenMap(brageRecord);
@@ -322,11 +322,9 @@ public final class PublicationInstanceMapper {
         return new AcademicChapter(extractPages(brageRecord));
     }
 
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenFeatureArticle(Record brageRecord) {
-        return new FeatureArticle.Builder().withPages(extractPages(brageRecord))
-                   .withIssue(extractIssue(brageRecord))
-                   .withVolume(extractVolume(brageRecord))
-                   .build();
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenMediaFeatureArticle(Record brageRecord) {
+        return new MediaFeatureArticle(extractVolume(brageRecord), extractIssue(brageRecord),
+                                       extractArticleNumber(brageRecord), extractPages(brageRecord));
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenReportWorkingPaper(
