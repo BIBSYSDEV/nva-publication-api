@@ -30,16 +30,17 @@ import no.unit.nva.expansion.utils.FramedJsonGenerator;
 import no.unit.nva.expansion.utils.SearchIndexFrame;
 import no.unit.nva.publication.external.services.UriRetriever;
 import nva.commons.core.ioutils.IoUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class IndexDocumentWrapperLinkedData {
 
+    public static final String CRISTIN_VERSION = "; version=2023-05-26";
+    private static final Logger logger = LoggerFactory.getLogger(IndexDocumentWrapperLinkedData.class);
     private static final String PART_OF_FIELD = "/partOf";
     private static final String ID_FIELD = "/id";
     private static final String SOURCE = "source";
     private static final String CONTEXT = "@context";
-    public static final String CRISTIN_VERSION = "; version=2023-05-26";
-    private final UriRetriever uriRetriever;
-
     @Deprecated
     private static final String contextAsString =
         "{\n"
@@ -51,8 +52,8 @@ public class IndexDocumentWrapperLinkedData {
         + "    \"@container\": \"@language\"\n"
         + "  }\n"
         + "}\n";
-
     private static final JsonNode CONTEXT_NODE = attempt(() -> objectMapper.readTree(contextAsString)).get();
+    private final UriRetriever uriRetriever;
 
     public IndexDocumentWrapperLinkedData(UriRetriever uriRetriever) {
         this.uriRetriever = uriRetriever;
@@ -95,7 +96,6 @@ public class IndexDocumentWrapperLinkedData {
         return inputStreams;
     }
 
-
     @Deprecated
     private Collection<? extends InputStream> fetchFundingSources(JsonNode indexDocument) {
         return fetchAll(extractUris(fundingNodes(indexDocument), SOURCE))
@@ -134,7 +134,9 @@ public class IndexDocumentWrapperLinkedData {
 
     private Collection<? extends InputStream> fetchAll(Collection<URI> uris) {
         return uris.stream()
+                   .peek(uri -> logger.info("Fetching uri: {}", uri))
                    .map(this::fetch)
+                   .peek(optionalResource -> logger.info("Retrieved body: {}", optionalResource.orElse("No content")))
                    .flatMap(Optional::stream)
                    .map(IoUtils::stringToStream)
                    .collect(Collectors.toList());
@@ -158,10 +160,9 @@ public class IndexDocumentWrapperLinkedData {
     private Optional<InputStream> getAnthology(JsonNode indexDocument) {
         return extractPublicationContextUri(indexDocument)
                    .map(uri -> new ExpandedParentPublication(uriRetriever)
-                        .getExpandedParentPublication(uri))
+                                   .getExpandedParentPublication(uri))
                    .map(IoUtils::stringToStream);
     }
-
 
     private Stream<String> fetchContentRecursively(URI uri) {
         var affiliation = fetchOrganizations(uri);
