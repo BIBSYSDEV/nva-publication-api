@@ -31,6 +31,9 @@ dependencies {
     implementation libs.tika.core
     implementation libs.tika.langdetect.optimaize
 
+    testImplementation libs.cucumber.java
+    testImplementation libs.cucumber.junit
+    testImplementation libs.cucumber.picocontainer
     testImplementation project(path: ':publication-testing')
 }
 
