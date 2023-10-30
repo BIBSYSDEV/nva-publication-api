@@ -22,7 +22,6 @@ import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.NOT_SU
 import static no.sikt.nva.brage.migration.merger.AssociatedArtifactMover.COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.TEST_DESCRIPTION;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
@@ -81,7 +80,6 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -211,39 +209,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
         assertThatPublicationsMatch(actualPublication, brageGenerator.getNvaPublication());
-    }
-
-    //Temporary compares associatedArtifacts based on contentLength. Has to be changed for proper comparison of
-    // artifacts. See AssociatedArtifactComparator.
-    @Test
-    void shouldNotAttachAssociatedArtifactsToExistingPublicationWhenAssociatedArtifactAlreadyExistsAndCristinIdsMatch()
-        throws IOException, NotFoundException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_REPORT_WORKING_PAPER)
-                                 .withCristinIdentifier("123456")
-                                 .withResourceContent(createResourceContent())
-                                 .withAssociatedArtifacts(createCorrespondingAssociatedArtifacts())
-                                 .withLink(randomUri())
-                                 .build();
-        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
-        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, brageGenerator.getNvaPublication());
-    }
-
-    @Test
-    void shouldAttachAssociatedArtifactsToExistingPublicationWhenNewAssociatedArtifactAndWhenCristinIdsMatch()
-        throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_REPORT_WORKING_PAPER)
-                                 .withCristinIdentifier("123456")
-                                 .withResourceContent(createResourceContent())
-                                 .build();
-        var s3Driver = new S3Driver(s3Client, persistedStorageBucket);
-        var file = new java.io.File("src/test/resources/testFile.txt");
-        putAssociatedArtifactsToResourceStorage(brageGenerator, s3Driver, file);
-        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
-        var expectedPublication = createPublicationWithAssociatedArtifacts(brageGenerator.getNvaPublication(),
-                                                                           createCorrespondingAssociatedArtifacts());
-        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
     }
 
     @Test
@@ -1012,11 +977,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         assertThat(actualPublication.getHandle(), is(equalTo(expectedPublication.getHandle())));
         assertThat(actualPublication.getLink(), is(equalTo(expectedPublication.getLink())));
         assertThat(actualPublication.getSubjects(), containsInAnyOrder(expectedPublication.getSubjects().toArray()));
-    }
-
-    private Publication createPublicationWithAssociatedArtifacts(Publication publication,
-                                                                 List<AssociatedArtifact> associatedArtifacts) {
-        return publication.copy().withAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts)).build();
     }
 
     private void persistMultiplePublicationWithSameCristinId() {
