@@ -13,7 +13,6 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.fasterxml.jackson.databind.JsonNode;
-import java.net.URI;
 import java.time.Clock;
 import java.util.List;
 import java.util.Objects;
@@ -22,13 +21,10 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.Identifiable;
-import no.unit.nva.cristin.mapper.SearchResource2Response;
 import no.unit.nva.cristin.mapper.nva.exceptions.CristinIdAlreadyExistException;
-import no.unit.nva.cristin.mapper.nva.exceptions.DuplicateDoiException;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -70,32 +66,30 @@ public class CristinEntryEventConsumer
     private static final Clock CLOCK = Clock.systemDefaultZone();
     private static final String PUBLICATIONS_THAT_ARE_PART_OF_OTHER_PUBLICATIONS_BUCKET_PATH =
         "PUBLICATIONS_THAT_ARE_PART_OF_OTHER_PUBLICATIONS";
-    private static final String API_HOST = new Environment().readEnv("API_HOST");
-    private static final String SEARCH = "search";
-    private static final String RESOURCES2 = "resources2";
-    private static final String DOI = "doi";
-    private static final String DOI_URI_HOST = "https://doi.org/";
-    private static final String APPLICATION_JSON = "application/json";
-    private static final String EMPTY_STRING = "";
+
 
     private final ResourceService resourceService;
     private final S3Client s3Client;
-    private final UriRetriever uriRetriever;
+    private final DoiDuplicateChecker doiDuplicateChecker;
 
     @JacocoGenerated
     public CristinEntryEventConsumer() {
-        this(defaultDynamoDbClient(), defaultS3Client(), defaultUriRetriever());
+        this(defaultDynamoDbClient(), defaultS3Client(), defaultDoiDuplicateChecker());
     }
 
     @JacocoGenerated
-    protected CristinEntryEventConsumer(AmazonDynamoDB dynamoDbClient, S3Client s3Client, UriRetriever uriRetriever) {
-        this(new ResourceService(dynamoDbClient, CLOCK), s3Client, uriRetriever);
+    protected CristinEntryEventConsumer(AmazonDynamoDB dynamoDbClient,
+                                        S3Client s3Client,
+                                        DoiDuplicateChecker doiDuplicateChecker) {
+        this(new ResourceService(dynamoDbClient, CLOCK), s3Client, doiDuplicateChecker);
     }
 
-    protected CristinEntryEventConsumer(ResourceService resourceService, S3Client s3Client, UriRetriever uriRetriever) {
+    protected CristinEntryEventConsumer(ResourceService resourceService,
+                                        S3Client s3Client,
+                                        DoiDuplicateChecker doiDuplicateChecker) {
         this.resourceService = resourceService;
         this.s3Client = s3Client;
-        this.uriRetriever = uriRetriever;
+        this.doiDuplicateChecker = doiDuplicateChecker;
     }
 
     @Override
@@ -107,91 +101,12 @@ public class CristinEntryEventConsumer
                    .collect(Collectors.toList());
     }
 
-    private Optional<Publication> processMessage(SQSMessage message) {
-        logger.info("received message: " + message.getBody());
-        return attempt(() -> getEventReferenceFromBody(message.getBody())).map(this::processEvent)
-                   .toOptional();
-    }
-
-    private Publication processEvent(EventReference eventReference) {
-        var eventBody = readEventBody(eventReference);
-        return attempt(() -> getCristinObject(eventBody))
-                   .map(cristinObject -> generatePublicationRepresentations(cristinObject, eventBody))
-                   .map(this::throwIfDoiExists)
-                   .map(this::persistNvaPublicationInDatabaseAndGetUpdatedPublicationIdentifier)
-                   .map(this::persistConversionReports)
-                   .orElseThrow(fail -> handleSavingError(fail, eventBody, eventReference));
-    }
-
-    private CristinObject getCristinObject(FileContentsEvent<JsonNode> eventBody) {
-        var cristinObject = parseCristinObject(eventBody);
-        validateCristinObject(cristinObject);
-        return cristinObject;
-    }
-
-    private void validateCristinObject(CristinObject cristinObject) {
-        var duplicateCristinPublicationsInNva = resourceService
-            .getPublicationsByCristinIdentifier(cristinObject.getId().toString());
-        if (!duplicateCristinPublicationsInNva.isEmpty()) {
-            var nvaPublicationIdentifiers = getDuplicatePublicationIdentifiers(duplicateCristinPublicationsInNva);
-            throw new CristinIdAlreadyExistException(cristinObject.getId().toString(), nvaPublicationIdentifiers);
-        }
-    }
-
     private static Stream<String> getDuplicatePublicationIdentifiers(
         List<Publication> duplicateCristinPublicationsInNva) {
         return duplicateCristinPublicationsInNva
-            .stream()
-            .map(Publication::getIdentifier)
-            .map(SortableIdentifier::toString);
-    }
-
-    private PublicationRepresentations throwIfDoiExists(PublicationRepresentations pubRep) {
-        var doi = pubRep.getPublication().getEntityDescription().getReference().getDoi();
-        if (doi == null) {
-            return pubRep;
-        }
-
-        var response = fetchNvaPublicationsByDoi(doi);
-        if (response != null && response.totalHits() > 0) {
-            throw new DuplicateDoiException(doi);
-        }
-
-        return pubRep;
-    }
-
-    private SearchResource2Response fetchNvaPublicationsByDoi(URI doi) {
-        return attempt(() -> constructSearchUri(doi))
-                   .map(this::getResponseBody)
-                   .map(Optional::get)
-                   .map(this::toResponse)
-                   .orElse(failure -> null);
-    }
-
-    private URI constructSearchUri(URI doi) {
-        var doiAsString = doi.toString();
-        if (doiAsString.startsWith(DOI_URI_HOST)) {
-            doiAsString = doiAsString.replaceFirst(DOI_URI_HOST, EMPTY_STRING);
-        }
-
-        return UriWrapper.fromHost(API_HOST)
-                   .addChild(SEARCH)
-                   .addChild(RESOURCES2)
-                   .addQueryParameter(DOI, doiAsString)
-                   .getUri();
-    }
-
-    private Optional<String> getResponseBody(URI uri) {
-        return uriRetriever.getRawContent(uri, APPLICATION_JSON);
-    }
-
-    private SearchResource2Response toResponse(String response) {
-        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response, SearchResource2Response.class))
-                   .orElseThrow();
-    }
-
-    private EventReference getEventReferenceFromBody(String body) {
-        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(body, EventReference.class)).orElseThrow();
+                   .stream()
+                   .map(Publication::getIdentifier)
+                   .map(SortableIdentifier::toString);
     }
 
     @JacocoGenerated
@@ -199,6 +114,11 @@ public class CristinEntryEventConsumer
         return S3Client.builder()
                    .httpClient(UrlConnectionHttpClient.create())
                    .build();
+    }
+
+    @JacocoGenerated
+    private static DoiDuplicateChecker defaultDoiDuplicateChecker() {
+        return new DoiDuplicateChecker(defaultUriRetriever(), new Environment().readEnv("API_HOST"));
     }
 
     @JacocoGenerated
@@ -214,6 +134,42 @@ public class CristinEntryEventConsumer
         return new UriRetriever();
     }
 
+    private Optional<Publication> processMessage(SQSMessage message) {
+        logger.info("received message: " + message.getBody());
+        return attempt(() -> getEventReferenceFromBody(message.getBody())).map(this::processEvent)
+                   .toOptional();
+    }
+
+    private Publication processEvent(EventReference eventReference) {
+        var eventBody = readEventBody(eventReference);
+        return attempt(() -> getCristinObject(eventBody))
+                   .map(cristinObject -> generatePublicationRepresentations(cristinObject, eventBody))
+                   .map(doiDuplicateChecker::throwIfDoiExists)
+                   .map(this::persistNvaPublicationInDatabaseAndGetUpdatedPublicationIdentifier)
+                   .map(this::persistConversionReports)
+                   .orElseThrow(fail -> handleSavingError(fail, eventBody, eventReference));
+    }
+
+    private CristinObject getCristinObject(FileContentsEvent<JsonNode> eventBody) {
+        var cristinObject = parseCristinObject(eventBody);
+        validateCristinObject(cristinObject);
+        return cristinObject;
+    }
+
+    private void validateCristinObject(CristinObject cristinObject) {
+        var duplicateCristinPublicationsInNva = resourceService
+                                                    .getPublicationsByCristinIdentifier(
+                                                        cristinObject.getId().toString());
+        if (!duplicateCristinPublicationsInNva.isEmpty()) {
+            var nvaPublicationIdentifiers = getDuplicatePublicationIdentifiers(duplicateCristinPublicationsInNva);
+            throw new CristinIdAlreadyExistException(cristinObject.getId().toString(), nvaPublicationIdentifiers);
+        }
+    }
+
+    private EventReference getEventReferenceFromBody(String body) {
+        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(body, EventReference.class)).orElseThrow();
+    }
+
     private Publication persistConversionReports(PublicationRepresentations publicationRepresentations) {
         persistCristinIdentifierInFileNamedWithPublicationIdentifier(publicationRepresentations);
         persistPartOfCristinIdentifierIfPartOfExists(publicationRepresentations);
@@ -221,8 +177,8 @@ public class CristinEntryEventConsumer
     }
 
     private PublicationRepresentations generatePublicationRepresentations(
-            CristinObject cristinObject,
-            FileContentsEvent<JsonNode> eventBody) {
+        CristinObject cristinObject,
+        FileContentsEvent<JsonNode> eventBody) {
         var publication = cristinObject.toPublication();
         return new PublicationRepresentations(cristinObject, publication, eventBody);
     }
@@ -360,10 +316,10 @@ public class CristinEntryEventConsumer
         final FileContentsEvent<JsonNode> eventBody,
         final EventReference eventReference) {
         return new FileContentsEvent<>(eventReference.getTopic(),
-            eventReference.getSubtopic(),
-            eventReference.getUri(),
-            eventReference.getTimestamp(),
-            eventBody.getContents());
+                                       eventReference.getSubtopic(),
+                                       eventReference.getUri(),
+                                       eventReference.getTimestamp(),
+                                       eventBody.getContents());
     }
 
     private void saveReportToS3(Failure<Publication> fail,
