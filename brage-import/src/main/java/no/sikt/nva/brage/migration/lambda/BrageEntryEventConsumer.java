@@ -44,7 +44,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     public static final Random RANDOM = new Random(System.currentTimeMillis());
     public static final int MAX_EFFORTS = 10;
     public static final String SOURCE_CRISTIN = "Cristin";
-    public static final String BRAGE_MIGRATION_ERROR_BUCKET_NAME = "BRAGE_MIGRATION_ERROR_BUCKET_NAME";
+    public static final String BRAGE_MIGRATION_REPORTS_BUCKET_NAME = "BRAGE_MIGRATION_ERROR_BUCKET_NAME";
     public static final String YYYY_MM_DD_HH_FORMAT = "yyyy-MM-dd:HH";
     public static final String ERROR_BUCKET_PATH = "ERROR";
     public static final String HANDLE_REPORTS_PATH = "HANDLE_REPORTS";
@@ -138,7 +138,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
     private void storePublicationBeforeUpdate(Publication publication, S3Event s3Event) {
         var fileUri = updateResourceFilePath(publication, s3Event);
-        var s3Driver = new S3Driver(s3Client, new Environment().readEnv(BRAGE_MIGRATION_ERROR_BUCKET_NAME));
+        var s3Driver = new S3Driver(s3Client, new Environment().readEnv(BRAGE_MIGRATION_REPORTS_BUCKET_NAME));
         attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(), publication.toString())).orElseThrow();
     }
 
@@ -186,7 +186,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private Publication storeHandleAndPublicationIdentifier(Publication publication, S3Event s3Event) {
         var handle = publication.getHandle();
         var fileUri = constructResourcehandleFileUri(s3Event, publication);
-        var s3Driver = new S3Driver(s3Client, new Environment().readEnv(BRAGE_MIGRATION_ERROR_BUCKET_NAME));
+        var s3Driver = new S3Driver(s3Client, new Environment().readEnv(BRAGE_MIGRATION_REPORTS_BUCKET_NAME));
         attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(), handle.toString())).orElseThrow();
         return publication;
     }
@@ -254,7 +254,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private void saveReportToS3(Failure<Publication> fail,
                                 S3Event event) {
         var errorFileUri = constructErrorFileUri(event, fail.getException());
-        var s3Driver = new S3Driver(s3Client, new Environment().readEnv(BRAGE_MIGRATION_ERROR_BUCKET_NAME));
+        var s3Driver = new S3Driver(s3Client, new Environment().readEnv(BRAGE_MIGRATION_REPORTS_BUCKET_NAME));
         var content = attempt(() -> JsonUtils.dtoObjectMapper.readTree(determineBestEventReference(event)))
                           .orElseThrow();
         var reportContent = ImportResult.reportFailure(content, fail.getException());

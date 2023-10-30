@@ -930,6 +930,26 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldSaveSuccessReportContainingIncomingHandleWhenUpdatingExistingPublication()
+        throws BadRequestException, IOException {
+        var cristinIdentifier = randomString();
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder().withPublishedDate(null)
+                                                 .withType(TYPE_BOOK)
+                                                 .withCristinIdentifier(cristinIdentifier)
+                                                 .build();
+        var existingPublication =
+            persistPublicationWithCristinIdAndHandle(cristinIdentifier,
+                                                     nvaBrageMigrationDataGenerator.getNvaPublication().getHandle());
+        var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+
+        var actualStoredHandleString = extractActualHandleReportFromS3Client(s3Event, actualPublication);
+        assertThat(actualPublication.getIdentifier(), is(equalTo(existingPublication.getIdentifier())));
+        assertThat(actualStoredHandleString,
+                   is(equalTo(nvaBrageMigrationDataGenerator.getBrageRecord().getId().toString())));
+    }
+
+    @Test
     void shouldSavePublicationBeforeUpdateInS3() throws IOException, BadRequestException {
         var cristinIdentifier = randomString();
         var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder().withPublishedDate(null)
@@ -1150,9 +1170,9 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private UriWrapper constructHandleReportFileUri(S3Event s3Event, Publication actualPublication) {
         var timestamp = s3Event.getRecords().get(0).getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
         return UriWrapper.fromUri(HANDLE_REPORTS_PATH)
-                   .addChild(actualPublication.getResourceOwner().getOwner().getValue().split("@")[0])
-                   .addChild(timestamp)
-                   .addChild(actualPublication.getIdentifier().toString());
+                                    .addChild("institution")
+                                    .addChild(timestamp)
+                                    .addChild(actualPublication.getIdentifier().toString());
     }
 
     private JsonNode extractActualReportFromS3Client(S3Event s3Event, String exceptionSimpleName, Record brageRecord)
