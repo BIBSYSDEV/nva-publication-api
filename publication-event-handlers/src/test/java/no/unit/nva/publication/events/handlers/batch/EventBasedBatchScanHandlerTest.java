@@ -120,7 +120,31 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
 
         assertThat(updatedResource, is(equalTo(initialResource)));
         assertThat(updatedDao.getVersion(), is(not(equalTo(originalDao.getVersion()))));
-        assertThat(updatedTicketDao.getVersion(), is(equalTo(originalDao.getVersion())));
+        assertThat(updatedTicketDao.getVersion(), is(equalTo(originalTicketDao.getVersion())));
+    }
+
+    @Test
+    void shouldUpdateDataEntriesDefaultTypesWhenRequestDoesNotContainType()
+        throws ApiGatewayException {
+        var createdPublication = createPublication(PublicationGenerator.randomPublication());
+        var initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
+        var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
+        var originalTicketDao = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
+                                    .persistNewTicket(ticketService).toDao();
+
+        handler.handleRequest(eventToInputStream(ScanDatabaseRequest.builder()
+                                                     .withPageSize(LARGE_PAGE)
+                                                     .withStartMarker(START_FROM_BEGINNING)
+                                                     .withTopic(TOPIC)
+                                                     .withType(TYPE_RESOURCE)
+                                                     .build()), output, context);
+        var updatedResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
+        var updatedDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
+        var updatedTicketDao = ticketService.fetchTicketByIdentifier(originalTicketDao.getIdentifier()).toDao();
+
+        assertThat(updatedResource, is(equalTo(initialResource)));
+        assertThat(updatedDao.getVersion(), is(not(equalTo(originalDao.getVersion()))));
+        assertThat(updatedTicketDao.getVersion(), is(not(equalTo(originalTicketDao.getVersion()))));
     }
 
     @Test
