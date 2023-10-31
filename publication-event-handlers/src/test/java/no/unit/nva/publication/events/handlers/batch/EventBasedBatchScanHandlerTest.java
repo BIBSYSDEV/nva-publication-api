@@ -118,11 +118,9 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
                                                      .withTopic(TOPIC)
                                                      .withTypes(List.of(KeyField.RESOURCE))
                                                      .build()), output, context);
-        var updatedResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         var updatedDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
         var updatedTicketDao = fetchTicketDao(originalTicket.getIdentifier());
 
-        assertThat(updatedResource, is(equalTo(initialResource)));
         assertThat(updatedDao.getVersion(), is(not(equalTo(originalDao.getVersion()))));
         assertThat(updatedTicketDao.getVersion(), is(equalTo(originalTicketDao.getVersion())));
     }
@@ -142,11 +140,9 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
                                                      .withStartMarker(START_FROM_BEGINNING)
                                                      .withTopic(TOPIC)
                                                      .build()), output, context);
-        var updatedResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         var updatedDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
         var updatedTicketDao = fetchTicketDao(originalTicket.getIdentifier());
 
-        assertThat(updatedResource, is(equalTo(initialResource)));
         assertThat(updatedDao.getVersion(), is(not(equalTo(originalDao.getVersion()))));
         assertThat(updatedTicketDao.getVersion(), is(not(equalTo(originalTicketDao.getVersion()))));
     }

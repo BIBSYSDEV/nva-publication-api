@@ -3,7 +3,7 @@ package no.unit.nva.publication.model.storage;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIn.in;
 import static org.hamcrest.core.Is.is;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.commons.json.JsonUtils;
 import org.junit.jupiter.api.Test;
@@ -28,5 +28,4 @@ class KeyFieldTest {
         Executable executable = () -> KeyField.parse(UNKNOWN_VALUE);
         assertThrows(IllegalArgumentException.class, executable);
     }
-
 }

@@ -37,11 +37,11 @@ import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
@@ -236,7 +236,8 @@ public class ResourceService extends ServiceWithTransactions {
         return updateResourceService.updatePublishedStatusToDeleted(resourceIdentifier);
     }
 
-    public ListingResult<Entity> scanResources(int pageSize, Map<String, AttributeValue> startMarker, List<KeyField> types) {
+    public ListingResult<Entity> scanResources(int pageSize, Map<String, AttributeValue> startMarker,
+                                               List<KeyField> types) {
         var scanRequest = createScanRequestThatFiltersOutIdentityEntries(pageSize, startMarker, types);
         var scanResult = getClient().scan(scanRequest);
         var values = extractDatabaseEntries(scanResult);
