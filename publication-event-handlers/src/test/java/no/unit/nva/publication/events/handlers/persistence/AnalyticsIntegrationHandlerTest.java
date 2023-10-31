@@ -5,6 +5,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.util.List;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.ResourceExpansionService;
@@ -12,8 +13,11 @@ import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.contexttypes.Anthology;
+import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
-import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Resource;
@@ -38,6 +42,8 @@ import java.io.InputStream;
 import java.net.URI;
 import java.time.Clock;
 import java.util.Optional;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
@@ -55,6 +61,8 @@ import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -75,6 +83,10 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     private final Context context = new FakeContext();
 
     private TicketService ticketService;
+
+    private static List<Class<?>> listPublicationInstanceTypes() {
+        return PublicationInstanceBuilder.listPublicationInstanceTypes();
+    }
 
     @BeforeEach()
     public void init() {
@@ -100,9 +112,10 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         assertThat(expectedException.getMessage(), containsString(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC));
     }
 
-    @Test
-    void shouldStoreTheExpandedPublicationReferredInTheS3UriInTheAnalyticsFolder() throws IOException {
-        var inputEvent = generateEventForExpandedPublication();
+    @ParameterizedTest(name = "should store the expanded publication from S3 URI in analytics folder: {0} ")
+    @MethodSource("listPublicationInstanceTypes")
+    void shouldStoreTheExpandedPublicationReferredInTheS3UriInTheAnalyticsFolder(Class<?> type) throws IOException {
+        var inputEvent = generateEventForExpandedPublication(type);
         InputStream event = sampleLambdaDestinationsEvent(inputEvent);
         analyticsIntegration.handleRequest(event, outputStream, context);
         var analyticsObjectEvent = objectMapper.readValue(outputStream.toString(), EventReference.class);
@@ -143,9 +156,8 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
                    .split(FILENAME_AND_FILE_ENDING_SEPRATOR);
     }
 
-    private EventReference generateEventForExpandedPublication() throws IOException {
-        var samplePublication = PublicationGenerator.randomPublication();
-        var inputFileUri = expandPublicationAndSaveToS3(samplePublication);
+    private EventReference generateEventForExpandedPublication(Class<?> type) throws IOException {
+        var inputFileUri = expandPublicationAndSaveToS3(randomPublication(type));
         return new EventReference(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC, inputFileUri);
     }
 
@@ -174,21 +186,67 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
 
     private URI expandPublicationAndSaveToS3(Publication publication) throws IOException {
         UriRetriever fakeUrlRetriever = mock(UriRetriever.class);
-        when(fakeUrlRetriever.getRawContent(any(URI.class), anyString())).thenReturn(Optional.of(getAnthology()));
+        mockPublicationContextResponse(publication, fakeUrlRetriever);
         ExpandedResource expandedPublication = ExpandedResource.fromPublication(fakeUrlRetriever, publication);
         String resourceJson = DTO_OBJECT_MAPPER.writeValueAsString(expandedPublication);
         UnixPath randomPath = formatPublicationFilename(expandedPublication);
         return s3Driver.insertFile(randomPath, resourceJson);
     }
 
+    private void mockPublicationContextResponse(Publication publication, UriRetriever fakeUrlRetriever) {
+        var publicationContext = publication.getEntityDescription().getReference().getPublicationContext();
+
+        if (publicationContext instanceof Anthology anthology) {
+            URI id = anthology.getId();
+            when(fakeUrlRetriever.getRawContent(eq(id), anyString())).thenReturn(Optional.of(getAnthology(id)));
+        } else if (publicationContext instanceof Journal journal) {
+            URI id = journal.getId();
+            when(fakeUrlRetriever.getRawContent(eq(id), anyString())).thenReturn(Optional.of(getJournal(id)));
+        } else if (publicationContext instanceof Publisher publisher) {
+            URI id = publisher.getId();
+            when(fakeUrlRetriever.getRawContent(eq(id), anyString())).thenReturn(Optional.of(getPublisher(id)));
+        }
+    }
+
+    private String getPublisher(URI id) {
+        var template = """
+            {
+              "id" : "%s",
+              "name" : "Test (Madrid)",
+              "scientificValue" : "LevelOne",
+              "sameAs" : "https://kanalregister.hkdir.no/publiseringskanaler/KanalTidsskriftInfo?pid=D4781C26-15BD-4CD2-BC2D-03C19B112134",
+              "type" : "Publisher",
+              "@context" : "https://bibsysdev.github.io/src/publication-channel/channel-context.json"
+            }
+            """;
+        return String.format(template, id.toString());
+    }
+
+    private String getJournal(URI id) {
+        var template = """
+            {
+              "id" : "%s",
+              "name" : "Test (Madrid)",
+              "onlineIssn" : "1863-8260",
+              "printIssn" : "1133-0686",
+              "scientificValue" : "LevelOne",
+              "sameAs" : "https://kanalregister.hkdir.no/publiseringskanaler/KanalTidsskriftInfo?pid=D4781C26-15BD-4CD2-BC2D-03C19B112134",
+              "type" : "Journal",
+              "@context" : "https://bibsysdev.github.io/src/publication-channel/channel-context.json"
+            }
+            """;
+        return String.format(template, id.toString());
+    }
+
     private UnixPath formatPublicationFilename(ExpandedResource expandedPublication) {
         return UnixPath.of(randomString(), expandedPublication.identifyExpandedEntry() + ".gz");
     }
 
-    private String getAnthology() {
+    private String getAnthology(URI id) {
         var publication = attempt(
             () -> DTO_OBJECT_MAPPER.writeValueAsString(randomPublication(AcademicMonograph.class))).orElseThrow();
         var publicationNode = (ObjectNode) attempt(() -> DTO_OBJECT_MAPPER.readTree(publication)).orElseThrow();
+        publicationNode.put("id", id.toString());
 
         var context = Publication.getJsonLdContext(URI.create(System.getenv("ID_NAMESPACE")));
         var contextNode = attempt(() -> DTO_OBJECT_MAPPER.readTree(context)).orElseThrow();
