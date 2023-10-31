@@ -90,6 +90,10 @@ Parameters:
     Type: 'String'
     Default: "scopus-import-reports"
     Description: Name of bucket for output of reports
+  ImportCandidateStorageBucketName:
+    Type: 'String'
+    Default: "nva-import-candidate-resources"
+    Description: Name of bucket for scopus file import
   PiaRestHost:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/PiaRestHost'
@@ -2241,6 +2245,12 @@ Resources:
           - Id: DeleteContentAfter3Days
             Status: Enabled
             ExpirationInDays: 3
+
+  ImportCandidateStorageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      BucketName: !Sub "${ImportCandidateStorageBucketName}-${AWS::AccountId}"
 
   ScopusImportReportBucket:
     Type: AWS::S3::Bucket
