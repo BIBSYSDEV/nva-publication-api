@@ -57,6 +57,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -195,6 +196,21 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         Resource resourceUpdate = Resource.fromPublication(publication);
         ExpandedResource indexDoc = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
         assertThat(indexDoc.fetchId(), is(not(nullValue())));
+    }
+
+    @Test
+    void shouldReturnIndexDocumentWithContextUri()
+        throws JsonProcessingException, NotFoundException {
+
+        Publication publication = randomPublication(AcademicArticle.class)
+                                      .copy()
+                                      .withEntityDescription(new EntityDescription())
+                                      .build();
+
+        Resource resourceUpdate = Resource.fromPublication(publication);
+        ExpandedResource indexDoc = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
+        assertThat(indexDoc.getAllFields().get("@context"),
+                   is(equalTo("https://api.dev.nva.aws.unit.no/publication/context")));
     }
 
     @Test
