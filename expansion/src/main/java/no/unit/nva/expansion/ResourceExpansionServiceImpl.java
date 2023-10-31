@@ -129,12 +129,15 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     }
 
     private ObjectNode replaceInlineContextWithUriContext(String resourceWithNviValues) {
-        var objectNode =  attempt(() -> (ObjectNode) objectMapper.readTree(resourceWithNviValues)).orElseThrow();
-        if (!objectNode.at(CONTEXT_NODE_SELECTOR).isMissingNode()) {
-            objectNode.remove(CONTEXT_FIELD_PROPERTY_NAME);
+        var objectNode = attempt(() -> (ObjectNode) objectMapper.readTree(resourceWithNviValues)).orElseThrow();
+        if (hasContextNode(objectNode)) {
             objectNode.put(CONTEXT_FIELD_PROPERTY_NAME, CONTEXT_URI);
         }
         return objectNode;
+    }
+
+    private static boolean hasContextNode(ObjectNode objectNode) {
+        return !objectNode.at(CONTEXT_NODE_SELECTOR).isMissingNode();
     }
 
     @Override

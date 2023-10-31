@@ -202,13 +202,13 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldReturnIndexDocumentWithContextUri()
         throws JsonProcessingException, NotFoundException {
 
-        Publication publication = randomPublication(AcademicArticle.class)
+        var publication = randomPublication(AcademicArticle.class)
                                       .copy()
                                       .withEntityDescription(new EntityDescription())
                                       .build();
 
-        Resource resourceUpdate = Resource.fromPublication(publication);
-        ExpandedResource indexDoc = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
+        var resourceUpdate = Resource.fromPublication(publication);
+        var indexDoc = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
         assertThat(indexDoc.getAllFields().get("@context"),
                    is(equalTo("https://api.dev.nva.aws.unit.no/publication/context")));
     }
