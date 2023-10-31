@@ -410,11 +410,11 @@ public final class ReferenceGenerator {
     }
 
     private static boolean hasJournalId(Builder builder) {
-        return nonNull(builder.getPublication().getPublicationContext().getJournal().getId());
+        return nonNull(builder.getPublication().getPublicationContext().getJournal().getPid());
     }
 
     private static PublicationContext generatePublicationContextForReport(Builder builder)
-        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        throws InvalidIssnException, InvalidUnconfirmedSeriesException {
         return new Report.Builder().withIsbnList(Collections.singletonList(builder.getIsbn()))
                    .withSeries(generateSeries(builder))
                    .withSeriesNumber(builder.getSeriesNumberPublication())
@@ -425,8 +425,7 @@ public final class ReferenceGenerator {
         return new AcademicMonograph(builder.getMonographPages());
     }
 
-    private static PublicationContext generatePublicationContextForOtherStudentWork(Builder builder)
-        throws InvalidIsbnException {
+    private static PublicationContext generatePublicationContextForOtherStudentWork(Builder builder) {
         return new Book.BookBuilder().withIsbnList(Collections.singletonList(builder.getIsbn())).build();
     }
 
@@ -435,7 +434,7 @@ public final class ReferenceGenerator {
     }
 
     private static Publisher generatePublisher(Builder builder) {
-        return new Publisher(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
+        return new Publisher(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY_V_2)
                                  .addChild(ChannelType.PUBLISHER.getType())
                                  .addChild(builder.getPublisherId())
                                  .addChild(nonNull(getYear(builder)) ? getYear(builder) : CURRENT_YEAR)
@@ -448,7 +447,7 @@ public final class ReferenceGenerator {
 
     private static BookSeries generateSeries(Builder builder) throws InvalidIssnException {
         if (nonNull(builder.getSeriesId())) {
-            return new Series(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
+            return new Series(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY_V_2)
                                   .addChild(ChannelType.JOURNAL.getType())
                                   .addChild(builder.getSeriesId())
                                   .addChild(nonNull(getYear(builder)) ? getYear(builder) : CURRENT_YEAR)
@@ -468,7 +467,7 @@ public final class ReferenceGenerator {
     }
 
     private static PublicationContext createJournal(Builder builder) {
-        return new Journal(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY)
+        return new Journal(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY_V_2)
                                .addChild(ChannelType.JOURNAL.getType())
                                .addChild(builder.getJournalId())
                                .addChild(nonNull(getYear(builder)) ? getYear(builder) : CURRENT_YEAR)
@@ -500,7 +499,7 @@ public final class ReferenceGenerator {
         return new ReportResearch(generateMonographPages(builder));
     }
 
-    private static Book generatePublicationContextForBook(Builder builder) throws InvalidIsbnException {
+    private static Book generatePublicationContextForBook(Builder builder) {
         return new Book.BookBuilder().withSeriesNumber(builder.getSeriesNumberPublication())
                    .withIsbnList(Collections.singletonList(builder.getIsbn()))
                    .build();

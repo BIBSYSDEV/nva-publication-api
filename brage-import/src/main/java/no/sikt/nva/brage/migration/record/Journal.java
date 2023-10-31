@@ -9,29 +9,29 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class Journal {
 
-    private String id;
+    private String pid;
 
     @JacocoGenerated
     @JsonCreator
-    public Journal(@JsonProperty("id") String id) {
-        this.id = id;
+    public Journal(@JsonProperty("pid") String pid) {
+        this.pid = pid;
     }
 
     @JacocoGenerated
-    @JsonProperty("id")
-    public String getId() {
-        return id;
+    @JsonProperty("pid")
+    public String getPid() {
+        return pid;
     }
 
     @JacocoGenerated
-    public void setId(String id) {
-        this.id = id;
+    public void setPid(String pid) {
+        this.pid = pid;
     }
 
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getId());
+        return Objects.hash(getPid());
     }
 
     @JacocoGenerated
@@ -44,6 +44,6 @@ public class Journal {
             return false;
         }
         Journal journal = (Journal) o;
-        return Objects.equals(getId(), journal.getId());
+        return Objects.equals(getPid(), journal.getPid());
     }
 }
