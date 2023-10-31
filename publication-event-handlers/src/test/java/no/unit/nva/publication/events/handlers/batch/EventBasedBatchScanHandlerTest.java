@@ -35,6 +35,7 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.storage.KeyField;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -59,7 +60,6 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     public static final String OUTPUT_EVENT_TOPIC = "OUTPUT_EVENT_TOPIC";
     public static final String TOPIC = new Environment().readEnv(OUTPUT_EVENT_TOPIC);
     private static final String RESOURCES_TABLE_NAME = new Environment().readEnv("TABLE_NAME");
-    public static final String TYPE_RESOURCE = "Resource";
     private EventBasedBatchScanHandler handler;
     private ByteArrayOutputStream output;
     private FakeContext context;
@@ -105,18 +105,19 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         var createdPublication = createPublication(PublicationGenerator.randomPublication());
         var initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
-        var originalTicketDao = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
-                         .persistNewTicket(ticketService).toDao();
+        var originalTicket = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
+                                 .persistNewTicket(ticketService);
+        var originalTicketDao = ticketService.fetchTicketDaoByIdentifier(originalTicket.getIdentifier());
 
         handler.handleRequest(eventToInputStream(ScanDatabaseRequest.builder()
                                                      .withPageSize(LARGE_PAGE)
                                                      .withStartMarker(START_FROM_BEGINNING)
                                                      .withTopic(TOPIC)
-                                                     .withType(TYPE_RESOURCE)
+                                                     .withTypes(List.of(KeyField.RESOURCE))
                                                      .build()), output, context);
         var updatedResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         var updatedDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
-        var updatedTicketDao = ticketService.fetchTicketByIdentifier(originalTicketDao.getIdentifier()).toDao();
+        var updatedTicketDao = ticketService.fetchTicketDaoByIdentifier(originalTicket.getIdentifier());
 
         assertThat(updatedResource, is(equalTo(initialResource)));
         assertThat(updatedDao.getVersion(), is(not(equalTo(originalDao.getVersion()))));
@@ -129,18 +130,18 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         var createdPublication = createPublication(PublicationGenerator.randomPublication());
         var initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
-        var originalTicketDao = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
-                                    .persistNewTicket(ticketService).toDao();
+        var originalTicket = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
+                                 .persistNewTicket(ticketService);
+        var originalTicketDao = ticketService.fetchTicketDaoByIdentifier(originalTicket.getIdentifier());
 
         handler.handleRequest(eventToInputStream(ScanDatabaseRequest.builder()
                                                      .withPageSize(LARGE_PAGE)
                                                      .withStartMarker(START_FROM_BEGINNING)
                                                      .withTopic(TOPIC)
-                                                     .withType(TYPE_RESOURCE)
                                                      .build()), output, context);
         var updatedResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         var updatedDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
-        var updatedTicketDao = ticketService.fetchTicketByIdentifier(originalTicketDao.getIdentifier()).toDao();
+        var updatedTicketDao = ticketService.fetchTicketDaoByIdentifier(originalTicket.getIdentifier());
 
         assertThat(updatedResource, is(equalTo(initialResource)));
         assertThat(updatedDao.getVersion(), is(not(equalTo(originalDao.getVersion()))));
@@ -204,7 +205,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         var expectedExceptionMessage = randomString();
         var spiedResourceService = spy(resourceService);
         doThrow(new RuntimeException(expectedExceptionMessage)).when(spiedResourceService)
-            .scanResources(anyInt(), any());
+            .scanResources(anyInt(), any(), any());
 
         handler = new EventBasedBatchScanHandler(spiedResourceService, eventBridgeClient);
         Executable action = () -> handler.handleRequest(createInitialScanRequest(ONE_ENTRY_PER_EVENT), output, context);
@@ -226,11 +227,12 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     private ResourceService mockResourceService(AmazonDynamoDB dynamoDbClient) {
         return new ResourceService(dynamoDbClient, clock) {
             @Override
-            public ListingResult<Entity> scanResources(int pageSize, Map<String, AttributeValue> startMarker) {
+            public ListingResult<Entity> scanResources(int pageSize, Map<String, AttributeValue> startMarker,
+                                                       List<KeyField> types) {
                 if (nonNull(startMarker)) {
                     scanningStartingPoints.add(startMarker);
                 }
-                return super.scanResources(pageSize, startMarker);
+                return super.scanResources(pageSize, startMarker, types);
             }
         };
     }

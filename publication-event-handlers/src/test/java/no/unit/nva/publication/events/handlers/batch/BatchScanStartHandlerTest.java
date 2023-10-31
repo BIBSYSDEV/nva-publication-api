@@ -1,13 +1,16 @@
 package no.unit.nva.publication.events.handlers.batch;
 
+import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import java.io.IOException;
+import java.util.List;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.publication.events.bodies.ScanDatabaseRequest;
+import no.unit.nva.publication.model.storage.KeyField;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import nva.commons.core.ioutils.IoUtils;
@@ -17,7 +20,6 @@ class BatchScanStartHandlerTest {
 
     private static final String TOPIC = "OUTPUT_EVENT_TOPIC";
     private static final int NOT_SET_PAGE_SIZE = 0;
-    private static final String TYPE = "SomeType";
     private final FakeContext context = new FakeContext() {
         @Override
         public String getInvokedFunctionArn() {
@@ -32,7 +34,7 @@ class BatchScanStartHandlerTest {
         var scanDatabaseRequest = ScanDatabaseRequest.builder()
                                       .withPageSize(NOT_SET_PAGE_SIZE)
                                       .withTopic(TOPIC)
-                                      .withType(TYPE)
+                                      .withTypes(List.of(randomElement(KeyField.values())))
                                       .build();
         var request = IoUtils.stringToStream(scanDatabaseRequest.toJsonString());
         handler.handleRequest(request, null, context);

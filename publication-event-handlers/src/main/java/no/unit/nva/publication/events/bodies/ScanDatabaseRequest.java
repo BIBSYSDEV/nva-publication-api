@@ -1,13 +1,17 @@
 package no.unit.nva.publication.events.bodies;
 
+import static java.util.Collections.emptyList;
+import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonSerializable;
+import no.unit.nva.publication.model.storage.KeyField;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 
 public class ScanDatabaseRequest implements JsonSerializable {
@@ -17,13 +21,13 @@ public class ScanDatabaseRequest implements JsonSerializable {
     public static final int DEFAULT_PAGE_SIZE = 700; // Choosing for safety 3/4 of max page size.
     public static final int MAX_PAGE_SIZE = 1000;
     public static final String TOPIC = "topic";
-    public static final String TYPE = "type";
+    public static final String TYPE = "types";
     @JsonProperty(START_MARKER)
     private final Map<String, AttributeValue> startMarker;
     @JsonProperty(PAGE_SIZE)
     private final int pageSize;
     @JsonProperty(TYPE)
-    private String type;
+    private final List<KeyField> types;
     @JsonProperty(TOPIC)
     private String topic;
 
@@ -31,11 +35,11 @@ public class ScanDatabaseRequest implements JsonSerializable {
     public ScanDatabaseRequest(@JsonProperty(PAGE_SIZE) int pageSize,
                                @JsonProperty(START_MARKER) Map<String, AttributeValue> startMarker,
                                @JsonProperty(TOPIC) String topic,
-                               @JsonProperty(TYPE) String type) {
+                               @JsonProperty(TYPE) List<KeyField> types) {
         this.pageSize = pageSize;
         this.startMarker = startMarker;
         this.topic = topic;
-        this.type = type;
+        this.types = types;
     }
 
     public static ScanDatabaseRequest fromJson(String detail) throws JsonProcessingException {
@@ -44,6 +48,10 @@ public class ScanDatabaseRequest implements JsonSerializable {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public List<KeyField> getTypes() {
+        return nonNull(types) ? types : emptyList();
     }
 
     @JsonProperty(TOPIC)
@@ -66,7 +74,7 @@ public class ScanDatabaseRequest implements JsonSerializable {
     }
 
     public ScanDatabaseRequest newScanDatabaseRequest(Map<String, AttributeValue> newStartMarker) {
-        return new ScanDatabaseRequest(this.getPageSize(), newStartMarker, topic, type);
+        return new ScanDatabaseRequest(this.getPageSize(), newStartMarker, topic, types);
     }
 
     public PutEventsRequestEntry createNewEventEntry(
@@ -93,7 +101,7 @@ public class ScanDatabaseRequest implements JsonSerializable {
 
         private Map<String, AttributeValue> startMarker;
         private int pageSize;
-        private String type;
+        private List<KeyField> types;
         private String topic;
 
         private Builder() {
@@ -109,8 +117,8 @@ public class ScanDatabaseRequest implements JsonSerializable {
             return this;
         }
 
-        public Builder withType(String type) {
-            this.type = type;
+        public Builder withTypes(List<KeyField> types) {
+            this.types = types;
             return this;
         }
 
@@ -120,7 +128,7 @@ public class ScanDatabaseRequest implements JsonSerializable {
         }
 
         public ScanDatabaseRequest build() {
-            return new ScanDatabaseRequest(pageSize, startMarker, topic, type);
+            return new ScanDatabaseRequest(pageSize, startMarker, topic, types);
         }
     }
 }
