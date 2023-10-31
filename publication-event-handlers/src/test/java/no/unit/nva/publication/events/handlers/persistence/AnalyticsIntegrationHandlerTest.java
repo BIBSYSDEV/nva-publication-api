@@ -2,7 +2,6 @@ package no.unit.nva.publication.events.handlers.persistence;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.List;
@@ -59,10 +58,8 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -170,7 +167,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         return new EventReference(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC, fileUri);
     }
 
-    private ExpandedDoiRequest createSampleExpandedDoiRequest() throws ApiGatewayException, JsonProcessingException {
+    private ExpandedDoiRequest createSampleExpandedDoiRequest() throws ApiGatewayException {
         Publication samplePublication = insertSamplePublication();
         var doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(samplePublication));
         var messages = doiRequest.fetchMessages(ticketService);
@@ -214,7 +211,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
               "id" : "%s",
               "name" : "Test (Madrid)",
               "scientificValue" : "LevelOne",
-              "sameAs" : "https://kanalregister.hkdir.no/publiseringskanaler/KanalTidsskriftInfo?pid=D4781C26-15BD-4CD2-BC2D-03C19B112134",
+              "sameAs" : "https://example.org/KanalTidsskriftInfo?pid=D4781C26-15BD-4CD2-BC2D-03C19B112134",
               "type" : "Publisher",
               "@context" : "https://bibsysdev.github.io/src/publication-channel/channel-context.json"
             }
@@ -230,7 +227,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
               "onlineIssn" : "1863-8260",
               "printIssn" : "1133-0686",
               "scientificValue" : "LevelOne",
-              "sameAs" : "https://kanalregister.hkdir.no/publiseringskanaler/KanalTidsskriftInfo?pid=D4781C26-15BD-4CD2-BC2D-03C19B112134",
+              "sameAs" : "https://example.org/KanalTidsskriftInfo?pid=D4781C26-15BD-4CD2-BC2D-03C19B112134",
               "type" : "Journal",
               "@context" : "https://bibsysdev.github.io/src/publication-channel/channel-context.json"
             }
