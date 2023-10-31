@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Arrays;
 import java.util.stream.Collectors;
-import no.unit.nva.publication.model.business.TicketStatus;
 import nva.commons.core.SingletonCollector;
 
 public enum KeyField {
@@ -22,17 +21,22 @@ public enum KeyField {
         this.keyField = keyField;
     }
 
+    @JsonCreator
+    public static KeyField parse(String candidate) {
+        return Arrays.stream(KeyField.values())
+                   .filter(value -> value.toString().equalsIgnoreCase(candidate))
+                   .collect(SingletonCollector.tryCollect())
+                   .orElseThrow(fail -> handleParsingError());
+    }
+
     @JsonValue
     public String getKeyField() {
         return KEY_FIELDS_DELIMITER + keyField;
     }
 
-    @JsonCreator
-    public KeyField parse(String candidate) {
-        return Arrays.stream(KeyField.values())
-                   .filter(value -> value.toString().equalsIgnoreCase(candidate))
-                   .collect(SingletonCollector.tryCollect())
-                   .orElseThrow(fail -> handleParsingError());
+    @Override
+    public String toString() {
+        return keyField;
     }
 
     private static IllegalArgumentException handleParsingError() {
@@ -40,8 +44,8 @@ public enum KeyField {
     }
 
     private static String validValues() {
-        return Arrays.stream(TicketStatus.values())
-                   .map(TicketStatus::toString)
+        return Arrays.stream(KeyField.values())
+                   .map(KeyField::toString)
                    .collect(Collectors.joining(SEPARATOR));
     }
 }
