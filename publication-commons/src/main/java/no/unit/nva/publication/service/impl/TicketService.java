@@ -153,13 +153,6 @@ public class TicketService extends ServiceWithTransactions {
         return (TicketEntry) queryResult.getData();
     }
 
-    public TicketDao fetchTicketDaoByIdentifier(SortableIdentifier ticketIdentifier)
-        throws NotFoundException {
-        var queryObject = TicketEntry.createQueryObject(ticketIdentifier);
-        var queryResult = queryObject.fetchByIdentifier(getClient(), tableName);
-        return (TicketDao) queryResult;
-    }
-
     public void updateTicket(TicketEntry ticketEntry) {
         ticketEntry.toDao().updateExistingEntry(getClient());
     }

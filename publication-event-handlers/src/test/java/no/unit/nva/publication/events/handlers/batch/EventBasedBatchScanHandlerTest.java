@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.events.bodies.ScanDatabaseRequest;
@@ -37,12 +38,14 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.KeyField;
 import no.unit.nva.publication.model.storage.ResourceDao;
+import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
@@ -67,6 +70,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     private Clock clock;
     private ResourceService resourceService;
     private TicketService ticketService;
+    private AmazonDynamoDB dynamoDbClient;
     private List<Map<String, AttributeValue>> scanningStartingPoints;
 
     @BeforeEach
@@ -77,8 +81,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         this.output = new ByteArrayOutputStream();
         this.context = mockContent();
         this.eventBridgeClient = new FakeEventBridgeClient();
-
-        var dynamoDbClient = super.client;
+        dynamoDbClient = super.client;
         this.resourceService = mockResourceService(dynamoDbClient);
         this.ticketService = new TicketService(dynamoDbClient);
         this.handler = new EventBasedBatchScanHandler(resourceService, eventBridgeClient);
@@ -107,7 +110,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
         var originalTicket = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
                                  .persistNewTicket(ticketService);
-        var originalTicketDao = ticketService.fetchTicketDaoByIdentifier(originalTicket.getIdentifier());
+        var originalTicketDao = fetchTicketDao(originalTicket.getIdentifier());
 
         handler.handleRequest(eventToInputStream(ScanDatabaseRequest.builder()
                                                      .withPageSize(LARGE_PAGE)
@@ -117,7 +120,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
                                                      .build()), output, context);
         var updatedResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         var updatedDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
-        var updatedTicketDao = ticketService.fetchTicketDaoByIdentifier(originalTicket.getIdentifier());
+        var updatedTicketDao = fetchTicketDao(originalTicket.getIdentifier());
 
         assertThat(updatedResource, is(equalTo(initialResource)));
         assertThat(updatedDao.getVersion(), is(not(equalTo(originalDao.getVersion()))));
@@ -132,7 +135,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
         var originalTicket = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
                                  .persistNewTicket(ticketService);
-        var originalTicketDao = ticketService.fetchTicketDaoByIdentifier(originalTicket.getIdentifier());
+        var originalTicketDao = fetchTicketDao(originalTicket.getIdentifier());
 
         handler.handleRequest(eventToInputStream(ScanDatabaseRequest.builder()
                                                      .withPageSize(LARGE_PAGE)
@@ -141,7 +144,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
                                                      .build()), output, context);
         var updatedResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         var updatedDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
-        var updatedTicketDao = ticketService.fetchTicketDaoByIdentifier(originalTicket.getIdentifier());
+        var updatedTicketDao = fetchTicketDao(originalTicket.getIdentifier());
 
         assertThat(updatedResource, is(equalTo(initialResource)));
         assertThat(updatedDao.getVersion(), is(not(equalTo(originalDao.getVersion()))));
@@ -211,6 +214,12 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         Executable action = () -> handler.handleRequest(createInitialScanRequest(ONE_ENTRY_PER_EVENT), output, context);
         assertThrows(RuntimeException.class, action);
         assertThat(logger.getMessages(), containsString(expectedExceptionMessage));
+    }
+
+    private TicketDao fetchTicketDao(SortableIdentifier identifier) throws NotFoundException {
+        var queryObject = TicketEntry.createQueryObject(identifier);
+        var queryResult = queryObject.fetchByIdentifier(dynamoDbClient, RESOURCES_TABLE_NAME);
+        return (TicketDao) queryResult;
     }
 
     private void createRandomResources(int numberOfResources) throws ApiGatewayException {

@@ -14,7 +14,6 @@ public enum KeyField {
 
     public static final String KEY_FIELDS_DELIMITER = ":";
     private static final String SEPARATOR = ",";
-
     private final String keyField;
 
     KeyField(String keyField) {
@@ -24,17 +23,17 @@ public enum KeyField {
     @JsonCreator
     public static KeyField parse(String candidate) {
         return Arrays.stream(KeyField.values())
-                   .filter(value -> value.toString().equalsIgnoreCase(candidate))
+                   .filter(value -> value.filterByNameOrValue(candidate))
                    .collect(SingletonCollector.tryCollect())
                    .orElseThrow(fail -> handleParsingError());
     }
 
-    @JsonValue
     public String getKeyField() {
         return KEY_FIELDS_DELIMITER + keyField;
     }
 
     @Override
+    @JsonValue
     public String toString() {
         return keyField;
     }
@@ -47,5 +46,10 @@ public enum KeyField {
         return Arrays.stream(KeyField.values())
                    .map(KeyField::toString)
                    .collect(Collectors.joining(SEPARATOR));
+    }
+
+    private boolean filterByNameOrValue(String candidate) {
+        return toString().equalsIgnoreCase(candidate)
+               || getKeyField().equalsIgnoreCase(candidate);
     }
 }
