@@ -3,7 +3,6 @@ package no.unit.nva.expansion.utils;
 import static java.util.Objects.isNull;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.utils.JsonLdDefaults.frameJsonLd;
-import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.InputStream;
@@ -37,11 +36,9 @@ public final class NviCalculator {
     private NviCalculator() {
     }
 
-    public static ExpandedResource calculateNviType(ExpandedResource expandedResource) throws JsonProcessingException {
+    public static String calculateNviType(ExpandedResource expandedResource) throws JsonProcessingException {
         var model = createModelWithNviType(expandedResource);
-        var expandedResourceJsonWithNviType = frameJsonLd(model, FRAME_SRC);
-        return attempt(
-            () -> objectMapper.readValue(expandedResourceJsonWithNviType, ExpandedResource.class)).orElseThrow();
+        return frameJsonLd(model, FRAME_SRC);
     }
 
     private static Model createModelWithNviType(ExpandedResource expandedResource) throws JsonProcessingException {

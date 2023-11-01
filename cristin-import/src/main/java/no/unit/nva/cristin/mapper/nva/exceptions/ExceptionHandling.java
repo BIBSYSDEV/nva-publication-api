@@ -33,6 +33,9 @@ public final class ExceptionHandling {
         if (exception instanceof  CristinIdAlreadyExistException) {
             return (CristinIdAlreadyExistException) exception;
         }
+        if (exception instanceof DuplicateDoiException) {
+            return (DuplicateDoiException) exception;
+        }
         if (exception instanceof InvalidArchiveException) {
             return (InvalidArchiveException) exception;
         }

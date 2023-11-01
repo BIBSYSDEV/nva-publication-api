@@ -1,6 +1,7 @@
 package no.unit.nva.expansion;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.InputStream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
@@ -35,6 +36,7 @@ import java.net.URI;
 import java.util.Optional;
 
 import static java.util.Objects.isNull;
+import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
 
@@ -45,7 +47,10 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     public static final String UNSUPPORTED_TYPE = "Expansion is not supported for type:";
     public static final String CRISTIN = "cristin";
     public static final String PERSON = "person";
-    public static final String API_HOST = "API_HOST";
+    public static final String API_HOST = new Environment().readEnv("API_HOST");
+    public static final String CONTEXT_URI = new UriWrapper(UriWrapper.HTTPS, API_HOST)
+                                                 .addChild("publication", "context")
+                                                 .toString();
     public static final String CRISTIN_ID_DELIMITER = "@";
     private static final String EXPAND_PERSON_DEFAULT_INFO = "Could not retrieve Cristin Person. Creating default "
                                                              + "expanded person for owner";
@@ -54,6 +59,8 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     public static final String LAST_NAME_CRISTIN_TYPE = "LastName";
     public static final String PREFERRED_LAST_NAME_CRISTIN_TYPE = "PreferredLastName";
     private static final String PART_OF_PROPERTY = "https://nva.sikt.no/ontology/publication#partOf";
+    public static final String CONTEXT_NODE_SELECTOR = "/@context";
+    public static final String CONTEXT_FIELD_PROPERTY_NAME = "@context";
     private final ResourceService resourceService;
     private final TicketService ticketService;
     private final UriRetriever personRetriever;
@@ -105,7 +112,10 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
             logger.info("Expanding Resource: {}", resource.getIdentifier());
             var expandedResource = ExpandedResource.fromPublication(personRetriever,
                                                                     resource.toPublication(resourceService));
-            return NviCalculator.calculateNviType(expandedResource);
+            var resourceWithNviType = NviCalculator.calculateNviType(expandedResource);
+            var resourceWithContextUri = replaceInlineContextWithUriContext(resourceWithNviType);
+            return attempt(
+                () -> objectMapper.readValue(resourceWithContextUri.toString(), ExpandedResource.class)).orElseThrow();
         } else if (dataEntry instanceof TicketEntry ticketEntry) {
             logger.info("Expanding TicketEntry: {}", ticketEntry.getIdentifier());
             return ExpandedTicket.create((TicketEntry) dataEntry, resourceService, this, ticketService);
@@ -116,6 +126,18 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
         }
         // will throw exception if we want to index a new type that we are not handling yet
         throw new UnsupportedOperationException(UNSUPPORTED_TYPE + dataEntry.getClass().getSimpleName());
+    }
+
+    private ObjectNode replaceInlineContextWithUriContext(String resourceWithNviValues) {
+        var objectNode = attempt(() -> (ObjectNode) objectMapper.readTree(resourceWithNviValues)).orElseThrow();
+        if (hasContextNode(objectNode)) {
+            objectNode.put(CONTEXT_FIELD_PROPERTY_NAME, CONTEXT_URI);
+        }
+        return objectNode;
+    }
+
+    private static boolean hasContextNode(ObjectNode objectNode) {
+        return !objectNode.at(CONTEXT_NODE_SELECTOR).isMissingNode();
     }
 
     @Override
@@ -159,7 +181,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     }
 
     private URI constructUri(User owner) {
-        return UriWrapper.fromHost(new Environment().readEnv(API_HOST))
+        return UriWrapper.fromHost(API_HOST)
                 .addChild(CRISTIN)
                 .addChild(PERSON)
                 .addChild(extractCristinId(owner))
