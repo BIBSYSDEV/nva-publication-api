@@ -553,6 +553,7 @@ Resources:
             Resource:
               - !Sub '${ScopusXmlBucket.Arn}/*'
               - !Sub '${ScopusZipBucket.Arn}/*'
+              - !Sub '${ImportCandidateStorageBucket.Arn}/*'
 
   #================================ApiGateway handlers====================================================
   NvaCreatePublicationFunction:
