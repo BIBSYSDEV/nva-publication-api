@@ -11,6 +11,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import jakarta.xml.bind.JAXB;
@@ -61,6 +62,7 @@ import no.scopus.generated.ItemidTp;
 import no.scopus.generated.ItemidlistTp;
 import no.scopus.generated.MetaTp;
 import no.scopus.generated.ObjectFactory;
+import no.scopus.generated.OpenAccessType;
 import no.scopus.generated.OrganizationTp;
 import no.scopus.generated.OrigItemTp;
 import no.scopus.generated.PagerangeTp;
@@ -74,12 +76,16 @@ import no.scopus.generated.SourcetitleTp;
 import no.scopus.generated.SourcetypeAtt;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
+import no.scopus.generated.UpwOaLocationType;
+import no.scopus.generated.UpwOaLocationsType;
+import no.scopus.generated.UpwOpenAccessType;
 import no.scopus.generated.VolissTp;
 import no.scopus.generated.VolisspagTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.ScopusConstants;
 import no.unit.nva.language.Language;
 import no.unit.nva.language.LanguageConstants;
+import nva.commons.core.StringUtils;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
 
@@ -691,7 +697,33 @@ public final class ScopusGenerator {
         meta.setDoi(randomScopusDoi());
         meta.setSrctype(sourcetypeAtt.value());
         meta.setEid(randomString());
+        meta.setOpenAccess(randomOpenAccess());
         return meta;
+    }
+
+    private OpenAccessType randomOpenAccess() {
+        var openAccess = new OpenAccessType();
+        openAccess.setUpwOpenAccess(randomUpwOpenAccess());
+        return openAccess;
+    }
+
+    private UpwOpenAccessType randomUpwOpenAccess() {
+        var upwOpenAccess = new UpwOpenAccessType();
+        upwOpenAccess.setUpwOaLocations(randomLocations());
+        return upwOpenAccess;
+    }
+
+    private UpwOaLocationsType randomLocations() {
+        var locations = new UpwOaLocationsType();
+        var locationList = IntStream.range(0, 3).mapToObj(i -> randomLocation()).toList();
+        locations.getUpwOaLocation().addAll(locationList);
+        return locations;
+    }
+
+    private UpwOaLocationType randomLocation() {
+        var location = new UpwOaLocationType();
+        location.setUpwUrlForPdf(randomUri().toString());
+        return location;
     }
 
     private String randomScopusDoi() {

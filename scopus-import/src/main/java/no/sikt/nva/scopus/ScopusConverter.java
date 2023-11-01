@@ -2,6 +2,7 @@ package no.sikt.nva.scopus;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
+import static java.util.UUID.randomUUID;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.sikt.nva.scopus.ScopusConstants.INF_END;
@@ -9,13 +10,18 @@ import static no.sikt.nva.scopus.ScopusConstants.INF_START;
 import static no.sikt.nva.scopus.ScopusConstants.SUP_END;
 import static no.sikt.nva.scopus.ScopusConstants.SUP_START;
 import static nva.commons.core.StringUtils.isEmpty;
+import static nva.commons.core.attempt.Try.attempt;
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.util.RuntimeHttpUtils;
 import jakarta.xml.bind.JAXBElement;
+import java.io.InputStream;
 import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AuthorGroupTp;
@@ -28,8 +34,12 @@ import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
 import no.scopus.generated.InfTp;
+import no.scopus.generated.OpenAccessType;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
+import no.scopus.generated.UpwOaLocationType;
+import no.scopus.generated.UpwOaLocationsType;
+import no.scopus.generated.UpwOpenAccessType;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.conversion.ContributorExtractor;
 import no.sikt.nva.scopus.conversion.CristinConnection;
@@ -46,10 +56,18 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
+import nva.commons.core.Environment;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 public class ScopusConverter {
 
@@ -58,17 +76,23 @@ public class ScopusConverter {
     public static final ResourceOwner HARDCODED_RESOURCE_OWNER = new ResourceOwner(new Username("concurrencyT@unit.no"),
                                                                                    URI.create(
                                                                                        "https://www.example.org"));
+    public static final String IMPORT_CANDIDATES_FILES_BUCKET = new Environment().readEnv(
+        "IMPORT_CANDIDATES_FILES_BUCKET");
+    public static final String RIGHTS_RESERVED_LICENSE = "http://rightsstatements.org/vocab/InC/1.0/";
+    private static final String CONTENT_DISPOSITION_FILE_NAME_PATTERN = "filename=\"%s\"";
     private final DocTp docTp;
     private final PiaConnection piaConnection;
     private final CristinConnection cristinConnection;
     private final PublicationChannelConnection publicationChannelConnection;
+    private final S3Client s3Client;
 
     protected ScopusConverter(DocTp docTp, PiaConnection piaConnection, CristinConnection cristinConnection,
-                              PublicationChannelConnection publicationChannelConnection) {
+                              PublicationChannelConnection publicationChannelConnection, S3Client s3Client) {
         this.docTp = docTp;
         this.piaConnection = piaConnection;
         this.cristinConnection = cristinConnection;
         this.publicationChannelConnection = publicationChannelConnection;
+        this.s3Client = s3Client;
     }
 
     public static String extractContentString(Object content) {
@@ -111,7 +135,53 @@ public class ScopusConverter {
                    .withModifiedDate(Instant.now())
                    .withStatus(PublicationStatus.PUBLISHED)
                    .withImportStatus(ImportStatusFactory.createNotImported())
+                   .withAssociatedArtifacts(generateAssociatedArtifacts())
                    .build();
+    }
+
+    private static InputStream fetchFile(UpwOaLocationType type) {
+        return attempt(() -> RuntimeHttpUtils.fetchFile(UriWrapper.fromUri(type.getUpwUrlForPdf()).getUri(),
+                                                        new ClientConfiguration())).orElseThrow();
+    }
+
+    private List<AssociatedArtifact> generateAssociatedArtifacts() {
+        return getLocations().stream().map(this::saveToS3).toList();
+    }
+
+    private List<UpwOaLocationType> getLocations() {
+        return Optional.ofNullable(docTp.getMeta().getOpenAccess())
+                   .map(OpenAccessType::getUpwOpenAccess)
+                   .map(UpwOpenAccessType::getUpwOaLocations)
+                   .map(UpwOaLocationsType::getUpwOaLocation)
+                   .orElse(List.of());
+    }
+
+    private AssociatedArtifact saveToS3(UpwOaLocationType type) {
+        var fileName = UriWrapper.fromUri(type.getUpwUrlForPdf()).getLastPathElement();
+        var fileIdentifier = randomUUID();
+        saveFile(type, fileName, fileIdentifier);
+        var head = fetchFileInfo(fileIdentifier);
+        return File.builder()
+                   .withIdentifier(fileIdentifier)
+                   .withName(fileName)
+                   .withMimeType(head.contentType())
+                   .withSize(head.contentLength())
+                   .withLicense(URI.create(RIGHTS_RESERVED_LICENSE))
+                   .buildPublishedFile();
+    }
+
+    private HeadObjectResponse fetchFileInfo(UUID fileIdentifier) {
+        return s3Client.headObject(
+            HeadObjectRequest.builder().bucket(IMPORT_CANDIDATES_FILES_BUCKET).key(fileIdentifier.toString()).build());
+    }
+
+    private void saveFile(UpwOaLocationType type, String fileName, UUID fileIdentifier) {
+        s3Client.putObject(PutObjectRequest.builder()
+                               .bucket(IMPORT_CANDIDATES_FILES_BUCKET)
+                               .contentDisposition(String.format(CONTENT_DISPOSITION_FILE_NAME_PATTERN, fileName))
+                               .key(fileIdentifier.toString())
+                               .build(),
+                           RequestBody.fromBytes(attempt(() -> fetchFile(type).readAllBytes()).orElseThrow()));
     }
 
     private Optional<AuthorKeywordsTp> extractAuthorKeyWords() {

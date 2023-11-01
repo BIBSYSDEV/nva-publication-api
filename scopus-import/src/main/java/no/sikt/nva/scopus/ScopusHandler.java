@@ -247,7 +247,7 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
 
     private ImportCandidate generatePublication(DocTp docTp) {
         var scopusConverter = new ScopusConverter(docTp, piaConnection, cristinConnection,
-                                                  publicationChannelConnection);
+                                                  publicationChannelConnection, s3Client);
         return scopusConverter.generateImportCandidate();
     }
 
