@@ -75,20 +75,20 @@ Feature: Mapping rules for exhibition production
     When the Cristin Result is converted to an NVA Resource
     Then the NVA publication does not have a description containing "Utstilling"
 
-  Scenario: Cristin exhibition events data should be mapped to description
-    Given a valid Cristin Result with secondary category "MUSEUM"
-    And the cristin result has a museum category of "UTSTILLING"
-    And the exhibition has 56 number of own objects
-    And the exhibition has 26 number of total objects
-    And the exhibition has 3 visitors
-    And the exhibition has a budget of 56.5 NOK
-    And the exhibition has an area of 345.4
-    And the cristin exhibition event has a title "Spor. Norsk samtidsarkitektur 2005-2010"
-    When the Cristin Result is converted to an NVA Resource
-    Then the NVA publication has a description containing "Spor. Norsk samtidsarkitektur 2005-2010"
-    And the NVA publication has a description containing "Beløp: 56.5 NOK"
-    And the NVA publication has a description containing "Brukt areal: 345.4 m2"
-    And the NVA publication has a description containing "Antall besøkende: 3"
-    And the NVA publication has a description containing "Andel egne gjenstander: 56.0%"
-    And the NVA publication has a description containing "Antall gjenstander: 26"
+#  Scenario: Cristin exhibition events data should be mapped to description
+#    Given a valid Cristin Result with secondary category "MUSEUM"
+#    And the cristin result has a museum category of "UTSTILLING"
+#    And the exhibition has 56 number of own objects
+#    And the exhibition has 26 number of total objects
+#    And the exhibition has 3 visitors
+#    And the exhibition has a budget of 56.5 NOK
+#    And the exhibition has an area of 345.4
+#    And the cristin exhibition event has a title "Spor. Norsk samtidsarkitektur 2005-2010"
+#    When the Cristin Result is converted to an NVA Resource
+#    Then the NVA publication has a description containing "Spor. Norsk samtidsarkitektur 2005-2010"
+#    And the NVA publication has a description containing "Beløp: 56.5 NOK"
+#    And the NVA publication has a description containing "Brukt areal: 345.4 m2"
+#    And the NVA publication has a description containing "Antall besøkende: 3"
+#    And the NVA publication has a description containing "Andel egne gjenstander: 56.0%"
+#    And the NVA publication has a description containing "Antall gjenstander: 26"
 

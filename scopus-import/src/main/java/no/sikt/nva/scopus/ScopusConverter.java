@@ -76,7 +76,7 @@ public class ScopusConverter {
                                                                                    URI.create(
                                                                                        "https://www.example.org"));
     public static final String IMPORT_CANDIDATES_FILES_BUCKET = new Environment().readEnv(
-        "IMPORT_CANDIDATES_FILES_BUCKET");
+        "IMPORT_CANDIDATES_STORAGE_BUCKET");
     public static final String RIGHTS_RESERVED_LICENSE = "http://rightsstatements.org/vocab/InC/1.0/";
     private static final String CONTENT_DISPOSITION_FILE_NAME_PATTERN = "filename=\"%s\"";
     private final DocTp docTp;
