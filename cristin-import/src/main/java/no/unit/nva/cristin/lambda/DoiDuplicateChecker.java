@@ -36,14 +36,6 @@ public class DoiDuplicateChecker {
                    .orElse(pubRep);
     }
 
-    private PublicationRepresentations checkForHits(String response, URI doi, PublicationRepresentations pubRep) {
-        var searchRespnse = toResponse(response);
-        if (searchRespnse.totalHits() > 0) {
-            throw new DuplicateDoiException(doi);
-        }
-        return pubRep;
-    }
-
     private URI constructSearchUri(URI doi) {
         return UriWrapper.fromHost(apiHost)
                    .addChild(SEARCH)
@@ -56,8 +48,20 @@ public class DoiDuplicateChecker {
         return uriRetriever.getRawContent(uri, APPLICATION_JSON);
     }
 
+    private PublicationRepresentations checkForHits(String response, URI doi, PublicationRepresentations pubRep) {
+        var searchResponse = toResponse(response);
+        if (responseHasHits(searchResponse)) {
+            throw new DuplicateDoiException(doi);
+        }
+        return pubRep;
+    }
+
     private SearchResource2Response toResponse(String response) {
         return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response, SearchResource2Response.class))
                    .orElseThrow();
+    }
+
+    private static boolean responseHasHits(SearchResource2Response searchResponse) {
+        return searchResponse.totalHits() > 0;
     }
 }
