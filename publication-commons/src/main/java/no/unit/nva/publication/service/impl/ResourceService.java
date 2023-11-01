@@ -37,15 +37,16 @@ import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.IdentifierEntry;
+import no.unit.nva.publication.model.storage.KeyField;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.storage.UniqueDoiRequestEntry;
@@ -235,8 +236,9 @@ public class ResourceService extends ServiceWithTransactions {
         return updateResourceService.updatePublishedStatusToDeleted(resourceIdentifier);
     }
 
-    public ListingResult<Entity> scanResources(int pageSize, Map<String, AttributeValue> startMarker) {
-        var scanRequest = createScanRequestThatFiltersOutIdentityEntries(pageSize, startMarker);
+    public ListingResult<Entity> scanResources(int pageSize, Map<String, AttributeValue> startMarker,
+                                               List<KeyField> types) {
+        var scanRequest = createScanRequestThatFiltersOutIdentityEntries(pageSize, startMarker, types);
         var scanResult = getClient().scan(scanRequest);
         var values = extractDatabaseEntries(scanResult);
         var isTruncated = thereAreMorePagesToScan(scanResult);
@@ -409,15 +411,16 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private ScanRequest createScanRequestThatFiltersOutIdentityEntries(int pageSize,
-                                                                       Map<String, AttributeValue> startMarker) {
+                                                                       Map<String, AttributeValue> startMarker,
+                                                                       List<KeyField> types) {
         return new ScanRequest()
                    .withTableName(tableName)
                    .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
                    .withLimit(pageSize)
                    .withExclusiveStartKey(startMarker)
-                   .withFilterExpression(Dao.scanFilterExpressionForDataEntries())
+                   .withFilterExpression(Dao.scanFilterExpressionForDataEntries(types))
                    .withExpressionAttributeNames(Dao.scanFilterExpressionAttributeNames())
-                   .withExpressionAttributeValues(Dao.scanFilterExpressionAttributeValues());
+                   .withExpressionAttributeValues(Dao.scanFilterExpressionAttributeValues(types));
     }
 
     private List<Entity> extractDatabaseEntries(ScanResult response) {
