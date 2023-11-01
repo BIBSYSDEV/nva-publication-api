@@ -23,6 +23,7 @@ dependencies {
     implementation libs.nva.apigateway
     implementation libs.nva.language
     implementation libs.nva.logutils
+    implementation libs.nva.auth
     implementation libs.nva.identifiers
 
     implementation libs.aws.lambda.java.core

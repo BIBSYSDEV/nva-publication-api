@@ -5,6 +5,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static java.util.Objects.nonNull;
+import static java.net.http.HttpHeaders.*;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.ERROR_BUCKET_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.PATH_SEPERATOR;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM_DD_HH_FORMAT;
@@ -78,13 +79,17 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.http.Fault;
+import com.github.tomakehurst.wiremock.http.HttpHeader;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import jakarta.xml.bind.JAXBElement;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.http.HttpHeaders;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Clock;
@@ -98,6 +103,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -174,8 +180,8 @@ import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
-import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
-import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
+import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
@@ -206,8 +212,12 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
+import software.amazon.awssdk.services.s3.model.CopyObjectResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 
 @WireMockTest(httpsEnabled = true)
 class ScopusHandlerTest extends ResourcesLocalTest {
@@ -273,7 +283,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         fakeSecretsManagerClient.putPlainTextSecret("someSecret",
                                                     String.valueOf(new BackendClientCredentials("id", "secret")));
         var secretsReader = new SecretsReader(fakeSecretsManagerClient);
-        s3Client = new FakeS3Client();
+        s3Client = new FakeS3cClientWithHeadSupport();
         s3Driver = new S3Driver(s3Client, "ignoredValue");
         var httpClient = WiremockHttpClient.create();
         var piaEnvironment = createPiaConnectionEnvironment(wireMockRuntimeInfo);
@@ -285,8 +295,23 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         uriRetriever = mock(UriRetriever.class);
         scopusUpdater = new ScopusUpdater(resourceService, uriRetriever);
         scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
-                                          resourceService, scopusUpdater);
+                                          resourceService, scopusUpdater, uriRetriever);
         scopusData = new ScopusGenerator();
+        mockFetchFileResponse();
+    }
+
+    private void mockFetchFileResponse() {
+        var response = (HttpResponse<String>) mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(200);
+        var contentTypeHeader = new HttpHeader("Content-Type", "application/pdf;charset=UTF-8");
+        var contentDispositionHeader = new HttpHeader("Content-Disposition", "attachment; filename=\"someFile.pdf\"");
+        BiPredicate<String, String> biPredicate = (x, y) -> !x.equals(y);
+        var headers = HttpHeaders.of(Map.of("Content-Type", List.of("application/pdf", "charset=UTF-8"),
+                                                                    "Content-Disposition", List.of("attachment",
+                                                                                                   "filename=\"someFile.pdf\"")), biPredicate);
+        when(response.headers()).thenReturn(headers);
+        when(response.body()).thenReturn(InputStream.nullInputStream().toString());
+        when(uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(response));
     }
 
     @AfterEach
@@ -301,7 +326,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var expectedMessage = randomString();
         s3Client = new FakeS3ClientThrowingException(expectedMessage);
         scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
-                                          resourceService, scopusUpdater);
+                                          resourceService, scopusUpdater, uriRetriever);
         assertThrows(RuntimeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
     }
@@ -1113,7 +1138,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var s3Event = createNewScopusPublicationEvent();
         var handler = new ScopusHandler(this.s3Client, this.piaConnection, this.cristinConnection,
                                         this.publicationChannelConnection, fakeResourceServiceThrowingException,
-                                        scopusUpdater);
+                                        scopusUpdater, uriRetriever);
         assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
     }
 
@@ -1840,6 +1865,35 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         public <ReturnT> ReturnT getObject(GetObjectRequest getObjectRequest,
                                            ResponseTransformer<GetObjectResponse, ReturnT> responseTransformer) {
             throw new RuntimeException(expectedErrorMessage);
+        }
+    }
+
+    public class FakeS3cClientWithHeadSupport extends FakeS3Client {
+
+        public static final long SOME_CONTENT_LENGTH = 2932645L;
+        public static final String APPLICATION_PDF_MIMETYPE = "application/pdf";
+        private final List<CopyObjectRequest> copyObjectRequestList;
+
+        public FakeS3cClientWithHeadSupport() {
+            this.copyObjectRequestList = new ArrayList<>();
+        }
+
+        @Override
+        public CopyObjectResponse copyObject(CopyObjectRequest copyObjectRequest) {
+            copyObjectRequestList.add(copyObjectRequest);
+            return CopyObjectResponse.builder().build();
+        }
+
+        @Override
+        public HeadObjectResponse headObject(HeadObjectRequest headObjectRequest) {
+            return HeadObjectResponse.builder()
+                       .contentLength(SOME_CONTENT_LENGTH)
+                       .contentType(APPLICATION_PDF_MIMETYPE)
+                       .build();
+        }
+
+        public List<CopyObjectRequest> getCopyObjectRequestList() {
+            return copyObjectRequestList;
         }
     }
 }

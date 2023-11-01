@@ -10,12 +10,9 @@ import static no.sikt.nva.scopus.ScopusConstants.INF_START;
 import static no.sikt.nva.scopus.ScopusConstants.SUP_END;
 import static no.sikt.nva.scopus.ScopusConstants.SUP_START;
 import static nva.commons.core.StringUtils.isEmpty;
-import static nva.commons.core.attempt.Try.attempt;
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.util.RuntimeHttpUtils;
 import jakarta.xml.bind.JAXBElement;
-import java.io.InputStream;
 import java.net.URI;
+import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +45,7 @@ import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.sikt.nva.scopus.conversion.PublicationChannelConnection;
 import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
+import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
@@ -69,6 +67,7 @@ import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
+@SuppressWarnings("PMD.GodClass")
 public class ScopusConverter {
 
     public static final URI HARDCODED_ID = URI.create(
@@ -85,14 +84,18 @@ public class ScopusConverter {
     private final CristinConnection cristinConnection;
     private final PublicationChannelConnection publicationChannelConnection;
     private final S3Client s3Client;
+    private final UriRetriever uriRetriever;
 
     protected ScopusConverter(DocTp docTp, PiaConnection piaConnection, CristinConnection cristinConnection,
-                              PublicationChannelConnection publicationChannelConnection, S3Client s3Client) {
+                              PublicationChannelConnection publicationChannelConnection, S3Client s3Client,
+                              UriRetriever uriRetriever) {
         this.docTp = docTp;
         this.piaConnection = piaConnection;
         this.cristinConnection = cristinConnection;
         this.publicationChannelConnection = publicationChannelConnection;
         this.s3Client = s3Client;
+        this.uriRetriever = uriRetriever;
+
     }
 
     public static String extractContentString(Object content) {
@@ -139,13 +142,33 @@ public class ScopusConverter {
                    .build();
     }
 
-    private static InputStream fetchFile(UpwOaLocationType type) {
-        return attempt(() -> RuntimeHttpUtils.fetchFile(UriWrapper.fromUri(type.getUpwUrlForPdf()).getUri(),
-                                                        new ClientConfiguration())).orElseThrow();
+    private Optional<HttpResponse<String>> fetchFile(UpwOaLocationType type) {
+        return uriRetriever.fetchResponse(URI.create(type.getUpwUrlForPdf()), "*/*");
+    }
+
+    private static String getFilename(HttpResponse<String> response) {
+        var contentType = response.headers()
+                              .map()
+                              .get("Content-Type")
+                              .stream()
+                              .filter(value -> value.contains("application"))
+                              .toList()
+                              .get(0)
+                              .split("/")[1];
+        return Optional.ofNullable(response.headers().map().get("Content-Disposition"))
+                   .map(list -> list.stream().filter(item -> item.contains("filename")).toList())
+                   .map(list -> list.get(0))
+                   .map(value -> value.split("filename=")[1].split(";")[0].replace("\"", ""))
+                   .orElse(randomUUID() + "\\." + contentType);
     }
 
     private List<AssociatedArtifact> generateAssociatedArtifacts() {
-        return getLocations().stream().map(this::saveToS3).toList();
+        return getLocations().stream()
+                   .map(this::fetchFile)
+                   .filter(Optional::isPresent)
+                   .map(Optional::get)
+                   .map(this::convertToAssociatedArtifact)
+                   .toList();
     }
 
     private List<UpwOaLocationType> getLocations() {
@@ -156,14 +179,15 @@ public class ScopusConverter {
                    .orElse(List.of());
     }
 
-    private AssociatedArtifact saveToS3(UpwOaLocationType type) {
-        var fileName = UriWrapper.fromUri(type.getUpwUrlForPdf()).getLastPathElement();
+    private AssociatedArtifact convertToAssociatedArtifact(HttpResponse<String> response) {
         var fileIdentifier = randomUUID();
-        saveFile(type, fileName, fileIdentifier);
+        var file = response.body().getBytes();
+        var filename = getFilename(response);
+        saveFile(file, filename, fileIdentifier);
         var head = fetchFileInfo(fileIdentifier);
         return File.builder()
                    .withIdentifier(fileIdentifier)
-                   .withName(fileName)
+                   .withName(filename)
                    .withMimeType(head.contentType())
                    .withSize(head.contentLength())
                    .withLicense(URI.create(RIGHTS_RESERVED_LICENSE))
@@ -171,17 +195,19 @@ public class ScopusConverter {
     }
 
     private HeadObjectResponse fetchFileInfo(UUID fileIdentifier) {
-        return s3Client.headObject(
-            HeadObjectRequest.builder().bucket(IMPORT_CANDIDATES_FILES_BUCKET).key(fileIdentifier.toString()).build());
+        var request = HeadObjectRequest.builder()
+                                      .bucket(IMPORT_CANDIDATES_FILES_BUCKET)
+                                      .key(fileIdentifier.toString())
+                                      .build();
+        return s3Client.headObject(request);
     }
 
-    private void saveFile(UpwOaLocationType type, String fileName, UUID fileIdentifier) {
+    private void saveFile(byte[] file, String fileName, UUID fileIdentifier) {
         s3Client.putObject(PutObjectRequest.builder()
                                .bucket(IMPORT_CANDIDATES_FILES_BUCKET)
                                .contentDisposition(String.format(CONTENT_DISPOSITION_FILE_NAME_PATTERN, fileName))
                                .key(fileIdentifier.toString())
-                               .build(),
-                           RequestBody.fromBytes(attempt(() -> fetchFile(type).readAllBytes()).orElseThrow()));
+                               .build(), RequestBody.fromBytes(file));
     }
 
     private Optional<AuthorKeywordsTp> extractAuthorKeyWords() {
