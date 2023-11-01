@@ -1,5 +1,6 @@
 package no.sikt.nva.scopus;
 
+import static com.amazonaws.util.RuntimeHttpUtils.fetchFile;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static java.util.UUID.randomUUID;
@@ -10,6 +11,8 @@ import static no.sikt.nva.scopus.ScopusConstants.INF_START;
 import static no.sikt.nva.scopus.ScopusConstants.SUP_END;
 import static no.sikt.nva.scopus.ScopusConstants.SUP_START;
 import static nva.commons.core.StringUtils.isEmpty;
+import static nva.commons.core.attempt.Try.attempt;
+import com.amazonaws.ClientConfiguration;
 import jakarta.xml.bind.JAXBElement;
 import java.net.URI;
 import java.net.http.HttpResponse;
@@ -142,7 +145,7 @@ public class ScopusConverter {
                    .build();
     }
 
-    private Optional<HttpResponse<String>> fetchFile(UpwOaLocationType type) {
+    private Optional<HttpResponse<String>> fetchResponse(UpwOaLocationType type) {
         return uriRetriever.fetchResponse(URI.create(type.getUpwUrlForPdf()), "*/*");
     }
 
@@ -164,9 +167,6 @@ public class ScopusConverter {
 
     private List<AssociatedArtifact> generateAssociatedArtifacts() {
         return getLocations().stream()
-                   .map(this::fetchFile)
-                   .filter(Optional::isPresent)
-                   .map(Optional::get)
                    .map(this::convertToAssociatedArtifact)
                    .toList();
     }
@@ -179,9 +179,10 @@ public class ScopusConverter {
                    .orElse(List.of());
     }
 
-    private AssociatedArtifact convertToAssociatedArtifact(HttpResponse<String> response) {
+    public AssociatedArtifact convertToAssociatedArtifact(UpwOaLocationType locationType) {
+        var response = fetchResponse(locationType).get();
         var fileIdentifier = randomUUID();
-        var file = response.body().getBytes();
+        var file = fetchFileContent(locationType);
         var filename = getFilename(response);
         saveFile(file, filename, fileIdentifier);
         var head = fetchFileInfo(fileIdentifier);
@@ -192,6 +193,11 @@ public class ScopusConverter {
                    .withSize(head.contentLength())
                    .withLicense(URI.create(RIGHTS_RESERVED_LICENSE))
                    .buildPublishedFile();
+    }
+
+    private static byte[] fetchFileContent(UpwOaLocationType locationType) {
+        return attempt(() -> fetchFile(URI.create(locationType.getUpwUrlForPdf()), new ClientConfiguration()).readAllBytes())
+                   .orElseThrow();
     }
 
     private HeadObjectResponse fetchFileInfo(UUID fileIdentifier) {
