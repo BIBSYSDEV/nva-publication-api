@@ -53,9 +53,9 @@ Feature: Mapping of "Feature article" entries
 
   Scenario: When the the Cristin entry has a reference to an NSD journal then the
   NVA Entry contains a URI that is a reference to that NSD journal.
-    Given the Journal Publication has a reference to an NSD journal or publisher with identifier 12345
+    Given the Journal Publication has a reference to an NSD journal or publisher with identifier 339708
     And the Journal Publication has publishing year equal to 2003
     And the year the Cristin Result was published is equal to 2003
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Reference object with a journal URI that points to NVAs NSD proxy
-    And the Journal URI specifies the Journal by the NSD ID 12345 and the year 2003.
+    And the Journal URI specifies the Journal by the NSD ID "45F22A4F-F0CA-4F5F-B279-A2F1EF9D490B" and the year 2003.

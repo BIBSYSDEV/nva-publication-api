@@ -8,11 +8,11 @@ Feature: Rules that apply for both Books and Reports
   Scenario Outline: Mapping creates a reference to an NSD publisher when a Cristin Result mentions
   a Publisher with an NSD code.
     Given a valid Cristin Result with secondary category "<secondaryCategory>"
-    And the Cristin Result mentions a Publisher with NSD code 12345
+    And the Cristin Result mentions a Publisher with NSD code 6435
     And the Cristin Result was reported in NVI the year 2005
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource contains a Publisher reference that is a URI pointing to the NVA NSD proxy
-    And the Publisher URI contains the NSD code 12345 and the publication year 2005
+    And the Publisher URI contains the NSD code "2DB34A7E-A1AD-46CC-B69C-14ADA60C58FF" and the publication year 2005
     Examples:
       | secondaryCategory |
       | MONOGRAFI         |

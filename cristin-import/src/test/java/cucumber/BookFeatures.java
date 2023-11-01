@@ -215,10 +215,10 @@ public class BookFeatures {
         assertThat(publisher.getName(), is(equalTo(publisherName)));
     }
 
-    @Then("the Publisher URI contains the NSD code {int} and the publication year {int}")
-    public void thePublisherUriContainsTheNsdCodeAndThePublicationYear(Integer nsdCode, Integer publicationYear) {
+    @Then("the Publisher URI contains the NSD code {string} and the publication year {int}")
+    public void thePublisherUriContainsTheNsdCodeAndThePublicationYear(String pid, Integer publicationYear) {
         URI publisherId = extractConfirmedPublisher().getId();
-        assertThat(publisherId.getPath(), containsString(nsdCode.toString()));
+        assertThat(publisherId.getPath(), containsString(pid));
         assertThat(publisherId.getPath(), containsString(publicationYear.toString()));
     }
 
@@ -248,14 +248,14 @@ public class BookFeatures {
         URI seriesId = extractSeriesId();
         String expectedHost = URI.create(MappingConstants.NVA_API_DOMAIN).getHost();
         assertThat(seriesId.getHost(), is(equalTo(expectedHost)));
-        assertThat(seriesId.getPath(), containsString(MappingConstants.NSD_PROXY_PATH));
+        assertThat(seriesId.getPath(), containsString(MappingConstants.NVA_CHANNEL_REGISTRY_V2));
         assertThat(seriesId.getPath(), containsString(MappingConstants.NSD_PROXY_PATH_JOURNAL));
     }
 
-    @Then("the Series URI contains the NSD code {int} and the publication year {int}")
-    public void theSeriesUriContainsTheNsdCodeAndThePublicationYear(Integer nsdCode, Integer publicationYear) {
+    @Then("the Series URI contains the NSD code {string} and the publication year {int}")
+    public void theSeriesUriContainsTheNsdCodeAndThePublicationYear(String pid, Integer publicationYear) {
         URI seriesId = extractSeriesId();
-        assertThat(seriesId.getPath(), containsString(nsdCode.toString()));
+        assertThat(seriesId.getPath(), containsString(pid));
         assertThat(seriesId.getPath(), containsString(publicationYear.toString()));
     }
 

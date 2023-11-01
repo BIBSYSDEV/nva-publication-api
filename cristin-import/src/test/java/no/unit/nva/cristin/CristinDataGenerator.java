@@ -101,6 +101,8 @@ public final class CristinDataGenerator {
     private static final String MEDIA_CONTRIBUTION = "mediaContribution";
     private static final CristinSecondaryCategory[] BOOK_SECONDARY_CATEGORIES = new CristinSecondaryCategory[]{
         MONOGRAPH, TEXTBOOK, NON_FICTION_BOOK, ENCYCLOPEDIA, POPULAR_BOOK, REFERENCE_MATERIAL};
+    private static final Integer VALID_PUBLISHER_NSD_NUMBER = 5269;
+    private static final Integer VALID_JOURNAL_NSD_CODE = 339714;
 
     private CristinDataGenerator() {
 
@@ -434,7 +436,10 @@ public final class CristinDataGenerator {
     }
 
     private static CristinPublisher randomPublisher() {
-        return CristinPublisher.builder().withPublisherName(randomString()).withNsdCode(largeRandomNumber()).build();
+        return CristinPublisher.builder()
+                   .withPublisherName(randomString())
+                   .withNsdCode(VALID_PUBLISHER_NSD_NUMBER)
+                   .build();
     }
 
     private static CristinObject randomChapterArticle(CristinSecondaryCategory secondaryCategory) {
@@ -542,7 +547,7 @@ public final class CristinDataGenerator {
     private static CristinJournalPublicationJournal randomBookSeries() {
         return CristinJournalPublicationJournal.builder()
                    .withJournalTitle(randomString())
-                   .withNsdCode(largeRandomNumber())
+                   .withNsdCode(VALID_JOURNAL_NSD_CODE)
                    .withIssn(randomIssn())
                    .withIssnOnline(randomIssn())
 
@@ -727,7 +732,7 @@ public final class CristinDataGenerator {
             Set.of(PUBLICATION_OWNER_FIELD, ENTRY_PUBLISHED_DATE, JOURNAL_PUBLICATION_FIELD, CRISTIN_TAGS,
                    SOURCE_RECORD_IDENTIFIER, SUB_DEPARTMEND_IDENTIFIER_CREATED, OWNER_CODE_CREATED,
                    INSTITUTION_IDENTIFIER_CREATED, GROUP_IDENTIFIER_CREATED, DEPARTMENT_IDENTIFIER_CREATED,
-                   CRISTIN_LOCALES, CRISTIN_ASSOCIATED_URIS, "cristinProduct","note", "cristinArtisticProduction",
+                   CRISTIN_LOCALES, CRISTIN_ASSOCIATED_URIS, "cristinProduct", "note", "cristinArtisticProduction",
                    "cristinExhibition",
                    SOURCE_CODE, CRISTIN_PRESENTATIONAL_WORK, CRISTIN_SUBJECT_FIELD, BOOK_OR_REPORT_METADATA_FIELD,
                    BOOK_OR_REPORT_PART_METADATA, HRCS_CATEGORIES_AND_ACTIVITIES, CRISTIN_MODIFIED_DATE,

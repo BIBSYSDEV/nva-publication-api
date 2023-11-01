@@ -35,6 +35,8 @@ dependencies {
     implementation libs.typesafe.config
     implementation libs.bundles.logging
 
+    implementation libs.open.csv
+
     testImplementation libs.nva.datamodel.testutils
     testImplementation project(":publication-testing")
     testImplementation libs.nva.testutils
