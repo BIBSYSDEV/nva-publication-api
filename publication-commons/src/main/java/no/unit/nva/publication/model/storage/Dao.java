@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -88,8 +87,7 @@ public abstract class Dao
      * @return filtering expression string.
      */
     public static String scanFilterExpressionForDataEntries(Collection<KeyField> types) {
-        var currentTypes = types.isEmpty() ? List.of(KeyField.values()) : types;
-        return currentTypes.stream().map(Dao::toQueryPart).collect(Collectors.joining(" or \n"));
+        return getTypesOrDefault(types).map(Dao::toQueryPart).collect(Collectors.joining(" or \n"));
     }
 
     // replaces the hash values in the filter expression with the actual key name
@@ -99,9 +97,7 @@ public abstract class Dao
 
     // replaces the colon values in the filter expression with the actual value
     public static Map<String, AttributeValue> scanFilterExpressionAttributeValues(Collection<KeyField> types) {
-        var currentTypes = types.isEmpty() ? List.of(KeyField.values()) : types;
-        return currentTypes.stream()
-                   .map(Dao::createFilterExpression)
+        return getTypesOrDefault(types).map(Dao::createFilterExpression)
                    .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
     }
 
@@ -237,6 +233,10 @@ public abstract class Dao
 
     @JsonIgnore
     protected abstract User getOwner();
+
+    private static Stream<KeyField> getTypesOrDefault(Collection<KeyField> types) {
+        return types.isEmpty() ? Stream.of(KeyField.values()) : types.stream();
+    }
 
     private static String toQueryPart(KeyField type) {
         return "begins_with (#PK, " + type.getKeyField() + ")";
