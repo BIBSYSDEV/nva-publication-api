@@ -330,7 +330,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldDownloadFileFromUrlAndPersistIntoS3BucketAndMapToAssociatedArtifact(WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException {
+    void shouldDownloadFileFromUrlAndPersistIntoS3BucketAndMapToAssociatedArtifact(
+        WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException {
         scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccess(wireMockRuntimeInfo));
         createEmptyPiaMock();
         var expectedFilenames = mockFetchFilesResponses(scopusData);

@@ -22,7 +22,6 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 import nva.commons.core.Environment;
 import nva.commons.core.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
@@ -35,11 +34,12 @@ public class ScopusFileConverter {
     public static final String IMPORT_CANDIDATES_FILES_BUCKET = new Environment().readEnv(
         "IMPORT_CANDIDATES_STORAGE_BUCKET");
     private static final URI RIGHTS_RESERVED_LICENSE = URI.create("https://creativecommons.org/licenses/by/4.0/");
-    public static final String CONTENT_TYPE_APPLICATION_PDF = "application/pdf";
+    public static final String CONTENT_TYPE_OCTET_STREAM = "application/octet-stream";
     public static final String CONTENT_TYPE_DELIMITER = ";";
     public static final String FILE_TYPE_DELIMITER = "/";
     public static final String FILENAME = "filename";
     public static final String PDF_FILE_TYPE = "pdf";
+    public static final String FILE_NAME_DELIMITER = ".";
     private final HttpClient httpClient;
     private final S3Client s3Client;
 
@@ -56,12 +56,12 @@ public class ScopusFileConverter {
                    .toList();
     }
 
+    //TODO: Fetched files should be scanned for malware
     public AssociatedArtifact convertToAssociatedArtifact(String downloadUrl) {
         var response = fetchResponse(downloadUrl);
         var fileIdentifier = randomUUID();
-        var file = attempt(() -> response.body().readAllBytes()).orElseThrow();
         var filename = getFilename(response);
-        saveFile(file, filename, fileIdentifier, response);
+        saveFile(filename, fileIdentifier, response);
         var head = fetchFileInfo(fileIdentifier);
         return File.builder()
                    .withIdentifier(fileIdentifier)
@@ -77,10 +77,9 @@ public class ScopusFileConverter {
                    .map(list -> list.stream().filter(item -> item.contains(FILENAME)).toList())
                    .map(list -> list.get(0))
                    .map(ScopusFileConverter::getFilename)
-                   .orElse(randomUUID() + "\\." + getFileType(response));
+                   .orElse(randomUUID() + FILE_NAME_DELIMITER + getFileType(response));
     }
 
-    @NotNull
     private static String getFilename(String value) {
         return value.split("filename=")[1].split(CONTENT_TYPE_DELIMITER)[0].replace("\"", StringUtils.EMPTY_STRING);
     }
@@ -103,7 +102,7 @@ public class ScopusFileConverter {
         return Optional.of(response.headers().firstValue(Headers.CONTENT_TYPE))
                    .map(Optional::orElseThrow)
                    .map(value -> value.split(CONTENT_TYPE_DELIMITER)[0])
-                   .orElse(CONTENT_TYPE_APPLICATION_PDF);
+                   .orElse(CONTENT_TYPE_OCTET_STREAM);
     }
 
     private HeadObjectResponse fetchFileInfo(UUID fileIdentifier) {
@@ -114,13 +113,14 @@ public class ScopusFileConverter {
         return s3Client.headObject(request);
     }
 
-    private void saveFile(byte[] file, String fileName, UUID fileIdentifier, HttpResponse<InputStream> response) {
+    private void saveFile(String fileName, UUID fileIdentifier, HttpResponse<InputStream> response) {
+        var fileToSave = attempt(() -> response.body().readAllBytes()).orElseThrow();
         s3Client.putObject(PutObjectRequest.builder()
                                .bucket(IMPORT_CANDIDATES_FILES_BUCKET)
                                .contentDisposition(String.format(CONTENT_DISPOSITION_FILE_NAME_PATTERN, fileName))
                                .contentType(getContentType(response))
                                .key(fileIdentifier.toString())
-                               .build(), RequestBody.fromBytes(file));
+                               .build(), RequestBody.fromBytes(fileToSave));
     }
 
     private HttpResponse<InputStream> fetchResponse(String type) {
