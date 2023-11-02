@@ -23,6 +23,7 @@ dependencies {
     implementation libs.nva.apigateway
     implementation libs.nva.language
     implementation libs.nva.logutils
+    implementation libs.nva.auth
     implementation libs.nva.identifiers
 
     implementation libs.aws.lambda.java.core
@@ -55,4 +56,5 @@ test {
     environment "SCOPUS_IMPORT_BUCKET", "someBucket"
     environment "BACKEND_CLIENT_SECRET_NAME", "someSecret"
     environment "BACKEND_CLIENT_AUTH_URL", "example.com"
+    environment "IMPORT_CANDIDATES_STORAGE_BUCKET", "someBucket"
 }
