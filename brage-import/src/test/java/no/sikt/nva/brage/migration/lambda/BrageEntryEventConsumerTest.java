@@ -1024,7 +1024,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                    .persistNew(resourceService, UserInstance.fromPublication(publication));
     }
 
-    private Publication persistPublicationWithDoi( URI doi)
+    private Publication persistPublicationWithDoi(URI doi)
         throws BadRequestException {
         var publication = randomPublication().copy()
                               .withDoi(doi)
