@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Iterables;
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -25,9 +26,12 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
+import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
@@ -59,26 +63,33 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private static final String S3_URI_TEMPLATE = "s3://%s/%s";
     private static final String ERROR_SAVING_BRAGE_IMPORT = "Error saving brage import for record with object key: ";
     private static final Logger logger = LoggerFactory.getLogger(BrageEntryEventConsumer.class);
+    private static final String RESOURCES_2 = "resources2";
+    private static final String SEARCH = "search";
+    private static final String DOI = "doi";
+    private static final String APPLICATION_JSON = "application/json";
     private final S3Client s3Client;
     private final ResourceService resourceService;
     private String brageRecordFile;
-    private List<Publication> publicationsByCristinIdentifier;
+    private List<Publication> publicationsToMerge;
+    private final UriRetriever uriRetriever;
+    private final String apiHost = new Environment().readEnv("API_HOST");
 
-    public BrageEntryEventConsumer(S3Client s3Client, ResourceService resourceService) {
+    public BrageEntryEventConsumer(S3Client s3Client, ResourceService resourceService, UriRetriever uriRetriever) {
         this.s3Client = s3Client;
         this.resourceService = resourceService;
+        this.uriRetriever = uriRetriever;
     }
 
     @JacocoGenerated
     public BrageEntryEventConsumer() {
-        this(S3Driver.defaultS3Client().build(), ResourceService.defaultService());
+        this(S3Driver.defaultS3Client().build(), ResourceService.defaultService(), new UriRetriever());
     }
 
     @Override
     public Publication handleRequest(S3Event s3Event, Context context) {
         return attempt(() -> parseBrageRecord(s3Event))
                    .map(publication -> pushAssociatedFilesToPersistedStorage(publication, s3Event))
-                   .map(publication -> publicationWithCristinIdentifierAlreadyExists(publication)
+                   .map(publication -> shouldMergePublications(publication)
                                            ? attemptToUpdateExistingPublication(publication, s3Event)
                                            : createNewPublication(publication, s3Event))
                    .orElse(fail -> handleSavingError(fail, s3Event));
@@ -91,13 +102,60 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                        fail.getException()));
     }
 
-    private boolean publicationWithCristinIdentifierAlreadyExists(Publication publication) {
+    private boolean shouldMergePublications(Publication publication) throws NotFoundException {
         var cristinIdentifier = getCristinIdentifier(publication);
         if (nonNull(cristinIdentifier)) {
-            publicationsByCristinIdentifier = getPublicationsByCristinIdentifier(cristinIdentifier);
-            return !publicationsByCristinIdentifier.isEmpty();
+            publicationsToMerge = getPublicationsByCristinIdentifier(cristinIdentifier);
+            return !publicationsToMerge.isEmpty();
+        }
+
+        return existingPublicationHasSameDoi(publication);
+    }
+
+    private boolean existingPublicationHasSameDoi(Publication publication)
+        throws NotFoundException {
+        var doi = publication.getEntityDescription().getReference().getDoi();
+
+        if (nonNull(doi)) {
+            var publicationsByDoi = searchForPublicationsByDoi(doi);
+            if (publicationsByDoi.isEmpty()) {
+                return false;
+            }
+
+            var firstPublicationHitByDoi = publicationsByDoi.get(0);
+
+            var upToDateVersionOfPublication =
+                resourceService.getPublicationByIdentifier(firstPublicationHitByDoi.getIdentifier());
+            publicationsToMerge = List.of(upToDateVersionOfPublication);
+
+            return true;
         }
         return false;
+    }
+
+    private List<Publication> searchForPublicationsByDoi(URI doi) {
+        var searchUri = constructSearchUri(doi);
+        return getResponseBody(searchUri)
+                .map(this::toResponse)
+                .map(SearchResourceApiResponse::hits)
+                .orElse(List.of());
+    }
+
+    private URI constructSearchUri(URI doi) {
+        return UriWrapper.fromHost(apiHost)
+                   .addChild(SEARCH)
+                   .addChild(RESOURCES_2)
+                   .addQueryParameter(DOI, doi.toString())
+                   .getUri();
+    }
+
+    private Optional<String> getResponseBody(URI uri) {
+        return uriRetriever.getRawContent(uri, APPLICATION_JSON);
+    }
+
+    private SearchResourceApiResponse toResponse(String response) {
+        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response, SearchResourceApiResponse.class))
+                   .orElseThrow();
     }
 
     private List<Publication> getPublicationsByCristinIdentifier(String cristinIdentifier) {
@@ -131,7 +189,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private Publication attemptToUpdateExistingPublication(Publication publication, S3Event s3Event) {
-        return attempt(() -> publicationsByCristinIdentifier)
+        return attempt(() -> publicationsToMerge)
                    .map(publications -> mergeTwoPublications(publication, getOnlyElement(publications), s3Event))
                    .orElseThrow();
     }
