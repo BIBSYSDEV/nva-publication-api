@@ -9,6 +9,7 @@ import jakarta.xml.bind.JAXB;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.util.Random;
 import no.scopus.generated.DocTp;
 import no.sikt.nva.scopus.conversion.CristinConnection;
@@ -59,29 +60,28 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     private final CristinConnection cristinConnection;
     private final PublicationChannelConnection publicationChannelConnection;
     private final ResourceService resourceService;
-    private final UriRetriever uriRetriever;
     private final ScopusUpdater scopusUpdater;
+    private final ScopusFileConverter scopusFileConverter;
 
     @JacocoGenerated
     public ScopusHandler() {
         this(S3Driver.defaultS3Client().build(), defaultPiaConnection(), defaultCristinConnection(),
              new PublicationChannelConnection(
                  new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME)),
-             ResourceService.defaultService(), new ScopusUpdater(ResourceService.defaultService(),
-                                                                 new UriRetriever()),
-             new UriRetriever());
+             ResourceService.defaultService(), new ScopusUpdater(ResourceService.defaultService(), new UriRetriever()),
+             new ScopusFileConverter(HttpClient.newHttpClient(), S3Driver.defaultS3Client().build()));
     }
 
     public ScopusHandler(S3Client s3Client, PiaConnection piaConnection, CristinConnection cristinConnection,
                          PublicationChannelConnection publicationChannelConnection, ResourceService resourceService,
-                         ScopusUpdater scopusUpdater, UriRetriever uriRetriever) {
+                         ScopusUpdater scopusUpdater, ScopusFileConverter scopusFileConverter) {
         this.s3Client = s3Client;
         this.piaConnection = piaConnection;
         this.cristinConnection = cristinConnection;
         this.publicationChannelConnection = publicationChannelConnection;
         this.resourceService = resourceService;
         this.scopusUpdater = scopusUpdater;
-        this.uriRetriever = uriRetriever;
+        this.scopusFileConverter = scopusFileConverter;
     }
 
     @Override
@@ -251,7 +251,7 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
 
     private ImportCandidate generatePublication(DocTp docTp) {
         var scopusConverter = new ScopusConverter(docTp, piaConnection, cristinConnection,
-                                                  publicationChannelConnection, s3Client, uriRetriever);
+                                                  publicationChannelConnection, scopusFileConverter);
         return scopusConverter.generateImportCandidate();
     }
 

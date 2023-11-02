@@ -697,33 +697,7 @@ public final class ScopusGenerator {
         meta.setDoi(randomScopusDoi());
         meta.setSrctype(sourcetypeAtt.value());
         meta.setEid(randomString());
-        meta.setOpenAccess(randomOpenAccess());
         return meta;
-    }
-
-    private OpenAccessType randomOpenAccess() {
-        var openAccess = new OpenAccessType();
-        openAccess.setUpwOpenAccess(randomUpwOpenAccess());
-        return openAccess;
-    }
-
-    private UpwOpenAccessType randomUpwOpenAccess() {
-        var upwOpenAccess = new UpwOpenAccessType();
-        upwOpenAccess.setUpwOaLocations(randomLocations());
-        return upwOpenAccess;
-    }
-
-    private UpwOaLocationsType randomLocations() {
-        var locations = new UpwOaLocationsType();
-        var locationList = IntStream.range(0, 3).mapToObj(i -> randomLocation()).toList();
-        locations.getUpwOaLocation().addAll(locationList);
-        return locations;
-    }
-
-    private UpwOaLocationType randomLocation() {
-        var location = new UpwOaLocationType();
-        location.setUpwUrlForPdf(randomUri().toString());
-        return location;
     }
 
     private String randomScopusDoi() {
