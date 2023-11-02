@@ -7,7 +7,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import no.sikt.nva.scopus.conversion.model.PublicationChannelResponse;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
+import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 

@@ -35,11 +35,11 @@ import nva.commons.core.JacocoGenerated;
 @JsonIgnoreProperties({"varbeidlopenr", "utstillingstype"})
 public class CristinExhibition implements DescriptionExtractor {
 
-    private static final String BUDGET_INFORMATION = "Beløp: %.1f NOK";
-    private static final String AREA_INFORMATION = "Brukt areal: %.1f m2";
-    private static final String NUMBER_OF_OBJECTS_INFORMATION = "Antall gjenstander: %d";
-    private static final String NUMBER_OF_OWNED_OBJECTS_INFORMATION = "Andel egne gjenstander: %.1f%%";
-    private static final String NUMBER_OF_VISITORS_INFORMATION = "Antall besøkende: %d";
+    private static final String BUDGET_INFORMATION = "Beløp: %s NOK";
+    private static final String AREA_INFORMATION = "Brukt areal: %s m2";
+    private static final String NUMBER_OF_OBJECTS_INFORMATION = "Antall gjenstander: %s";
+    private static final String NUMBER_OF_OWNED_OBJECTS_INFORMATION = "Andel egne gjenstander: %s%%";
+    private static final String NUMBER_OF_VISITORS_INFORMATION = "Antall besøkende: %s";
     private static final String YES = "J";
 
     @JsonProperty("hendelse")

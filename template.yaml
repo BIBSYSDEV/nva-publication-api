@@ -937,6 +937,7 @@ Resources:
           PIA_PASSWORD_KEY: !Ref PiaRestUsernamePasswordKey
           PIA_REST_API: !Ref PiaRestHost
           SCOPUS_IMPORT_BUCKET: !Sub "${ScopusImportReportBucketName}-${AWS::AccountId}"
+          IMPORT_CANDIDATES_STORAGE_BUCKET: !Ref ImportCandidateStorageBucket
           BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
       Events:
@@ -2097,7 +2098,7 @@ Resources:
                   - s3:PutObject
                 Resource:
                   - !Sub "arn:aws:s3:::cristin-import-${AWS::AccountId}/*"
-                  - !Sub "arn:aws:s3:::brage-migration-input-files-${AWS::AccountId}//*"
+                  - !Sub "arn:aws:s3:::brage-migration-reports-${AWS::AccountId}/*"
 
 
   #==========================BI=============================================================================
@@ -2128,8 +2129,6 @@ Resources:
       RecrawlPolicy:
         RecrawlBehavior: CRAWL_EVERYTHING
       Role: !GetAtt PublicationsCrawlerRole.Arn
-      Schedule:
-        ScheduleExpression: "cron(0 8-17 ? * MON-FRI *)"
       SchemaChangePolicy:
         DeleteBehavior: DELETE_FROM_DATABASE
         UpdateBehavior: UPDATE_IN_DATABASE

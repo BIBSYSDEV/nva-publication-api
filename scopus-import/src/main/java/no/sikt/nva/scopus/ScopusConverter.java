@@ -51,6 +51,7 @@ import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactor
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 
+@SuppressWarnings("PMD.GodClass")
 public class ScopusConverter {
 
     public static final URI HARDCODED_ID = URI.create(
@@ -58,17 +59,21 @@ public class ScopusConverter {
     public static final ResourceOwner HARDCODED_RESOURCE_OWNER = new ResourceOwner(new Username("concurrencyT@unit.no"),
                                                                                    URI.create(
                                                                                        "https://www.example.org"));
+
     private final DocTp docTp;
     private final PiaConnection piaConnection;
     private final CristinConnection cristinConnection;
     private final PublicationChannelConnection publicationChannelConnection;
+    private final ScopusFileConverter scopusFileConverter;
 
     protected ScopusConverter(DocTp docTp, PiaConnection piaConnection, CristinConnection cristinConnection,
-                              PublicationChannelConnection publicationChannelConnection) {
+                              PublicationChannelConnection publicationChannelConnection,
+                              ScopusFileConverter scopusFileConverter) {
         this.docTp = docTp;
         this.piaConnection = piaConnection;
         this.cristinConnection = cristinConnection;
         this.publicationChannelConnection = publicationChannelConnection;
+        this.scopusFileConverter = scopusFileConverter;
     }
 
     public static String extractContentString(Object content) {
@@ -111,6 +116,7 @@ public class ScopusConverter {
                    .withModifiedDate(Instant.now())
                    .withStatus(PublicationStatus.PUBLISHED)
                    .withImportStatus(ImportStatusFactory.createNotImported())
+                   .withAssociatedArtifacts(scopusFileConverter.fetchAssociatedArtifacts(docTp))
                    .build();
     }
 
