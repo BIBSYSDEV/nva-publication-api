@@ -22,6 +22,7 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 import nva.commons.core.Environment;
 import nva.commons.core.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
@@ -75,8 +76,13 @@ public class ScopusFileConverter {
         return Optional.ofNullable(response.headers().map().get(Headers.CONTENT_DISPOSITION))
                    .map(list -> list.stream().filter(item -> item.contains(FILENAME)).toList())
                    .map(list -> list.get(0))
-                   .map(value -> value.split("filename=")[1].split(CONTENT_TYPE_DELIMITER)[0].replace("\"", StringUtils.EMPTY_STRING))
+                   .map(ScopusFileConverter::getFilename)
                    .orElse(randomUUID() + "\\." + getFileType(response));
+    }
+
+    @NotNull
+    private static String getFilename(String value) {
+        return value.split("filename=")[1].split(CONTENT_TYPE_DELIMITER)[0].replace("\"", StringUtils.EMPTY_STRING);
     }
 
     private static String getFileType(HttpResponse<InputStream> response) {
