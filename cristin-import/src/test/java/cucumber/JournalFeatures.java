@@ -472,6 +472,15 @@ public class JournalFeatures {
         assertThat(actualIssue, is(equalTo(expectedIssue)));
     }
 
+    @And("the Publisher URI contains the NSD pid code {string} and the publication year {int}")
+    public void thePublisherUriContainsTheNsdPidCodeAndThePublicationYear(String pid, Integer year) {
+        Journal journal = extractJournal();
+        String uriString = journal.getId().toString();
+        assertThat(uriString, containsString(pid));
+        assertThat(uriString, containsString("publisher"));
+        assertThat(uriString, containsString(year.toString()));
+    }
+
     private Journal extractJournal() {
         PublicationContext publicationContext = scenarioContext.getNvaEntry()
                                                     .getEntityDescription()

@@ -276,6 +276,14 @@ public class BookFeatures {
         assertThat(actualIsbnList, hasSize(0));
     }
 
+    @And("the Journal URI contains the PID code {string} and the publication year {int}")
+    public void theJournalUriContainsThePidCodeAndThePublicationYear(String pid, Integer year) {
+        URI publisherId = extractConfirmedPublisher().getId();
+        assertThat(publisherId.getPath(), containsString(pid));
+        assertThat(publisherId.getPath(), containsString("journal"));
+        assertThat(publisherId.getPath(), containsString(year.toString()));
+    }
+
     private Book extractNvaBook() {
         PublicationContext context = this.scenarioContext.getNvaEntry()
                                          .getEntityDescription()

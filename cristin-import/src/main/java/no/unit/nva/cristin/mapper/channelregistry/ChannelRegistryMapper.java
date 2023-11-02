@@ -1,6 +1,5 @@
 package no.unit.nva.cristin.mapper.channelregistry;
 
-import static java.util.Objects.isNull;
 import com.opencsv.bean.CsvToBeanBuilder;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -10,12 +9,11 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import nva.commons.core.ioutils.IoUtils;
 
-public class ChannelRegistryMapper {
+public final class ChannelRegistryMapper {
 
     public static final String JOURNAL_SERIES_ID_MAPPING_CSV = "channelRegistry/journal_series_id_mapping_251023.csv";
     private static final char SEPARATOR = ';';
     private static final String PATH_PUBLISHER_CSV = "channelRegistry/publisher_id_mapping.csv";
-    private static ChannelRegistryMapper INSTANCE;
 
     private final Map<Integer, String> channelRegisterJournals;
 
@@ -26,11 +24,8 @@ public class ChannelRegistryMapper {
         this.channelRegisterPublishers = getMapFromResource(PATH_PUBLISHER_CSV);
     }
 
-    public static synchronized ChannelRegistryMapper getInstance() {
-        if (isNull(INSTANCE)) {
-            return new ChannelRegistryMapper();
-        }
-        return INSTANCE;
+    public static ChannelRegistryMapper getInstance() {
+        return ChannelRegistrySingletonHelper.INSTANCE;
     }
 
     public Optional<String> convertNsdJournalCodeToPid(int nsdCode) {
@@ -55,5 +50,10 @@ public class ChannelRegistryMapper {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static class ChannelRegistrySingletonHelper {
+
+        private static final ChannelRegistryMapper INSTANCE = new ChannelRegistryMapper();
     }
 }
