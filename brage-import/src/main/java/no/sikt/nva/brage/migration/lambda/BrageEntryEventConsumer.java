@@ -117,17 +117,16 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         var doi = publication.getEntityDescription().getReference().getDoi();
 
         if (nonNull(doi)) {
-            var publications = searchForPublicationsByDoi(doi);
-            if (publications.isEmpty()) {
+            var publicationsByDoi = searchForPublicationsByDoi(doi);
+            if (publicationsByDoi.isEmpty()) {
                 return false;
             }
 
-            // Fetch first publication regardless of how many hits
-            var publicationByDoi = publications.get(0);
+            var firstPublicationHitByDoi = publicationsByDoi.get(0);
 
-            // The Search Index is not reliable enough, therefore we fetch the publication from the source
-            var publicationFromResource = resourceService.getPublicationByIdentifier(publicationByDoi.getIdentifier());
-            publicationsToMerge = List.of(publicationFromResource);
+            var upToDateVersionOfPublication =
+                resourceService.getPublicationByIdentifier(firstPublicationHitByDoi.getIdentifier());
+            publicationsToMerge = List.of(upToDateVersionOfPublication);
 
             return true;
         }

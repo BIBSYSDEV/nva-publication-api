@@ -940,9 +940,9 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldMergePublicationsIfDoiDuplicateExistsWithCristinIdentifier() throws BadRequestException, IOException {
+    void shouldMergePublicationsIfDoiDuplicateExists() throws BadRequestException, IOException {
         var doi = randomDoi();
-        var existingPublication = persistPublicationWithCristinIdAndDoi(randomString(), doi);
+        var existingPublication = persistPublicationWithDoi(doi);
         assertThat(existingPublication.getHandle(), is(nullValue()));
 
         var listOfExistingPublications = List.of(existingPublication);
@@ -964,37 +964,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         assertThat(publication.getIdentifier(), is(equalTo(existingPublication.getIdentifier())));
 
         var actualStoredHandleString = extractActualHandleReportFromS3Client(s3Event, existingPublication);
-        assertThat(actualStoredHandleString,
-                   is(equalTo(nvaBrageMigrationDataGenerator.getBrageRecord().getId().toString())));
-    }
-
-    @Test
-    void shouldMergePublicationsIfDoiDuplicateExistsWithoutCristinIdentifier() throws BadRequestException, IOException {
-        var doi = randomDoi();
-        var existingPublicationWithoutCristinIdentifier = persistPublicationWithCristinIdAndDoi(null, doi);
-        assertThat(existingPublicationWithoutCristinIdentifier.getHandle(), is(nullValue()));
-
-        var listOfExistingPublications = List.of(existingPublicationWithoutCristinIdentifier);
-        var searchResourceApiResponseSingleHit = new SearchResourceApiResponse(listOfExistingPublications.size(),
-                                                                               listOfExistingPublications);
-        var singleHitOptional = Optional.of(searchResourceApiResponseSingleHit.toString());
-        when(uriRetriever.getRawContent(any(), any())).thenReturn(singleHitOptional);
-
-        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
-                                                 .withPublishedDate(null)
-                                                 .withType(TYPE_BOOK)
-                                                 .withDoi(doi)
-                                                 .build();
-
-        var brageRecord = nvaBrageMigrationDataGenerator.getBrageRecord();
-        var s3Event = createNewBrageRecordEvent(brageRecord);
-        var publication = handler.handleRequest(s3Event, CONTEXT);
-        assertThat(publication.getHandle(), is(equalTo(brageRecord.getId())));
-        assertThat(publication.getIdentifier(),
-                   is(equalTo(existingPublicationWithoutCristinIdentifier.getIdentifier())));
-
-        var actualStoredHandleString =
-            extractActualHandleReportFromS3Client(s3Event, existingPublicationWithoutCristinIdentifier);
         assertThat(actualStoredHandleString,
                    is(equalTo(nvaBrageMigrationDataGenerator.getBrageRecord().getId().toString())));
     }
@@ -1055,18 +1024,12 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                    .persistNew(resourceService, UserInstance.fromPublication(publication));
     }
 
-    private Publication persistPublicationWithCristinIdAndDoi(String cristinIdentifier, URI doi)
+    private Publication persistPublicationWithDoi( URI doi)
         throws BadRequestException {
         var publication = randomPublication().copy()
                               .withDoi(doi)
                               .withHandle(null)
                               .build();
-
-        if (cristinIdentifier != null) {
-            publication.setAdditionalIdentifiers(
-                Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier))
-            );
-        }
 
         return Resource.fromPublication(publication)
                    .persistNew(resourceService, UserInstance.fromPublication(publication));
