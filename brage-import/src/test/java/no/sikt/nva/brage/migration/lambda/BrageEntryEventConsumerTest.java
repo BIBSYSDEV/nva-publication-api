@@ -22,6 +22,7 @@ import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.NOT_SU
 import static no.sikt.nva.brage.migration.merger.AssociatedArtifactMover.COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.TEST_DESCRIPTION;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
@@ -36,6 +37,9 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import com.amazonaws.services.kms.model.NotFoundException;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
@@ -55,6 +59,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.IntStream;
@@ -81,6 +86,8 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -193,14 +200,16 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private S3Driver s3Driver;
     private FakeS3Client s3Client;
     private ResourceService resourceService;
+    private UriRetriever uriRetriever;
 
     @BeforeEach
     public void init() {
         super.init();
         this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
         this.s3Client = new FakeS3cClientWithCopyObjectSupport();
-        this.handler = new BrageEntryEventConsumer(s3Client, resourceService);
         this.s3Driver = new S3Driver(s3Client, INPUT_BUCKET_NAME);
+        this.uriRetriever = mock(UriRetriever.class);
+        this.handler = new BrageEntryEventConsumer(s3Client, resourceService, uriRetriever);
     }
 
     @Test
@@ -793,7 +802,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     void shouldTryToPersistPublicationInDatabaseSeveralTimesWhenResourceServiceIsThrowingException()
         throws IOException {
         var fakeResourceServiceThrowingException = new FakeResourceServiceThrowingException(client);
-        this.handler = new BrageEntryEventConsumer(s3Client, fakeResourceServiceThrowingException);
+        this.handler = new BrageEntryEventConsumer(s3Client, fakeResourceServiceThrowingException, uriRetriever);
         var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder().withPublishedDate(null)
                                                  .withType(TYPE_BOOK)
                                                  .build();
@@ -808,7 +817,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     void shouldStoreExceptionIfItCannotCopyAssociatedArtifacts() throws IOException {
         this.s3Client = new FakeS3ClientThrowingExceptionWhenCopying();
         this.s3Driver = new S3Driver(s3Client, INPUT_BUCKET_NAME);
-        this.handler = new BrageEntryEventConsumer(s3Client, resourceService);
+        this.handler = new BrageEntryEventConsumer(s3Client, resourceService, uriRetriever);
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withPublishedDate(null)
                                  .withType(TYPE_BOOK)
                                  .withResourceContent(createResourceContent())
@@ -866,7 +875,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     @Test
     void shouldSaveErrorReportInS3ContainingTheOriginalInputData() throws IOException {
         resourceService = new FakeResourceServiceThrowingException(client);
-        this.handler = new BrageEntryEventConsumer(s3Client, resourceService);
+        this.handler = new BrageEntryEventConsumer(s3Client, resourceService, uriRetriever);
         var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder().withPublishedDate(null)
                                                  .withType(TYPE_BOOK)
                                                  .build();
@@ -930,6 +939,57 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         assertThat(storedPublication, is(equalTo(existingPublication.toString())));
     }
 
+    @Test
+    void shouldMergePublicationsIfDoiDuplicateExists() throws BadRequestException, IOException {
+        var doi = randomDoi();
+        var existingPublication = persistPublicationWithDoi(doi);
+        assertThat(existingPublication.getHandle(), is(nullValue()));
+
+        var listOfExistingPublications = List.of(existingPublication);
+        var searchResourceApiResponseSingleHit = new SearchResourceApiResponse(listOfExistingPublications.size(),
+                                                                               listOfExistingPublications);
+        var singleHitOptional = Optional.of(searchResourceApiResponseSingleHit.toString());
+        when(uriRetriever.getRawContent(any(), any())).thenReturn(singleHitOptional);
+
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withPublishedDate(null)
+                                                 .withType(TYPE_BOOK)
+                                                 .withDoi(doi)
+                                                 .build();
+
+        var brageRecord = nvaBrageMigrationDataGenerator.getBrageRecord();
+        var s3Event = createNewBrageRecordEvent(brageRecord);
+        var publication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(publication.getHandle(), is(equalTo(brageRecord.getId())));
+        assertThat(publication.getIdentifier(), is(equalTo(existingPublication.getIdentifier())));
+
+        var actualStoredHandleString = extractActualHandleReportFromS3Client(s3Event, existingPublication);
+        assertThat(actualStoredHandleString,
+                   is(equalTo(nvaBrageMigrationDataGenerator.getBrageRecord().getId().toString())));
+    }
+
+    @Test
+    void shouldNotMergePublicationsIfNoDoiDuplicateExists() throws IOException {
+        var searchResourceApiResponseNoHits = new SearchResourceApiResponse(0, null);
+        var noHitsOptional = Optional.of(searchResourceApiResponseNoHits.toString());
+        when(uriRetriever.getRawContent(any(), any())).thenReturn(noHitsOptional);
+
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withPublishedDate(null)
+                                                 .withType(TYPE_BOOK)
+                                                 .withDoi(randomDoi())
+                                                 .build();
+
+        var brageRecord = nvaBrageMigrationDataGenerator.getBrageRecord();
+        var s3Event = createNewBrageRecordEvent(brageRecord);
+        var publication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(publication.getHandle(), is(equalTo(brageRecord.getId())));
+
+        var actualStoredHandleString = extractActualHandleReportFromS3Client(s3Event, publication);
+        assertThat(actualStoredHandleString,
+                   is(equalTo(nvaBrageMigrationDataGenerator.getBrageRecord().getId().toString())));
+    }
+
     private static Publication copyPublication(NvaBrageMigrationDataGenerator brageGenerator)
         throws JsonProcessingException {
         return JsonUtils.dtoObjectMapper.readValue(
@@ -960,6 +1020,17 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                   Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)))
                               .withHandle(handle)
                               .build();
+        return Resource.fromPublication(publication)
+                   .persistNew(resourceService, UserInstance.fromPublication(publication));
+    }
+
+    private Publication persistPublicationWithDoi(URI doi)
+        throws BadRequestException {
+        var publication = randomPublication().copy()
+                              .withDoi(doi)
+                              .withHandle(null)
+                              .build();
+
         return Resource.fromPublication(publication)
                    .persistNew(resourceService, UserInstance.fromPublication(publication));
     }
