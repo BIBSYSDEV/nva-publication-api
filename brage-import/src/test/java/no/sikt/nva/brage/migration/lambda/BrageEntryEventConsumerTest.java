@@ -1237,12 +1237,12 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private String extractHandleReportFromS3Client(S3Event s3Event, Publication actualPublication) {
-        return extractHandleReportFromS3Client(s3Event, actualPublication, HANDLE_REPORTS_PATH);
-    }
-
     private String extractUpdatedPublicationsHandleReportFromS3Client(S3Event s3Event, Publication actualPublication) {
         return extractHandleReportFromS3Client(s3Event, actualPublication, UPDATED_PUBLICATIONS_REPORTS_PATH);
+    }
+
+    private String extractHandleReportFromS3Client(S3Event s3Event, Publication actualPublication) {
+        return extractHandleReportFromS3Client(s3Event, actualPublication, HANDLE_REPORTS_PATH);
     }
 
     private String extractHandleReportFromS3Client(S3Event s3Event, Publication actualPublication,
