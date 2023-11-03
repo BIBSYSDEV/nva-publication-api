@@ -77,7 +77,7 @@ public class ScopusFileConverter {
     private static String getFilename(HttpResponse<InputStream> response) {
         return Optional.ofNullable(response.headers().map().get(Headers.CONTENT_DISPOSITION))
                    .map(list -> list.stream().filter(item -> item.contains(FILENAME)).toList())
-                   .map(list -> list.get(0))
+                   .map(list -> !list.isEmpty() ? list.get(0) : StringUtils.EMPTY_STRING)
                    .map(ScopusFileConverter::getFilename)
                    .orElse(randomUUID() + FILE_NAME_DELIMITER + getFileType(response));
     }
