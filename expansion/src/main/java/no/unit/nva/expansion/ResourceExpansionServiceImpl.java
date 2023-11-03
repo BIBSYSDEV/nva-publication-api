@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.Optional;
-import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedOrganization;
@@ -144,7 +143,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     }
 
     private ExpandedPerson toExpandedPerson(String response, User owner) throws JsonProcessingException {
-        var cristinPerson = JsonUtils.dtoObjectMapper.readValue(response, CristinPerson.class);
+        var cristinPerson = objectMapper.readValue(response, CristinPerson.class);
         var nameMap = cristinPerson.getNameTypeMap();
         return new ExpandedPerson.Builder()
                    .withFirstName(nameMap.get(FIRST_NAME_CRISTIN_TYPE))
