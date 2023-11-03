@@ -11,6 +11,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import no.scopus.generated.DocTp;
@@ -52,6 +53,7 @@ public class ScopusFileConverter {
         return getLocations(docTp).stream()
                    .map(UpwOaLocationType::getUpwUrlForPdf)
                    .distinct()
+                   .filter(Objects::nonNull)
                    .map(this::convertToAssociatedArtifact)
                    .toList();
     }
