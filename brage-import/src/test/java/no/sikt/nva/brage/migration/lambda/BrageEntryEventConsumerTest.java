@@ -1011,8 +1011,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var publication = handler.handleRequest(s3Event, CONTEXT);
 
-        S3Driver s3Driver = new S3Driver(s3Client, new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
-        UnixPath updatedPublicationsFolder = UnixPath.of(UPDATED_PUBLICATIONS_REPORTS_PATH);
+        var s3Driver = new S3Driver(s3Client, new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
+        var updatedPublicationsFolder = UnixPath.of(UPDATED_PUBLICATIONS_REPORTS_PATH);
         var filesInUpdatedPublicationsFolder = s3Driver.getFiles(updatedPublicationsFolder);
         assertThat(filesInUpdatedPublicationsFolder, is(not(empty())));
 
@@ -1026,8 +1026,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var publication = handler.handleRequest(s3Event, CONTEXT);
 
-        S3Driver s3Driver = new S3Driver(s3Client, new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
-        UnixPath handleReportsFolder = UnixPath.of(HANDLE_REPORTS_PATH);
+        var s3Driver = new S3Driver(s3Client, new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
+        var handleReportsFolder = UnixPath.of(HANDLE_REPORTS_PATH);
         var filesInHandleReportsFolder = s3Driver.getFiles(handleReportsFolder);
         assertThat(filesInHandleReportsFolder, is(not(empty())));
 
