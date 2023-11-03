@@ -52,6 +52,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     public static final String YYYY_MM_DD_HH_FORMAT = "yyyy-MM-dd:HH";
     public static final String ERROR_BUCKET_PATH = "ERROR";
     public static final String HANDLE_REPORTS_PATH = "HANDLE_REPORTS";
+    public static final String UPDATED_PUBLICATIONS_REPORTS_PATH = "UPDATED_PUBLICATIONS_HANDLE_REPORTS";
     public static final String PATH_SEPERATOR = "/";
     public static final String UPDATE_REPORTS_PATH = "UPDATE_REPORTS";
     public static final String CRISTIN_RECORD_EXCEPTION =
@@ -171,7 +172,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private Publication persistPublication(Publication publication, S3Event s3Event) {
         return attempt(() -> publication)
                    .flatMap(this::persistInDatabase)
-                   .map(pub -> storeHandleAndPublicationIdentifier(pub, s3Event))
+                   .map(pub -> storeHandleAndPublicationIdentifier(pub, s3Event, HANDLE_REPORTS_PATH))
                    .orElse(fail -> handleSavingError(fail, s3Event));
     }
 
@@ -212,7 +213,9 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         storePublicationBeforeUpdate(existingPublication, s3Event);
         return attempt(() -> updatedPublication(publication, existingPublication))
                    .map(resourceService::updatePublication)
-                   .map(updatedPublication -> storeHandleAndPublicationIdentifier(updatedPublication, s3Event))
+                   .map(updatedPublication ->
+                            storeHandleAndPublicationIdentifier(updatedPublication, s3Event,
+                                                                UPDATED_PUBLICATIONS_REPORTS_PATH))
                    .orElseThrow();
     }
 
@@ -241,17 +244,19 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         return SOURCE_CRISTIN.equals(identifier.getSourceName());
     }
 
-    private Publication storeHandleAndPublicationIdentifier(Publication publication, S3Event s3Event) {
+    private Publication storeHandleAndPublicationIdentifier(Publication publication, S3Event s3Event,
+                                                            String destinationFolder) {
         var handle = publication.getHandle();
-        var fileUri = constructResourcehandleFileUri(s3Event, publication);
+        var fileUri = constructResourceHandleFileUri(s3Event, publication, destinationFolder);
         var s3Driver = new S3Driver(s3Client, new Environment().readEnv(BRAGE_MIGRATION_REPORTS_BUCKET_NAME));
         attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(), handle.toString())).orElseThrow();
         return publication;
     }
 
-    private UriWrapper constructResourcehandleFileUri(S3Event s3Event, Publication publication) {
+    private UriWrapper constructResourceHandleFileUri(S3Event s3Event, Publication publication,
+                                                      String destinationFolder) {
         var timestamp = timePath(s3Event);
-        return UriWrapper.fromUri(HANDLE_REPORTS_PATH)
+        return UriWrapper.fromUri(destinationFolder)
                    .addChild(extractInstitutionName(s3Event))
                    .addChild(timestamp)
                    .addChild(publication.getIdentifier().toString());
