@@ -16,6 +16,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.util.Optional;
 import no.unit.nva.cristin.mapper.CristinJournalPublication;
+import no.unit.nva.cristin.mapper.CristinMediaContribution;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
 import no.unit.nva.cristin.mapper.PeriodicalBuilder;
@@ -90,12 +91,22 @@ public class ReferenceBuilder extends CristinMappingModule {
     }
 
     private PublicationContext buildMediaContributionForPublicationContext() {
-        return isWrittenInterview(cristinObject) ? new MediaContribution.Builder().withFormat(MediaFormat.TEXT)
-                                                       .withMedium(MediaSubType.create(MediaSubTypeEnum.JOURNAL))
-                                                       .build()
-                   : new MediaContribution.Builder().withFormat(new MediaFormatBuilder(cristinObject).build())
+        return isWrittenInterview(cristinObject)
+                   ? new MediaContribution.Builder()
+                         .withFormat(MediaFormat.TEXT)
+                         .withMedium(MediaSubType.create(MediaSubTypeEnum.JOURNAL))
+                         .withDisseminationChannel(extractDisseminationChannel().orElse(null))
+                         .build()
+                   : new MediaContribution.Builder()
+                         .withFormat(new MediaFormatBuilder(cristinObject).build())
                          .withMedium(new MediaSubTypeBuilder(cristinObject).build())
+                         .withDisseminationChannel(extractDisseminationChannel().orElse(null))
                          .build();
+    }
+
+    private Optional<String> extractDisseminationChannel() {
+        return Optional.ofNullable(cristinObject.getMediaContribution())
+                   .map(CristinMediaContribution::getMediaPlaceName);
     }
 
     private boolean isWrittenInterview(CristinObject cristinObject) {
