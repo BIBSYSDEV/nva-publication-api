@@ -3,15 +3,15 @@ Feature: Mapping of "Feature article" entries
   Background:
     Given a valid Cristin Result with secondary category "KRONIKK"
 
-  Scenario: Cristin Result of type "Feature article" maps to "FeatureArticle"
+  Scenario: Cristin Result of type "Feature article" maps to "MediaFeatureArticle"
     When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource has a Publication Instance of type "FeatureArticle"
+    Then the NVA Resource has a Publication Instance of type "MediaFeatureArticle"
 
   Scenario Outline: Cristin Entry's Journal Publication "pagesBegin" is copied as is with in NVA's field  "pagesBegin".
     Given that the Cristin Result has a non empty Journal Publication
     And the Journal Publication has a "pagesBegin" entry equal to "<pagesEnd>"
     When the Cristin Result is converted to an NVA Resource
-    Then the Nva Resource, FeatureArticle, has a PublicationContext with pagesBegin equal to "<pagesEnd>"
+    Then the Nva Resource, MediaFeatureArticle, has a PublicationContext with pagesBegin equal to "<pagesEnd>"
     Examples:
       | pagesEnd  |
       | XI        |
@@ -22,7 +22,7 @@ Feature: Mapping of "Feature article" entries
     Given that the Cristin Result has a non empty Journal Publication
     And the Journal Publication has a "pagesEnd" entry equal to "<pagesBegin>"
     When the Cristin Result is converted to an NVA Resource
-    Then the Nva Resource, FeatureArticle, has a PublicationContext with pagesEnd equal to "<pagesBegin>"
+    Then the Nva Resource, MediaFeatureArticle, has a PublicationContext with pagesEnd equal to "<pagesBegin>"
     Examples:
       | pagesBegin |
       | XI         |
@@ -33,7 +33,7 @@ Feature: Mapping of "Feature article" entries
     Given that the Cristin Result has a non empty Journal Publication
     And the Journal Publication has a "volume" entry equal to "<volume>"
     When the Cristin Result is converted to an NVA Resource
-    Then the Nva Resource, FeatureArticle, has a PublicationContext with volume equal to "<volume>"
+    Then the Nva Resource, MediaFeatureArticle, has a PublicationContext with volume equal to "<volume>"
     Examples:
       | volume      |
       | VI          |
@@ -44,12 +44,19 @@ Feature: Mapping of "Feature article" entries
     Given that the Cristin Result has a non empty Journal Publication
     And the Journal Publication has a "issue" entry equal to "<issue>"
     When the Cristin Result is converted to an NVA Resource
-    Then the Nva Resource, FeatureArticle, has a PublicationContext with issue equal to "<issue>"
+    Then the Nva Resource, MediaFeatureArticle, has a PublicationContext with issue equal to "<issue>"
     Examples:
       | issue       |
       | VI          |
       | 123         |
       | some volume |
+
+  Scenario: Cristin result with invalid issn should throw issn exception.
+    Given that the Cristin Result has a non empty Journal Publication
+    And the Journal Publication has a "issn" entry equal to "gurba"
+    When the Cristin Result is converted to an NVA Resource
+    Then an error is reported.
+
 
   Scenario: When the the Cristin entry has a reference to an NSD journal then the
   NVA Entry contains a URI that is a reference to that NSD journal.

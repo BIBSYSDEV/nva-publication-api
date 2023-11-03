@@ -37,7 +37,8 @@ public enum CristinMainCategory {
 
     public static boolean isJournal(CristinObject cristinObject) {
         return CristinMainCategory.JOURNAL.equals(cristinObject.getMainCategory())
-               && !CristinSecondaryCategory.WRITTEN_INTERVIEW.equals(cristinObject.getSecondaryCategory());
+               && !CristinSecondaryCategory.WRITTEN_INTERVIEW.equals(cristinObject.getSecondaryCategory())
+               && !CristinSecondaryCategory.FEATURE_ARTICLE.equals(cristinObject.getSecondaryCategory());
     }
 
     public static boolean isReport(CristinObject cristinObject) {
@@ -62,8 +63,18 @@ public enum CristinMainCategory {
 
     public static boolean isMediaContribution(CristinObject cristinObject) {
         return CristinMainCategory.MEDIA_CONTRIBUTION.equals(cristinObject.getMainCategory())
-               || CristinMainCategory.JOURNAL.equals(cristinObject.getMainCategory())
-                  && CristinSecondaryCategory.WRITTEN_INTERVIEW.equals(cristinObject.getSecondaryCategory());
+               || mainAndSecondaryCategoryIndicatesWrittenInterview(cristinObject)
+               || mainAndSecondaryCategoryIndicatesFeatureArticle(cristinObject);
+    }
+
+    private static boolean mainAndSecondaryCategoryIndicatesWrittenInterview(CristinObject cristinObject) {
+        return CristinMainCategory.JOURNAL.equals(cristinObject.getMainCategory())
+               && CristinSecondaryCategory.WRITTEN_INTERVIEW.equals(cristinObject.getSecondaryCategory());
+    }
+
+    private static boolean mainAndSecondaryCategoryIndicatesFeatureArticle(CristinObject cristinObject) {
+        return CristinMainCategory.JOURNAL.equals(cristinObject.getMainCategory())
+               && CristinSecondaryCategory.FEATURE_ARTICLE.equals(cristinObject.getSecondaryCategory());
     }
 
     public boolean isUnknownCategory() {

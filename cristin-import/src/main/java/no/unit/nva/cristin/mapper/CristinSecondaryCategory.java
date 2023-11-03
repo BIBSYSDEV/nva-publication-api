@@ -93,11 +93,6 @@ public enum CristinSecondaryCategory {
                || CristinSecondaryCategory.EXHIBITION_CATALOG.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.ACADEMIC_COMMENTARY.equals(cristinObject.getSecondaryCategory());
     }
-
-    public static boolean isFeatureArticle(CristinObject cristinObject) {
-        return CristinSecondaryCategory.FEATURE_ARTICLE.equals(cristinObject.getSecondaryCategory());
-    }
-
     public static boolean isJournalLetter(CristinObject cristinObject) {
         return CristinSecondaryCategory.JOURNAL_LETTER.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.READER_OPINION.equals(cristinObject.getSecondaryCategory());
@@ -154,6 +149,10 @@ public enum CristinSecondaryCategory {
     public static boolean isProgramParticipation(CristinObject cristinObject) {
         return CristinSecondaryCategory.PROGRAM_PARTICIPATION.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.PROGRAM_MANAGEMENT.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static boolean isMediaFeatureArticle(CristinObject cristinObject) {
+        return CristinSecondaryCategory.FEATURE_ARTICLE.equals(cristinObject.getSecondaryCategory());
     }
 
     public static boolean isConferenceLecture(CristinObject cristinObject) {

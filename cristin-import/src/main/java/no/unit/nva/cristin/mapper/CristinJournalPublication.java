@@ -29,6 +29,7 @@ public class CristinJournalPublication {
     public static final String VOLUME = "volum";
     public static final String ISSUE = "hefte";
     public static final String DOI = "doi";
+    public static final String ARTICLE_NUMBER = "artikkelnummer";
 
     @JsonProperty(JOURNAL)
     private CristinJournalPublicationJournal journal;
@@ -42,6 +43,8 @@ public class CristinJournalPublication {
     private String issue;
     @JsonProperty(DOI)
     private String doi;
+    @JsonProperty(ARTICLE_NUMBER)
+    private String articleNumber;
 
     public CristinJournalPublication() {
 

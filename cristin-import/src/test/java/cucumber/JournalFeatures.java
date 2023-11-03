@@ -12,18 +12,14 @@ import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import java.net.URI;
-import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Journal;
-import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
-import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.model.instancetypes.journal.JournalReview;
-import no.unit.nva.model.pages.Pages;
+import no.unit.nva.model.instancetypes.media.MediaFeatureArticle;
 import nva.commons.core.paths.UriWrapper;
 
 public class JournalFeatures {
@@ -58,13 +54,13 @@ public class JournalFeatures {
 
     @Then("the Nva Resource has a PublicationContext with printISSN equal to {string}")
     public void theNvaResourceHasAPublicationContextWithPrintIssnEqualTo(String expectedIssn) {
-        PublicationContext context = scenarioContext
-                                         .getNvaEntry()
-                                         .getEntityDescription()
-                                         .getReference()
-                                         .getPublicationContext();
-        UnconfirmedJournal journal = (UnconfirmedJournal) context;
-        String actualIssn = journal.getPrintIssn();
+        var context = scenarioContext
+                          .getNvaEntry()
+                          .getEntityDescription()
+                          .getReference()
+                          .getPublicationContext();
+        var journal = (UnconfirmedJournal) context;
+        var actualIssn = journal.getPrintIssn();
         assertThat(actualIssn, is(equalTo(expectedIssn)));
     }
 
@@ -78,37 +74,37 @@ public class JournalFeatures {
 
     @Then("the Nva Resource has a PublicationContext with onlineIssn equal to {string}")
     public void theNvaResourceHasAPublicationContextWithOnlineIssnEqualTo(String expectedIssn) {
-        PublicationContext context = scenarioContext
-                                         .getNvaEntry()
-                                         .getEntityDescription()
-                                         .getReference()
-                                         .getPublicationContext();
-        UnconfirmedJournal journal = (UnconfirmedJournal) context;
-        String actualIssn = journal.getOnlineIssn();
+        var context = scenarioContext
+                          .getNvaEntry()
+                          .getEntityDescription()
+                          .getReference()
+                          .getPublicationContext();
+        var journal = (UnconfirmedJournal) context;
+        var actualIssn = journal.getOnlineIssn();
         assertThat(actualIssn, is(equalTo(expectedIssn)));
     }
 
     @Then("the Nva Resource has a PublicationContext with pagesBegin equal to {string}")
     public void theNvaResourceHasAPublicationContextWithPagesBeginEqualTo(String expectedPagesBegin) {
-        PublicationInstance<? extends Pages> instance = scenarioContext
-                                                            .getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        JournalArticle journalArticle = (JournalArticle) instance;
-        String actualPagesBegin = journalArticle.getPages().getBegin();
+        var instance = scenarioContext
+                           .getNvaEntry()
+                           .getEntityDescription()
+                           .getReference()
+                           .getPublicationInstance();
+        var journalArticle = (JournalArticle) instance;
+        var actualPagesBegin = journalArticle.getPages().getBegin();
         assertThat(actualPagesBegin, is(equalTo(expectedPagesBegin)));
     }
 
     @Then("the Nva Resource has a PublicationContext with title equal to {string}")
     public void theNvaResourceHasAPublicationContextWithTitleEqualTo(String expectedTitle) {
-        PublicationContext context = scenarioContext
-                                         .getNvaEntry()
-                                         .getEntityDescription()
-                                         .getReference()
-                                         .getPublicationContext();
-        UnconfirmedJournal journal = (UnconfirmedJournal) context;
-        String actualTitle = journal.getTitle();
+        var context = scenarioContext
+                          .getNvaEntry()
+                          .getEntityDescription()
+                          .getReference()
+                          .getPublicationContext();
+        var journal = (UnconfirmedJournal) context;
+        var actualTitle = journal.getTitle();
         assertThat(actualTitle, is(equalTo(expectedTitle)));
     }
 
@@ -128,25 +124,25 @@ public class JournalFeatures {
 
     @Then("the Nva Resource has a PublicationContext with pagesEnd equal to {string}")
     public void theNvaResourceHasAPublicationContextWithPagesEndEqualTo(String expectedPagesEnd) {
-        PublicationInstance<? extends Pages> instance = scenarioContext
-                                                            .getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        JournalArticle journalArticle = (JournalArticle) instance;
-        String actualPagesEnd = journalArticle.getPages().getEnd();
+        var instance = scenarioContext
+                           .getNvaEntry()
+                           .getEntityDescription()
+                           .getReference()
+                           .getPublicationInstance();
+        var journalArticle = (JournalArticle) instance;
+        var actualPagesEnd = journalArticle.getPages().getEnd();
         assertThat(actualPagesEnd, is(equalTo(expectedPagesEnd)));
     }
 
     @Then("the Nva Resource has a PublicationContext with volume equal to {string}")
     public void theNvaResourceHasAPublicationContextWithVolumeEqualTo(String expectedVolume) {
-        PublicationInstance<? extends Pages> instance = scenarioContext
-                                                            .getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        JournalArticle journalArticle = (JournalArticle) instance;
-        String actualVolume = journalArticle.getVolume();
+        var instance = scenarioContext
+                           .getNvaEntry()
+                           .getEntityDescription()
+                           .getReference()
+                           .getPublicationInstance();
+        var journalArticle = (JournalArticle) instance;
+        var actualVolume = journalArticle.getVolume();
         assertThat(actualVolume, is(equalTo(expectedVolume)));
     }
 
@@ -189,207 +185,207 @@ public class JournalFeatures {
 
     @Then("the NVA Resource has a Reference object with a journal URI that points to NVAs NSD proxy")
     public void theNvaResourceHasAReferenceObjectWithAJournalUriThatPointsToNvaNsdProxy() {
-        Journal journal = extractJournal();
-        String uriString = journal.getId().toString();
-        String nsdProxyUri = UriWrapper.fromUri(NVA_API_DOMAIN).addChild(NSD_PROXY_PATH).getUri().toString();
+        var journal = extractJournal();
+        var uriString = journal.getId().toString();
+        var nsdProxyUri = UriWrapper.fromUri(NVA_API_DOMAIN).addChild(NSD_PROXY_PATH).getUri().toString();
         assertThat(uriString, containsString(nsdProxyUri));
     }
 
     @Then("the Journal URI specifies the Journal by the NSD ID {int} and the year {int}.")
     public void theJournalUriSpecifiesTheJournalByTheNsdIdAndTheYear(Integer nsdCode, Integer journalYear) {
-        Journal journal = extractJournal();
-        String uriString = journal.getId().toString();
+        var journal = extractJournal();
+        var uriString = journal.getId().toString();
         assertThat(uriString, containsString(nsdCode.toString()));
         assertThat(uriString, containsString(journalYear.toString()));
     }
 
     @Then("the Nva Resource has a Reference object with doi equal to {string}")
     public void theNvaResourceHasAReferenceObjectWithDoiEqualTo(String expectedDoi) {
-        Reference reference = scenarioContext
-                                  .getNvaEntry()
-                                  .getEntityDescription()
-                                  .getReference();
-        URI actualDoi = reference.getDoi();
+        var reference = scenarioContext
+                            .getNvaEntry()
+                            .getEntityDescription()
+                            .getReference();
+        var actualDoi = reference.getDoi();
         assertThat(actualDoi, is(equalTo(URI.create(expectedDoi))));
     }
 
-    @Then("the Nva Resource, FeatureArticle, has a PublicationContext with pagesBegin equal to {string}")
-    public void theNvaResourceFeatureArticleHasAPublicationContextWithPagesBeginEqualTo(String expectedPagesBegin) {
-        PublicationInstance<? extends Pages> instance = scenarioContext
-                                                            .getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        FeatureArticle featureArticle = (FeatureArticle) instance;
-        String actualPagesBegin = featureArticle.getPages().getBegin();
+    @Then("the Nva Resource, MediaFeatureArticle, has a PublicationContext with pagesBegin equal to {string}")
+    public void theNvaResourceMediaFeatureArticleHasAPublicationContextWithPagesBeginEqualTo(String expectedPagesBegin) {
+        var instance = scenarioContext
+                           .getNvaEntry()
+                           .getEntityDescription()
+                           .getReference()
+                           .getPublicationInstance();
+        var mediaFeatureArticle = (MediaFeatureArticle) instance;
+        var actualPagesBegin = mediaFeatureArticle.getPages().getBegin();
         assertThat(actualPagesBegin, is(equalTo(expectedPagesBegin)));
     }
 
-    @Then("the Nva Resource, FeatureArticle, has a PublicationContext with pagesEnd equal to {string}")
+    @Then("the Nva Resource, MediaFeatureArticle, has a PublicationContext with pagesEnd equal to {string}")
     public void theNvaResourceFeatureArticleHasAPublicationContextWithPagesEndEqualTo(String expectedPagesEnd) {
-        PublicationInstance<? extends Pages> instance = scenarioContext
-                                                            .getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        FeatureArticle featureArticle = (FeatureArticle) instance;
-        String actualPagesEnd = featureArticle.getPages().getEnd();
+        var instance = scenarioContext
+                           .getNvaEntry()
+                           .getEntityDescription()
+                           .getReference()
+                           .getPublicationInstance();
+        var mediaFeatureArticle = (MediaFeatureArticle) instance;
+        var actualPagesEnd = mediaFeatureArticle.getPages().getEnd();
         assertThat(actualPagesEnd, is(equalTo(expectedPagesEnd)));
     }
 
-    @Then("the Nva Resource, FeatureArticle, has a PublicationContext with volume equal to {string}")
+    @Then("the Nva Resource, MediaFeatureArticle, has a PublicationContext with volume equal to {string}")
     public void theNvaResourceFeatureArticleHasAPublicationContextWithVolumeEqualTo(String expectedVolume) {
-        PublicationInstance<? extends Pages> instance = scenarioContext
-                                                            .getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        FeatureArticle featureArticle = (FeatureArticle) instance;
-        String actualVolume = featureArticle.getVolume();
+        var instance = scenarioContext
+                           .getNvaEntry()
+                           .getEntityDescription()
+                           .getReference()
+                           .getPublicationInstance();
+        var mediaFeatureArticle = (MediaFeatureArticle) instance;
+        var actualVolume = mediaFeatureArticle.getVolume();
         assertThat(actualVolume, is(equalTo(expectedVolume)));
     }
 
     @Then("the Nva Resource, JournalLetter, has a PublicationContext with pagesBegin equal to {string}")
     public void theNvaResourceJournalLetterHasAPublicationContextWithPagesBeginEqualTo(String expectedPagesBegin) {
-        PublicationInstance<? extends Pages> instance = scenarioContext
-                                                            .getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        JournalLetter journalLetter = (JournalLetter) instance;
-        String actualPagesBegin = journalLetter.getPages().getBegin();
+        var instance = scenarioContext
+                           .getNvaEntry()
+                           .getEntityDescription()
+                           .getReference()
+                           .getPublicationInstance();
+        var journalLetter = (JournalLetter) instance;
+        var actualPagesBegin = journalLetter.getPages().getBegin();
         assertThat(actualPagesBegin, is(equalTo(expectedPagesBegin)));
     }
 
     @Then("the Nva Resource, JournalLetter, has a PublicationContext with pagesEnd equal to {string}")
     public void theNvaResourceJournalLetterHasAPublicationContextWithPagesEndEqualTo(String expectedPagesEnd) {
-        PublicationInstance<? extends Pages> instance = scenarioContext
-                                                            .getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        JournalLetter journalLetter = (JournalLetter) instance;
-        String actualPagesEnd = journalLetter.getPages().getEnd();
+        var instance = scenarioContext
+                           .getNvaEntry()
+                           .getEntityDescription()
+                           .getReference()
+                           .getPublicationInstance();
+        var journalLetter = (JournalLetter) instance;
+        var actualPagesEnd = journalLetter.getPages().getEnd();
         assertThat(actualPagesEnd, is(equalTo(expectedPagesEnd)));
     }
 
     @Then("the Nva Resource, JournalLetter, has a PublicationContext with volume equal to {string}")
     public void theNvaResourceJournalLetterHasAPublicationContextWithVolumeEqualTo(String expectedVolume) {
-        PublicationInstance<? extends Pages> instance = scenarioContext
-                                                            .getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        JournalLetter journalLetter = (JournalLetter) instance;
-        String actualVolume = journalLetter.getVolume();
+        var instance = scenarioContext
+                           .getNvaEntry()
+                           .getEntityDescription()
+                           .getReference()
+                           .getPublicationInstance();
+        var journalLetter = (JournalLetter) instance;
+        var actualVolume = journalLetter.getVolume();
         assertThat(actualVolume, is(equalTo(expectedVolume)));
     }
 
     @Then("the Nva Resource, JournalReview, has a PublicationContext with pagesBegin equal to {string}")
     public void theNvaResourceJournalReviewHasAPublicationContextWithPagesBeginEqualTo(String expectedPagesBegin) {
-        PublicationInstance<? extends Pages> instance = scenarioContext
-                                                            .getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        JournalReview journalReview = (JournalReview) instance;
-        String actualPagesBegin = journalReview.getPages().getBegin();
+        var instance = scenarioContext
+                           .getNvaEntry()
+                           .getEntityDescription()
+                           .getReference()
+                           .getPublicationInstance();
+        var journalReview = (JournalReview) instance;
+        var actualPagesBegin = journalReview.getPages().getBegin();
         assertThat(actualPagesBegin, is(equalTo(expectedPagesBegin)));
     }
 
     @Then("the Nva Resource, JournalReview, has a PublicationContext with pagesEnd equal to {string}")
     public void theNvaResourceJournalReviewHasAPublicationContextWithPagesEndEqualTo(String expectedPagesEnd) {
-        PublicationInstance<? extends Pages> instance = scenarioContext
-                                                            .getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        JournalReview journalReview = (JournalReview) instance;
-        String actualPagesEnd = journalReview.getPages().getEnd();
+        var instance = scenarioContext
+                           .getNvaEntry()
+                           .getEntityDescription()
+                           .getReference()
+                           .getPublicationInstance();
+        var journalReview = (JournalReview) instance;
+        var actualPagesEnd = journalReview.getPages().getEnd();
         assertThat(actualPagesEnd, is(equalTo(expectedPagesEnd)));
     }
 
     @Then("the Nva Resource, JournalReview, has a PublicationContext with volume equal to {string}")
     public void theNvaResourceJournalReviewHasAPublicationContextWithVolumeEqualTo(String expectedVolume) {
-        PublicationInstance<? extends Pages> instance = scenarioContext
-                                                            .getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        JournalReview journalReview = (JournalReview) instance;
-        String actualVolume = journalReview.getVolume();
+        var instance = scenarioContext
+                           .getNvaEntry()
+                           .getEntityDescription()
+                           .getReference()
+                           .getPublicationInstance();
+        var journalReview = (JournalReview) instance;
+        var actualVolume = journalReview.getVolume();
         assertThat(actualVolume, is(equalTo(expectedVolume)));
     }
 
     @Then("the Nva Resource, JournalLeader, has a PublicationContext with pagesBegin equal to {string}")
     public void theNvaResourceJournalLeaderHasAPublicationContextWithPagesBeginEqualTo(String expectedPagesBegin) {
-        PublicationInstance<? extends Pages> instance = scenarioContext
-                                                            .getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        JournalLeader journalLeader = (JournalLeader) instance;
-        String actualPagesBegin = journalLeader.getPages().getBegin();
+        var instance = scenarioContext
+                           .getNvaEntry()
+                           .getEntityDescription()
+                           .getReference()
+                           .getPublicationInstance();
+        var journalLeader = (JournalLeader) instance;
+        var actualPagesBegin = journalLeader.getPages().getBegin();
         assertThat(actualPagesBegin, is(equalTo(expectedPagesBegin)));
     }
 
     @Then("the Nva Resource, JournalLeader, has a PublicationContext with pagesEnd equal to {string}")
     public void theNvaResourceJournalLeaderHasAPublicationContextWithPagesEndEqualTo(String expectedPagesEnd) {
-        PublicationInstance<? extends Pages> instance = scenarioContext
-                                                            .getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        JournalLeader journalLeader = (JournalLeader) instance;
-        String actualPagesEnd = journalLeader.getPages().getEnd();
+        var instance = scenarioContext
+                           .getNvaEntry()
+                           .getEntityDescription()
+                           .getReference()
+                           .getPublicationInstance();
+        var journalLeader = (JournalLeader) instance;
+        var actualPagesEnd = journalLeader.getPages().getEnd();
         assertThat(actualPagesEnd, is(equalTo(expectedPagesEnd)));
     }
 
     @Then("the Nva Resource, JournalLeader, has a PublicationContext with volume equal to {string}")
     public void theNvaResourceJournalLeaderHasAPublicationContextWithVolumeEqualTo(String expectedVolume) {
-        PublicationInstance<? extends Pages> instance = scenarioContext
-                                                            .getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        JournalLeader journalLeader = (JournalLeader) instance;
-        String actualVolume = journalLeader.getVolume();
+        var instance = scenarioContext
+                           .getNvaEntry()
+                           .getEntityDescription()
+                           .getReference()
+                           .getPublicationInstance();
+        var journalLeader = (JournalLeader) instance;
+        var actualVolume = journalLeader.getVolume();
         assertThat(actualVolume, is(equalTo(expectedVolume)));
     }
 
     @Then("the Nva Resource, JournalCorrigendum, has a PublicationContext with pagesBegin equal to {string}")
     public void theNvaResourceJournalCorrigendumHasAPublicationContextWithPagesBeginEqualTo(String expectedPagesBegin) {
-        PublicationInstance<? extends Pages> instance = scenarioContext
-                                                            .getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        JournalCorrigendum journalCorrigendum = (JournalCorrigendum) instance;
-        String actualPagesBegin = journalCorrigendum.getPages().getBegin();
+        var instance = scenarioContext
+                           .getNvaEntry()
+                           .getEntityDescription()
+                           .getReference()
+                           .getPublicationInstance();
+        var journalCorrigendum = (JournalCorrigendum) instance;
+        var actualPagesBegin = journalCorrigendum.getPages().getBegin();
         assertThat(actualPagesBegin, is(equalTo(expectedPagesBegin)));
     }
 
     @Then("the Nva Resource, JournalCorrigendum, has a PublicationContext with pagesEnd equal to {string}")
     public void theNvaResourceJournalCorrigendumHasAPublicationContextWithPagesEndEqualTo(String expectedPagesEnd) {
-        PublicationInstance<? extends Pages> instance = scenarioContext
-                                                            .getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        JournalCorrigendum journalCorrigendum = (JournalCorrigendum) instance;
-        String actualPagesEnd = journalCorrigendum.getPages().getEnd();
+        var instance = scenarioContext
+                           .getNvaEntry()
+                           .getEntityDescription()
+                           .getReference()
+                           .getPublicationInstance();
+        var journalCorrigendum = (JournalCorrigendum) instance;
+        var actualPagesEnd = journalCorrigendum.getPages().getEnd();
         assertThat(actualPagesEnd, is(equalTo(expectedPagesEnd)));
     }
 
     @Then("the Nva Resource, JournalCorrigendum, has a PublicationContext with volume equal to {string}")
     public void theNvaResourceJournalCorrigendumHasAPublicationContextWithVolumeEqualTo(String expectedVolume) {
-        PublicationInstance<? extends Pages> instance = scenarioContext
-                                                            .getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        JournalCorrigendum journalCorrigendum = (JournalCorrigendum) instance;
-        String actualVolume = journalCorrigendum.getVolume();
+        var instance = scenarioContext
+                           .getNvaEntry()
+                           .getEntityDescription()
+                           .getReference()
+                           .getPublicationInstance();
+        var journalCorrigendum = (JournalCorrigendum) instance;
+        var actualVolume = journalCorrigendum.getVolume();
         assertThat(actualVolume, is(equalTo(expectedVolume)));
     }
 
@@ -400,83 +396,83 @@ public class JournalFeatures {
             .setIssue(issue);
     }
 
-    @Then("the Nva Resource, FeatureArticle, has a PublicationContext with issue equal to {string}")
+    @Then("the Nva Resource, MediaFeatureArticle, has a PublicationContext with issue equal to {string}")
     public void theNvaResourceFeatureArticleHasAPublicationContextWithIssueEqualTo(String expectedIssue) {
-        PublicationInstance<? extends Pages> instance = scenarioContext
-                                                            .getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        FeatureArticle featureArticle = (FeatureArticle) instance;
-        String actualIssue = featureArticle.getIssue();
+        var instance = scenarioContext
+                           .getNvaEntry()
+                           .getEntityDescription()
+                           .getReference()
+                           .getPublicationInstance();
+        var mediaFeatureArticle = (MediaFeatureArticle) instance;
+        var actualIssue = mediaFeatureArticle.getIssue();
         assertThat(actualIssue, is(equalTo(expectedIssue)));
     }
 
     @Then("the Nva Resource, Journal Article, has a PublicationContext with issue equal to {string}")
     public void theNvaResourceJournalArticleHasAPublicationContextWithIssueEqualTo(String expectedIssue) {
-        PublicationInstance<? extends Pages> instance = scenarioContext
-                                                            .getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        JournalArticle journalArticle = (JournalArticle) instance;
-        String actualIssue = journalArticle.getIssue();
+        var instance = scenarioContext
+                           .getNvaEntry()
+                           .getEntityDescription()
+                           .getReference()
+                           .getPublicationInstance();
+        var journalArticle = (JournalArticle) instance;
+        var actualIssue = journalArticle.getIssue();
         assertThat(actualIssue, is(equalTo(expectedIssue)));
     }
 
     @Then("the Nva Resource, JournalCorrigendum, has a PublicationContext with issue equal to {string}")
     public void theNvaResourceJournalCorrigendumHasAPublicationContextWithIssueEqualTo(String expectedIssue) {
-        PublicationInstance<? extends Pages> instance = scenarioContext
-                                                            .getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        JournalCorrigendum journalCorrigendum = (JournalCorrigendum) instance;
-        String actualIssue = journalCorrigendum.getIssue();
+        var instance = scenarioContext
+                           .getNvaEntry()
+                           .getEntityDescription()
+                           .getReference()
+                           .getPublicationInstance();
+        var journalCorrigendum = (JournalCorrigendum) instance;
+        var actualIssue = journalCorrigendum.getIssue();
         assertThat(actualIssue, is(equalTo(expectedIssue)));
     }
 
     @Then("the Nva Resource, Journal Leader, has a PublicationContext with issue equal to {string}")
     public void theNvaResourceJournalLeaderHasAPublicationContextWithIssueEqualTo(String expectedIssue) {
-        PublicationInstance<? extends Pages> instance = scenarioContext
-                                                            .getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        JournalLeader journalLeader = (JournalLeader) instance;
-        String actualIssue = journalLeader.getIssue();
+        var instance = scenarioContext
+                           .getNvaEntry()
+                           .getEntityDescription()
+                           .getReference()
+                           .getPublicationInstance();
+        var journalLeader = (JournalLeader) instance;
+        var actualIssue = journalLeader.getIssue();
         assertThat(actualIssue, is(equalTo(expectedIssue)));
     }
 
     @Then("the Nva Resource, Journal Letter, has a PublicationContext with issue equal to {string}")
     public void theNvaResourceJournalLetterHasAPublicationContextWithIssueEqualTo(String expectedIssue) {
-        PublicationInstance<? extends Pages> instance = scenarioContext
-                                                            .getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        JournalLetter journalLetter = (JournalLetter) instance;
-        String actualIssue = journalLetter.getIssue();
+        var instance = scenarioContext
+                           .getNvaEntry()
+                           .getEntityDescription()
+                           .getReference()
+                           .getPublicationInstance();
+        var journalLetter = (JournalLetter) instance;
+        var actualIssue = journalLetter.getIssue();
         assertThat(actualIssue, is(equalTo(expectedIssue)));
     }
 
     @Then("the Nva Resource, Journal Review, has a PublicationContext with issue equal to {string}")
     public void theNvaResourceJournalReviewHasAPublicationContextWithIssueEqualTo(String expectedIssue) {
-        PublicationInstance<? extends Pages> instance = scenarioContext
-                                                            .getNvaEntry()
-                                                            .getEntityDescription()
-                                                            .getReference()
-                                                            .getPublicationInstance();
-        JournalReview journalReview = (JournalReview) instance;
-        String actualIssue = journalReview.getIssue();
+        var instance = scenarioContext
+                           .getNvaEntry()
+                           .getEntityDescription()
+                           .getReference()
+                           .getPublicationInstance();
+        var journalReview = (JournalReview) instance;
+        var actualIssue = journalReview.getIssue();
         assertThat(actualIssue, is(equalTo(expectedIssue)));
     }
 
     private Journal extractJournal() {
-        PublicationContext publicationContext = scenarioContext.getNvaEntry()
-                                                    .getEntityDescription()
-                                                    .getReference()
-                                                    .getPublicationContext();
+        var publicationContext = scenarioContext.getNvaEntry()
+                                     .getEntityDescription()
+                                     .getReference()
+                                     .getPublicationContext();
         return (Journal) publicationContext;
     }
 }

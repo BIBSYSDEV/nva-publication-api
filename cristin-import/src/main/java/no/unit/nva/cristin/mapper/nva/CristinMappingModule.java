@@ -41,6 +41,18 @@ public class CristinMappingModule {
         return Optional.ofNullable(cristinObject.getYearReported()).orElseGet(cristinObject::getPublicationYear);
     }
 
+    protected String extractIssn() {
+        return extractCristinJournalPublication().getJournal().getIssn();
+    }
+
+    protected String extractIssnOnline() {
+        return extractCristinJournalPublication().getJournal().getIssnOnline();
+    }
+
+    protected String extractPublisherTitle() {
+        return extractCristinJournalPublication().getJournal().getJournalTitle();
+    }
+
     private String cleanCristinIsbn(String isbn) {
         return isNull(isbn) || isEmptyIsbn(isbn) ? null : isbn.replaceAll(NOT_DIGITS_OR_X_REGEX, "");
     }
