@@ -67,13 +67,15 @@ public class MediaContributionFeatures {
     }
 
     @Then("the NVA publicationContext has a disseminationChannel equalTo {string}")
-    public void theNVAPublicationContextHasADisseminationChannelEqualTo(String dissemintaionChannel) {
+    public void theNVAPublicationContextHasADisseminationChannelEqualTo(
+        String dissemintaionChannel) {
         var context = scenarioContext.getNvaEntry()
                           .getEntityDescription()
                           .getReference()
                           .getPublicationContext();
         assertThat(context, is(instanceOf(MediaContribution.class)));
         var mediaContribution = (MediaContribution) context;
-        assertThat(mediaContribution.getDisseminationChannel(), is(equalTo(dissemintaionChannel)));
+        assertThat(mediaContribution.getDisseminationChannel(),
+                   is(equalTo(dissemintaionChannel)));
     }
 }
