@@ -72,7 +72,7 @@ public class ReferenceBuilder extends CristinMappingModule {
             return new PeriodicalBuilder(cristinObject, channelRegistryMapper).buildPeriodicalForPublicationContext();
         }
         if (isMediaFeatureArticle(cristinObject)) {
-            return new MediaPeriodicalBuilder(cristinObject).buildMediaPeriodicalForPublicationContext();
+            return new MediaPeriodicalBuilder(cristinObject, channelRegistryMapper).buildMediaPeriodicalForPublicationContext();
         }
         if (isReport(cristinObject)) {
             return buildPublicationContextWhenMainCategoryIsReport();
