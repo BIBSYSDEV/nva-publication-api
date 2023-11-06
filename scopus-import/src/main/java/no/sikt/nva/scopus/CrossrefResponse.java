@@ -8,15 +8,15 @@ import no.unit.nva.commons.json.JsonSerializable;
 
 public class CrossrefResponse implements JsonSerializable {
 
-    private final List<CrossrefLink> links;
+    private final Message message;
 
     @JsonCreator
-    public CrossrefResponse(@JsonProperty("link") List<CrossrefLink> links) {
-        this.links = links;
+    public CrossrefResponse(@JsonProperty("message") Message message) {
+        this.message = message;
     }
 
-    public List<CrossrefLink> getLinks() {
-        return links;
+    public Message getMessage() {
+        return message;
     }
 
     @Override
@@ -24,7 +24,7 @@ public class CrossrefResponse implements JsonSerializable {
         return this.toJsonString();
     }
 
-    public static class CrossrefLink {
+    public static class CrossrefLink implements JsonSerializable {
 
         private final URI uri;
 
@@ -35,6 +35,20 @@ public class CrossrefResponse implements JsonSerializable {
 
         public URI getUri() {
             return uri;
+        }
+    }
+
+    public static class Message implements JsonSerializable {
+
+        private final List<CrossrefLink> links;
+
+        @JsonCreator
+        public Message(@JsonProperty("link") List<CrossrefLink> links) {
+            this.links = links;
+        }
+
+        public List<CrossrefLink> getLinks() {
+            return links;
         }
     }
 }

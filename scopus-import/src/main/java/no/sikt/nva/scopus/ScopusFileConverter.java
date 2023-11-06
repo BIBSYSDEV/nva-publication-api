@@ -27,6 +27,8 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
@@ -35,6 +37,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 public class ScopusFileConverter {
 
+    private static final Logger logger = LoggerFactory.getLogger(ScopusFileConverter.class);
     public static final String IMPORT_CANDIDATES_FILES_BUCKET = new Environment().readEnv(
         "IMPORT_CANDIDATES_STORAGE_BUCKET");
     public static final String CONTENT_TYPE_OCTET_STREAM = "application/octet-stream";
@@ -47,6 +50,8 @@ public class ScopusFileConverter {
     private static final URI RIGHTS_RESERVED_LICENSE = URI.create("https://creativecommons.org/licenses/by/4.0/");
     public static final String CROSSREF_URI_ENV_VAR_NAME = "CROSSREF_FETCH_DOI_URI";
     public static final String CROSSREF_DEFAULT_URI = "https://api.crossref.org/v1/works/";
+    public static final String FETCH_FILE_FROM_XML_MESSAGE_ERROR_MESSAGE = "Could not fetch file from xml: {}";
+    public static final String FETCH_FILE_FROM_DOI_ERROR_MESSAGE = "Could not fetch file from doi: {}";
     public final String crossRefUri;
     private final HttpClient httpClient;
     private final S3Client s3Client;
@@ -77,7 +82,7 @@ public class ScopusFileConverter {
             var response = fetchResponseAsString(uriToFetch);
             var crossrefResponse = getCrossrefResponse(response);
 
-            return crossrefResponse.getLinks()
+            return crossrefResponse.getMessage().getLinks()
                        .stream()
                        .map(CrossrefLink::getUri)
                        .filter(Objects::nonNull)
@@ -86,6 +91,7 @@ public class ScopusFileConverter {
                        .map(Optional::get)
                        .toList();
         } catch (Exception e) {
+            logger.info(FETCH_FILE_FROM_DOI_ERROR_MESSAGE, e.getMessage());
             return List.of();
         }
 
@@ -101,7 +107,7 @@ public class ScopusFileConverter {
     }
 
     //TODO: Fetched files should be scanned for malware
-    public Optional<AssociatedArtifact> convertToAssociatedArtifact(URI downloadUrl) {
+    private Optional<AssociatedArtifact> convertToAssociatedArtifact(URI downloadUrl) {
         try {
             var response = fetchResponseAsInputStream(downloadUrl);
             var fileIdentifier = randomUUID();
@@ -110,6 +116,7 @@ public class ScopusFileConverter {
             var head = fetchFileInfo(fileIdentifier);
             return Optional.of(createFile(fileIdentifier, filename, head));
         } catch (Exception e) {
+            logger.error(FETCH_FILE_FROM_XML_MESSAGE_ERROR_MESSAGE, e.getMessage());
             return Optional.empty();
         }
     }

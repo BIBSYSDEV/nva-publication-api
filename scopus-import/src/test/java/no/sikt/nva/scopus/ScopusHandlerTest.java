@@ -126,6 +126,7 @@ import no.scopus.generated.UpwOaLocationsType;
 import no.scopus.generated.UpwOpenAccessType;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.CrossrefResponse.CrossrefLink;
+import no.sikt.nva.scopus.CrossrefResponse.Message;
 import no.sikt.nva.scopus.conversion.ContributorExtractor;
 import no.sikt.nva.scopus.conversion.CristinConnection;
 import no.sikt.nva.scopus.conversion.PiaConnection;
@@ -165,7 +166,6 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
@@ -399,7 +399,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var downloadUrl = UriWrapper.fromUri(wireMockRuntimeInfo.getHttpBaseUrl()).addChild(randomString());
         stubFor(WireMock.get(urlPathEqualTo("/" + scopusData.getDocument().getMeta().getDoi()))
                     .willReturn(aResponse()
-                                    .withBody(new CrossrefResponse(List.of(new CrossrefLink(downloadUrl.getUri()))).toString())
+                                    .withBody(toCrossrefResponse(downloadUrl))
                                     .withStatus(HttpURLConnection.HTTP_OK)));
         var filename = randomString() + ".pdf";
         var testUrl = "/" + UriWrapper.fromUri(downloadUrl.getLastPathElement()).getLastPathElement();
@@ -409,6 +409,10 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                                     .withHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"")
                                     .withStatus(HttpURLConnection.HTTP_OK)));
         return filename;
+    }
+
+    private static String toCrossrefResponse(UriWrapper downloadUrl) {
+        return new CrossrefResponse(new Message(List.of(new CrossrefLink(downloadUrl.getUri())))).toString();
     }
 
     private void mockBadRequestCrossrefDoiResponse(ScopusGenerator scopusData) {
