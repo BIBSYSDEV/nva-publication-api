@@ -44,9 +44,9 @@ public class Nsd {
                    .map(pid -> getNsdProxyUri(NSD_PROXY_PATH_JOURNAL, pid));
     }
 
-    private URI getNsdProxyUri(String nsdProxyPathPublisher, String pid) {
+    private URI getNsdProxyUri(String nsdProxyPath, String pid) {
         return nvaProxyUri()
-                   .addChild(nsdProxyPathPublisher)
+                   .addChild(nsdProxyPath)
                    .addChild(pid)
                    .addChild(Integer.toString(year))
                    .getUri();
