@@ -57,4 +57,5 @@ test {
     environment "BACKEND_CLIENT_SECRET_NAME", "someSecret"
     environment "BACKEND_CLIENT_AUTH_URL", "example.com"
     environment "IMPORT_CANDIDATES_STORAGE_BUCKET", "someBucket"
+    environment "CROSSREF_FETCH_DOI_URI", "https://example.com"
 }

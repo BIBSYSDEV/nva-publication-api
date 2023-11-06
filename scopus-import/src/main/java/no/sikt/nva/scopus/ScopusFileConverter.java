@@ -19,10 +19,14 @@ import no.scopus.generated.OpenAccessType;
 import no.scopus.generated.UpwOaLocationType;
 import no.scopus.generated.UpwOaLocationsType;
 import no.scopus.generated.UpwOpenAccessType;
+import no.sikt.nva.scopus.CrossrefResponse.CrossrefLink;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 import nva.commons.core.Environment;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
+import nva.commons.core.paths.UriWrapper;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
@@ -31,40 +35,86 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 public class ScopusFileConverter {
 
-    private static final String CONTENT_DISPOSITION_FILE_NAME_PATTERN = "filename=\"%s\"";
     public static final String IMPORT_CANDIDATES_FILES_BUCKET = new Environment().readEnv(
         "IMPORT_CANDIDATES_STORAGE_BUCKET");
-    private static final URI RIGHTS_RESERVED_LICENSE = URI.create("https://creativecommons.org/licenses/by/4.0/");
     public static final String CONTENT_TYPE_OCTET_STREAM = "application/octet-stream";
     public static final String CONTENT_TYPE_DELIMITER = ";";
     public static final String FILE_TYPE_DELIMITER = "/";
     public static final String FILENAME = "filename";
     public static final String PDF_FILE_TYPE = "pdf";
     public static final String FILE_NAME_DELIMITER = ".";
+    private static final String CONTENT_DISPOSITION_FILE_NAME_PATTERN = "filename=\"%s\"";
+    private static final URI RIGHTS_RESERVED_LICENSE = URI.create("https://creativecommons.org/licenses/by/4.0/");
+    public static final String CROSSREF_URI_ENV_VAR_NAME = "CROSSREF_FETCH_DOI_URI";
+    public static final String CROSSREF_DEFAULT_URI = "https://api.crossref.org/v1/works/";
+    public final String crossRefUri;
     private final HttpClient httpClient;
     private final S3Client s3Client;
 
+    @JacocoGenerated
     public ScopusFileConverter(HttpClient httpClient, S3Client s3Client) {
         this.httpClient = httpClient;
         this.s3Client = s3Client;
+        this.crossRefUri = new Environment().readEnvOpt(CROSSREF_URI_ENV_VAR_NAME).orElse(CROSSREF_DEFAULT_URI);
+    }
+
+    public ScopusFileConverter(HttpClient httpClient, S3Client s3Client, Environment environment) {
+        this.httpClient = httpClient;
+        this.s3Client = s3Client;
+        this.crossRefUri = environment.readEnv("CROSSREF_FETCH_DOI_URI");
     }
 
     public List<AssociatedArtifact> fetchAssociatedArtifacts(DocTp docTp) {
-        return getLocations(docTp).stream()
-                   .map(UpwOaLocationType::getUpwUrlForPdf)
-                   .distinct()
-                   .filter(Objects::nonNull)
-                   .map(this::convertToAssociatedArtifact)
-                   .toList();
+        var associatedArtifactsFromXmlReferences = extractAssociatedArtifactsFromFileReference(docTp);
+        return !associatedArtifactsFromXmlReferences.isEmpty()
+                   ? associatedArtifactsFromXmlReferences
+                   : extractAssociatedArtifactsFromCrossref(docTp);
+    }
+
+    private List<AssociatedArtifact> extractAssociatedArtifactsFromCrossref(DocTp docTp) {
+        try {
+            var uriToFetch = UriWrapper.fromUri(crossRefUri).addChild(docTp.getMeta().getDoi()).getUri();
+            var response = fetchResponseAsString(uriToFetch);
+            var crossrefResponse = getCrossrefResponse(response);
+
+            return crossrefResponse.getLinks()
+                       .stream()
+                       .map(CrossrefLink::getUri)
+                       .filter(Objects::nonNull)
+                       .map(this::convertToAssociatedArtifact)
+                       .filter(Optional::isPresent)
+                       .map(Optional::get)
+                       .toList();
+        } catch (Exception e) {
+            return List.of();
+        }
+
+    }
+
+    private static CrossrefResponse getCrossrefResponse(HttpResponse<String> response) {
+        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response.body(),
+                                                                 CrossrefResponse.class)).orElseThrow();
+    }
+
+    private HttpResponse<String> fetchResponseAsString(URI uriToFetch) {
+        return attempt(() -> httpClient.send(constructRequest(uriToFetch), BodyHandlers.ofString())).orElseThrow();
     }
 
     //TODO: Fetched files should be scanned for malware
-    public AssociatedArtifact convertToAssociatedArtifact(String downloadUrl) {
-        var response = fetchResponse(downloadUrl);
-        var fileIdentifier = randomUUID();
-        var filename = getFilename(response);
-        saveFile(filename, fileIdentifier, response);
-        var head = fetchFileInfo(fileIdentifier);
+    public Optional<AssociatedArtifact> convertToAssociatedArtifact(URI downloadUrl) {
+        try {
+            var response = fetchResponseAsInputStream(downloadUrl);
+            var fileIdentifier = randomUUID();
+            var filename = getFilename(response);
+            saveFile(filename, fileIdentifier, response);
+            var head = fetchFileInfo(fileIdentifier);
+            return Optional.of(createFile(fileIdentifier, filename, head));
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
+    private static File createFile(UUID fileIdentifier, String filename, HeadObjectResponse head) {
         return File.builder()
                    .withIdentifier(fileIdentifier)
                    .withName(filename)
@@ -96,8 +146,8 @@ public class ScopusFileConverter {
                    .orElse(PDF_FILE_TYPE);
     }
 
-    private static HttpRequest constructRequest(String uri) {
-        return HttpRequest.newBuilder().GET().uri(URI.create(uri)).build();
+    private static HttpRequest constructRequest(URI uri) {
+        return HttpRequest.newBuilder().GET().uri(uri).build();
     }
 
     private static String getContentType(HttpResponse<InputStream> response) {
@@ -105,6 +155,18 @@ public class ScopusFileConverter {
                    .map(Optional::orElseThrow)
                    .map(value -> value.split(CONTENT_TYPE_DELIMITER)[0])
                    .orElse(CONTENT_TYPE_OCTET_STREAM);
+    }
+
+    private List<AssociatedArtifact> extractAssociatedArtifactsFromFileReference(DocTp docTp) {
+        return getLocations(docTp).stream()
+                   .map(UpwOaLocationType::getUpwUrlForPdf)
+                   .distinct()
+                   .filter(Objects::nonNull)
+                   .map(URI::create)
+                   .map(this::convertToAssociatedArtifact)
+                   .filter(Optional::isPresent)
+                   .map(Optional::get)
+                   .toList();
     }
 
     private HeadObjectResponse fetchFileInfo(UUID fileIdentifier) {
@@ -125,9 +187,8 @@ public class ScopusFileConverter {
                                .build(), RequestBody.fromBytes(fileToSave));
     }
 
-    private HttpResponse<InputStream> fetchResponse(String type) {
-        return attempt(
-            () -> httpClient.send(constructRequest(type), BodyHandlers.ofInputStream())).orElseThrow();
+    private HttpResponse<InputStream> fetchResponseAsInputStream(URI uri) {
+        return attempt(() -> httpClient.send(constructRequest(uri), BodyHandlers.ofInputStream())).orElseThrow();
     }
 
     private List<UpwOaLocationType> getLocations(DocTp docTp) {
