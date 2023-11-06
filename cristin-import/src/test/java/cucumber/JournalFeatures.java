@@ -210,7 +210,8 @@ public class JournalFeatures {
     }
 
     @Then("the Nva Resource, MediaFeatureArticle, has a PublicationContext with pagesBegin equal to {string}")
-    public void theNvaResourceMediaFeatureArticleHasAPublicationContextWithPagesBeginEqualTo(String expectedPagesBegin) {
+    public void theNvaResourceMediaFeatureArticleHasAPublicationContextWithPagesBeginEqualTo(
+        String expectedPagesBegin) {
         var instance = scenarioContext
                            .getNvaEntry()
                            .getEntityDescription()
