@@ -67,7 +67,7 @@ public class MediaContributionFeatures {
     }
 
     @Then("the NVA publicationContext has a disseminationChannel equalTo {string}")
-    public void theNVAPublicationContextHasADisseminationChannelEqualTo(
+    public void theNvaPublicationContextHasADisseminationChannelEqualTo(
         String dissemintaionChannel) {
         var context = scenarioContext.getNvaEntry()
                           .getEntityDescription()
