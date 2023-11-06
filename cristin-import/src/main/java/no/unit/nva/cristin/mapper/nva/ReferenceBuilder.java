@@ -20,6 +20,7 @@ import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
 import no.unit.nva.cristin.mapper.PeriodicalBuilder;
 import no.unit.nva.cristin.mapper.PublicationInstanceBuilderImpl;
+import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Artistic;
@@ -42,8 +43,8 @@ public class ReferenceBuilder extends CristinMappingModule {
 
     private final DoiConverter doiConverter;
 
-    public ReferenceBuilder(CristinObject cristinObject) {
-        super(cristinObject);
+    public ReferenceBuilder(CristinObject cristinObject, ChannelRegistryMapper channelRegistryMapper) {
+        super(cristinObject, channelRegistryMapper);
         doiConverter = new DoiConverter(DoiValidator::validateOffline);
     }
 
@@ -63,10 +64,10 @@ public class ReferenceBuilder extends CristinMappingModule {
     private PublicationContext buildPublicationContext()
         throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
         if (isBook(cristinObject)) {
-            return new NvaBookBuilder(cristinObject).buildBookForPublicationContext();
+            return new NvaBookBuilder(cristinObject, channelRegistryMapper).buildBookForPublicationContext();
         }
         if (isJournal(cristinObject)) {
-            return new PeriodicalBuilder(cristinObject).buildPeriodicalForPublicationContext();
+            return new PeriodicalBuilder(cristinObject, channelRegistryMapper).buildPeriodicalForPublicationContext();
         }
         if (isReport(cristinObject)) {
             return buildPublicationContextWhenMainCategoryIsReport();
@@ -105,9 +106,9 @@ public class ReferenceBuilder extends CristinMappingModule {
     private PublicationContext buildPublicationContextWhenMainCategoryIsReport()
         throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
         if (isDegreePhd(cristinObject) || isDegreeMaster(cristinObject) || isDegreeLicentiate(cristinObject)) {
-            return new NvaDegreeBuilder(cristinObject).buildDegree();
+            return new NvaDegreeBuilder(cristinObject, channelRegistryMapper).buildDegree();
         }
-        return new NvaReportBuilder(cristinObject).buildNvaReport();
+        return new NvaReportBuilder(cristinObject, channelRegistryMapper).buildNvaReport();
     }
 
     private Anthology buildChapterForPublicationContext() {
