@@ -11,6 +11,7 @@ import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreeLicentiate;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreeMaster;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreePhd;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isMediaFeatureArticle;
 import static no.unit.nva.cristin.mapper.nva.exceptions.ExceptionHandling.castToCorrectRuntimeException;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
@@ -18,6 +19,7 @@ import java.util.Optional;
 import no.unit.nva.cristin.mapper.CristinJournalPublication;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
+import no.unit.nva.cristin.mapper.MediaPeriodicalBuilder;
 import no.unit.nva.cristin.mapper.PeriodicalBuilder;
 import no.unit.nva.cristin.mapper.PublicationInstanceBuilderImpl;
 import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
@@ -68,6 +70,9 @@ public class ReferenceBuilder extends CristinMappingModule {
         }
         if (isJournal(cristinObject)) {
             return new PeriodicalBuilder(cristinObject, channelRegistryMapper).buildPeriodicalForPublicationContext();
+        }
+        if (isMediaFeatureArticle(cristinObject)) {
+            return new MediaPeriodicalBuilder(cristinObject, channelRegistryMapper).buildMediaPeriodicalForPublicationContext();
         }
         if (isReport(cristinObject)) {
             return buildPublicationContextWhenMainCategoryIsReport();

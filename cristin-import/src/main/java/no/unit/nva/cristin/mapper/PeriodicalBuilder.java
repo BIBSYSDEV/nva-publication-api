@@ -38,16 +38,4 @@ public class PeriodicalBuilder extends CristinMappingModule {
         var journalUri = new Nsd(nsdCode, publicationYear, channelRegistryMapper).createJournalOrSeriesUri();
         return new Journal(journalUri);
     }
-
-    private String extractIssn() {
-        return extractCristinJournalPublication().getJournal().getIssn();
-    }
-
-    private String extractIssnOnline() {
-        return extractCristinJournalPublication().getJournal().getIssnOnline();
-    }
-
-    private String extractPublisherTitle() {
-        return extractCristinJournalPublication().getJournal().getJournalTitle();
-    }
 }
