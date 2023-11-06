@@ -1,5 +1,6 @@
 package no.sikt.nva.scopus;
 
+import static java.util.Objects.nonNull;
 import static java.util.UUID.randomUUID;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.s3.Headers;
@@ -22,6 +23,7 @@ import no.scopus.generated.UpwOaLocationType;
 import no.scopus.generated.UpwOaLocationsType;
 import no.scopus.generated.UpwOpenAccessType;
 import no.sikt.nva.scopus.CrossrefResponse.CrossrefLink;
+import no.sikt.nva.scopus.CrossrefResponse.License;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -51,6 +53,7 @@ public class ScopusFileConverter {
     public static final String CROSSREF_DEFAULT_URI = "https://api.crossref.org/v1/works/";
     public static final String FETCH_FILE_FROM_XML_MESSAGE_ERROR_MESSAGE = "Could not fetch file from xml: {}";
     public static final String FETCH_FILE_FROM_DOI_ERROR_MESSAGE = "Could not fetch file from doi: {}";
+    public static final String CREATIVECOMMONS_DOMAIN = "creativecommons.org";
     private static final Logger logger = LoggerFactory.getLogger(ScopusFileConverter.class);
     private static final String CONTENT_DISPOSITION_FILE_NAME_PATTERN = "filename=\"%s\"";
     private static final URI DEFAULT_LICENSE = URI.create("https://creativecommons.org/licenses/by/4.0/");
@@ -82,13 +85,13 @@ public class ScopusFileConverter {
         return JsonUtils.dtoObjectMapper.readValue(body, CrossrefResponse.class);
     }
 
-    private static File createFile(UUID fileIdentifier, String filename, HeadObjectResponse head) {
+    private static File createFile(UUID fileIdentifier, String filename, HeadObjectResponse head, URI license) {
         return File.builder()
                    .withIdentifier(fileIdentifier)
                    .withName(filename)
                    .withMimeType(head.contentType())
                    .withSize(head.contentLength())
-                   .withLicense(DEFAULT_LICENSE)
+                   .withLicense(nonNull(license) ? license : DEFAULT_LICENSE)
                    .buildPublishedFile();
     }
 
@@ -128,12 +131,14 @@ public class ScopusFileConverter {
     private List<AssociatedArtifact> extractAssociatedArtifactsFromDoi(DocTp docTp) {
         try {
             var doi = docTp.getMeta().getDoi();
-            return fetchDoi(doi).getMessage()
+            var response = fetchDoi(doi);
+            var license = extractLicense(response);
+            return response.getMessage()
                        .getLinks()
                        .stream()
                        .map(CrossrefLink::getUri)
                        .filter(Objects::nonNull)
-                       .map(this::convertToAssociatedArtifact)
+                       .map(uri -> convertToAssociatedArtifact(uri, license))
                        .filter(Optional::isPresent)
                        .map(Optional::get)
                        .toList();
@@ -141,6 +146,18 @@ public class ScopusFileConverter {
             logger.info(FETCH_FILE_FROM_DOI_ERROR_MESSAGE, e.getMessage());
             return List.of();
         }
+    }
+
+    private URI extractLicense(CrossrefResponse doiResponse) {
+        return Optional.ofNullable(doiResponse.getMessage().getLicense())
+                   .map(licenses -> !licenses.isEmpty() ? licenses.get(0) : null)
+                   .map(License::getUri)
+                   .filter(this::isCreativeCommonsLicense)
+                   .orElse(DEFAULT_LICENSE);
+    }
+
+    private boolean isCreativeCommonsLicense(URI uri) {
+        return uri.toString().contains(CREATIVECOMMONS_DOMAIN);
     }
 
     private CrossrefResponse fetchDoi(String doi) {
@@ -161,14 +178,14 @@ public class ScopusFileConverter {
     }
 
     //TODO: Fetched files should be scanned for malware
-    private Optional<AssociatedArtifact> convertToAssociatedArtifact(URI downloadUrl) {
+    private Optional<AssociatedArtifact> convertToAssociatedArtifact(URI downloadUrl, URI license) {
         try {
             var response = fetchResponseAsInputStream(downloadUrl);
             var fileIdentifier = randomUUID();
             var filename = getFilename(response);
             saveFile(filename, fileIdentifier, response);
             var head = fetchFileInfo(fileIdentifier);
-            return Optional.of(createFile(fileIdentifier, filename, head));
+            return Optional.of(createFile(fileIdentifier, filename, head, license));
         } catch (Exception e) {
             logger.error(FETCH_FILE_FROM_XML_MESSAGE_ERROR_MESSAGE, e.getMessage());
             return Optional.empty();
@@ -181,7 +198,7 @@ public class ScopusFileConverter {
                    .distinct()
                    .filter(Objects::nonNull)
                    .map(URI::create)
-                   .map(this::convertToAssociatedArtifact)
+                   .map(downloadUrl -> convertToAssociatedArtifact(downloadUrl, DEFAULT_LICENSE))
                    .filter(Optional::isPresent)
                    .map(Optional::get)
                    .toList();

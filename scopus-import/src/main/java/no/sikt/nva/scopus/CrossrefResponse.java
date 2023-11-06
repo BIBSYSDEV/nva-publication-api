@@ -40,15 +40,36 @@ public class CrossrefResponse implements JsonSerializable {
 
     public static class Message implements JsonSerializable {
 
+        private final List<License> license;
         private final List<CrossrefLink> links;
 
         @JsonCreator
-        public Message(@JsonProperty("link") List<CrossrefLink> links) {
+        public Message(@JsonProperty("link") List<CrossrefLink> links,
+                       @JsonProperty("license") List<License> license) {
             this.links = links;
+            this.license = license;
+        }
+
+        public List<License> getLicense() {
+            return license;
         }
 
         public List<CrossrefLink> getLinks() {
             return links;
+        }
+    }
+
+    public static class License implements JsonSerializable {
+
+        private final URI uri;
+
+        @JsonCreator
+        public License(@JsonProperty("URL") URI uri) {
+            this.uri = uri;
+        }
+
+        public URI getUri() {
+            return uri;
         }
     }
 }

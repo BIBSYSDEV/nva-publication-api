@@ -126,6 +126,7 @@ import no.scopus.generated.UpwOaLocationsType;
 import no.scopus.generated.UpwOpenAccessType;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.CrossrefResponse.CrossrefLink;
+import no.sikt.nva.scopus.CrossrefResponse.License;
 import no.sikt.nva.scopus.CrossrefResponse.Message;
 import no.sikt.nva.scopus.conversion.ContributorExtractor;
 import no.sikt.nva.scopus.conversion.CristinConnection;
@@ -412,7 +413,9 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     private static String toCrossrefResponse(UriWrapper downloadUrl) {
-        return new CrossrefResponse(new Message(List.of(new CrossrefLink(downloadUrl.getUri())))).toString();
+        return new CrossrefResponse(new Message(List.of(new CrossrefLink(downloadUrl.getUri())),
+                                    List.of(new License(URI.create("http://creativecommons.org/" + randomString())))))
+                   .toString();
     }
 
     private void mockBadRequestCrossrefDoiResponse(ScopusGenerator scopusData) {
