@@ -26,6 +26,7 @@ entityDescription.reference.publicationContext.linkedContext
 entityDescription.reference.publicationContext.title
 entityDescription.reference.publicationContext.id
 entityDescription.reference.publicationContext.additionalIdentifiers
+entityDescription.reference.publicationContext.additionalIdentifier
 
 entityDescription.contributors
 
