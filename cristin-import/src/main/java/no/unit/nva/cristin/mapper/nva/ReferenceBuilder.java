@@ -11,6 +11,7 @@ import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreeLicentiate;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreeMaster;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreePhd;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isMediaFeatureArticle;
 import static no.unit.nva.cristin.mapper.nva.exceptions.ExceptionHandling.castToCorrectRuntimeException;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
@@ -19,8 +20,10 @@ import no.unit.nva.cristin.mapper.CristinJournalPublication;
 import no.unit.nva.cristin.mapper.CristinMediaContribution;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
+import no.unit.nva.cristin.mapper.MediaPeriodicalBuilder;
 import no.unit.nva.cristin.mapper.PeriodicalBuilder;
 import no.unit.nva.cristin.mapper.PublicationInstanceBuilderImpl;
+import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Artistic;
@@ -43,8 +46,8 @@ public class ReferenceBuilder extends CristinMappingModule {
 
     private final DoiConverter doiConverter;
 
-    public ReferenceBuilder(CristinObject cristinObject) {
-        super(cristinObject);
+    public ReferenceBuilder(CristinObject cristinObject, ChannelRegistryMapper channelRegistryMapper) {
+        super(cristinObject, channelRegistryMapper);
         doiConverter = new DoiConverter(DoiValidator::validateOffline);
     }
 
@@ -64,10 +67,13 @@ public class ReferenceBuilder extends CristinMappingModule {
     private PublicationContext buildPublicationContext()
         throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
         if (isBook(cristinObject)) {
-            return new NvaBookBuilder(cristinObject).buildBookForPublicationContext();
+            return new NvaBookBuilder(cristinObject, channelRegistryMapper).buildBookForPublicationContext();
         }
         if (isJournal(cristinObject)) {
-            return new PeriodicalBuilder(cristinObject).buildPeriodicalForPublicationContext();
+            return new PeriodicalBuilder(cristinObject, channelRegistryMapper).buildPeriodicalForPublicationContext();
+        }
+        if (isMediaFeatureArticle(cristinObject)) {
+            return new MediaPeriodicalBuilder(cristinObject, channelRegistryMapper).buildMediaPeriodicalForPublicationContext();
         }
         if (isReport(cristinObject)) {
             return buildPublicationContextWhenMainCategoryIsReport();
@@ -116,9 +122,9 @@ public class ReferenceBuilder extends CristinMappingModule {
     private PublicationContext buildPublicationContextWhenMainCategoryIsReport()
         throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
         if (isDegreePhd(cristinObject) || isDegreeMaster(cristinObject) || isDegreeLicentiate(cristinObject)) {
-            return new NvaDegreeBuilder(cristinObject).buildDegree();
+            return new NvaDegreeBuilder(cristinObject, channelRegistryMapper).buildDegree();
         }
-        return new NvaReportBuilder(cristinObject).buildNvaReport();
+        return new NvaReportBuilder(cristinObject, channelRegistryMapper).buildNvaReport();
     }
 
     private Anthology buildChapterForPublicationContext() {

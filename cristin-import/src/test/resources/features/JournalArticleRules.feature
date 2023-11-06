@@ -81,9 +81,24 @@ Feature: Mapping of "Article in business/trade/industry journal", "Academic arti
 
   Scenario: When the the Cristin entry has a reference to an NSD journal then the
   NVA Entry contains a URI that is a reference to that NSD journal.
-    Given the Journal Publication has a reference to an NSD journal or publisher with identifier 12345
+    Given the Journal Publication has a reference to an NSD journal or publisher with identifier 339708
     And the Journal Publication has publishing year equal to 2003
     And the year the Cristin Result was published is equal to 2003
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Reference object with a journal URI that points to NVAs NSD proxy
-    And the Journal URI specifies the Journal by the NSD ID 12345 and the year 2003.
+    And the Journal URI specifies the Journal by the NSD ID "45F22A4F-F0CA-4F5F-B279-A2F1EF9D490B" and the year 2003.
+
+  Scenario: When the cristin entry has a reference to a NSD publisher then the
+    NVA Entry contains a URI that is a reference to that NSD publisher.
+    Given the Journal Publication has a reference to an NSD journal or publisher with identifier 6435
+    And the Journal Publication has publishing year equal to 2003
+    And the year the Cristin Result was published is equal to 2003
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a Reference object with a journal URI that points to NVAs NSD proxy
+    And the Publisher URI contains the NSD pid code "2DB34A7E-A1AD-46CC-B69C-14ADA60C58FF" and the publication year 2003
+
+  Scenario: When the cristin entry has a NSD code that does not exists in the csv channel-registry file,
+       then an exception is thrown
+    Given the Journal Publication has a reference to an NSD journal or publisher with identifier 12345
+    When the Cristin Result is converted to an NVA Resource
+    Then an error is reported.
