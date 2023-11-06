@@ -86,9 +86,9 @@ Feature: Mapping rules for exhibition production
     And the cristin exhibition event has a title "Spor. Norsk samtidsarkitektur 2005-2010"
     When the Cristin Result is converted to an NVA Resource
     Then the NVA publication has a description containing "Spor. Norsk samtidsarkitektur 2005-2010"
-    And the NVA publication has a description containing "Beløp: 56.5 NOK"
-    And the NVA publication has a description containing "Brukt areal: 345.4 m2"
+    And the NVA publication has a description containing "Beløp: 56,5 NOK"
+    And the NVA publication has a description containing "Brukt areal: 345,4 m2"
     And the NVA publication has a description containing "Antall besøkende: 3"
-    And the NVA publication has a description containing "Andel egne gjenstander: 56.0%"
+    And the NVA publication has a description containing "Andel egne gjenstander: 56,0%"
     And the NVA publication has a description containing "Antall gjenstander: 26"
 

@@ -18,6 +18,7 @@ import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
@@ -138,7 +139,7 @@ class MigrationTests extends ResourcesLocalTest {
     }
 
     private void migrateResources() {
-        var scanResources = resourceService.scanResources(1000, START_FROM_BEGINNING);
+        var scanResources = resourceService.scanResources(1000, START_FROM_BEGINNING, Collections.emptyList());
         resourceService.refreshResources(scanResources.getDatabaseEntries());
     }
 }

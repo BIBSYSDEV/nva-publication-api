@@ -1093,7 +1093,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private ListingResult<Entity> fetchRestOfDatabaseEntries(ListingResult<Entity> listingResult) {
-        return resourceService.scanResources(BIG_PAGE, listingResult.getStartMarker());
+        return resourceService.scanResources(BIG_PAGE, listingResult.getStartMarker(), Collections.emptyList());
     }
 
     private SortableIdentifier extractIdentifierFromFirstScanResult(ListingResult<Entity> listingResult) {
@@ -1103,7 +1103,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private ListingResult<Entity> fetchFirstDataEntry() {
         ListingResult<Entity> listingResult = ListingResult.empty();
         while (listingResult.isEmpty()) {
-            listingResult = resourceService.scanResources(1, listingResult.getStartMarker());
+            listingResult = resourceService.scanResources(1, listingResult.getStartMarker(), Collections.emptyList());
         }
         return listingResult;
     }
