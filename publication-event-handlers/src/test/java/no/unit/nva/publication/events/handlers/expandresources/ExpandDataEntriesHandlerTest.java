@@ -93,7 +93,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         when(mockUriRetriever.getRawContent(any(), any())).thenReturn(Optional.empty());
 
         ResourceExpansionService resourceExpansionService =
-            new ResourceExpansionServiceImpl(resourceService, ticketService, mockUriRetriever);
+            new ResourceExpansionServiceImpl(resourceService, ticketService, mockUriRetriever, mockUriRetriever);
 
         this.expandResourceHandler = new ExpandDataEntriesHandler(s3Client, resourceExpansionService);
         this.s3Driver = new S3Driver(s3Client, "ignoredForFakeS3Client");

@@ -1,6 +1,6 @@
 package cucumber;
 
-import static no.unit.nva.cristin.lambda.constants.MappingConstants.NSD_PROXY_PATH;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_CHANNEL_REGISTRY_V2;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -187,15 +187,15 @@ public class JournalFeatures {
     public void theNvaResourceHasAReferenceObjectWithAJournalUriThatPointsToNvaNsdProxy() {
         var journal = extractJournal();
         var uriString = journal.getId().toString();
-        var nsdProxyUri = UriWrapper.fromUri(NVA_API_DOMAIN).addChild(NSD_PROXY_PATH).getUri().toString();
+        var nsdProxyUri = UriWrapper.fromUri(NVA_API_DOMAIN).addChild(NVA_CHANNEL_REGISTRY_V2).getUri().toString();
         assertThat(uriString, containsString(nsdProxyUri));
     }
 
-    @Then("the Journal URI specifies the Journal by the NSD ID {int} and the year {int}.")
-    public void theJournalUriSpecifiesTheJournalByTheNsdIdAndTheYear(Integer nsdCode, Integer journalYear) {
+    @Then("the Journal URI specifies the Journal by the NSD ID {string} and the year {int}.")
+    public void theJournalUriSpecifiesTheJournalByTheNsdIdAndTheYear(String pid, Integer journalYear) {
         var journal = extractJournal();
         var uriString = journal.getId().toString();
-        assertThat(uriString, containsString(nsdCode.toString()));
+        assertThat(uriString, containsString(pid));
         assertThat(uriString, containsString(journalYear.toString()));
     }
 
@@ -467,6 +467,15 @@ public class JournalFeatures {
         var journalReview = (JournalReview) instance;
         var actualIssue = journalReview.getIssue();
         assertThat(actualIssue, is(equalTo(expectedIssue)));
+    }
+
+    @And("the Publisher URI contains the NSD pid code {string} and the publication year {int}")
+    public void thePublisherUriContainsTheNsdPidCodeAndThePublicationYear(String pid, Integer year) {
+        Journal journal = extractJournal();
+        String uriString = journal.getId().toString();
+        assertThat(uriString, containsString(pid));
+        assertThat(uriString, containsString("publisher"));
+        assertThat(uriString, containsString(year.toString()));
     }
 
     private Journal extractJournal() {

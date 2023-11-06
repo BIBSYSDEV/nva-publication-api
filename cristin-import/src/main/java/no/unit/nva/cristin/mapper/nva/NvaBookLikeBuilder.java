@@ -10,6 +10,7 @@ import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinPublisher;
 import no.unit.nva.cristin.mapper.Nsd;
+import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
 import no.unit.nva.cristin.mapper.nva.exceptions.NoPublisherException;
 import no.unit.nva.model.contexttypes.BookSeries;
 import no.unit.nva.model.contexttypes.Publisher;
@@ -21,9 +22,9 @@ public class NvaBookLikeBuilder extends CristinMappingModule {
 
     public static final String CUSTOM_VOLUME_SERIES_DELIMITER = ";";
     private static final String EMPTY_STRING = null;
-    
-    public NvaBookLikeBuilder(CristinObject cristinObject) {
-        super(cristinObject);
+
+    public NvaBookLikeBuilder(CristinObject cristinObject, ChannelRegistryMapper channelRegistryMapper) {
+        super(cristinObject, channelRegistryMapper);
     }
 
     protected String constructSeriesNumber() {
@@ -43,7 +44,8 @@ public class NvaBookLikeBuilder extends CristinMappingModule {
     }
 
     protected BookSeries buildSeries() {
-        return new NvaBookSeriesBuilder(cristinObject).createBookSeries();
+        return new NvaBookSeriesBuilder(cristinObject, channelRegistryMapper)
+                   .createBookSeries();
     }
 
     protected List<String> createIsbnList() {
@@ -62,7 +64,7 @@ public class NvaBookLikeBuilder extends CristinMappingModule {
 
     private Optional<PublishingHouse> createConfirmedPublisherIfPublisherReferenceHasNsdCode() {
         return extractPublishersNsdCode()
-                   .map(nsdCode -> new Nsd(nsdCode, extractYearReportedInNvi()))
+                   .map(nsdCode -> new Nsd(nsdCode, extractYearReportedInNvi(), channelRegistryMapper))
                    .map(Nsd::getPublisherUri)
                    .map(this::createConfirmedPublisher);
     }
