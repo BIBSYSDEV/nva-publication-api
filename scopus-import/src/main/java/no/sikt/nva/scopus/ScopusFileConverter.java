@@ -3,6 +3,8 @@ package no.sikt.nva.scopus;
 import static java.util.UUID.randomUUID;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.s3.Headers;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -37,7 +39,6 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 public class ScopusFileConverter {
 
-    private static final Logger logger = LoggerFactory.getLogger(ScopusFileConverter.class);
     public static final String IMPORT_CANDIDATES_FILES_BUCKET = new Environment().readEnv(
         "IMPORT_CANDIDATES_STORAGE_BUCKET");
     public static final String CONTENT_TYPE_OCTET_STREAM = "application/octet-stream";
@@ -46,12 +47,13 @@ public class ScopusFileConverter {
     public static final String FILENAME = "filename";
     public static final String PDF_FILE_TYPE = "pdf";
     public static final String FILE_NAME_DELIMITER = ".";
-    private static final String CONTENT_DISPOSITION_FILE_NAME_PATTERN = "filename=\"%s\"";
-    private static final URI RIGHTS_RESERVED_LICENSE = URI.create("https://creativecommons.org/licenses/by/4.0/");
     public static final String CROSSREF_URI_ENV_VAR_NAME = "CROSSREF_FETCH_DOI_URI";
     public static final String CROSSREF_DEFAULT_URI = "https://api.crossref.org/v1/works/";
     public static final String FETCH_FILE_FROM_XML_MESSAGE_ERROR_MESSAGE = "Could not fetch file from xml: {}";
     public static final String FETCH_FILE_FROM_DOI_ERROR_MESSAGE = "Could not fetch file from doi: {}";
+    private static final Logger logger = LoggerFactory.getLogger(ScopusFileConverter.class);
+    private static final String CONTENT_DISPOSITION_FILE_NAME_PATTERN = "filename=\"%s\"";
+    private static final URI DEFAULT_LICENSE = URI.create("https://creativecommons.org/licenses/by/4.0/");
     public final String crossRefUri;
     private final HttpClient httpClient;
     private final S3Client s3Client;
@@ -73,52 +75,11 @@ public class ScopusFileConverter {
         var associatedArtifactsFromXmlReferences = extractAssociatedArtifactsFromFileReference(docTp);
         return !associatedArtifactsFromXmlReferences.isEmpty()
                    ? associatedArtifactsFromXmlReferences
-                   : extractAssociatedArtifactsFromCrossref(docTp);
+                   : extractAssociatedArtifactsFromDoi(docTp);
     }
 
-    private List<AssociatedArtifact> extractAssociatedArtifactsFromCrossref(DocTp docTp) {
-        try {
-            var uriToFetch = UriWrapper.fromUri(crossRefUri).addChild(docTp.getMeta().getDoi()).getUri();
-            var response = fetchResponseAsString(uriToFetch);
-            var crossrefResponse = getCrossrefResponse(response);
-
-            return crossrefResponse.getMessage().getLinks()
-                       .stream()
-                       .map(CrossrefLink::getUri)
-                       .filter(Objects::nonNull)
-                       .map(this::convertToAssociatedArtifact)
-                       .filter(Optional::isPresent)
-                       .map(Optional::get)
-                       .toList();
-        } catch (Exception e) {
-            logger.info(FETCH_FILE_FROM_DOI_ERROR_MESSAGE, e.getMessage());
-            return List.of();
-        }
-
-    }
-
-    private static CrossrefResponse getCrossrefResponse(HttpResponse<String> response) {
-        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response.body(),
-                                                                 CrossrefResponse.class)).orElseThrow();
-    }
-
-    private HttpResponse<String> fetchResponseAsString(URI uriToFetch) {
-        return attempt(() -> httpClient.send(constructRequest(uriToFetch), BodyHandlers.ofString())).orElseThrow();
-    }
-
-    //TODO: Fetched files should be scanned for malware
-    private Optional<AssociatedArtifact> convertToAssociatedArtifact(URI downloadUrl) {
-        try {
-            var response = fetchResponseAsInputStream(downloadUrl);
-            var fileIdentifier = randomUUID();
-            var filename = getFilename(response);
-            saveFile(filename, fileIdentifier, response);
-            var head = fetchFileInfo(fileIdentifier);
-            return Optional.of(createFile(fileIdentifier, filename, head));
-        } catch (Exception e) {
-            logger.error(FETCH_FILE_FROM_XML_MESSAGE_ERROR_MESSAGE, e.getMessage());
-            return Optional.empty();
-        }
+    private static CrossrefResponse toCrossrefResponse(String body) throws JsonProcessingException {
+        return JsonUtils.dtoObjectMapper.readValue(body, CrossrefResponse.class);
     }
 
     private static File createFile(UUID fileIdentifier, String filename, HeadObjectResponse head) {
@@ -127,7 +88,7 @@ public class ScopusFileConverter {
                    .withName(filename)
                    .withMimeType(head.contentType())
                    .withSize(head.contentLength())
-                   .withLicense(RIGHTS_RESERVED_LICENSE)
+                   .withLicense(DEFAULT_LICENSE)
                    .buildPublishedFile();
     }
 
@@ -162,6 +123,56 @@ public class ScopusFileConverter {
                    .map(Optional::orElseThrow)
                    .map(value -> value.split(CONTENT_TYPE_DELIMITER)[0])
                    .orElse(CONTENT_TYPE_OCTET_STREAM);
+    }
+
+    private List<AssociatedArtifact> extractAssociatedArtifactsFromDoi(DocTp docTp) {
+        try {
+            var doi = docTp.getMeta().getDoi();
+            return fetchDoi(doi).getMessage()
+                       .getLinks()
+                       .stream()
+                       .map(CrossrefLink::getUri)
+                       .filter(Objects::nonNull)
+                       .map(this::convertToAssociatedArtifact)
+                       .filter(Optional::isPresent)
+                       .map(Optional::get)
+                       .toList();
+        } catch (Exception e) {
+            logger.info(FETCH_FILE_FROM_DOI_ERROR_MESSAGE, e.getMessage());
+            return List.of();
+        }
+    }
+
+    private CrossrefResponse fetchDoi(String doi) {
+        return attempt(() -> constructCrossrefDoiUri(doi))
+                   .map(ScopusFileConverter::constructRequest)
+                   .map(this::fetchResponseAsString)
+                   .map(HttpResponse::body)
+                   .map(ScopusFileConverter::toCrossrefResponse)
+                   .orElseThrow();
+    }
+
+    private HttpResponse<String> fetchResponseAsString(HttpRequest request) throws IOException, InterruptedException {
+        return httpClient.send(request, BodyHandlers.ofString());
+    }
+
+    private URI constructCrossrefDoiUri(String doi) {
+        return UriWrapper.fromUri(crossRefUri).addChild(doi).getUri();
+    }
+
+    //TODO: Fetched files should be scanned for malware
+    private Optional<AssociatedArtifact> convertToAssociatedArtifact(URI downloadUrl) {
+        try {
+            var response = fetchResponseAsInputStream(downloadUrl);
+            var fileIdentifier = randomUUID();
+            var filename = getFilename(response);
+            saveFile(filename, fileIdentifier, response);
+            var head = fetchFileInfo(fileIdentifier);
+            return Optional.of(createFile(fileIdentifier, filename, head));
+        } catch (Exception e) {
+            logger.error(FETCH_FILE_FROM_XML_MESSAGE_ERROR_MESSAGE, e.getMessage());
+            return Optional.empty();
+        }
     }
 
     private List<AssociatedArtifact> extractAssociatedArtifactsFromFileReference(DocTp docTp) {
