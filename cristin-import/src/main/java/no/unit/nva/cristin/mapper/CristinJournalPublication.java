@@ -20,7 +20,7 @@ import nva.commons.core.JacocoGenerated;
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"antall_sider_totalt", "publiseringsar", "status_referee_ordning",
-    "supplement", "utbredelsesomrade", "artikkelnummer", "arstall_trykket", "arstall_online"})
+    "supplement", "utbredelsesomrade", "arstall_trykket", "arstall_online"})
 public class CristinJournalPublication {
     
     public static final String JOURNAL = "tidsskrift";
