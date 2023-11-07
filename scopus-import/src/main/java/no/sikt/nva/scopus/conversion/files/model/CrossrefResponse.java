@@ -1,14 +1,14 @@
 package no.sikt.nva.scopus.conversion.files.model;
 
-import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 import no.unit.nva.commons.json.JsonSerializable;
 
 /**
- * See https://github.com/CrossRef/rest-api-doc/blob/master/api_format.md#license for documentation
+ * See https://github.com/CrossRef/rest-api-doc/blob/master/api_format.md#license for documentation.
  */
 
 public class CrossrefResponse implements JsonSerializable {
@@ -108,6 +108,10 @@ public class CrossrefResponse implements JsonSerializable {
         public URI getUri() {
             return uri;
         }
+
+        public boolean hasDelay() {
+            return delay != 0;
+        }
     }
 
     public static class Start implements JsonSerializable {
@@ -127,15 +131,15 @@ public class CrossrefResponse implements JsonSerializable {
         }
 
         public Integer getYear() {
-            return attempt(() -> dateParts.get(0).get(0)).orElse(failure -> null);
+            return Optional.ofNullable(dateParts.get(0)).map(list -> list.get(0)).orElse(null);
         }
 
         public Integer getMonth() {
-            return attempt(() -> dateParts.get(0).get(1)).orElse(failure -> null);
+            return Optional.ofNullable(dateParts.get(0)).map(list -> list.get(1)).orElse(null);
         }
 
         public Integer getDay() {
-            return attempt(() -> dateParts.get(0).get(2)).orElse(failure -> null);
+            return Optional.ofNullable(dateParts.get(0)).map(list -> list.get(2)).orElse(null);
         }
     }
 }

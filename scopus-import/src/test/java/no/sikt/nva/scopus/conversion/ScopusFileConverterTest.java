@@ -2,8 +2,10 @@ package no.sikt.nva.scopus.conversion;
 
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -18,6 +20,7 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
@@ -77,6 +80,19 @@ public class ScopusFileConverterTest {
         var files = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).get(0);
 
         assertThat(files.isPublisherAuthority(), is(true));
+    }
+
+    @Test
+    void shouldBeAbleToSetDefaultValuesToFileWhenDoiDoesNotContainEnoughData() throws IOException,
+                                                                                      InterruptedException {
+        var scopusData = new ScopusGenerator();
+        scopusData.getDocument().getMeta().setOpenAccess(null);
+        scopusData.getDocument().getMeta().setDoi(DOI_PATH);
+        mockResponses("crossrefResponseMissingFields.json");
+        var files = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).get(0);
+
+        assertThat(files.isPublisherAuthority(), is(false));
+        assertThat(files.getEmbargoDate(), is(Optional.empty()));
     }
 
     private void mockResponses(String responseBody) throws IOException, InterruptedException {

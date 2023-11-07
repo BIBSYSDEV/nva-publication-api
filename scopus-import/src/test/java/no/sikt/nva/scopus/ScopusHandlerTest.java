@@ -232,9 +232,6 @@ import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 @WireMockTest(httpsEnabled = true)
 class ScopusHandlerTest extends ResourcesLocalTest {
 
-
-    @Rule
-    public Map<String, String> environmentVariables = new HashMap<>();
     public static final Context CONTEXT = null;
     public static final RequestParametersEntity EMPTY_REQUEST_PARAMETERS = null;
     public static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;
@@ -260,6 +257,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private static final String PIA_SECRET_NAME = "someSecretName";
     private static final String PIA_USERNAME_SECRET_KEY = "someUserNameKey";
     private static final String PIA_PASSWORD_SECRET_KEY = "somePasswordNameKey";
+    @Rule
+    public Map<String, String> environmentVariables = new HashMap<>();
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
     private ScopusHandler scopusHandler;
@@ -374,8 +373,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldFetchFileFromCrossRefDoiWhenScopusXmlDoesNotHaveFileReference(
-        WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException {
+    void shouldFetchFileFromCrossRefDoiWhenScopusXmlDoesNotHaveFileReference(WireMockRuntimeInfo wireMockRuntimeInfo)
+        throws IOException {
         scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccess(wireMockRuntimeInfo));
         scopusData.getDocument().getMeta().setDoi(randomString());
         createEmptyPiaMock();
@@ -399,41 +398,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var importCandidate = scopusHandler.handleRequest(s3Event, CONTEXT);
 
         assertThat(importCandidate.getAssociatedArtifacts(), is(emptyIterable()));
-    }
-
-    private String mockFetchCrossrefDoiResponse(ScopusGenerator scopusData, WireMockRuntimeInfo wireMockRuntimeInfo) {
-        var downloadUrl = UriWrapper.fromUri(wireMockRuntimeInfo.getHttpBaseUrl()).addChild(randomString());
-        stubFor(WireMock.get(urlPathEqualTo("/" + scopusData.getDocument().getMeta().getDoi()))
-                    .willReturn(aResponse()
-                                    .withBody(toCrossrefResponse(downloadUrl))
-                                    .withStatus(HttpURLConnection.HTTP_OK)));
-        var filename = randomString() + ".pdf";
-        var testUrl = "/" + UriWrapper.fromUri(downloadUrl.getLastPathElement()).getLastPathElement();
-        stubFor(WireMock.get(urlPathEqualTo(testUrl))
-                    .willReturn(aResponse().withBody("")
-                                    .withHeader("Content-Type", "application/pdf;charset=UTF-8")
-                                    .withHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"")
-                                    .withStatus(HttpURLConnection.HTTP_OK)));
-        return filename;
-    }
-
-    private static String toCrossrefResponse(UriWrapper downloadUrl) {
-        return new CrossrefResponse(new Message(List.of(new CrossrefLink(downloadUrl.getUri(), "application/pdf", VOR)),
-                                                List.of(new License(URI.create("http://creativecommons.org/" + randomString()),
-                                                        0, new Start(List.of(List.of(2023, 01, 25))), VOR)))).toString();
-    }
-
-    @Test
-    void some() {
-        scopusData.getDocument().getMeta().setDoi("10.1017/s0305000922000484");
-        new ScopusFileConverter(HttpClient.newBuilder().build(), S3Driver.defaultS3Client().build()).fetchAssociatedArtifacts(scopusData.getDocument());
-    }
-
-    private void mockBadRequestCrossrefDoiResponse(ScopusGenerator scopusData) {
-        stubFor(WireMock.get(urlPathEqualTo("/" + scopusData.getDocument().getMeta().getDoi()))
-                    .willReturn(aResponse()
-                                    .withBody(randomString())
-                                    .withStatus(HttpURLConnection.HTTP_BAD_REQUEST)));
     }
 
     @Test
@@ -1261,6 +1225,13 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         }
     }
 
+    private static String toCrossrefResponse(UriWrapper downloadUrl) {
+        return new CrossrefResponse(new Message(List.of(new CrossrefLink(downloadUrl.getUri(), "application/pdf", VOR)),
+                                                List.of(new License(
+                                                    URI.create("http://creativecommons.org/" + randomString()), 0,
+                                                    new Start(List.of(List.of(2023, 01, 25))), VOR)))).toString();
+    }
+
     private static void mockBadRequestFileResponse(UpwOaLocationType locationType) {
         var testUrl = "/" + UriWrapper.fromUri(locationType.getUpwUrlForPdf()).getLastPathElement();
         stubFor(WireMock.get(urlPathEqualTo(testUrl))
@@ -1331,6 +1302,26 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private static Optional<String> toResponse(ImportCandidate importCandidate) {
         return Optional.of(String.valueOf(new ImportCandidateSearchApiResponse(
             List.of(ExpandedImportCandidate.fromImportCandidate(importCandidate, null)), 1)));
+    }
+
+    private String mockFetchCrossrefDoiResponse(ScopusGenerator scopusData, WireMockRuntimeInfo wireMockRuntimeInfo) {
+        var downloadUrl = UriWrapper.fromUri(wireMockRuntimeInfo.getHttpBaseUrl()).addChild(randomString());
+        stubFor(WireMock.get(urlPathEqualTo("/" + scopusData.getDocument().getMeta().getDoi()))
+                    .willReturn(
+                        aResponse().withBody(toCrossrefResponse(downloadUrl)).withStatus(HttpURLConnection.HTTP_OK)));
+        var filename = randomString() + ".pdf";
+        var testUrl = "/" + UriWrapper.fromUri(downloadUrl.getLastPathElement()).getLastPathElement();
+        stubFor(WireMock.get(urlPathEqualTo(testUrl))
+                    .willReturn(aResponse().withBody("")
+                                    .withHeader("Content-Type", "application/pdf;charset=UTF-8")
+                                    .withHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                                    .withStatus(HttpURLConnection.HTTP_OK)));
+        return filename;
+    }
+
+    private void mockBadRequestCrossrefDoiResponse(ScopusGenerator scopusData) {
+        stubFor(WireMock.get(urlPathEqualTo("/" + scopusData.getDocument().getMeta().getDoi()))
+                    .willReturn(aResponse().withBody(randomString()).withStatus(HttpURLConnection.HTTP_BAD_REQUEST)));
     }
 
     private void mockBadRequestFetchingFilesFromXml(ScopusGenerator scopusData) {

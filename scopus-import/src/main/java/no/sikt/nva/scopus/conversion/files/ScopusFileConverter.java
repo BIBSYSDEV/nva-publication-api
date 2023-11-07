@@ -147,13 +147,9 @@ public class ScopusFileConverter {
                    .plusDays(license.getDelay());
     }
 
-    private static boolean hasDelay(License license) {
-        return license.getDelay() != 0;
-    }
-
     private static URI extractLicenseForLink(CrossrefLink crossrefLink, List<License> licenses) {
         return licenses.stream()
-                   .filter(l -> l.getContentVersion().equals(crossrefLink.getContentVersion()))
+                   .filter(license -> hasSameVersion(crossrefLink, license))
                    .map(License::getUri)
                    .filter(ScopusFileConverter::isCreativeCommonsLicense)
                    .findFirst()
@@ -178,7 +174,7 @@ public class ScopusFileConverter {
             var doi = docTp.getMeta().getDoi();
             var response = fetchDoi(doi);
             return getScopusFiles(response).stream()
-                       .map(this::fetchFileContent)
+                       .map(s -> attempt(() -> fetchFileContent(s)).orElseThrow())
                        .collect(collectRemovingDuplicates())
                        .stream()
                        .map(this::saveFile)
@@ -190,12 +186,12 @@ public class ScopusFileConverter {
         }
     }
 
-    private ScopusFile fetchFileContent(ScopusFile file) {
+    private ScopusFile fetchFileContent(ScopusFile file) throws IOException {
         var fetchFileResponse = fetchResponseAsInputStream(file.downloadFileUrl());
         var content = fetchFileResponse.body();
         return file.copy()
                    .withContent(content)
-                   .withSize(attempt(content::available).orElse(failure -> null))
+                   .withSize(content.available())
                    .withName(getFilename(fetchFileResponse))
                    .build();
     }
@@ -212,11 +208,10 @@ public class ScopusFileConverter {
     }
 
     private ScopusFile toScopusFile(CrossrefLink crossrefLink, List<License> licenses) {
-        boolean equals = VOR.equals(crossrefLink.getContentVersion());
         return ScopusFile.builder()
                    .withIdentifier(randomUUID())
                    .withDownloadFileUrl(crossrefLink.getUri())
-                   .withPublisherAuthority(equals)
+                   .withPublisherAuthority(VOR.equals(crossrefLink.getContentVersion()))
                    .withLicense(extractLicenseForLink(crossrefLink, licenses))
                    .withEmbargo(calculateEmbargo(crossrefLink, licenses))
                    .withContentType(crossrefLink.getContentType())
@@ -225,23 +220,27 @@ public class ScopusFileConverter {
 
     private Instant calculateEmbargo(CrossrefLink crossrefLink, List<License> licenses) {
         return licenses.stream()
-                   .filter(l -> l.getContentVersion().equals(crossrefLink.getContentVersion()))
+                   .filter(license -> hasSameVersion(crossrefLink, license))
                    .findFirst()
                    .map(this::calculateEmbargo)
                    .orElse(null);
     }
 
-    private boolean hasSupportedContentType(CrossrefLink link) {
-        var contentType = link.getContentType();
-        return !contentType.equals(HTML_CONTENT_TYPE) && !contentType.equals(XML_CONTENT_TYPE);
+    private static boolean hasSameVersion(CrossrefLink crossrefLink, License license) {
+        return license.getContentVersion().equals(crossrefLink.getContentVersion());
     }
 
     private Instant calculateEmbargo(License license) {
-        if (hasDelay(license)) {
+        if (license.hasDelay()) {
             var embargoDate = toEmbargoDate(license).atStartOfDay(ZoneId.systemDefault()).toInstant();
             return embargoDate.isAfter(Instant.now()) ? embargoDate : null;
         }
         return null;
+    }
+
+    private boolean hasSupportedContentType(CrossrefLink link) {
+        var contentType = link.getContentType();
+        return nonNull(contentType) && !HTML_CONTENT_TYPE.equals(contentType) && !XML_CONTENT_TYPE.equals(contentType);
     }
 
     private List<License> extractLicenses(CrossrefResponse doiResponse) {

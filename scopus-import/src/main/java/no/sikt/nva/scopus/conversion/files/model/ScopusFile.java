@@ -8,8 +8,7 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 
 public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, InputStream content, int size,
-                         String contentType, URI license,
-                         boolean publisherAuthority, Instant embargo) {
+                         String contentType, URI license, boolean publisherAuthority, Instant embargo) {
 
     public static Builder builder() {
         return new Builder();
@@ -52,10 +51,6 @@ public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, Inpu
         private Instant embargo;
 
         private Builder() {
-        }
-
-        public static Builder aScopusFile() {
-            return new Builder();
         }
 
         public Builder withIdentifier(UUID identifier) {

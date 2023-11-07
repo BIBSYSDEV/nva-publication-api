@@ -14,7 +14,7 @@
           "timestamp": 1666569600000
         },
         "content-version": "vor",
-        "delay-in-days": 5000,
+        "delay-in-days": 10,
         "URL": "http:\/\/creativecommons.org\/licenses\/by\/4.0"
       }
     ],
@@ -22,7 +22,7 @@
       {
         "URL": "https:\/\/www.cambridge.org\/core\/services\/aop-cambridge-core\/content\/view\/S0305000922000484",
         "content-type": "unspecified",
-        "content-version": "vor",
+        "content-version": "unspecified",
         "intended-application": "similarity-checking"
       }
     ]
