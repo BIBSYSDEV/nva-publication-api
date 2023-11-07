@@ -1,0 +1,585 @@
+{
+  "status": "ok",
+  "message-type": "work",
+  "message-version": "1.0.0",
+  "message": {
+    "indexed": {
+      "date-parts": [
+        [
+          2023,
+          10,
+          4
+        ]
+      ],
+      "date-time": "2023-10-04T18:27:20Z",
+      "timestamp": 1696444040023
+    },
+    "reference-count": 65,
+    "publisher": "Cambridge University Press (CUP)",
+    "license": [
+      {
+        "start": {
+          "date-parts": [
+            [
+              2022,
+              10,
+              24
+            ]
+          ],
+          "date-time": "2022-10-24T00:00:00Z",
+          "timestamp": 1666569600000
+        },
+        "content-version": "vor",
+        "delay-in-days": 5000,
+        "URL": "http:\/\/creativecommons.org\/licenses\/by\/4.0"
+      }
+    ],
+    "funder": [
+      {
+        "DOI": "10.13039\/501100005366",
+        "name": "Universitetet i Oslo",
+        "doi-asserted-by": "publisher",
+        "award": [
+          "Internal research grant"
+        ]
+      }
+    ],
+    "content-domain": {
+      "domain": [
+        "cambridge.org"
+      ],
+      "crossmark-restriction": true
+    },
+    "short-container-title": [
+      "J. Child Lang."
+    ],
+    "abstract": "<jats:title>Abstract<\/jats:title>\n\t  <jats:p>Little is known about the productive morphosyntax of Norwegian children with developmental language disorder (DLD). The current study examined morphosyntax in Norwegian-speaking children with DLD (<jats:italic>n<\/jats:italic> =19) and a control group that was pairwise matched for age, gender, and intelligence quotient (IQ; <jats:italic>n<\/jats:italic> = 19). The children\u2019s sentence repetitions were studied through the lens of Processability Theory. The group differences were largest for grammatical structures at the latest developmental stage of the processability hierarchy. The Norwegian subordinate clause word order, belonging to the latest stage of the processability hierarchy, stood out as particularly challenging for children with DLD. Only 2 children with DLD but 16 children in the control group produced a subordinate clause with subordinate clause word order. Categorization of children\u2019s errors revealed that children with DLD made more errors of all types (addition, omission, substitution, inflection and word order) but especially errors of omission and inflection.<\/jats:p>",
+    "DOI": "10.1017\/s0305000922000484",
+    "type": "journal-article",
+    "created": {
+      "date-parts": [
+        [
+          2022,
+          10,
+          24
+        ]
+      ],
+      "date-time": "2022-10-24T07:47:38Z",
+      "timestamp": 1666597658000
+    },
+    "page": "1-24",
+    "update-policy": "http:\/\/dx.doi.org\/10.1017\/policypage",
+    "source": "Crossref",
+    "is-referenced-by-count": 1,
+    "title": [
+      "What Characterizes the Productive Morphosyntax of Norwegian Children with Developmental Language Disorder?"
+    ],
+    "prefix": "10.1017",
+    "author": [
+      {
+        "given": "Gisela",
+        "family": "H\u00c5KANSSON",
+        "sequence": "first",
+        "affiliation": []
+      },
+      {
+        "given": "Emily Wanda",
+        "family": "WILLIAMS",
+        "sequence": "additional",
+        "affiliation": []
+      },
+      {
+        "ORCID": "http:\/\/orcid.org\/0000-0001-8168-2020",
+        "authenticated-orcid": false,
+        "given": "Jannicke",
+        "family": "KARLSEN",
+        "sequence": "additional",
+        "affiliation": []
+      },
+      {
+        "ORCID": "http:\/\/orcid.org\/0000-0001-6574-456X",
+        "authenticated-orcid": false,
+        "given": "Janne von Koss",
+        "family": "TORKILDSEN",
+        "sequence": "additional",
+        "affiliation": []
+      }
+    ],
+    "member": "56",
+    "published-online": {
+      "date-parts": [
+        [
+          2022,
+          10,
+          24
+        ]
+      ]
+    },
+    "reference": [
+      {
+        "key": "S0305000922000484_r38",
+        "first-page": "35",
+        "article-title": "Ordforr\u00e5d og ordforr\u00e5dsutvikling hos norske barn og unge. Resultater fra en utpr\u00f8ving av British Picture Vocabulary Scale, Second Edition. [Vocabulary and vocabulary development in Norwegian-speaking children and adolescents. Results from a study using the British Picture Vocabulary Scale",
+        "volume": "9",
+        "author": "Lyster",
+        "year": "2010",
+        "journal-title": "Second Edition.] Spesialpedagogikk"
+      },
+      {
+        "key": "S0305000922000484_r3",
+        "volume-title": "Manual (Norwegian version)",
+        "author": "Bishop",
+        "year": "2011"
+      },
+      {
+        "key": "S0305000922000484_r65",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1017\/S1366728901000141"
+      },
+      {
+        "key": "S0305000922000484_r64",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.3389\/fpsyg.2019.02530"
+      },
+      {
+        "key": "S0305000922000484_r6",
+        "volume-title": "Lexical-functional syntax",
+        "author": "Bresnan",
+        "year": "2001"
+      },
+      {
+        "key": "S0305000922000484_r52",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1080\/13682820310001595628"
+      },
+      {
+        "key": "S0305000922000484_r40",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.11613\/BM.2012.031"
+      },
+      {
+        "key": "S0305000922000484_r61",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1080\/01690960042000076"
+      },
+      {
+        "key": "S0305000922000484_r11",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1075\/bpa.4"
+      },
+      {
+        "key": "S0305000922000484_r42",
+        "first-page": "289",
+        "volume-title": "Language development and language disorders in children",
+        "author": "Nettelbladt",
+        "year": "2007"
+      },
+      {
+        "key": "S0305000922000484_r45",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1016\/0749-596X(90)90042-X"
+      },
+      {
+        "key": "S0305000922000484_r50",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.3109\/13682820802647676"
+      },
+      {
+        "key": "S0305000922000484_r24",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1080\/10489223.2016.1192634"
+      },
+      {
+        "key": "S0305000922000484_r12",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1044\/2022_AJSLP-21-00240"
+      },
+      {
+        "key": "S0305000922000484_r16",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1016\/j.lingua.2008.09.002"
+      },
+      {
+        "key": "S0305000922000484_r55",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1111\/j.1473-4192.1998.tb00132.x"
+      },
+      {
+        "key": "S0305000922000484_r33",
+        "first-page": "6",
+        "article-title": "Terminologi for vansker med spr\u00e5k hos barn og unge. En konsensusstudie. [Terminology for difficulties with language in children and adolescents",
+        "volume": "3",
+        "author": "Kristoffersen",
+        "year": "2021",
+        "journal-title": "A consensus study.] Norsk tidsskrift for logopedi [Norwegian Journal of Speech Language Pathology"
+      },
+      {
+        "key": "S0305000922000484_r44",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1075\/sibil.15"
+      },
+      {
+        "key": "S0305000922000484_r35",
+        "volume-title": "Speaking: From intention to articulation",
+        "author": "Levelt",
+        "year": "1989"
+      },
+      {
+        "key": "S0305000922000484_r37",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1044\/1092-4388(2008\/07-0183)"
+      },
+      {
+        "key": "S0305000922000484_r9",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1080\/13682820601030686"
+      },
+      {
+        "key": "S0305000922000484_r57",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.3389\/fpsyg.2017.02104"
+      },
+      {
+        "key": "S0305000922000484_r26",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1515\/ling.2003.009"
+      },
+      {
+        "key": "S0305000922000484_r15",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1044\/1092-4388(2005\/043)"
+      },
+      {
+        "key": "S0305000922000484_r2",
+        "author": "Bishop",
+        "year": "2003"
+      },
+      {
+        "key": "S0305000922000484_r31",
+        "first-page": "63",
+        "article-title": "Noun Phrase Accessibility and Universal Grammar",
+        "volume": "8",
+        "author": "Keenan",
+        "year": "1977",
+        "journal-title": "Linguistic Inquiry"
+      },
+      {
+        "key": "S0305000922000484_r48",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1044\/jshr.3906.1239"
+      },
+      {
+        "key": "S0305000922000484_r39",
+        "first-page": "95",
+        "volume-title": "Assessing multilingual children. Disentangling bilingualism from language impairment",
+        "author": "Marinis",
+        "year": "2015"
+      },
+      {
+        "key": "S0305000922000484_r43",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1080\/14417040600919496"
+      },
+      {
+        "key": "S0305000922000484_r60",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1207\/s15327817la0702-4_4"
+      },
+      {
+        "key": "S0305000922000484_r10",
+        "volume-title": "The British Picture Vocabulary Scale II",
+        "author": "Dunn",
+        "year": "1997"
+      },
+      {
+        "key": "S0305000922000484_r41",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1177\/1367006915609240"
+      },
+      {
+        "key": "S0305000922000484_r5",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1017\/S0305000907008379"
+      },
+      {
+        "key": "S0305000922000484_r30",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1017\/S0305000912000517"
+      },
+      {
+        "key": "S0305000922000484_r28",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1111\/j.1467-9450.2009.00718.x"
+      },
+      {
+        "key": "S0305000922000484_r63",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1515\/9783110977905.271"
+      },
+      {
+        "key": "S0305000922000484_r7",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1080\/10489223.2016.1192636"
+      },
+      {
+        "key": "S0305000922000484_r19",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1017\/S0305000918000144"
+      },
+      {
+        "key": "S0305000922000484_r18",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1111\/lang.12332"
+      },
+      {
+        "key": "S0305000922000484_r1",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.21832\/9781847696397"
+      },
+      {
+        "key": "S0305000922000484_r34",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1111\/cdep.12053"
+      },
+      {
+        "key": "S0305000922000484_r8",
+        "first-page": "30",
+        "article-title": "Implicational scales and sociolinguistic linearity",
+        "volume": "9",
+        "author": "De Camp",
+        "year": "1971",
+        "journal-title": "Linguistics"
+      },
+      {
+        "key": "S0305000922000484_r20",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1111\/j.1467-9817.2009.01393.x"
+      },
+      {
+        "key": "S0305000922000484_r46",
+        "volume-title": "Manual for Raven\u2019s Progressive Matrices and Vocabulary Scales",
+        "author": "Raven",
+        "year": "2003"
+      },
+      {
+        "key": "S0305000922000484_r59",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1016\/j.jcomdis.2017.03.002"
+      },
+      {
+        "key": "S0305000922000484_r47",
+        "first-page": "1",
+        "volume-title": "Grammatical Profiles: Further languages of LARSP",
+        "author": "Ribu",
+        "year": "2019"
+      },
+      {
+        "key": "S0305000922000484_r49",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1111\/j.1460-6984.2012.00158.x"
+      },
+      {
+        "key": "S0305000922000484_r17",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1111\/1460-6984.12070"
+      },
+      {
+        "key": "S0305000922000484_r29",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1006\/brln.2000.2405"
+      },
+      {
+        "key": "S0305000922000484_r21",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1080\/09658219408258940"
+      },
+      {
+        "key": "S0305000922000484_r4",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1111\/jcpp.12721"
+      },
+      {
+        "key": "S0305000922000484_r54",
+        "author": "Semel",
+        "year": "2003"
+      },
+      {
+        "key": "S0305000922000484_r14",
+        "first-page": "15",
+        "volume-title": "International Journal of Audiology",
+        "volume": "44",
+        "author": "Engdahl",
+        "year": "2005"
+      },
+      {
+        "key": "S0305000922000484_r53",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1080\/02699200801892959"
+      },
+      {
+        "key": "S0305000922000484_r51",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1080\/10489223.2021.1934685"
+      },
+      {
+        "key": "S0305000922000484_r36",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1016\/0749-596X(92)90036-W"
+      },
+      {
+        "key": "S0305000922000484_r13",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1177\/0265659013512321"
+      },
+      {
+        "key": "S0305000922000484_r56",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1044\/2021_JSLHR-21-00244"
+      },
+      {
+        "key": "S0305000922000484_r22",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1016\/j.lingua.2012.02.001"
+      },
+      {
+        "key": "S0305000922000484_r62",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1111\/1473-4192.00024"
+      },
+      {
+        "key": "S0305000922000484_r23",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1111\/j.1467-9582.1989.tb00794.x"
+      },
+      {
+        "key": "S0305000922000484_r27",
+        "volume-title": "The research manual: Design and statistics for applied linguistics",
+        "author": "Hatch",
+        "year": "1991"
+      },
+      {
+        "key": "S0305000922000484_r25",
+        "doi-asserted-by": "publisher",
+        "DOI": "10.1017\/S0305000900004128"
+      },
+      {
+        "key": "S0305000922000484_r32",
+        "first-page": "1",
+        "article-title": "Sentence repetition in Farsi-English bilingual children",
+        "volume": "4",
+        "author": "Komeili",
+        "year": "2020",
+        "journal-title": "Journal of the European Second Language Acquisition"
+      },
+      {
+        "key": "S0305000922000484_r58",
+        "first-page": "11",
+        "volume-title": "Developmental theory and language disorders",
+        "author": "Thomas",
+        "year": "2011"
+      }
+    ],
+    "container-title": [
+      "Journal of Child Language"
+    ],
+    "original-title": [],
+    "language": "en",
+    "link": [
+      {
+        "URL": "https:\/\/www.cambridge.org\/core\/services\/aop-cambridge-core\/content\/view\/S0305000922000484",
+        "content-type": "unspecified",
+        "content-version": "vor",
+        "intended-application": "similarity-checking"
+      }
+    ],
+    "deposited": {
+      "date-parts": [
+        [
+          2022,
+          10,
+          24
+        ]
+      ],
+      "date-time": "2022-10-24T07:48:00Z",
+      "timestamp": 1666597680000
+    },
+    "score": 1,
+    "resource": {
+      "primary": {
+        "URL": "https:\/\/www.cambridge.org\/core\/product\/identifier\/S0305000922000484\/type\/journal_article"
+      }
+    },
+    "subtitle": [],
+    "short-title": [],
+    "issued": {
+      "date-parts": [
+        [
+          2022,
+          10,
+          24
+        ]
+      ]
+    },
+    "references-count": 65,
+    "alternative-id": [
+      "S0305000922000484"
+    ],
+    "URL": "http:\/\/dx.doi.org\/10.1017\/s0305000922000484",
+    "relation": {},
+    "ISSN": [
+      "0305-0009",
+      "1469-7602"
+    ],
+    "issn-type": [
+      {
+        "value": "0305-0009",
+        "type": "print"
+      },
+      {
+        "value": "1469-7602",
+        "type": "electronic"
+      }
+    ],
+    "subject": [
+      "General Psychology",
+      "Linguistics and Language",
+      "Developmental and Educational Psychology",
+      "Experimental and Cognitive Psychology",
+      "Language and Linguistics"
+    ],
+    "published": {
+      "date-parts": [
+        [
+          2022,
+          10,
+          24
+        ]
+      ]
+    },
+    "assertion": [
+      {
+        "value": "\u00a9 The Author(s), 2022. Published by Cambridge University Press",
+        "name": "copyright",
+        "label": "Copyright",
+        "group": {
+          "name": "copyright_and_licensing",
+          "label": "Copyright and Licensing"
+        }
+      },
+      {
+        "value": "This is an Open Access article, distributed under the terms of the Creative Commons Attribution licence (http:\/\/creativecommons.org\/licenses\/by\/4.0), which permits unrestricted re-use, distribution and reproduction, provided the original article is properly cited.",
+        "name": "license",
+        "label": "License",
+        "group": {
+          "name": "copyright_and_licensing",
+          "label": "Copyright and Licensing"
+        }
+      },
+      {
+        "value": "This content has been made available to all.",
+        "name": "free",
+        "label": "Free to read"
+      }
+    ]
+  }
+}

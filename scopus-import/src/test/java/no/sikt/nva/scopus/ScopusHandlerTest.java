@@ -13,7 +13,6 @@ import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_ELECTRONIC;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_PRINT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
-import static no.sikt.nva.scopus.ScopusFileConverter.CROSSREF_URI_ENV_VAR_NAME;
 import static no.sikt.nva.scopus.ScopusHandler.SCOPUS_IMPORT_BUCKET;
 import static no.sikt.nva.scopus.ScopusHandler.SUCCESS_BUCKET_PATH;
 import static no.sikt.nva.scopus.conversion.ContributorExtractor.NAME_DELIMITER;
@@ -23,6 +22,8 @@ import static no.sikt.nva.scopus.conversion.PiaConnection.PIA_REST_API_ENV_KEY;
 import static no.sikt.nva.scopus.conversion.PiaConnection.PIA_SECRETS_NAME_ENV_KEY;
 import static no.sikt.nva.scopus.conversion.PiaConnection.PIA_USERNAME_KEY;
 import static no.sikt.nva.scopus.conversion.PublicationContextCreator.UNSUPPORTED_SOURCE_TYPE;
+import static no.sikt.nva.scopus.conversion.files.ScopusFileConverter.CROSSREF_URI_ENV_VAR_NAME;
+import static no.sikt.nva.scopus.conversion.files.model.ContentVersion.VOR;
 import static no.sikt.nva.scopus.utils.ScopusGenerator.createWithOneAuthorGroupAndAffiliation;
 import static no.sikt.nva.scopus.utils.ScopusGenerator.randomYear;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
@@ -87,6 +88,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Clock;
@@ -125,14 +127,17 @@ import no.scopus.generated.UpwOaLocationType;
 import no.scopus.generated.UpwOaLocationsType;
 import no.scopus.generated.UpwOpenAccessType;
 import no.scopus.generated.YesnoAtt;
-import no.sikt.nva.scopus.CrossrefResponse.CrossrefLink;
-import no.sikt.nva.scopus.CrossrefResponse.License;
-import no.sikt.nva.scopus.CrossrefResponse.Message;
 import no.sikt.nva.scopus.conversion.ContributorExtractor;
 import no.sikt.nva.scopus.conversion.CristinConnection;
 import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.sikt.nva.scopus.conversion.PublicationChannelConnection;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
+import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;
+import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse;
+import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.CrossrefLink;
+import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.License;
+import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.Message;
+import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.Start;
 import no.sikt.nva.scopus.conversion.model.ImportCandidateSearchApiResponse;
 import no.sikt.nva.scopus.conversion.model.PublicationChannelResponse;
 import no.sikt.nva.scopus.conversion.model.PublicationChannelResponse.PublicationChannelHit;
@@ -413,9 +418,15 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     private static String toCrossrefResponse(UriWrapper downloadUrl) {
-        return new CrossrefResponse(new Message(List.of(new CrossrefLink(downloadUrl.getUri())),
-                                    List.of(new License(URI.create("http://creativecommons.org/" + randomString())))))
-                   .toString();
+        return new CrossrefResponse(new Message(List.of(new CrossrefLink(downloadUrl.getUri(), "application/pdf", VOR)),
+                                                List.of(new License(URI.create("http://creativecommons.org/" + randomString()),
+                                                        0, new Start(List.of(List.of(2023, 01, 25))), VOR)))).toString();
+    }
+
+    @Test
+    void some() {
+        scopusData.getDocument().getMeta().setDoi("10.1017/s0305000922000484");
+        new ScopusFileConverter(HttpClient.newBuilder().build(), S3Driver.defaultS3Client().build()).fetchAssociatedArtifacts(scopusData.getDocument());
     }
 
     private void mockBadRequestCrossrefDoiResponse(ScopusGenerator scopusData) {
