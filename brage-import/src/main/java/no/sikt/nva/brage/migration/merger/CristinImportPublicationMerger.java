@@ -3,6 +3,9 @@ package no.sikt.nva.brage.migration.merger;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import java.net.URI;
+import java.util.HashSet;
+import java.util.Set;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import nva.commons.core.StringUtils;
@@ -20,8 +23,20 @@ public class CristinImportPublicationMerger {
     public Publication mergePublications() {
         var publicationForUpdating = cristinPublication.copy()
                                          .withHandle(determineHandle())
+                                         .withAdditionalIdentifiers(mergeAdditionalIdentifiers())
                                          .build();
         return fillNewPublicationWithMetadataFromBrage(publicationForUpdating);
+    }
+
+    private Set<AdditionalIdentifier> mergeAdditionalIdentifiers() {
+        var additionalIdentifiers = new HashSet<>(cristinPublication.getAdditionalIdentifiers());
+        additionalIdentifiers.addAll(bragePublication.getAdditionalIdentifiers());
+        additionalIdentifiers.add(extractBrageHandleAsAdditionalIdentifier());
+        return additionalIdentifiers;
+    }
+
+    private AdditionalIdentifier extractBrageHandleAsAdditionalIdentifier() {
+        return new AdditionalIdentifier("brage", bragePublication.getHandle().toString());
     }
 
     private URI determineHandle() {
