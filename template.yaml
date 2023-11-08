@@ -940,6 +940,7 @@ Resources:
           IMPORT_CANDIDATES_STORAGE_BUCKET: !Ref ImportCandidateStorageBucket
           BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
+          CROSSREF_FETCH_DOI_URI: 'https://api.crossref.org/v1/works/'
       Events:
         Scopus:
           Type: S3
