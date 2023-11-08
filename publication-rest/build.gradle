@@ -29,6 +29,7 @@ dependencies {
     implementation libs.aws.lambda.java.core
     implementation libs.guava
     implementation libs.aws.sdk2.secrets
+    implementation libs.aws.sdk2.s3
 
     testImplementation project(":publication-testing")
     testImplementation project(path: ':tickets-test')
@@ -61,5 +62,7 @@ test {
     environment "CUSTOM_DOMAIN_BASE_PATH", "publication"
     environment "IMPORT_CANDIDATES_TABLE_NAME", "import-candidates-table"
     environment "RESOURCE_TABLE_NAME", "publications-table"
+    environment "NVA_PERSISTED_STORAGE_BUCKET_NAME", "some-persisted-bucket"
+    environment "IMPORT_CANDIDATES_STORAGE_BUCKET", "some-candidate-bucket"
 }
 
