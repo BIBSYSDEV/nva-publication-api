@@ -11,11 +11,14 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RiotException;
+import org.apache.jena.update.UpdateAction;
+import org.apache.jena.update.UpdateFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @JacocoGenerated
 public class FramedJsonGenerator {
+
     private static final Logger logger = LoggerFactory.getLogger(FramedJsonGenerator.class);
     private final String framedJson;
 
@@ -28,10 +31,15 @@ public class FramedJsonGenerator {
         return framedJson;
     }
 
+    private static void logInvalidJsonLdInput(Exception exception) {
+        logger.warn("Invalid JSON LD input encountered: ", exception);
+    }
+
     private Model createModel(List<InputStream> streams) {
         var m = ModelFactory.createDefaultModel();
         streams.forEach(s -> loadDataIntoModel(m, s));
-        return addTopLevelAffiliation(m);
+        var modelWithTopLevelAffiliations = addTopLevelAffiliation(m);
+        return removeNonAffiliations(modelWithTopLevelAffiliations);
     }
 
     private void loadDataIntoModel(Model model, InputStream inputStream) {
@@ -55,7 +63,10 @@ public class FramedJsonGenerator {
         }
     }
 
-    private static void logInvalidJsonLdInput(Exception exception) {
-        logger.warn("Invalid JSON LD input encountered: ", exception);
+    private Model removeNonAffiliations(Model model) {
+        var deleteQuery = AffiliationQueries.DELETE_NON_AFFILIATIONS;
+        var updateRequest = UpdateFactory.create(deleteQuery);
+        UpdateAction.execute(updateRequest, model);
+        return model;
     }
 }

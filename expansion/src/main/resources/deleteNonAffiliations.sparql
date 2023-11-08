@@ -1,0 +1,12 @@
+PREFIX  nva: <https://nva.sikt.no/ontology/publication#>
+
+DELETE { ?a ?b ?c }
+WHERE
+  { ?organization a nva:Organization .
+
+  	OPTIONAL{
+    ?affiliation nva:affiliation ?organization .
+    ?organization nva:partOf* ?top_org}
+
+  FILTER(!BOUND(?affiliation) || !BOUND(?top_org))
+  }
