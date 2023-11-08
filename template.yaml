@@ -881,6 +881,8 @@ Resources:
           ALLOWED_ORIGIN: '*'
           IMPORT_CANDIDATES_TABLE_NAME: !Ref NvaImportCandidatesTable
           RESOURCE_TABLE_NAME: !Ref NvaResourcesTable
+          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Sub "nva-resource-storage-${AWS::AccountId}"
+          IMPORT_CANDIDATES_STORAGE_BUCKET: !Ref ImportCandidateStorageBucket
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
