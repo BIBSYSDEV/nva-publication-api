@@ -2,6 +2,7 @@ package no.sikt.nva.scopus.conversion.files;
 
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.util.Comparator.comparing;
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -36,6 +37,9 @@ import no.scopus.generated.UpwOpenAccessType;
 import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse;
 import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.CrossrefLink;
 import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.License;
+import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.Message;
+import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.Primary;
+import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.Resource;
 import no.sikt.nva.scopus.conversion.files.model.ScopusFile;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
@@ -198,13 +202,27 @@ public class ScopusFileConverter {
 
     private List<ScopusFile> getScopusFiles(CrossrefResponse response) {
         var licenses = extractLicenses(response);
+        var resource = extractResourceUri(response);
         return response.getMessage()
                    .getLinks()
                    .stream()
                    .filter(this::hasSupportedContentType)
+                   .filter(crossrefLink -> isNotResource(crossrefLink, resource))
                    .map(crossrefLink -> toScopusFile(crossrefLink, licenses))
                    .distinct()
                    .toList();
+    }
+
+    private boolean isNotResource(CrossrefLink crossrefLink, URI resource) {
+        return isNull(resource) || !crossrefLink.getUri().equals(resource);
+    }
+
+    private URI extractResourceUri(CrossrefResponse response) {
+        return Optional.ofNullable(response.getMessage())
+                   .map(Message::getResource)
+                   .map(Resource::getPrimary)
+                   .map(Primary::getUri)
+                   .orElse(null);
     }
 
     private ScopusFile toScopusFile(CrossrefLink crossrefLink, List<License> licenses) {
@@ -226,16 +244,16 @@ public class ScopusFileConverter {
                    .orElse(null);
     }
 
-    private static boolean hasSameVersion(CrossrefLink crossrefLink, License license) {
-        return license.getContentVersion().equals(crossrefLink.getContentVersion());
-    }
-
     private Instant calculateEmbargo(License license) {
         if (license.hasDelay()) {
             var embargoDate = toEmbargoDate(license).atStartOfDay(ZoneId.systemDefault()).toInstant();
             return embargoDate.isAfter(Instant.now()) ? embargoDate : null;
         }
         return null;
+    }
+
+    private static boolean hasSameVersion(CrossrefLink crossrefLink, License license) {
+        return license.getContentVersion().equals(crossrefLink.getContentVersion());
     }
 
     private boolean hasSupportedContentType(CrossrefLink link) {

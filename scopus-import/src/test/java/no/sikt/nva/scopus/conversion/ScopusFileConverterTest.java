@@ -2,10 +2,9 @@ package no.sikt.nva.scopus.conversion;
 
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -21,6 +20,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import jdk.jfr.Description;
 import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
@@ -43,29 +43,28 @@ public class ScopusFileConverterTest {
     public void init() {
         httpClient = mock(HttpClient.class);
         s3Client = mock(S3Client.class);
+        fileConverter = new ScopusFileConverter(httpClient, s3Client);
+        fileConverter = new ScopusFileConverter(httpClient, s3Client);
+
         scopusData = new ScopusGenerator();
-        fileConverter = new ScopusFileConverter(httpClient, s3Client);
-        fileConverter = new ScopusFileConverter(httpClient, s3Client);
+        scopusData.getDocument().getMeta().setOpenAccess(null);
+        scopusData.getDocument().getMeta().setDoi(DOI_PATH);
     }
 
     @Test
     void shouldCreateAssociatedArtifactWithEmbargoWhenSumOfDelayAndStartDateIsInFuture()
         throws IOException, InterruptedException {
-        var scopusData = new ScopusGenerator();
-        scopusData.getDocument().getMeta().setOpenAccess(null);
-        scopusData.getDocument().getMeta().setDoi(DOI_PATH);
         mockResponses("crossrefResponseWithEmbargo.json");
-        var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).stream().map(i -> (PublishedFile) i).toList().get(0);
+
+        var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).get(0);
 
         assertThat(file.getEmbargoDate().orElseThrow(), is(notNullValue()));
     }
 
     @Test
     void shouldRemoveDuplicateLinksWhenFetchingFilesFromCrossrefDoi() throws IOException, InterruptedException {
-        var scopusData = new ScopusGenerator();
-        scopusData.getDocument().getMeta().setOpenAccess(null);
-        scopusData.getDocument().getMeta().setDoi(DOI_PATH);
         mockResponses("crossrefResponse.json");
+
         var files = fileConverter.fetchAssociatedArtifacts(scopusData.getDocument());
 
         assertThat(files.size(), is(1));
@@ -73,26 +72,33 @@ public class ScopusFileConverterTest {
 
     @Test
     void shouldMapContentVersionToPublisherAuthority() throws IOException, InterruptedException {
-        var scopusData = new ScopusGenerator();
-        scopusData.getDocument().getMeta().setOpenAccess(null);
-        scopusData.getDocument().getMeta().setDoi(DOI_PATH);
         mockResponses("crossrefResponseWithEmbargo.json");
+
         var files = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).get(0);
 
         assertThat(files.isPublisherAuthority(), is(true));
     }
 
     @Test
-    void shouldBeAbleToSetDefaultValuesToFileWhenDoiDoesNotContainEnoughData() throws IOException,
-                                                                                      InterruptedException {
-        var scopusData = new ScopusGenerator();
-        scopusData.getDocument().getMeta().setOpenAccess(null);
-        scopusData.getDocument().getMeta().setDoi(DOI_PATH);
+    void shouldBeAbleToSetDefaultValuesToFileWhenDoiDoesNotContainEnoughData()
+        throws IOException, InterruptedException {
         mockResponses("crossrefResponseMissingFields.json");
+
         var files = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).get(0);
 
         assertThat(files.isPublisherAuthority(), is(false));
         assertThat(files.getEmbargoDate(), is(Optional.empty()));
+    }
+
+    @Description("Resource primary url is a landing page url for resource and will never be a content file.")
+    @Test
+    void shouldNotCreateAssociatedArtifactFromLinkWhichAlsoIsAResourcePrimaryUrl()
+        throws IOException, InterruptedException {
+        mockResponses("crossrefResponseWithLinkAsResource.json");
+
+        var files = fileConverter.fetchAssociatedArtifacts(scopusData.getDocument());
+
+        assertThat(files, is(emptyIterable()));
     }
 
     private void mockResponses(String responseBody) throws IOException, InterruptedException {
@@ -105,14 +111,13 @@ public class ScopusFileConverterTest {
         when(fetchDownloadUrlResponse.headers()).thenReturn(createDownloadUrlHeaders());
         when(httpClient.send(any(), eq(BodyHandlers.ofInputStream()))).thenReturn(fetchDownloadUrlResponse);
 
-        when(s3Client.headObject(any(HeadObjectRequest.class))).thenReturn(HeadObjectResponse.builder()
-                                                                               .contentType(randomString())
-                                                                               .contentLength(100L).build());
+        when(s3Client.headObject(any(HeadObjectRequest.class))).thenReturn(
+            HeadObjectResponse.builder().contentType(randomString()).contentLength(100L).build());
     }
 
     private HttpHeaders createDownloadUrlHeaders() {
-        return HttpHeaders.of(Map.of("Content-Type", List.of("application/pdf;charset=UTF-8"),
-                                     "Content-Disposition", List.of("attachment; filename=\"someFile\"")),
-                              (s, s2) -> false);
+        return HttpHeaders.of(Map.of("Content-Type",
+                                     List.of("application/pdf;charset=UTF-8"), "Content-Disposition",
+                                     List.of("attachment; filename=\"someFile\"")), (s, s2) -> false);
     }
 }

@@ -137,6 +137,8 @@ import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse;
 import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.CrossrefLink;
 import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.License;
 import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.Message;
+import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.Primary;
+import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.Resource;
 import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.Start;
 import no.sikt.nva.scopus.conversion.model.ImportCandidateSearchApiResponse;
 import no.sikt.nva.scopus.conversion.model.PublicationChannelResponse;
@@ -1229,7 +1231,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         return new CrossrefResponse(new Message(List.of(new CrossrefLink(downloadUrl.getUri(), "application/pdf", VOR)),
                                                 List.of(new License(
                                                     URI.create("http://creativecommons.org/" + randomString()), 0,
-                                                    new Start(List.of(List.of(2023, 01, 25))), VOR)))).toString();
+                                                    new Start(List.of(List.of(2023, 01, 25))), VOR)),
+                                                new Resource(new Primary(randomUri())))).toString();
     }
 
     private static void mockBadRequestFileResponse(UpwOaLocationType locationType) {

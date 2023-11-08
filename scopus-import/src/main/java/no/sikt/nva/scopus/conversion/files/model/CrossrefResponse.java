@@ -60,11 +60,14 @@ public class CrossrefResponse implements JsonSerializable {
 
         private final List<License> license;
         private final List<CrossrefLink> links;
+        private final Resource resource;
 
         @JsonCreator
-        public Message(@JsonProperty("link") List<CrossrefLink> links, @JsonProperty("license") List<License> license) {
+        public Message(@JsonProperty("link") List<CrossrefLink> links, @JsonProperty("license") List<License> license,
+                       @JsonProperty("resource") Resource resource) {
             this.links = links;
             this.license = license;
+            this.resource = resource;
         }
 
         public List<License> getLicense() {
@@ -73,6 +76,10 @@ public class CrossrefResponse implements JsonSerializable {
 
         public List<CrossrefLink> getLinks() {
             return links;
+        }
+
+        public Resource getResource() {
+            return resource;
         }
     }
 
@@ -117,7 +124,7 @@ public class CrossrefResponse implements JsonSerializable {
     public static class Start implements JsonSerializable {
 
         /**
-         * List of date parts in format [yyyy, mm, dd] and only year has to be present
+         * List of date parts in format [yyyy, mm, dd] where year only has to be present.
          */
         private final List<List<Integer>> dateParts;
 
@@ -140,6 +147,34 @@ public class CrossrefResponse implements JsonSerializable {
 
         public Integer getDay() {
             return Optional.ofNullable(dateParts.get(0)).map(list -> list.get(2)).orElse(null);
+        }
+    }
+
+    public static class Resource implements JsonSerializable {
+
+        private final Primary primary;
+
+        @JsonCreator
+        public Resource(@JsonProperty("primary") Primary primary) {
+            this.primary = primary;
+        }
+
+        public Primary getPrimary() {
+            return primary;
+        }
+    }
+
+    public static class Primary implements JsonSerializable {
+
+        private final URI uri;
+
+        @JsonCreator
+        public Primary(@JsonProperty("URL") URI uri) {
+            this.uri = uri;
+        }
+
+        public URI getUri() {
+            return uri;
         }
     }
 }
