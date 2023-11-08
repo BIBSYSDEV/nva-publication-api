@@ -122,7 +122,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     }
 
     @Test
-    void shouldReturnCopyAssociatedResources() throws NotFoundException, IOException {
+    void shouldCopyAssociatedResourceFiles() throws NotFoundException, IOException {
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);
         var artifactId = ((File) importCandidate.getAssociatedArtifacts().stream().findFirst().get()).getIdentifier()
