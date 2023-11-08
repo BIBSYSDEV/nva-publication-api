@@ -2,7 +2,7 @@
 
 
 nva = { strictly = '1.34.0' }
-nvaDatamodel = { strictly = '0.20.54' }
+nvaDatamodel = { strictly = '0.20.55' }
 nvaDoiPartnerData = { strictly = '0.5.8' }
 jackson = { strictly = '2.15.2' }
 awsSdk = { strictly = '1.12.544' }
@@ -162,6 +162,9 @@ tika-langdetect-optimaize = { group = 'org.apache.tika', name = 'tika-langdetect
 
 mockito-inline = {group= 'org.mockito', name= 'mockito-inline', version= '5.2.0'}
 mockito-junit-jupiter = {group= 'org.mockito', name= 'mockito-junit-jupiter', version= '5.3.1'}
+
+
+open-csv = { group = 'com.opencsv', name = 'opencsv', version = '5.8' } # open-csv is used by cristin-import, can be deleted when cristin-import is deleted
 
 [bundles]
 testing = ['junit-jupiter-params', 'junit-jupiter-api', 'junit-vintage-engine', 'guava',

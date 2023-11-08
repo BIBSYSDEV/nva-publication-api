@@ -5,6 +5,7 @@ import java.util.Optional;
 import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinJournalPublication;
 import no.unit.nva.cristin.mapper.CristinObject;
+import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
 
 /**
  * Class containing common functionality for the different modules implementing the mapping logic of Cristin entries to
@@ -17,8 +18,11 @@ public class CristinMappingModule {
 
     protected final CristinObject cristinObject;
 
-    public CristinMappingModule(CristinObject cristinObject) {
+    protected final ChannelRegistryMapper channelRegistryMapper;
+
+    public CristinMappingModule(CristinObject cristinObject, ChannelRegistryMapper channelRegistryMapper) {
         this.cristinObject = cristinObject;
+        this.channelRegistryMapper = channelRegistryMapper;
     }
 
     protected CristinJournalPublication extractCristinJournalPublication() {
@@ -39,6 +43,18 @@ public class CristinMappingModule {
 
     protected Integer extractYearReportedInNvi() {
         return Optional.ofNullable(cristinObject.getYearReported()).orElseGet(cristinObject::getPublicationYear);
+    }
+
+    protected String extractIssn() {
+        return extractCristinJournalPublication().getJournal().getIssn();
+    }
+
+    protected String extractIssnOnline() {
+        return extractCristinJournalPublication().getJournal().getIssnOnline();
+    }
+
+    protected String extractPublisherTitle() {
+        return extractCristinJournalPublication().getJournal().getJournalTitle();
     }
 
     private String cleanCristinIsbn(String isbn) {

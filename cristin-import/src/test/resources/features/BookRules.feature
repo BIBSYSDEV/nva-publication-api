@@ -127,11 +127,11 @@ Feature: Book conversion rules
   Scenario Outline: Mapping creates a reference to an NSD Series when the Cristin entry contains
   an NSD code for the series
     Given a valid Cristin Result with secondary category "<secondaryCategory>"
-    And the Cristin Result refers to a Series with NSD code 12345
+    And the Cristin Result refers to a Series with NSD code 339722
     And the Cristin Result has publication year 2002
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Reference to a Series that is a URI pointing to the NVA NSD proxy
-    And the Series URI contains the NSD code 12345 and the publication year 2002
+    And the Series URI contains the NSD code "EBD3A449-4D13-4730-B1BE-DBAF0405E38F" and the publication year 2002
     Examples:
       | secondaryCategory |
       | MONOGRAFI         |

@@ -34,6 +34,10 @@ entityDescription.reference.publicationInstance.manifestations.ensemble
 entityDescription.reference.publicationInstance.manifestations.ismn
 entityDescription.reference.publicationInstance.manifestations.isrc
 entityDescription.reference.publicationInstance.manifestations.date.to
+entityDescription.reference.publicationInstance.manifestations.time
+entityDescription.reference.publicationInstance.manifestations.concertProgramme.title
+entityDescription.reference.publicationInstance.manifestations.extent
+entityDescription.reference.publicationInstance.manifestations.musicalWorks.composer
 
 entityDescription.abstract
 entityDescription.tags

@@ -16,12 +16,14 @@ import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.CRISTIN
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.DUPLICATE_PUBLICATIONS_MESSAGE;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.ERROR_BUCKET_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.HANDLE_REPORTS_PATH;
+import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.UPDATED_PUBLICATIONS_REPORTS_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.UPDATE_REPORTS_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM_DD_HH_FORMAT;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.NOT_SUPPORTED_TYPE;
 import static no.sikt.nva.brage.migration.merger.AssociatedArtifactMover.COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.TEST_DESCRIPTION;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
@@ -30,12 +32,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import com.amazonaws.services.kms.model.NotFoundException;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
@@ -55,6 +61,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.IntStream;
@@ -81,6 +88,8 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -193,14 +202,16 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private S3Driver s3Driver;
     private FakeS3Client s3Client;
     private ResourceService resourceService;
+    private UriRetriever uriRetriever;
 
     @BeforeEach
     public void init() {
         super.init();
         this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
         this.s3Client = new FakeS3cClientWithCopyObjectSupport();
-        this.handler = new BrageEntryEventConsumer(s3Client, resourceService);
         this.s3Driver = new S3Driver(s3Client, INPUT_BUCKET_NAME);
+        this.uriRetriever = mock(UriRetriever.class);
+        this.handler = new BrageEntryEventConsumer(s3Client, resourceService, uriRetriever);
     }
 
     @Test
@@ -793,7 +804,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     void shouldTryToPersistPublicationInDatabaseSeveralTimesWhenResourceServiceIsThrowingException()
         throws IOException {
         var fakeResourceServiceThrowingException = new FakeResourceServiceThrowingException(client);
-        this.handler = new BrageEntryEventConsumer(s3Client, fakeResourceServiceThrowingException);
+        this.handler = new BrageEntryEventConsumer(s3Client, fakeResourceServiceThrowingException, uriRetriever);
         var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder().withPublishedDate(null)
                                                  .withType(TYPE_BOOK)
                                                  .build();
@@ -808,7 +819,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     void shouldStoreExceptionIfItCannotCopyAssociatedArtifacts() throws IOException {
         this.s3Client = new FakeS3ClientThrowingExceptionWhenCopying();
         this.s3Driver = new S3Driver(s3Client, INPUT_BUCKET_NAME);
-        this.handler = new BrageEntryEventConsumer(s3Client, resourceService);
+        this.handler = new BrageEntryEventConsumer(s3Client, resourceService, uriRetriever);
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withPublishedDate(null)
                                  .withType(TYPE_BOOK)
                                  .withResourceContent(createResourceContent())
@@ -866,7 +877,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     @Test
     void shouldSaveErrorReportInS3ContainingTheOriginalInputData() throws IOException {
         resourceService = new FakeResourceServiceThrowingException(client);
-        this.handler = new BrageEntryEventConsumer(s3Client, resourceService);
+        this.handler = new BrageEntryEventConsumer(s3Client, resourceService, uriRetriever);
         var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder().withPublishedDate(null)
                                                  .withType(TYPE_BOOK)
                                                  .build();
@@ -889,7 +900,10 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                  .build();
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        var actualStoredHandleString = extractActualHandleReportFromS3Client(s3Event, actualPublication);
+        var actualStoredHandleString =
+            extractHandleReportFromS3Client(s3Event,
+                                            actualPublication,
+                                            nvaBrageMigrationDataGenerator.getBrageRecord().getId());
         assertThat(actualStoredHandleString,
                    is(equalTo(nvaBrageMigrationDataGenerator.getNvaPublication().getHandle().toString())));
     }
@@ -908,7 +922,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
 
-        var actualStoredHandleString = extractActualHandleReportFromS3Client(s3Event, actualPublication);
+        var actualStoredHandleString = extractUpdatedPublicationsHandleReportFromS3Client(s3Event, actualPublication,
+                                                                                          nvaBrageMigrationDataGenerator.getBrageRecord().getId());
         assertThat(actualPublication.getIdentifier(), is(equalTo(existingPublication.getIdentifier())));
         assertThat(actualStoredHandleString,
                    is(equalTo(nvaBrageMigrationDataGenerator.getBrageRecord().getId().toString())));
@@ -926,8 +941,110 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                      nvaBrageMigrationDataGenerator.getNvaPublication().getHandle());
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         handler.handleRequest(s3Event, CONTEXT);
-        var storedPublication = extractUpdateReportFromS3(s3Event, existingPublication);
+        var storedPublication =
+            extractUpdateReportFromS3(s3Event,
+                                      existingPublication,
+                                      nvaBrageMigrationDataGenerator.getBrageRecord().getId());
         assertThat(storedPublication, is(equalTo(existingPublication.toString())));
+    }
+
+    @Test
+    void shouldMergePublicationsIfDoiDuplicateExists() throws BadRequestException, IOException {
+        var doi = randomDoi();
+        var existingPublication = persistPublicationWithDoi(doi);
+        assertThat(existingPublication.getHandle(), is(nullValue()));
+
+        var listOfExistingPublications = List.of(existingPublication);
+        var searchResourceApiResponseSingleHit = new SearchResourceApiResponse(listOfExistingPublications.size(),
+                                                                               listOfExistingPublications);
+        var singleHitOptional = Optional.of(searchResourceApiResponseSingleHit.toString());
+        when(uriRetriever.getRawContent(any(), any())).thenReturn(singleHitOptional);
+
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withPublishedDate(null)
+                                                 .withType(TYPE_BOOK)
+                                                 .withDoi(doi)
+                                                 .build();
+
+        var brageRecord = nvaBrageMigrationDataGenerator.getBrageRecord();
+        var s3Event = createNewBrageRecordEvent(brageRecord);
+        var publication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(publication.getHandle(), is(equalTo(brageRecord.getId())));
+        assertThat(publication.getIdentifier(), is(equalTo(existingPublication.getIdentifier())));
+
+        var actualStoredHandleString = extractUpdatedPublicationsHandleReportFromS3Client(s3Event,
+                                                                                          existingPublication,
+                                                                                          brageRecord.getId());
+        assertThat(actualStoredHandleString,
+                   is(equalTo(nvaBrageMigrationDataGenerator.getBrageRecord().getId().toString())));
+    }
+
+    @Test
+    void shouldNotMergePublicationsIfNoDoiDuplicateExists() throws IOException {
+        var searchResourceApiResponseNoHits = new SearchResourceApiResponse(0, null);
+        var noHitsOptional = Optional.of(searchResourceApiResponseNoHits.toString());
+        when(uriRetriever.getRawContent(any(), any())).thenReturn(noHitsOptional);
+
+        var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                                 .withPublishedDate(null)
+                                                 .withType(TYPE_BOOK)
+                                                 .withDoi(randomDoi())
+                                                 .build();
+
+        var brageRecord = nvaBrageMigrationDataGenerator.getBrageRecord();
+        var s3Event = createNewBrageRecordEvent(brageRecord);
+        var publication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(publication.getHandle(), is(equalTo(brageRecord.getId())));
+
+        var actualStoredHandleString = extractHandleReportFromS3Client(s3Event, publication, brageRecord.getId());
+        assertThat(actualStoredHandleString,
+                   is(equalTo(nvaBrageMigrationDataGenerator.getBrageRecord().getId().toString())));
+    }
+
+    @Test
+    void whenMergingWithExistingPublicationTheHandleReportShouldBeStoredUnderUpdatedPublicationsFolder()
+        throws IOException, BadRequestException {
+
+        var cristinIdentifier = randomString();
+        var existingPublication = randomPublication().copy()
+                                      .withAdditionalIdentifiers(
+                                          Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)))
+                                      .build();
+        Resource.fromPublication(existingPublication)
+            .persistNew(resourceService, UserInstance.fromPublication(existingPublication));
+
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                 .withType(TYPE_CRISTIN_RECORD)
+                                 .withCristinIdentifier(cristinIdentifier)
+                                 .build();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var publication = handler.handleRequest(s3Event, CONTEXT);
+
+        var s3Driver = new S3Driver(s3Client, new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
+        var updatedPublicationsFolder = UnixPath.of(UPDATED_PUBLICATIONS_REPORTS_PATH);
+        var filesInUpdatedPublicationsFolder = s3Driver.getFiles(updatedPublicationsFolder);
+        assertThat(filesInUpdatedPublicationsFolder, is(not(empty())));
+
+        var storedHandleString = extractUpdatedPublicationsHandleReportFromS3Client(s3Event, publication,
+                                                                                    brageGenerator.getBrageRecord().getId());
+        assertThat(storedHandleString, is(not(nullValue())));
+    }
+
+    @Test
+    void whenCreatingNewPublicationTheHandleReportShouldBeStoredUnderHandleReportsFolder() throws IOException {
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_REPORT_WORKING_PAPER).build();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var publication = handler.handleRequest(s3Event, CONTEXT);
+
+        var s3Driver = new S3Driver(s3Client, new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
+        var handleReportsFolder = UnixPath.of(HANDLE_REPORTS_PATH);
+        var filesInHandleReportsFolder = s3Driver.getFiles(handleReportsFolder);
+        assertThat(filesInHandleReportsFolder, is(not(empty())));
+
+        var storedHandleString = extractHandleReportFromS3Client(s3Event,
+                                                                 publication,
+                                                                 brageGenerator.getBrageRecord().getId());
+        assertThat(storedHandleString, is(not(nullValue())));
     }
 
     private static Publication copyPublication(NvaBrageMigrationDataGenerator brageGenerator)
@@ -964,11 +1081,25 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                    .persistNew(resourceService, UserInstance.fromPublication(publication));
     }
 
-    private String extractUpdateReportFromS3(S3Event s3Event, Publication publication) {
+    private Publication persistPublicationWithDoi(URI doi)
+        throws BadRequestException {
+        var publication = randomPublication().copy()
+                              .withDoi(doi)
+                              .withHandle(null)
+                              .build();
+
+        return Resource.fromPublication(publication)
+                   .persistNew(resourceService, UserInstance.fromPublication(publication));
+    }
+
+    private String extractUpdateReportFromS3(S3Event s3Event,
+                                             Publication publication,
+                                             URI brageHandle) {
         var timestamp = s3Event.getRecords().get(0).getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
         var uri = UriWrapper.fromUri(UPDATE_REPORTS_PATH)
                       .addChild("institution")
                       .addChild(timestamp)
+                      .addChild(brageHandle.getPath())
                       .addChild(String.valueOf(publication.getIdentifier()));
         S3Driver s3Driver = new S3Driver(s3Client,
                                          new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
@@ -1121,18 +1252,33 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private String extractActualHandleReportFromS3Client(S3Event s3Event, Publication actualPublication) {
-        UriWrapper handleReport = constructHandleReportFileUri(s3Event, actualPublication);
+    private String extractUpdatedPublicationsHandleReportFromS3Client(S3Event s3Event,
+                                                                      Publication actualPublication,
+                                                                      URI brageHandle) {
+        return extractHandleReportFromS3Client(s3Event, actualPublication, UPDATED_PUBLICATIONS_REPORTS_PATH, brageHandle);
+    }
+
+    private String extractHandleReportFromS3Client(S3Event s3Event, Publication actualPublication, URI brageHandle) {
+        return extractHandleReportFromS3Client(s3Event, actualPublication, HANDLE_REPORTS_PATH, brageHandle);
+    }
+
+    private String extractHandleReportFromS3Client(S3Event s3Event, Publication actualPublication,
+                                                   String destinationFolder,
+                                                   URI brageHandle) {
+        UriWrapper handleReport = constructHandleReportFileUri(s3Event, actualPublication, destinationFolder, brageHandle);
         S3Driver s3Driver = new S3Driver(s3Client, new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
         return s3Driver.getFile(handleReport.toS3bucketPath());
     }
 
-    private UriWrapper constructHandleReportFileUri(S3Event s3Event, Publication actualPublication) {
+    private UriWrapper constructHandleReportFileUri(S3Event s3Event, Publication actualPublication,
+                                                    String destinationFolder,
+                                                    URI brageHandle) {
         var timestamp = s3Event.getRecords().get(0).getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
-        return UriWrapper.fromUri(HANDLE_REPORTS_PATH)
-                                    .addChild("institution")
-                                    .addChild(timestamp)
-                                    .addChild(actualPublication.getIdentifier().toString());
+        return UriWrapper.fromUri(destinationFolder)
+                   .addChild("institution")
+                   .addChild(timestamp)
+                   .addChild(brageHandle.getPath())
+                   .addChild(actualPublication.getIdentifier().toString());
     }
 
     private JsonNode extractActualReportFromS3Client(S3Event s3Event, String exceptionSimpleName, Record brageRecord)

@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.cristin.mapper.artisticproduction.CristinArtisticProduction;
+import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
 import no.unit.nva.cristin.mapper.exhibition.CristinExhibition;
 import no.unit.nva.cristin.mapper.nva.CristinMappingModule;
 import no.unit.nva.cristin.mapper.nva.ReferenceBuilder;
@@ -69,7 +70,7 @@ public class CristinMapper extends CristinMappingModule {
                                                                      "0").toResourceOwner();
 
     public CristinMapper(CristinObject cristinObject) {
-        super(cristinObject);
+        super(cristinObject, ChannelRegistryMapper.getInstance());
     }
 
     public static ZoneOffset zoneOffset() {
@@ -286,17 +287,17 @@ public class CristinMapper extends CristinMappingModule {
 
     private EntityDescription generateEntityDescription() {
         return new EntityDescription.Builder()
-            .withLanguage(extractLanguage())
-            .withMainTitle(extractMainTitle())
-            .withPublicationDate(extractPublicationDate())
-            .withReference(new ReferenceBuilder(cristinObject).buildReference())
-            .withContributors(extractContributors())
-            .withNpiSubjectHeading(extractNpiSubjectHeading())
-            .withAbstract(extractAbstract())
-            .withTags(extractTags())
-            .withAlternativeAbstracts(Collections.emptyMap())
-            .withDescription(extractDescription())
-            .build();
+                   .withLanguage(extractLanguage())
+                   .withMainTitle(extractMainTitle())
+                   .withPublicationDate(extractPublicationDate())
+                   .withReference(new ReferenceBuilder(cristinObject, channelRegistryMapper).buildReference())
+                   .withContributors(extractContributors())
+                   .withNpiSubjectHeading(extractNpiSubjectHeading())
+                   .withAbstract(extractAbstract())
+                   .withTags(extractTags())
+                   .withAlternativeAbstracts(Collections.emptyMap())
+                   .withDescription(extractDescription())
+                   .build();
     }
 
     private String extractDescription() {

@@ -1,6 +1,5 @@
 package no.unit.nva.cristin.mapper;
 
-import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isFeatureArticle;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalArticle;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalCorrigendum;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalLeader;
@@ -11,7 +10,6 @@ import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryExc
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.AcademicLiteratureReview;
-import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
@@ -29,9 +27,7 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
 
     @Override
     public PublicationInstance<? extends Pages> build() {
-        if (isFeatureArticle(getCristinObject())) {
-            return createFeatureArticle();
-        } else if (isJournalLetter(getCristinObject())) {
+        if (isJournalLetter(getCristinObject())) {
             return createJournalLetter();
         } else if (isJournalLeader(getCristinObject())) {
             return createJournalLeader();
@@ -51,21 +47,13 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
         return Set.of(CristinMainCategory.JOURNAL);
     }
 
-    private PublicationInstance<? extends Pages> createFeatureArticle() {
-        Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
-        return new FeatureArticle.Builder()
-                   .withPages(numberOfPages)
-                   .withVolume(extractVolume())
-                   .withIssue(extractIssue())
-                   .build();
-    }
-
     private PublicationInstance<? extends Pages> createJournalLetter() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new JournalLetter.Builder()
                    .withPages(numberOfPages)
                    .withIssue(extractIssue())
                    .withVolume(extractVolume())
+                   .withArticleNumber(extractArticleNumber())
                    .build();
     }
 
@@ -75,6 +63,7 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
                    .withPages(numberOfPages)
                    .withIssue(extractIssue())
                    .withVolume(extractVolume())
+                   .withArticleNumber(extractArticleNumber())
                    .build();
     }
 
@@ -84,6 +73,7 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
                    .withPages(numberOfPages)
                    .withIssue(extractIssue())
                    .withVolume(extractVolume())
+                   .withArticleNumber(extractArticleNumber())
                    .build();
     }
 
@@ -93,6 +83,7 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
                    .withPages(numberOfPages)
                    .withIssue(extractIssue())
                    .withVolume(extractVolume())
+                   .withArticleNumber(extractArticleNumber())
                    .build();
     }
 
@@ -129,5 +120,9 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
 
     private String extractIssue() {
         return getCristinObject().getJournalPublication().getIssue();
+    }
+
+    private String extractArticleNumber() {
+        return getCristinObject().getJournalPublication().getArticleNumber();
     }
 }
