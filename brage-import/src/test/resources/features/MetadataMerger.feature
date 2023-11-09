@@ -9,4 +9,4 @@ Feature:
     Given a brage publication with handle "https://hdl.handle.net/11250/2506045"
     And the nva publication has main handle "https://hdl.handle.net/11250/1234567"
     When the nva publications are merged
-    Then the NVA publication has an additionalIdentifier with type "brage" and value "https://hdl.handle.net/11250/2506045"
+    Then the NVA publication has an additionalIdentifier with type "handle" and value "https://hdl.handle.net/11250/2506045"

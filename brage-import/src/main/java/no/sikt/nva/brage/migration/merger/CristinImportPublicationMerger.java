@@ -36,7 +36,7 @@ public class CristinImportPublicationMerger {
     }
 
     private AdditionalIdentifier extractBrageHandleAsAdditionalIdentifier() {
-        return new AdditionalIdentifier("brage", bragePublication.getHandle().toString());
+        return new AdditionalIdentifier("handle", bragePublication.getHandle().toString());
     }
 
     private URI determineHandle() {
