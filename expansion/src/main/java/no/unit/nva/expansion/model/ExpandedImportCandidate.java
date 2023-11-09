@@ -44,7 +44,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.joda.time.DateTime;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount"})
+@SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount", "PMD.TooManyFields"})
 @JsonTypeName(ExpandedImportCandidate.TYPE)
 public class ExpandedImportCandidate implements ExpandedDataEntry {
 
@@ -140,6 +140,11 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     @JacocoGenerated
     public Instant getCreatedDate() {
         return createdDate;
+    }
+
+    @JacocoGenerated
+    public List<AssociatedArtifact> getAssociatedArtifacts() {
+        return associatedArtifacts;
     }
 
     private void setCreatedDate(Instant createdDate) {
