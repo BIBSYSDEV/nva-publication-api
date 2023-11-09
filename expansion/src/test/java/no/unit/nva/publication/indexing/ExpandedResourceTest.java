@@ -10,6 +10,7 @@ import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPu
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSamplePublisher;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSampleSeries;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
@@ -29,9 +30,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -169,6 +172,29 @@ class ExpandedResourceTest {
         assertThat(distinctTopLevelIds.stream().sorted().collect(Collectors.toList()),
                    is(equalTo(expectedTopLevelOrgs.stream().sorted().collect(Collectors.toList()))));
         assertExplicitFieldsFromFraming(framedResultNode);
+    }
+
+    @Test
+    void shouldReturnIndexDocumentWithTopLevelOrganizationsWithTreeToRelevantAffiliation() throws Exception {
+        final var publication = randomBookWithConfirmedPublisher();
+        final var affiliationToBeExpanded = extractAffiliationsUris(publication).get(0);
+
+        final var mockUriRetriever = mock(UriRetriever.class);
+        mockCristinOrganizationResponse(mockUriRetriever, affiliationToBeExpanded);
+
+        var framedResultNode = fromPublication(mockUriRetriever, publication).asJsonNode();
+
+        var topLevelNodes = (ArrayNode) framedResultNode.at("/topLevelOrganizations");
+        var topLevelNodeForExpandedAffiliation =
+            StreamSupport.stream(topLevelNodes.spliterator(), false)
+                .filter(node -> node.at("/id").textValue().contains(("194.0.0.0")))
+                .findFirst()
+                .map(JsonNode::toString)
+                .orElse(null);
+
+        var expectedTopLevelAffiliationNode = stringFromResources(Path.of("expectedTopLevelNode.json")).replace(
+            "__REPLACE_AFFILIATION_ID__", affiliationToBeExpanded.toString());
+        assertEquals(expectedTopLevelAffiliationNode, topLevelNodeForExpandedAffiliation);
     }
 
     @Test
@@ -585,6 +611,14 @@ class ExpandedResourceTest {
 
     private static Set<URI> getOrgIds(List<Organization> organizations) {
         return organizations.stream().map(Organization::getId).collect(Collectors.toSet());
+    }
+
+    private void mockCristinOrganizationResponse(UriRetriever uriRetriever, URI affiliation) {
+        var content = stringFromResources(Path.of("cristin_org.json")).replace(
+            "__REPLACE_AFFILIATION_ID__",
+            affiliation.toString());
+        when(uriRetriever.getRawContent(eq(affiliation), any())).thenReturn(
+            Optional.of(content));
     }
 
     private Publication bookAnthologyWithDoiReferencedInAssociatedLink() {

@@ -1,7 +1,6 @@
 {
   "@context": {
     "@vocab": "https://nva.sikt.no/ontology/publication#",
-    "hasPart": "https://bibsysdev.github.io/src/organization-ontology.ttl#hasPart",
     "xsd": "http://www.w3.org/2001/XMLSchema#",
     "DIRHEALTH": "https://nva.sikt.no/ontology/approvals-body#DIRHEALTH",
     "NMA": "https://nva.sikt.no/ontology/approvals-body#NMA",

@@ -1,12 +1,13 @@
 {
   "type": "Organization",
+  "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0",
   "@context": "https://bibsysdev.github.io/src/organization-context.json",
-  "id": "__REPLACE_AFFILIATION_ID__",
   "labels": {
-    "en": "Department of Computer Science",
-    "nb": "Institutt for datateknologi og informatikk"
+    "en": "Norwegian University of Science and Technology",
+    "nb": "Norges teknisk-naturvitenskapelige universitet",
+    "nn": "Noregs teknisk-naturvitskaplege universitet",
   },
-  "partOf": [
+  "hasPart": [
     {
       "type": "Organization",
       "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.0.0",
@@ -14,14 +15,13 @@
         "en": "Faculty of Information Technology and Electrical Engineering",
         "nb": "Fakultet for informasjonsteknologi og elektroteknikk"
       },
-      "partOf": [
+      "hasPart": [
         {
           "type": "Organization",
-          "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0",
+          "id": "__REPLACE_AFFILIATION_ID__",
           "labels": {
-            "en": "Norwegian University of Science and Technology",
-            "nb": "Norges teknisk-naturvitenskapelige universitet",
-            "nn": "Noregs teknisk-naturvitskaplege universitet"
+            "en": "Department of Computer Science",
+            "nb": "Institutt for datateknologi og informatikk"
           }
         }
       ]
