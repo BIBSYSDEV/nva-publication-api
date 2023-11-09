@@ -38,6 +38,7 @@ import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.sikt.nva.scopus.conversion.PublicationChannelConnection;
 import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
+import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;

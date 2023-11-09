@@ -1,0 +1,63 @@
+{
+  "message": {
+    "license": [
+      {
+        "start": {
+          "date-parts": [
+            [
+              2023,
+              7,
+              26
+            ]
+          ],
+          "date-time": "2023-07-26T00:00:00Z",
+          "timestamp": 1690329600000
+        },
+        "content-version": "tdm",
+        "delay-in-days": 0,
+        "URL": "https:\/\/creativecommons.org\/licenses\/by\/4.0"
+      },
+      {
+        "start": {
+          "date-parts": [
+            [
+              2023,
+              7,
+              26
+            ]
+          ],
+          "date-time": "2023-07-26T00:00:00Z",
+          "timestamp": 1690329600000
+        },
+        "content-version": "vor",
+        "delay-in-days": 0,
+        "URL": "https:\/\/creativecommons.org\/licenses\/by\/4.0"
+      }
+    ],
+    "link": [
+      {
+        "URL": "https:\/\/www.nature.com\/articles\/s41467-023-40306-w.pdf",
+        "content-type": "application\/pdf",
+        "content-version": "vor",
+        "intended-application": "text-mining"
+      },
+      {
+        "URL": "https:\/\/www.nature.com\/articles\/s41467-023-40306-w",
+        "content-type": "text\/html",
+        "content-version": "vor",
+        "intended-application": "text-mining"
+      },
+      {
+        "URL": "https:\/\/www.nature.com\/articles\/s41467-023-40306-w.pdf",
+        "content-type": "application\/pdf",
+        "content-version": "vor",
+        "intended-application": "similarity-checking"
+      }
+    ],
+    "resource": {
+      "primary": {
+        "URL": "https:\/\/www.nature.com\/articles\/s41467-023-40306-w"
+      }
+    }
+  }
+}
