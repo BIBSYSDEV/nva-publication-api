@@ -27,6 +27,8 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
@@ -61,14 +63,15 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     public static final String IMPORT_STATUS_FIELD = "importStatus";
     public static final String PUBLICATION_YEAR_FIELD = "publicationYear";
     public static final String PUBLICATION_INSTANCE_FIELD = "publicationInstance";
-    public static final String CREATED_DATE = "createdDate";
+    public static final String CREATED_DATE_FIELD = "createdDate";
     public static final String CRISTIN = "cristin";
     public static final String ORGANIZATION = "organization";
-    public static final String CONTRIBUTORS = "contributors";
+    public static final String CONTRIBUTORS_FIELD = "contributors";
     public static final String IMPORT_CANDIDATE = "import-candidate";
+    public static final String ASSOCIATED_ARTIFACTS_FIELD = "associatedArtifacts";
+    public static final String COLLABORATION_TYPE_FIELD = "collaborationType";
     private static final String CUSTOMER = "customer";
     private static final String CRISTIN_ID = "cristinId";
-    public static final String COLLABORATION_TYPE_FIELD = "collaborationType";
     @JsonProperty(ID_FIELD)
     private URI identifier;
     @JsonProperty(ADDITIONAL_IDENTIFIERS_FIELD)
@@ -88,7 +91,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     @JsonProperty(CONTRIBUTORS_NUMBER_FIELD)
     private int totalNumberOfContributors;
     @Getter
-    @JsonProperty(CONTRIBUTORS)
+    @JsonProperty(CONTRIBUTORS_FIELD)
     private List<Contributor> contributors;
     @JsonProperty(ORGANIZATIONS_FIELD)
     private Set<Organization> organizations;
@@ -98,14 +101,15 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     private ImportStatus importStatus;
     @JsonProperty(PUBLICATION_YEAR_FIELD)
     private String publicationYear;
-    @JsonProperty(CREATED_DATE)
+    @JsonProperty(CREATED_DATE_FIELD)
     private Instant createdDate;
+    @JsonProperty(ASSOCIATED_ARTIFACTS_FIELD)
+    private List<AssociatedArtifact> associatedArtifacts;
 
     public static ExpandedImportCandidate fromImportCandidate(ImportCandidate importCandidate,
                                                               AuthorizedBackendUriRetriever uriRetriever) {
         var organizations = extractOrganizations(importCandidate, uriRetriever);
-        return new ExpandedImportCandidate.Builder()
-                   .withIdentifier(generateIdentifier(importCandidate.getIdentifier()))
+        return new ExpandedImportCandidate.Builder().withIdentifier(generateIdentifier(importCandidate.getIdentifier()))
                    .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
                    .withPublicationInstance(extractPublicationInstance(importCandidate))
                    .withImportStatus(importCandidate.getImportStatus())
@@ -120,13 +124,13 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .withPublisher(extractPublisher(importCandidate))
                    .withCreatedDate(importCandidate.getCreatedDate())
                    .withCooperation(extractCooperation(organizations))
+                   .withAssociatedArtifacts(importCandidate.getAssociatedArtifacts())
                    .build();
     }
 
-    private static CollaborationType extractCooperation(Set<Organization> organizations) {
-        return organizations.size() > 1
-                   ? CollaborationType.COLLABORATIVE
-                   : CollaborationType.NON_COLLABORATIVE;
+    @JacocoGenerated
+    public void setAssociatedArtifacts(List<AssociatedArtifact> associatedArtifacts) {
+        this.associatedArtifacts = associatedArtifacts;
     }
 
     public void setContributors(List<Contributor> contributors) {
@@ -269,6 +273,10 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
         return new SortableIdentifier(UriWrapper.fromUri(identifier).getLastPathElement());
     }
 
+    private static CollaborationType extractCooperation(Set<Organization> organizations) {
+        return organizations.size() > 1 ? CollaborationType.COLLABORATIVE : CollaborationType.NON_COLLABORATIVE;
+    }
+
     private static List<Contributor> extractContributors(ImportCandidate importCandidate) {
         var contributors = importCandidate.getEntityDescription().getContributors();
         return contributors.size() < 5 ? contributors.subList(0, contributors.size()) : contributors.subList(0, 5);
@@ -391,22 +399,23 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     // Should use getResponse() method of uriRetriever instead of getRawContent()
     private static Organization toNvaCustomer(URI id, AuthorizedBackendUriRetriever uriRetriever) {
         return attempt(() -> getCristinIdentifier(id)).map(ExpandedImportCandidate::toCristinOrgUri)
-                         .map(uri -> fetchTopLevelOrg(uri, uriRetriever))
-                         .map(Optional::get)
-                         .map(ExpandedImportCandidate::toCristinOrganization)
-                         .map(CristinOrganization::getTopLevelOrg)
-                         .map(org -> fetchCustomer(uriRetriever, org))
-                         .orElse(failure -> null);
+                   .map(uri -> fetchTopLevelOrg(uri, uriRetriever))
+                   .map(Optional::get)
+                   .map(ExpandedImportCandidate::toCristinOrganization)
+                   .map(CristinOrganization::getTopLevelOrg)
+                   .map(org -> fetchCustomer(uriRetriever, org))
+                   .orElse(failure -> null);
     }
 
     private static Organization fetchCustomer(AuthorizedBackendUriRetriever uriRetriever,
                                               CristinOrganization organization) {
-        return attempt(() -> toFetchCustomerByCristinIdUri(organization.getId()))
-            .map(uri -> uriRetriever.getRawContent(uri, CONTENT_TYPE))
-            .map(Optional::get)
-            .map(string -> attempt(() -> JsonUtils.dtoObjectMapper.readValue(string, Customer.class)).orElseThrow())
-            .map(customer -> toOrganization(customer, organization))
-            .orElseThrow();
+        return attempt(() -> toFetchCustomerByCristinIdUri(organization.getId())).map(
+                uri -> uriRetriever.getRawContent(uri, CONTENT_TYPE))
+                   .map(Optional::get)
+                   .map(string -> attempt(
+                       () -> JsonUtils.dtoObjectMapper.readValue(string, Customer.class)).orElseThrow())
+                   .map(customer -> toOrganization(customer, organization))
+                   .orElseThrow();
     }
 
     private static Organization toOrganization(Customer organization, CristinOrganization cristinOrganization) {
@@ -520,8 +529,14 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
             return this;
         }
 
+        public Builder withAssociatedArtifacts(AssociatedArtifactList associatedArtifacts) {
+            expandedImportCandidate.setAssociatedArtifacts(associatedArtifacts);
+            return this;
+        }
+
         public ExpandedImportCandidate build() {
             return expandedImportCandidate;
         }
+
     }
 }
