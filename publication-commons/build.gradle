@@ -17,6 +17,8 @@ dependencies {
     implementation libs.aws.java.sdk.core
     implementation libs.aws.sdk.dynamodb
     implementation libs.aws.sdk2.secrets
+    implementation libs.aws.sdk2.urlconnectionclient
+    implementation libs.aws.sdk2.s3
 
 
     implementation libs.guava
