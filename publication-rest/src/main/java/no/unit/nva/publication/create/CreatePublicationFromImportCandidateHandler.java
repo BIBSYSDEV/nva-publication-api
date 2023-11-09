@@ -51,7 +51,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     public static final String PUBLICATION = "publication";
     private final ResourceService candidateService;
     private final ResourceService publicationService;
-    private final S3Client s3;
+    private final S3Client ss3Client;
 
     @JacocoGenerated
     public CreatePublicationFromImportCandidateHandler() {
@@ -62,11 +62,11 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
 
     public CreatePublicationFromImportCandidateHandler(ResourceService importCandidateService,
                                                        ResourceService publicationService,
-                                                       S3Client s3) {
+                                                       S3Client s3Client) {
         super(ImportCandidate.class);
         this.candidateService = importCandidateService;
         this.publicationService = publicationService;
-        this.s3 = s3;
+        this.ss3Client = s3Client;
         this.persistedStorageBucket = environment.readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME");
         this.importCandidateStorageBucket = environment.readEnv("IMPORT_CANDIDATES_STORAGE_BUCKET");
     }
@@ -95,13 +95,19 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     private Publication copyArtifacts(Publication publication) {
         publication.getAssociatedArtifacts().stream()
             .filter(File.class::isInstance)
-            .forEach(a -> s3.copyObject(CopyObjectRequest.builder()
-                                            .sourceBucket(importCandidateStorageBucket)
-                                            .sourceKey(((File) a).getIdentifier().toString())
-                                            .destinationBucket(persistedStorageBucket)
-                                            .destinationKey(((File) a).getIdentifier().toString())
-                                            .build()));
+            .map(File.class::cast)
+            .forEach(
+                a -> copyS3file(importCandidateStorageBucket, persistedStorageBucket, a.getIdentifier().toString()));
         return publication;
+    }
+
+    private void copyS3file(String source, String destination, String key) {
+        ss3Client.copyObject(CopyObjectRequest.builder()
+                                 .sourceBucket(source)
+                                 .sourceKey(key)
+                                 .destinationBucket(destination)
+                                 .destinationKey(key)
+                                 .build());
     }
 
     private static SortableIdentifier extractPublicationId(ImportCandidate importCandidate) {

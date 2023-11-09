@@ -85,7 +85,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     private ResourceService importCandidateService;
     private ResourceService publicationService;
     private CreatePublicationFromImportCandidateHandler handler;
-    private S3Client s3;
+    private S3Client s3Client;
 
     private static PublicationResponse getBodyObject(GatewayResponse<PublicationResponse> response)
         throws JsonProcessingException {
@@ -93,8 +93,8 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     }
 
     @BeforeEach
-    public void setUp(@Mock Environment environment, @Mock Context context, @Mock S3Client s3) {
-        this.s3 = s3;
+    public void setUp(@Mock Environment environment, @Mock Context context, @Mock S3Client s3Client) {
+        this.s3Client = s3Client;
         super.init(IMPORT_CANDIDATES_TABLE, PUBLICATIONS_TABLE);
         lenient().when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
         lenient().when(environment.readEnv(IMPORT_CANDIDATES_STORAGE_BUCKET_ENV)).thenReturn("some-candidate-bucket");
@@ -103,7 +103,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         publicationService = new ResourceService(client, PUBLICATIONS_TABLE);
         this.context = context;
         output = new ByteArrayOutputStream();
-        handler = new CreatePublicationFromImportCandidateHandler(importCandidateService, publicationService, s3);
+        handler = new CreatePublicationFromImportCandidateHandler(importCandidateService, publicationService, s3Client);
     }
 
     @Test
@@ -130,7 +130,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
 
         handler.handleRequest(request, output, context);
 
-        verify(s3, atLeastOnce()).copyObject(
+        verify(s3Client, atLeastOnce()).copyObject(
             CopyObjectRequest.builder()
                 .sourceBucket("some-candidate-bucket")
                 .sourceKey(artifactId)
@@ -146,7 +146,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);
         publicationService = resourceService;
-        handler = new CreatePublicationFromImportCandidateHandler(importCandidateService, publicationService, s3);
+        handler = new CreatePublicationFromImportCandidateHandler(importCandidateService, publicationService, s3Client);
         when(publicationService.autoImportPublication(any())).thenThrow(
             new TransactionFailedException(new Exception()));
         handler.handleRequest(request, output, context);
@@ -166,7 +166,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);
         importCandidateService = resourceService;
-        handler = new CreatePublicationFromImportCandidateHandler(importCandidateService, publicationService, s3);
+        handler = new CreatePublicationFromImportCandidateHandler(importCandidateService, publicationService, s3Client);
         when(importCandidateService.updateImportStatus(any(), any()))
             .thenThrow(new TransactionFailedException(new Exception()));
         handler.handleRequest(request, output, context);
@@ -204,7 +204,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         var request = createRequest(importCandidate);
         publicationService = resourceService;
         importCandidateService = resourceService;
-        handler = new CreatePublicationFromImportCandidateHandler(importCandidateService, publicationService, s3);
+        handler = new CreatePublicationFromImportCandidateHandler(importCandidateService, publicationService, s3Client);
         when(importCandidateService.updateImportStatus(any(), any()))
             .thenCallRealMethod()
             .thenThrow(new NotFoundException(""));
