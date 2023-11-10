@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -62,8 +61,6 @@ public class ScopusFileConverter {
         "IMPORT_CANDIDATES_STORAGE_BUCKET");
     public static final String DEFAULT_CONTENT_TYPE = "application/pdf";
     public static final String CONTENT_TYPE_DELIMITER = ";";
-    public static final String FILE_TYPE_DELIMITER = "/";
-    public static final String FILENAME = "filename";
     public static final String PDF_FILE_TYPE = "pdf";
     public static final String FILE_NAME_DELIMITER = ".";
     public static final String CROSSREF_URI_ENV_VAR_NAME = "CROSSREF_FETCH_DOI_URI";
@@ -76,6 +73,8 @@ public class ScopusFileConverter {
     private static final Logger logger = LoggerFactory.getLogger(ScopusFileConverter.class);
     private static final String CONTENT_DISPOSITION_FILE_NAME_PATTERN = "filename=\"%s\"";
     private static final URI DEFAULT_LICENSE = URI.create("https://creativecommons.org/licenses/by/4.0/");
+    public static final String FILENAME_CONTENT_TYPE_HEADER_VALUE = "filename=";
+    public static final String QUOTE = "\"";
     public final String crossRefUri;
     private final HttpClient httpClient;
     private final S3Client s3Client;
@@ -114,25 +113,20 @@ public class ScopusFileConverter {
     }
 
     private static String getFilename(HttpResponse<InputStream> response) {
-        return Optional.ofNullable(response.headers().map().get(Headers.CONTENT_DISPOSITION))
-                   .map(list -> list.stream().filter(item -> item.contains(FILENAME)).toList())
-                   .map(list -> list.get(0))
-                   .map(ScopusFileConverter::getFilename)
-                   .orElse(randomUUID() + FILE_NAME_DELIMITER + getFileType(response));
+        return extractContentType(response)
+                   .map(ScopusFileConverter::extractFileNameFromContentType)
+                   .orElseGet(() -> randomUUID() + FILE_NAME_DELIMITER + PDF_FILE_TYPE);
     }
 
-    private static String getFilename(String value) {
-        return value.split("filename=")[1].split(CONTENT_TYPE_DELIMITER)[0].replace("\"", StringUtils.EMPTY_STRING);
+    private static Optional<String> extractContentType(HttpResponse<InputStream> response) {
+        var contentDisposition =  response.headers().map().getOrDefault(Headers.CONTENT_DISPOSITION, List.of());
+        return contentDisposition.isEmpty() ? Optional.empty() : Optional.of(contentDisposition.get(0));
     }
 
-    private static String getFileType(HttpResponse<InputStream> response) {
-        return Optional.ofNullable(response.headers())
-                   .map(HttpHeaders::map)
-                   .map(map -> map.get(Headers.CONTENT_TYPE))
-                   .map(values -> values.stream().filter(value -> value.contains("application")).toList())
-                   .map(list -> list.get(0))
-                   .map(item -> item.split(FILE_TYPE_DELIMITER)[1])
-                   .orElse(PDF_FILE_TYPE);
+    private static String extractFileNameFromContentType(String contentType) {
+        return contentType.split(FILENAME_CONTENT_TYPE_HEADER_VALUE)[1]
+                   .split(CONTENT_TYPE_DELIMITER)[0]
+                   .replace(QUOTE, StringUtils.EMPTY_STRING);
     }
 
     private static HttpRequest constructRequest(URI uri) {
@@ -177,6 +171,7 @@ public class ScopusFileConverter {
         try {
             var doi = docTp.getMeta().getDoi();
             var response = fetchDoi(doi);
+
             return getScopusFiles(response).stream()
                        .map(s -> attempt(() -> fetchFileContent(s)).orElseThrow())
                        .collect(collectRemovingDuplicates())
