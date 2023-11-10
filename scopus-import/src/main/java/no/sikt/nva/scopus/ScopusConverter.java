@@ -49,6 +49,7 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
+import nva.commons.core.Environment;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 
@@ -57,10 +58,11 @@ public class ScopusConverter {
 
     public static final URI HARDCODED_ID = URI.create(
         "https://api.sandbox.nva.aws.unit" + ".no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934");
-    public static final ResourceOwner HARDCODED_RESOURCE_OWNER = new ResourceOwner(new Username("concurrencyT@unit.no"),
-                                                                                   URI.create(
-                                                                                       "https://www.example.org"));
-
+    public static final String RESOURCE_OWNER_SIKT = "sikt@20754";
+    public static final String CRISTIN_ID_SIKT = "20754.0.0.0";
+    public static final String CRISTIN = "cristin";
+    public static final String ORGANIZATION = "organization";
+    public static final String API_HOST = "API_HOST";
     private final DocTp docTp;
     private final PiaConnection piaConnection;
     private final CristinConnection cristinConnection;
@@ -111,7 +113,7 @@ public class ScopusConverter {
 
     public ImportCandidate generateImportCandidate() {
         return new ImportCandidate.Builder().withPublisher(new Organization.Builder().withId(HARDCODED_ID).build())
-                   .withResourceOwner(HARDCODED_RESOURCE_OWNER)
+                   .withResourceOwner(constructResourceOwner())
                    .withAdditionalIdentifiers(generateAdditionalIdentifiers())
                    .withEntityDescription(generateEntityDescription())
                    .withModifiedDate(Instant.now())
@@ -119,6 +121,15 @@ public class ScopusConverter {
                    .withImportStatus(ImportStatusFactory.createNotImported())
                    .withAssociatedArtifacts(scopusFileConverter.fetchAssociatedArtifacts(docTp))
                    .build();
+    }
+
+    private static URI constructOwnerAffiliation() {
+        var apiHost = new Environment().readEnv(API_HOST);
+        return UriWrapper.fromHost(apiHost).addChild(CRISTIN).addChild(ORGANIZATION).addChild(CRISTIN_ID_SIKT).getUri();
+    }
+
+    private ResourceOwner constructResourceOwner() {
+        return new ResourceOwner(new Username(RESOURCE_OWNER_SIKT), constructOwnerAffiliation());
     }
 
     private Optional<AuthorKeywordsTp> extractAuthorKeyWords() {

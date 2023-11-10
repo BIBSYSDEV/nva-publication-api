@@ -89,6 +89,7 @@ import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpClient.Redirect;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Clock;
@@ -320,6 +321,14 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     @AfterEach
     void tearDown() {
         appender.stop();
+    }
+
+    @Test
+    void some() {
+        scopusData.getDocument().getMeta().setDoi("https://doi.org/10.1103/PhysRevLett.130.083201");
+        var associatedArtifacts = new ScopusFileConverter(HttpClient.newBuilder().followRedirects(Redirect.NORMAL).build(),
+                                        S3Driver.defaultS3Client().build()).fetchAssociatedArtifacts(scopusData.getDocument());
+        var s = "";
     }
 
     @Test
