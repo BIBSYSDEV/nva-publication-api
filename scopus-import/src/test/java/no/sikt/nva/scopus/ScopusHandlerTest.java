@@ -324,14 +324,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void some() {
-        scopusData.getDocument().getMeta().setDoi("https://doi.org/10.1103/PhysRevLett.130.083201");
-        var associatedArtifacts = new ScopusFileConverter(HttpClient.newBuilder().followRedirects(Redirect.NORMAL).build(),
-                                        S3Driver.defaultS3Client().build()).fetchAssociatedArtifacts(scopusData.getDocument());
-        var s = "";
-    }
-
-    @Test
     void shouldLogExceptionMessageWhenExceptionOccurs() {
         createEmptyPiaMock();
         var s3Event = createS3Event(randomString());
