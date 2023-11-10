@@ -73,6 +73,8 @@ public class ScopusFileConverter {
     private static final Logger logger = LoggerFactory.getLogger(ScopusFileConverter.class);
     private static final String CONTENT_DISPOSITION_FILE_NAME_PATTERN = "filename=\"%s\"";
     private static final URI DEFAULT_LICENSE = URI.create("https://creativecommons.org/licenses/by/4.0/");
+    public static final String FILENAME_CONTENT_TYPE_HEADER_VALUE = "filename=";
+    public static final String QUOTE = "\"";
     public final String crossRefUri;
     private final HttpClient httpClient;
     private final S3Client s3Client;
@@ -112,7 +114,7 @@ public class ScopusFileConverter {
 
     private static String getFilename(HttpResponse<InputStream> response) {
         return extractContentType(response)
-                   .map(ScopusFileConverter::getFilename)
+                   .map(ScopusFileConverter::extractFileNameFromContentType)
                    .orElseGet(() -> randomUUID() + FILE_NAME_DELIMITER + PDF_FILE_TYPE);
     }
 
@@ -121,8 +123,10 @@ public class ScopusFileConverter {
         return contentDisposition.isEmpty() ? Optional.empty() : Optional.of(contentDisposition.get(0));
     }
 
-    private static String getFilename(String value) {
-        return value.split("filename=")[1].split(CONTENT_TYPE_DELIMITER)[0].replace("\"", StringUtils.EMPTY_STRING);
+    private static String extractFileNameFromContentType(String contentType) {
+        return contentType.split(FILENAME_CONTENT_TYPE_HEADER_VALUE)[1]
+                   .split(CONTENT_TYPE_DELIMITER)[0]
+                   .replace(QUOTE, StringUtils.EMPTY_STRING);
     }
 
     private static HttpRequest constructRequest(URI uri) {
