@@ -50,6 +50,14 @@ public class CristinContributorExtractorTest {
         assertThat(contributor.isCorrespondingAuthor(), is(true));
     }
 
+    @Test
+    void shouldCreateContributorWithoutAffiliationWhen() {
+        var person = new Person(null, null, Set.of(FIRST_NAME, LAST_NAME), null, null, null);
+        var contributor = CristinContributorExtractor.generateContributorFromCristin(person, authorTp(),
+                                                                                     correspondencePerson(), null);
+        assertThat(contributor.isCorrespondingAuthor(), is(true));
+    }
+
     private static PersonalnameType correspondencePerson() {
         var correspondencePerson = new PersonalnameType();
         correspondencePerson.setIndexedName("First, Last");

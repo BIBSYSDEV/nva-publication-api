@@ -9,6 +9,7 @@ import java.util.stream.Stream;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.PersonalnameType;
 import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
+import no.sikt.nva.scopus.conversion.model.cristin.CristinOrganization;
 import no.sikt.nva.scopus.conversion.model.cristin.Person;
 import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
 import no.unit.nva.model.Contributor;
@@ -36,7 +37,7 @@ public final class CristinContributorExtractor {
         Person person,
         AuthorTp authorTp,
         PersonalnameType correspondencePerson,
-        no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
+        CristinOrganization organization) {
 
         return new Contributor.Builder()
                    .withIdentity(generateContributorIdentityFromCristinPerson(person))
@@ -70,7 +71,7 @@ public final class CristinContributorExtractor {
 
     private static List<Organization> generateOrganizations(
         Set<Affiliation> affiliations,
-        no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
+        CristinOrganization organization) {
 
         var organizations = createOrganizationsFromCristinPersonAffiliations(affiliations);
         var organisationFromAuthorGroupTp = createOrganizationFromAuthorGroupTpAffiliation(organization);
@@ -93,11 +94,11 @@ public final class CristinContributorExtractor {
     }
 
     private static Stream<Organization> createOrganizationFromAuthorGroupTpAffiliation(
-        no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
+        CristinOrganization organization) {
         return Stream.ofNullable(organization).map(CristinContributorExtractor::toOrganization);
     }
 
-    private static Organization toOrganization(no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
+    private static Organization toOrganization(CristinOrganization organization) {
         return new Organization.Builder().withId(organization.getId()).withLabels(organization.getLabels()).build();
     }
 
