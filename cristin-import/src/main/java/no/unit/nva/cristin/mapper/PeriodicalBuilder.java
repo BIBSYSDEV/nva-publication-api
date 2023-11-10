@@ -3,6 +3,7 @@ package no.unit.nva.cristin.mapper;
 import static no.unit.nva.cristin.mapper.nva.exceptions.ExceptionHandling.handlePublicationContextFailure;
 import static nva.commons.core.attempt.Try.attempt;
 import java.util.Optional;
+import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
 import no.unit.nva.cristin.mapper.nva.CristinMappingModule;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Periodical;
@@ -12,8 +13,8 @@ public class PeriodicalBuilder extends CristinMappingModule {
 
     private final CristinObject cristinObject;
 
-    public PeriodicalBuilder(CristinObject cristinObject) {
-        super(cristinObject);
+    public PeriodicalBuilder(CristinObject cristinObject, ChannelRegistryMapper channelRegistryMapper) {
+        super(cristinObject, channelRegistryMapper);
         this.cristinObject = cristinObject;
     }
 
@@ -34,19 +35,7 @@ public class PeriodicalBuilder extends CristinMappingModule {
     private Periodical createJournal() {
         Integer nsdCode = cristinObject.getJournalPublication().getJournal().getNsdCode();
         int publicationYear = extractYearReportedInNvi();
-        var journalUri = new Nsd(nsdCode, publicationYear).createJournalOrSeriesUri();
+        var journalUri = new Nsd(nsdCode, publicationYear, channelRegistryMapper).createJournalOrSeriesUri();
         return new Journal(journalUri);
-    }
-
-    private String extractIssn() {
-        return extractCristinJournalPublication().getJournal().getIssn();
-    }
-
-    private String extractIssnOnline() {
-        return extractCristinJournalPublication().getJournal().getIssnOnline();
-    }
-
-    private String extractPublisherTitle() {
-        return extractCristinJournalPublication().getJournal().getJournalTitle();
     }
 }

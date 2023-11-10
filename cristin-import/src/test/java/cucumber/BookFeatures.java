@@ -18,13 +18,11 @@ import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinSubjectField;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.BookSeries;
-import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.UnconfirmedSeries;
-import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.MonographPages;
 import nva.commons.core.SingletonCollector;
 
@@ -60,14 +58,14 @@ public class BookFeatures {
 
     @Then("the NVA Resource has a PublicationContext with publisher with name equal to {string}")
     public void theNvaResourceHasAPublicationContextWithPublisherWithNameEqualTo(String expectedPublisherName) {
-        Book book = extractNvaBook();
+        var book = extractNvaBook();
         PublishingHouse expectedPublisher = new UnconfirmedPublisher(expectedPublisherName);
         assertThat(book.getPublisher(), is(equalTo(expectedPublisher)));
     }
 
     @Given("that the Book Report entry has an empty \"numberOfPages\" field")
     public void thatTheBookReportEntryHasAnEmptyNumberOfPagesField() {
-        CristinBookOrReportMetadata bookReport = CristinDataGenerator.randomBookOrReportMetadata();
+        var bookReport = CristinDataGenerator.randomBookOrReportMetadata();
         bookReport.setNumberOfPages(null);
         scenarioContext.getCristinEntry().setBookOrReportMetadata(bookReport);
     }
@@ -160,17 +158,17 @@ public class BookFeatures {
 
     @Then("the NVA Resource has a PublicationContext with an ISBN list containing the value {string}")
     public void theNvaResourceHasAPublicationContextWithAnIsbnListContainingTheValues(String expectedIsbn) {
-        Book bookContext = extractNvaBook();
-        String singleIsbn = bookContext.getIsbnList().stream().collect(SingletonCollector.collect());
+        var bookContext = extractNvaBook();
+        var singleIsbn = bookContext.getIsbnList().stream().collect(SingletonCollector.collect());
         assertThat(singleIsbn, is(equalTo(expectedIsbn)));
     }
 
     @Then("the NVA Resource has a PublicationContext with number of pages equal to {string}")
     public void theNvaResourceHasAPublicationContextWithNumberOfPagesEqualTo(String expectedNumberOfPages) {
-        PublicationInstance<?> context = scenarioContext.getNvaEntry()
-                                             .getEntityDescription()
-                                             .getReference()
-                                             .getPublicationInstance();
+        var context = scenarioContext.getNvaEntry()
+                          .getEntityDescription()
+                          .getReference()
+                          .getPublicationInstance();
         var rawPages = context.getPages();
         var pages = rawPages instanceof MonographPages
                         ? ((MonographPages) rawPages).getPages()
@@ -180,15 +178,15 @@ public class BookFeatures {
 
     @Then("the NVA Resource has a npiSubjectHeading with value equal to {int}")
     public void theNvaResourceHasANpiSubjectHeadingWithValueEqualTo(int expectedSubjectFieldCode) {
-        String actualSubjectFieldCode = scenarioContext.getNvaEntry()
-                                            .getEntityDescription()
-                                            .getNpiSubjectHeading();
+        var actualSubjectFieldCode = scenarioContext.getNvaEntry()
+                                         .getEntityDescription()
+                                         .getNpiSubjectHeading();
         assertThat(actualSubjectFieldCode, is(equalTo(String.valueOf(expectedSubjectFieldCode))));
     }
 
     @Then("the NVA Resource contains a Publisher reference that is a URI pointing to the NVA NSD proxy")
     public void theNbaResourceContainsAPublisherReferenceThatIsAUriPointingToTheNvaNsdProxy() {
-        Publisher publisher = extractConfirmedPublisher();
+        var publisher = extractConfirmedPublisher();
         assertThat(publisher.getId().toString(), containsString(MappingConstants.NVA_API_DOMAIN));
     }
 
@@ -198,9 +196,9 @@ public class BookFeatures {
                                                                                                 String issn,
                                                                                                 String onlineIssn,
                                                                                                 String seriesNumber) {
-        Book book = extractNvaBook();
+        var book = extractNvaBook();
         assertThat(book.getSeries().isConfirmed(), is(equalTo(false)));
-        UnconfirmedSeries unconfirmedSeries = (UnconfirmedSeries) book.getSeries();
+        var unconfirmedSeries = (UnconfirmedSeries) book.getSeries();
         assertThat(unconfirmedSeries.getIssn(), is(equalTo(issn)));
         assertThat(unconfirmedSeries.getOnlineIssn(), is(equalTo(onlineIssn)));
         assertThat(unconfirmedSeries.getTitle(), is(equalTo(title)));
@@ -209,25 +207,25 @@ public class BookFeatures {
 
     @Then("the NVA Resource mentions an Unconfirmed Publisher with name {string}")
     public void theNvaResourceMentionsAnUnconfirmedPublisherWithName(String publisherName) {
-        Book book = extractNvaBook();
+        var book = extractNvaBook();
         assertThat(book.getPublisher(), is(instanceOf(UnconfirmedPublisher.class)));
-        UnconfirmedPublisher publisher = (UnconfirmedPublisher) book.getPublisher();
+        var publisher = (UnconfirmedPublisher) book.getPublisher();
         assertThat(publisher.getName(), is(equalTo(publisherName)));
     }
 
-    @Then("the Publisher URI contains the NSD code {int} and the publication year {int}")
-    public void thePublisherUriContainsTheNsdCodeAndThePublicationYear(Integer nsdCode, Integer publicationYear) {
-        URI publisherId = extractConfirmedPublisher().getId();
-        assertThat(publisherId.getPath(), containsString(nsdCode.toString()));
+    @Then("the Publisher URI contains the NSD code {string} and the publication year {int}")
+    public void thePublisherUriContainsTheNsdCodeAndThePublicationYear(String pid, Integer publicationYear) {
+        var publisherId = extractConfirmedPublisher().getId();
+        assertThat(publisherId.getPath(), containsString(pid));
         assertThat(publisherId.getPath(), containsString(publicationYear.toString()));
     }
 
     @Then("the NVA Resource has a PublicationContext of type {string}")
     public void theNvaResourceHasAPublicationContextOfType(String publicationContextType) {
-        PublicationContext context = scenarioContext.getNvaEntry()
-                                         .getEntityDescription()
-                                         .getReference()
-                                         .getPublicationContext();
+        var context = scenarioContext.getNvaEntry()
+                          .getEntityDescription()
+                          .getReference()
+                          .getPublicationContext();
         assertThat(context.getClass().getSimpleName(), is(equalTo(publicationContextType)));
     }
 
@@ -238,24 +236,24 @@ public class BookFeatures {
 
     @Then("NVA Resource has a Publisher that cannot be verified through a URI")
     public void nvaResourceHasAPublisherThatCannotBeVerifiedThroughAUri() {
-        Book bookContext = extractNvaBook();
-        PublishingHouse publisher = bookContext.getPublisher();
+        var bookContext = extractNvaBook();
+        var publisher = bookContext.getPublisher();
         assertThat(publisher, is(instanceOf(UnconfirmedPublisher.class)));
     }
 
     @Then("the NVA Resource has a Reference to a Series that is a URI pointing to the NVA NSD proxy")
     public void theNvaResourceHasAReferenceToAPublisherThatIsAUriPointingToTheNvaNsdProxy() {
-        URI seriesId = extractSeriesId();
-        String expectedHost = URI.create(MappingConstants.NVA_API_DOMAIN).getHost();
+        var seriesId = extractSeriesId();
+        var expectedHost = URI.create(MappingConstants.NVA_API_DOMAIN).getHost();
         assertThat(seriesId.getHost(), is(equalTo(expectedHost)));
-        assertThat(seriesId.getPath(), containsString(MappingConstants.NSD_PROXY_PATH));
+        assertThat(seriesId.getPath(), containsString(MappingConstants.NVA_CHANNEL_REGISTRY_V2));
         assertThat(seriesId.getPath(), containsString(MappingConstants.NSD_PROXY_PATH_JOURNAL));
     }
 
-    @Then("the Series URI contains the NSD code {int} and the publication year {int}")
-    public void theSeriesUriContainsTheNsdCodeAndThePublicationYear(Integer nsdCode, Integer publicationYear) {
-        URI seriesId = extractSeriesId();
-        assertThat(seriesId.getPath(), containsString(nsdCode.toString()));
+    @Then("the Series URI contains the NSD code {string} and the publication year {int}")
+    public void theSeriesUriContainsTheNsdCodeAndThePublicationYear(String pid, Integer publicationYear) {
+        var seriesId = extractSeriesId();
+        assertThat(seriesId.getPath(), containsString(pid));
         assertThat(seriesId.getPath(), containsString(publicationYear.toString()));
     }
 
@@ -271,33 +269,44 @@ public class BookFeatures {
 
     @Then("the NVA Resource has a PublicationContext with an empty ISBN list")
     public void theNvaResourceHasAPublicationContextWithAnEmptyIsbnList() {
-        Book bookContext = extractNvaBook();
+        var bookContext = extractNvaBook();
         var actualIsbnList = bookContext.getIsbnList();
         assertThat(actualIsbnList, hasSize(0));
     }
 
+    @And("the Journal URI contains the PID code {string} and the publication year {int}")
+    public void theJournalUriContainsThePidCodeAndThePublicationYear(String pid, Integer year) {
+        var publisherId = extractConfirmedPublisher().getId();
+        assertThat(publisherId.getPath(), containsString(pid));
+        assertThat(publisherId.getPath(), containsString("journal"));
+        assertThat(publisherId.getPath(), containsString(year.toString()));
+    }
+
     private Book extractNvaBook() {
-        PublicationContext context = this.scenarioContext.getNvaEntry()
-                                         .getEntityDescription()
-                                         .getReference()
-                                         .getPublicationContext();
+        var context = this.scenarioContext.getNvaEntry()
+                          .getEntityDescription()
+                          .getReference()
+                          .getPublicationContext();
         return (Book) context;
     }
 
     private Publisher extractConfirmedPublisher() {
-        Book book = extractNvaBook();
+        var book = extractNvaBook();
         assertThat(book.getPublisher(), is(instanceOf(Publisher.class)));
         return (Publisher) book.getPublisher();
     }
 
     private URI extractSeriesId() {
-        Series bookSeries = Optional.of(
-                this.scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationContext())
-                                .map(context -> (Book) context)
-                                .map(Book::getSeries)
-                                .filter(BookSeries::isConfirmed)
-                                .map(series -> (Series) series)
-                                .orElseThrow(() -> new IllegalStateException("BookSeries is not confirmed"));
+        var bookSeries = Optional.of(
+                this.scenarioContext.getNvaEntry()
+                    .getEntityDescription()
+                    .getReference()
+                    .getPublicationContext())
+                             .map(context -> (Book) context)
+                             .map(Book::getSeries)
+                             .filter(BookSeries::isConfirmed)
+                             .map(series -> (Series) series)
+                             .orElseThrow(() -> new IllegalStateException("BookSeries is not confirmed"));
         return bookSeries.getId();
     }
 }

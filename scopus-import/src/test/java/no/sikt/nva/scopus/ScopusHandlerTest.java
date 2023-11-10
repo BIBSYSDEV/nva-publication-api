@@ -22,6 +22,8 @@ import static no.sikt.nva.scopus.conversion.PiaConnection.PIA_REST_API_ENV_KEY;
 import static no.sikt.nva.scopus.conversion.PiaConnection.PIA_SECRETS_NAME_ENV_KEY;
 import static no.sikt.nva.scopus.conversion.PiaConnection.PIA_USERNAME_KEY;
 import static no.sikt.nva.scopus.conversion.PublicationContextCreator.UNSUPPORTED_SOURCE_TYPE;
+import static no.sikt.nva.scopus.conversion.files.ScopusFileConverter.CROSSREF_URI_ENV_VAR_NAME;
+import static no.sikt.nva.scopus.conversion.files.model.ContentVersion.VOR;
 import static no.sikt.nva.scopus.utils.ScopusGenerator.createWithOneAuthorGroupAndAffiliation;
 import static no.sikt.nva.scopus.utils.ScopusGenerator.randomYear;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
@@ -45,6 +47,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.equalToObject;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
@@ -128,6 +131,14 @@ import no.sikt.nva.scopus.conversion.CristinConnection;
 import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.sikt.nva.scopus.conversion.PublicationChannelConnection;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
+import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;
+import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse;
+import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.CrossrefLink;
+import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.License;
+import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.Message;
+import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.Primary;
+import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.Resource;
+import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.Start;
 import no.sikt.nva.scopus.conversion.model.ImportCandidateSearchApiResponse;
 import no.sikt.nva.scopus.conversion.model.PublicationChannelResponse;
 import no.sikt.nva.scopus.conversion.model.PublicationChannelResponse.PublicationChannelHit;
@@ -201,6 +212,7 @@ import nva.commons.logutils.TestAppender;
 import nva.commons.secrets.SecretsReader;
 import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -246,6 +258,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private static final String PIA_SECRET_NAME = "someSecretName";
     private static final String PIA_USERNAME_SECRET_KEY = "someUserNameKey";
     private static final String PIA_PASSWORD_SECRET_KEY = "somePasswordNameKey";
+    @Rule
+    public Map<String, String> environmentVariables = new HashMap<>();
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
     private ScopusHandler scopusHandler;
@@ -294,7 +308,9 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         resourceService = new ResourceService(client, Clock.systemDefaultZone());
         uriRetriever = mock(UriRetriever.class);
         scopusUpdater = new ScopusUpdater(resourceService, uriRetriever);
-        scopusFileConverter = new ScopusFileConverter(httpClient, s3Client);
+        var environment = mock(Environment.class);
+        when(environment.readEnv(CROSSREF_URI_ENV_VAR_NAME)).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
+        scopusFileConverter = new ScopusFileConverter(httpClient, s3Client, environment);
         scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
                                           resourceService, scopusUpdater, scopusFileConverter);
         scopusData = new ScopusGenerator();
@@ -345,8 +361,44 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         actualFiles.forEach(this::assertThatFileHasBeenPersisted);
     }
 
-    private String assertThatFileHasBeenPersisted(File file) {
-        return assertDoesNotThrow(() -> s3Driver.getFile(UnixPath.of(file.getIdentifier().toString())));
+    @Test
+    void shouldReturnImportCandidateWithoutAssociatedArtifactsWhenExceptionOccursFetchingFiles(
+        WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException {
+        scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccess(wireMockRuntimeInfo));
+        createEmptyPiaMock();
+        mockBadRequestFetchingFilesFromXml(scopusData);
+        var s3Event = createNewScopusPublicationEvent();
+        var importCandidate = scopusHandler.handleRequest(s3Event, CONTEXT);
+
+        assertThat(importCandidate.getAssociatedArtifacts(), is(emptyIterable()));
+    }
+
+    @Test
+    void shouldFetchFileFromCrossRefDoiWhenScopusXmlDoesNotHaveFileReference(WireMockRuntimeInfo wireMockRuntimeInfo)
+        throws IOException {
+        scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccess(wireMockRuntimeInfo));
+        scopusData.getDocument().getMeta().setDoi(randomString());
+        createEmptyPiaMock();
+        mockBadRequestFetchingFilesFromXml(scopusData);
+        var expectedFilename = mockFetchCrossrefDoiResponse(scopusData, wireMockRuntimeInfo);
+        var s3Event = createNewScopusPublicationEvent();
+        var importCandidate = scopusHandler.handleRequest(s3Event, CONTEXT);
+
+        assertThat(((File) importCandidate.getAssociatedArtifacts().get(0)).getName(), is(equalTo(expectedFilename)));
+    }
+
+    @Test
+    void shouldReturnImportCandidateWithoutAssociatedArtifactsWhenFailingFetchingFilesFromFilesFromXmlAndCrossref(
+        WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException {
+        scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccess(wireMockRuntimeInfo));
+        scopusData.getDocument().getMeta().setDoi(randomString());
+        createEmptyPiaMock();
+        mockBadRequestFetchingFilesFromXml(scopusData);
+        mockBadRequestCrossrefDoiResponse(scopusData);
+        var s3Event = createNewScopusPublicationEvent();
+        var importCandidate = scopusHandler.handleRequest(s3Event, CONTEXT);
+
+        assertThat(importCandidate.getAssociatedArtifacts(), is(emptyIterable()));
     }
 
     @Test
@@ -1174,6 +1226,20 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         }
     }
 
+    private static String toCrossrefResponse(UriWrapper downloadUrl) {
+        return new CrossrefResponse(new Message(List.of(new CrossrefLink(downloadUrl.getUri(), "application/pdf", VOR)),
+                                                List.of(new License(
+                                                    URI.create("http://creativecommons.org/" + randomString()), 0,
+                                                    new Start(List.of(List.of(2023, 01, 25))), VOR)),
+                                                new Resource(new Primary(randomUri())))).toString();
+    }
+
+    private static void mockBadRequestFileResponse(UpwOaLocationType locationType) {
+        var testUrl = "/" + UriWrapper.fromUri(locationType.getUpwUrlForPdf()).getLastPathElement();
+        stubFor(WireMock.get(urlPathEqualTo(testUrl))
+                    .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_BAD_REQUEST)));
+    }
+
     private static String mockFileResponse(UpwOaLocationType locationType) {
         var filename = randomString() + ".pdf";
         var testUrl = "/" + UriWrapper.fromUri(locationType.getUpwUrlForPdf()).getLastPathElement();
@@ -1240,6 +1306,40 @@ class ScopusHandlerTest extends ResourcesLocalTest {
             List.of(ExpandedImportCandidate.fromImportCandidate(importCandidate, null)), 1)));
     }
 
+    private String mockFetchCrossrefDoiResponse(ScopusGenerator scopusData, WireMockRuntimeInfo wireMockRuntimeInfo) {
+        var downloadUrl = UriWrapper.fromUri(wireMockRuntimeInfo.getHttpBaseUrl()).addChild(randomString());
+        stubFor(WireMock.get(urlPathEqualTo("/" + scopusData.getDocument().getMeta().getDoi()))
+                    .willReturn(
+                        aResponse().withBody(toCrossrefResponse(downloadUrl)).withStatus(HttpURLConnection.HTTP_OK)));
+        var filename = randomString() + ".pdf";
+        var testUrl = "/" + UriWrapper.fromUri(downloadUrl.getLastPathElement()).getLastPathElement();
+        stubFor(WireMock.get(urlPathEqualTo(testUrl))
+                    .willReturn(aResponse().withBody("")
+                                    .withHeader("Content-Type", "application/pdf;charset=UTF-8")
+                                    .withHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                                    .withStatus(HttpURLConnection.HTTP_OK)));
+        return filename;
+    }
+
+    private void mockBadRequestCrossrefDoiResponse(ScopusGenerator scopusData) {
+        stubFor(WireMock.get(urlPathEqualTo("/" + scopusData.getDocument().getMeta().getDoi()))
+                    .willReturn(aResponse().withBody(randomString()).withStatus(HttpURLConnection.HTTP_BAD_REQUEST)));
+    }
+
+    private void mockBadRequestFetchingFilesFromXml(ScopusGenerator scopusData) {
+        scopusData.getDocument()
+            .getMeta()
+            .getOpenAccess()
+            .getUpwOpenAccess()
+            .getUpwOaLocations()
+            .getUpwOaLocation()
+            .forEach(ScopusHandlerTest::mockBadRequestFileResponse);
+    }
+
+    private void assertThatFileHasBeenPersisted(File file) {
+        assertDoesNotThrow(() -> s3Driver.getFile(UnixPath.of(file.getIdentifier().toString())));
+    }
+
     private OpenAccessType randomOpenAccess(WireMockRuntimeInfo wireMockRuntimeInfo) {
         var openAccess = new OpenAccessType();
         var upwOpenAccess = new UpwOpenAccessType();
@@ -1260,14 +1360,14 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
     private List<String> mockFetchFilesResponses(ScopusGenerator scopusData) {
         return scopusData.getDocument()
-            .getMeta()
-            .getOpenAccess()
-            .getUpwOpenAccess()
-            .getUpwOaLocations()
-            .getUpwOaLocation()
-            .stream()
-            .map(ScopusHandlerTest::mockFileResponse)
-            .toList();
+                   .getMeta()
+                   .getOpenAccess()
+                   .getUpwOpenAccess()
+                   .getUpwOaLocations()
+                   .getUpwOaLocation()
+                   .stream()
+                   .map(ScopusHandlerTest::mockFileResponse)
+                   .toList();
     }
 
     private ImportCandidate createPersistedImportCandidate() {

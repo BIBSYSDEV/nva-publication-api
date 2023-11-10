@@ -1,0 +1,30 @@
+{
+  "message": {
+    "license": [
+      {
+        "start": {
+          "date-parts": [
+            [
+              2022,
+              10,
+              24
+            ]
+          ],
+          "date-time": "2022-10-24T00:00:00Z",
+          "timestamp": 1666569600000
+        },
+        "content-version": "vor",
+        "delay-in-days": 5000,
+        "URL": "http:\/\/creativecommons.org\/licenses\/by\/4.0"
+      }
+    ],
+    "link": [
+      {
+        "URL": "https:\/\/www.cambridge.org\/core\/services\/aop-cambridge-core\/content\/view\/S0305000922000484",
+        "content-type": "unspecified",
+        "content-version": "vor",
+        "intended-application": "similarity-checking"
+      }
+    ]
+  }
+}

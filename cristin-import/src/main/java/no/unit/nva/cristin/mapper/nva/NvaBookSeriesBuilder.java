@@ -9,16 +9,17 @@ import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinJournalPublicationJournal;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.Nsd;
+import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
 import no.unit.nva.model.contexttypes.BookSeries;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 
 public class NvaBookSeriesBuilder extends CristinMappingModule {
 
-    public NvaBookSeriesBuilder(CristinObject cristinObject) {
-        super(cristinObject);
+    public NvaBookSeriesBuilder(CristinObject cristinObject, ChannelRegistryMapper channelRegistryMapper) {
+        super(cristinObject, channelRegistryMapper);
     }
-    
+
     public BookSeries createBookSeries() {
         return Optional.of(cristinObject)
                    .map(CristinObject::getBookOrReportMetadata)
@@ -44,7 +45,8 @@ public class NvaBookSeriesBuilder extends CristinMappingModule {
     private BookSeries createConfirmedBookSeries(CristinJournalPublicationJournal b) {
         int nsdCode = b.getNsdCode();
         int publicationYear = cristinObject.getPublicationYear();
-        URI seriesUri = new Nsd(nsdCode, publicationYear).createJournalOrSeriesUri();
+        URI seriesUri = new Nsd(nsdCode, publicationYear, channelRegistryMapper)
+                            .createJournalOrSeriesUri();
         return new Series(seriesUri);
     }
 }
