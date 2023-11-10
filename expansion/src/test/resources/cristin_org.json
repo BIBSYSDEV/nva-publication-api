@@ -20,8 +20,7 @@
           "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0",
           "labels": {
             "en": "Norwegian University of Science and Technology",
-            "nb": "Norges teknisk-naturvitenskapelige universitet",
-            "nn": "Noregs teknisk-naturvitskaplege universitet"
+            "nb": "Norges teknisk-naturvitenskapelige universitet"
           }
         }
       ]
