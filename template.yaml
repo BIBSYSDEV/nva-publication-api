@@ -1189,6 +1189,7 @@ Resources:
       Runtime: java17
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 64
+      Timeout: 900
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
