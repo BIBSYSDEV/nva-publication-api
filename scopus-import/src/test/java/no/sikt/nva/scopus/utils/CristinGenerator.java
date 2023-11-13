@@ -11,7 +11,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
-import no.sikt.nva.scopus.conversion.model.cristin.Organization;
+import no.sikt.nva.scopus.conversion.model.cristin.CristinOrganization;
 import no.sikt.nva.scopus.conversion.model.cristin.Person;
 import no.sikt.nva.scopus.conversion.model.cristin.Role;
 import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
@@ -32,15 +32,15 @@ public class CristinGenerator {
                    .build();
     }
 
-    public static Organization generateCristinOrganization(URI cristinId) {
-        return new Organization(cristinId, randomLabels());
+    public static CristinOrganization generateCristinOrganization(URI cristinId) {
+        return new CristinOrganization(cristinId, randomLabels());
     }
 
     public static String convertPersonToJson(Person person) throws JsonProcessingException {
         return JsonUtils.dtoObjectMapper.writeValueAsString(person);
     }
 
-    public static String convertOrganizationToJson(Organization organization) throws JsonProcessingException {
+    public static String convertOrganizationToJson(CristinOrganization organization) throws JsonProcessingException {
         return JsonUtils.dtoObjectMapper.writeValueAsString(organization);
     }
 
