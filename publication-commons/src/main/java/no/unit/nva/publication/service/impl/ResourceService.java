@@ -1,6 +1,7 @@
 package no.unit.nva.publication.service.impl;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
 import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
@@ -33,6 +34,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.exception.NotImplementedException;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
@@ -79,6 +81,7 @@ public class ResourceService extends ServiceWithTransactions {
     private static final String SEPARATOR_ITEM = ",";
     private static final String SEPARATOR_TABLE = ";";
     private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
+    public static final String ONLY_PUBLISHED_PUBLICATIONS_CAN_BE_UNPUBLISHED_ERROR_MESSAGE = "Only published publications can be unpublished";
     private final String tableName;
     private final Clock clockForTimestamps;
     private final Supplier<SortableIdentifier> identifierSupplier;
@@ -151,7 +154,7 @@ public class ResourceService extends ServiceWithTransactions {
                          ? Optional.ofNullable(fromPublication.getStatus()).orElse(PublicationStatus.DRAFT)
                          : PublicationStatus.DRAFT;
 
-        if (status == PublicationStatus.PUBLISHED && !fromPublication.isPublishable()) {
+        if (status == PUBLISHED && !fromPublication.isPublishable()) {
             throw new BadRequestException(NOT_PUBLISHABLE);
         }
 
@@ -171,7 +174,7 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setPublishedDate(inputData.getPublishedDate());
         newResource.setCreatedDate(inputData.getCreatedDate());
         newResource.setModifiedDate(inputData.getModifiedDate());
-        newResource.setStatus(PublicationStatus.PUBLISHED);
+        newResource.setStatus(PUBLISHED);
         return insertResource(newResource);
     }
 
@@ -217,7 +220,7 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setPublisher(createOrganization(userInstance));
         newResource.setCreatedDate(currentTime);
         newResource.setModifiedDate(currentTime);
-        newResource.setStatus(PublicationStatus.PUBLISHED);
+        newResource.setStatus(PUBLISHED);
         return insertResource(newResource);
     }
 
@@ -334,6 +337,18 @@ public class ResourceService extends ServiceWithTransactions {
 
     public ImportCandidate updateImportCandidate(ImportCandidate importCandidate) throws BadRequestException {
         return updateResourceService.updateImportCandidate(importCandidate);
+    }
+
+    public void unpublishPublication(Publication publication) throws BadRequestException, NotImplementedException {
+        if (!PUBLISHED.equals(publication.getStatus())) {
+            throw new BadRequestException(ONLY_PUBLISHED_PUBLICATIONS_CAN_BE_UNPUBLISHED_ERROR_MESSAGE);
+        }
+
+        if (nonNull(publication.getDoi())) {
+            throw new NotImplementedException();
+        }
+
+        updateResourceService.unpublishPublication(publication);
     }
 
     private Resource fetchResourceForElevatedUser(URI customerId, SortableIdentifier publicationIdentifier)
@@ -522,7 +537,7 @@ public class ResourceService extends ServiceWithTransactions {
             "#doi", DOI_FIELD_IN_RESOURCE
         );
         Map<String, AttributeValue> expressionAttributeValues = Map.of(
-            ":publishedStatus", new AttributeValue(PublicationStatus.PUBLISHED.getValue())
+            ":publishedStatus", new AttributeValue(PUBLISHED.getValue())
         );
 
         deleteResource.getDelete()

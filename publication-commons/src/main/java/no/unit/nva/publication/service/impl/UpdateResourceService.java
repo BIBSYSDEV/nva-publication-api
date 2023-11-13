@@ -1,5 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
+import static no.unit.nva.model.PublicationStatus.DELETED;
 import static no.unit.nva.publication.model.business.PublishingRequestCase.assertThatPublicationHasMinimumMandatoryFields;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION;
@@ -131,6 +132,18 @@ public class UpdateResourceService extends ServiceWithTransactions {
             return importCandidate;
         }
         throw new BadRequestException("Can not update already imported candidate");
+    }
+
+    public void unpublishPublication(Publication publication) {
+        publication.setStatus(DELETED);
+
+        publication.setModifiedDate(clockForTimestamps.instant());
+        var resource = Resource.fromPublication(publication);
+
+        var updateResourceTransactionItem = updateResource(resource);
+
+        var request = new TransactWriteItemsRequest().withTransactItems(updateResourceTransactionItem);
+        sendTransactionWriteRequest(request);
     }
 
     protected static DeletePublicationStatusResponse deletionStatusIsCompleted() {
