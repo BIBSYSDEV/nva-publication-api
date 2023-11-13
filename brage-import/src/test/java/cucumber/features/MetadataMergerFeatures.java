@@ -15,7 +15,7 @@ public class MetadataMergerFeatures {
     }
 
     @Then("the NVA publication has an additionalIdentifier with type {string} and value {string}")
-    public void theNVAPublicationHasAnAdditionalIdentifierWithTypeAndValue(String type, String value) {
+    public void theNvaPublicationHasAnAdditionalIdentifierWithTypeAndValue(String type, String value) {
         var expectedAdditionalIdentifier = new AdditionalIdentifier(type, value);
         var additionalIdentifiers = scenarioContext.getMergedPublication().getAdditionalIdentifiers();
         assertThat(additionalIdentifiers, hasItem(expectedAdditionalIdentifier));
