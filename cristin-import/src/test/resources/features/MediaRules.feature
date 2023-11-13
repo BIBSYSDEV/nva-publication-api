@@ -15,6 +15,12 @@ Feature: Rules that apply for Media
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a PublicationContext of type MediaContribution
 
+  Scenario: Cristin Result mediumPlaceName is used as dissemnitaionChannel in NVA
+    Given a valid Cristin Result with secondary category "INTERVJU"
+    And the cristin medium has a medium place name "Helgemorgen, NRK P2"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA publicationContext has a disseminationChannel equalTo "Helgemorgen, NRK P2"
+
   Scenario Outline: Cristin Result have mediumType is mapped correctly
     Given a valid Cristin Result with secondary category "INTERVJU"
     And the cristin result has mediaContribution with mediumType equal to "<cristinMediumType>"
