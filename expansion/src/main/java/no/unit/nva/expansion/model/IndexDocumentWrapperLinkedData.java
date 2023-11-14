@@ -142,8 +142,6 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     private Optional<String> fetchOrganizations(URI externalReference) {
-        Optional<String> rawContent = uriRetriever.getRawContent(externalReference,
-                                                                 APPLICATION_JSON_LD.toString() + CRISTIN_VERSION);
-        return rawContent;
+        return uriRetriever.getRawContent(externalReference, APPLICATION_JSON_LD.toString() + CRISTIN_VERSION);
     }
 }
