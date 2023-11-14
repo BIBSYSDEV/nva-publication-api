@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 @JacocoGenerated
 public class FramedJsonGenerator {
+
     private static final Logger logger = LoggerFactory.getLogger(FramedJsonGenerator.class);
     private final String framedJson;
 
@@ -28,10 +29,15 @@ public class FramedJsonGenerator {
         return framedJson;
     }
 
+    private static void logInvalidJsonLdInput(Exception exception) {
+        logger.warn("Invalid JSON LD input encountered: ", exception);
+    }
+
     private Model createModel(List<InputStream> streams) {
-        var m = ModelFactory.createDefaultModel();
-        streams.forEach(s -> loadDataIntoModel(m, s));
-        return addTopLevelAffiliation(m);
+        var model = ModelFactory.createDefaultModel();
+        streams.forEach(s -> loadDataIntoModel(model, s));
+        addTopLevelAffiliation(model);
+        return addSubUnitsToTopLevelAffiliation(model);
     }
 
     private void loadDataIntoModel(Model model, InputStream inputStream) {
@@ -45,17 +51,19 @@ public class FramedJsonGenerator {
         }
     }
 
-    private Model addTopLevelAffiliation(Model model) {
-
+    private void addTopLevelAffiliation(Model model) {
         var query = AffiliationQueries.TOP_LEVEL_AFFILIATION;
-
         try (var qexec = QueryExecutionFactory.create(query, model)) {
             var topLevelNode = qexec.execConstruct();
-            return model.union(topLevelNode);
+            model.add(topLevelNode);
         }
     }
 
-    private static void logInvalidJsonLdInput(Exception exception) {
-        logger.warn("Invalid JSON LD input encountered: ", exception);
+    private Model addSubUnitsToTopLevelAffiliation(Model model) {
+        var query = AffiliationQueries.HAS_PART;
+        try (var qexec = QueryExecutionFactory.create(query, model)) {
+            var hasPartNodes = qexec.execConstruct();
+            return model.add(hasPartNodes);
+        }
     }
 }

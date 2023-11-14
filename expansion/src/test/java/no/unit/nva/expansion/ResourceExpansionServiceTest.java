@@ -525,11 +525,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         return objectMapper.readValue(samplePublicationAsJsonString, Publication.class);
     }
 
-    private void mockOrganizationResponse(URI organization) {
-        when(personRetriever.getRawContent(any(), any())).thenReturn(
-            Optional.of(stringFromResources(Path.of("cristin_org.json"))));
-    }
-
     private Publication getPublicationWithSamePersonInDifferentContributorRoles(URI id) throws JsonProcessingException {
         var publication = getSamplePublication();
         var contributors = new ArrayList<>(publication.getEntityDescription().getContributors());

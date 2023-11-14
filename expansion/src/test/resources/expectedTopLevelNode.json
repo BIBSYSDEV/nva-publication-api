@@ -1,0 +1,28 @@
+{
+  "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0",
+  "type": "Organization",
+  "labels": {
+    "en": "Norwegian University of Science and Technology",
+    "nb": "Norges teknisk-naturvitenskapelige universitet"
+  },
+  "hasPart": [
+    {
+      "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.0.0",
+      "type": "Organization",
+      "labels": {
+        "en": "Faculty of Information Technology and Electrical Engineering",
+        "nb": "Fakultet for informasjonsteknologi og elektroteknikk"
+      },
+      "hasPart": [
+        {
+          "id": "__REPLACE_AFFILIATION_ID__",
+          "type": "Organization",
+          "labels": {
+            "en": "Department of Computer Science",
+            "nb": "Institutt for datateknologi og informatikk"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+PREFIX  nva: <https://nva.sikt.no/ontology/publication#>
+
+CONSTRUCT {
+  ?parent nva:hasPart ?child
+} WHERE {
+  ?child a nva:Organization ;
+         nva:partOf ?parent .
+}

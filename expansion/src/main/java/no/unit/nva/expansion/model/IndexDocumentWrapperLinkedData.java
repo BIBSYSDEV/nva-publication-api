@@ -1,6 +1,5 @@
 package no.unit.nva.expansion.model;
 
-import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.extractAffiliationUris;
 import static no.unit.nva.expansion.model.ExpandedResource.extractPublicationContextUri;
@@ -24,8 +23,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import no.unit.nva.expansion.utils.FramedJsonGenerator;
 import no.unit.nva.expansion.utils.SearchIndexFrame;
 import no.unit.nva.publication.external.services.UriRetriever;
@@ -33,13 +30,9 @@ import nva.commons.core.ioutils.IoUtils;
 
 public class IndexDocumentWrapperLinkedData {
 
-    private static final String PART_OF_FIELD = "/partOf";
-    private static final String ID_FIELD = "/id";
+    public static final String CRISTIN_VERSION = "; version=2023-05-26";
     private static final String SOURCE = "source";
     private static final String CONTEXT = "@context";
-    public static final String CRISTIN_VERSION = "; version=2023-05-26";
-    private final UriRetriever uriRetriever;
-
     @Deprecated
     private static final String contextAsString =
         "{\n"
@@ -51,8 +44,8 @@ public class IndexDocumentWrapperLinkedData {
         + "    \"@container\": \"@language\"\n"
         + "  }\n"
         + "}\n";
-
     private static final JsonNode CONTEXT_NODE = attempt(() -> objectMapper.readTree(contextAsString)).get();
+    private final UriRetriever uriRetriever;
 
     public IndexDocumentWrapperLinkedData(UriRetriever uriRetriever) {
         this.uriRetriever = uriRetriever;
@@ -62,25 +55,6 @@ public class IndexDocumentWrapperLinkedData {
         var frame = SearchIndexFrame.FRAME_SRC;
         var inputStreams = getInputStreams(indexDocument);
         return new FramedJsonGenerator(inputStreams, frame).getFramedJson();
-    }
-
-    private static String extractIdField(JsonNode i) {
-        return i.at(ID_FIELD).asText();
-    }
-
-    private static Stream<JsonNode> extractParentAffiliationNodes(String affiliation) {
-        return attempt(() -> dtoObjectMapper.readTree(affiliation))
-                   .map(IndexDocumentWrapperLinkedData::extractPartOfNode)
-                   .map(IndexDocumentWrapperLinkedData::toStream)
-                   .orElseThrow();
-    }
-
-    private static JsonNode extractPartOfNode(JsonNode node) {
-        return node.at(PART_OF_FIELD);
-    }
-
-    private static Stream<JsonNode> toStream(JsonNode jsonNode) {
-        return StreamSupport.stream(jsonNode.spliterator(), false);
     }
 
     //TODO: parallelize
@@ -94,7 +68,6 @@ public class IndexDocumentWrapperLinkedData {
         inputStreams.removeIf(Objects::isNull);
         return inputStreams;
     }
-
 
     @Deprecated
     private Collection<? extends InputStream> fetchFundingSources(JsonNode indexDocument) {
@@ -144,7 +117,9 @@ public class IndexDocumentWrapperLinkedData {
         return extractAffiliationUris(indexDocument)
                    .stream()
                    .distinct()
-                   .flatMap(this::fetchContentRecursively)
+                   .map(this::fetchOrganizations)
+                   .filter(Optional::isPresent)
+                   .map(Optional::get)
                    .map(IoUtils::stringToStream)
                    .collect(Collectors.toList());
     }
@@ -158,21 +133,8 @@ public class IndexDocumentWrapperLinkedData {
     private Optional<InputStream> getAnthology(JsonNode indexDocument) {
         return extractPublicationContextUri(indexDocument)
                    .map(uri -> new ExpandedParentPublication(uriRetriever)
-                        .getExpandedParentPublication(uri))
+                                   .getExpandedParentPublication(uri))
                    .map(IoUtils::stringToStream);
-    }
-
-
-    private Stream<String> fetchContentRecursively(URI uri) {
-        var affiliation = fetchOrganizations(uri);
-        if (affiliation.isEmpty()) {
-            return Stream.empty();
-        }
-        var parentAffiliations = extractParentAffiliationNodes(affiliation.get())
-                                     .map(IndexDocumentWrapperLinkedData::extractIdField)
-                                     .map(URI::create)
-                                     .flatMap(this::fetchContentRecursively);
-        return Stream.concat(Stream.of(affiliation.get()), parentAffiliations);
     }
 
     private Optional<String> fetch(URI externalReference) {
