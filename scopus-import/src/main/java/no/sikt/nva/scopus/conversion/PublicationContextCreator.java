@@ -35,12 +35,13 @@ import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import nva.commons.core.SingletonCollector;
 
-@SuppressWarnings({"PMD.PrematureDeclaration", "PMD.UnusedLocalVariable"})
+@SuppressWarnings({"PMD.PrematureDeclaration", "PMD.UnusedLocalVariable", "PMD.GodClass"})
 public class PublicationContextCreator {
 
     public static final String UNSUPPORTED_SOURCE_TYPE = "Unsupported source type, in %s";
     public static final String DASH = "-";
     public static final int START_YEAR_FOR_LEVEL_INFO = 2004;
+    public static final String NOT_APPLICABLE = "NA";
     private final DocTp docTp;
     private final PublicationChannelConnection publicationChannelConnection;
 
@@ -289,8 +290,13 @@ public class PublicationContextCreator {
         return Optional.ofNullable(issnTpList.stream()
                                        .filter(issn -> issnType.equals(issn.getType()))
                                        .map(IssnTp::getContent)
+                                       .filter(PublicationContextCreator::isApplicable)
                                        .map(this::addDashToIssn)
                                        .collect(SingletonCollector.collectOrElse(null)));
+    }
+
+    private static boolean isApplicable(String issn) {
+        return !NOT_APPLICABLE.equals(issn);
     }
 
     private String addDashToIssn(String issn) {

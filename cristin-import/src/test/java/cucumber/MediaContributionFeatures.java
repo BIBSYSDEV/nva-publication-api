@@ -60,4 +60,22 @@ public class MediaContributionFeatures {
         var expectedFormat = nullString.equals(format) ? null : MediaFormat.valueOf(format);
         assertThat(mediaContribution.getFormat(), is(equalTo(expectedFormat)));
     }
+
+    @And("the cristin medium has a medium place name {string}")
+    public void theCristinMediumHasAMediumPlaceName(String mediumPlaceName) {
+        scenarioContext.getCristinEntry().getMediaContribution().setMediaPlaceName(mediumPlaceName);
+    }
+
+    @Then("the NVA publicationContext has a disseminationChannel equalTo {string}")
+    public void theNvaPublicationContextHasADisseminationChannelEqualTo(
+        String dissemintaionChannel) {
+        var context = scenarioContext.getNvaEntry()
+                          .getEntityDescription()
+                          .getReference()
+                          .getPublicationContext();
+        assertThat(context, is(instanceOf(MediaContribution.class)));
+        var mediaContribution = (MediaContribution) context;
+        assertThat(mediaContribution.getDisseminationChannel(),
+                   is(equalTo(dissemintaionChannel)));
+    }
 }

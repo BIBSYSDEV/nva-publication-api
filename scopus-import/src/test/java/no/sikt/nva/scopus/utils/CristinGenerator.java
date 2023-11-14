@@ -25,19 +25,18 @@ public class CristinGenerator {
 
     public static CristinPerson generateCristinPerson(URI cristinId, String firstname, String surname) {
         var names = Set.of(new TypedValue("FirstName", firstname), new TypedValue("LastName", surname));
-        return new CristinPerson.Builder()
-                   .withId(cristinId)
-                   .withNames(names).withAffiliations(generateAffiliations())
+        return new CristinPerson.Builder().withId(cristinId)
+                   .withNames(names)
+                   .withAffiliations(generateAffiliations())
                    .withIdentifiers(Set.of(new TypedValue("orcid", randomString())))
                    .withVerifiedStatus(randomBoolean())
                    .build();
     }
 
     public static CristinPerson generateCristinPersonWithoutAffiliations(URI cristinId, String firstname,
-                                                                       String surname) {
+                                                                         String surname) {
         var names = Set.of(new TypedValue("FirstName", firstname), new TypedValue("LastName", surname));
-        return new CristinPerson.Builder()
-                   .withId(cristinId)
+        return new CristinPerson.Builder().withId(cristinId)
                    .withNames(names)
                    .withIdentifiers(Set.of(new TypedValue("orcid", randomString())))
                    .withVerifiedStatus(randomBoolean())
@@ -56,12 +55,12 @@ public class CristinGenerator {
         return new CristinOrganization(randomUri(), randomLabels(), country);
     }
 
-    public static String convertPersonToJson(CristinPerson cristinPerson) throws JsonProcessingException {
-        return JsonUtils.dtoObjectMapper.writeValueAsString(cristinPerson);
+    public static String convertOrganizationToJson(CristinOrganization organization) throws JsonProcessingException {
+        return JsonUtils.dtoObjectMapper.writeValueAsString(organization);
     }
 
-    public static String convertOrganizationToJson(CristinOrganization cristinOrganization) throws JsonProcessingException {
-        return JsonUtils.dtoObjectMapper.writeValueAsString(cristinOrganization);
+    public static String convertPersonToJson(CristinPerson cristinPerson) throws JsonProcessingException {
+        return JsonUtils.dtoObjectMapper.writeValueAsString(cristinPerson);
     }
 
     private static Set<Affiliation> generateAffiliations() {

@@ -18,19 +18,18 @@ import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
 
 public final class AffiliationGenerator {
 
-    private AffiliationGenerator() {}
+    private AffiliationGenerator() {
+    }
 
     public static List<Organization> fromCristinOrganization(CristinOrganization cristinOrganization) {
-        return List.of(new Organization.Builder()
-                   .withId(cristinOrganization.getId())
-                   .withLabels(cristinOrganization.getLabels())
-                   .build());
+        return List.of(new Organization.Builder().withId(cristinOrganization.getId())
+                           .withLabels(cristinOrganization.getLabels())
+                           .build());
     }
 
     public static List<Organization> fromAuthorGroupTp(AuthorGroupTp authorGroup) {
-        return List.of(new Organization.Builder()
-                   .withLabels(getOrganizationLabels(authorGroup).orElseGet(Map::of))
-                   .build());
+        return List.of(
+            new Organization.Builder().withLabels(getOrganizationLabels(authorGroup).orElseGet(Map::of)).build());
     }
 
     private static Optional<String> getOrganizationNameFromAuthorGroup(AuthorGroupTp authorGroup) {
@@ -46,8 +45,8 @@ public final class AffiliationGenerator {
     }
 
     private static Optional<Map<String, String>> getOrganizationLabels(AuthorGroupTp authorGroup) {
-        return getOrganizationNameFromAuthorGroup(authorGroup)
-                   .map(organizationName -> Map.of(getLanguageIso6391Code(organizationName), organizationName));
+        return getOrganizationNameFromAuthorGroup(authorGroup).map(
+            organizationName -> Map.of(getLanguageIso6391Code(organizationName), organizationName));
     }
 
     private static String getLanguageIso6391Code(String textToBeGuessedLanguageCodeFrom) {

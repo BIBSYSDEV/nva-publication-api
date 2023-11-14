@@ -70,7 +70,8 @@ public class CristinPerson implements JsonSerializable {
     @JsonCreator
     public CristinPerson(@JsonProperty("id") URI id, @JsonProperty("identifiers") Set<TypedValue> identifiers,
                          @JsonProperty("names") Set<TypedValue> names,
-                         @JsonProperty("contactDetails") ContactDetails contactDetails, @JsonProperty("image") URI image,
+                         @JsonProperty("contactDetails") ContactDetails contactDetails,
+                         @JsonProperty("image") URI image,
                          @JsonProperty("affiliations") Set<Affiliation> affiliations) {
         this.id = id;
         this.identifiers = identifiers;

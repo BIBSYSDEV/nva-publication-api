@@ -49,7 +49,7 @@ public class CristinConnection {
                                              .toOptional();
     }
 
-    public CristinOrganization getCristinOrganizationByCristinId(URI cristinOrgId) {
+    public CristinOrganization fetchCristinOrganizationByCristinId(URI cristinOrgId) {
         return isNull(cristinOrgId)
                    ? null
                    : attempt(() -> createOrganizationRequest(cristinOrgId))
@@ -91,12 +91,6 @@ public class CristinConnection {
     }
 
     private HttpResponse<String> getCristinResponse(HttpRequest httpRequest) throws IOException, InterruptedException {
-        for (int i = 0; i < 3; i++) {
-            var response = httpClient.send(httpRequest, BodyHandlers.ofString());
-            if (response.statusCode() == HTTP_OK) {
-                return response;
-            }
-        }
         return httpClient.send(httpRequest, BodyHandlers.ofString());
     }
 

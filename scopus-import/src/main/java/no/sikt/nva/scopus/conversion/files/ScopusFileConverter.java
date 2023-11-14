@@ -55,6 +55,7 @@ import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
+@SuppressWarnings("PMD.GodClass")
 public class ScopusFileConverter {
 
     public static final String IMPORT_CANDIDATES_FILES_BUCKET = new Environment().readEnv(
@@ -65,6 +66,7 @@ public class ScopusFileConverter {
     public static final String FILE_NAME_DELIMITER = ".";
     public static final String CROSSREF_URI_ENV_VAR_NAME = "CROSSREF_FETCH_DOI_URI";
     public static final String CROSSREF_DEFAULT_URI = "https://api.crossref.org/v1/works/";
+    public static final String FETCH_FILE_FROM_URL_MESSAGE_ERROR_MESSAGE = "Could not fetch file from url: {}";
     public static final String FETCH_FILE_FROM_XML_MESSAGE_ERROR_MESSAGE = "Could not fetch file from xml: {}";
     public static final String FETCH_FILE_FROM_DOI_ERROR_MESSAGE = "Could not fetch file from doi: {}";
     public static final String CREATIVECOMMONS_DOMAIN = "creativecommons.org";
@@ -75,6 +77,8 @@ public class ScopusFileConverter {
     private static final URI DEFAULT_LICENSE = URI.create("https://creativecommons.org/licenses/by/4.0/");
     public static final String FILENAME_CONTENT_TYPE_HEADER_VALUE = "filename=";
     public static final String QUOTE = "\"";
+    public static final String WHITESPACE = " ";
+    public static final String ENCODED_WHITESPACE = "%20";
     public final String crossRefUri;
     private final HttpClient httpClient;
     private final S3Client s3Client;
@@ -282,7 +286,8 @@ public class ScopusFileConverter {
             var response = fetchResponseAsInputStream(downloadUrl);
             return convertToAssociatedArtifact(response);
         } catch (Exception e) {
-            logger.error(FETCH_FILE_FROM_XML_MESSAGE_ERROR_MESSAGE, e.getMessage());
+            logger.error(FETCH_FILE_FROM_URL_MESSAGE_ERROR_MESSAGE,
+                         downloadUrl.toString() + StringUtils.WHITESPACES + e.getMessage());
             return Optional.empty();
         }
     }
@@ -299,15 +304,24 @@ public class ScopusFileConverter {
     }
 
     private List<AssociatedArtifact> extractAssociatedArtifactsFromFileReference(DocTp docTp) {
-        return getLocations(docTp).stream()
-                   .map(UpwOaLocationType::getUpwUrlForPdf)
-                   .distinct()
-                   .filter(Objects::nonNull)
-                   .map(URI::create)
-                   .map(this::convertToAssociatedArtifact)
-                   .filter(Optional::isPresent)
-                   .map(Optional::get)
-                   .toList();
+        try {
+            return getLocations(docTp).stream()
+                       .map(UpwOaLocationType::getUpwUrlForPdf)
+                       .distinct()
+                       .filter(Objects::nonNull)
+                       .map(ScopusFileConverter::toUri)
+                       .map(this::convertToAssociatedArtifact)
+                       .filter(Optional::isPresent)
+                       .map(Optional::get)
+                       .toList();
+        } catch (Exception e) {
+            logger.error(FETCH_FILE_FROM_XML_MESSAGE_ERROR_MESSAGE, e.getMessage());
+            return List.of();
+        }
+    }
+    
+    private static URI toUri(String string) {
+        return attempt(() -> new URI(string.replace(WHITESPACE, ENCODED_WHITESPACE))).orElseThrow();
     }
 
     private HeadObjectResponse fetchFileInfo(UUID fileIdentifier) {

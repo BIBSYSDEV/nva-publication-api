@@ -33,8 +33,7 @@ import no.unit.nva.model.Publication;
 // to remove it from the exports
 @JsonIgnoreProperties({"brukernavn_opprettet", "peerreviewed",
     "brukernavn_siste_endring", "publiseringstatuskode", "merknadtekst_godkjenning",
-    "finansiering_varbeid",
-    "kildepostid", "arkivpost", "pubidnr", "eierkode_siste_endring",
+    "arkivpost", "pubidnr", "eierkode_siste_endring",
     "varbeid_vdisiplin", "arkivfil", "h_dbh_forskres_publikasjon"})
 @SuppressWarnings({"PMD.TooManyFields"})
 public class CristinObject implements JsonSerializable {

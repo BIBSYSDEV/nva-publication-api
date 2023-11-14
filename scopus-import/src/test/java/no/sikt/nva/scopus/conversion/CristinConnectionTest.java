@@ -51,7 +51,7 @@ class CristinConnectionTest {
         var appender = LogUtils.getTestingAppenderForRootLogger();
         var randomOrganizationUri = getRandomOrganizationUri(wireMockRuntimeInfo);
         mockCristinOrganizationBadRequest();
-        var actualOrganization = cristinConnection.getCristinOrganizationByCristinId(randomOrganizationUri);
+        var actualOrganization = cristinConnection.fetchCristinOrganizationByCristinId(randomOrganizationUri);
         assertThat(actualOrganization, is(nullValue()));
         assertThat(appender.getMessages(), containsString(CRISTIN_ORGANIZATION_RESPONSE_ERROR));
     }
@@ -71,7 +71,7 @@ class CristinConnectionTest {
         var randomOrganizationId = getRandomOrganizationUri(wireMockRuntimeInfo);
         var expectedOrganization = createExpectedOrganization(randomOrganizationId);
         mockCristinOrganization(randomOrganizationId, expectedOrganization.toJsonString());
-        var actualOrganization = cristinConnection.getCristinOrganizationByCristinId(randomOrganizationId);
+        var actualOrganization = cristinConnection.fetchCristinOrganizationByCristinId(randomOrganizationId);
         assertThat(actualOrganization, is(equalTo(expectedOrganization)));
     }
 
@@ -85,7 +85,7 @@ class CristinConnectionTest {
     @Test
     void shouldReturnNullWhenCristinIdIsNull() {
         URI cristinId = null;
-        var actualOrganization = cristinConnection.getCristinOrganizationByCristinId(cristinId);
+        var actualOrganization = cristinConnection.fetchCristinOrganizationByCristinId(cristinId);
         assertThat(actualOrganization, is(nullValue()));
     }
 

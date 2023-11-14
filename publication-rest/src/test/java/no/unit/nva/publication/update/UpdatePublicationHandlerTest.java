@@ -890,7 +890,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return new UnpublishedFile(UUID.randomUUID(), randomString(), randomString(),
                 Long.valueOf(randomInteger().toString()),
                 new License.Builder().withIdentifier(randomString()).withLink(randomUri()).build(),
-                false, false, null);
+                false, false, null, null);
     }
 
     private TestAppender createAppenderForLogMonitoring() {

@@ -33,14 +33,11 @@ public final class CristinContributorExtractor {
     private CristinContributorExtractor() {
     }
 
-    public static Contributor generateContributorFromCristinPerson(
-        CristinPerson cristinPerson,
-        AuthorTp authorTp,
-        PersonalnameType correspondencePerson,
-        CristinOrganization cristinOrganization) {
+    public static Contributor generateContributorFromCristinPerson(CristinPerson cristinPerson, AuthorTp authorTp,
+                                                                   PersonalnameType correspondencePerson,
+                                                                   CristinOrganization cristinOrganization) {
 
-        return new Contributor.Builder()
-                   .withIdentity(generateContributorIdentityFromCristinPerson(cristinPerson))
+        return new Contributor.Builder().withIdentity(generateContributorIdentityFromCristinPerson(cristinPerson))
                    .withAffiliations(generateOrganizations(cristinPerson.getAffiliations(), cristinOrganization))
                    .withRole(new RoleType(Role.CREATOR))
                    .withSequence(getSequenceNumber(authorTp))
@@ -64,14 +61,12 @@ public final class CristinContributorExtractor {
     }
 
     private static ContributorVerificationStatus generateVerificationStatus(CristinPerson cristinPerson) {
-        return Boolean.TRUE.equals(cristinPerson.getVerified())
-                   ? ContributorVerificationStatus.VERIFIED
+        return Boolean.TRUE.equals(cristinPerson.getVerified()) ? ContributorVerificationStatus.VERIFIED
                    : ContributorVerificationStatus.NOT_VERIFIED;
     }
 
-    private static List<Organization> generateOrganizations(
-        Set<Affiliation> affiliations,
-        CristinOrganization cristinOrganization) {
+    private static List<Organization> generateOrganizations(Set<Affiliation> affiliations,
+                                                            CristinOrganization cristinOrganization) {
 
         var organizations = createOrganizationsFromCristinPersonAffiliations(affiliations).toList();
         var organisationFromAuthorGroupTp = createOrganizationFromCristinOrganization(cristinOrganization).toList();
@@ -99,7 +94,9 @@ public final class CristinContributorExtractor {
     }
 
     private static Organization toOrganization(CristinOrganization cristinOrganization) {
-        return new Organization.Builder().withId(cristinOrganization.getId()).withLabels(cristinOrganization.getLabels()).build();
+        return new Organization.Builder().withId(cristinOrganization.getId())
+                   .withLabels(cristinOrganization.getLabels())
+                   .build();
     }
 
     private static int getSequenceNumber(AuthorTp authorTp) {
@@ -119,7 +116,7 @@ public final class CristinContributorExtractor {
         if (firstName.isEmpty() || lastName.isEmpty()) {
             return firstName + lastName;
         }
-        return lastName + NAME_DELIMITER + firstName;
+        return firstName + NAME_DELIMITER + lastName;
     }
 
     private static String getFirstName(CristinPerson cristinPerson) {
