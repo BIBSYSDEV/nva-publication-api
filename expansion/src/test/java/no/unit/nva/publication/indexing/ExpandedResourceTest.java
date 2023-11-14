@@ -22,8 +22,6 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -153,11 +151,6 @@ class ExpandedResourceTest {
         var topLevelNodes = (ArrayNode) framedResultNode.at(JSON_PTR_TOP_LEVEL_ORGS);
         var topLevelForExpandedAffiliation = getTopLevel(topLevelNodes, "194.0.0.0");
 
-        assertNotNull(topLevelForExpandedAffiliation);
-        assertThat(topLevelForExpandedAffiliation.at(JSON_PTR_HAS_PART), is(not(nullValue())));
-        assertFalse(topLevelForExpandedAffiliation.at(JSON_PTR_HAS_PART).isEmpty());
-        assertThat(topLevelForExpandedAffiliation.at(JSON_PTR_ID), is(not(nullValue())));
-        assertNotNull(findDeepestNestedSubUnit(topLevelForExpandedAffiliation));
         assertThat(findDeepestNestedSubUnit(topLevelForExpandedAffiliation).at(JSON_PTR_ID).textValue(),
                    is(equalTo(affiliationToBeExpanded.toString())));
     }
