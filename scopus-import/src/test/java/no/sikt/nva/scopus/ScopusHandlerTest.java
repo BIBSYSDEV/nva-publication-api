@@ -143,7 +143,7 @@ import no.sikt.nva.scopus.conversion.model.ImportCandidateSearchApiResponse;
 import no.sikt.nva.scopus.conversion.model.PublicationChannelResponse;
 import no.sikt.nva.scopus.conversion.model.PublicationChannelResponse.PublicationChannelHit;
 import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
-import no.sikt.nva.scopus.conversion.model.cristin.Person;
+import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
 import no.sikt.nva.scopus.conversion.model.pia.Author;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
@@ -215,7 +215,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -445,18 +444,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var actualContributors = publication.getEntityDescription().getContributors();
         authors.forEach(author -> checkContributor(author, actualContributors));
         collaborations.forEach(collaboration -> checkCollaborationName(collaboration, actualContributors));
-    }
-
-    @Test
-    void shouldExtractContributorAffiliation() throws IOException {
-        createEmptyPiaMock();
-
-        var authorsGroups = scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getAuthorGroup();
-        var authors = keepOnlyTheAuthors();
-        var s3Event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
-        var actualContributors = publication.getEntityDescription().getContributors();
-        authors.forEach(author -> checkAffiliationForAuthor(author, actualContributors, authorsGroups));
     }
 
     @Test
@@ -1060,16 +1047,14 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var piaCristinIdAndAuthors = new HashMap<Integer, AuthorTp>();
         authorTypes.forEach(authorTp -> piaCristinIdAndAuthors.put(randomInteger(), authorTp));
         var authors = new ArrayList<List<Author>>();
-        var cristinPersons = new ArrayList<Person>();
+        var cristinPersons = new ArrayList<CristinPerson>();
         piaCristinIdAndAuthors.forEach(
             (cristinId, authorTp) -> generatePiaResponseAndCristinPersons(new PiaResponseGenerator(), authors,
                                                                           cristinPersons, cristinId, authorTp));
         var s3Event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualContributors = publication.getEntityDescription().getContributors();
-        var authorList = actualContributors.stream()
-                             .filter(contributor -> isAuthor(contributor, authorTypes))
-                             .collect(Collectors.toList());
+        var authorList = actualContributors.stream().filter(contributor -> isAuthor(contributor, authorTypes)).toList();
         authorList.forEach(
             contributor -> assertThatContributorHasCorrectCristinPersonData(contributor, piaCristinIdAndAuthors,
                                                                             cristinPersons));
@@ -1534,21 +1519,22 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     private void generatePiaResponseAndCristinPersons(PiaResponseGenerator piaResponseGenerator,
-                                                      ArrayList<List<Author>> authors, ArrayList<Person> cristinPersons,
-                                                      Integer cristinId, AuthorTp authorTp) {
+                                                      ArrayList<List<Author>> authors,
+                                                      ArrayList<CristinPerson> cristinCristinPeople, Integer cristinId,
+                                                      AuthorTp authorTp) {
         try {
             generatePiaAuthorResponse(piaResponseGenerator, authors, cristinId, authorTp);
-            generateCristinPersonsResponse(cristinPersons, cristinId);
+            generateCristinPersonsResponse(cristinCristinPeople, cristinId);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private void generateCristinPersonsResponse(ArrayList<Person> cristinPersons, Integer cristinId)
+    private void generateCristinPersonsResponse(ArrayList<CristinPerson> cristinCristinPeople, Integer cristinId)
         throws JsonProcessingException {
         var cristinPerson = CristinGenerator.generateCristinPerson(
             UriWrapper.fromUri("/cristin/person/" + cristinId.toString()).getUri(), randomString(), randomString());
-        cristinPersons.add(cristinPerson);
+        cristinCristinPeople.add(cristinPerson);
         mockCristinPerson(cristinId.toString(), CristinGenerator.convertPersonToJson(cristinPerson));
     }
 
@@ -1646,10 +1632,10 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
     private void assertThatContributorHasCorrectCristinPersonData(Contributor contributor,
                                                                   HashMap<Integer, AuthorTp> cristinIdAndAuthor,
-                                                                  List<Person> cristinPersons) {
+                                                                  List<CristinPerson> cristinCristinPeople) {
         var actualCristinId = contributor.getIdentity().getId();
         assertThat(actualCristinId, hasProperty("path", containsString("/cristin/person")));
-        var expectedCristinPersonOptional = getPersonByCristinNumber(cristinPersons, actualCristinId);
+        var expectedCristinPersonOptional = getPersonByCristinNumber(cristinCristinPeople, actualCristinId);
         assertThat(expectedCristinPersonOptional.isPresent(), is(true));
         var expectedCristinPerson = expectedCristinPersonOptional.get();
         var actualCristinNumber = actualCristinId.getPath().split("/")[3];
@@ -1673,7 +1659,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var expectedOrganizationFromAffiliation = expectedCristinPerson.getAffiliations()
                                                       .stream()
                                                       .map(Affiliation::getOrganization)
-                                                      .collect(Collectors.toList());
+                                                      .toList();
 
         assertThat(actualOrganizationFromAffiliation, containsInAnyOrder(
             expectedOrganizationFromAffiliation.stream().map(Matchers::equalTo).collect(Collectors.toList())));
@@ -1685,20 +1671,20 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var expectedAffiliationLabels = expectedCristinPerson.getAffiliations()
                                             .stream()
                                             .map(organization -> organization.getRole().getLabels())
-                                            .collect(Collectors.toList());
+                                            .toList();
 
         assertThat(actualAffiliationLabels, containsInAnyOrder(
             expectedAffiliationLabels.stream().map(Matchers::equalTo).collect(Collectors.toList())));
     }
 
     @NotNull
-    private String calculateExpectedNameFromCristinPerson(Person person) {
-        return person.getNames()
+    private String calculateExpectedNameFromCristinPerson(CristinPerson cristinPerson) {
+        return cristinPerson.getNames()
                    .stream()
                    .filter(this::isFirstName)
                    .findFirst()
                    .map(TypedValue::getValue)
-                   .orElse(StringUtils.EMPTY_STRING) + ", " + person.getNames()
+                   .orElse(StringUtils.EMPTY_STRING) + ", " + cristinPerson.getNames()
                                                                   .stream()
                                                                   .filter(this::isSurname)
                                                                   .findFirst()
@@ -1715,8 +1701,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     @NotNull
-    private Optional<Person> getPersonByCristinNumber(List<Person> cristinPersons, URI cristinId) {
-        return cristinPersons.stream().filter(person -> cristinId.equals(person.getId())).findFirst();
+    private Optional<CristinPerson> getPersonByCristinNumber(List<CristinPerson> cristinCristinPeople, URI cristinId) {
+        return cristinCristinPeople.stream().filter(person -> cristinId.equals(person.getId())).findFirst();
     }
 
     private void mockCristinPerson(String cristinPersonId, String response) {

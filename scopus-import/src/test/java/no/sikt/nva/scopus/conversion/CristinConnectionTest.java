@@ -18,7 +18,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinOrganization;
-import no.sikt.nva.scopus.conversion.model.cristin.Person;
+import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.unit.nva.stubs.WiremockHttpClient;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
@@ -51,7 +51,7 @@ class CristinConnectionTest {
         var appender = LogUtils.getTestingAppenderForRootLogger();
         var randomOrganizationUri = getRandomOrganizationUri(wireMockRuntimeInfo);
         mockCristinOrganizationBadRequest();
-        var actualOrganization = cristinConnection.fetchCristinOrganizationByIdentifier(randomOrganizationUri);
+        var actualOrganization = cristinConnection.fetchCristinOrganizationByCristinId(randomOrganizationUri);
         assertThat(actualOrganization, is(nullValue()));
         assertThat(appender.getMessages(), containsString(CRISTIN_ORGANIZATION_RESPONSE_ERROR));
     }
@@ -71,7 +71,7 @@ class CristinConnectionTest {
         var randomOrganizationId = getRandomOrganizationUri(wireMockRuntimeInfo);
         var expectedOrganization = createExpectedOrganization(randomOrganizationId);
         mockCristinOrganization(randomOrganizationId, expectedOrganization.toJsonString());
-        var actualOrganization = cristinConnection.fetchCristinOrganizationByIdentifier(randomOrganizationId);
+        var actualOrganization = cristinConnection.fetchCristinOrganizationByCristinId(randomOrganizationId);
         assertThat(actualOrganization, is(equalTo(expectedOrganization)));
     }
 
@@ -85,7 +85,7 @@ class CristinConnectionTest {
     @Test
     void shouldReturnNullWhenCristinIdIsNull() {
         URI cristinId = null;
-        var actualOrganization = cristinConnection.fetchCristinOrganizationByIdentifier(cristinId);
+        var actualOrganization = cristinConnection.fetchCristinOrganizationByCristinId(cristinId);
         assertThat(actualOrganization, is(nullValue()));
     }
 
@@ -99,11 +99,11 @@ class CristinConnectionTest {
     }
 
     private CristinOrganization createExpectedOrganization(URI organizationId) {
-        return new CristinOrganization(organizationId, null);
+        return new CristinOrganization(organizationId, null, randomString());
     }
 
-    private Person createExpectedPerson(URI personId) {
-        return new Person.Builder().withId(personId).build();
+    private CristinPerson createExpectedPerson(URI personId) {
+        return new CristinPerson.Builder().withId(personId).build();
     }
 
     private URI getRandomOrganizationUri(WireMockRuntimeInfo wireMockRuntimeInfo) {

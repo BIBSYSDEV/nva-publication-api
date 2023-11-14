@@ -10,7 +10,7 @@ import no.scopus.generated.AuthorTp;
 import no.scopus.generated.PersonalnameType;
 import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinOrganization;
-import no.sikt.nva.scopus.conversion.model.cristin.Person;
+import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ContributorVerificationStatus;
@@ -33,22 +33,19 @@ public final class CristinContributorExtractor {
     private CristinContributorExtractor() {
     }
 
-    public static Contributor generateContributorFromCristin(
-        Person person,
-        AuthorTp authorTp,
-        PersonalnameType correspondencePerson,
-        CristinOrganization organization) {
+    public static Contributor generateContributorFromCristinPerson(CristinPerson cristinPerson, AuthorTp authorTp,
+                                                                   PersonalnameType correspondencePerson,
+                                                                   CristinOrganization cristinOrganization) {
 
-        return new Contributor.Builder()
-                   .withIdentity(generateContributorIdentityFromCristinPerson(person))
-                   .withAffiliations(generateOrganizations(person.getAffiliations(), organization))
+        return new Contributor.Builder().withIdentity(generateContributorIdentityFromCristinPerson(cristinPerson))
+                   .withAffiliations(generateOrganizations(cristinPerson.getAffiliations(), cristinOrganization))
                    .withRole(new RoleType(Role.CREATOR))
                    .withSequence(getSequenceNumber(authorTp))
                    .withCorrespondingAuthor(isCorrespondingAuthor(authorTp, correspondencePerson))
                    .build();
     }
 
-    private static Identity generateContributorIdentityFromCristinPerson(Person cristinPerson) {
+    private static Identity generateContributorIdentityFromCristinPerson(CristinPerson cristinPerson) {
         var identity = new Identity();
         identity.setName(determineContributorName(cristinPerson));
         identity.setOrcId(cristinPerson.getIdentifiers()
@@ -63,19 +60,18 @@ public final class CristinContributorExtractor {
         return identity;
     }
 
-    private static ContributorVerificationStatus generateVerificationStatus(Person cristinPerson) {
+    private static ContributorVerificationStatus generateVerificationStatus(CristinPerson cristinPerson) {
         return Boolean.TRUE.equals(cristinPerson.getVerified())
                    ? ContributorVerificationStatus.VERIFIED
                    : ContributorVerificationStatus.NOT_VERIFIED;
     }
 
-    private static List<Organization> generateOrganizations(
-        Set<Affiliation> affiliations,
-        CristinOrganization organization) {
+    private static List<Organization> generateOrganizations(Set<Affiliation> affiliations,
+                                                            CristinOrganization cristinOrganization) {
 
-        var organizations = createOrganizationsFromCristinPersonAffiliations(affiliations);
-        var organisationFromAuthorGroupTp = createOrganizationFromAuthorGroupTpAffiliation(organization);
-        return Stream.concat(organizations, organisationFromAuthorGroupTp)
+        var organizations = createOrganizationsFromCristinPersonAffiliations(affiliations).toList();
+        var organisationFromAuthorGroupTp = createOrganizationFromCristinOrganization(cristinOrganization).toList();
+        return Stream.concat(organizations.stream(), organisationFromAuthorGroupTp.stream())
                    .filter(Objects::nonNull)
                    .toList();
     }
@@ -93,26 +89,28 @@ public final class CristinContributorExtractor {
                    .build();
     }
 
-    private static Stream<Organization> createOrganizationFromAuthorGroupTpAffiliation(
-        CristinOrganization organization) {
-        return Stream.ofNullable(organization).map(CristinContributorExtractor::toOrganization);
+    private static Stream<Organization> createOrganizationFromCristinOrganization(
+        CristinOrganization cristinOrganization) {
+        return Stream.ofNullable(cristinOrganization).map(CristinContributorExtractor::toOrganization);
     }
 
-    private static Organization toOrganization(CristinOrganization organization) {
-        return new Organization.Builder().withId(organization.getId()).withLabels(organization.getLabels()).build();
+    private static Organization toOrganization(CristinOrganization cristinOrganization) {
+        return new Organization.Builder().withId(cristinOrganization.getId())
+                   .withLabels(cristinOrganization.getLabels())
+                   .build();
     }
 
     private static int getSequenceNumber(AuthorTp authorTp) {
         return Integer.parseInt(authorTp.getSeq());
     }
 
-    private static String determineContributorName(Person person) {
-        return constructName(person);
+    private static String determineContributorName(CristinPerson cristinPerson) {
+        return constructName(cristinPerson);
     }
 
-    private static String constructName(Person person) {
-        var firstName = getFirstName(person);
-        var lastName = getLastName(person);
+    private static String constructName(CristinPerson cristinPerson) {
+        var firstName = getFirstName(cristinPerson);
+        var lastName = getLastName(cristinPerson);
         if (firstName.isEmpty() && lastName.isEmpty()) {
             return StringUtils.EMPTY_STRING;
         }
@@ -122,8 +120,8 @@ public final class CristinContributorExtractor {
         return firstName + NAME_DELIMITER + lastName;
     }
 
-    private static String getFirstName(Person person) {
-        return person.getNames()
+    private static String getFirstName(CristinPerson cristinPerson) {
+        return cristinPerson.getNames()
                    .stream()
                    .filter(CristinContributorExtractor::isFirstName)
                    .findFirst()
@@ -131,8 +129,8 @@ public final class CristinContributorExtractor {
                    .orElse(StringUtils.EMPTY_STRING);
     }
 
-    private static String getLastName(Person person) {
-        return person.getNames()
+    private static String getLastName(CristinPerson cristinPerson) {
+        return cristinPerson.getNames()
                    .stream()
                    .filter(CristinContributorExtractor::isSurname)
                    .findFirst()

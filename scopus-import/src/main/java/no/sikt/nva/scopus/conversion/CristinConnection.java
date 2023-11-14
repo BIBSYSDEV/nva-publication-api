@@ -13,7 +13,7 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Optional;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinOrganization;
-import no.sikt.nva.scopus.conversion.model.cristin.Person;
+import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
@@ -41,7 +41,7 @@ public class CristinConnection {
         this(HttpClient.newBuilder().build());
     }
 
-    public Optional<Person> getCristinPersonByCristinId(URI cristinPersonId) {
+    public Optional<CristinPerson> getCristinPersonByCristinId(URI cristinPersonId) {
         return attempt(() -> createRequest(cristinPersonId))
                                              .map(this::getCristinResponse)
                                              .map(this::getBodyFromPersonResponse)
@@ -49,7 +49,7 @@ public class CristinConnection {
                                              .toOptional();
     }
 
-    public CristinOrganization fetchCristinOrganizationByIdentifier(URI cristinOrgId) {
+    public CristinOrganization fetchCristinOrganizationByCristinId(URI cristinOrgId) {
         return isNull(cristinOrgId)
                    ? null
                    : attempt(() -> createOrganizationRequest(cristinOrgId))
@@ -78,8 +78,8 @@ public class CristinConnection {
         return organization;
     }
 
-    private Person getCristinPersonResponse(String json) throws JsonProcessingException {
-        return JsonUtils.singleLineObjectMapper.readValue(json, Person.class);
+    private CristinPerson getCristinPersonResponse(String json) throws JsonProcessingException {
+        return JsonUtils.singleLineObjectMapper.readValue(json, CristinPerson.class);
     }
 
     private String getBodyFromPersonResponse(HttpResponse<String> response) {
