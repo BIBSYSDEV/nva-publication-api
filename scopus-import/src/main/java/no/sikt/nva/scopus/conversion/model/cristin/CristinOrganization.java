@@ -12,14 +12,14 @@ public class CristinOrganization implements JsonSerializable {
 
     @JsonProperty("id")
     private final URI id;
-    @JsonProperty("name")
+    @JsonProperty("labels")
     private final Map<String, String> labels;
     @JsonProperty("country")
     private final String country;
 
     @JsonCreator
     public CristinOrganization(@JsonProperty("id") URI id,
-                               @JsonProperty("name") Map<String, String> labels,
+                               @JsonProperty("labels") Map<String, String> labels,
                                @JsonProperty("country") String country) {
         this.id = id;
         this.labels = labels;
