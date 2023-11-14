@@ -31,9 +31,8 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import nva.commons.core.SingletonCollector;
 import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("PMD.GodClass")
 public class ContributorExtractor {
@@ -98,16 +97,14 @@ public class ContributorExtractor {
         }
     }
 
-    @Nullable
     private PersonalnameType getCorrespondencePerson() {
         return correspondenceTps.stream()
                    .map(this::extractPersonalNameType)
-                   .findFirst()
-                   .orElse(Optional.empty())
-                   .orElse(null);
+                   .filter(Optional::isPresent)
+                   .map(Optional::get)
+                   .collect(SingletonCollector.collectOrElse(null));
     }
 
-    @NotNull
     private Optional<Contributor> getExistingContributor(Object authorOrCollaboration) {
         return contributors.stream()
                    .filter(contributor -> compareContributorToAuthorOrCollaboration(contributor, authorOrCollaboration))
@@ -136,7 +133,7 @@ public class ContributorExtractor {
 
     private Contributor cloneContributorAddingAffiliation(Contributor existingContributor,
                                                           Organization newAffiliation) {
-        List<Organization> affiliations = new ArrayList<>(existingContributor.getAffiliations());
+        var affiliations = new ArrayList<>(existingContributor.getAffiliations());
         affiliations.add(newAffiliation);
 
         return new Contributor.Builder().withIdentity(existingContributor.getIdentity())
@@ -194,16 +191,19 @@ public class ContributorExtractor {
                                                         PersonalnameType correspondencePerson,
                                                         CristinOrganization cristinOrganization) {
         return new Contributor.Builder().withIdentity(generateContributorIdentityFromAuthorTp(author))
-                   .withAffiliations(
-                       nonNull(cristinOrganization) ? AffiliationGenerator.fromCristinOrganization(cristinOrganization)
-                           : AffiliationGenerator.fromAuthorGroupTp(authorGroup))
+                   .withAffiliations(extractAffiliation(authorGroup, cristinOrganization))
                    .withRole(new RoleType(Role.CREATOR))
                    .withSequence(getSequenceNumber(author))
                    .withCorrespondingAuthor(isCorrespondingAuthor(author, correspondencePerson))
                    .build();
     }
 
-    @NotNull
+    private static List<Organization> extractAffiliation(AuthorGroupTp authorGroup,
+                                                      CristinOrganization cristinOrganization) {
+        return nonNull(cristinOrganization) ? AffiliationGenerator.fromCristinOrganization(cristinOrganization)
+                   : AffiliationGenerator.fromAuthorGroupTp(authorGroup);
+    }
+
     private Optional<CristinPerson> fetchCristinPerson(AuthorTp author) {
         return piaConnection.getCristinPersonIdentifier(author.getAuid())
                    .flatMap(cristinConnection::getCristinPersonByCristinId);
@@ -242,7 +242,6 @@ public class ContributorExtractor {
         contributors.add(newContributor);
     }
 
-    @NotNull
     private Identity generateIdentity(CollaborationTp collaboration) {
         return new Identity.Builder().withName(determineContributorName(collaboration)).build();
     }
@@ -302,13 +301,15 @@ public class ContributorExtractor {
 
     private Optional<Map<String, String>> getOrganizationLabels(AuthorGroupTp authorGroup) {
         var organizationName = getOrganizationNameFromAuthorGroup(authorGroup);
-        if (organizationName.isPresent() && !organizationName.get().isEmpty()) {
-            return organizationName.map(name -> Map.of(getLanguageIso6391Code(name), name));
-        } else {
-            return Optional.ofNullable(authorGroup.getAffiliation())
-                       .map(AffiliationTp::getCountry)
-                       .map(country -> Map.of(getLanguageIso6391Code(country), country));
-        }
+        return organizationName.isPresent() && !organizationName.get().isEmpty()
+            ? organizationName.map(name -> Map.of(getLanguageIso6391Code(name), name))
+            : extractCountryNameAsAffiliation(authorGroup);
+    }
+
+    private Optional<Map<String, String>> extractCountryNameAsAffiliation(AuthorGroupTp authorGroup) {
+        return Optional.ofNullable(authorGroup.getAffiliation())
+                   .map(AffiliationTp::getCountry)
+                   .map(country -> Map.of(getLanguageIso6391Code(country), country));
     }
 
     private String craftOrcidUriString(String potentiallyMalformedOrcidString) {

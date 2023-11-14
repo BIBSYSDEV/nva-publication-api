@@ -178,10 +178,9 @@ public class CristinPerson implements JsonSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof CristinPerson)) {
+        if (!(o instanceof CristinPerson that)) {
             return false;
         }
-        CristinPerson that = (CristinPerson) o;
         return Objects.equals(getContext(), that.getContext())
                && Objects.equals(getId(), that.getId())
                && getIdentifiers().equals(that.getIdentifiers())

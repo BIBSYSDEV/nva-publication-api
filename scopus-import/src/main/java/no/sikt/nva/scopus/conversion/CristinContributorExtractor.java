@@ -61,7 +61,8 @@ public final class CristinContributorExtractor {
     }
 
     private static ContributorVerificationStatus generateVerificationStatus(CristinPerson cristinPerson) {
-        return Boolean.TRUE.equals(cristinPerson.getVerified()) ? ContributorVerificationStatus.VERIFIED
+        return Boolean.TRUE.equals(cristinPerson.getVerified())
+                   ? ContributorVerificationStatus.VERIFIED
                    : ContributorVerificationStatus.NOT_VERIFIED;
     }
 
