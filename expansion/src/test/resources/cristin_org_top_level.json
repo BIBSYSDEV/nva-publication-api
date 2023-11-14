@@ -1,0 +1,29 @@
+{
+  "@context": "https://bibsysdev.github.io/src/organization-context.json",
+  "type": "Organization",
+  "id": "__REPLACE_AFFILIATION_ID__",
+  "labels": {
+    "en": "Some University"
+  },
+  "country": "NO",
+  "partOf": [],
+  "hasPart": [
+    {
+      "type": "Organization",
+      "id": "https://api.dev.nva.aws.unit.no/cristin/organization/faculty",
+      "labels": {
+        "en": "Some faculty"
+      },
+      "acronym": "HF",
+      "partOf": [
+        {
+          "type": "Organization",
+          "id": "__REPLACE_AFFILIATION_ID__",
+          "labels": {},
+          "partOf": [],
+          "hasPart": []
+        }
+      ]
+    }
+  ]
+}
