@@ -17,6 +17,8 @@ import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.StringUtils;
+import nva.commons.core.attempt.Failure;
 import nva.commons.core.paths.UnixPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +32,9 @@ public class ExpandImportCandidateHandler extends DestinationsEventBridgeEventHa
     public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
     public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
     public static final int PUBLICATION_YEAR_2018 = 2018;
+    public static final String EMPTY_EVENT_MESSAGE = "Candidate should not be expanded because of publication year: {}";
+    public static final String EXPANSION_ERROR_MESSAGE = "Something went wrong expanding import candidate: {}";
+    public static final String EXPANSION_MESSAGE = "Import candidate with identifier has been expanded: {}";
     private final Logger logger = LoggerFactory.getLogger(ExpandImportCandidateHandler.class);
     private final AuthorizedBackendUriRetriever retriever;
     private final S3Driver s3Reader;
@@ -53,16 +58,26 @@ public class ExpandImportCandidateHandler extends DestinationsEventBridgeEventHa
                                                  AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
                                                  Context context) {
         var blob = readBlobFromS3(input);
-        return attempt(() -> ExpandedImportCandidate.fromImportCandidate(blob.getNewData(), retriever)).map(
-            expandedImportCandidate -> shouldBeExpanded(expandedImportCandidate) ? createOutPutEventAndPersistDocument(
-                expandedImportCandidate) : emptyEvent()).orElse(failure -> emptyEvent());
+        return attempt(() -> ExpandedImportCandidate.fromImportCandidate(blob.getNewData(), retriever))
+                   .map(expandedImportCandidate -> shouldBeExpanded(expandedImportCandidate)
+                                                       ? createOutPutEventAndPersistDocument(expandedImportCandidate)
+                                                       : emptyEvent(expandedImportCandidate))
+                   .orElse(this::emptyEvent);
     }
 
     private boolean shouldBeExpanded(ExpandedImportCandidate expandedImportCandidate) {
         return Integer.parseInt(expandedImportCandidate.getPublicationYear()) >= PUBLICATION_YEAR_2018;
     }
 
-    private EventReference emptyEvent() {
+    private EventReference emptyEvent(ExpandedImportCandidate expandedImportCandidate) {
+        logger.info(EMPTY_EVENT_MESSAGE, expandedImportCandidate.getPublicationYear()
+                                         + StringUtils.WHITESPACES
+                                         + expandedImportCandidate.getIdentifier());
+        return new EventReference(EMPTY_EVENT_TOPIC, null);
+    }
+
+    private EventReference emptyEvent(Failure<EventReference> failure) {
+        logger.error(EXPANSION_ERROR_MESSAGE, failure.getException().getMessage());
         return new EventReference(EMPTY_EVENT_TOPIC, null);
     }
 
@@ -75,7 +90,7 @@ public class ExpandImportCandidateHandler extends DestinationsEventBridgeEventHa
         var indexDocument = createIndexDocument(expandedImportCandidate);
         var uri = writeEntryToS3(indexDocument);
         var outputEvent = new EventReference(IMPORT_CANDIDATE_PERSISTENCE, uri);
-        logger.info(outputEvent.toJsonString());
+        logger.info(EXPANSION_MESSAGE, expandedImportCandidate.getIdentifier());
         return outputEvent;
     }
 

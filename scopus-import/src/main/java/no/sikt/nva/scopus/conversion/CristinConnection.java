@@ -12,7 +12,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Optional;
-import no.sikt.nva.scopus.conversion.model.cristin.Organization;
+import no.sikt.nva.scopus.conversion.model.cristin.CristinOrganization;
 import no.sikt.nva.scopus.conversion.model.cristin.Person;
 import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.JacocoGenerated;
@@ -49,7 +49,7 @@ public class CristinConnection {
                                              .toOptional();
     }
 
-    public Organization getCristinOrganizationByCristinId(URI cristinOrgId) {
+    public CristinOrganization fetchCristinOrganizationByIdentifier(URI cristinOrgId) {
         return isNull(cristinOrgId)
                    ? null
                    : attempt(() -> createOrganizationRequest(cristinOrgId))
@@ -59,7 +59,7 @@ public class CristinConnection {
                          .orElse(this::loggExceptionAndReturnNull);
     }
 
-    private Organization loggExceptionAndReturnNull(Failure<Organization> failure) {
+    private CristinOrganization loggExceptionAndReturnNull(Failure<CristinOrganization> failure) {
         logger.info(COULD_NOT_FETCH_ORGANIZATION, failure.getException().toString());
         return null;
     }
@@ -72,8 +72,8 @@ public class CristinConnection {
         return response.body();
     }
 
-    private Organization convertToOrganization(String body) throws JsonProcessingException {
-        var organization = JsonUtils.dtoObjectMapper.readValue(body, Organization.class);
+    private CristinOrganization convertToOrganization(String body) throws JsonProcessingException {
+        var organization = JsonUtils.dtoObjectMapper.readValue(body, CristinOrganization.class);
         logger.info(ORGANIZATION_SUCCESSFULLY_FETCHED, organization.toJsonString());
         return organization;
     }
@@ -91,12 +91,6 @@ public class CristinConnection {
     }
 
     private HttpResponse<String> getCristinResponse(HttpRequest httpRequest) throws IOException, InterruptedException {
-        for (int i = 0; i < 3; i++) {
-            var response = httpClient.send(httpRequest, BodyHandlers.ofString());
-            if (response.statusCode() == HTTP_OK) {
-                return response;
-            }
-        }
         return httpClient.send(httpRequest, BodyHandlers.ofString());
     }
 

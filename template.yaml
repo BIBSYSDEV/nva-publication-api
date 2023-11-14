@@ -1189,6 +1189,7 @@ Resources:
       Runtime: java17
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 64
+      Timeout: 900
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
@@ -2102,6 +2103,7 @@ Resources:
                 Resource:
                   - !Sub "arn:aws:s3:::cristin-import-${AWS::AccountId}/*"
                   - !Sub "arn:aws:s3:::brage-migration-reports-${AWS::AccountId}/*"
+                  - !Sub "arn:aws:s3:::brage-migration-input-files-${AWS::AccountId}/*"
 
 
   #==========================BI=============================================================================

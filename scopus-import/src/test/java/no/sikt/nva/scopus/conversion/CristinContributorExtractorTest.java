@@ -24,7 +24,7 @@ public class CristinContributorExtractorTest {
     void shouldCreateIdentityWithFullName() {
         var person = new Person(null, null, Set.of(FIRST_NAME, LAST_NAME), null, null, null);
         var contributor = CristinContributorExtractor.generateContributorFromCristin(person, authorTp(), null, null);
-        var expectedName = "Last, First";
+        var expectedName = "First, Last";
         assertThat(contributor.getIdentity().getName(), is(equalTo(expectedName)));
     }
 
@@ -44,6 +44,14 @@ public class CristinContributorExtractorTest {
 
     @Test
     void shouldReturnContributorWhichIsCorrespondingAuthorWhenIndexedNameEqualsCorrespondencePersonIndexedName() {
+        var person = new Person(null, null, Set.of(FIRST_NAME, LAST_NAME), null, null, null);
+        var contributor = CristinContributorExtractor.generateContributorFromCristin(person, authorTp(),
+                                                                                     correspondencePerson(), null);
+        assertThat(contributor.isCorrespondingAuthor(), is(true));
+    }
+
+    @Test
+    void shouldCreateContributorWithoutAffiliationWhen() {
         var person = new Person(null, null, Set.of(FIRST_NAME, LAST_NAME), null, null, null);
         var contributor = CristinContributorExtractor.generateContributorFromCristin(person, authorTp(),
                                                                                      correspondencePerson(), null);

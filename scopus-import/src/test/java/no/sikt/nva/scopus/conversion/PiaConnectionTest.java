@@ -60,7 +60,7 @@ class PiaConnectionTest {
                                                   .orElse(affiliationList.get(0));
         var response = PiaResponseGenerator.convertAffiliationsToJson(affiliationList);
         mockedPiaAffiliationIdSearch(affiliationId, response);
-        var affiliationUri = piaConnection.getCristinOrganizationIdentifier(affiliationId);
+        var affiliationUri = piaConnection.fetchCristinOrganizationIdentifier(affiliationId);
         assertThat(affiliationUri.toString(), containsString(affiliationUnitWithHighestCount.getUnitIdentifier()));
     }
 
@@ -69,7 +69,7 @@ class PiaConnectionTest {
         var affiliationId = randomString();
         var response = PiaResponseGenerator.convertAffiliationsToJson(List.of());
         mockedPiaAffiliationIdSearch(affiliationId, response);
-        var affiliationUri = piaConnection.getCristinOrganizationIdentifier(affiliationId);
+        var affiliationUri = piaConnection.fetchCristinOrganizationIdentifier(affiliationId);
         assertThat(affiliationUri, is(equalTo(Optional.empty())));
     }
 

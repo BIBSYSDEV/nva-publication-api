@@ -21,6 +21,7 @@ import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.PersonalnameType;
+import no.sikt.nva.scopus.conversion.model.cristin.CristinOrganization;
 import no.unit.nva.language.LanguageMapper;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
@@ -28,6 +29,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
+import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("PMD.GodClass")
 public class ContributorExtractor {
@@ -118,8 +120,7 @@ public class ContributorExtractor {
     }
 
     private boolean compareContributorToAuthorOrCollaboration(Contributor contributor, Object authorOrCollaboration) {
-        return authorOrCollaboration instanceof AuthorTp authorTp
-                   ? isSamePerson(authorTp, contributor)
+        return authorOrCollaboration instanceof AuthorTp authorTp ? isSamePerson(authorTp, contributor)
                    : isSameSequenceElement((CollaborationTp) authorOrCollaboration, contributor);
     }
 
@@ -147,26 +148,21 @@ public class ContributorExtractor {
         }
     }
 
-    private void generateContributor(AuthorTp author,
-                                     AuthorGroupTp authorGroup,
+    private void generateContributor(AuthorTp author, AuthorGroupTp authorGroup,
                                      PersonalnameType correspondencePerson) {
 
-        var cristinOrganization = getCristinOrganizationUri(authorGroup)
-                                      .map(cristinConnection::getCristinOrganizationByCristinId)
-                                      .orElse(null);
+        var cristinOrganization = getCristinOrganizationUri(authorGroup).map(
+            cristinConnection::fetchCristinOrganizationByIdentifier).orElse(null);
 
         var contributor = piaConnection.getCristinPersonIdentifier(author.getAuid())
                               .map(cristinConnection::getCristinPersonByCristinId)
                               .filter(Optional::isPresent)
                               .map(Optional::get)
-                              .map(person -> generateContributorFromCristin(person,
-                                                                            author,
-                                                                            correspondencePerson,
+                              .map(person -> generateContributorFromCristin(person, author, correspondencePerson,
                                                                             cristinOrganization))
-                              .orElseGet(() -> generateContributorFromAuthorTp(author,
-                                                                               authorGroup,
-                                                                               correspondencePerson,
-                                                                               cristinOrganization));
+                              .orElseGet(
+                                  () -> generateContributorFromAuthorTp(author, authorGroup, correspondencePerson,
+                                                                        cristinOrganization));
 
         contributors.add(contributor);
     }
@@ -175,14 +171,12 @@ public class ContributorExtractor {
         return Optional.ofNullable(authorGroup)
                    .map(AuthorGroupTp::getAffiliation)
                    .map(AffiliationTp::getAfid)
-                   .flatMap(piaConnection::getCristinOrganizationIdentifier);
+                   .flatMap(piaConnection::fetchCristinOrganizationIdentifier);
     }
 
-    private Contributor generateContributorFromAuthorTp(
-        AuthorTp author,
-        AuthorGroupTp authorGroup,
-        PersonalnameType correspondencePerson,
-        no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
+    private Contributor generateContributorFromAuthorTp(AuthorTp author, AuthorGroupTp authorGroup,
+                                                        PersonalnameType correspondencePerson,
+                                                        CristinOrganization organization) {
         return new Contributor.Builder().withIdentity(generateContributorIdentityFromAuthorTp(author))
                    .withAffiliations(generateAffiliation(organization, authorGroup).map(List::of).orElse(List.of()))
                    .withRole(new RoleType(Role.CREATOR))
@@ -191,19 +185,16 @@ public class ContributorExtractor {
                    .build();
     }
 
-    private Optional<Organization> generateAffiliationFromCristinOrganization(
-        no.sikt.nva.scopus.conversion.model.cristin.Organization organization) {
+    private Optional<Organization> generateAffiliationFromCristinOrganization(CristinOrganization organization) {
         return Optional.of(
             new Organization.Builder().withId(organization.getId()).withLabels(organization.getLabels()).build());
     }
 
     private void generateContributorFromCollaborationTp(CollaborationTp collaboration, AuthorGroupTp authorGroupTp,
                                                         PersonalnameType correspondencePerson) {
-        var cristinOrganization = piaConnection.getCristinOrganizationIdentifier(
-            authorGroupTp.getAffiliation().getAfid()).map(cristinConnection::getCristinOrganizationByCristinId)
-                                         .orElse(null);
-        var newContributor = new Contributor.Builder().withIdentity(
-                new Identity.Builder().withName(determineContributorName(collaboration)).build())
+        var cristinOrganization = getCristinOrganization(authorGroupTp);
+        var newContributor = new Contributor.Builder()
+                                 .withIdentity(generateIdentity(collaboration))
                                  .withAffiliations(generateAffiliation(cristinOrganization, authorGroupTp)
                                                        .map(List::of)
                                                        .orElse(Collections.emptyList()))
@@ -214,9 +205,28 @@ public class ContributorExtractor {
         contributors.add(newContributor);
     }
 
-    private Optional<Organization> generateAffiliation(
-        no.sikt.nva.scopus.conversion.model.cristin.Organization cristinOrganization, AuthorGroupTp authorGroupTp) {
-        return nonNull(cristinOrganization) ? generateAffiliationFromCristinOrganization(cristinOrganization)
+    @NotNull
+    private Identity generateIdentity(CollaborationTp collaboration) {
+        return new Identity.Builder().withName(determineContributorName(collaboration)).build();
+    }
+
+    private CristinOrganization getCristinOrganization(AuthorGroupTp authorGroupTp) {
+        return Optional.ofNullable(authorGroupTp.getAffiliation())
+                   .map(AffiliationTp::getAfid)
+                   .map(this::fetchCristinOrganization)
+                   .orElse(null);
+    }
+
+    private CristinOrganization fetchCristinOrganization(String affiliatedIdentifier) {
+        return piaConnection.fetchCristinOrganizationIdentifier(affiliatedIdentifier)
+                   .map(cristinConnection::fetchCristinOrganizationByIdentifier)
+                   .orElse(null);
+    }
+
+    private Optional<Organization> generateAffiliation(CristinOrganization cristinOrganization,
+                                                       AuthorGroupTp authorGroupTp) {
+        return nonNull(cristinOrganization)
+                   ? generateAffiliationFromCristinOrganization(cristinOrganization)
                    : generateAffiliationFromAuthorGroupTp(authorGroupTp);
     }
 
@@ -249,7 +259,7 @@ public class ContributorExtractor {
     }
 
     private String determineContributorName(AuthorTp author) {
-        return author.getPreferredName().getSurname() + NAME_DELIMITER + author.getPreferredName().getGivenName();
+        return author.getPreferredName().getGivenName() + NAME_DELIMITER + author.getPreferredName().getSurname();
     }
 
     private String determineContributorName(CollaborationTp collaborationTp) {

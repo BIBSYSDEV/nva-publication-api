@@ -82,7 +82,7 @@ public class PiaConnection {
                    .toOptional();
     }
 
-    public Optional<URI> getCristinOrganizationIdentifier(String scopusAffiliationIdentifier) {
+    public Optional<URI> fetchCristinOrganizationIdentifier(String scopusAffiliationIdentifier) {
         return attempt(() -> fetchAffiliationList(scopusAffiliationIdentifier))
                    .map(this::selectOneAffiliation)
                    .map(this::createCristinUriFromCristinOrganization)

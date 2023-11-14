@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpClient.Redirect;
 import java.util.Random;
 import no.scopus.generated.DocTp;
 import no.sikt.nva.scopus.conversion.CristinConnection;
@@ -18,10 +19,10 @@ import no.sikt.nva.scopus.conversion.PublicationChannelConnection;
 import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;
 import no.sikt.nva.scopus.exception.ExceptionMapper;
 import no.sikt.nva.scopus.update.ScopusUpdater;
-import no.unit.nva.model.AdditionalIdentifier;
-import no.unit.nva.model.Publication;
 import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
 import no.unit.nva.auth.uriretriever.UriRetriever;
+import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -70,7 +71,7 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
              new PublicationChannelConnection(
                  new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME)),
              ResourceService.defaultService(), new ScopusUpdater(ResourceService.defaultService(), new UriRetriever()),
-             new ScopusFileConverter(HttpClient.newHttpClient(), S3Driver.defaultS3Client().build()));
+             new ScopusFileConverter(defaultHttpClientWithRedirect(), S3Driver.defaultS3Client().build()));
     }
 
     public ScopusHandler(S3Client s3Client, PiaConnection piaConnection, CristinConnection cristinConnection,
@@ -92,6 +93,11 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
                    .flatMap(this::persistOrUpdateInDatabase)
                    .map(publication -> storeSuccessReport(publication, event))
                    .orElseThrow(fail -> handleSavingError(fail, event));
+    }
+
+    @JacocoGenerated
+    private static HttpClient defaultHttpClientWithRedirect() {
+        return HttpClient.newBuilder().followRedirects(Redirect.NORMAL).build();
     }
 
     @JacocoGenerated
@@ -251,8 +257,8 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     }
 
     private ImportCandidate generatePublication(DocTp docTp) {
-        var scopusConverter = new ScopusConverter(docTp, piaConnection, cristinConnection,
-                                                  publicationChannelConnection, scopusFileConverter);
+        var scopusConverter = new ScopusConverter(docTp, piaConnection, cristinConnection, publicationChannelConnection,
+                                                  scopusFileConverter);
         return scopusConverter.generateImportCandidate();
     }
 
