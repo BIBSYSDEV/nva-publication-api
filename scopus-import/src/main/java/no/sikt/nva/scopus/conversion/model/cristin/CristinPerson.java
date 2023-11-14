@@ -26,7 +26,7 @@ import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
 @JsonPropertyOrder({CONTEXT, ID, TYPE, IDENTIFIERS, NAMES, CONTACT_DETAILS, IMAGE, AFFILIATIONS})
-public class Person implements JsonSerializable {
+public class CristinPerson implements JsonSerializable {
 
     public static final String VERIFIED = "verified";
     @JsonProperty(TYPE)
@@ -53,7 +53,7 @@ public class Person implements JsonSerializable {
     @JsonProperty(VERIFIED)
     private Boolean isVerified;
 
-    private Person() {
+    private CristinPerson() {
 
     }
 
@@ -68,10 +68,10 @@ public class Person implements JsonSerializable {
      * @param affiliations   This person's organization affiliations.
      */
     @JsonCreator
-    public Person(@JsonProperty("id") URI id, @JsonProperty("identifiers") Set<TypedValue> identifiers,
-                  @JsonProperty("names") Set<TypedValue> names,
-                  @JsonProperty("contactDetails") ContactDetails contactDetails, @JsonProperty("image") URI image,
-                  @JsonProperty("affiliations") Set<Affiliation> affiliations) {
+    public CristinPerson(@JsonProperty("id") URI id, @JsonProperty("identifiers") Set<TypedValue> identifiers,
+                         @JsonProperty("names") Set<TypedValue> names,
+                         @JsonProperty("contactDetails") ContactDetails contactDetails, @JsonProperty("image") URI image,
+                         @JsonProperty("affiliations") Set<Affiliation> affiliations) {
         this.id = id;
         this.identifiers = identifiers;
         this.names = names;
@@ -177,10 +177,10 @@ public class Person implements JsonSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Person)) {
+        if (!(o instanceof CristinPerson)) {
             return false;
         }
-        Person that = (Person) o;
+        CristinPerson that = (CristinPerson) o;
         return Objects.equals(getContext(), that.getContext())
                && Objects.equals(getId(), that.getId())
                && getIdentifiers().equals(that.getIdentifiers())
@@ -198,64 +198,64 @@ public class Person implements JsonSerializable {
     @JacocoGenerated
     public static final class Builder {
 
-        private final transient Person person;
+        private final transient CristinPerson cristinPerson;
 
         public Builder() {
-            person = new Person();
+            cristinPerson = new CristinPerson();
         }
 
         public Builder withContext(String context) {
-            person.setContext(context);
+            cristinPerson.setContext(context);
             return this;
         }
 
         public Builder withId(URI id) {
-            person.setId(id);
+            cristinPerson.setId(id);
             return this;
         }
 
         public Builder withIdentifiers(Set<TypedValue> identifiers) {
-            person.setIdentifiers(identifiers);
+            cristinPerson.setIdentifiers(identifiers);
             return this;
         }
 
         public Builder withNames(Set<TypedValue> names) {
-            person.setNames(names);
+            cristinPerson.setNames(names);
             return this;
         }
 
         public Builder withContactDetails(ContactDetails contactDetails) {
-            person.setContactDetails(contactDetails);
+            cristinPerson.setContactDetails(contactDetails);
             return this;
         }
 
         public Builder withImage(URI image) {
-            person.setImage(image);
+            cristinPerson.setImage(image);
             return this;
         }
 
         public Builder withAffiliations(Set<Affiliation> affiliations) {
-            person.setAffiliations(affiliations);
+            cristinPerson.setAffiliations(affiliations);
             return this;
         }
 
         public Builder withNorwegianNationalId(String norwegianNationalId) {
-            person.setNorwegianNationalId(norwegianNationalId);
+            cristinPerson.setNorwegianNationalId(norwegianNationalId);
             return this;
         }
 
         public Builder withReserved(Boolean reserved) {
-            person.setReserved(reserved);
+            cristinPerson.setReserved(reserved);
             return this;
         }
 
         public Builder withVerifiedStatus(Boolean verifiedStatus) {
-            person.setVerified(verifiedStatus);
+            cristinPerson.setVerified(verifiedStatus);
             return this;
         }
 
-        public Person build() {
-            return person;
+        public CristinPerson build() {
+            return cristinPerson;
         }
     }
 }

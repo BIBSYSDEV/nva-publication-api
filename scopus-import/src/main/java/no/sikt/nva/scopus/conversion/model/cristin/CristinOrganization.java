@@ -8,18 +8,26 @@ import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import nva.commons.core.JacocoGenerated;
 
-public class Organization implements JsonSerializable {
+public class CristinOrganization implements JsonSerializable {
 
     @JsonProperty("id")
     private final URI id;
     @JsonProperty("name")
     private final Map<String, String> labels;
+    @JsonProperty("country")
+    private final String country;
 
     @JsonCreator
-    public Organization(@JsonProperty("id") URI id,
-                        @JsonProperty("name") Map<String, String> labels) {
+    public CristinOrganization(@JsonProperty("id") URI id,
+                               @JsonProperty("name") Map<String, String> labels,
+                               @JsonProperty("country") String country) {
         this.id = id;
         this.labels = labels;
+        this.country = country;
+    }
+
+    public String getCountry() {
+        return country;
     }
 
     @JsonCreator
@@ -44,11 +52,9 @@ public class Organization implements JsonSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Organization)) {
+        if (!(o instanceof CristinOrganization that)) {
             return false;
         }
-        Organization that = (Organization) o;
-        return Objects.equals(getId(), that.getId())
-               && Objects.equals(getLabels(), that.getLabels());
+        return Objects.equals(getId(), that.getId()) && Objects.equals(getLabels(), that.getLabels());
     }
 }

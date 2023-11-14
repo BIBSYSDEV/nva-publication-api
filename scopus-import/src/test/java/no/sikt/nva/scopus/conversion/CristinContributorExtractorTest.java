@@ -8,7 +8,7 @@ import static org.hamcrest.Matchers.is;
 import java.util.Set;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.PersonalnameType;
-import no.sikt.nva.scopus.conversion.model.cristin.Person;
+import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
 import nva.commons.core.StringUtils;
 import org.junit.jupiter.api.Test;
@@ -22,31 +22,31 @@ public class CristinContributorExtractorTest {
 
     @Test
     void shouldCreateIdentityWithFullName() {
-        var person = new Person(null, null, Set.of(FIRST_NAME, LAST_NAME), null, null, null);
-        var contributor = CristinContributorExtractor.generateContributorFromCristin(person, authorTp(), null, null);
+        var person = new CristinPerson(null, null, Set.of(FIRST_NAME, LAST_NAME), null, null, null);
+        var contributor = CristinContributorExtractor.generateContributorFromCristinPerson(person, authorTp(), null, null);
         var expectedName = "Last, First";
         assertThat(contributor.getIdentity().getName(), is(equalTo(expectedName)));
     }
 
     @Test
     void shouldCreateEmptyNameWhenTypedValueIsNull() {
-        var person = new Person(null, null, null, null, null, null);
-        var contributor = CristinContributorExtractor.generateContributorFromCristin(person, authorTp(), null, null);
+        var person = new CristinPerson(null, null, null, null, null, null);
+        var contributor = CristinContributorExtractor.generateContributorFromCristinPerson(person, authorTp(), null, null);
         assertThat(contributor.getIdentity().getName(), is(equalTo(StringUtils.EMPTY_STRING)));
     }
 
     @Test
     void shouldCreateNameWithFirstNameOnlyWhenLastNameValueIsEmpty() {
-        var person = new Person(null, null, Set.of(FIRST_NAME), null, null, null);
-        var contributor = CristinContributorExtractor.generateContributorFromCristin(person, authorTp(), null, null);
+        var person = new CristinPerson(null, null, Set.of(FIRST_NAME), null, null, null);
+        var contributor = CristinContributorExtractor.generateContributorFromCristinPerson(person, authorTp(), null, null);
         assertThat(contributor.getIdentity().getName(), is(equalTo(FIRST_NAME.getValue())));
     }
 
     @Test
     void shouldReturnContributorWhichIsCorrespondingAuthorWhenIndexedNameEqualsCorrespondencePersonIndexedName() {
-        var person = new Person(null, null, Set.of(FIRST_NAME, LAST_NAME), null, null, null);
-        var contributor = CristinContributorExtractor.generateContributorFromCristin(person, authorTp(),
-                                                                                     correspondencePerson(), null);
+        var person = new CristinPerson(null, null, Set.of(FIRST_NAME, LAST_NAME), null, null, null);
+        var contributor = CristinContributorExtractor.generateContributorFromCristinPerson(person, authorTp(),
+                                                                                           correspondencePerson(), null);
         assertThat(contributor.isCorrespondingAuthor(), is(true));
     }
 
