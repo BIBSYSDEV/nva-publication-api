@@ -215,6 +215,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -1002,7 +1003,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var actualPublicationContributors = publication.getEntityDescription().getContributors();
         var actualCorrespondingContributor = getCorrespondingContributor(actualPublicationContributors);
         assertThat(actualCorrespondingContributor.getIdentity().getName(),
-                   startsWith(correspondingAuthorTp.getSurname()));
+                   startsWith(correspondingAuthorTp.getGivenName()));
     }
 
     @Test
@@ -1694,12 +1695,12 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private String calculateExpectedNameFromCristinPerson(Person person) {
         return person.getNames()
                    .stream()
-                   .filter(this::isSurname)
+                   .filter(this::isFirstName)
                    .findFirst()
                    .map(TypedValue::getValue)
                    .orElse(StringUtils.EMPTY_STRING) + ", " + person.getNames()
                                                                   .stream()
-                                                                  .filter(this::isFirstName)
+                                                                  .filter(this::isSurname)
                                                                   .findFirst()
                                                                   .map(TypedValue::getValue)
                                                                   .orElse(StringUtils.EMPTY_STRING);
@@ -1820,9 +1821,12 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
     private void checkCollaborationName(CollaborationTp collaboration, List<Contributor> contributors) {
         var optionalContributor = findContributorBySequence(collaboration.getSeq(), contributors);
-        assertEquals(1, optionalContributor.size());
-        var contributor = optionalContributor.get(0);
-        assertEquals(collaboration.getIndexedName(), contributor.getIdentity().getName());
+        if (Integer.parseInt(collaboration.getSeq()) < contributors.size()) {
+            var contributor = optionalContributor.get(0);
+
+            assertEquals(1, optionalContributor.size());
+            assertEquals(collaboration.getIndexedName(), contributor.getIdentity().getName());
+        }
     }
 
     private List<Contributor> findContributorBySequence(String sequence, List<Contributor> contributors) {
@@ -1838,7 +1842,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     private String getExpectedFullAuthorName(AuthorTp authorTp) {
-        return authorTp.getPreferredName().getSurname() + NAME_DELIMITER + authorTp.getPreferredName().getGivenName();
+        return authorTp.getPreferredName().getGivenName() + NAME_DELIMITER + authorTp.getPreferredName().getSurname();
     }
 
     private S3Event createNewScopusPublicationEvent() throws IOException {

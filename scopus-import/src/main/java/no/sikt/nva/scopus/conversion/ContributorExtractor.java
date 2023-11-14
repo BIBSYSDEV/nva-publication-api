@@ -259,7 +259,7 @@ public class ContributorExtractor {
     }
 
     private String determineContributorName(AuthorTp author) {
-        return author.getPreferredName().getSurname() + NAME_DELIMITER + author.getPreferredName().getGivenName();
+        return author.getPreferredName().getGivenName() + NAME_DELIMITER + author.getPreferredName().getSurname();
     }
 
     private String determineContributorName(CollaborationTp collaborationTp) {
