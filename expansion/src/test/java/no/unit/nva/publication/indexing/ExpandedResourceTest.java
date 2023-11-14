@@ -1,5 +1,6 @@
 package no.unit.nva.publication.indexing;
 
+import static java.util.Objects.isNull;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
@@ -576,13 +577,21 @@ class ExpandedResourceTest {
     }
 
     private static JsonNode findDeepestNestedSubUnit(JsonNode jsonNode) {
-        if (jsonNode == null || jsonNode.isMissingNode()) {
+        if (isNull(jsonNode) || isBlankJsonNode(jsonNode)) {
             return null;
         }
-        while (!jsonNode.at(JSON_PTR_HAS_PART).isEmpty() || !jsonNode.at(JSON_PTR_HAS_PART).isMissingNode()) {
+        while (hasPartHasContent(jsonNode)) {
             jsonNode = jsonNode.at(JSON_PTR_HAS_PART);
         }
         return jsonNode;
+    }
+
+    private static boolean hasPartHasContent(JsonNode jsonNode) {
+        return !jsonNode.at(JSON_PTR_HAS_PART).isEmpty() || !isBlankJsonNode(jsonNode.at(JSON_PTR_HAS_PART));
+    }
+
+    private static boolean isBlankJsonNode(JsonNode jsonNode) {
+        return jsonNode.isMissingNode();
     }
 
     private Publication bookAnthologyWithDoiReferencedInAssociatedLink() {

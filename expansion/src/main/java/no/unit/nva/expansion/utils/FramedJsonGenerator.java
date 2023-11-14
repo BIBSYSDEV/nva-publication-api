@@ -34,10 +34,10 @@ public class FramedJsonGenerator {
     }
 
     private Model createModel(List<InputStream> streams) {
-        var m = ModelFactory.createDefaultModel();
-        streams.forEach(s -> loadDataIntoModel(m, s));
-        addTopLevelAffiliation(m);
-        return addSubUnitsToTopLevelAffiliation(m);
+        var model = ModelFactory.createDefaultModel();
+        streams.forEach(s -> loadDataIntoModel(model, s));
+        addTopLevelAffiliation(model);
+        return addSubUnitsToTopLevelAffiliation(model);
     }
 
     private void loadDataIntoModel(Model model, InputStream inputStream) {
