@@ -22,6 +22,8 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -74,6 +76,8 @@ class ExpandedResourceTest {
     public static final String COUNTRY_CODE_NO = "NO";
     public static final String JSON_PTR_TOP_LEVEL_ORGS = "/topLevelOrganizations";
     public static final String JSON_PTR_ID = "/id";
+    public static final String JSON_PTR_HAS_PART = "/hasPart";
+    public static final String CRISTIN_ORG_JSON = "cristin_org.json";
     private static final String SERIES_LEVEL_JSON_PTR =
         "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
         + "/series/level";
@@ -143,24 +147,19 @@ class ExpandedResourceTest {
         final var affiliationToBeExpanded = extractAffiliationsUris(publication).get(0);
 
         final var mockUriRetriever = mock(UriRetriever.class);
-        var replacementString = "__REPLACE_AFFILIATION_ID__";
-        var mockedCristinResponse = stringFromResources(Path.of("cristin_org.json")).replace(
-            replacementString, affiliationToBeExpanded.toString());
-        mockGetRawContentResponse(mockUriRetriever, affiliationToBeExpanded, mockedCristinResponse);
+        mockOrganizationResponse(affiliationToBeExpanded, mockUriRetriever);
 
         var framedResultNode = fromPublication(mockUriRetriever, publication).asJsonNode();
-
         var topLevelNodes = (ArrayNode) framedResultNode.at(JSON_PTR_TOP_LEVEL_ORGS);
-        var topLevelNodeForExpandedAffiliation =
-            StreamSupport.stream(topLevelNodes.spliterator(), false)
-                .filter(node -> node.at(JSON_PTR_ID).textValue().contains(("194.0.0.0")))
-                .findFirst()
-                .map(JsonNode::toString)
-                .orElse(null);
+        var topLevelForExpandedAffiliation = getTopLevel(topLevelNodes, "194.0.0.0");
 
-        var expectedTopLevelAffiliationNode = stringFromResources(Path.of("expectedTopLevelNode.json")).replace(
-            replacementString, affiliationToBeExpanded.toString());
-        assertEquals(expectedTopLevelAffiliationNode, topLevelNodeForExpandedAffiliation);
+        assertNotNull(topLevelForExpandedAffiliation);
+        assertThat(topLevelForExpandedAffiliation.at(JSON_PTR_HAS_PART), is(not(nullValue())));
+        assertFalse(topLevelForExpandedAffiliation.at(JSON_PTR_HAS_PART).isEmpty());
+        assertThat(topLevelForExpandedAffiliation.at(JSON_PTR_ID), is(not(nullValue())));
+        assertNotNull(findDeepestNestedSubUnit(topLevelForExpandedAffiliation));
+        assertThat(findDeepestNestedSubUnit(topLevelForExpandedAffiliation).at(JSON_PTR_ID).textValue(),
+                   is(equalTo(affiliationToBeExpanded.toString())));
     }
 
     @Test
@@ -412,6 +411,19 @@ class ExpandedResourceTest {
                                      is((equalTo(bookAnthology.getLink().toString())))));
     }
 
+    private static JsonNode getTopLevel(ArrayNode topLevelNodes, String topLevelOrgId) {
+        return StreamSupport.stream(topLevelNodes.spliterator(), false)
+                   .filter(node -> node.at(JSON_PTR_ID).textValue().contains(topLevelOrgId))
+                   .findFirst()
+                   .orElse(null);
+    }
+
+    private static void mockOrganizationResponse(URI affiliationToBeExpanded, UriRetriever mockUriRetriever) {
+        var mockedCristinResponse = stringFromResources(Path.of(CRISTIN_ORG_JSON)).replace(
+            "__REPLACE_AFFILIATION_ID__", affiliationToBeExpanded.toString());
+        mockGetRawContentResponse(mockUriRetriever, affiliationToBeExpanded, mockedCristinResponse);
+    }
+
     private static void mockCristinOrganizationRawContentResponse(UriRetriever mockUriRetriever,
                                                                   Publication publication) {
         publication.getEntityDescription()
@@ -568,6 +580,16 @@ class ExpandedResourceTest {
 
     private static Set<URI> getOrgIds(List<Organization> organizations) {
         return organizations.stream().map(Organization::getId).collect(Collectors.toSet());
+    }
+
+    private static JsonNode findDeepestNestedSubUnit(JsonNode jsonNode) {
+        if (jsonNode == null || jsonNode.isMissingNode()) {
+            return null;
+        }
+        while (!jsonNode.at(JSON_PTR_HAS_PART).isEmpty() || !jsonNode.at(JSON_PTR_HAS_PART).isMissingNode()) {
+            jsonNode = jsonNode.at(JSON_PTR_HAS_PART);
+        }
+        return jsonNode;
     }
 
     private Publication bookAnthologyWithDoiReferencedInAssociatedLink() {

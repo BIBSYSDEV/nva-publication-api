@@ -1,6 +1,6 @@
 {
-  "type": "Organization",
   "@context": "https://bibsysdev.github.io/src/organization-context.json",
+  "type": "Organization",
   "id": "__REPLACE_AFFILIATION_ID__",
   "labels": {
     "en": "Department of Computer Science",
@@ -23,7 +23,9 @@
             "nb": "Norges teknisk-naturvitenskapelige universitet"
           }
         }
-      ]
+      ],
+      "hasPart": []
     }
-  ]
+  ],
+  "hasPart": []
 }
