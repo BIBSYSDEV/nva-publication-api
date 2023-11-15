@@ -213,7 +213,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     }
 
     private static boolean isJournal(JsonNode root) {
-        return "Journal" .equals(getPublicationContextType(root));
+        return "Journal".equals(getPublicationContextType(root));
     }
 
     private static boolean hasPublisher(JsonNode root) {
