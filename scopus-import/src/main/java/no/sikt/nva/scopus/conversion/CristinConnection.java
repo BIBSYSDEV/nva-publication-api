@@ -34,6 +34,7 @@ public class CristinConnection {
     public static final String CRISTIN = "cristin";
     public static final String PERSON = "person";
     private static final Logger logger = LoggerFactory.getLogger(CristinConnection.class);
+    public static final String API_HOST = "API_HOST";
     private final HttpClient httpClient;
     private final Environment environment;
 
@@ -68,8 +69,7 @@ public class CristinConnection {
     }
 
     public Optional<CristinPerson> getCristinPersonByOrcId(String orcid) {
-        return attempt(() -> createCristinPersonUri(orcid))
-                   .map(this::createRequest)
+        return attempt(() -> createCristinPersonUri(orcid)).map(this::createRequest)
                    .map(this::getCristinResponse)
                    .map(this::getBodyFromPersonResponse)
                    .map(this::getCristinPersonResponse)
@@ -77,8 +77,11 @@ public class CristinConnection {
     }
 
     private URI createCristinPersonUri(String orcId) {
-        var apiHost = environment.readEnv("API_HOST");
-        return UriWrapper.fromUri(PiaConnection.HTTPS_SCHEME + apiHost).addChild(CRISTIN).addChild(PERSON).addChild(orcId).getUri();
+        return UriWrapper.fromUri(PiaConnection.HTTPS_SCHEME + environment.readEnv(API_HOST))
+                   .addChild(CRISTIN)
+                   .addChild(PERSON)
+                   .addChild(orcId)
+                   .getUri();
     }
 
     private CristinOrganization loggExceptionAndReturnNull(Failure<CristinOrganization> failure) {
