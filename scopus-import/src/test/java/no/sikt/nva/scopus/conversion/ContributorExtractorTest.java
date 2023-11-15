@@ -8,12 +8,14 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import no.scopus.generated.AuthorGroupTp;
+import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.DocTp;
 import no.sikt.nva.scopus.utils.CristinGenerator;
@@ -90,6 +92,39 @@ public class ContributorExtractorTest {
                               .collect(SingletonCollector.collect());
 
         assertThat(contributor.getAffiliations().get(0).getId(), is(equalTo(CRISTIN_ID)));
+    }
+
+    @Test
+    void shouldCreateContributorByFetchingCristinPersonByOrcIdWhenNoResponseFromPia() {
+        var document = ScopusGenerator.createWithNumberOfContributorsFromAuthorTp(1).getDocument();
+        var orcId = getOrcidFromScopusDocument(document);
+        var expectedContributorName = mockCristinPersonByOrcIdResponse(orcId);
+        mockRandomCristinOrgResponse();
+
+        var contributor = contributorExtractorFromDocument(document).generateContributors()
+                              .stream()
+                              .collect(SingletonCollector.collect());
+
+        assertThat(contributor.getIdentity().getName(), is(equalTo(expectedContributorName)));
+    }
+
+    private static String getOrcidFromScopusDocument(DocTp document) {
+        return ((AuthorTp) document.getItem()
+                               .getItem()
+                               .getBibrecord()
+                               .getHead()
+                               .getAuthorGroup()
+                               .get(0)
+                               .getAuthorOrCollaboration()
+                               .get(0)).getOrcid();
+    }
+
+    private String mockCristinPersonByOrcIdResponse(String orcId) {
+        var firstname = randomString();
+        var surname = randomString();
+        when(cristinConnection.getCristinPersonByOrcId(eq(orcId)))
+            .thenReturn(Optional.of(CristinGenerator.generateCristinPerson(randomUri(), firstname, surname)));
+        return firstname + ", " + surname;
     }
 
     private static List<AuthorGroupTp> getAuthorGroup(DocTp document) {

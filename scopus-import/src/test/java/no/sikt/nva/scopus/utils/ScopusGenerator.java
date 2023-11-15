@@ -812,6 +812,7 @@ public final class ScopusGenerator {
         authorTp.setSurname(surname);
         authorTp.setGivenName(givenName);
         authorTp.setSeq(String.valueOf(contributorSequence + 1));
+        authorTp.setOrcid(randomOrcid());
         authorGroup.setAffiliation(affiliationTp);
         authorGroup.getAuthorOrCollaboration().add(authorTp);
     }
