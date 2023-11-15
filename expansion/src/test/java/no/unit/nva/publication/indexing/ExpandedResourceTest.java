@@ -158,6 +158,19 @@ class ExpandedResourceTest {
     }
 
     @Test
+    void shouldReturnIndexDocumentEvenIfParsingCristinOrgResponseFails() throws Exception {
+        final var publication = randomBookWithConfirmedPublisher();
+        final var affiliationToBeExpanded = extractAffiliationsUris(publication).get(0);
+
+        final var mockUriRetriever = mock(UriRetriever.class);
+        var nonParseableResponse = randomString();
+        mockGetRawContentResponse(mockUriRetriever, affiliationToBeExpanded, nonParseableResponse);
+
+        var framedResultNode = fromPublication(mockUriRetriever, publication).asJsonNode();
+        assertThat(framedResultNode, is(not(nullValue())));
+    }
+
+    @Test
     void shouldReturnIndexDocumentWithTopLevelOrganizationWithoutHasPartsIfContributorAffiliatedWithTopLevel()
         throws Exception {
         final var publication = randomBookWithConfirmedPublisher();

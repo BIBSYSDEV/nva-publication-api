@@ -32,6 +32,7 @@ import nva.commons.core.ioutils.IoUtils;
 public class IndexDocumentWrapperLinkedData {
 
     public static final String CRISTIN_VERSION = "; version=2023-05-26";
+    private static final String MEDIA_TYPE_JSON_LD_V2 = APPLICATION_JSON_LD.toString() + CRISTIN_VERSION;
     private static final String SOURCE = "source";
     private static final String CONTEXT = "@context";
     @Deprecated
@@ -145,7 +146,9 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     private Optional<CristinOrganization> fetchOrganization(URI externalReference) {
-        return uriRetriever.getRawContent(externalReference, APPLICATION_JSON_LD.toString() + CRISTIN_VERSION).map(
-            content -> attempt(() -> objectMapper.readValue(content, CristinOrganization.class)).orElseThrow());
+        var rawContent = uriRetriever.getRawContent(externalReference, MEDIA_TYPE_JSON_LD_V2);
+        return rawContent.isPresent()
+                   ? attempt(() -> objectMapper.readValue(rawContent.get(), CristinOrganization.class)).toOptional()
+                   : Optional.empty();
     }
 }
