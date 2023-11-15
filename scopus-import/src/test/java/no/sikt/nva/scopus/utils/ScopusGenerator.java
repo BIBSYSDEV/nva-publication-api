@@ -11,7 +11,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import jakarta.xml.bind.JAXB;
@@ -62,7 +61,6 @@ import no.scopus.generated.ItemidTp;
 import no.scopus.generated.ItemidlistTp;
 import no.scopus.generated.MetaTp;
 import no.scopus.generated.ObjectFactory;
-import no.scopus.generated.OpenAccessType;
 import no.scopus.generated.OrganizationTp;
 import no.scopus.generated.OrigItemTp;
 import no.scopus.generated.PagerangeTp;
@@ -76,16 +74,12 @@ import no.scopus.generated.SourcetitleTp;
 import no.scopus.generated.SourcetypeAtt;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
-import no.scopus.generated.UpwOaLocationType;
-import no.scopus.generated.UpwOaLocationsType;
-import no.scopus.generated.UpwOpenAccessType;
 import no.scopus.generated.VolissTp;
 import no.scopus.generated.VolisspagTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.ScopusConstants;
 import no.unit.nva.language.Language;
 import no.unit.nva.language.LanguageConstants;
-import nva.commons.core.StringUtils;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
 
@@ -107,7 +101,7 @@ public final class ScopusGenerator {
     private final LanguagesWrapper languages;
     private int minimumSequenceNumber;
     private CitationtypeAtt citationtypeAtt;
-    private boolean shouldReturnAuthorTyp;
+    private final boolean shouldReturnAuthorTyp;
 
     public ScopusGenerator() {
         this.shouldReturnAuthorTyp = true;
@@ -213,6 +207,18 @@ public final class ScopusGenerator {
         this.document = randomDocumentWithAuthorGroup(authorGroup);
     }
 
+    public ScopusGenerator(int numberOfContributors) {
+        this.shouldReturnAuthorTyp = true;
+        this.languages = createRandomLanguages();
+        this.doi = randomDoi();
+        this.sourcetypeAtt = SourcetypeAtt.J;
+        this.minimumSequenceNumber = 1;
+        this.abstractsTp = randomAbstracts();
+        this.contentWithSupAndInf = packRandomSerializablesWithSupAndInf();
+        this.affiliations = randomAffiliations();
+        this.document = randomDocumentWithContributors(numberOfContributors);
+    }
+
     public static ScopusGenerator createWithSpecifiedAbstract(AbstractsTp abstractsTp) {
         return new ScopusGenerator(abstractsTp);
     }
@@ -247,6 +253,18 @@ public final class ScopusGenerator {
 
     public static Integer randomYear() {
         return 1 + randomInteger(currentYear());
+    }
+
+    public static ScopusGenerator createWithNumberOfContributorsFromAuthorTp(int numberOfContributors) {
+        return new ScopusGenerator(numberOfContributors);
+    }
+
+    public DocTp createWithNumberOfContributorsFromCollaborationTp(int numberOfContributors) {
+        DocTp docTp = new DocTp();
+        docTp.setItem(randomItemTpWithContributorsFromCollaborationTp(numberOfContributors));
+        docTp.setMeta(randomMetaTp());
+        assertThat(docTp, doesNotHaveEmptyValuesIgnoringFieldsAndClasses(NOT_BEAN_CLASSES, IGNORED_FIELDS));
+        return docTp;
     }
 
     public DocTp randomDocument() {
@@ -314,12 +332,24 @@ public final class ScopusGenerator {
         AuthorKeywordTp authorKeywordTp = new AuthorKeywordTp();
         authorKeywordTp.setLang(language);
         authorKeywordTp.getContent().add(keyword);
-        document.getItem().getItem().getBibrecord().getHead().getCitationInfo().getAuthorKeywords().getAuthorKeyword()
+        document.getItem()
+            .getItem()
+            .getBibrecord()
+            .getHead()
+            .getCitationInfo()
+            .getAuthorKeywords()
+            .getAuthorKeyword()
             .add(authorKeywordTp);
     }
 
     public void clearAuthorKeywords() {
-        document.getItem().getItem().getBibrecord().getHead().getCitationInfo().getAuthorKeywords().getAuthorKeyword()
+        document.getItem()
+            .getItem()
+            .getBibrecord()
+            .getHead()
+            .getCitationInfo()
+            .getAuthorKeywords()
+            .getAuthorKeyword()
             .clear();
     }
 
@@ -334,7 +364,13 @@ public final class ScopusGenerator {
     }
 
     public void setPublishername(String publisherName) {
-        document.getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0)
+        document.getItem()
+            .getItem()
+            .getBibrecord()
+            .getHead()
+            .getSource()
+            .getPublisher()
+            .get(0)
             .setPublishername(publisherName);
     }
 
@@ -654,6 +690,133 @@ public final class ScopusGenerator {
         return new HashSet<>(IoUtils.linesfromResource(Path.of("conversion", "ignoredScopusFields.txt")));
     }
 
+    private ItemTp randomItemTpWithContributorsFromCollaborationTp(int numberOfContributors) {
+        var item = new ItemTp();
+        item.setItem(randomOriginalItemWithContributorsFromCollaborationTp(numberOfContributors));
+        return item;
+    }
+
+    private OrigItemTp randomOriginalItemWithContributorsFromCollaborationTp(int numberOfContributors) {
+        var item = new OrigItemTp();
+        item.setBibrecord(randomBibRecordWithContributorsFromCollaborationTp(numberOfContributors));
+        item.setProcessInfo(randomProcessInfo());
+        return item;
+    }
+
+    private BibrecordTp randomBibRecordWithContributorsFromCollaborationTp(int numberOfContributors) {
+        var bibRecord = new BibrecordTp();
+        bibRecord.setItemInfo(randomItemInfo());
+        bibRecord.setHead(randomHeadTpWithContributorsFromCollaborationTp(numberOfContributors));
+        return bibRecord;
+    }
+
+    private DocTp randomDocumentWithContributors(int numberOfContributors) {
+        DocTp docTp = new DocTp();
+        docTp.setItem(randomItemTpWithContributorsFromAuthorTp(numberOfContributors));
+        docTp.setMeta(randomMetaTp());
+        assertThat(docTp, doesNotHaveEmptyValuesIgnoringFieldsAndClasses(NOT_BEAN_CLASSES, IGNORED_FIELDS));
+        return docTp;
+    }
+
+    private ItemTp randomItemTpWithContributorsFromAuthorTp(int numberOfContributors) {
+        var item = new ItemTp();
+        item.setItem(randomOriginalItemWithContributorsFromAuthorTp(numberOfContributors));
+        return item;
+    }
+
+    private OrigItemTp randomOriginalItemWithContributorsFromAuthorTp(int numberOfContributors) {
+        var item = new OrigItemTp();
+        item.setBibrecord(randomBibRecordWithContributorsFromAuthorTp(numberOfContributors));
+        item.setProcessInfo(randomProcessInfo());
+        return item;
+    }
+
+    private BibrecordTp randomBibRecordWithContributorsFromAuthorTp(int numberOfContributors) {
+        var bibRecord = new BibrecordTp();
+        bibRecord.setItemInfo(randomItemInfo());
+        bibRecord.setHead(randomHeadTpWithContributorsFromAuthorTp(numberOfContributors));
+        return bibRecord;
+    }
+
+    private HeadTp randomHeadTpWithContributorsFromCollaborationTp(int numberOfContributors) {
+        var correspondenceTp = new CorrespondenceTp();
+        var authorGroupTp = new AuthorGroupTp();
+        generateContributorsForCollaborationTp(numberOfContributors, authorGroupTp);
+        var head = new HeadTp();
+        head.getAuthorGroup().add(authorGroupTp);
+        head.getCorrespondence().add(correspondenceTp);
+        head.setCitationTitle(randomCitationTitle());
+        head.setAbstracts(abstractsTp);
+        head.setCitationInfo(randomCitationInfo());
+        head.setSource(randomSource());
+        return head;
+    }
+
+    private void generateContributorsForCollaborationTp(int numberOfContributors, AuthorGroupTp collaborationTp) {
+        IntStream.range(0, numberOfContributors).forEach(i -> createContributorWithCollaborationTp(i, collaborationTp));
+    }
+
+    private void createContributorWithCollaborationTp(int contributorSequence, AuthorGroupTp authorGroupTp) {
+        var collaborationTp = new CollaborationTp();
+        collaborationTp.setIndexedName(randomString());
+        collaborationTp.setSeq(String.valueOf(contributorSequence + 1));
+        authorGroupTp.getAuthorOrCollaboration().add(collaborationTp);
+        var affiliationTp = new AffiliationTp();
+        affiliationTp.setAfid(randomString());
+        affiliationTp.setCountry(NORWAY);
+        authorGroupTp.setAffiliation(affiliationTp);
+    }
+
+    private HeadTp randomHeadTpWithContributorsFromAuthorTp(int numberOfContributors) {
+        var correspondenceTp = new CorrespondenceTp();
+        var authorGroup = new AuthorGroupTp();
+        generateContributorsForAuthorTp(numberOfContributors, authorGroup, correspondenceTp);
+        var head = new HeadTp();
+        head.getAuthorGroup().add(authorGroup);
+        head.getCorrespondence().add(correspondenceTp);
+        head.setCitationTitle(randomCitationTitle());
+        head.setAbstracts(abstractsTp);
+        head.setCitationInfo(randomCitationInfo());
+        head.setSource(randomSource());
+        return head;
+    }
+
+    private void generateContributorsForAuthorTp(int numberOfContributors, AuthorGroupTp authorGroup,
+                                                 CorrespondenceTp correspondenceTp) {
+        IntStream.range(0, numberOfContributors)
+            .forEach(i -> createContributorWithAuthorTp(i, authorGroup, correspondenceTp));
+    }
+
+    private void createContributorWithAuthorTp(int contributorSequence, AuthorGroupTp authorGroup,
+                                               CorrespondenceTp correspondenceTp) {
+        var affiliationTp = new AffiliationTp();
+        affiliationTp.setCountry(randomString());
+        affiliationTp.setAfid(randomString());
+
+        var initials = randomString();
+        var indexedName = randomString();
+        var surname = randomString();
+        var givenName = randomString();
+
+        var person = new PersonalnameType();
+        person.setInitials(initials);
+        person.setIndexedName(indexedName);
+        person.setSurname(surname);
+        person.setGivenName(givenName);
+        correspondenceTp.setAffiliation(affiliationTp);
+        correspondenceTp.setPerson(person);
+
+        var authorTp = new AuthorTp();
+        authorTp.setInitials(initials);
+        authorTp.setIndexedName(indexedName);
+        authorTp.setSurname(surname);
+        authorTp.setGivenName(givenName);
+        authorTp.setSeq(String.valueOf(contributorSequence + 1));
+        authorTp.setOrcid(randomOrcid());
+        authorGroup.setAffiliation(affiliationTp);
+        authorGroup.getAuthorOrCollaboration().add(authorTp);
+    }
+
     private DocTp randomDocumentWithAuthorGroup(AuthorGroupTp authorGroup) {
         DocTp docTp = new DocTp();
         docTp.setItem(itemWithAuthorGroup(authorGroup));
@@ -701,9 +864,7 @@ public final class ScopusGenerator {
     }
 
     private String randomScopusDoi() {
-        return nonNull(doi)
-                   ? UriWrapper.fromUri(doi).getPath().removeRoot().toString()
-                   : null;
+        return nonNull(doi) ? UriWrapper.fromUri(doi).getPath().removeRoot().toString() : null;
     }
 
     private ItemTp randomItemTp() {
@@ -738,8 +899,7 @@ public final class ScopusGenerator {
     }
 
     private Collection<? extends AuthorGroupTp> randomAuthorGroups(List<?> authorsAndCollaborations) {
-        return affiliations
-                   .stream()
+        return affiliations.stream()
                    .map(affiliationTp -> randomAuthorGroup(authorsAndCollaborations, affiliationTp))
                    .collect(Collectors.toList());
     }
@@ -747,12 +907,8 @@ public final class ScopusGenerator {
     private List<?> randomAuthorOrCollaborations() {
         final int maxNumbersOfAuthors = 50;
         int randomMax = RANDOM.nextInt(2, maxNumbersOfAuthors);
-        var authors =  IntStream.range(1, randomMax)
-                   .boxed()
-                   .map(this::randomAuthorTp);
-        var collaborations = IntStream.range(randomMax, randomMax + 3)
-                                 .boxed()
-                                 .map(this::randomCollaborationTp);
+        var authors = IntStream.range(1, randomMax).boxed().map(this::randomAuthorTp);
+        var collaborations = IntStream.range(randomMax, randomMax + 3).boxed().map(this::randomCollaborationTp);
         return Stream.concat(authors, collaborations).collect(Collectors.toList());
     }
 

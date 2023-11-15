@@ -287,7 +287,7 @@ public class ScopusFileConverter {
             return convertToAssociatedArtifact(response);
         } catch (Exception e) {
             logger.error(FETCH_FILE_FROM_URL_MESSAGE_ERROR_MESSAGE,
-                         downloadUrl.toString() + StringUtils.WHITESPACES + e.getMessage());
+                         downloadUrl.toString() + StringUtils.SPACE + e.getMessage());
             return Optional.empty();
         }
     }

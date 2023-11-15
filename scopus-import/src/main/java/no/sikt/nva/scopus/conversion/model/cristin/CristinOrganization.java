@@ -12,14 +12,22 @@ public class CristinOrganization implements JsonSerializable {
 
     @JsonProperty("id")
     private final URI id;
-    @JsonProperty("name")
+    @JsonProperty("labels")
     private final Map<String, String> labels;
+    @JsonProperty("country")
+    private final String country;
 
     @JsonCreator
     public CristinOrganization(@JsonProperty("id") URI id,
-                               @JsonProperty("name") Map<String, String> labels) {
+                               @JsonProperty("labels") Map<String, String> labels,
+                               @JsonProperty("country") String country) {
         this.id = id;
         this.labels = labels;
+        this.country = country;
+    }
+
+    public String getCountry() {
+        return country;
     }
 
     @JsonCreator
@@ -44,11 +52,9 @@ public class CristinOrganization implements JsonSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof CristinOrganization)) {
+        if (!(o instanceof CristinOrganization that)) {
             return false;
         }
-        CristinOrganization that = (CristinOrganization) o;
-        return Objects.equals(getId(), that.getId())
-               && Objects.equals(getLabels(), that.getLabels());
+        return Objects.equals(getId(), that.getId()) && Objects.equals(getLabels(), that.getLabels());
     }
 }

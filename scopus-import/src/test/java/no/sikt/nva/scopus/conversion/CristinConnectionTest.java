@@ -1,25 +1,31 @@
 package no.sikt.nva.scopus.conversion;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.or;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static no.sikt.nva.scopus.conversion.CristinConnection.CRISTIN_ORGANIZATION_RESPONSE_ERROR;
 import static no.sikt.nva.scopus.conversion.CristinConnection.CRISTIN_PERSON_RESPONSE_ERROR;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinOrganization;
-import no.sikt.nva.scopus.conversion.model.cristin.Person;
+import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
+import no.sikt.nva.scopus.utils.CristinGenerator;
 import no.unit.nva.stubs.WiremockHttpClient;
+import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,9 +37,11 @@ class CristinConnectionTest {
     private CristinConnection cristinConnection;
 
     @BeforeEach
-    void init() {
+    void init(WireMockRuntimeInfo wireMockRuntimeInfo) {
         var httpClient = WiremockHttpClient.create();
-        cristinConnection = new CristinConnection(httpClient);
+        var environment = mock(Environment.class);
+        when(environment.readEnv("API_HOST")).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl().replace("https://", ""));
+        cristinConnection = new CristinConnection(httpClient, environment);
     }
 
     @Test
@@ -51,7 +59,7 @@ class CristinConnectionTest {
         var appender = LogUtils.getTestingAppenderForRootLogger();
         var randomOrganizationUri = getRandomOrganizationUri(wireMockRuntimeInfo);
         mockCristinOrganizationBadRequest();
-        var actualOrganization = cristinConnection.fetchCristinOrganizationByIdentifier(randomOrganizationUri);
+        var actualOrganization = cristinConnection.fetchCristinOrganizationByCristinId(randomOrganizationUri);
         assertThat(actualOrganization, is(nullValue()));
         assertThat(appender.getMessages(), containsString(CRISTIN_ORGANIZATION_RESPONSE_ERROR));
     }
@@ -67,11 +75,28 @@ class CristinConnectionTest {
     }
 
     @Test
+    void shouldReturnPeronFetchedByOrcId() {
+        var orcId = randomString();
+        mockCristinPersonByOrcId(orcId);
+        var actualPerson = cristinConnection.getCristinPersonByOrcId(orcId);
+        assertThat(actualPerson.isPresent(), is(equalTo(true)));
+    }
+
+    private void mockCristinPersonByOrcId(String orcId) {
+        stubFor(
+            WireMock.get(urlPathEqualTo("/cristin/person/" + orcId))
+                .willReturn(aResponse()
+                                .withBody(CristinGenerator.generateCristinPerson(randomUri(), randomString(),
+                                                                                 randomString()).toString())
+                                .withStatus(HttpURLConnection.HTTP_OK)));
+    }
+
+    @Test
     void shouldReturnOrganizationIfCristinProxyRespondsWithOrganization(WireMockRuntimeInfo wireMockRuntimeInfo) {
         var randomOrganizationId = getRandomOrganizationUri(wireMockRuntimeInfo);
         var expectedOrganization = createExpectedOrganization(randomOrganizationId);
         mockCristinOrganization(randomOrganizationId, expectedOrganization.toJsonString());
-        var actualOrganization = cristinConnection.fetchCristinOrganizationByIdentifier(randomOrganizationId);
+        var actualOrganization = cristinConnection.fetchCristinOrganizationByCristinId(randomOrganizationId);
         assertThat(actualOrganization, is(equalTo(expectedOrganization)));
     }
 
@@ -85,7 +110,7 @@ class CristinConnectionTest {
     @Test
     void shouldReturnNullWhenCristinIdIsNull() {
         URI cristinId = null;
-        var actualOrganization = cristinConnection.fetchCristinOrganizationByIdentifier(cristinId);
+        var actualOrganization = cristinConnection.fetchCristinOrganizationByCristinId(cristinId);
         assertThat(actualOrganization, is(nullValue()));
     }
 
@@ -99,11 +124,11 @@ class CristinConnectionTest {
     }
 
     private CristinOrganization createExpectedOrganization(URI organizationId) {
-        return new CristinOrganization(organizationId, null);
+        return new CristinOrganization(organizationId, null, randomString());
     }
 
-    private Person createExpectedPerson(URI personId) {
-        return new Person.Builder().withId(personId).build();
+    private CristinPerson createExpectedPerson(URI personId) {
+        return new CristinPerson.Builder().withId(personId).build();
     }
 
     private URI getRandomOrganizationUri(WireMockRuntimeInfo wireMockRuntimeInfo) {
