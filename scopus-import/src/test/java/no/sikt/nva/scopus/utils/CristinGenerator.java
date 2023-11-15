@@ -33,6 +33,17 @@ public class CristinGenerator {
                    .build();
     }
 
+    public static CristinPerson generateCristinPersonWithSingleActiveAffiliation(URI cristinId, String firstname,
+                                                                                 String surname) {
+        var names = Set.of(new TypedValue("FirstName", firstname), new TypedValue("LastName", surname));
+        return new CristinPerson.Builder().withId(cristinId)
+                   .withNames(names)
+                   .withAffiliations(generateAffiliationsWithSingleActiveAffiliation())
+                   .withIdentifiers(Set.of(new TypedValue("orcid", randomString())))
+                   .withVerifiedStatus(randomBoolean())
+                   .build();
+    }
+
     public static CristinPerson generateCristinPersonWithoutAffiliations(URI cristinId, String firstname,
                                                                          String surname) {
         var names = Set.of(new TypedValue("FirstName", firstname), new TypedValue("LastName", surname));
@@ -69,8 +80,20 @@ public class CristinGenerator {
                    .collect(Collectors.toSet());
     }
 
+    private static Set<Affiliation> generateAffiliationsWithSingleActiveAffiliation() {
+        return Set.of(generateInactiveAffiliation(), generateActiveAffiliation());
+    }
+
     private static Affiliation generateAffiliation() {
         return new Affiliation(UriWrapper.fromUri(randomString()).getUri(), randomBoolean(), randomRole());
+    }
+
+    private static Affiliation generateActiveAffiliation() {
+        return new Affiliation(UriWrapper.fromUri(randomString()).getUri(), true, randomRole());
+    }
+
+    private static Affiliation generateInactiveAffiliation() {
+        return new Affiliation(UriWrapper.fromUri(randomString()).getUri(), false, randomRole());
     }
 
     private static Role randomRole() {
