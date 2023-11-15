@@ -79,6 +79,7 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.InvalidPublicationException;
+import no.unit.nva.publication.exception.NotImplementedException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
@@ -964,7 +965,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldThrowBadRequestWhenUnpublishingNotPublishedPublication() throws BadRequestException {
+    void shouldThrowBadRequestWhenUnpublishingNotPublishedPublication() throws ApiGatewayException {
         var publication = createPersistedPublicationWithDoi();
         assertThrows(BadRequestException.class, () -> resourceService.unpublishPublication(publication));
     }
@@ -974,6 +975,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var publication = createPublishedResource();
         resourceService.unpublishPublication(publication);
         assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(DELETED)));
+    }
+
+    @Test
+    void shouldThrowNotImplementedExceptionWhenUnpublishingPublicationWithNvaDoi() throws ApiGatewayException {
+        var publication = createPersistedPublicationWithDoi();
+        var publishedPublication = publishResource(publication);
+        assertThrows(NotImplementedException.class, () -> resourceService.unpublishPublication(publishedPublication));
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {

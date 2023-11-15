@@ -78,10 +78,12 @@ public class ResourceService extends ServiceWithTransactions {
     public static final int MAX_SIZE_OF_BATCH_REQUEST = 5;
     public static final String NOT_PUBLISHABLE = "Publication is not publishable. Check main title and doi";
     public static final String IMPORT_CANDIDATE_HAS_BEEN_DELETED_MESSAGE = "Import candidate has been deleted: ";
+    public static final String ONLY_PUBLISHED_PUBLICATIONS_CAN_BE_UNPUBLISHED_ERROR_MESSAGE = "Only published "
+                                                                                              + "publications can be "
+                                                                                              + "unpublished";
     private static final String SEPARATOR_ITEM = ",";
     private static final String SEPARATOR_TABLE = ";";
     private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
-    public static final String ONLY_PUBLISHED_PUBLICATIONS_CAN_BE_UNPUBLISHED_ERROR_MESSAGE = "Only published publications can be unpublished";
     private final String tableName;
     private final Clock clockForTimestamps;
     private final Supplier<SortableIdentifier> identifierSupplier;

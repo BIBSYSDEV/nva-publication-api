@@ -2,11 +2,11 @@ package no.unit.nva.publication.delete;
 
 import static no.unit.nva.publication.RequestUtil.createExternalUserInstance;
 import static no.unit.nva.publication.RequestUtil.createInternalUserInstance;
-import static no.unit.nva.publication.UserAccessValidationUtil.validateUserAccessForDeletingPublishedPublication;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.time.Clock;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.publication.PublicationPermissionStrategy;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -14,6 +14,7 @@ import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
@@ -22,6 +23,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     
     private final ResourceService resourceService;
     private final IdentityServiceClient identityServiceClient;
+    private PublicationPermissionStrategy publicationPermissionStrategy;
 
     /**
      * Default constructor for DeletePublicationHandler.
@@ -43,6 +45,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
         super(Void.class, environment);
         this.resourceService = resourceService;
         this.identityServiceClient = identityServiceClient;
+        this.publicationPermissionStrategy = new PublicationPermissionStrategy();
     }
 
     @Override
@@ -55,7 +58,9 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
 
         switch (publicationStatus) {
             case PUBLISHED:
-                validateUserAccessForDeletingPublishedPublication(requestInfo, publication);
+                if (!publicationPermissionStrategy.hasPermissionToUnpublish(requestInfo, publication)) {
+                    throw new UnauthorizedException();
+                }
                 resourceService.unpublishPublication(publication);
                 break;
             case DRAFT:
