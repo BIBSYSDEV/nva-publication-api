@@ -8,16 +8,20 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.DocTp;
+import no.sikt.nva.scopus.conversion.model.cristin.CristinOrganization;
+import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
 import no.sikt.nva.scopus.utils.CristinGenerator;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
 import nva.commons.core.SingletonCollector;
@@ -108,6 +112,17 @@ public class ContributorExtractorTest {
         assertThat(contributor.getIdentity().getName(), is(equalTo(expectedContributorName)));
     }
 
+    @Test
+    void shouldCreateContributorAffiliationSearchingOrganizationNameWhenNoResponseFromPiaAndWhenCreatingFromAuthorTp() {
+        var document = ScopusGenerator.createWithNumberOfContributorsFromAuthorTp(1).getDocument();
+        var organization = mockSearchOrganizationResponse();
+        var contributor = contributorExtractorFromDocument(document).generateContributors()
+                              .stream()
+                              .collect(SingletonCollector.collect());
+
+        assertThat(contributor.getAffiliations().get(0).getId(), is(equalTo(organization.getId())));
+    }
+
     private static String getOrcidFromScopusDocument(DocTp document) {
         return ((AuthorTp) document.getItem()
                                .getItem()
@@ -119,20 +134,27 @@ public class ContributorExtractorTest {
                                .get(0)).getOrcid();
     }
 
-    private String mockCristinPersonByOrcIdResponse(String orcId) {
-        var firstname = randomString();
-        var surname = randomString();
-        when(cristinConnection.getCristinPersonByOrcId(eq(orcId)))
-            .thenReturn(Optional.of(CristinGenerator.generateCristinPerson(randomUri(), firstname, surname)));
-        return firstname + ", " + surname;
-    }
-
     private static List<AuthorGroupTp> getAuthorGroup(DocTp document) {
         return document.getItem().getItem().getBibrecord().getHead().getAuthorGroup();
     }
 
     private static List<CorrespondenceTp> getCorrespondence(DocTp document) {
         return document.getItem().getItem().getBibrecord().getHead().getCorrespondence();
+    }
+
+    private CristinOrganization mockSearchOrganizationResponse() {
+        var organization = new CristinOrganization(randomUri(), Map.of(randomString(), randomString()), randomString());
+        when(cristinConnection.searchCristinOrganization(anyString())).thenReturn(Optional.of(
+            new SearchOrganizationResponse(List.of(organization), 1)));
+        return organization;
+    }
+
+    private String mockCristinPersonByOrcIdResponse(String orcId) {
+        var firstname = randomString();
+        var surname = randomString();
+        when(cristinConnection.getCristinPersonByOrcId(eq(orcId))).thenReturn(
+            Optional.of(CristinGenerator.generateCristinPerson(randomUri(), firstname, surname)));
+        return firstname + ", " + surname;
     }
 
     private void mockRandomCristinOrgResponse() {

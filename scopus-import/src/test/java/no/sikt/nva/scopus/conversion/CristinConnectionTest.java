@@ -3,6 +3,7 @@ package no.sikt.nva.scopus.conversion;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.or;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static no.sikt.nva.scopus.conversion.CristinConnection.CRISTIN_ORGANIZATION_RESPONSE_ERROR;
@@ -80,6 +81,23 @@ class CristinConnectionTest {
         mockCristinPersonByOrcId(orcId);
         var actualPerson = cristinConnection.getCristinPersonByOrcId(orcId);
         assertThat(actualPerson.isPresent(), is(equalTo(true)));
+    }
+
+    @Test
+    void shouldReturnSearchOrganizationResponseWhenSearchingByOrganizationName() {
+        var organizationName = randomString();
+        mockCristinSearchOrganizationResponse(organizationName);
+        var searchResponse = cristinConnection.searchCristinOrganization(organizationName);
+
+        assertThat(searchResponse.isPresent(), is(equalTo(true)));
+    }
+
+    private void mockCristinSearchOrganizationResponse(String organizationName) {
+        stubFor(
+            WireMock.get(urlEqualTo("/cristin/organization?query=" + organizationName))
+                .willReturn(aResponse()
+                                .withBody(CristinGenerator.generateSearchCristinOrganizationResponse(organizationName).toString())
+                                .withStatus(HttpURLConnection.HTTP_OK)));
     }
 
     private void mockCristinPersonByOrcId(String orcId) {

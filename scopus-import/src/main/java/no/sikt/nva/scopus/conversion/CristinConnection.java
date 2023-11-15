@@ -14,6 +14,7 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Optional;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinOrganization;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
+import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
 import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -35,6 +36,7 @@ public class CristinConnection {
     public static final String PERSON = "person";
     private static final Logger logger = LoggerFactory.getLogger(CristinConnection.class);
     public static final String API_HOST = "API_HOST";
+    public static final String ORGANIZATION = "organization";
     private final HttpClient httpClient;
     private final Environment environment;
 
@@ -74,6 +76,27 @@ public class CristinConnection {
                    .map(this::getBodyFromPersonResponse)
                    .map(this::getCristinPersonResponse)
                    .toOptional();
+    }
+
+    public Optional<SearchOrganizationResponse> searchCristinOrganization(String organization) {
+        return attempt(() -> constructSearchCristinOrganizationUri(organization))
+                   .map(this::createRequest)
+                   .map(this::getCristinResponse)
+                   .map(this::getBodyFromOrganizationResponse)
+                   .map(this::convertSearchResponseToOrganization)
+                   .toOptional();
+    }
+
+    private SearchOrganizationResponse convertSearchResponseToOrganization(String body) throws JsonProcessingException {
+        return JsonUtils.singleLineObjectMapper.readValue(body, SearchOrganizationResponse.class);
+    }
+
+    private URI constructSearchCristinOrganizationUri(String organization) {
+        return UriWrapper.fromUri(PiaConnection.HTTPS_SCHEME + environment.readEnv(API_HOST))
+                   .addChild(CRISTIN)
+                   .addChild(ORGANIZATION)
+                   .addQueryParameter("query", organization)
+                   .getUri();
     }
 
     private URI createCristinPersonUri(String orcId) {
