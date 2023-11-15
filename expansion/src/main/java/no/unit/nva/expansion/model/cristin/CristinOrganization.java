@@ -7,40 +7,37 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
-import lombok.Getter;
 import no.unit.nva.commons.json.JsonSerializable;
 import nva.commons.core.SingletonCollector;
 
-@Getter
-public class CristinOrganization implements JsonSerializable {
+public record CristinOrganization(@JsonProperty(ID) URI id,
+                                  @JsonProperty(CONTEXT) URI context,
+                                  @JsonProperty(TYPE) String type,
+                                  @JsonProperty(PART_OF) List<CristinOrganization> partOf,
+                                  @JsonProperty(COUNTRY) String country,
+                                  @JsonProperty(LABELS) Map<String, String> labels
+)
+    implements JsonSerializable {
 
     public static final String PART_OF = "partOf";
     public static final String ID = "id";
     public static final String LABELS = "labels";
-    @JsonProperty(ID)
-    private final URI id;
-    @JsonProperty(PART_OF)
-    private final List<CristinOrganization> partOf;
-    @JsonProperty(LABELS)
-    private final Map<String, String> labels;
+    public static final String COUNTRY = "country";
+    public static final String CONTEXT = "@context";
+    private static final String TYPE = "type";
 
     @JsonCreator
-    public CristinOrganization(@JsonProperty(ID) URI id,
-                               @JsonProperty(PART_OF) List<CristinOrganization> partOf,
-                               @JsonProperty(LABELS) Map<String, String> labels) {
-        this.id = id;
-        this.partOf = partOf;
-        this.labels = labels;
+    public CristinOrganization {
     }
 
     @JsonIgnore
     public CristinOrganization getTopLevelOrg() {
-        if (nonNull(getPartOf())) {
+        if (nonNull(partOf())) {
 
-            var organization = getPartOf().stream().collect(SingletonCollector.collect());
+            var organization = partOf().stream().collect(SingletonCollector.collect());
 
             while (hasPartOf(organization)) {
-                organization = organization.getPartOf().stream().collect(SingletonCollector.collect());
+                organization = organization.partOf().stream().collect(SingletonCollector.collect());
             }
 
             return organization;
@@ -50,6 +47,6 @@ public class CristinOrganization implements JsonSerializable {
     }
 
     private static boolean hasPartOf(CristinOrganization org) {
-        return nonNull(org.getPartOf()) && !org.getPartOf().isEmpty();
+        return nonNull(org.partOf()) && !org.partOf().isEmpty();
     }
 }

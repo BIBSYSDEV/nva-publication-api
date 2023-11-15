@@ -414,7 +414,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
 
     private static Organization fetchCustomer(AuthorizedBackendUriRetriever uriRetriever,
                                               CristinOrganization organization) {
-        return attempt(() -> toFetchCustomerByCristinIdUri(organization.getId())).map(
+        return attempt(() -> toFetchCustomerByCristinIdUri(organization.id())).map(
                 uri -> uriRetriever.getRawContent(uri, CONTENT_TYPE))
                    .map(Optional::get)
                    .map(string -> attempt(
@@ -424,7 +424,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     private static Organization toOrganization(Customer organization, CristinOrganization cristinOrganization) {
-        return new Organization.Builder().withLabels(cristinOrganization.getTopLevelOrg().getLabels())
+        return new Organization.Builder().withLabels(cristinOrganization.getTopLevelOrg().labels())
                    .withId(organization.getId())
                    .build();
     }

@@ -1,5 +1,6 @@
 package no.unit.nva.expansion.model;
 
+import static java.util.stream.Collectors.toList;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.extractAffiliationUris;
 import static no.unit.nva.expansion.model.ExpandedResource.extractPublicationContextUri;
@@ -22,7 +23,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.expansion.utils.FramedJsonGenerator;
 import no.unit.nva.expansion.utils.SearchIndexFrame;
 import no.unit.nva.publication.external.services.UriRetriever;
@@ -58,6 +59,7 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     //TODO: parallelize
+
     private List<InputStream> getInputStreams(JsonNode indexDocument) {
         final List<InputStream> inputStreams = new ArrayList<>();
         inputStreams.add(stringToStream(toJsonString(indexDocument)));
@@ -74,7 +76,7 @@ public class IndexDocumentWrapperLinkedData {
         return fetchAll(extractUris(fundingNodes(indexDocument), SOURCE))
                    .stream()
                    .map(this::addPotentiallyMissingContext)
-                   .collect(Collectors.toList());
+                   .collect(toList());
     }
 
     @Deprecated
@@ -110,18 +112,19 @@ public class IndexDocumentWrapperLinkedData {
                    .map(this::fetch)
                    .flatMap(Optional::stream)
                    .map(IoUtils::stringToStream)
-                   .collect(Collectors.toList());
+                   .collect(toList());
     }
 
     private Collection<? extends InputStream> fetchAllAffiliationContent(JsonNode indexDocument) {
         return extractAffiliationUris(indexDocument)
                    .stream()
                    .distinct()
-                   .map(this::fetchOrganizations)
+                   .map(this::fetchOrganization)
                    .filter(Optional::isPresent)
                    .map(Optional::get)
+                   .map(CristinOrganization::toJsonString)
                    .map(IoUtils::stringToStream)
-                   .collect(Collectors.toList());
+                   .collect(toList());
     }
 
     private Optional<InputStream> fetchAnthologyContent(JsonNode indexDocument) {
@@ -141,7 +144,8 @@ public class IndexDocumentWrapperLinkedData {
         return uriRetriever.getRawContent(externalReference, APPLICATION_JSON_LD.toString());
     }
 
-    private Optional<String> fetchOrganizations(URI externalReference) {
-        return uriRetriever.getRawContent(externalReference, APPLICATION_JSON_LD.toString() + CRISTIN_VERSION);
+    private Optional<CristinOrganization> fetchOrganization(URI externalReference) {
+        return uriRetriever.getRawContent(externalReference, APPLICATION_JSON_LD.toString() + CRISTIN_VERSION).map(
+            content -> attempt(() -> objectMapper.readValue(content, CristinOrganization.class)).orElseThrow());
     }
 }
