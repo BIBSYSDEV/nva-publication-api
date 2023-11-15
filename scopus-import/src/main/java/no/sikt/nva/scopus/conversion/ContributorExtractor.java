@@ -31,7 +31,6 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
-import nva.commons.core.SingletonCollector;
 import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
 
 @SuppressWarnings("PMD.GodClass")
@@ -102,7 +101,8 @@ public class ContributorExtractor {
                    .map(this::extractPersonalNameType)
                    .filter(Optional::isPresent)
                    .map(Optional::get)
-                   .collect(SingletonCollector.collectOrElse(null));
+                   .findFirst()
+                   .orElse(null);
     }
 
     private Optional<Contributor> getExistingContributor(Object authorOrCollaboration) {
@@ -200,11 +200,19 @@ public class ContributorExtractor {
 
     private static List<Organization> extractAffiliation(AuthorGroupTp authorGroup,
                                                       CristinOrganization cristinOrganization) {
-        return nonNull(cristinOrganization) ? AffiliationGenerator.fromCristinOrganization(cristinOrganization)
+        return nonNull(cristinOrganization)
+                   ? AffiliationGenerator.fromCristinOrganization(cristinOrganization)
                    : AffiliationGenerator.fromAuthorGroupTp(authorGroup);
     }
 
     private Optional<CristinPerson> fetchCristinPerson(AuthorTp author) {
+        var cristinPerson = fetchCristinPersonByScopusId(author);
+        return cristinPerson.isPresent()
+                   ? cristinPerson
+                   : cristinConnection.getCristinPersonByOrcId(author.getOrcid());
+    }
+
+    private Optional<CristinPerson> fetchCristinPersonByScopusId(AuthorTp author) {
         return piaConnection.getCristinPersonIdentifier(author.getAuid())
                    .flatMap(cristinConnection::getCristinPersonByCristinId);
     }
@@ -282,7 +290,9 @@ public class ContributorExtractor {
     }
 
     private String determineContributorName(AuthorTp author) {
-        return author.getPreferredName().getGivenName() + NAME_DELIMITER + author.getPreferredName().getSurname();
+        return nonNull(author.getPreferredName())
+            ? author.getPreferredName().getGivenName() + NAME_DELIMITER + author.getPreferredName().getSurname()
+            : author.getGivenName() + NAME_DELIMITER + author.getSurname();
     }
 
     private String determineContributorName(CollaborationTp collaborationTp) {

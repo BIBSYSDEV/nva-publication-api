@@ -15,8 +15,10 @@ import java.util.Optional;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinOrganization;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.unit.nva.commons.json.JsonUtils;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
+import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,11 +31,20 @@ public class CristinConnection {
     public static final String ORGANIZATION_SUCCESSFULLY_FETCHED = "Organization successfully fetched: {}";
     public static final String ACCEPT = "Accept";
     public static final String CRISTIN_VERSION = "; version=2023-05-26";
+    public static final String CRISTIN = "cristin";
+    public static final String PERSON = "person";
     private static final Logger logger = LoggerFactory.getLogger(CristinConnection.class);
     private final HttpClient httpClient;
+    private final Environment environment;
 
     public CristinConnection(HttpClient httpClient) {
         this.httpClient = httpClient;
+        this.environment = new Environment();
+    }
+
+    public CristinConnection(HttpClient httpClient, Environment environment) {
+        this.httpClient = httpClient;
+        this.environment = environment;
     }
 
     @JacocoGenerated
@@ -42,21 +53,32 @@ public class CristinConnection {
     }
 
     public Optional<CristinPerson> getCristinPersonByCristinId(URI cristinPersonId) {
-        return attempt(() -> createRequest(cristinPersonId))
-                                             .map(this::getCristinResponse)
-                                             .map(this::getBodyFromPersonResponse)
-                                             .map(this::getCristinPersonResponse)
-                                             .toOptional();
+        return attempt(() -> createRequest(cristinPersonId)).map(this::getCristinResponse)
+                   .map(this::getBodyFromPersonResponse)
+                   .map(this::getCristinPersonResponse)
+                   .toOptional();
     }
 
     public CristinOrganization fetchCristinOrganizationByCristinId(URI cristinOrgId) {
-        return isNull(cristinOrgId)
-                   ? null
-                   : attempt(() -> createOrganizationRequest(cristinOrgId))
-                         .map(this::getCristinResponse)
+        return isNull(cristinOrgId) ? null
+                   : attempt(() -> createOrganizationRequest(cristinOrgId)).map(this::getCristinResponse)
                          .map(this::getBodyFromOrganizationResponse)
                          .map(this::convertToOrganization)
                          .orElse(this::loggExceptionAndReturnNull);
+    }
+
+    public Optional<CristinPerson> getCristinPersonByOrcId(String orcid) {
+        return attempt(() -> createCristinPersonUri(orcid))
+                   .map(this::createRequest)
+                   .map(this::getCristinResponse)
+                   .map(this::getBodyFromPersonResponse)
+                   .map(this::getCristinPersonResponse)
+                   .toOptional();
+    }
+
+    private URI createCristinPersonUri(String orcId) {
+        var apiHost = environment.readEnv("API_HOST");
+        return UriWrapper.fromUri(PiaConnection.HTTPS_SCHEME + apiHost).addChild(CRISTIN).addChild(PERSON).addChild(orcId).getUri();
     }
 
     private CristinOrganization loggExceptionAndReturnNull(Failure<CristinOrganization> failure) {
@@ -95,18 +117,15 @@ public class CristinConnection {
     }
 
     private HttpRequest createRequest(URI uri) {
-        return HttpRequest.newBuilder()
-                   .uri(uri)
-                   .GET()
-                   .build();
+        return HttpRequest.newBuilder().uri(uri).GET().build();
     }
 
     private HttpRequest createOrganizationRequest(URI uri) {
         var organizationUri = URI.create(uri + QUERY_PARAM_DEPTH_NONE);
         return HttpRequest.newBuilder()
-                .uri(organizationUri)
-                .header(ACCEPT, APPLICATION_JSON_LD.toString() + CRISTIN_VERSION)
-                .GET()
-                .build();
+                   .uri(organizationUri)
+                   .header(ACCEPT, APPLICATION_JSON_LD.toString() + CRISTIN_VERSION)
+                   .GET()
+                   .build();
     }
 }
