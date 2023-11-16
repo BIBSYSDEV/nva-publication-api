@@ -1,7 +1,6 @@
 package no.sikt.nva.scopus.conversion;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.or;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
@@ -95,8 +94,8 @@ class CristinConnectionTest {
     private void mockCristinSearchOrganizationResponse(String organizationName) {
         stubFor(
             WireMock.get(urlEqualTo("/cristin/organization?query=" + organizationName))
-                .willReturn(aResponse()
-                                .withBody(CristinGenerator.generateSearchCristinOrganizationResponse(organizationName).toString())
+                .willReturn(aResponse().withBody(
+                    CristinGenerator.generateSearchCristinOrganizationResponse(organizationName).toString())
                                 .withStatus(HttpURLConnection.HTTP_OK)));
     }
 
