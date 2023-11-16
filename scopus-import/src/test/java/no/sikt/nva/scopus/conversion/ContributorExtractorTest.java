@@ -111,7 +111,7 @@ public class ContributorExtractorTest {
     }
 
     @Test
-    void shouldMapActiveAffiliationsFromCristinPersonOnlyWhenCreatingOrganizationsForContributor() {
+    void shouldUseActiveAffiliationOnlyWhenCreatingOrganizationsForContributorWhenFetchingCristinPerson() {
         var document = ScopusGenerator.createWithNumberOfContributorsFromAuthorTp(1).getDocument();
         var cristinPerson = mockCristinPersonWithSingleActiveAffiliationResponse();
         var contributor = contributorExtractorFromDocument(document).generateContributors()
