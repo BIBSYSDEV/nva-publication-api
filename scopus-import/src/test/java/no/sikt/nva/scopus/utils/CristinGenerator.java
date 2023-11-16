@@ -7,6 +7,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -15,6 +16,7 @@ import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinOrganization;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.conversion.model.cristin.Role;
+import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
 import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
 import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.paths.UriWrapper;
@@ -33,6 +35,17 @@ public class CristinGenerator {
                    .build();
     }
 
+    public static CristinPerson generateCristinPersonWithSingleActiveAffiliation(URI cristinId, String firstname,
+                                                                                 String surname) {
+        var names = Set.of(new TypedValue("FirstName", firstname), new TypedValue("LastName", surname));
+        return new CristinPerson.Builder().withId(cristinId)
+                   .withNames(names)
+                   .withAffiliations(generateAffiliationsWithSingleActiveAffiliation())
+                   .withIdentifiers(Set.of(new TypedValue("orcid", randomString())))
+                   .withVerifiedStatus(randomBoolean())
+                   .build();
+    }
+
     public static CristinPerson generateCristinPersonWithoutAffiliations(URI cristinId, String firstname,
                                                                          String surname) {
         var names = Set.of(new TypedValue("FirstName", firstname), new TypedValue("LastName", surname));
@@ -41,6 +54,13 @@ public class CristinGenerator {
                    .withIdentifiers(Set.of(new TypedValue("orcid", randomString())))
                    .withVerifiedStatus(randomBoolean())
                    .build();
+    }
+
+    public static SearchOrganizationResponse generateSearchCristinOrganizationResponse(String organizationName) {
+        var cristinOrganization = new CristinOrganization(randomUri(),
+                                                                          Map.of(randomString(), organizationName),
+                                                                          randomString());
+        return new SearchOrganizationResponse(List.of(cristinOrganization), 1);
     }
 
     public static CristinOrganization generateOtherCristinOrganization(URI cristinId) {
@@ -69,8 +89,20 @@ public class CristinGenerator {
                    .collect(Collectors.toSet());
     }
 
+    private static Set<Affiliation> generateAffiliationsWithSingleActiveAffiliation() {
+        return Set.of(generateInactiveAffiliation(), generateActiveAffiliation());
+    }
+
     private static Affiliation generateAffiliation() {
         return new Affiliation(UriWrapper.fromUri(randomString()).getUri(), randomBoolean(), randomRole());
+    }
+
+    private static Affiliation generateActiveAffiliation() {
+        return new Affiliation(UriWrapper.fromUri(randomString()).getUri(), true, randomRole());
+    }
+
+    private static Affiliation generateInactiveAffiliation() {
+        return new Affiliation(UriWrapper.fromUri(randomString()).getUri(), false, randomRole());
     }
 
     private static Role randomRole() {

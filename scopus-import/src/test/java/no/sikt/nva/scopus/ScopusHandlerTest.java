@@ -1635,9 +1635,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                                                                   List<CristinPerson> cristinCristinPeople) {
         var actualCristinId = contributor.getIdentity().getId();
         assertThat(actualCristinId, hasProperty("path", containsString("/cristin/person")));
-        var expectedCristinPersonOptional = getPersonByCristinNumber(cristinCristinPeople, actualCristinId);
-        assertThat(expectedCristinPersonOptional.isPresent(), is(true));
-        var expectedCristinPerson = expectedCristinPersonOptional.get();
+        var expectedCristinPerson =
+            getPersonByCristinNumber(cristinCristinPeople, actualCristinId).orElseThrow();
         var actualCristinNumber = actualCristinId.getPath().split("/")[3];
         var expectedName = calculateExpectedNameFromCristinPerson(expectedCristinPerson);
         var expectedAuthor = cristinIdAndAuthor.get(Integer.parseInt(actualCristinNumber));
@@ -1646,7 +1645,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
         assertThat(contributor.getIdentity().getName(), is(equalTo(expectedName)));
 
-        assertThat(contributor.getAffiliations(), hasSize(expectedCristinPerson.getAffiliations().size()));
+        assertThat(contributor.getAffiliations(),
+                   hasSize(getActiveAffiliations(expectedCristinPerson).size()));
 
         assertThat(contributor.getIdentity().getVerificationStatus(),
                    anyOf(equalTo(ContributorVerificationStatus.VERIFIED),
@@ -1658,6 +1658,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                                                     .collect(Collectors.toList());
         var expectedOrganizationFromAffiliation = expectedCristinPerson.getAffiliations()
                                                       .stream()
+                                                      .filter(Affiliation::isActive)
                                                       .map(Affiliation::getOrganization)
                                                       .toList();
 
@@ -1670,6 +1671,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                                           .collect(Collectors.toList());
         var expectedAffiliationLabels = expectedCristinPerson.getAffiliations()
                                             .stream()
+                                            .filter(Affiliation::isActive)
                                             .map(organization -> organization.getRole().getLabels())
                                             .toList();
 
@@ -1677,7 +1679,10 @@ class ScopusHandlerTest extends ResourcesLocalTest {
             expectedAffiliationLabels.stream().map(Matchers::equalTo).collect(Collectors.toList())));
     }
 
-    @NotNull
+    private static List<Affiliation> getActiveAffiliations(CristinPerson expectedCristinPerson) {
+        return expectedCristinPerson.getAffiliations().stream().filter(Affiliation::isActive).toList();
+    }
+
     private String calculateExpectedNameFromCristinPerson(CristinPerson cristinPerson) {
         return cristinPerson.getNames()
                    .stream()

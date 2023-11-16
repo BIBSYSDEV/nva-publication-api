@@ -69,9 +69,9 @@ public class ScopusConverter {
     private final PublicationChannelConnection publicationChannelConnection;
     private final ScopusFileConverter scopusFileConverter;
 
-    protected ScopusConverter(DocTp docTp, PiaConnection piaConnection, CristinConnection cristinConnection,
-                              PublicationChannelConnection publicationChannelConnection,
-                              ScopusFileConverter scopusFileConverter) {
+    public ScopusConverter(DocTp docTp, PiaConnection piaConnection, CristinConnection cristinConnection,
+                           PublicationChannelConnection publicationChannelConnection,
+                           ScopusFileConverter scopusFileConverter) {
         this.docTp = docTp;
         this.piaConnection = piaConnection;
         this.cristinConnection = cristinConnection;

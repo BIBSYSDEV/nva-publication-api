@@ -178,7 +178,7 @@ public class ContributorExtractor {
         var cristinOrganization = fetchCristinOrganization(authorGroup);
 
         var contributor = fetchCristinPerson(author).map(
-                person -> generateContributorFromCristinPerson(person, author, getCorrespondencePerson(),
+                cristinPerson -> generateContributorFromCristinPerson(cristinPerson, author, getCorrespondencePerson(),
                                                                cristinOrganization))
                               .orElseGet(
                                   () -> generateContributorFromAuthorTp(authorGroup, author, getCorrespondencePerson(),
@@ -198,11 +198,11 @@ public class ContributorExtractor {
                    .build();
     }
 
-    private static List<Organization> extractAffiliation(AuthorGroupTp authorGroup,
-                                                      CristinOrganization cristinOrganization) {
+    private List<Organization> extractAffiliation(AuthorGroupTp authorGroup,
+                                                  CristinOrganization cristinOrganization) {
         return nonNull(cristinOrganization)
                    ? AffiliationGenerator.fromCristinOrganization(cristinOrganization)
-                   : AffiliationGenerator.fromAuthorGroupTp(authorGroup);
+                   : AffiliationGenerator.fromAuthorGroupTp(authorGroup, cristinConnection);
     }
 
     private Optional<CristinPerson> fetchCristinPerson(AuthorTp author) {
