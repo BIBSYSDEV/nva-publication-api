@@ -20,7 +20,6 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
-import org.jetbrains.annotations.NotNull;
 
 public final class CristinContributorExtractor {
 
@@ -76,13 +75,13 @@ public final class CristinContributorExtractor {
                    .toList();
     }
 
-    @NotNull
     private static Stream<Organization> createOrganizationsFromCristinPersonAffiliations(
         Set<Affiliation> affiliations) {
-        return affiliations.stream().map(CristinContributorExtractor::convertToOrganization);
+        return affiliations.stream()
+                   .filter(Affiliation::isActive)
+                   .map(CristinContributorExtractor::convertToOrganization);
     }
 
-    @NotNull
     private static Organization convertToOrganization(Affiliation affiliation) {
         return new Organization.Builder().withId(affiliation.getOrganization())
                    .withLabels(affiliation.getRole().getLabels())

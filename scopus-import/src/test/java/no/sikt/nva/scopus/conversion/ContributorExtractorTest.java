@@ -18,6 +18,8 @@ import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.DocTp;
+import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
+import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.utils.CristinGenerator;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
 import nva.commons.core.SingletonCollector;
@@ -106,6 +108,32 @@ public class ContributorExtractorTest {
                               .collect(SingletonCollector.collect());
 
         assertThat(contributor.getIdentity().getName(), is(equalTo(expectedContributorName)));
+    }
+
+    @Test
+    void shouldUseActiveAffiliationOnlyWhenCreatingOrganizationsForContributorWhenFetchingCristinPerson() {
+        var document = ScopusGenerator.createWithNumberOfContributorsFromAuthorTp(1).getDocument();
+        var cristinPerson = mockCristinPersonWithSingleActiveAffiliationResponse();
+        var contributor = contributorExtractorFromDocument(document).generateContributors()
+                              .stream()
+                              .collect(SingletonCollector.collect());
+
+        var expectedAffiliations = cristinPerson.getAffiliations().stream().filter(Affiliation::isActive).toList();
+        var actualOrganizations = contributor.getAffiliations();
+
+        assertThat(actualOrganizations.size(), is(equalTo(expectedAffiliations.size())));
+        assertThat(actualOrganizations.get(0).getId(), is(equalTo(expectedAffiliations.get(0).getOrganization())));
+    }
+
+    private CristinPerson mockCristinPersonWithSingleActiveAffiliationResponse() {
+        var personCristinId = randomUri();
+        when(piaConnection.getCristinPersonIdentifier(any())).thenReturn(Optional.of(personCristinId));
+        var person = CristinGenerator.generateCristinPersonWithSingleActiveAffiliation(personCristinId,
+                                                                                                randomString(),
+                                                                                                randomString());
+        when(cristinConnection.getCristinPersonByCristinId(personCristinId)).thenReturn(Optional.of(
+            person));
+        return person;
     }
 
     private static String getOrcidFromScopusDocument(DocTp document) {

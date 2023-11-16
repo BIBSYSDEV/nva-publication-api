@@ -178,7 +178,7 @@ public class ContributorExtractor {
         var cristinOrganization = fetchCristinOrganization(authorGroup);
 
         var contributor = fetchCristinPerson(author).map(
-                person -> generateContributorFromCristinPerson(person, author, getCorrespondencePerson(),
+                cristinPerson -> generateContributorFromCristinPerson(cristinPerson, author, getCorrespondencePerson(),
                                                                cristinOrganization))
                               .orElseGet(
                                   () -> generateContributorFromAuthorTp(authorGroup, author, getCorrespondencePerson(),
