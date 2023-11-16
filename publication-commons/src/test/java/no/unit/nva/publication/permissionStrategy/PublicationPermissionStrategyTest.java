@@ -1,4 +1,4 @@
-package no.unit.nva.publication;
+package no.unit.nva.publication.permissionStrategy;
 
 import org.junit.jupiter.api.Test;
 

@@ -6,7 +6,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.time.Clock;
 import no.unit.nva.clients.IdentityServiceClient;
-import no.unit.nva.publication.PublicationPermissionStrategy;
+import no.unit.nva.publication.permissionStrategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -23,7 +23,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     
     private final ResourceService resourceService;
     private final IdentityServiceClient identityServiceClient;
-    private PublicationPermissionStrategy publicationPermissionStrategy;
+    private final PublicationPermissionStrategy publicationPermissionStrategy;
 
     /**
      * Default constructor for DeletePublicationHandler.

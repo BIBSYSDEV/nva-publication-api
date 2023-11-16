@@ -349,7 +349,9 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnSuccessAndUpdatePublicationStatusToDeletedWhenUserCanEditOwnInstitutionResources() throws IOException, ApiGatewayException {
+    void shouldReturnSuccessAndUpdatePublicationStatusToDeletedWhenUserCanEditOwnInstitutionResources()
+        throws IOException, ApiGatewayException {
+
         var publication = createAndPersistPublicationWithoutDoi(true);
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 

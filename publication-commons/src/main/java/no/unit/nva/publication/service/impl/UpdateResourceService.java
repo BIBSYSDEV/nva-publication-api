@@ -174,10 +174,10 @@ public class UpdateResourceService extends ServiceWithTransactions {
         throws NotFoundException {
         var publication =
             readResourceService.getResourceByIdentifier(resourceIdentifier).toPublication();
-        if (PublicationStatus.DELETED.equals(publication.getStatus())) {
+        if (DELETED.equals(publication.getStatus())) {
             return deletionStatusIsCompleted();
         } else {
-            publication.setStatus(PublicationStatus.DELETED);
+            publication.setStatus(DELETED);
             publication.setPublishedDate(null);
             updatePublicationIncludingStatus(publication);
             return deletionStatusChangeInProgress();
