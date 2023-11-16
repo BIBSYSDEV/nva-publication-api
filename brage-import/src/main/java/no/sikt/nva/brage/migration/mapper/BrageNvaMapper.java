@@ -53,6 +53,7 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
+import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("PMD.GodClass")
 public final class BrageNvaMapper {
@@ -106,8 +107,13 @@ public final class BrageNvaMapper {
 
     public static String extractDescription(Record record) {
         return Optional.ofNullable(record.getEntityDescription().getDescriptions())
-                   .map(descriptions -> descriptions.isEmpty() ? null : mergeStringsByLineBreak(descriptions))
+                   .map(BrageNvaMapper::filterOutEmptyValues)
+                   .map(descriptions -> descriptions.isEmpty() ? null : mergeValuesIfNeeded(descriptions))
                    .orElse(null);
+    }
+
+    private static List<String> filterOutEmptyValues(List<String> descriptions) {
+        return descriptions.stream().filter(string -> !string.isBlank()).toList();
     }
 
     private static List<AssociatedArtifact> extractAssociatedArtifacts(Record brageRecord) {
@@ -142,6 +148,10 @@ public final class BrageNvaMapper {
             String message = error.getMessage();
             throw new MissingFieldsException(message);
         }
+    }
+
+    private static String mergeValuesIfNeeded(List<String> list) {
+        return list.size() == 1 ? list.get(0) : mergeStringsByLineBreak(list);
     }
 
     private static String mergeStringsByLineBreak(List<String> list) {
@@ -395,7 +405,8 @@ public final class BrageNvaMapper {
 
     private static String extractAbstract(Record brageRecord) {
         return Optional.ofNullable(brageRecord.getEntityDescription().getAbstracts())
-                   .map(abstracts -> abstracts.isEmpty() ? null : mergeStringsByLineBreak(abstracts))
+                   .map(BrageNvaMapper::filterOutEmptyValues)
+                   .map(abstracts -> abstracts.isEmpty() ? null : mergeValuesIfNeeded(abstracts))
                    .orElse(null);
     }
 }
