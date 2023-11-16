@@ -1,9 +1,8 @@
-package no.unit.nva.publication.permissionStrategy;
+package no.unit.nva.publication.permission.strategy;
 
 import static nva.commons.core.attempt.Try.attempt;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permissionStrategy.PermissionStrategy;
 import nva.commons.apigateway.RequestInfo;
 
 public class ResourceOwnerPermissionStrategy extends PermissionStrategy {

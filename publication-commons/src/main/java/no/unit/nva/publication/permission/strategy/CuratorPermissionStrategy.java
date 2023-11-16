@@ -1,4 +1,4 @@
-package no.unit.nva.publication.permissionStrategy;
+package no.unit.nva.publication.permission.strategy;
 
 import static nva.commons.apigateway.AccessRight.EDIT_OWN_INSTITUTION_RESOURCES;
 import static nva.commons.core.attempt.Try.attempt;
