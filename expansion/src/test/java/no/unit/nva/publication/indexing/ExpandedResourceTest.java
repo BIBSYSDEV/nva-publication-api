@@ -77,6 +77,7 @@ class ExpandedResourceTest {
     public static final String JSON_PTR_ID = "/id";
     public static final String JSON_PTR_HAS_PART = "/hasPart";
     public static final String CRISTIN_ORG_JSON = "cristin_org.json";
+    public static final String TOP_LEVEL_CRISTIN_ORG_JSON = "cristin_org_top_level.json";
     private static final String SERIES_LEVEL_JSON_PTR =
         "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
         + "/series/level";
@@ -154,6 +155,36 @@ class ExpandedResourceTest {
 
         assertThat(findDeepestNestedSubUnit(topLevelForExpandedAffiliation).at(JSON_PTR_ID).textValue(),
                    is(equalTo(affiliationToBeExpanded.toString())));
+    }
+
+    @Test
+    void shouldReturnIndexDocumentEvenIfParsingCristinOrgResponseFails() throws Exception {
+        final var publication = randomBookWithConfirmedPublisher();
+        final var affiliationToBeExpanded = extractAffiliationsUris(publication).get(0);
+
+        final var mockUriRetriever = mock(UriRetriever.class);
+        var nonParseableResponse = randomString();
+        mockGetRawContentResponse(mockUriRetriever, affiliationToBeExpanded, nonParseableResponse);
+
+        var framedResultNode = fromPublication(mockUriRetriever, publication).asJsonNode();
+        assertThat(framedResultNode, is(not(nullValue())));
+    }
+
+    @Test
+    void shouldReturnIndexDocumentWithTopLevelOrganizationWithoutHasPartsIfContributorAffiliatedWithTopLevel()
+        throws Exception {
+        final var publication = randomBookWithConfirmedPublisher();
+        final var affiliationToBeExpanded = extractAffiliationsUris(publication).get(0);
+
+        final var mockUriRetriever = mock(UriRetriever.class);
+        mockOrganizationResponseForTopLevelAffiliation(affiliationToBeExpanded, mockUriRetriever);
+
+        var framedResultNode = fromPublication(mockUriRetriever, publication).asJsonNode();
+        var topLevelNodes = (ArrayNode) framedResultNode.at(JSON_PTR_TOP_LEVEL_ORGS);
+        var topLevelForExpandedAffiliation = getTopLevel(topLevelNodes, affiliationToBeExpanded.toString());
+
+        var deepestNestedSubUnit = findDeepestNestedSubUnit(topLevelForExpandedAffiliation);
+        assertThat(deepestNestedSubUnit.at(JSON_PTR_ID).textValue(), is(equalTo(affiliationToBeExpanded.toString())));
     }
 
     @Test
@@ -414,6 +445,13 @@ class ExpandedResourceTest {
 
     private static void mockOrganizationResponse(URI affiliationToBeExpanded, UriRetriever mockUriRetriever) {
         var mockedCristinResponse = stringFromResources(Path.of(CRISTIN_ORG_JSON)).replace(
+            "__REPLACE_AFFILIATION_ID__", affiliationToBeExpanded.toString());
+        mockGetRawContentResponse(mockUriRetriever, affiliationToBeExpanded, mockedCristinResponse);
+    }
+
+    private static void mockOrganizationResponseForTopLevelAffiliation(URI affiliationToBeExpanded,
+                                                                       UriRetriever mockUriRetriever) {
+        var mockedCristinResponse = stringFromResources(Path.of(TOP_LEVEL_CRISTIN_ORG_JSON)).replace(
             "__REPLACE_AFFILIATION_ID__", affiliationToBeExpanded.toString());
         mockGetRawContentResponse(mockUriRetriever, affiliationToBeExpanded, mockedCristinResponse);
     }

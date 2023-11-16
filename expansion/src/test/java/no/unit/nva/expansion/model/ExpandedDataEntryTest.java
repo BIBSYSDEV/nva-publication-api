@@ -350,8 +350,14 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             var importCandidate = new Builder().withPublication(publication).build();
             var authorizedBackendClient = mock(AuthorizedBackendUriRetriever.class);
             when(authorizedBackendClient.getRawContent(any(), any())).thenReturn(Optional.of(
-                new CristinOrganization(randomUri(), List.of(new CristinOrganization(randomUri(), List.of(), Map.of())),
-                                        Map.of()).toJsonString()));
+                new CristinOrganization(randomUri(), randomUri(), randomString(),
+                                        List.of(new CristinOrganization(randomUri(),
+                                                                        randomUri(),
+                                                                        randomString(),
+                                                                        List.of(),
+                                                                        randomString(),
+                                                                        Map.of())),
+                                        randomString(), Map.of()).toJsonString()));
             var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate,
                                                                                       authorizedBackendClient);
             return new ExpandedDataEntryWithAssociatedPublication(expandedImportCandidate);
