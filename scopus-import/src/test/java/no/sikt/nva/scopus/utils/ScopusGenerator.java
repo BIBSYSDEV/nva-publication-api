@@ -789,9 +789,13 @@ public final class ScopusGenerator {
 
     private void createContributorWithAuthorTp(int contributorSequence, AuthorGroupTp authorGroup,
                                                CorrespondenceTp correspondenceTp) {
+        var organization = new OrganizationTp();
+        organization.getContent().add(randomString());
+
         var affiliationTp = new AffiliationTp();
         affiliationTp.setCountry(randomString());
         affiliationTp.setAfid(randomString());
+        affiliationTp.getOrganization().add(organization);
 
         var initials = randomString();
         var indexedName = randomString();

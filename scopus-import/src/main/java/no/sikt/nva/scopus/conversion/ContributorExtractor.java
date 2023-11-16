@@ -198,11 +198,11 @@ public class ContributorExtractor {
                    .build();
     }
 
-    private static List<Organization> extractAffiliation(AuthorGroupTp authorGroup,
-                                                      CristinOrganization cristinOrganization) {
+    private List<Organization> extractAffiliation(AuthorGroupTp authorGroup,
+                                                  CristinOrganization cristinOrganization) {
         return nonNull(cristinOrganization)
                    ? AffiliationGenerator.fromCristinOrganization(cristinOrganization)
-                   : AffiliationGenerator.fromAuthorGroupTp(authorGroup);
+                   : AffiliationGenerator.fromAuthorGroupTp(authorGroup, cristinConnection);
     }
 
     private Optional<CristinPerson> fetchCristinPerson(AuthorTp author) {

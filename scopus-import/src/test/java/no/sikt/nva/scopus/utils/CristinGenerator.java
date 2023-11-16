@@ -7,6 +7,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -15,6 +16,7 @@ import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinOrganization;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.conversion.model.cristin.Role;
+import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
 import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
 import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.paths.UriWrapper;
@@ -52,6 +54,13 @@ public class CristinGenerator {
                    .withIdentifiers(Set.of(new TypedValue("orcid", randomString())))
                    .withVerifiedStatus(randomBoolean())
                    .build();
+    }
+
+    public static SearchOrganizationResponse generateSearchCristinOrganizationResponse(String organizationName) {
+        var cristinOrganization = new CristinOrganization(randomUri(),
+                                                                          Map.of(randomString(), organizationName),
+                                                                          randomString());
+        return new SearchOrganizationResponse(List.of(cristinOrganization), 1);
     }
 
     public static CristinOrganization generateOtherCristinOrganization(URI cristinId) {
