@@ -53,7 +53,6 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
-import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("PMD.GodClass")
 public final class BrageNvaMapper {
@@ -69,8 +68,7 @@ public final class BrageNvaMapper {
 
     public static Publication toNvaPublication(Record brageRecord)
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        var publication = new Publication.Builder()
-                              .withHandle(extractHandle(brageRecord))
+        var publication = new Publication.Builder().withHandle(extractHandle(brageRecord))
                               .withEntityDescription(extractEntityDescription(brageRecord))
                               .withCreatedDate(extractPublishedDate(brageRecord))
                               .withPublishedDate(extractPublishedDate(brageRecord))
@@ -87,9 +85,20 @@ public final class BrageNvaMapper {
         return publication;
     }
 
+    public static String extractDescription(Record record) {
+        return Optional.ofNullable(record.getEntityDescription().getDescriptions())
+                   .map(BrageNvaMapper::filterOutEmptyValues)
+                   .filter(descriptions -> !descriptions.isEmpty())
+                   .map(BrageNvaMapper::joinByNewLine)
+                   .orElse(null);
+    }
+
+    private static String joinByNewLine(List<String> values) {
+        return values.stream().collect(Collectors.joining(System.lineSeparator()));
+    }
+
     private static Instant extractPublishedDate(Record brageRecord) {
-        return attempt(() -> brageRecord.getPublishedDate().getNvaDate())
-                   .map(Instant::parse)
+        return attempt(() -> brageRecord.getPublishedDate().getNvaDate()).map(Instant::parse)
                    .orElse(failure -> Instant.now());
     }
 
@@ -105,13 +114,6 @@ public final class BrageNvaMapper {
         return NvaType.CRISTIN_RECORD.getValue().equals(record.getType().getNva());
     }
 
-    public static String extractDescription(Record record) {
-        return Optional.ofNullable(record.getEntityDescription().getDescriptions())
-                   .map(BrageNvaMapper::filterOutEmptyValues)
-                   .map(descriptions -> descriptions.isEmpty() ? null : mergeValuesIfNeeded(descriptions))
-                   .orElse(null);
-    }
-
     private static List<String> filterOutEmptyValues(List<String> descriptions) {
         return descriptions.stream().filter(string -> !string.isBlank()).toList();
     }
@@ -119,15 +121,11 @@ public final class BrageNvaMapper {
     private static List<AssociatedArtifact> extractAssociatedArtifacts(Record brageRecord) {
         var associatedArtifacts = new ArrayList<>(extractAssociatedFiles(brageRecord));
         associatedArtifacts.add(extractAssociatedLink(brageRecord));
-        return associatedArtifacts.stream()
-                   .filter(Objects::nonNull)
-                   .toList();
+        return associatedArtifacts.stream().filter(Objects::nonNull).toList();
     }
 
     private static AssociatedLink extractAssociatedLink(Record brageRecord) {
-        return nonNull(brageRecord.getLink())
-                   ? new AssociatedLink(brageRecord.getLink(), null, null)
-                   : null;
+        return nonNull(brageRecord.getLink()) ? new AssociatedLink(brageRecord.getLink(), null, null) : null;
     }
 
     private static Set<AdditionalIdentifier> extractCristinIdentifier(Record brageRecord) {
@@ -141,25 +139,12 @@ public final class BrageNvaMapper {
     private static void assertPublicationDoesNotHaveEmptyFields(Publication publication) {
         // TODO: Fix this so we don't depend on JUnit.
         try {
-            assertThat(publication,
-                       doesNotHaveEmptyValuesIgnoringFields(
-                           MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS));
+            assertThat(publication, doesNotHaveEmptyValuesIgnoringFields(
+                MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS));
         } catch (Error error) {
             String message = error.getMessage();
             throw new MissingFieldsException(message);
         }
-    }
-
-    private static String mergeValuesIfNeeded(List<String> list) {
-        return list.size() == 1 ? list.get(0) : mergeStringsByLineBreak(list);
-    }
-
-    private static String mergeStringsByLineBreak(List<String> list) {
-        var sb = new StringBuilder();
-        for (String string : list) {
-            sb.append(string).append('\n');
-        }
-        return sb.toString();
     }
 
     private static ResourceOwner extractResourceOwner(Record brageRecord) {
@@ -182,9 +167,7 @@ public final class BrageNvaMapper {
 
     private static List<AssociatedArtifact> convertFilesToAssociatedArtifact(List<ContentFile> files,
                                                                              Record brageRecord) {
-        return files.stream()
-                   .map(file -> generateFile(file, brageRecord))
-                   .toList();
+        return files.stream().map(file -> generateFile(file, brageRecord)).toList();
     }
 
     private static AssociatedArtifact generateFile(ContentFile file, Record brageRecord) {
@@ -198,15 +181,11 @@ public final class BrageNvaMapper {
     }
 
     private static Instant extractEmbargoDate(ContentFile file) {
-        return Optional.ofNullable(file)
-                   .map(ContentFile::getEmbargoDate)
-                   .orElse(null);
+        return Optional.ofNullable(file).map(ContentFile::getEmbargoDate).orElse(null);
     }
 
     private static Boolean extractPublisherAuthority(Record brageRecord) {
-        return Optional.ofNullable(brageRecord.getPublisherAuthority())
-                   .map(PublisherAuthority::getNva)
-                   .orElse(false);
+        return Optional.ofNullable(brageRecord.getPublisherAuthority()).map(PublisherAuthority::getNva).orElse(false);
     }
 
     private static URI getLicenseUri(ContentFile file) {
@@ -230,8 +209,7 @@ public final class BrageNvaMapper {
 
     private static EntityDescription extractEntityDescription(Record brageRecord)
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        return new EntityDescription.Builder()
-                   .withLanguage(extractLanguage(brageRecord))
+        return new EntityDescription.Builder().withLanguage(extractLanguage(brageRecord))
                    .withAbstract(extractAbstract(brageRecord))
                    .withDescription(extractDescription(brageRecord))
                    .withPublicationDate(extractDate(brageRecord))
@@ -271,8 +249,8 @@ public final class BrageNvaMapper {
 
     private static Reference extractReference(Record brageRecord)
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        return new Reference.Builder()
-                   .withPublishingContext(PublicationContextMapper.buildPublicationContext(brageRecord))
+        return new Reference.Builder().withPublishingContext(
+                PublicationContextMapper.buildPublicationContext(brageRecord))
                    .withPublicationInstance(PublicationInstanceMapper.buildPublicationInstance(brageRecord))
                    .withDoi(extractDoi(brageRecord))
                    .build();
@@ -287,9 +265,7 @@ public final class BrageNvaMapper {
     }
 
     private static List<Contributor> extractContributors(Record brageRecord) {
-        return Optional.ofNullable(getContributors(brageRecord))
-                   .map(BrageNvaMapper::generateContributors)
-                   .orElse(null);
+        return Optional.ofNullable(getContributors(brageRecord)).map(BrageNvaMapper::generateContributors).orElse(null);
     }
 
     private static List<no.sikt.nva.brage.migration.record.Contributor> getContributors(Record brageRecord) {
@@ -298,15 +274,11 @@ public final class BrageNvaMapper {
 
     private static List<Contributor> generateContributors(
         List<no.sikt.nva.brage.migration.record.Contributor> contributors) {
-        return contributors.stream()
-                   .filter(Objects::nonNull)
-                   .map(BrageNvaMapper::mapContributorToNva)
-                   .toList();
+        return contributors.stream().filter(Objects::nonNull).map(BrageNvaMapper::mapContributorToNva).toList();
     }
 
     private static Contributor mapContributorToNva(no.sikt.nva.brage.migration.record.Contributor contributor) {
-        return new Contributor.Builder()
-                   .withRole(extractRole(contributor))
+        return new Contributor.Builder().withRole(extractRole(contributor))
                    .withIdentity(extractIdentity(contributor))
                    .withAffiliations(generateAffiliations(contributor))
                    .build();
@@ -319,15 +291,11 @@ public final class BrageNvaMapper {
     }
 
     private static List<Organization> getCristinOrganizationList(List<Affiliation> affiliations) {
-        return affiliations.stream()
-                   .map(BrageNvaMapper::toCristinOrganization)
-                   .toList();
+        return affiliations.stream().map(BrageNvaMapper::toCristinOrganization).toList();
     }
 
     private static Organization toCristinOrganization(Affiliation affiliation) {
-        return new Organization.Builder()
-                   .withId(generateCristinOrganization(affiliation))
-                   .build();
+        return new Organization.Builder().withId(generateCristinOrganization(affiliation)).build();
     }
 
     private static URI generateCristinOrganization(Affiliation affiliation) {
@@ -346,21 +314,15 @@ public final class BrageNvaMapper {
     }
 
     private static RoleType extractRole(no.sikt.nva.brage.migration.record.Contributor contributor) {
-        return Optional.of(new RoleType(Role.parse(contributor.getRole())))
-                   .orElse(new RoleType(Role.OTHER));
+        return Optional.of(new RoleType(Role.parse(contributor.getRole()))).orElse(new RoleType(Role.OTHER));
     }
 
     private static Identity extractIdentity(no.sikt.nva.brage.migration.record.Contributor contributor) {
-        return Optional.ofNullable(contributor.getIdentity())
-                   .map(BrageNvaMapper::generateIdentity)
-                   .orElse(null);
+        return Optional.ofNullable(contributor.getIdentity()).map(BrageNvaMapper::generateIdentity).orElse(null);
     }
 
     private static Identity generateIdentity(no.sikt.nva.brage.migration.record.Identity identity) {
-        return new Identity.Builder()
-                   .withName(identity.getName())
-                   .withId(generateIdentityIdentifier(identity))
-                   .build();
+        return new Identity.Builder().withName(identity.getName()).withId(generateIdentityIdentifier(identity)).build();
     }
 
     private static URI generateIdentityIdentifier(no.sikt.nva.brage.migration.record.Identity identity) {
@@ -386,8 +348,7 @@ public final class BrageNvaMapper {
 
     private static PublicationDate generatePublicationDate(
         no.sikt.nva.brage.migration.record.PublicationDate publicationDate) {
-        return new Builder()
-                   .withYear(publicationDate.getNva().getYear())
+        return new Builder().withYear(publicationDate.getNva().getYear())
                    .withMonth(publicationDate.getNva().getMonth())
                    .withDay(publicationDate.getNva().getDay())
                    .build();
@@ -406,7 +367,8 @@ public final class BrageNvaMapper {
     private static String extractAbstract(Record brageRecord) {
         return Optional.ofNullable(brageRecord.getEntityDescription().getAbstracts())
                    .map(BrageNvaMapper::filterOutEmptyValues)
-                   .map(abstracts -> abstracts.isEmpty() ? null : mergeValuesIfNeeded(abstracts))
+                   .filter(abstracts -> !abstracts.isEmpty())
+                   .map(BrageNvaMapper::joinByNewLine)
                    .orElse(null);
     }
 }
