@@ -15,7 +15,6 @@ import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_PRINT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.sikt.nva.scopus.ScopusHandler.SCOPUS_IMPORT_BUCKET;
 import static no.sikt.nva.scopus.ScopusHandler.SUCCESS_BUCKET_PATH;
-import static no.sikt.nva.scopus.conversion.ContributorExtractor.NAME_DELIMITER;
 import static no.sikt.nva.scopus.conversion.PiaConnection.API_HOST;
 import static no.sikt.nva.scopus.conversion.PiaConnection.PIA_PASSWORD_KEY;
 import static no.sikt.nva.scopus.conversion.PiaConnection.PIA_REST_API_ENV_KEY;
@@ -1292,6 +1291,10 @@ class ScopusHandlerTest extends ResourcesLocalTest {
             List.of(ExpandedImportCandidate.fromImportCandidate(importCandidate, null)), 1)));
     }
 
+    private static List<Affiliation> getActiveAffiliations(CristinPerson expectedCristinPerson) {
+        return expectedCristinPerson.getAffiliations().stream().filter(Affiliation::isActive).toList();
+    }
+
     private String mockFetchCrossrefDoiResponse(ScopusGenerator scopusData, WireMockRuntimeInfo wireMockRuntimeInfo) {
         var downloadUrl = UriWrapper.fromUri(wireMockRuntimeInfo.getHttpBaseUrl()).addChild(randomString());
         stubFor(WireMock.get(urlPathEqualTo("/" + scopusData.getDocument().getMeta().getDoi()))
@@ -1635,8 +1638,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                                                                   List<CristinPerson> cristinCristinPeople) {
         var actualCristinId = contributor.getIdentity().getId();
         assertThat(actualCristinId, hasProperty("path", containsString("/cristin/person")));
-        var expectedCristinPerson =
-            getPersonByCristinNumber(cristinCristinPeople, actualCristinId).orElseThrow();
+        var expectedCristinPerson = getPersonByCristinNumber(cristinCristinPeople, actualCristinId).orElseThrow();
         var actualCristinNumber = actualCristinId.getPath().split("/")[3];
         var expectedName = calculateExpectedNameFromCristinPerson(expectedCristinPerson);
         var expectedAuthor = cristinIdAndAuthor.get(Integer.parseInt(actualCristinNumber));
@@ -1645,8 +1647,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
         assertThat(contributor.getIdentity().getName(), is(equalTo(expectedName)));
 
-        assertThat(contributor.getAffiliations(),
-                   hasSize(getActiveAffiliations(expectedCristinPerson).size()));
+        assertThat(contributor.getAffiliations(), hasSize(getActiveAffiliations(expectedCristinPerson).size()));
 
         assertThat(contributor.getIdentity().getVerificationStatus(),
                    anyOf(equalTo(ContributorVerificationStatus.VERIFIED),
@@ -1679,10 +1680,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
             expectedAffiliationLabels.stream().map(Matchers::equalTo).collect(Collectors.toList())));
     }
 
-    private static List<Affiliation> getActiveAffiliations(CristinPerson expectedCristinPerson) {
-        return expectedCristinPerson.getAffiliations().stream().filter(Affiliation::isActive).toList();
-    }
-
     private String calculateExpectedNameFromCristinPerson(CristinPerson cristinPerson) {
         return cristinPerson.getNames()
                    .stream()
@@ -1690,11 +1687,11 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                    .findFirst()
                    .map(TypedValue::getValue)
                    .orElse(StringUtils.EMPTY_STRING) + StringUtils.SPACE + cristinPerson.getNames()
-                                                                  .stream()
-                                                                  .filter(this::isSurname)
-                                                                  .findFirst()
-                                                                  .map(TypedValue::getValue)
-                                                                  .orElse(StringUtils.EMPTY_STRING);
+                                                                               .stream()
+                                                                               .filter(this::isSurname)
+                                                                               .findFirst()
+                                                                               .map(TypedValue::getValue)
+                                                                               .orElse(StringUtils.EMPTY_STRING);
     }
 
     private boolean isFirstName(TypedValue typedValue) {
@@ -1833,7 +1830,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     private String getExpectedFullAuthorName(AuthorTp authorTp) {
-        return authorTp.getPreferredName().getGivenName() + StringUtils.SPACE + authorTp.getPreferredName().getSurname();
+        return authorTp.getPreferredName().getGivenName() + StringUtils.SPACE + authorTp.getPreferredName()
+                                                                                    .getSurname();
     }
 
     private S3Event createNewScopusPublicationEvent() throws IOException {
