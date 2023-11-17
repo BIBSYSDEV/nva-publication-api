@@ -42,7 +42,6 @@ public final class AffiliationGenerator {
                    : cristinOrganizations.stream().map(AffiliationGenerator::toOrganization).toList();
     }
 
-    @NotNull
     private static List<Organization> getOrganizationsFromAuthorGroup(AuthorGroupTp authorGroup) {
         return List.of(
             new Organization.Builder().withLabels(getOrganizationLabels(authorGroup).orElseGet(Map::of)).build());

@@ -25,7 +25,7 @@ public class CristinContributorExtractorTest {
         var person = new CristinPerson(null, null, Set.of(FIRST_NAME, LAST_NAME), null, null, null);
         var contributor = CristinContributorExtractor.generateContributorFromCristinPerson(person, authorTp(), null,
                                                                                            null);
-        var expectedName = "First, Last";
+        var expectedName = "First Last";
         assertThat(contributor.getIdentity().getName(), is(equalTo(expectedName)));
     }
 

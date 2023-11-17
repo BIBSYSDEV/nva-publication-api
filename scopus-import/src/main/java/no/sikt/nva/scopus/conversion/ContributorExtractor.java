@@ -31,6 +31,7 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import nva.commons.core.StringUtils;
 import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
 
 @SuppressWarnings("PMD.GodClass")
@@ -291,8 +292,8 @@ public class ContributorExtractor {
 
     private String determineContributorName(AuthorTp author) {
         return nonNull(author.getPreferredName())
-            ? author.getPreferredName().getGivenName() + NAME_DELIMITER + author.getPreferredName().getSurname()
-            : author.getGivenName() + NAME_DELIMITER + author.getSurname();
+            ? author.getPreferredName().getGivenName() + StringUtils.SPACE + author.getPreferredName().getSurname()
+            : author.getGivenName() + StringUtils.SPACE + author.getSurname();
     }
 
     private String determineContributorName(CollaborationTp collaborationTp) {
