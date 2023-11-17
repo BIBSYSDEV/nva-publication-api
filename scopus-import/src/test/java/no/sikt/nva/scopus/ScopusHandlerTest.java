@@ -1689,7 +1689,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                    .filter(this::isFirstName)
                    .findFirst()
                    .map(TypedValue::getValue)
-                   .orElse(StringUtils.EMPTY_STRING) + ", " + cristinPerson.getNames()
+                   .orElse(StringUtils.EMPTY_STRING) + StringUtils.SPACE + cristinPerson.getNames()
                                                                   .stream()
                                                                   .filter(this::isSurname)
                                                                   .findFirst()
@@ -1833,7 +1833,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     private String getExpectedFullAuthorName(AuthorTp authorTp) {
-        return authorTp.getPreferredName().getGivenName() + NAME_DELIMITER + authorTp.getPreferredName().getSurname();
+        return authorTp.getPreferredName().getGivenName() + StringUtils.SPACE + authorTp.getPreferredName().getSurname();
     }
 
     private S3Event createNewScopusPublicationEvent() throws IOException {

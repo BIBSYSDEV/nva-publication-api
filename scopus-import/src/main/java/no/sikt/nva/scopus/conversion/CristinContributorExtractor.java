@@ -116,7 +116,7 @@ public final class CristinContributorExtractor {
         if (firstName.isEmpty() || lastName.isEmpty()) {
             return firstName + lastName;
         }
-        return firstName + NAME_DELIMITER + lastName;
+        return firstName + StringUtils.SPACE + lastName;
     }
 
     private static String getFirstName(CristinPerson cristinPerson) {

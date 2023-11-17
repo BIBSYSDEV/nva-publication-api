@@ -27,6 +27,7 @@ import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
 import no.sikt.nva.scopus.utils.CristinGenerator;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
 import nva.commons.core.SingletonCollector;
+import nva.commons.core.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -182,7 +183,7 @@ public class ContributorExtractorTest {
         var surname = randomString();
         when(cristinConnection.getCristinPersonByOrcId(eq(orcId))).thenReturn(
             Optional.of(CristinGenerator.generateCristinPerson(randomUri(), firstname, surname)));
-        return firstname + ", " + surname;
+        return firstname + StringUtils.SPACE + surname;
     }
 
     private void mockRandomCristinOrgResponse() {
