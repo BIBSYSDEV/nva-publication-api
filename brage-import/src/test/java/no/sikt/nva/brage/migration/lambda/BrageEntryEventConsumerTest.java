@@ -743,6 +743,32 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldNotAddLineBreaksToDescriptionAndAbstractWhenBrageRecordContainsSingleValue() throws IOException {
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_TEXTBOOK)
+                                 .withDescription(List.of(randomString()))
+                                 .withAbstracts(List.of(randomString()))
+                                 .build();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+
+        assertThat(actualPublication.getEntityDescription().getDescription(), not(containsString("\n")));
+        assertThat(actualPublication.getEntityDescription().getAbstract(), not(containsString("\n")));
+    }
+
+    @Test
+    void shouldNotCreateAbstractAndDescriptionWhenSingleValueIsBlankString() throws IOException {
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_TEXTBOOK)
+                                 .withDescription(List.of("  "))
+                                 .withAbstracts(List.of("  "))
+                                 .build();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+
+        assertThat(actualPublication.getEntityDescription().getDescription(), is(nullValue()));
+        assertThat(actualPublication.getEntityDescription().getAbstract(), is(nullValue()));
+    }
+
+    @Test
     void shouldStoreExceptionWhenConvertingCristinRecordAndPublicationWithMatchingCristinIdDoesExist()
         throws IOException, BadRequestException {
         var existingPublication = randomPublication().copy().withAdditionalIdentifiers(Set.of()).build();

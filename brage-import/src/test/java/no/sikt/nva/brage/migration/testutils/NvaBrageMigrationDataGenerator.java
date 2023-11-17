@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.record.Affiliation;
 import no.sikt.nva.brage.migration.record.Contributor;
 import no.sikt.nva.brage.migration.record.Customer;
@@ -125,8 +126,7 @@ public class NvaBrageMigrationDataGenerator {
     }
 
     private EntityDescription createEntityDescription(Builder builder) {
-        return new EntityDescription.Builder()
-                   .withLanguage(builder.getLanguage().getNva())
+        return new EntityDescription.Builder().withLanguage(builder.getLanguage().getNva())
                    .withContributors(builder.noContributors ? List.of() : List.of(createCorrespondingContributor()))
                    .withReference(ReferenceGenerator.generateReference(builder))
                    .withDescription(builder.getDescriptionsForPublication())
@@ -164,8 +164,7 @@ public class NvaBrageMigrationDataGenerator {
     private no.unit.nva.model.Contributor createCorrespondingContributor() {
         var contributor = createContributor();
         var name = contributor.getIdentity().getName();
-        return new no.unit.nva.model.Contributor.Builder()
-                   .withIdentity(createIdentity(name))
+        return new no.unit.nva.model.Contributor.Builder().withIdentity(createIdentity(name))
                    .withAffiliations(createAffiliationList())
                    .withRole(new RoleType(Role.parse(contributor.getRole())))
                    .build();
@@ -204,8 +203,8 @@ public class NvaBrageMigrationDataGenerator {
         public static final URI CUSTOMER_URi = URI.create(
             "https://dev.nva.sikt.no/registration/0184ebf2c2ad" + "-0b4cd833-2f8c-4bd6-b11b-7b9cb15e9c05/edit");
         public static final URI RESOURCE_OWNER_URI = URI.create("https://api.nva.unit.no/customer/test");
-        private boolean noContributors;
         public ResourceOwner resourceOwner;
+        private boolean noContributors;
         private URI handle;
         private boolean handleShouldBeNull;
         private URI doi;
@@ -462,7 +461,9 @@ public class NvaBrageMigrationDataGenerator {
         }
 
         public String getDescriptionsForPublication() {
-            return isNull(descriptions) || descriptions.isEmpty() ? null : mergeStringsByLineBreak(descriptions);
+            var filteredDescription = descriptions.stream().filter(value -> !value.isBlank()).toList();
+            return isNull(filteredDescription) || filteredDescription.isEmpty() ? null
+                       : filteredDescription.stream().collect(Collectors.joining(System.lineSeparator()));
         }
 
         public Type getType() {
@@ -552,7 +553,6 @@ public class NvaBrageMigrationDataGenerator {
             this.volume = volume;
             return this;
         }
-
 
         public Builder withSubjects(Set<URI> subjects) {
             this.subjects = subjects;
@@ -649,7 +649,9 @@ public class NvaBrageMigrationDataGenerator {
         }
 
         public String getEntityAbstractsForPublication() {
-            return isNull(abstracts) || abstracts.isEmpty() ? null : mergeStringsByLineBreak(abstracts);
+            var filteredAbstracts = abstracts.stream().filter(value -> !value.isBlank()).toList();
+            return isNull(filteredAbstracts) || filteredAbstracts.isEmpty() ? null
+                       : filteredAbstracts.stream().collect(Collectors.joining(System.lineSeparator()));
         }
 
         public URI getLink() {
@@ -678,14 +680,6 @@ public class NvaBrageMigrationDataGenerator {
                        .withMonth(publicationDate.getNva().getMonth())
                        .withDay(publicationDate.getNva().getDay())
                        .build();
-        }
-
-        private static String mergeStringsByLineBreak(List<String> list) {
-            var sb = new StringBuilder();
-            for (String string : list) {
-                sb.append(string).append("\n");
-            }
-            return sb.toString();
         }
 
         private PublicationDate createPublicationDate() {
