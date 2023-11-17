@@ -17,13 +17,8 @@ public class CuratorPermissionStrategy extends PermissionStrategy {
     }
 
     private static Boolean userIsFromSameInstitutionAsPublication(RequestInfo requestInfo, Publication publication) {
-        var requestInfoCurrentCustomer = attempt(requestInfo::getCurrentCustomer)
-                                             .orElse(uriFailure -> null);
-
-        if (requestInfoCurrentCustomer == null) {
-            return false;
-        }
-
-        return publication.getPublisher().getId().equals(requestInfoCurrentCustomer);
+        return attempt(requestInfo::getCurrentCustomer)
+                   .map(customer -> customer.equals(publication.getPublisher().getId()))
+                   .orElse(fail -> false);
     }
 }

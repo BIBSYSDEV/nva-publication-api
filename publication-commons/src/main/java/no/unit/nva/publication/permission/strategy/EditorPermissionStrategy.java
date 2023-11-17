@@ -15,10 +15,6 @@ import nva.commons.apigateway.RequestInfo;
 
 public class EditorPermissionStrategy extends PermissionStrategy {
 
-    public EditorPermissionStrategy() {
-        super();
-    }
-
     @Override
     public boolean hasPermission(RequestInfo requestInfo, Publication publication) {
         if (isDegree(publication)) {

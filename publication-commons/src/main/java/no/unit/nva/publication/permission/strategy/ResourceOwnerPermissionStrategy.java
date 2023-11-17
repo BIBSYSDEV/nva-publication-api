@@ -9,13 +9,8 @@ public class ResourceOwnerPermissionStrategy extends PermissionStrategy {
 
     @Override
     public boolean hasPermission(RequestInfo requestInfo, Publication publication) {
-        var username = attempt(requestInfo::getUserName)
-                           .orElse(stringFailure -> null);
-
-        if (username == null) {
-            return false;
-        }
-
-        return UserInstance.fromPublication(publication).getUsername().equals(username);
+        return attempt(requestInfo::getUserName)
+                           .map(username -> UserInstance.fromPublication(publication).getUsername().equals(username))
+                           .orElse(fail -> false);
     }
 }

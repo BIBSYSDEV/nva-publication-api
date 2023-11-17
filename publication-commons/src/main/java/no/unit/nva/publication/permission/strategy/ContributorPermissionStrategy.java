@@ -1,25 +1,25 @@
 package no.unit.nva.publication.permission.strategy;
 
-import static java.util.Objects.nonNull;
 import static no.unit.nva.model.role.Role.CREATOR;
 import static nva.commons.core.attempt.Try.attempt;
+import java.net.URI;
 import java.util.Objects;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.role.RoleType;
 import nva.commons.apigateway.RequestInfo;
 
 public class ContributorPermissionStrategy extends PermissionStrategy {
 
     @Override
     public boolean hasPermission(RequestInfo requestInfo, Publication publication) {
-        var identity = attempt(requestInfo::getPersonCristinId)
-                           .orElse(uriFailure -> null);
+        return attempt(requestInfo::getPersonCristinId)
+                           .map(cristinId -> publicationContainsContributor(cristinId, publication))
+                           .orElse(fail -> false);
+    }
 
-        if (identity == null) {
-            return false;
-        }
-
+    private boolean publicationContainsContributor(URI contributor, Publication publication) {
         return publication.getEntityDescription()
                    .getContributors()
                    .stream()
@@ -27,10 +27,13 @@ public class ContributorPermissionStrategy extends PermissionStrategy {
                    .map(Contributor::getIdentity)
                    .map(Identity::getId)
                    .filter(Objects::nonNull)
-                   .anyMatch(identity::equals);
+                   .anyMatch(contributor::equals);
     }
 
     private static boolean isCreator(Contributor contributor) {
-        return nonNull(contributor.getRole()) && CREATOR.equals(contributor.getRole().getType());
+        return attempt(contributor::getRole)
+                   .map(RoleType::getType)
+                   .map(CREATOR::equals)
+                   .get();
     }
 }
