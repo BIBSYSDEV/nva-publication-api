@@ -104,7 +104,7 @@ public class ScopusUpdater {
     private String constructQuery(String scopusIdentifier) {
         return "(additionalIdentifiers.value:\""
                + scopusIdentifier
-               + "\")+AND+(additionalIdentifiers.source:\"scopusIdentifier\")";
+               + "\")+AND+(additionalIdentifiers.source:\"Scopus\")";
     }
 
     private Optional<String> getResponseBody(URI uri) {

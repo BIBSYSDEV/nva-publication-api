@@ -6,7 +6,7 @@ import nva.commons.core.paths.UriWrapper;
 
 public class ScopusConstants {
     // Identifier field names:
-    public static final String ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME = "scopusIdentifier";
+    public static final String SCOPUS_IDENTIFIER = "Scopus";
     public static final String SCOPUS_ITEM_IDENTIFIER_SCP_FIELD_NAME = "scp";
 
     // URI constants:

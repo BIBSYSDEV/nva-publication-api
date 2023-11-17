@@ -42,7 +42,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     private final String persistedStorageBucket;
     private final String importCandidateStorageBucket;
     public static final String API_HOST = new Environment().readEnv("API_HOST");
-    public static final String SCOPUS_IDENTIFIER = "scopusIdentifier";
+    public static final String SCOPUS_IDENTIFIER = "Scopus";
     public static final String ROLLBACK_WENT_WRONG_MESSAGE = "Rollback went wrong";
     public static final String IMPORT_PROCESS_WENT_WRONG = "Import process went wrong";
     public static final String RESOURCE_HAS_ALREADY_BEEN_IMPORTED_ERROR_MESSAGE = "Resource has already been imported";

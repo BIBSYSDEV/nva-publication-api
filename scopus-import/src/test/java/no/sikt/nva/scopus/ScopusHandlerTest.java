@@ -8,7 +8,7 @@ import static java.util.Objects.nonNull;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.ERROR_BUCKET_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.PATH_SEPERATOR;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM_DD_HH_FORMAT;
-import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
+import static no.sikt.nva.scopus.ScopusConstants.SCOPUS_IDENTIFIER;
 import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_ELECTRONIC;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_PRINT;
@@ -337,7 +337,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     void shouldExtractOnlyScopusIdentifierIgnoreAllOtherIdentifiersAndStoreItInPublication() throws IOException {
         createEmptyPiaMock();
         var scopusIdentifiers = scopusData.getDocument().getMeta().getEid();
-        var expectedAdditionalIdentifier = new AdditionalIdentifier(ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME,
+        var expectedAdditionalIdentifier = new AdditionalIdentifier(SCOPUS_IDENTIFIER,
                                                                     scopusIdentifiers);
         var s3Event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -737,9 +737,9 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         createEmptyPiaMock();
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
         var s3Event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
-        var report = extractSuccessReport(s3Event, publication);
-        assertThat(getScopusIdentifier(publication), is(equalTo(report)));
+        var importCandidate = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var report = extractSuccessReport(s3Event, importCandidate);
+        assertThat(getScopusIdentifier(importCandidate), is(equalTo(report)));
     }
 
     @Test
@@ -1281,7 +1281,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private static String getScopusIdentifier(Publication publication) {
         return publication.getAdditionalIdentifiers()
                    .stream()
-                   .filter(id -> "scopusIdentifier".equals(id.getSourceName()))
+                   .filter(id -> SCOPUS_IDENTIFIER.equals(id.getSourceName()))
                    .findFirst()
                    .map(AdditionalIdentifier::getValue)
                    .orElse(null);
@@ -1377,7 +1377,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                    .withRightsHolder(randomString())
                    .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
                    .withFundings(List.of(new FundingBuilder().build()))
-                   .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier("scopusIdentifier", randomString())))
+                   .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Scopus", randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of())
                    .build();
@@ -1498,11 +1498,11 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         return scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getAuthorGroup().get(0);
     }
 
-    private String extractSuccessReport(S3Event s3Event, Publication publication) {
+    private String extractSuccessReport(S3Event s3Event, ImportCandidate importCandidate) {
         UriWrapper handleReport = UriWrapper.fromUri(SUCCESS_BUCKET_PATH)
                                       .addChild(
                                           s3Event.getRecords().get(0).getEventTime().toString(YYYY_MM_DD_HH_FORMAT))
-                                      .addChild(publication.getIdentifier().toString());
+                                      .addChild(importCandidate.getIdentifier().toString());
         S3Driver s3Driver = new S3Driver(s3Client, new Environment().readEnv(SCOPUS_IMPORT_BUCKET));
         return s3Driver.getFile(handleReport.toS3bucketPath());
     }

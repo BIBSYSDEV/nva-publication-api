@@ -2,7 +2,7 @@ package no.sikt.nva.scopus;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
-import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
+import static no.sikt.nva.scopus.ScopusConstants.SCOPUS_IDENTIFIER;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.sikt.nva.scopus.ScopusConstants.INF_END;
 import static no.sikt.nva.scopus.ScopusConstants.INF_START;
@@ -273,7 +273,7 @@ public class ScopusConverter {
     }
 
     private AdditionalIdentifier extractScopusIdentifier() {
-        return new AdditionalIdentifier(ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME, docTp.getMeta().getEid());
+        return new AdditionalIdentifier(SCOPUS_IDENTIFIER, docTp.getMeta().getEid());
     }
 
     private List<AuthorGroupTp> extractAuthorGroup() {

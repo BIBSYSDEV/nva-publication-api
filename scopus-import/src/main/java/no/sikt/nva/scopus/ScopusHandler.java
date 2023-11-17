@@ -50,7 +50,7 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     public static final String S3_URI_TEMPLATE = "s3://%s/%s";
     public static final String PATH_SEPERATOR = "/";
     public static final String SCOPUS_IMPORT_BUCKET = "SCOPUS_IMPORT_BUCKET";
-    public static final String SCOPUS_IDENTIFIER = "scopusIdentifier";
+    public static final String SCOPUS_IDENTIFIER = "Scopus";
     public static final String SUCCESS_BUCKET_PATH = "SUCCESS";
     private static final String ERROR_SAVING_SCOPUS_PUBLICATION = "Error saving imported scopus publication object "
                                                                   + "key: {}";
@@ -243,7 +243,7 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
 
     private ImportCandidate createImportCandidate(S3Event event) {
         return attempt(() -> readFile(event)).map(this::parseXmlFile)
-                   .map(this::generatePublication)
+                   .map(this::generateImportCandidate)
                    .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
     }
 
@@ -256,7 +256,7 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
         return JAXB.unmarshal(new StringReader(file), DocTp.class);
     }
 
-    private ImportCandidate generatePublication(DocTp docTp) {
+    private ImportCandidate generateImportCandidate(DocTp docTp) {
         var scopusConverter = new ScopusConverter(docTp, piaConnection, cristinConnection, publicationChannelConnection,
                                                   scopusFileConverter);
         return scopusConverter.generateImportCandidate();

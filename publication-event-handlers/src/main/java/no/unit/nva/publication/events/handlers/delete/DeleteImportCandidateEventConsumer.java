@@ -117,6 +117,6 @@ public class DeleteImportCandidateEventConsumer
     private String constructQuery(String scopusIdentifier) {
         return "(additionalIdentifiers.value:\""
                + scopusIdentifier
-               + "\")+AND+(additionalIdentifiers.source:\"scopusIdentifier\")";
+               + "\")+AND+(additionalIdentifiers.source:\"Scopus\")";
     }
 }
