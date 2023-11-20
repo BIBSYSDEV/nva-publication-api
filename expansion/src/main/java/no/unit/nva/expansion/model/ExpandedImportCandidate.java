@@ -34,6 +34,7 @@ import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.Report;
+import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
@@ -70,6 +71,8 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     public static final String IMPORT_CANDIDATE = "import-candidate";
     public static final String ASSOCIATED_ARTIFACTS_FIELD = "associatedArtifacts";
     public static final String COLLABORATION_TYPE_FIELD = "collaborationType";
+    public static final String PRINT_ISSN_FIELD = "printIssn";
+    public static final String ONLINE_ISSN_FIELD = "onlineIssn";
     private static final String CUSTOMER = "customer";
     private static final String CRISTIN_ID = "cristinId";
     @JsonProperty(ID_FIELD)
@@ -105,6 +108,10 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     private Instant createdDate;
     @JsonProperty(ASSOCIATED_ARTIFACTS_FIELD)
     private List<AssociatedArtifact> associatedArtifacts;
+    @JsonProperty(PRINT_ISSN_FIELD)
+    private String printIssn;
+    @JsonProperty(ONLINE_ISSN_FIELD)
+    private String onlineIssn;
 
     public static ExpandedImportCandidate fromImportCandidate(ImportCandidate importCandidate,
                                                               AuthorizedBackendUriRetriever uriRetriever) {
@@ -125,12 +132,25 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .withCreatedDate(importCandidate.getCreatedDate())
                    .withCooperation(extractCooperation(organizations))
                    .withAssociatedArtifacts(importCandidate.getAssociatedArtifacts())
+                   .withPrintIssn(extractPrintIssn(importCandidate))
+                   .withOnlineIssn(extractOnlineIssn(importCandidate))
                    .build();
     }
 
-    @JacocoGenerated
-    public void setAssociatedArtifacts(List<AssociatedArtifact> associatedArtifacts) {
-        this.associatedArtifacts = associatedArtifacts;
+    public String getPrintIssn() {
+        return printIssn;
+    }
+
+    private void setPrintIssn(String printIssn) {
+        this.printIssn = printIssn;
+    }
+
+    public String getOnlineIssn() {
+        return onlineIssn;
+    }
+
+    public void setOnlineIssn(String onlineIssn) {
+        this.onlineIssn = onlineIssn;
     }
 
     public void setContributors(List<Contributor> contributors) {
@@ -142,13 +162,18 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
         return createdDate;
     }
 
+    private void setCreatedDate(Instant createdDate) {
+        this.createdDate = createdDate;
+    }
+
     @JacocoGenerated
     public List<AssociatedArtifact> getAssociatedArtifacts() {
         return associatedArtifacts;
     }
 
-    private void setCreatedDate(Instant createdDate) {
-        this.createdDate = createdDate;
+    @JacocoGenerated
+    public void setAssociatedArtifacts(List<AssociatedArtifact> associatedArtifacts) {
+        this.associatedArtifacts = associatedArtifacts;
     }
 
     @JacocoGenerated
@@ -276,6 +301,24 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     @Override
     public SortableIdentifier identifyExpandedEntry() {
         return new SortableIdentifier(UriWrapper.fromUri(identifier).getLastPathElement());
+    }
+
+    private static String extractOnlineIssn(ImportCandidate importCandidate) {
+        return Optional.ofNullable(importCandidate.getEntityDescription().getReference())
+                   .map(Reference::getPublicationContext)
+                   .filter(publicationContext -> publicationContext instanceof UnconfirmedJournal)
+                   .map(UnconfirmedJournal.class::cast)
+                   .map(UnconfirmedJournal::getOnlineIssn)
+                   .orElse(null);
+    }
+
+    private static String extractPrintIssn(ImportCandidate importCandidate) {
+        return Optional.ofNullable(importCandidate.getEntityDescription().getReference())
+                   .map(Reference::getPublicationContext)
+                   .filter(publicationContext -> publicationContext instanceof UnconfirmedJournal)
+                   .map(UnconfirmedJournal.class::cast)
+                   .map(UnconfirmedJournal::getPrintIssn)
+                   .orElse(null);
     }
 
     private static CollaborationType extractCooperation(Set<Organization> organizations) {
@@ -543,5 +586,14 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
             return expandedImportCandidate;
         }
 
+        public Builder withPrintIssn(String printIssn) {
+            expandedImportCandidate.setPrintIssn(printIssn);
+            return this;
+        }
+
+        public Builder withOnlineIssn(String onlineIssn) {
+            expandedImportCandidate.setOnlineIssn(onlineIssn);
+            return this;
+        }
     }
 }
