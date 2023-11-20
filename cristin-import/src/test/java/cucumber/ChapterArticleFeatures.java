@@ -46,7 +46,7 @@ public class ChapterArticleFeatures {
     }
 
     @And("the Book Report Part has a DOI equal to {string}")
-    public void theBookReportPartHasADOIEqualTo(String doi) {
+    public void theBookReportPartHasADoiEqualTo(String doi) {
         scenarioContext.getCristinEntry().getBookOrReportPartMetadata().setDoi(doi);
     }
 }

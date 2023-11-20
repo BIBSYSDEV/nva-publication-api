@@ -49,7 +49,7 @@ public class ReportFeatures {
     }
 
     @And("the cristin Book Report has a DOI equal to {string}")
-    public void theCristinBookReportHasADOIEqualTo(String doi) {
+    public void theCristinBookReportHasADoiEqualTo(String doi) {
         scenarioContext.getCristinEntry().getBookOrReportMetadata().setDoi(doi);
     }
 }
