@@ -116,7 +116,7 @@ public class ScopusConverter {
                    .withResourceOwner(constructResourceOwner())
                    .withAdditionalIdentifiers(generateAdditionalIdentifiers())
                    .withEntityDescription(generateEntityDescription())
-                   .withModifiedDate(Instant.now())
+                   .withCreatedDate(Instant.now())
                    .withStatus(PublicationStatus.PUBLISHED)
                    .withImportStatus(ImportStatusFactory.createNotImported())
                    .withAssociatedArtifacts(scopusFileConverter.fetchAssociatedArtifacts(docTp))
