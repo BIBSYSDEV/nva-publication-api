@@ -71,7 +71,7 @@ import static nva.commons.core.attempt.Try.attempt;
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"status_bestilt", "produkttype"})
-@SuppressWarnings({"PMD.TooManyFields"})
+@SuppressWarnings({"PMD.TooManyFields", "PMD.GodClass"})
 public class CristinArtisticProduction implements DescriptionExtractor, MovingPictureExtractor {
 
     @JsonIgnore
@@ -100,7 +100,6 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
 
     @JsonProperty("antall_ensemble")
     private int ensembleCount;
-
 
     @JsonProperty("utgivernavn")
     private String publisherName;
@@ -135,7 +134,6 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     @JsonProperty("hendelse")
     private ArtisticEvent event;
 
-
     @JacocoGenerated
     public CristinArtisticProduction() {
 
@@ -144,30 +142,9 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     @JsonIgnore
     public MovingPicture toMovingPicture() {
         return new MovingPicture(extractSubType(artisticProductionTimeUnit, duration),
-            extractDescription(descriptionFields()),
-            extractOutPuts());
+                                 extractDescription(descriptionFields()),
+                                 extractOutPuts());
     }
-
-    private List<MovingPictureOutput> extractOutPuts() {
-        return List.of(extractOutPut());
-    }
-
-    private OtherRelease extractOutPut() {
-        return new OtherRelease(medium,
-            new UnconfirmedPlace(publisherPlace, null),
-            new UnconfirmedPublisher(publisherName),
-            null,
-            1);
-    }
-
-    @JsonIgnore
-    private Stream<Optional<String>> descriptionFields() {
-        return Stream.of(createInformativeDescription("Ensemble navn: %s", ensembleName),
-            createInformativeDescription("Produsent: %s", producer),
-            createInformativeDescription("Besetning: %s", crew),
-            createInformativeDescription("Medvirkende: %s", coCreators));
-    }
-
 
     @JsonIgnore
     public MusicPerformance toMusicPerformance() {
@@ -177,14 +154,41 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     @JsonIgnore
     public PerformingArts toTheatricalPerformance() {
         return new PerformingArts(PerformingArtsSubtype.create(PerformingArtsSubtypeEnum.THEATRICAL_PRODUCTION),
-            extractDescription(descriptionFields()),
-            extractTheatricalEvents());
+                                  extractDescription(descriptionFields()),
+                                  extractTheatricalEvents());
+    }
+
+    @JsonIgnore
+    public String getDescription() {
+        return extractDescription(Stream.of(Optional.ofNullable(crew),
+                                            Optional.ofNullable(coCreators)));
+    }
+
+    private List<MovingPictureOutput> extractOutPuts() {
+        return List.of(extractOutPut());
+    }
+
+    private OtherRelease extractOutPut() {
+        return new OtherRelease(medium,
+                                new UnconfirmedPlace(publisherPlace, null),
+                                new UnconfirmedPublisher(publisherName),
+                                null,
+                                1);
+    }
+
+    @JsonIgnore
+    private Stream<Optional<String>> descriptionFields() {
+        return Stream.of(createInformativeDescription("Ensemble navn: %s", ensembleName),
+                         createInformativeDescription("Produsent: %s", producer),
+                         createInformativeDescription("Arrangørnavn: %s", extractOrganizerName()),
+                         createInformativeDescription("Besetning: %s", crew),
+                         createInformativeDescription("Medvirkende: %s", coCreators));
     }
 
     private List<PerformingArtsOutput> extractTheatricalEvents() {
         var performingArtsOutputs = new ArrayList<PerformingArtsOutput>();
         var venueOptional = Optional.ofNullable(event)
-            .map(ArtisticEvent::toNvaPerformingArtsVenue);
+                                .map(ArtisticEvent::toNvaPerformingArtsVenue);
         venueOptional.ifPresent(performingArtsOutputs::add);
         return performingArtsOutputs;
     }
@@ -208,10 +212,10 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
 
     private MusicScore createMusicScore() {
         return attempt(() -> new MusicScore(ensembleName,
-            null, extractExtent(),
-            new UnconfirmedPublisher(publisherName),
-            extractIsmn()))
-            .orElseThrow();
+                                            null, extractExtent(),
+                                            new UnconfirmedPublisher(publisherName),
+                                            extractIsmn()))
+                   .orElseThrow();
     }
 
     private Ismn extractIsmn() throws InvalidIsmnException {
@@ -231,10 +235,10 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
 
     private AudioVisualPublication createAudioVisualPublication() {
         return attempt(() -> new AudioVisualPublication(extractMediumType(),
-            new UnconfirmedPublisher(publisherName),
-            null,
-            List.of(),
-            constructIsrc())).orElseThrow();
+                                                        new UnconfirmedPublisher(publisherName),
+                                                        null,
+                                                        List.of(),
+                                                        constructIsrc())).orElseThrow();
     }
 
     private Isrc constructIsrc() {
@@ -243,7 +247,7 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
 
     private Isrc extractIsrc(String isrc) {
         return attempt(() -> new Isrc(isrc))
-            .orElseThrow(fail -> new InvalidIsrcException(fail.getException()));
+                   .orElseThrow(fail -> new InvalidIsrcException(fail.getException()));
     }
 
     private MusicMediaSubtype extractMediumType() {
@@ -277,7 +281,6 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
             Pattern.CASE_INSENSITIVE);
         var matcher = pattern.matcher(medium);
         return matcher.matches();
-
     }
 
     @JsonIgnore
@@ -287,7 +290,6 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
             Pattern.CASE_INSENSITIVE);
         var matcher = pattern.matcher(medium);
         return matcher.matches();
-
     }
 
     @JsonIgnore
@@ -299,7 +301,6 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
         return matcher.matches();
     }
 
-
     @JsonIgnore
     private boolean isCompactDisc(String medium) {
         var pattern = Pattern.compile(
@@ -309,18 +310,17 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
         return matcher.matches();
     }
 
-
     private MusicPerformanceManifestation extractMusicPerformanceManifestation() {
         return isConcert()
-            ? new Concert(extractPlace(),
-            extractTime(),
-            extractExtent(),
-            extractConcertProgrammes(),
-            null)
-            : new OtherPerformance(null,
-            extractPlace(),
-            extractExtent(),
-            extractProgrammes());
+                   ? new Concert(extractPlace(),
+                                 extractTime(),
+                                 extractExtent(),
+                                 extractConcertProgrammes(),
+                                 null)
+                   : new OtherPerformance(null,
+                                          extractPlace(),
+                                          extractExtent(),
+                                          extractProgrammes());
     }
 
     private List<MusicalWork> extractProgrammes() {
@@ -338,9 +338,9 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
 
     private String extractExtent() {
         return Optional.ofNullable(artisticProductionTimeUnit)
-            .map(ArtisticProductionTimeUnit::timeUnitIsInMinutes)
-            .map(timeIsInMinutes -> timeIsInMinutes ? duration : null)
-            .orElse(null);
+                   .map(ArtisticProductionTimeUnit::timeUnitIsInMinutes)
+                   .map(timeIsInMinutes -> timeIsInMinutes ? duration : null)
+                   .orElse(null);
     }
 
     private List<MusicalWorkPerformance> extractConcertProgrammes() {
@@ -368,9 +368,9 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
         return Optional.ofNullable(event).map(ArtisticEvent::toNvaPlace).orElse(null);
     }
 
-    @JsonIgnore
-    public String getDescription() {
-        return extractDescription(Stream.of(Optional.ofNullable(crew),
-                                                                 Optional.ofNullable(coCreators)));
+    private String extractOrganizerName() {
+        return Optional.ofNullable(event)
+                   .map(ArtisticEvent::getOrganizerName)
+                   .orElse(null);
     }
 }
