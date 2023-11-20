@@ -2224,12 +2224,14 @@ Resources:
 
   BrageMigrationErrorBucket:
     Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
     Properties:
       AccessControl: Private
       BucketName: !Sub "${BrageMigrationErrorBucketName}-${AWS::AccountId}"
 
   ScopusZipBucket:
     Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
     Properties:
       AccessControl: Private
       BucketName: !Sub "${ScopusZipBucketName}-${AWS::AccountId}"
@@ -2242,6 +2244,7 @@ Resources:
 
   ScopusXmlBucket:
     Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
     Properties:
       AccessControl: Private
       BucketName: !Sub "${ScopusXmlBucketName}-${AWS::AccountId}"
@@ -2253,12 +2256,14 @@ Resources:
 
   ImportCandidateStorageBucket:
     Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
     Properties:
       AccessControl: Private
       BucketName: !Sub "${ImportCandidateStorageBucketName}-${AWS::AccountId}"
 
   ScopusImportReportBucket:
     Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
     Properties:
       AccessControl: Private
       BucketName: !Sub "${ScopusImportReportBucketName}-${AWS::AccountId}"
