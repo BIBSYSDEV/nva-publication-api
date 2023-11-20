@@ -72,10 +72,12 @@ public class PublishPublicationHandlerTest {
         var actualResponse =
             GatewayResponse.fromOutputStream(output, PublishPublicationStatusResponse.class);
         
-        GatewayResponse<PublishPublicationStatusResponse> expected = new GatewayResponse<>(
+        GatewayResponse<Object> expected = new GatewayResponse<>(
             restApiMapper.writeValueAsString(status),
             getResponseHeaders(handler.getLocation(identifier).toString()),
-            SC_ACCEPTED
+            SC_ACCEPTED,
+            false,
+            null
         );
         
         assertEquals(expected, actualResponse);
