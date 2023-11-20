@@ -5,11 +5,13 @@ import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
+import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSampleJournal;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSamplePublisher;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSampleSeries;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -30,16 +32,20 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import no.unit.nva.api.PublicationResponse;
@@ -47,6 +53,7 @@ import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.utils.PublicationJsonPointers;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
@@ -59,10 +66,13 @@ import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.external.services.UriRetriever;
+import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UriWrapper;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
@@ -185,6 +195,41 @@ class ExpandedResourceTest {
 
         var deepestNestedSubUnit = findDeepestNestedSubUnit(topLevelForExpandedAffiliation);
         assertThat(deepestNestedSubUnit.at(JSON_PTR_ID).textValue(), is(equalTo(affiliationToBeExpanded.toString())));
+    }
+
+    @Test
+    void shouldReturnIndexDocumentWithSortedContributorsByTheirSequence()
+        throws Exception {
+        final var publication = randomBookWithManyContributors();
+        final var affiliationToBeExpanded = extractAffiliationsUris(publication).get(0);
+
+        final var mockUriRetriever = mock(UriRetriever.class);
+        mockOrganizationResponseForTopLevelAffiliation(affiliationToBeExpanded, mockUriRetriever);
+
+        var framedResultNode = fromPublication(mockUriRetriever, publication).asJsonNode();
+        var contributorsJson = framedResultNode.at("/entityDescription/contributors");
+
+        List<Contributor> contributors = objectMapper.convertValue(contributorsJson,
+                                                                   objectMapper.getTypeFactory()
+                                                                       .constructCollectionType(List.class,
+                                                                                                Contributor.class));
+        var sortedContributors = contributors.stream().sorted(
+            Comparator.comparing(Contributor::getSequence)).toList();
+
+        assertThat(contributors, is(equalTo(sortedContributors)));
+    }
+
+    @Test
+    void shouldReturnIndexDocumentWithIdWhenThereIsNoEntityDescription()
+        throws Exception {
+        final var publication = randomPublicationWithoutEntityDescription();
+
+        final var mockUriRetriever = mock(UriRetriever.class);
+
+        var framedResultNode = fromPublication(mockUriRetriever, publication).asJsonNode();
+        var id = URI.create(framedResultNode.at(PublicationJsonPointers.ID_JSON_PTR).textValue());
+
+        assertThat(id, is(not(nullValue())));
     }
 
     @Test
@@ -734,5 +779,30 @@ class ExpandedResourceTest {
 
     private Publication randomJournalArticleWithConfirmedJournal() {
         return PublicationGenerator.randomPublication(FeatureArticle.class);
+    }
+
+    private Publication randomPublicationWithoutEntityDescription() {
+        var publication = PublicationGenerator.randomPublication(BookMonograph.class);
+        publication.setEntityDescription(null);
+        return publication;
+    }
+
+    private Contributor randomContributor() {
+        return new Contributor.Builder()
+                   .withIdentity(new Identity.Builder().withName(randomString()).build())
+                   .withRole(new RoleType(Role.ACTOR))
+                   .withSequence(randomInteger(10000))
+                   .withAffiliations(List.of(randomOrganization()))
+                   .build();
+    }
+
+    private Publication randomBookWithManyContributors() {
+        var publication = PublicationGenerator.randomPublication(BookMonograph.class);
+        var contributions = IntStream
+                                .rangeClosed(1, 10)
+                                .mapToObj(i -> randomContributor())
+                                .collect(Collectors.toList());
+        publication.getEntityDescription().setContributors(contributions);
+        return publication;
     }
 }
