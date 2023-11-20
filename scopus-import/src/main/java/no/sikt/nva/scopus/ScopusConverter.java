@@ -116,6 +116,7 @@ public class ScopusConverter {
                    .withResourceOwner(constructResourceOwner())
                    .withAdditionalIdentifiers(generateAdditionalIdentifiers())
                    .withEntityDescription(generateEntityDescription())
+                   .withCreatedDate(Instant.now())
                    .withModifiedDate(Instant.now())
                    .withStatus(PublicationStatus.PUBLISHED)
                    .withImportStatus(ImportStatusFactory.createNotImported())
