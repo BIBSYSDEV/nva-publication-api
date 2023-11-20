@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.Collections;
 import java.util.Map;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
@@ -71,11 +72,13 @@ public class PublishPublicationHandlerTest {
         
         var actualResponse =
             GatewayResponse.fromOutputStream(output, PublishPublicationStatusResponse.class);
-        
-        GatewayResponse<PublishPublicationStatusResponse> expected = new GatewayResponse<>(
-            restApiMapper.writeValueAsString(status),
+
+        var expected = new GatewayResponse<>(
+            status,
             getResponseHeaders(handler.getLocation(identifier).toString()),
-            SC_ACCEPTED
+            SC_ACCEPTED,
+            false,
+            JsonUtils.dtoObjectMapper
         );
         
         assertEquals(expected, actualResponse);
