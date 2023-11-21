@@ -6,13 +6,15 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.time.Clock;
 import no.unit.nva.clients.IdentityServiceClient;
-import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
@@ -21,7 +23,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     
     private final ResourceService resourceService;
     private final IdentityServiceClient identityServiceClient;
-    
+
     /**
      * Default constructor for DeletePublicationHandler.
      */
@@ -46,10 +48,27 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
 
     @Override
     protected Void processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
-        SortableIdentifier identifier = RequestUtil.getIdentifier(requestInfo);
         var userInstance = createUserInstanceFromRequest(requestInfo);
-        
-        resourceService.markPublicationForDeletion(userInstance, identifier);
+        var publicationIdentifier = RequestUtil.getIdentifier(requestInfo);
+
+        var publication = resourceService.getPublicationByIdentifier(publicationIdentifier);
+        var publicationStatus = publication.getStatus();
+
+        switch (publicationStatus) {
+            case PUBLISHED:
+                if (!PublicationPermissionStrategy.fromRequestInfo(requestInfo).hasPermissionToUnpublish(publication)) {
+                    throw new UnauthorizedException();
+                }
+                resourceService.unpublishPublication(publication);
+                break;
+            case DRAFT:
+                resourceService.markPublicationForDeletion(userInstance, publicationIdentifier);
+                break;
+            default:
+                throw new BadRequestException(String.format("Publication status %s is not supported for deletion",
+                                                            publicationStatus));
+        }
+
         return null;
     }
 
@@ -58,7 +77,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
                    ? createExternalUserInstance(requestInfo, identityServiceClient)
                    : createInternalUserInstance(requestInfo);
     }
-    
+
     @Override
     protected Integer getSuccessStatusCode(Void input, Void output) {
         return HttpStatus.SC_ACCEPTED;

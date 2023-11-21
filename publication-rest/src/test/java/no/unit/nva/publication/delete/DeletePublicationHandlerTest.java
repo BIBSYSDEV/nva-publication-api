@@ -1,15 +1,20 @@
 package no.unit.nva.publication.delete;
 
 import static java.util.Collections.singletonMap;
+import static java.util.Objects.nonNull;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.apache.http.HttpStatus.SC_ACCEPTED;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
+import static org.apache.http.HttpStatus.SC_NOT_FOUND;
+import static org.apache.http.HttpStatus.SC_NOT_IMPLEMENTED;
 import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -18,17 +23,30 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.time.Clock;
-import java.util.UUID;
+import java.util.List;
+import java.util.Map;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Identity;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.instancetypes.degree.DegreePhd;
+import no.unit.nva.model.pages.MonographPages;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -37,6 +55,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.TestHeaders;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -49,18 +68,17 @@ import org.mockito.Mockito;
 import org.zalando.problem.Problem;
 
 class DeletePublicationHandlerTest extends ResourcesLocalTest {
-    
+
     public static final String WILDCARD = "*";
     public static final String SOME_USER = "some_other_user";
     private static final String EXTERNAL_CLIENT_ID = "external-client-id";
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
-    public static final URI SOME_CUSTOMER = URI.create("https://www.example.org");
+    private final Context context = new FakeContext();
     private DeletePublicationHandler handler;
     private ResourceService publicationService;
     private IdentityServiceClient identityServiceClient;
     private Environment environment;
     private ByteArrayOutputStream outputStream;
-    private final Context context = new FakeContext();
     private GetExternalClientResponse getExternalClientResponse;
 
     @BeforeEach
@@ -72,12 +90,12 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         handler = new DeletePublicationHandler(publicationService, environment, identityServiceClient);
         outputStream = new ByteArrayOutputStream();
     }
-    
+
     @Test
     void handleRequestReturnsAcceptedWhenOnDraftPublication() throws IOException, BadRequestException {
-        
-        Publication publication = createPublication();
-    
+
+        var publication = createAndPersistPublication();
+
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
                                       .withHeaders(TestHeaders.getRequestHeaders())
                                       .withPathParameters(
@@ -85,9 +103,9 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
                                       .withUserName(publication.getResourceOwner().getOwner().getValue())
                                       .withCurrentCustomer(publication.getPublisher().getId())
                                       .build();
-        
+
         handler.handleRequest(inputStream, outputStream, context);
-        
+
         var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Void.class);
         assertEquals(SC_ACCEPTED, gatewayResponse.getStatusCode());
     }
@@ -95,7 +113,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void handleRequestReturnsAcceptedWhenOnDraftPublicationAndClientIsExternal() throws IOException,
                                                                                         BadRequestException {
-        Publication createdPublication = createPublicationWithExternalOwner();
+        var createdPublication = createAndPersistPublicationWithExternalOwner();
 
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
                                       .withHeaders(TestHeaders.getRequestHeaders())
@@ -110,58 +128,21 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Void.class);
         assertEquals(SC_ACCEPTED, gatewayResponse.getStatusCode());
     }
-    
-    @Test
-    void handleRequestReturnsBadRequestWhenOnPublishedPublication() throws IOException, ApiGatewayException {
-        Publication publication = createPublication();
-        
-        publicationService.publishPublication(createUserInstance(publication), publication.getIdentifier());
-    
-        InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
-                                      .withHeaders(TestHeaders.getRequestHeaders())
-                                      .withPathParameters(
-                                          singletonMap(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
-                                      .withUserName(publication.getResourceOwner().getOwner().getValue())
-                                      .withCurrentCustomer(publication.getPublisher().getId())
-                                      .build();
-        
-        handler.handleRequest(inputStream, outputStream, context);
-        
-        var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Problem.class);
-        assertThat(gatewayResponse.getStatusCode(), is(equalTo((SC_BAD_REQUEST))));
-    }
-    
-    @Test
-    void handleRequestReturnsErrorWhenNonExistingPublication() throws IOException {
-        UUID identifier = UUID.randomUUID();
-    
-        InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
-                                      .withHeaders(TestHeaders.getRequestHeaders())
-                                      .withPathParameters(singletonMap(PUBLICATION_IDENTIFIER, identifier.toString()))
-                                      .withCurrentCustomer(SOME_CUSTOMER)
-                                      .withUserName(SOME_USER)
-                                      .build();
-        
-        handler.handleRequest(inputStream, outputStream, context);
-        
-        var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Problem.class);
-        assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
-    }
-    
+
     @Test
     void handleRequestReturnsErrorWhenCallerIsNotOwnerOfPublication() throws IOException, ApiGatewayException {
-        Publication createdPublication = createPublication();
-    
+        var createdPublication = createAndPersistPublication();
+
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
                                       .withHeaders(TestHeaders.getRequestHeaders())
                                       .withPathParameters(singletonMap(PUBLICATION_IDENTIFIER,
-                                          createdPublication.getIdentifier().toString()))
+                                                                       createdPublication.getIdentifier().toString()))
                                       .withUserName(SOME_USER)
                                       .withCurrentCustomer(createdPublication.getPublisher().getId())
                                       .build();
-        
+
         handler.handleRequest(inputStream, outputStream, context);
-        
+
         var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         // Return BadRequest because Dynamo cannot distinguish between the primary key (containing the user info)
         // being wrong or the status of the resource not being "DRAFT"
@@ -171,7 +152,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void handleRequestReturnsErrorWhenCallerIsNotOwnerOfPublicationAndCalledIsExternalClient()
         throws IOException, BadRequestException {
-        Publication createdPublication = createPublication();
+        var createdPublication = createAndPersistPublication();
 
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
                                       .withHeaders(TestHeaders.getRequestHeaders())
@@ -193,7 +174,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     void handleRequestReturnsUnauthorizedWhenCallerIsMissingClientId()
         throws IOException, NotFoundException, BadRequestException {
         prepareIdentityServiceClientForNotFound();
-        Publication createdPublication = createPublication();
+        Publication createdPublication = createAndPersistPublication();
 
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
                                       .withHeaders(TestHeaders.getRequestHeaders())
@@ -208,13 +189,12 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         assertEquals(SC_UNAUTHORIZED, gatewayResponse.getStatusCode());
     }
 
-
     @Test
     void handleRequestReturnsBadRequestWhenAlreadyMarkedForDeletionPublication()
         throws IOException, ApiGatewayException {
-        Publication publication = createPublication();
+        Publication publication = createAndPersistPublication();
         markForDeletion(publication);
-    
+
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
                                       .withHeaders(TestHeaders.getRequestHeaders())
                                       .withPathParameters(
@@ -222,11 +202,265 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
                                       .withUserName(publication.getResourceOwner().getOwner().getValue())
                                       .withCurrentCustomer(publication.getPublisher().getId())
                                       .build();
-        
+
         handler.handleRequest(inputStream, outputStream, context);
-        
+
         var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertEquals(HttpStatus.SC_BAD_REQUEST, gatewayResponse.getStatusCode());
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenMissingAccessRightsWhenUnpublishingPublication()
+        throws IOException, ApiGatewayException {
+        var publication = createAndPersistPublicationWithoutDoi(true);
+
+        var inputStream = new HandlerRequestBuilder<Void>(restApiMapper)
+                              .withUserName(randomString())
+                              .withCurrentCustomer(randomUri())
+                              .withAccessRights(null)
+                              .withPathParameters(
+                                  Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
+                              .build();
+
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(SC_UNAUTHORIZED)));
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenUserIsNotPublicationOwnerWhenUnpublishingPublication() throws IOException,
+                                                                                                   ApiGatewayException {
+        var publication = createAndPersistPublicationWithoutDoi(true);
+
+        var inputStream = createHandlerRequest(publication.getIdentifier(), randomString(), randomUri(),
+                                               AccessRight.USER);
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(SC_UNAUTHORIZED)));
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenUserIsNotContributorWhenUnpublishingPublication()
+        throws IOException, ApiGatewayException {
+
+        var userId = randomUri();
+        var userName = randomString();
+
+        var publication = createPublicationWithoutDoiAndWithContributor(userId, userName);
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+
+        var inputStream = createHandlerRequest(publication.getIdentifier(), randomString(), randomUri(),
+                                               AccessRight.USER, randomUri());
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(SC_UNAUTHORIZED)));
+    }
+
+    @Test
+    void shouldSuccessWhenUserIsContributorWhenUnpublishingPublication()
+        throws ApiGatewayException, IOException {
+
+        var userCristinId = randomUri();
+        var userName = randomString();
+
+        var publication = createPublicationWithoutDoiAndWithContributor(userCristinId, userName);
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+
+        var inputStream = createHandlerRequest(publication.getIdentifier(), userName, randomUri(), AccessRight.USER,
+                                               userCristinId);
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(SC_ACCEPTED)));
+    }
+
+    @Test
+    void shouldReturnSuccessWhenUserIsResourceOwnerWhenUnpublishingPublication()
+        throws ApiGatewayException, IOException {
+
+        var userName = randomString();
+        var institutionId = randomUri();
+
+        var publication = createAndPersistPublicationWithoutDoiAndWithResourceOwner(userName, institutionId);
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+
+        var inputStream = createHandlerRequest(publication.getIdentifier(), userName, institutionId, AccessRight.USER);
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(SC_ACCEPTED)));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenUnpublishingNotPublishedPublication() throws IOException, ApiGatewayException {
+        var unpublishedPublication = createAndPersistPublicationWithoutDoi(false);
+        var publisherUri = unpublishedPublication.getPublisher().getId();
+
+        var inputStream = createHandlerRequest(unpublishedPublication.getIdentifier(), randomString(), publisherUri,
+                                               AccessRight.EDIT_ALL_NON_DEGREE_RESOURCES);
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(SC_BAD_REQUEST)));
+    }
+
+    // TODO: Should this return 200 OK?
+    @Test
+    void shouldReturnNotFoundWhenPublicationDoesNotExist() throws IOException {
+        var inputStream = createHandlerRequest(SortableIdentifier.next(), randomString(), randomUri(),
+                                               AccessRight.USER);
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(SC_NOT_FOUND)));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenDeletingUnsupportedPublicationStatus() throws BadRequestException, IOException {
+        var publication = randomPublication().copy().withStatus(PublicationStatus.NEW).build();
+        var persistedPublication = Resource.fromPublication(publication)
+                                       .persistNew(publicationService, UserInstance.fromPublication(publication));
+
+        var publisherUri = publication.getPublisher().getId();
+        var inputStream = createHandlerRequest(persistedPublication.getIdentifier(), randomString(), publisherUri,
+                                               AccessRight.EDIT_OWN_INSTITUTION_RESOURCES);
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(SC_BAD_REQUEST)));
+    }
+
+    @Test
+    void shouldReturnNotImplementedWhenUnpublishingPublicationWithNvaDoi()
+        throws ApiGatewayException, IOException {
+        var publication = createAndPersistPublication();
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+
+        var publisherUri = publication.getPublisher().getId();
+        var inputStream = createHandlerRequest(publication.getIdentifier(), randomString(), publisherUri,
+                                               AccessRight.EDIT_OWN_INSTITUTION_RESOURCES);
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(SC_NOT_IMPLEMENTED)));
+    }
+
+    @Test
+    void shouldReturnSuccessAndUpdatePublicationStatusToDeletedWhenUserCanEditOwnInstitutionResources()
+        throws IOException, ApiGatewayException {
+
+        var publication = createAndPersistPublicationWithoutDoi(true);
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+
+        var publisherUri = publication.getPublisher().getId();
+        var inputStream = createHandlerRequest(publication.getIdentifier(), randomString(), publisherUri,
+                                               AccessRight.EDIT_OWN_INSTITUTION_RESOURCES);
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(SC_ACCEPTED)));
+
+        var unpublishedPublication = publicationService.getPublication(publication);
+        assertThat(unpublishedPublication.getStatus(), is(equalTo(PublicationStatus.DELETED)));
+    }
+
+    @Test
+    void shouldReturnSuccessWhenEditorUnpublishesDegree() throws ApiGatewayException, IOException {
+        var publication = createAndPersistDegreeWithoutDoi();
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+
+        var publisherUri = publication.getPublisher().getId();
+        var inputStream = createHandlerRequest(publication.getIdentifier(), randomString(), publisherUri,
+                                               AccessRight.PUBLISH_DEGREE);
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(SC_ACCEPTED)));
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenNonEditorUnpublishesDegree() throws ApiGatewayException, IOException {
+        var publication = createAndPersistDegreeWithoutDoi();
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+
+        var publisherUri = publication.getPublisher().getId();
+        var inputStream = createHandlerRequest(publication.getIdentifier(), randomString(), publisherUri,
+                                               AccessRight.USER);
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(SC_UNAUTHORIZED)));
+    }
+
+    @Test
+    void shouldReturnSuccessWhenCuratorUnpublishesPublishedPublicationFromOwnInstitution()
+        throws ApiGatewayException, IOException {
+
+        var institutionId = randomUri();
+        var curatorUsername = randomString();
+        var curatorAccessRight = AccessRight.EDIT_OWN_INSTITUTION_RESOURCES;
+        var resourceOwnerUsername = randomString();
+
+        var publication = createAndPersistPublicationWithoutDoiAndWithResourceOwner(resourceOwnerUsername,
+                                                                                    institutionId);
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+
+        var inputStream = createHandlerRequest(publication.getIdentifier(), curatorUsername, institutionId,
+                                               curatorAccessRight);
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(SC_ACCEPTED)));
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenCuratorUnpublishesPublishedPublicationFromAnotherInstitution()
+        throws IOException, ApiGatewayException {
+
+        var curatorUsername = randomString();
+        var curatorInstitutionId = randomUri();
+        var curatorAccessRight = AccessRight.EDIT_OWN_INSTITUTION_RESOURCES;
+
+        var resourceOwnerUsername = randomString();
+        var resourceOwnerInstitutionId = randomUri();
+
+        var publication = createAndPersistPublicationWithoutDoiAndWithResourceOwner(resourceOwnerUsername,
+                                                                                    resourceOwnerInstitutionId);
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+
+        var inputStream = createHandlerRequest(publication.getIdentifier(), curatorUsername, curatorInstitutionId,
+                                               curatorAccessRight);
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(SC_UNAUTHORIZED)));
+    }
+
+    private InputStream createHandlerRequest(SortableIdentifier publicationIdentifier, String username,
+                                            URI institutionId, AccessRight accessRight)
+        throws JsonProcessingException {
+
+        return createHandlerRequest(publicationIdentifier, username, institutionId, accessRight, null);
+    }
+
+    private InputStream createHandlerRequest(SortableIdentifier publicationIdentifier, String username,
+                                             URI institutionId, AccessRight accessRight, URI cristinId)
+        throws JsonProcessingException {
+        var request = new HandlerRequestBuilder<Void>(restApiMapper)
+                   .withUserName(username)
+                   .withCurrentCustomer(institutionId)
+                   .withAccessRights(institutionId, accessRight.name())
+                   .withPathParameters(
+                       Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString()));
+
+        if (nonNull(cristinId)) {
+            request.withPersonCristinId(cristinId);
+        }
+
+        return request.build();
     }
 
     private void prepareIdentityServiceClient() throws NotFoundException {
@@ -245,20 +479,27 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         identityServiceClient = Mockito.mock(IdentityServiceClient.class);
         when(identityServiceClient.getExternalClient(any())).thenThrow(NotFoundException.class);
     }
-    
+
     private void prepareEnvironment() {
         environment = Mockito.mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
     }
-    
-    private Publication createPublication() throws BadRequestException {
+
+    private void markForDeletion(Publication publication) throws ApiGatewayException {
+        UserInstance userInstance = UserInstance.create(publication.getResourceOwner().getOwner().getValue(),
+                                                        publication.getPublisher().getId());
+        publicationService.markPublicationForDeletion(userInstance, publication.getIdentifier());
+    }
+
+    private Publication createAndPersistPublication() throws BadRequestException {
         var publication = PublicationGenerator.randomPublication();
         var userInstance = UserInstance
-                .create(publication.getResourceOwner().getOwner().getValue(), publication.getPublisher().getId());
+                               .create(publication.getResourceOwner().getOwner().getValue(),
+                                       publication.getPublisher().getId());
         return Resource.fromPublication(publication).persistNew(publicationService, userInstance);
     }
 
-    private Publication createPublicationWithExternalOwner() throws BadRequestException {
+    private Publication createAndPersistPublicationWithExternalOwner() throws BadRequestException {
         var publication = PublicationGenerator.randomPublication();
         var owner = new ResourceOwner(
             new Username(getExternalClientResponse.getActingUser()),
@@ -268,15 +509,56 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
             UserInstance.create(owner, getExternalClientResponse.getCustomerUri());
         return Resource.fromPublication(publication).persistNew(publicationService, userInstance);
     }
-    
-    private UserInstance createUserInstance(Publication publication) {
-        return UserInstance
-                .create(publication.getResourceOwner().getOwner().getValue(), publication.getPublisher().getId());
+
+    private Publication createAndPersistPublicationWithoutDoi(boolean shouldBePublished) throws ApiGatewayException {
+        var publication = randomPublication().copy().withDoi(null).build();
+        var persistedPublication = Resource.fromPublication(publication)
+                                       .persistNew(publicationService, UserInstance.fromPublication(publication));
+
+        if (shouldBePublished) {
+            publicationService.publishPublication(UserInstance.fromPublication(persistedPublication),
+                                                  persistedPublication.getIdentifier());
+        }
+
+        return persistedPublication;
     }
-    
-    private void markForDeletion(Publication publication) throws ApiGatewayException {
-        UserInstance userInstance = UserInstance.create(publication.getResourceOwner().getOwner().getValue(),
-            publication.getPublisher().getId());
-        publicationService.markPublicationForDeletion(userInstance, publication.getIdentifier());
+
+    private Publication createPublicationWithoutDoiAndWithContributor(URI contributorId, String contributorName)
+        throws ApiGatewayException {
+
+        var publication = randomPublication().copy().withDoi(null).build();
+
+        var identity = new Identity.Builder().withName(contributorName).withId(contributorId).build();
+        var contributor = new Contributor.Builder().withIdentity(identity).withRole(new RoleType(Role.CREATOR)).build();
+        var entityDesc = publication.getEntityDescription().copy().withContributors(List.of(contributor)).build();
+        var publicationWithContributor = publication.copy().withEntityDescription(entityDesc).build();
+
+        return Resource.fromPublication(publicationWithContributor)
+                   .persistNew(publicationService, UserInstance.fromPublication(publication));
+    }
+
+    private Publication createAndPersistDegreeWithoutDoi() throws BadRequestException {
+        var publication = randomPublication().copy().withDoi(null).build();
+
+        var degreePhd = new DegreePhd(new MonographPages(), new PublicationDate());
+        var reference = new Reference.Builder().withPublicationInstance(degreePhd).build();
+        var entityDescription = publication.getEntityDescription().copy().withReference(reference).build();
+        var publicationOfTypeDegree = publication.copy().withEntityDescription(entityDescription).build();
+
+        return Resource.fromPublication(publicationOfTypeDegree)
+                   .persistNew(publicationService, UserInstance.fromPublication(publication));
+    }
+
+    private Publication createAndPersistPublicationWithoutDoiAndWithResourceOwner(String userName, URI institution)
+        throws BadRequestException {
+
+        var publication = randomPublication().copy()
+                              .withDoi(null)
+                              .withResourceOwner(new ResourceOwner(new Username(userName), institution))
+                              .withPublisher(new Organization.Builder().withId(institution).build())
+                              .build();
+
+        return Resource.fromPublication(publication)
+                   .persistNew(publicationService, UserInstance.fromPublication(publication));
     }
 }
