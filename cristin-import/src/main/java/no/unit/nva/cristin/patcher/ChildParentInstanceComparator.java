@@ -22,7 +22,7 @@ import nva.commons.core.JacocoGenerated;
 
 public final class ChildParentInstanceComparator {
 
-    private final static Map<String, List<String>> VALID_PUBLICATION_INSTANCE =
+    private static final Map<String, List<String>> VALID_PUBLICATION_INSTANCE =
         Map.of(NonFictionChapter.class.getSimpleName(), List.of(BookAnthology.class.getSimpleName()),
                AcademicChapter.class.getSimpleName(), List.of(BookAnthology.class.getSimpleName()),
                Introduction.class.getSimpleName(), List.of(BookAnthology.class.getSimpleName()),
