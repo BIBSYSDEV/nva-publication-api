@@ -89,6 +89,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -980,7 +981,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var existingPublication = persistPublicationWithDoi(doi);
         assertThat(existingPublication.getHandle(), is(nullValue()));
 
-        var listOfExistingPublications = List.of(existingPublication);
+        var listOfExistingPublications =
+            List.of(new ResourceWithId( UriWrapper.fromUri("https://api.test.nva.aws.unit.no/publication/" + existingPublication.getIdentifier().toString()).getUri()) );
         var searchResourceApiResponseSingleHit = new SearchResourceApiResponse(listOfExistingPublications.size(),
                                                                                listOfExistingPublications);
         var singleHitOptional = Optional.of(searchResourceApiResponseSingleHit.toString());
