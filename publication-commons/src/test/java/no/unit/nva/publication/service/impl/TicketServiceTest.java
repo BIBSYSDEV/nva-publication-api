@@ -103,6 +103,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     private static final Username USERNAME = new Username(randomString());
     private static final String FINALIZED_DATE = "finalizedDate";
     private static final String ASSIGNEE = "assignee";
+    private static final String ONWER_AFFILIATION = "ownerAffiliation";
     private static final String FINALIZED_BY = "finalizedBy";
     private static final String DOI = "doi";
     private ResourceService resourceService;
@@ -140,7 +141,8 @@ public class TicketServiceTest extends ResourcesLocalTest {
         assertThat(persistedTicket.getCreatedDate(), is(greaterThanOrEqualTo(now)));
         assertThat(persistedTicket, is(equalTo(ticket)));
         assertThat(persistedTicket,
-                   doesNotHaveEmptyValuesIgnoringFields(Set.of(DOI, ASSIGNEE, FINALIZED_BY, FINALIZED_DATE)));
+                   doesNotHaveEmptyValuesIgnoringFields(Set.of(ONWER_AFFILIATION, DOI, ASSIGNEE, FINALIZED_BY,
+                                                               FINALIZED_DATE)));
     }
 
     @ParameterizedTest(name = "Publication status: {0}")
@@ -168,7 +170,8 @@ public class TicketServiceTest extends ResourcesLocalTest {
         assertThat(persistedTicket.getCreatedDate(), is(greaterThanOrEqualTo(now)));
         assertThat(persistedTicket, is(equalTo(ticket)));
         assertThat(persistedTicket,
-                   doesNotHaveEmptyValuesIgnoringFields(Set.of(ASSIGNEE, FINALIZED_BY, FINALIZED_DATE)));
+                   doesNotHaveEmptyValuesIgnoringFields(Set.of(ONWER_AFFILIATION, ASSIGNEE, FINALIZED_BY,
+                                                               FINALIZED_DATE)));
     }
 
     @Test
@@ -180,7 +183,8 @@ public class TicketServiceTest extends ResourcesLocalTest {
         assertThat(persistedTicket.getCreatedDate(), is(greaterThanOrEqualTo(now)));
         assertThat(persistedTicket, is(equalTo(ticket)));
         assertThat(persistedTicket,
-                   doesNotHaveEmptyValuesIgnoringFields(Set.of(ASSIGNEE, FINALIZED_BY, FINALIZED_DATE)));
+                   doesNotHaveEmptyValuesIgnoringFields(Set.of(ONWER_AFFILIATION, ASSIGNEE, FINALIZED_BY,
+                                                               FINALIZED_DATE)));
     }
 
     // This action fails with a TransactionFailedException which contains no information about why the transaction
