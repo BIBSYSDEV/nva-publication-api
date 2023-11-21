@@ -23,7 +23,6 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     
     private final ResourceService resourceService;
     private final IdentityServiceClient identityServiceClient;
-    private final PublicationPermissionStrategy publicationPermissionStrategy;
 
     /**
      * Default constructor for DeletePublicationHandler.
@@ -45,7 +44,6 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
         super(Void.class, environment);
         this.resourceService = resourceService;
         this.identityServiceClient = identityServiceClient;
-        this.publicationPermissionStrategy = new PublicationPermissionStrategy();
     }
 
     @Override
@@ -58,7 +56,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
 
         switch (publicationStatus) {
             case PUBLISHED:
-                if (!publicationPermissionStrategy.hasPermissionToUnpublish(requestInfo, publication)) {
+                if (!PublicationPermissionStrategy.fromRequestInfo(requestInfo).hasPermissionToUnpublish(publication)) {
                     throw new UnauthorizedException();
                 }
                 resourceService.unpublishPublication(publication);

@@ -4,10 +4,12 @@ import java.util.Set;
 import no.unit.nva.model.Publication;
 import nva.commons.apigateway.RequestInfo;
 
-public class PublicationPermissionStrategy {
+public final class PublicationPermissionStrategy {
     private final Set<PermissionStrategy> permissionStrategies;
+    private final RequestInfo requestInfo;
 
-    public PublicationPermissionStrategy() {
+    private PublicationPermissionStrategy(RequestInfo requestInfo) {
+        this.requestInfo = requestInfo;
         this.permissionStrategies = Set.of(
             new EditorPermissionStrategy(),
             new CuratorPermissionStrategy(),
@@ -16,13 +18,13 @@ public class PublicationPermissionStrategy {
         );
     }
 
-    public boolean hasPermissionToUnpublish(RequestInfo requestInfo, Publication publication) {
-        for (PermissionStrategy strategy : permissionStrategies) {
-            if (strategy.hasPermission(requestInfo, publication)) {
-                return true;
-            }
-        }
-        return false;
+    public static PublicationPermissionStrategy fromRequestInfo(RequestInfo requestInfo) {
+        return new PublicationPermissionStrategy(requestInfo);
+    }
+
+    public boolean hasPermissionToUnpublish(Publication publication) {
+        return permissionStrategies.stream()
+                   .anyMatch(permissionStrategy -> permissionStrategy.hasPermission(requestInfo, publication));
     }
 }
 

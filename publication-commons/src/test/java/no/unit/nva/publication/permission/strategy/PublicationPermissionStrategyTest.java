@@ -39,14 +39,13 @@ class PublicationPermissionStrategyTest {
     public static final String INJECT_NVA_USERNAME_CLAIM = "custom:nvaUsername";
     public static final String INJECT_COGNITO_GROUPS_CLAIM = "cognito:groups";
     public static final String INJECT_CRISTIN_ID_CLAIM = "custom:cristinId";
-    private final PublicationPermissionStrategy permissionStrategy = new PublicationPermissionStrategy();
 
     @Test
     void shouldDenyPermissionToDeletePublicationWhenUserHasNoAccessRights() throws JsonProcessingException {
         var requestInfo = createRequestInfo(randomString(), randomUri());
         var publication = createPublication(randomString(), randomUri());
 
-        Assertions.assertFalse(permissionStrategy.hasPermissionToUnpublish(requestInfo, publication));
+        Assertions.assertFalse(PublicationPermissionStrategy.fromRequestInfo(requestInfo).hasPermissionToUnpublish(publication));
     }
 
     @Test
@@ -54,7 +53,7 @@ class PublicationPermissionStrategyTest {
         var requestInfo = createRequestInfo(null, URI.create(""));
         var publication = createPublication(randomString(), randomUri());
 
-        Assertions.assertFalse(permissionStrategy.hasPermissionToUnpublish(requestInfo, publication));
+        Assertions.assertFalse(PublicationPermissionStrategy.fromRequestInfo(requestInfo).hasPermissionToUnpublish(publication));
     }
 
     @Test
@@ -68,7 +67,7 @@ class PublicationPermissionStrategyTest {
         var requestInfo = createRequestInfo(editorName, editorInstitution, getEditorAccessRights());
         var publication = createPublication(resourceOwner, editorInstitution);
 
-        Assertions.assertTrue(permissionStrategy.hasPermissionToUnpublish(requestInfo, publication));
+        Assertions.assertTrue(PublicationPermissionStrategy.fromRequestInfo(requestInfo).hasPermissionToUnpublish(publication));
     }
 
     @Test
@@ -83,7 +82,7 @@ class PublicationPermissionStrategyTest {
         var requestInfo = createRequestInfo(editorName, editorInstitution, getEditorAccessRights());
         var publication = createPublication(resourceOwner, resourceOwnerInstitution);
 
-        Assertions.assertTrue(permissionStrategy.hasPermissionToUnpublish(requestInfo, publication));
+        Assertions.assertTrue(PublicationPermissionStrategy.fromRequestInfo(requestInfo).hasPermissionToUnpublish(publication));
     }
 
     @Test
@@ -95,7 +94,7 @@ class PublicationPermissionStrategyTest {
         var requestInfo = createRequestInfo(editorName, editorInstitution, getEditorAccessRights());
         var publication = createDegreePhd(resourceOwner, editorInstitution);
 
-        Assertions.assertTrue(permissionStrategy.hasPermissionToUnpublish(requestInfo, publication));
+        Assertions.assertTrue(PublicationPermissionStrategy.fromRequestInfo(requestInfo).hasPermissionToUnpublish(publication));
     }
 
     @Test
@@ -108,7 +107,7 @@ class PublicationPermissionStrategyTest {
         var requestInfo = createRequestInfo(editorName, editorInstitution, getEditorAccessRights());
         var publication = createDegreePhd(resourceOwner, resourceInstitution);
 
-        Assertions.assertTrue(permissionStrategy.hasPermissionToUnpublish(requestInfo, publication));
+        Assertions.assertTrue(PublicationPermissionStrategy.fromRequestInfo(requestInfo).hasPermissionToUnpublish(publication));
     }
 
     @Test
@@ -121,7 +120,7 @@ class PublicationPermissionStrategyTest {
 
         // TODO: Venter på svar fra Jan Erik
 
-        Assertions.assertTrue(permissionStrategy.hasPermissionToUnpublish(requestInfo, publication));
+        Assertions.assertTrue(PublicationPermissionStrategy.fromRequestInfo(requestInfo).hasPermissionToUnpublish(publication));
     }
 
     @Test
@@ -135,7 +134,7 @@ class PublicationPermissionStrategyTest {
         var requestInfo = createRequestInfo(curatorName, institution, getCuratorAccessRights());
         var publication = createDegreePhd(resourceOwner, institution);
 
-        Assertions.assertTrue(permissionStrategy.hasPermissionToUnpublish(requestInfo, publication));
+        Assertions.assertTrue(PublicationPermissionStrategy.fromRequestInfo(requestInfo).hasPermissionToUnpublish(publication));
     }
 
     @Test
@@ -150,7 +149,7 @@ class PublicationPermissionStrategyTest {
         var requestInfo = createRequestInfo(curatorName, curatorInstitution, getCuratorAccessRights());
         var publication = createDegreePhd(resourceOwner, resourceOwnerInstitution);
 
-        Assertions.assertFalse(permissionStrategy.hasPermissionToUnpublish(requestInfo, publication));
+        Assertions.assertFalse(PublicationPermissionStrategy.fromRequestInfo(requestInfo).hasPermissionToUnpublish(publication));
     }
 
     @Test
@@ -162,7 +161,7 @@ class PublicationPermissionStrategyTest {
         var requestInfo = createRequestInfo(contributorName, contributorInstitutionId, contributorCristinId);
         var publication = createPublicationWithContributor(contributorName, contributorCristinId, Role.CREATOR);
 
-        Assertions.assertTrue(permissionStrategy.hasPermissionToUnpublish(requestInfo, publication));
+        Assertions.assertTrue(PublicationPermissionStrategy.fromRequestInfo(requestInfo).hasPermissionToUnpublish(publication));
     }
 
     @Test
@@ -174,7 +173,7 @@ class PublicationPermissionStrategyTest {
         var requestInfo = createRequestInfo(contributorName, contributorInstitutionId);
         var publication = createPublicationWithContributor(contributorName, contributorCristinId, null);
 
-        Assertions.assertFalse(permissionStrategy.hasPermissionToUnpublish(requestInfo, publication));
+        Assertions.assertFalse(PublicationPermissionStrategy.fromRequestInfo(requestInfo).hasPermissionToUnpublish(publication));
     }
 
     @Test
@@ -185,7 +184,7 @@ class PublicationPermissionStrategyTest {
         var requestInfo = createRequestInfo(resourceOwner, institutionId);
         var publication = createPublication(resourceOwner, institutionId);
 
-        Assertions.assertTrue(permissionStrategy.hasPermissionToUnpublish(requestInfo, publication));
+        Assertions.assertTrue(PublicationPermissionStrategy.fromRequestInfo(requestInfo).hasPermissionToUnpublish(publication));
     }
 
     private Publication createPublication(String resourceOwner, URI customer) {
