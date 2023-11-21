@@ -94,7 +94,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void handleRequestReturnsAcceptedWhenOnDraftPublication() throws IOException, BadRequestException {
 
-        Publication publication = createAndPersistPublication();
+        var publication = createAndPersistPublication();
 
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
                                       .withHeaders(TestHeaders.getRequestHeaders())
@@ -113,7 +113,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void handleRequestReturnsAcceptedWhenOnDraftPublicationAndClientIsExternal() throws IOException,
                                                                                         BadRequestException {
-        Publication createdPublication = createAndPersistPublicationWithExternalOwner();
+        var createdPublication = createAndPersistPublicationWithExternalOwner();
 
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
                                       .withHeaders(TestHeaders.getRequestHeaders())
@@ -131,7 +131,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void handleRequestReturnsErrorWhenCallerIsNotOwnerOfPublication() throws IOException, ApiGatewayException {
-        Publication createdPublication = createAndPersistPublication();
+        var createdPublication = createAndPersistPublication();
 
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
                                       .withHeaders(TestHeaders.getRequestHeaders())
@@ -152,7 +152,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void handleRequestReturnsErrorWhenCallerIsNotOwnerOfPublicationAndCalledIsExternalClient()
         throws IOException, BadRequestException {
-        Publication createdPublication = createAndPersistPublication();
+        var createdPublication = createAndPersistPublication();
 
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
                                       .withHeaders(TestHeaders.getRequestHeaders())

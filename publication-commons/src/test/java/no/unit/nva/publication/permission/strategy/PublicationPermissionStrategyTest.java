@@ -119,8 +119,7 @@ class PublicationPermissionStrategyTest {
         var requestInfo = createRequestInfo(username, institution, getCuratorAccessRights());
         var publication = createDegreePhd(username, institution);
 
-        // Burde egentlig hele PublicationPermissionStrategy skrives om til å basere seg op accessrights istedenfor
-        // roller?
+        // TODO: Venter på svar fra Jan Erik
 
         Assertions.assertTrue(permissionStrategy.hasPermissionToUnpublish(requestInfo, publication));
     }
@@ -187,10 +186,6 @@ class PublicationPermissionStrategyTest {
         var publication = createPublication(resourceOwner, institutionId);
 
         Assertions.assertTrue(permissionStrategy.hasPermissionToUnpublish(requestInfo, publication));
-    }
-
-    private static Function<AccessRight, String> getCognitoGroup(URI institutionId) {
-        return accessRight -> accessRight.name() + AT + institutionId.toString();
     }
 
     private Publication createPublication(String resourceOwner, URI customer) {
@@ -281,6 +276,10 @@ class PublicationPermissionStrategyTest {
         requestInfo.setRequestContext(getRequestContextForClaim(claims));
 
         return requestInfo;
+    }
+
+    private static Function<AccessRight, String> getCognitoGroup(URI institutionId) {
+        return accessRight -> accessRight.name() + AT + institutionId.toString();
     }
 
     private JsonNode getRequestContextForClaim(Map<String, String> claimKeyValuePairs) throws JsonProcessingException {
