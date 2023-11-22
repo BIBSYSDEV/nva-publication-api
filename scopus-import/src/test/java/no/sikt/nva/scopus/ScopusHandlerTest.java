@@ -8,11 +8,11 @@ import static java.util.Objects.nonNull;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.ERROR_BUCKET_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.PATH_SEPERATOR;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM_DD_HH_FORMAT;
-import static no.sikt.nva.scopus.ScopusConstants.SCOPUS_IDENTIFIER;
 import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_ELECTRONIC;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_PRINT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
+import static no.sikt.nva.scopus.ScopusConstants.SCOPUS_IDENTIFIER;
 import static no.sikt.nva.scopus.ScopusHandler.SCOPUS_IMPORT_BUCKET;
 import static no.sikt.nva.scopus.ScopusHandler.SUCCESS_BUCKET_PATH;
 import static no.sikt.nva.scopus.conversion.PiaConnection.API_HOST;
@@ -211,7 +211,6 @@ import nva.commons.logutils.TestAppender;
 import nva.commons.secrets.SecretsReader;
 import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -257,8 +256,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private static final String PIA_SECRET_NAME = "someSecretName";
     private static final String PIA_USERNAME_SECRET_KEY = "someUserNameKey";
     private static final String PIA_PASSWORD_SECRET_KEY = "somePasswordNameKey";
-    @Rule
-    public Map<String, String> environmentVariables = new HashMap<>();
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
     private ScopusHandler scopusHandler;
@@ -1303,7 +1300,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var filename = randomString() + ".pdf";
         var testUrl = "/" + UriWrapper.fromUri(downloadUrl.getLastPathElement()).getLastPathElement();
         stubFor(WireMock.get(urlPathEqualTo(testUrl))
-                    .willReturn(aResponse().withBody("")
+                    .willReturn(aResponse().withBody("abcde")
                                     .withHeader("Content-Type", "application/pdf;charset=UTF-8")
                                     .withHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"")
                                     .withStatus(HttpURLConnection.HTTP_OK)));

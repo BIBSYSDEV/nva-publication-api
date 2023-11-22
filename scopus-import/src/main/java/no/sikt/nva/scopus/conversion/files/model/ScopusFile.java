@@ -7,7 +7,7 @@ import java.util.UUID;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 
-public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, InputStream content, int size,
+public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, InputStream content, long size,
                          String contentType, URI license, boolean publisherAuthority, Instant embargo) {
 
     public static Builder builder() {
@@ -30,8 +30,6 @@ public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, Inpu
         return File.builder()
                    .withIdentifier(identifier)
                    .withName(name)
-                   .withMimeType(contentType)
-                   .withSize(Long.parseLong(String.valueOf(size)))
                    .withLicense(license)
                    .withPublisherAuthority(publisherAuthority)
                    .withEmbargoDate(embargo)
@@ -44,7 +42,7 @@ public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, Inpu
         private String name;
         private URI downloadFileUrl;
         private InputStream content;
-        private int size;
+        private long size;
         private String contentType;
         private URI license;
         private boolean publisherAuthority;
@@ -73,7 +71,7 @@ public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, Inpu
             return this;
         }
 
-        public Builder withSize(int size) {
+        public Builder withSize(long size) {
             this.size = size;
             return this;
         }
