@@ -53,7 +53,7 @@ public abstract class TicketDto implements JsonSerializable {
     @JsonProperty(PUBLICATION_IDENTIFIER_FIELD)
     private final SortableIdentifier publicationIdentifier;
     @JsonProperty(OWNER_AFFILIATION_FIELD)
-    private URI ownerAffiliation;
+    private final URI ownerAffiliation;
 
     protected TicketDto(TicketDtoStatus status,
                         List<MessageDto> messages,
