@@ -3,6 +3,8 @@ package no.unit.nva.expansion.model.cristin;
 import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.util.List;
@@ -10,6 +12,7 @@ import java.util.Map;
 import no.unit.nva.commons.json.JsonSerializable;
 import nva.commons.core.SingletonCollector;
 
+@JsonInclude(Include.NON_NULL)
 public record CristinOrganization(@JsonProperty(ID) URI id,
                                   @JsonProperty(CONTEXT) URI context,
                                   @JsonProperty(TYPE) String type,
