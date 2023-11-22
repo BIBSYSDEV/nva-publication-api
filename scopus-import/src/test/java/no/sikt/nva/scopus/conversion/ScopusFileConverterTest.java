@@ -1,6 +1,5 @@
 package no.sikt.nva.scopus.conversion;
 
-import static com.amazonaws.util.RuntimeHttpUtils.fetchFile;
 import static java.io.InputStream.nullInputStream;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -13,7 +12,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import com.amazonaws.util.RuntimeHttpUtils;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -125,7 +123,7 @@ public class ScopusFileConverterTest {
     }
 
     @Test
-    void shouldRemoveFileFromDoiWhenFileIsFromElsveierAndHasPlainTextContentType()
+    void shouldRemoveFileFromDoiWhenFileIsFromElseveierAndHasPlainTextContentType()
         throws IOException, InterruptedException {
         scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccessWithDownloadUrl(randomUri()));
         mockResponses("crossrefResponseWithElsveierFileToRemove.json");

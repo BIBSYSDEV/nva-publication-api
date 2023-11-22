@@ -182,13 +182,13 @@ public class ScopusFileConverter {
         return file.size() != ZERO_LENGTH_CONTENT;
     }
 
-    private static boolean isElsvierPlainTextResource(CrossrefLink crossrefLink) {
-        return !(ELSEVIER_HOST.equals(crossrefLink.getUri().getHost())
-                 && crossrefLink.getContentType().equals(ContentType.TEXT_PLAIN.getMimeType()));
-    }
-
     private static boolean fileWithContent(AssociatedArtifact associatedArtifact) {
         return ((File) associatedArtifact).getSize() != ZERO_LENGTH_CONTENT;
+    }
+
+    private static boolean isElsevierPlainTextResource(CrossrefLink crossrefLink) {
+        return ELSEVIER_HOST.equals(crossrefLink.getUri().getHost())
+               && crossrefLink.getContentType().equals(ContentType.TEXT_PLAIN.getMimeType());
     }
 
     private List<AssociatedArtifact> extractAssociatedArtifactsFromDoi(DocTp docTp) {
@@ -229,15 +229,15 @@ public class ScopusFileConverter {
                    .getLinks()
                    .stream()
                    .filter(this::hasSupportedContentType)
-                   .filter(this::isIgnoredCrossrefLink)
+                   .filter(this::shouldBeIgnored)
                    .filter(crossrefLink -> isNotResource(crossrefLink, resource))
                    .map(crossrefLink -> toScopusFile(crossrefLink, licenses))
                    .distinct()
                    .toList();
     }
 
-    private boolean isIgnoredCrossrefLink(CrossrefLink crossrefLink) {
-        return isElsvierPlainTextResource(crossrefLink);
+    private boolean shouldBeIgnored(CrossrefLink crossrefLink) {
+        return !isElsevierPlainTextResource(crossrefLink);
     }
 
     private boolean isNotResource(CrossrefLink crossrefLink, URI resource) {
