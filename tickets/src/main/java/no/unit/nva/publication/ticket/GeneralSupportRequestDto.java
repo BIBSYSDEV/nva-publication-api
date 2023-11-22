@@ -35,6 +35,7 @@ public class GeneralSupportRequestDto extends TicketDto {
     @JsonProperty(IDENTIFIER_FIELD)
     private final SortableIdentifier identifier;
 
+    @SuppressWarnings({"PMD.ExcessiveParameterList"})
     public GeneralSupportRequestDto(@JsonProperty(STATUS_FIELD) TicketDtoStatus status,
                                     @JsonProperty(CREATED_DATE_FIELD) Instant createdDate,
                                     @JsonProperty(MODIFIED_DATE_FIELD) Instant modifiedDate,

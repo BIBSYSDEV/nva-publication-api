@@ -37,6 +37,7 @@ public class DoiRequestDto extends TicketDto {
     @JsonProperty(ID_FIELD)
     private final URI id;
 
+    @SuppressWarnings({"PMD.ExcessiveParameterList"})
     @JsonCreator
     public DoiRequestDto(@JsonProperty(STATUS_FIELD) TicketDtoStatus status,
                          @JsonProperty(CREATED_DATE_FIELD) Instant createdDate,
