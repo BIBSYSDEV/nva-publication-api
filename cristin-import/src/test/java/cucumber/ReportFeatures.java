@@ -4,6 +4,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import no.unit.nva.model.contexttypes.PublicationContext;
@@ -45,5 +46,10 @@ public class ReportFeatures {
         Report reportContext = (Report) context;
         PublishingHouse publisher = reportContext.getPublisher();
         assertThat(publisher, is(instanceOf(UnconfirmedPublisher.class)));
+    }
+
+    @And("the cristin Book Report has a DOI equal to {string}")
+    public void theCristinBookReportHasADoiEqualTo(String doi) {
+        scenarioContext.getCristinEntry().getBookOrReportMetadata().setDoi(doi);
     }
 }

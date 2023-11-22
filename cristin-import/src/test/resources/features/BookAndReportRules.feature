@@ -110,3 +110,10 @@ Feature: Rules that apply for both Books and Reports
       | MASTERGRADSOPPG   |
       | HOVEDFAGSOPPGAVE  |
       | FORSKERLINJEOPPG  |
+
+
+  Scenario: Should map doi if present
+    Given a valid Cristin Result with secondary category "ANTOLOGI"
+    And the cristin Book Report has a DOI equal to "https://doi.org/10.5334/ah.an"
+    When the Cristin Result is converted to an NVA Resource
+    Then the Nva Resource has a Reference object with doi equal to "https://doi.org/10.5334/ah.an"

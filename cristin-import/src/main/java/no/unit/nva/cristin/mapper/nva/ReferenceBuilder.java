@@ -16,6 +16,9 @@ import static no.unit.nva.cristin.mapper.nva.exceptions.ExceptionHandling.castTo
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.util.Optional;
+import java.util.stream.Stream;
+import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
+import no.unit.nva.cristin.mapper.CristinBookOrReportPartMetadata;
 import no.unit.nva.cristin.mapper.CristinJournalPublication;
 import no.unit.nva.cristin.mapper.CristinMediaContribution;
 import no.unit.nva.cristin.mapper.CristinObject;
@@ -39,6 +42,7 @@ import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
+import nva.commons.core.SingletonCollector;
 import nva.commons.doi.DoiConverter;
 import nva.commons.doi.DoiValidator;
 
@@ -73,7 +77,9 @@ public class ReferenceBuilder extends CristinMappingModule {
             return new PeriodicalBuilder(cristinObject, channelRegistryMapper).buildPeriodicalForPublicationContext();
         }
         if (isMediaFeatureArticle(cristinObject)) {
-            return new MediaPeriodicalBuilder(cristinObject, channelRegistryMapper).buildMediaPeriodicalForPublicationContext();
+            return new MediaPeriodicalBuilder(cristinObject,
+                                              channelRegistryMapper)
+                       .buildMediaPeriodicalForPublicationContext();
         }
         if (isReport(cristinObject)) {
             return buildPublicationContextWhenMainCategoryIsReport();
@@ -136,12 +142,27 @@ public class ReferenceBuilder extends CristinMappingModule {
     }
 
     private URI extractDoi() {
-        if (isJournal(cristinObject)) {
-            return Optional.of(extractCristinJournalPublication())
-                       .map(CristinJournalPublication::getDoi)
-                       .map(doiConverter::toUri)
-                       .orElse(null);
-        }
-        return null;
+        return Stream.of(getBookOrReportPart(), getBookOrReportDoi(), getJournalDOi())
+                   .flatMap(Optional::stream)
+                   .distinct()
+                   .collect(SingletonCollector.collectOrElse(null));
+    }
+
+    private Optional<URI> getBookOrReportPart() {
+        return Optional.ofNullable(extractCristinBookReportPart())
+                   .map(CristinBookOrReportPartMetadata::getDoi)
+                   .map(doiConverter::toUri);
+    }
+
+    private Optional<URI> getBookOrReportDoi() {
+        return Optional.ofNullable(extractCristinBookReport())
+                   .map(CristinBookOrReportMetadata::getDoi)
+                   .map(doiConverter::toUri);
+    }
+
+    private Optional<URI> getJournalDOi() {
+        return Optional.ofNullable(extractCristinJournalPublication())
+                   .map(CristinJournalPublication::getDoi)
+                   .map(doiConverter::toUri);
     }
 }

@@ -19,7 +19,7 @@ import nva.commons.core.JacocoGenerated;
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"utgave", "utgave_fra", "doi", "status_revidert", "status_elektronisk_publisert",
+@JsonIgnoreProperties({"utgave", "utgave_fra", "status_revidert", "status_elektronisk_publisert",
     "status_utgitt_av_forlag", "stedangivelse_utgiver", "landkode_utgiver", "institusjonsnr_utgiver",
     "avdnr_utgiver", "undavdnr_utgiver", "gruppenr_utgiver", "tidsskriftnr_serie",
     "sprakkode_oversatt_fra", "sprakkode_oversatt_til", "originalforfatter", "originaltittel",
@@ -36,6 +36,7 @@ public class CristinBookOrReportMetadata {
     public static final String ISSUE = "hefte";
     public static final String VOLUME = "volum_serie";
     public static final String PUBLISHER = "forlag";
+    private static final String DOI = "doi";
 
     @JsonProperty(ISBN_LIST)
     private String isbn;
@@ -54,6 +55,8 @@ public class CristinBookOrReportMetadata {
     private String volume;
     @JsonProperty(PUBLISHER)
     private CristinPublisher cristinPublisher;
+    @JsonProperty(DOI)
+    private String doi;
 
     public CristinBookOrReportMetadata() {
 
