@@ -89,6 +89,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -948,8 +949,11 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
 
-        var actualStoredHandleString = extractUpdatedPublicationsHandleReportFromS3Client(s3Event, actualPublication,
-                                                                                          nvaBrageMigrationDataGenerator.getBrageRecord().getId());
+        var actualStoredHandleString =
+            extractUpdatedPublicationsHandleReportFromS3Client(s3Event,
+                                                               actualPublication,
+                                                               nvaBrageMigrationDataGenerator.getBrageRecord()
+                                                                   .getId());
         assertThat(actualPublication.getIdentifier(), is(equalTo(existingPublication.getIdentifier())));
         assertThat(actualStoredHandleString,
                    is(equalTo(nvaBrageMigrationDataGenerator.getBrageRecord().getId().toString())));
@@ -980,7 +984,9 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var existingPublication = persistPublicationWithDoi(doi);
         assertThat(existingPublication.getHandle(), is(nullValue()));
 
-        var listOfExistingPublications = List.of(existingPublication);
+        var listOfExistingPublications =
+            List.of(new ResourceWithId(UriWrapper.fromUri("https://api.test.nva.aws.unit.no/publication/"
+                                                          + existingPublication.getIdentifier().toString()).getUri()));
         var searchResourceApiResponseSingleHit = new SearchResourceApiResponse(listOfExistingPublications.size(),
                                                                                listOfExistingPublications);
         var singleHitOptional = Optional.of(searchResourceApiResponseSingleHit.toString());
@@ -1052,7 +1058,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         assertThat(filesInUpdatedPublicationsFolder, is(not(empty())));
 
         var storedHandleString = extractUpdatedPublicationsHandleReportFromS3Client(s3Event, publication,
-                                                                                    brageGenerator.getBrageRecord().getId());
+                                                                                    brageGenerator.getBrageRecord()
+                                                                                        .getId());
         assertThat(storedHandleString, is(not(nullValue())));
     }
 
@@ -1281,7 +1288,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private String extractUpdatedPublicationsHandleReportFromS3Client(S3Event s3Event,
                                                                       Publication actualPublication,
                                                                       URI brageHandle) {
-        return extractHandleReportFromS3Client(s3Event, actualPublication, UPDATED_PUBLICATIONS_REPORTS_PATH, brageHandle);
+        return extractHandleReportFromS3Client(s3Event, actualPublication, UPDATED_PUBLICATIONS_REPORTS_PATH,
+                                               brageHandle);
     }
 
     private String extractHandleReportFromS3Client(S3Event s3Event, Publication actualPublication, URI brageHandle) {
@@ -1291,7 +1299,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private String extractHandleReportFromS3Client(S3Event s3Event, Publication actualPublication,
                                                    String destinationFolder,
                                                    URI brageHandle) {
-        UriWrapper handleReport = constructHandleReportFileUri(s3Event, actualPublication, destinationFolder, brageHandle);
+        UriWrapper handleReport = constructHandleReportFileUri(s3Event, actualPublication, destinationFolder,
+                                                               brageHandle);
         S3Driver s3Driver = new S3Driver(s3Client, new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
         return s3Driver.getFile(handleReport.toS3bucketPath());
     }
