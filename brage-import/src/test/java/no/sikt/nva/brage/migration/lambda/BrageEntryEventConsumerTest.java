@@ -949,9 +949,11 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
 
-        var actualStoredHandleString = extractUpdatedPublicationsHandleReportFromS3Client(s3Event, actualPublication,
-                                                                                          nvaBrageMigrationDataGenerator.getBrageRecord()
-                                                                                              .getId());
+        var actualStoredHandleString =
+            extractUpdatedPublicationsHandleReportFromS3Client(s3Event,
+                                                               actualPublication,
+                                                               nvaBrageMigrationDataGenerator.getBrageRecord()
+                                                                   .getId());
         assertThat(actualPublication.getIdentifier(), is(equalTo(existingPublication.getIdentifier())));
         assertThat(actualStoredHandleString,
                    is(equalTo(nvaBrageMigrationDataGenerator.getBrageRecord().getId().toString())));
