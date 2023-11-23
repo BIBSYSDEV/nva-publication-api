@@ -1,11 +1,32 @@
 package no.unit.nva.publication.events.handlers.persistence;
 
-import com.amazonaws.services.lambda.runtime.Context;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
+import static no.unit.nva.publication.events.handlers.persistence.ExpandedDataEntriesPersistenceHandler.EMPTY_EVENT;
+import static no.unit.nva.publication.events.handlers.persistence.ExpandedDataEntriesPersistenceHandler.EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC;
+import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.IMPORT_CANDIDATES_INDEX;
+import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.RESOURCES_INDEX;
+import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.TICKETS_INDEX;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.text.IsEmptyString.emptyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.nio.file.Path;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
@@ -34,13 +55,13 @@ import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -54,32 +75,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.URI;
-import java.time.Clock;
-import java.util.Optional;
-import java.util.stream.Stream;
-
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
-import static no.unit.nva.publication.events.handlers.persistence.ExpandedDataEntriesPersistenceHandler.EMPTY_EVENT;
-import static no.unit.nva.publication.events.handlers.persistence.ExpandedDataEntriesPersistenceHandler.EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC;
-import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.IMPORT_CANDIDATES_INDEX;
-import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.RESOURCES_INDEX;
-import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.TICKETS_INDEX;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static nva.commons.core.ioutils.IoUtils.stringFromResources;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.text.IsEmptyString.emptyString;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
 
@@ -242,7 +237,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     }
 
     private ExpandedDataEntry randomExpandedImportCandidate() {
-        return ExpandedImportCandidate.fromImportCandidate(randomImportCandidate(), null);
+        return ExpandedImportCandidate.fromImportCandidate(randomImportCandidate());
     }
 
     private PersistedEntryWithExpectedType generateExpandedPublishingRequestEntryWithAutocompletion()

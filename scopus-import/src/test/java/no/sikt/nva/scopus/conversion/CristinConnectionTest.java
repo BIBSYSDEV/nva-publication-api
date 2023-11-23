@@ -21,9 +21,10 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import no.sikt.nva.scopus.conversion.model.cristin.CristinOrganization;
+import java.util.List;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.utils.CristinGenerator;
+import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.stubs.WiremockHttpClient;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
@@ -141,7 +142,7 @@ class CristinConnectionTest {
     }
 
     private CristinOrganization createExpectedOrganization(URI organizationId) {
-        return new CristinOrganization(organizationId, null, randomString());
+        return new CristinOrganization(organizationId, randomUri(), randomString(), List.of(), randomString(), null);
     }
 
     private CristinPerson createExpectedPerson(URI personId) {

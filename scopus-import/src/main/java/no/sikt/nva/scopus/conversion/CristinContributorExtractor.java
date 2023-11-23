@@ -8,11 +8,11 @@ import java.util.Set;
 import java.util.stream.Stream;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.PersonalnameType;
+import no.sikt.nva.scopus.conversion.model.NvaCustomerContributor;
 import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
-import no.sikt.nva.scopus.conversion.model.cristin.CristinOrganization;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
-import no.unit.nva.model.Contributor;
+import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
@@ -23,7 +23,6 @@ import nva.commons.core.StringUtils;
 
 public final class CristinContributorExtractor {
 
-    public static final String NAME_DELIMITER = ", ";
     public static final String FIRST_NAME_CRISTIN_FIELD_NAME = "FirstName";
     public static final String LAST_NAME_CRISTIN_FIELD_NAME = "LastName";
     public static final String ORCID_FIELD_NAME = "orcid";
@@ -32,15 +31,17 @@ public final class CristinContributorExtractor {
     private CristinContributorExtractor() {
     }
 
-    public static Contributor generateContributorFromCristinPerson(CristinPerson cristinPerson, AuthorTp authorTp,
-                                                                   PersonalnameType correspondencePerson,
-                                                                   CristinOrganization cristinOrganization) {
+    public static NvaCustomerContributor generateContributorFromCristinPerson(
+        CristinPerson cristinPerson, AuthorTp authorTp, PersonalnameType correspondencePerson,
+        CristinOrganization cristinOrganization, boolean isNvaCustomer) {
 
-        return new Contributor.Builder().withIdentity(generateContributorIdentityFromCristinPerson(cristinPerson))
+        return new NvaCustomerContributor.Builder()
+                   .withIdentity(generateContributorIdentityFromCristinPerson(cristinPerson))
                    .withAffiliations(generateOrganizations(cristinPerson.getAffiliations(), cristinOrganization))
                    .withRole(new RoleType(Role.CREATOR))
                    .withSequence(getSequenceNumber(authorTp))
                    .withCorrespondingAuthor(isCorrespondingAuthor(authorTp, correspondencePerson))
+                   .withBelongsToNvaCustomer(isNvaCustomer)
                    .build();
     }
 
@@ -94,8 +95,8 @@ public final class CristinContributorExtractor {
     }
 
     private static Organization toOrganization(CristinOrganization cristinOrganization) {
-        return new Organization.Builder().withId(cristinOrganization.getId())
-                   .withLabels(cristinOrganization.getLabels())
+        return new Organization.Builder().withId(cristinOrganization.id())
+                   .withLabels(cristinOrganization.labels())
                    .build();
     }
 
