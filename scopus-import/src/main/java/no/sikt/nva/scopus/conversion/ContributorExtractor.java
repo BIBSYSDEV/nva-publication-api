@@ -1,5 +1,6 @@
 package no.sikt.nva.scopus.conversion;
 
+import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
@@ -10,7 +11,6 @@ import static no.unit.nva.language.LanguageConstants.ENGLISH;
 import static nva.commons.core.StringUtils.isNotBlank;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,6 +28,7 @@ import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.exception.MissingNvaContributorException;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.language.LanguageMapper;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
@@ -47,6 +48,7 @@ public class ContributorExtractor {
     public static final String MISSING_CONTRIBUTORS_OF_NVA_CUSTOMERS_MESSAGE = "None of contributors belongs to NVA "
                                                                                + "customer, all contributors "
                                                                                + "affiliations: ";
+    public static final String SCOPUS_AUID = "scopus-auid";
     private final List<CorrespondenceTp> correspondenceTps;
     private final List<AuthorGroupTp> authorGroupTps;
     private final List<NvaCustomerContributor> contributors;
@@ -278,7 +280,7 @@ public class ContributorExtractor {
 
         var newContributor = new NvaCustomerContributor.Builder().withIdentity(generateIdentity(collaboration))
                                  .withAffiliations(generateAffiliation(cristinOrganization, authorGroupTp).map(List::of)
-                                                       .orElse(Collections.emptyList()))
+                                                       .orElse(emptyList()))
                                  .withRole(new RoleType(Role.OTHER))
                                  .withSequence(getSequenceNumber(collaboration))
                                  .withCorrespondingAuthor(isCorrespondingAuthor(collaboration, correspondencePerson))
@@ -301,7 +303,18 @@ public class ContributorExtractor {
         var identity = new Identity();
         identity.setName(determineContributorName(authorTp));
         identity.setOrcId(getOrcidAsUriString(authorTp));
+        identity.setAdditionalIdentifiers(extractAdditionalIdentifiers(authorTp));
         return identity;
+    }
+
+    protected static List<AdditionalIdentifier> extractAdditionalIdentifiers(AuthorTp authorTp) {
+        return isNotBlank(authorTp.getAuid())
+                   ? List.of(createAuidAdditionalIdentifier(authorTp))
+                   : emptyList();
+    }
+
+    private static AdditionalIdentifier createAuidAdditionalIdentifier(AuthorTp authorTp) {
+        return new AdditionalIdentifier(SCOPUS_AUID, authorTp.getAuid());
     }
 
     private Optional<Organization> generateAffiliationFromAuthorGroupTp(AuthorGroupTp authorGroup) {

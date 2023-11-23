@@ -1,11 +1,13 @@
 package no.sikt.nva.scopus.conversion;
 
 import static no.sikt.nva.scopus.conversion.ContributorExtractor.MISSING_CONTRIBUTORS_OF_NVA_CUSTOMERS_MESSAGE;
+import static no.sikt.nva.scopus.conversion.ContributorExtractor.SCOPUS_AUID;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -18,7 +20,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
+import no.scopus.generated.AffiliationTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CorrespondenceTp;
@@ -30,6 +32,7 @@ import no.sikt.nva.scopus.exception.MissingNvaContributorException;
 import no.sikt.nva.scopus.utils.CristinGenerator;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
+import no.unit.nva.model.AdditionalIdentifier;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -159,6 +162,44 @@ public class ContributorExtractorTest {
         assertThrows(MissingNvaContributorException.class,
                      () -> contributorExtractorFromDocument(document).generateContributors(),
                      MISSING_CONTRIBUTORS_OF_NVA_CUSTOMERS_MESSAGE);
+    }
+
+    @Test
+    void shouldPreserveAuidWhenConvertingToNvaContributor() {
+        var auid = randomString();
+        var expectedAdditionalIdentifier = new AdditionalIdentifier(SCOPUS_AUID, auid);
+        var document = ScopusGenerator.createWithOneAuthorGroupAndAffiliation(createAuthorWithAuid(auid)).getDocument();
+        mockRandomCristinOrgResponse();
+        var nvaContributor = contributorExtractorFromDocument(document).generateContributors().get(0);
+        assertThat(nvaContributor.getIdentity().getAdditionalIdentifiers(), hasItem(expectedAdditionalIdentifier));
+    }
+
+    @Test
+    void shouldPreserveAuidEvenWhenReplacingWithCristinContributor() {
+        var auid = randomString();
+        var expectedAdditionalIdentifier = new AdditionalIdentifier(SCOPUS_AUID, auid);
+        var document = ScopusGenerator.createWithOneAuthorGroupAndAffiliation(createAuthorWithAuid(auid)).getDocument();
+        mockCristinPersonWithoutAffiliationResponse();
+        mockRandomCristinOrgResponse();
+        var nvaContributor = contributorExtractorFromDocument(document).generateContributors().get(0);
+        assertThat(nvaContributor.getIdentity().getAdditionalIdentifiers(), hasItem(expectedAdditionalIdentifier));
+    }
+
+
+    private AuthorGroupTp createAuthorWithAuid(String auid) {
+        var authorTp = new AuthorTp();
+        authorTp.setAuid(auid);
+        authorTp.setSurname(randomString());
+        authorTp.setGivenName(randomString());
+        authorTp.setIndexedName(randomString());
+        authorTp.setSeq("1");
+        var affiliationTp = new AffiliationTp();
+        affiliationTp.setAfid(randomString());
+        affiliationTp.setCountry("NO");
+        var authorGp = new AuthorGroupTp();
+        authorGp.setAffiliation(affiliationTp);
+        authorGp.getAuthorOrCollaboration().add(authorTp);
+        return authorGp;
     }
 
     private static String getOrcidFromScopusDocument(DocTp document) {
