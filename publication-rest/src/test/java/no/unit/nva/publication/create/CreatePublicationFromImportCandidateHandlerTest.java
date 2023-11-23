@@ -122,7 +122,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     }
 
     @Test
-    void shouldCreatePublicationWithValuesFromRequestBodyAndNotExistingDatabaseDatabase()
+    void shouldCreatePublicationWithValuesFromRequestBodyAndNotPersistedImportCandidate()
         throws NotFoundException, IOException {
         var persistedImportCandidate = createPersistedImportCandidate();
         var importCandidateRequestBody = persistedImportCandidate.copyImportCandidate().withDoi(randomDoi()).build();
