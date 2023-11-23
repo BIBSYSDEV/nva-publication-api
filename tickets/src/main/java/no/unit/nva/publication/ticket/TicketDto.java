@@ -40,6 +40,7 @@ public abstract class TicketDto implements JsonSerializable {
     public static final String MESSAGES_FIELD = "messages";
     public static final String VIEWED_BY = "viewedBy";
     public static final String ASSIGNEE_FIELD = "assignee";
+    public static final String OWNER_AFFILIATION_FIELD = "ownerAffiliation";
     public static final String PUBLICATION_IDENTIFIER_FIELD = "publicationIdentifier";
     @JsonProperty(STATUS_FIELD)
     private final TicketDtoStatus status;
@@ -51,17 +52,21 @@ public abstract class TicketDto implements JsonSerializable {
     private final Username assignee;
     @JsonProperty(PUBLICATION_IDENTIFIER_FIELD)
     private final SortableIdentifier publicationIdentifier;
+    @JsonProperty(OWNER_AFFILIATION_FIELD)
+    private final URI ownerAffiliation;
 
     protected TicketDto(TicketDtoStatus status,
                         List<MessageDto> messages,
                         Set<User> viewedBy,
                         Username assignee,
-                        SortableIdentifier publicationIdentifier) {
+                        SortableIdentifier publicationIdentifier,
+                        URI ownerAffiliation) {
         this.status = status;
         this.messages = messages;
         this.viewedBy = new ViewedBy(viewedBy);
         this.assignee = assignee;
         this.publicationIdentifier = publicationIdentifier;
+        this.ownerAffiliation = ownerAffiliation;
     }
 
     public static TicketDto fromTicket(TicketEntry ticket) {
@@ -86,6 +91,7 @@ public abstract class TicketDto implements JsonSerializable {
                    .withMessages(messageDtos)
                    .withViewedBy(ticket.getViewedBy())
                    .withAssignee(ticket.getAssignee())
+                   .withOwnerAffiliation(ticket.getOwnerAffiliation())
                    .build(ticket);
     }
 
@@ -106,6 +112,10 @@ public abstract class TicketDto implements JsonSerializable {
 
     public Username getAssignee() {
         return assignee;
+    }
+
+    public URI getOwnerAffiliation() {
+        return ownerAffiliation;
     }
 
     public abstract Class<? extends TicketEntry> ticketType();
@@ -140,6 +150,7 @@ public abstract class TicketDto implements JsonSerializable {
         private ViewedBy viewedBy;
         private SortableIdentifier publicationIdentifier;
         private Username assignee;
+        private URI ownerAffiliation;
 
         private Builder() {
         }
@@ -179,6 +190,11 @@ public abstract class TicketDto implements JsonSerializable {
             return this;
         }
 
+        public Builder withOwnerAffiliation(URI ownerAffiliation) {
+            this.ownerAffiliation = ownerAffiliation;
+            return this;
+        }
+
         public Builder withPublicationIdentifier(SortableIdentifier publicationIdentifier) {
             this.publicationIdentifier = publicationIdentifier;
             return this;
@@ -200,7 +216,8 @@ public abstract class TicketDto implements JsonSerializable {
                                                     id,
                                                     messages,
                                                     viewedBy,
-                                                    assignee);
+                                                    assignee,
+                                                    ownerAffiliation);
             }
             throw new RuntimeException("Unsupported type");
         }
@@ -220,6 +237,7 @@ public abstract class TicketDto implements JsonSerializable {
                                             messages,
                                             viewedBy,
                                             assignee,
+                                            ownerAffiliation,
                                             workflow);
         }
 
@@ -232,7 +250,8 @@ public abstract class TicketDto implements JsonSerializable {
                                      id,
                                      messages,
                                      viewedBy,
-                                     assignee);
+                                     assignee,
+                                     ownerAffiliation);
         }
     }
 }
