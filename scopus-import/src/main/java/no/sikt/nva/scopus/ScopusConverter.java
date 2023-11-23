@@ -52,12 +52,15 @@ import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactor
 import nva.commons.core.Environment;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("PMD.GodClass")
 public class ScopusConverter {
 
     public static final URI HARDCODED_ID = URI.create(
         "https://api.sandbox.nva.aws.unit" + ".no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934");
+    private static final Logger logger = LoggerFactory.getLogger(ScopusConverter.class);
     public static final String RESOURCE_OWNER_SIKT = "sikt@20754";
     public static final String CRISTIN_ID_SIKT = "20754.0.0.0";
     public static final String CRISTIN = "cristin";
@@ -112,7 +115,7 @@ public class ScopusConverter {
     }
 
     public ImportCandidate generateImportCandidate() {
-        return new ImportCandidate.Builder().withPublisher(new Organization.Builder().withId(HARDCODED_ID).build())
+        return new ImportCandidate.Builder().withPublisher(new Organization.Builder().withId(createId()).build())
                    .withResourceOwner(constructResourceOwner())
                    .withAdditionalIdentifiers(generateAdditionalIdentifiers())
                    .withEntityDescription(generateEntityDescription())
@@ -122,6 +125,12 @@ public class ScopusConverter {
                    .withImportStatus(ImportStatusFactory.createNotImported())
                    .withAssociatedArtifacts(scopusFileConverter.fetchAssociatedArtifacts(docTp))
                    .build();
+    }
+
+    private URI createId() {
+        var envVar = new Environment().readEnv("CUSTOMER_ID");
+        logger.info("Customer map: {}", envVar);
+        return HARDCODED_ID;
     }
 
     private static URI constructOwnerAffiliation() {
