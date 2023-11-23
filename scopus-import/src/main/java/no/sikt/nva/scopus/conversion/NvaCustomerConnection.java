@@ -22,6 +22,7 @@ public class NvaCustomerConnection {
                                                           .getUri();
     public static final String PATH_DELIMITER = "/";
     public static final String CONTENT_TYPE = "application/json";
+    public static final String FETCH_CUSTOMER_ERROR_MESSAGE = "Something went wrong fetching nva customer: ";
     private final AuthorizedBackendUriRetriever uriRetriever;
 
     public NvaCustomerConnection(AuthorizedBackendUriRetriever uriRetriever) {
@@ -52,10 +53,10 @@ public class NvaCustomerConnection {
 
     private HttpResponse<String> fetchResponse(URI uri) {
         var response = uriRetriever.fetchResponse(uri, CONTENT_TYPE);
-        return response.orElseGet(() -> throwRuntimeException(uri));
-    }
-
-    private HttpResponse<String> throwRuntimeException(URI uri) {
-        throw new RuntimeException("Something went wrong fetching nva customer: " + uri.toString());
+        if (response.isPresent()) {
+            return response.get();
+        } else {
+            throw new RuntimeException(FETCH_CUSTOMER_ERROR_MESSAGE + uri.toString());
+        }
     }
 }

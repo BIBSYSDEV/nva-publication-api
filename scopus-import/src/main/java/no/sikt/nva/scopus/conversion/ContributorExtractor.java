@@ -64,15 +64,17 @@ public class ContributorExtractor {
         this.cristinConnection = cristinConnection;
         this.nvaCustomerConnection = nvaCustomerConnection;
     }
-
     public List<Contributor> generateContributors() {
         var contributors = authorGroupTps.stream()
                                .map(this::generateContributorsFromAuthorGroup)
                                .flatMap(List::stream)
                                .toList();
-        return noContributorsBelongingToNvaCustomer(contributors)
-                   ? throwMissingNvaContributorException(contributors)
-                   : getContributors();
+        if (noContributorsBelongingToNvaCustomer(contributors)) {
+            var affiliationsIds = getAllAffiliationIds(contributors);
+            throw new MissingNvaContributorException(MISSING_CONTRIBUTORS_OF_NVA_CUSTOMERS_MESSAGE + affiliationsIds);
+        } else {
+            return getContributors();
+        }
     }
 
     private static boolean isNotOtherNorwegianInstitution(CristinOrganization org) {
@@ -95,11 +97,6 @@ public class ContributorExtractor {
 
     private boolean noContributorsBelongingToNvaCustomer(List<NvaCustomerContributor> contributors) {
         return contributors.stream().noneMatch(NvaCustomerContributor::belongsToNvaCustomer);
-    }
-
-    private List<Contributor> throwMissingNvaContributorException(List<NvaCustomerContributor> contributors) {
-        var affiliationsIds = getAllAffiliationIds(contributors);
-        throw new MissingNvaContributorException(MISSING_CONTRIBUTORS_OF_NVA_CUSTOMERS_MESSAGE + affiliationsIds);
     }
 
     private static List<URI> getAllAffiliationIds(List<NvaCustomerContributor> contributors) {

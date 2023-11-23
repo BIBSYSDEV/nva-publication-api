@@ -10,6 +10,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonSerializable;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.SingletonCollector;
 
 @JsonInclude(Include.NON_NULL)
@@ -33,6 +34,7 @@ public record CristinOrganization(@JsonProperty(ID) URI id,
     public CristinOrganization {
     }
 
+    @JacocoGenerated
     @JsonIgnore
     public CristinOrganization getTopLevelOrg() {
         if (nonNull(partOf())) {
@@ -49,6 +51,7 @@ public record CristinOrganization(@JsonProperty(ID) URI id,
         return this;
     }
 
+    @JacocoGenerated
     private static boolean hasPartOf(CristinOrganization org) {
         return nonNull(org.partOf()) && !org.partOf().isEmpty();
     }

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import java.net.URI;
 import java.util.Optional;
 import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
@@ -29,30 +30,30 @@ public class NvaCustomerConnectionTest {
     void shouldReturnTrueWhenFetchingCustomerByCristinIdReturnsOk() {
         mockResponseWithStatusCode(200);
 
-        assertTrue(nvaCustomerConnection.isNvaCustomer(cristinOrgWithId()));
+        assertTrue(nvaCustomerConnection.isNvaCustomer(cristinOrgWithId(randomUri())));
     }
 
     @Test
     void shouldReturnFalseWhenFetchingCustomerByCristinIdReturnsNotOk() {
         mockResponseWithStatusCode(502);
 
-        assertFalse(nvaCustomerConnection.isNvaCustomer(cristinOrgWithId()));
+        assertFalse(nvaCustomerConnection.isNvaCustomer(cristinOrgWithId(randomUri())));
     }
 
     @Test
     void shouldThrowExceptionWhenSomethingGoesWrongFetchingCustomer() {
-        assertThrows(NullPointerException.class, () -> nvaCustomerConnection.isNvaCustomer(null));
+        assertThrows(NullPointerException.class, () -> nvaCustomerConnection.isNvaCustomer(cristinOrgWithId(null)));
     }
 
     @Test
     void shouldThrowExceptionWhenFetchedResponseIsEmpty() {
         when(uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class, () -> nvaCustomerConnection.isNvaCustomer(cristinOrgWithId()));
+        assertThrows(RuntimeException.class, () -> nvaCustomerConnection.isNvaCustomer(cristinOrgWithId(randomUri())));
     }
 
-    private static CristinOrganization cristinOrgWithId() {
-        return new CristinOrganization(randomUri(), null, null, null, null, null);
+    private static CristinOrganization cristinOrgWithId(URI id) {
+        return new CristinOrganization(id, null, null, null, null, null);
     }
 
     private void mockResponseWithStatusCode(int statusCode) {

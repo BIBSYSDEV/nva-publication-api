@@ -8,16 +8,16 @@ import no.unit.nva.model.role.RoleType;
 
 public class NvaCustomerContributor extends Contributor {
 
-    private final boolean belongsToNvaCustomer;
+    private final boolean hasNvaCustomer;
 
     public NvaCustomerContributor(Identity identity, List<Organization> affiliations, Object role, Integer sequence,
-                                  boolean correspondingAuthor, boolean belongsToNvaCustomer) {
+                                  boolean correspondingAuthor, boolean hasNvaCustomer) {
         super(identity, affiliations, role, sequence, correspondingAuthor);
-        this.belongsToNvaCustomer = belongsToNvaCustomer;
+        this.hasNvaCustomer = hasNvaCustomer;
     }
 
     public boolean belongsToNvaCustomer() {
-        return belongsToNvaCustomer;
+        return hasNvaCustomer;
     }
 
     public static final class Builder {
