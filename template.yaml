@@ -107,17 +107,6 @@ Parameters:
     Type: String
     Default: "PiaRestPass"
 
-Mappings:
-  SiktCustomerIdMap:
-    sandbox:
-      CustomerId: 'bb3d0c0c-5065-4623-9b98-5810983c2478'
-    dev:
-      CustomerId: 'bb3d0c0c-5065-4623-9b98-5810983c2478'
-    test:
-      CustomerId: '0baf8fcb-b18d-4c09-88bb-956b4f659103'
-    prod:
-      CustomerId: '22139870-8d31-4df9-bc45-14eb68287c4a'
-
 Conditions:
   WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ] ]
 
@@ -954,7 +943,6 @@ Resources:
           BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
           CROSSREF_FETCH_DOI_URI: 'https://api.crossref.org/v1/works/'
-          CUSTOMER_ID: !FindInMap [SiktCustomerIdMap]
       Events:
         Scopus:
           Type: S3
