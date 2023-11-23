@@ -1,6 +1,7 @@
 package no.sikt.nva.scopus.conversion;
 
 import static java.util.Objects.nonNull;
+import static no.sikt.nva.scopus.conversion.ContributorExtractor.extractAdditionalIdentifiers;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -36,7 +37,7 @@ public final class CristinContributorExtractor {
         CristinOrganization cristinOrganization, boolean isNvaCustomer) {
 
         return new NvaCustomerContributor.Builder()
-                   .withIdentity(generateContributorIdentityFromCristinPerson(cristinPerson))
+                   .withIdentity(generateContributorIdentityFromCristinPerson(cristinPerson, authorTp))
                    .withAffiliations(generateOrganizations(cristinPerson.getAffiliations(), cristinOrganization))
                    .withRole(new RoleType(Role.CREATOR))
                    .withSequence(getSequenceNumber(authorTp))
@@ -45,7 +46,8 @@ public final class CristinContributorExtractor {
                    .build();
     }
 
-    private static Identity generateContributorIdentityFromCristinPerson(CristinPerson cristinPerson) {
+    private static Identity generateContributorIdentityFromCristinPerson(CristinPerson cristinPerson,
+                                                                         AuthorTp authorTp) {
         var identity = new Identity();
         identity.setName(determineContributorName(cristinPerson));
         identity.setOrcId(cristinPerson.getIdentifiers()
@@ -55,6 +57,7 @@ public final class CristinContributorExtractor {
                               .map(TypedValue::getValue)
                               .orElse(null));
         identity.setId(cristinPerson.getId());
+        identity.setAdditionalIdentifiers(extractAdditionalIdentifiers(authorTp));
         identity.setVerificationStatus(nonNull(cristinPerson.getVerified()) ? generateVerificationStatus(cristinPerson)
                                            : ContributorVerificationStatus.CANNOT_BE_ESTABLISHED);
         return identity;
