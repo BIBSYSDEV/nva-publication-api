@@ -128,9 +128,9 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws Exception {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        var userAffiliation = publication.getResourceOwner().getOwnerAffiliation();
+        ticket.setOwnerAffiliation(randomUri());
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
-        assertThat(userAffiliation, is(equalTo(expandedTicket.getOrganization().id())));
+        assertThat(ticket.getOwnerAffiliation(), is(equalTo(expandedTicket.getOrganization().id())));
     }
 
     @ParameterizedTest
@@ -273,11 +273,11 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        ticket.setOwnerAffiliation(randomUri());
 
-        var expectedOrgId = publication.getResourceOwner().getOwnerAffiliation();
         var orgIds = expansionService.getOrganization(ticket).id();
 
-        assertThat(orgIds, is(equalTo(expectedOrgId)));
+        assertThat(orgIds, is(equalTo(ticket.getOwnerAffiliation())));
     }
 
     @ParameterizedTest
