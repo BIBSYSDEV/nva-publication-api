@@ -63,7 +63,8 @@ public class NvaCustomerContributor extends Contributor {
         }
 
         public NvaCustomerContributor build() {
-            return new NvaCustomerContributor(identity, affiliations, role, sequence, correspondingAuthor, belongsToNvaCustomer);
+            return new NvaCustomerContributor(identity, affiliations, role,
+                                              sequence, correspondingAuthor, belongsToNvaCustomer);
         }
     }
 }

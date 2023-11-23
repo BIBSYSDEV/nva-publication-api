@@ -31,12 +31,12 @@ public final class CristinContributorExtractor {
     private CristinContributorExtractor() {
     }
 
-    public static NvaCustomerContributor generateContributorFromCristinPerson(CristinPerson cristinPerson, AuthorTp authorTp,
-                                                                   PersonalnameType correspondencePerson,
-                                                                   CristinOrganization cristinOrganization,
-                                                                   boolean isNvaCustomer) {
+    public static NvaCustomerContributor generateContributorFromCristinPerson(
+        CristinPerson cristinPerson, AuthorTp authorTp, PersonalnameType correspondencePerson,
+        CristinOrganization cristinOrganization, boolean isNvaCustomer) {
 
-        return new NvaCustomerContributor.Builder().withIdentity(generateContributorIdentityFromCristinPerson(cristinPerson))
+        return new NvaCustomerContributor.Builder()
+                   .withIdentity(generateContributorIdentityFromCristinPerson(cristinPerson))
                    .withAffiliations(generateOrganizations(cristinPerson.getAffiliations(), cristinOrganization))
                    .withRole(new RoleType(Role.CREATOR))
                    .withSequence(getSequenceNumber(authorTp))

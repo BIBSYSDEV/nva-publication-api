@@ -156,8 +156,8 @@ public class ContributorExtractor {
         }
     }
 
-    private void updateContributorWithAdditionalAffiliationsInContributorList(Organization newAffiliation,
-                                                                              NvaCustomerContributor matchingContributor) {
+    private void updateContributorWithAdditionalAffiliationsInContributorList(
+        Organization newAffiliation, NvaCustomerContributor matchingContributor) {
         var newContributor = cloneContributorAddingAffiliation(matchingContributor, newAffiliation);
         replaceContributor(matchingContributor, newContributor);
     }
