@@ -1,6 +1,5 @@
 package no.unit.nva.publication.ticket;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
@@ -35,7 +34,7 @@ public class UnpublishRequestDto extends TicketDto {
     @JsonProperty(ID_FIELD)
     private final URI id;
 
-    @JsonCreator
+    @SuppressWarnings({"PMD.ExcessiveParameterList"})
     public UnpublishRequestDto(@JsonProperty(STATUS_FIELD) TicketDtoStatus status,
                                @JsonProperty(CREATED_DATE_FIELD) Instant createdDate,
                                @JsonProperty(MODIFIED_DATE_FIELD) Instant modifiedDate,

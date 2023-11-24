@@ -70,7 +70,7 @@ public abstract class TicketEntry implements Entity {
             return createOpeningCaseObject(publication);
         } else if (GeneralSupportRequest.class.equals(ticketType)) {
             return GeneralSupportRequest.fromPublication(publication);
-        } else if(UnpublishRequest.class.equals(ticketType)) {
+        } else if (UnpublishRequest.class.equals(ticketType)) {
             return UnpublishRequest.fromPublication(publication);
         }
         throw new RuntimeException("Unrecognized ticket type");

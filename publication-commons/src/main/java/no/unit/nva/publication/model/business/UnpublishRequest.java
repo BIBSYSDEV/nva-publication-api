@@ -179,6 +179,7 @@ public class UnpublishRequest extends TicketEntry {
                    .withOwner(getOwner())
                    .withViewedBy(this.getViewedBy())
                    .withAssignee(getAssignee())
+                   .withOwnerAffiliation(getOwnerAffiliation())
                    .build();
     }
 
@@ -212,7 +213,7 @@ public class UnpublishRequest extends TicketEntry {
 
     @Override
     public URI getOwnerAffiliation() {
-        return null;
+        return this.ownerAffiliation;
     }
 
     @Override
@@ -229,7 +230,7 @@ public class UnpublishRequest extends TicketEntry {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getIdentifier(), getCreatedDate(), getModifiedDate(), getOwner(), getCustomerId(),
-                            getResourceIdentifier(), getStatus(), getAssignee());
+                            getResourceIdentifier(), getStatus(), getAssignee(), getOwnerAffiliation());
     }
 
     @Override
@@ -248,7 +249,8 @@ public class UnpublishRequest extends TicketEntry {
                && Objects.equals(getOwner(), that.getOwner())
                && Objects.equals(getCustomerId(), that.getCustomerId())
                && getStatus() == that.getStatus()
-               && Objects.equals(getAssignee(), that.getAssignee());
+               && Objects.equals(getAssignee(), that.getAssignee())
+               && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation());
     }
 
     private static URI extractCustomerId(Publication publication) {
@@ -306,6 +308,11 @@ public class UnpublishRequest extends TicketEntry {
 
         public UnpublishRequest.Builder withOwner(User owner) {
             unpublishRequest.setOwner(owner);
+            return this;
+        }
+
+        public UnpublishRequest.Builder withOwnerAffiliation(URI ownerAffiliation) {
+            unpublishRequest.setOwnerAffiliation(ownerAffiliation);
             return this;
         }
 
