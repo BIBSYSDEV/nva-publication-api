@@ -46,6 +46,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     public static final String RESOURCE_IS_MISSING_SCOPUS_IDENTIFIER_ERROR_MESSAGE =
         "Resource is missing scopus identifier";
     public static final String PUBLICATION = "publication";
+    public static final String RESOURCE_IS_NOT_PUBLISHABLE = "Resource is not publishable";
     private final String persistedStorageBucket;
     private final String importCandidateStorageBucket;
     private final ResourceService candidateService;
@@ -169,6 +170,9 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
         }
         if (isNull(getScopusIdentifier(importCandidate))) {
             throw new BadRequestException(RESOURCE_IS_MISSING_SCOPUS_IDENTIFIER_ERROR_MESSAGE);
+        }
+        if (!importCandidate.isPublishable()) {
+            throw new BadRequestException(RESOURCE_IS_NOT_PUBLISHABLE);
         }
     }
 

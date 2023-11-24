@@ -8,6 +8,7 @@ import static no.unit.nva.publication.create.CreatePublicationFromImportCandidat
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.PUBLICATIONS_TABLE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.RESOURCE_HAS_ALREADY_BEEN_IMPORTED_ERROR_MESSAGE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.RESOURCE_IS_MISSING_SCOPUS_IDENTIFIER_ERROR_MESSAGE;
+import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.RESOURCE_IS_NOT_PUBLISHABLE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.ROLLBACK_WENT_WRONG_MESSAGE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.SCOPUS_IDENTIFIER;
 import static no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever.ACCEPT;
@@ -288,6 +289,20 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                 .destinationBucket("some-persisted-bucket")
                 .destinationKey(fileNotKeptByImporter.getIdentifier().toString())
                 .build());
+    }
+
+    @Test
+    void shouldThrowBadRequestExceptionWhenTryingToImportCandideWithoutTitle()
+        throws NotFoundException, IOException {
+        var importCandidate = createPersistedImportCandidate();
+        var userInput = importCandidate.copyImportCandidate().build();
+        userInput.getEntityDescription().setMainTitle(null);
+        var request = createRequest(userInput);
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+
+        assertThat(response.getBodyObject(Problem.class).getDetail(),
+                   containsString(RESOURCE_IS_NOT_PUBLISHABLE));
     }
 
     private PublishedFile randomFile() {
