@@ -82,6 +82,7 @@ public class ScopusFileConverter {
     private static final Logger logger = LoggerFactory.getLogger(ScopusFileConverter.class);
     private static final String CONTENT_DISPOSITION_FILE_NAME_PATTERN = "filename=\"%s\"";
     private static final URI DEFAULT_LICENSE = URI.create("https://creativecommons.org/licenses/by/4.0/");
+    public static final String FETCH_FILE_ERROR_MESSAGE = "Could not fetch file: ";
     public final String crossRefUri;
     private final HttpClient httpClient;
     private final S3Client s3Client;
@@ -317,14 +318,11 @@ public class ScopusFileConverter {
     }
 
     private Optional<AssociatedArtifact> convertToAssociatedArtifact(HttpResponse<InputStream> response) {
-        if (isSuccess(response)) {
-            var fileIdentifier = randomUUID();
-            var filename = getFilename(response);
-            saveFile(filename, fileIdentifier, response);
-            var head = fetchFileInfo(fileIdentifier);
-            return Optional.of(createFile(fileIdentifier, filename, head));
-        }
-        throw new RuntimeException();
+        var fileIdentifier = randomUUID();
+        var filename = getFilename(response);
+        saveFile(filename, fileIdentifier, response);
+        var head = fetchFileInfo(fileIdentifier);
+        return Optional.of(createFile(fileIdentifier, filename, head));
     }
 
     private List<AssociatedArtifact> extractAssociatedArtifactsFromFileReference(DocTp docTp) {
@@ -375,7 +373,13 @@ public class ScopusFileConverter {
     }
 
     private HttpResponse<InputStream> fetchResponseAsInputStream(URI uri) {
-        return attempt(() -> httpClient.send(constructRequest(uri), BodyHandlers.ofInputStream())).orElseThrow();
+        var response = attempt(() -> httpClient.send(constructRequest(uri), BodyHandlers.ofInputStream()))
+                           .orElseThrow();
+        if(isSuccess(response)) {
+            return response;
+        } else {
+            throw new RuntimeException(FETCH_FILE_ERROR_MESSAGE);
+        }
     }
 
     private List<UpwOaLocationType> getLocations(DocTp docTp) {
