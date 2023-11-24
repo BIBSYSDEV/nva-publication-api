@@ -11,11 +11,9 @@ import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiM
 import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ENV_NAME_NVA_FRONTEND_DOMAIN;
-import static no.unit.nva.publication.fetch.FetchPublicationHandler.GONE_MESSAGE;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
-import static org.apache.http.HttpStatus.SC_GONE;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
@@ -54,6 +52,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.PublicationDetail;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -274,15 +273,17 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    @DisplayName("Handler returns Gone Response when when publication has status Deleted")
-    void handlerReturnsGoneErrorResponseWhenPublicationHasStatusDeleted()
+    void handlerReturnsGoneWithPublicationDetailWhenPublicationIsDeletedAndDuplicateOfValueIsNotPresent()
         throws ApiGatewayException, IOException {
-        var publicationIdentifier = createDeletedPublication();
-        fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier), output, context);
+        var publication = createDeletedPublicationWithDuplicate(null);
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output, context);
         var gatewayResponse = parseFailureResponse();
-        var actualDetail = getProblemDetail(gatewayResponse);
-        assertEquals(SC_GONE, gatewayResponse.getStatusCode());
-        assertThat(actualDetail, containsString(GONE_MESSAGE));
+        var expectedTombstone = new PublicationDetail(publication.getIdentifier(),
+                                                      publication.getDuplicateOf(),
+                                                      publication.getEntityDescription());
+
+        assertThat(gatewayResponse.getBody(), is(equalTo(expectedTombstone.toJsonString())));
+
     }
 
     @Test
@@ -332,11 +333,12 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private String createDeletedPublication() throws ApiGatewayException {
+    private Publication createDeletedPublicationWithDuplicate(URI duplicateOf) throws ApiGatewayException {
         var createdPublication = createPublication();
+        publicationService.updatePublication(createdPublication.copy().withDuplicateOf(duplicateOf).build());
         var publicationIdentifier = createdPublication.getIdentifier();
         publicationService.updatePublishedStatusToDeleted(publicationIdentifier);
-        return publicationIdentifier.toString();
+        return publicationService.getPublication(createdPublication);
     }
 
     private GatewayResponse<PublicationResponse> parseHandlerResponse() throws JsonProcessingException {

@@ -76,6 +76,9 @@
     "doi": {
       "@type": "@id"
     },
+    "duplicateOf": {
+      "@type": "@id"
+    },
     "embargoDate": {
       "@type": "xsd:dateTime"
     },

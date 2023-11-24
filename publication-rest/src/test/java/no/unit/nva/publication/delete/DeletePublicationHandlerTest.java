@@ -15,6 +15,7 @@ import static org.apache.http.HttpStatus.SC_ACCEPTED;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_NOT_IMPLEMENTED;
+import static org.apache.http.HttpStatus.SC_OK;
 import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -396,6 +397,25 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldUpdateDeletedResourceWithDuplicateOfValueWhenResourceIsADuplicate()
+        throws ApiGatewayException, IOException {
+        var publication = createAndPersistDegreeWithoutDoi();
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        var duplicate = randomUri();
+        var request = createRequestWithDuplicateOfValue(publication.getIdentifier(),
+                                                        randomString(),
+                                                        publication.getPublisher().getId(),
+                                                        AccessRight.PUBLISH_DEGREE,
+                                                        duplicate);
+        handler.handleRequest(request, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
+        var updatedPublication = publicationService.getPublication(publication);
+
+        assertThat(response.getStatusCode(), is(equalTo(SC_ACCEPTED)));
+        assertThat(updatedPublication.getDuplicateOf(), is(equalTo(duplicate)));
+    }
+
+    @Test
     void shouldReturnSuccessWhenCuratorUnpublishesPublishedPublicationFromOwnInstitution()
         throws ApiGatewayException, IOException {
 
@@ -459,6 +479,19 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         if (nonNull(cristinId)) {
             request.withPersonCristinId(cristinId);
         }
+
+        return request.build();
+    }
+
+    private InputStream createRequestWithDuplicateOfValue(SortableIdentifier publicationIdentifier, String username,
+                                             URI institutionId, AccessRight accessRight, URI duplicateOf)
+        throws JsonProcessingException {
+        var request = new HandlerRequestBuilder<DeletePublicationRequest>(restApiMapper)
+                          .withUserName(username)
+                          .withBody(new DeletePublicationRequest(duplicateOf))
+                          .withCurrentCustomer(institutionId)
+                          .withAccessRights(institutionId, accessRight.name())
+                          .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString()));
 
         return request.build();
     }

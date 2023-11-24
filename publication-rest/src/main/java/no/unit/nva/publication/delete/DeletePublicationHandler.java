@@ -1,11 +1,14 @@
 package no.unit.nva.publication.delete;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.RequestUtil.createExternalUserInstance;
 import static no.unit.nva.publication.RequestUtil.createInternalUserInstance;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.net.URI;
 import java.time.Clock;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.model.Publication;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -19,7 +22,7 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
 
-public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
+public class DeletePublicationHandler extends ApiGatewayHandler<DeletePublicationRequest, Void> {
     
     private final ResourceService resourceService;
     private final IdentityServiceClient identityServiceClient;
@@ -41,13 +44,13 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     public DeletePublicationHandler(ResourceService resourceService,
                                     Environment environment,
                                     IdentityServiceClient identityServiceClient) {
-        super(Void.class, environment);
+        super(DeletePublicationRequest.class, environment);
         this.resourceService = resourceService;
         this.identityServiceClient = identityServiceClient;
     }
 
     @Override
-    protected Void processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+    protected Void processInput(DeletePublicationRequest input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
         var userInstance = createUserInstanceFromRequest(requestInfo);
         var publicationIdentifier = RequestUtil.getIdentifier(requestInfo);
 
@@ -59,7 +62,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
                 if (!PublicationPermissionStrategy.fromRequestInfo(requestInfo).hasPermissionToUnpublish(publication)) {
                     throw new UnauthorizedException();
                 }
-                resourceService.unpublishPublication(publication);
+                resourceService.unpublishPublication(toPublicationWithDuplicate(input, publication));
                 break;
             case DRAFT:
                 resourceService.markPublicationForDeletion(userInstance, publicationIdentifier);
@@ -72,6 +75,10 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
         return null;
     }
 
+    private Publication toPublicationWithDuplicate(DeletePublicationRequest input, Publication publication) {
+        return nonNull(input) ? publication.copy().withDuplicateOf(input.duplicateOf()).build() : publication;
+    }
+
     private UserInstance createUserInstanceFromRequest(RequestInfo requestInfo) throws ApiGatewayException {
         return requestInfo.clientIsThirdParty()
                    ? createExternalUserInstance(requestInfo, identityServiceClient)
@@ -79,7 +86,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     }
 
     @Override
-    protected Integer getSuccessStatusCode(Void input, Void output) {
+    protected Integer getSuccessStatusCode(DeletePublicationRequest input, Void output) {
         return HttpStatus.SC_ACCEPTED;
     }
     

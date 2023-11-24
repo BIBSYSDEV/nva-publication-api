@@ -79,9 +79,10 @@ public class Resource implements Entity {
     private String rightsHolder;
     @JsonProperty
     private ImportStatus importStatus;
-
     @JsonProperty
     private List<PublicationNote> publicationNotes;
+    @JsonProperty
+    private URI duplicateOf;
 
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         return emptyResource(userInstance.getUser(), userInstance.getOrganizationUri(),
@@ -137,6 +138,7 @@ public class Resource implements Entity {
                    .withFundings(publication.getFundings())
                    .withRightsHolder(publication.getRightsHolder())
                    .withPublicationNotes(publication.getPublicationNotes())
+                   .withDuplicateOf(publication.getDuplicateOf())
                    .build();
     }
 
@@ -178,6 +180,14 @@ public class Resource implements Entity {
     public Publication persistNew(ResourceService resourceService, UserInstance userInstance)
         throws BadRequestException {
         return resourceService.createPublication(userInstance, this.toPublication());
+    }
+
+    public URI getDuplicateOf() {
+        return duplicateOf;
+    }
+
+    public void setDuplicateOf(URI duplicateOf) {
+        this.duplicateOf = duplicateOf;
     }
 
     public Owner getResourceOwner() {
@@ -252,6 +262,7 @@ public class Resource implements Entity {
                    .withFundings(getFundings())
                    .withRightsHolder(getRightsHolder())
                    .withPublicationNotes(getPublicationNotes())
+                   .withDuplicateOf(getDuplicateOf())
                    .build();
     }
 
@@ -431,6 +442,7 @@ public class Resource implements Entity {
                    .withSubjects(getSubjects())
                    .withFundings(getFundings())
                    .withPublicationNotes(getPublicationNotes())
+                   .withDuplicateOf(getDuplicateOf())
                    .withRightsHolder(getRightsHolder());
     }
 
@@ -469,7 +481,8 @@ public class Resource implements Entity {
         return Objects.hash(getIdentifier(), getStatus(), getResourceOwner(), getPublisher(), getCreatedDate(),
                             getModifiedDate(), getPublishedDate(), getIndexedDate(), getLink(),
                             getProjects(), getEntityDescription(), getDoi(), getHandle(), getAdditionalIdentifiers(),
-                            getSubjects(), getFundings(), getAssociatedArtifacts(), getPublicationNotes());
+                            getSubjects(), getFundings(), getAssociatedArtifacts(), getPublicationNotes(),
+                            getDuplicateOf());
     }
 
     /**
@@ -505,6 +518,7 @@ public class Resource implements Entity {
                && Objects.equals(getAssociatedArtifacts(), resource.getAssociatedArtifacts())
                && Objects.equals(getFundings(), resource.getFundings())
                && Objects.equals(getPublicationNotes(), resource.getPublicationNotes())
+               && Objects.equals(getDuplicateOf(), resource.getDuplicateOf())
                && Objects.equals(getSubjects(), resource.getSubjects());
     }
 
