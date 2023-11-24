@@ -375,7 +375,7 @@ public class ScopusFileConverter {
     private HttpResponse<InputStream> fetchResponseAsInputStream(URI uri) {
         var response = attempt(() -> httpClient.send(constructRequest(uri), BodyHandlers.ofInputStream()))
                            .orElseThrow();
-        if(isSuccess(response)) {
+        if (isSuccess(response)) {
             return response;
         } else {
             throw new RuntimeException(FETCH_FILE_ERROR_MESSAGE);
