@@ -266,8 +266,10 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         var fileAddedByImporter = randomFile();
         var importCandidateAssociatedArtifactList = new AssociatedArtifactList(fileKeptByImporter, fileNotKeptByImporter);
         var importCandidate = createPersistedImportCandidate(importCandidateAssociatedArtifactList);
-        var userInput = importCandidate.copyImportCandidate().build();
-        userInput.setAssociatedArtifacts(new AssociatedArtifactList(fileKeptByImporter, fileAddedByImporter));
+        var userInput = importCandidate
+                            .copyImportCandidate()
+                            .withAssociatedArtifacts(new AssociatedArtifactList(fileKeptByImporter, fileAddedByImporter))
+                            .build();
         var request = createRequest(userInput);
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
