@@ -130,8 +130,8 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
         var publication = publicationService.getPublicationByIdentifier(getBodyObject(response).getIdentifier());
-        var updatedImportCandidate = importCandidateService.
-                                         getImportCandidateByIdentifier(persistedImportCandidate.getIdentifier());
+        var updatedImportCandidate = importCandidateService
+                                         .getImportCandidateByIdentifier(persistedImportCandidate.getIdentifier());
 
         assertThat(updatedImportCandidate.getDoi(), is(equalTo(persistedImportCandidate.getDoi())));
         assertThat(publication.getDoi(), is(equalTo(importCandidateRequestBody.getDoi())));
