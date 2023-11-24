@@ -77,20 +77,9 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
         validateAccessRight(requestInfo);
         validateImportCandidate(input);
 
-        try {
-            var rawImportCandidate = candidateService.getImportCandidateByIdentifier(input.getIdentifier());
-            var inputWithOwner = injectOrganizationAndOwner(requestInfo, input);
-            var result = publicationService.autoImportPublication(inputWithOwner);
-            copyArtifacts(result, rawImportCandidate);
-            var nvaPublicationUri = toPublicationUriIdentifier(result);
-            candidateService.updateImportStatus(inputWithOwner.getIdentifier(), toImportStatus(requestInfo,
-                                                                                               nvaPublicationUri));
-            var endResult = publicationService.getPublicationByIdentifier(
-                result.getIdentifier());
-            return PublicationResponse.fromPublication(endResult);
-        } catch (Exception e) {
-            throw rollbackAndThrowException(input);
-        }
+        return attempt(() -> importCandidate(input, requestInfo))
+                   .map(PublicationResponse::fromPublication)
+                   .orElseThrow(fail -> rollbackAndThrowException(input));
     }
 
     @Override
@@ -111,6 +100,30 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
 
     private static boolean notAuthorizedToProcessImportCandidates(RequestInfo requestInfo) {
         return !requestInfo.userIsAuthorized(AccessRight.PROCESS_IMPORT_CANDIDATE.name());
+    }
+
+    private Publication importCandidate(ImportCandidate input, RequestInfo requestInfo)
+        throws NotFoundException, UnauthorizedException {
+        var nvaPublication = createNvaPublicationFromImportCandidateAndUserInput(input, requestInfo);
+        updateImportCandidate(input, requestInfo, nvaPublication);
+        return publicationService.getPublicationByIdentifier(nvaPublication.getIdentifier());
+    }
+
+    private void updateImportCandidate(ImportCandidate input, RequestInfo requestInfo, Publication nvaPublication)
+        throws NotFoundException, UnauthorizedException {
+        var nvaPublicationUri = toPublicationUriIdentifier(nvaPublication);
+        candidateService.updateImportStatus(input.getIdentifier(), toImportStatus(requestInfo,
+                                                                                  nvaPublicationUri));
+    }
+
+    private Publication createNvaPublicationFromImportCandidateAndUserInput(ImportCandidate input,
+                                                                            RequestInfo requestInfo)
+        throws NotFoundException, UnauthorizedException {
+        var rawImportCandidate = candidateService.getImportCandidateByIdentifier(input.getIdentifier());
+        var inputWithOwner = injectOrganizationAndOwner(requestInfo, input);
+        var nvaPublication = publicationService.autoImportPublication(inputWithOwner);
+        copyArtifacts(nvaPublication, rawImportCandidate);
+        return nvaPublication;
     }
 
     private void copyArtifacts(Publication publication, ImportCandidate importCandidate) {
@@ -150,8 +163,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
                    .build();
     }
 
-    private void validateImportCandidate(ImportCandidate importCandidate) throws BadRequestException,
-                                                                                 NotFoundException {
+    private void validateImportCandidate(ImportCandidate importCandidate) throws BadRequestException {
         if (CandidateStatus.IMPORTED.equals(importCandidate.getImportStatus().candidateStatus())) {
             throw new BadRequestException(RESOURCE_HAS_ALREADY_BEEN_IMPORTED_ERROR_MESSAGE);
         }
