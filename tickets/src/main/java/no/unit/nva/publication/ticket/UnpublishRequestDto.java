@@ -37,15 +37,16 @@ public class UnpublishRequestDto extends TicketDto {
 
     @JsonCreator
     public UnpublishRequestDto(@JsonProperty(STATUS_FIELD) TicketDtoStatus status,
-                         @JsonProperty(CREATED_DATE_FIELD) Instant createdDate,
-                         @JsonProperty(MODIFIED_DATE_FIELD) Instant modifiedDate,
-                         @JsonProperty(IDENTIFIER_FIELD) SortableIdentifier identifier,
-                         @JsonProperty(PUBLICATION_IDENTIFIER_FIELD) SortableIdentifier publicationIdentifier,
-                         @JsonProperty(ID_FIELD) URI id,
-                         @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
-                         @JsonProperty(VIEWED_BY) Set<User> viewedBy,
-                         @JsonProperty(ASSIGNEE_FIELD) Username assignee) {
-        super(status, messages, viewedBy, assignee, publicationIdentifier);
+                               @JsonProperty(CREATED_DATE_FIELD) Instant createdDate,
+                               @JsonProperty(MODIFIED_DATE_FIELD) Instant modifiedDate,
+                               @JsonProperty(IDENTIFIER_FIELD) SortableIdentifier identifier,
+                               @JsonProperty(PUBLICATION_IDENTIFIER_FIELD) SortableIdentifier publicationIdentifier,
+                               @JsonProperty(ID_FIELD) URI id,
+                               @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
+                               @JsonProperty(VIEWED_BY) Set<User> viewedBy,
+                               @JsonProperty(ASSIGNEE_FIELD) Username assignee,
+                               @JsonProperty(OWNER_AFFILIATION_FIELD) URI ownerAffiliation) {
+        super(status, messages, viewedBy, assignee, publicationIdentifier, ownerAffiliation);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
@@ -53,7 +54,7 @@ public class UnpublishRequestDto extends TicketDto {
     }
 
     public static TicketDto empty() {
-        return new UnpublishRequestDto(null, null, null, null, null, null, null, null, null);
+        return new UnpublishRequestDto(null, null, null, null, null, null, null, null, null, null);
     }
 
     public Instant getCreatedDate() {
@@ -86,10 +87,9 @@ public class UnpublishRequestDto extends TicketDto {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof UnpublishRequestDto)) {
+        if (!(o instanceof UnpublishRequestDto that)) {
             return false;
         }
-        UnpublishRequestDto that = (UnpublishRequestDto) o;
         return getStatus() == that.getStatus()
                && Objects.equals(getCreatedDate(), that.getCreatedDate())
                && Objects.equals(getModifiedDate(), that.getModifiedDate())

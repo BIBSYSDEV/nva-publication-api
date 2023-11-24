@@ -229,7 +229,8 @@ public abstract class TicketDto implements JsonSerializable {
                                                id,
                                                messages,
                                                viewedBy,
-                                               assignee);
+                                               assignee,
+                                               ownerAffiliation);
             }
             throw new RuntimeException("Unsupported type");
         }

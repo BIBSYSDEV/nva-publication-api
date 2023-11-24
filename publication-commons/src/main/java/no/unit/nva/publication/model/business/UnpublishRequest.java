@@ -5,6 +5,7 @@ import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREAT
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.MODIFIED_DATE_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_AFFILIATION_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.STATUS_FIELD;
 import static nva.commons.core.attempt.Try.attempt;
@@ -49,6 +50,8 @@ public class UnpublishRequest extends TicketEntry {
     private PublicationStatus resourceStatus;
     @JsonProperty(ASSIGNEE_FIELD)
     private Username assignee;
+    @JsonProperty(OWNER_AFFILIATION_FIELD)
+    private URI ownerAffiliation;
 
     public UnpublishRequest() {
         super();
@@ -205,6 +208,16 @@ public class UnpublishRequest extends TicketEntry {
     @Override
     public void setAssignee(Username assignee) {
         this.assignee = assignee;
+    }
+
+    @Override
+    public URI getOwnerAffiliation() {
+        return null;
+    }
+
+    @Override
+    public void setOwnerAffiliation(URI ownerAffiliation) {
+        this.ownerAffiliation = ownerAffiliation;
     }
 
     @Override

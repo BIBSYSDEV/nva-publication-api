@@ -77,6 +77,7 @@ public final class TicketDtoParser {
         request.setModifiedDate(unpublishRequest.getModifiedDate());
         request.setViewedBy(unpublishRequest.getViewedBy());
         request.setAssignee(unpublishRequest.getAssignee());
+        request.setOwnerAffiliation(unpublishRequest.getOwnerAffiliation());
         return request;
     }
 
