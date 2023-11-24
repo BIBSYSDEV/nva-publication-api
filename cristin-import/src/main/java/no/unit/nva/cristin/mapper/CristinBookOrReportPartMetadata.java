@@ -20,14 +20,13 @@ import nva.commons.core.JacocoGenerated;
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"antall_sider_totalt",
-    "status_utgitt_av_forlag", "delangivelse", "sprakkode_oversatt_fra", "doi", "fagfelt"})
+    "status_utgitt_av_forlag", "delangivelse", "sprakkode_oversatt_fra", "fagfelt"})
 public class CristinBookOrReportPartMetadata {
 
-
-    
     public static final String PAGES_START = "sidenr_fra";
     public static final String PAGES_END = "sidenr_til";
     public static final String PART_OF = "varbeidlopenr_inngar_i";
+    private static final String DOI = "doi";
 
     @JsonProperty(PAGES_START)
     private String pagesStart;
@@ -36,6 +35,9 @@ public class CristinBookOrReportPartMetadata {
 
     @JsonProperty(PART_OF)
     private String partOf;
+
+    @JsonProperty(DOI)
+    private String doi;
 
     @JacocoGenerated
     public CristinBookOrReportPartMetadata() {

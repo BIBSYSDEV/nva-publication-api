@@ -6,6 +6,7 @@ import static no.unit.nva.publication.model.business.TicketEntry.Constants.ASSIG
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_AFFILIATION_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.STATUS_FIELD;
 import static nva.commons.core.attempt.Try.attempt;
@@ -62,6 +63,8 @@ public class DoiRequest extends TicketEntry {
     private User owner;
     @JsonProperty(ASSIGNEE_FIELD)
     private Username assignee;
+    @JsonProperty(OWNER_AFFILIATION_FIELD)
+    private URI ownerAffiliation;
 
     public DoiRequest() {
         super();
@@ -208,6 +211,7 @@ public class DoiRequest extends TicketEntry {
                    .withOwner(getOwner())
                    .withViewedBy(this.getViewedBy())
                    .withAssignee(getAssignee())
+                   .withOwnerAffiliation(getOwnerAffiliation())
                    .build();
     }
 
@@ -229,6 +233,16 @@ public class DoiRequest extends TicketEntry {
     @Override
     public void setAssignee(Username assignee) {
         this.assignee = assignee;
+    }
+
+    @Override
+    public URI getOwnerAffiliation() {
+        return ownerAffiliation;
+    }
+
+    @Override
+    public void setOwnerAffiliation(URI ownerAffiliation) {
+        this.ownerAffiliation = ownerAffiliation;
     }
 
     @Override
@@ -260,7 +274,7 @@ public class DoiRequest extends TicketEntry {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getIdentifier(), getStatus(), getResourceStatus(), getModifiedDate(), getCreatedDate(),
-                            getCustomerId(), getOwner(), getAssignee());
+                            getCustomerId(), getOwner(), getAssignee(), getOwnerAffiliation());
     }
 
     @Override
@@ -281,7 +295,8 @@ public class DoiRequest extends TicketEntry {
                && Objects.equals(getCreatedDate(), that.getCreatedDate())
                && Objects.equals(getCustomerId(), that.getCustomerId())
                && Objects.equals(getOwner(), that.getOwner())
-               && Objects.equals(getAssignee(), that.getAssignee());
+               && Objects.equals(getAssignee(), that.getAssignee())
+               && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation());
     }
 
     private boolean publicationDoesNotHaveAnExpectedStatus(Publication publication) {
@@ -312,6 +327,11 @@ public class DoiRequest extends TicketEntry {
 
         public Builder withAssignee(Username assignee) {
             doiRequest.setAssignee(assignee);
+            return this;
+        }
+
+        public Builder withOwnerAffiliation(URI ownerAffiliation) {
+            doiRequest.setOwnerAffiliation(ownerAffiliation);
             return this;
         }
 

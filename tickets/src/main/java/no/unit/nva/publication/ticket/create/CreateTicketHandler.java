@@ -62,6 +62,8 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
         var publicationIdentifier = new SortableIdentifier(requestInfo.getPathParameter(PUBLICATION_IDENTIFIER));
         var publication = fetchPublication(publicationIdentifier, getUser(requestInfo), requestInfo);
         var newTicket = TicketEntry.requestNewTicket(publication, input.ticketType());
+        var ownerAffiliation = requestInfo.getPersonAffiliation();
+        newTicket.setOwnerAffiliation(ownerAffiliation);
         var customer = requestInfo.getCurrentCustomer();
         var username = new Username(requestInfo.getUserName());
         var isCurator = requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.name());

@@ -203,6 +203,10 @@ public abstract class TicketEntry implements Entity {
 
     public abstract void setAssignee(Username assignee);
 
+    public abstract URI getOwnerAffiliation();
+
+    public abstract void setOwnerAffiliation(URI ownerAffiliation);
+
     public final List<Message> fetchMessages(TicketService ticketService) {
         return ticketService.fetchTicketMessages(this);
     }
@@ -318,6 +322,7 @@ public abstract class TicketEntry implements Entity {
         public static final String IDENTIFIER_FIELD = "identifier";
         public static final String WORKFLOW = "workflow";
         public static final String ASSIGNEE_FIELD = "assignee";
+        public static final String OWNER_AFFILIATION_FIELD = "ownerAffiliation";
 
         private Constants() {
 

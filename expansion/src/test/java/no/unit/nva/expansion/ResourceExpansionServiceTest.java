@@ -105,6 +105,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private static final String FINALIZED_DATE = "finalizedDate";
     private static final String WORKFLOW = "workflow";
     private static final String ASSIGNEE = "assignee";
+    private static final String OWNERAFFILIATION = "ownerAffiliation";
     private static final String FINALIZED_BY = "finalizedBy";
     private ResourceExpansionService expansionService;
     private ResourceService resourceService;
@@ -164,7 +165,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
         assertThat(regeneratedTicket, is(equalTo(ticket)));
         assertThat(ticket,
-                   doesNotHaveEmptyValuesIgnoringFields(Set.of(WORKFLOW, ASSIGNEE, FINALIZED_BY, FINALIZED_DATE)));
+                   doesNotHaveEmptyValuesIgnoringFields(Set.of(WORKFLOW, ASSIGNEE, FINALIZED_BY,
+                                                               FINALIZED_DATE, OWNERAFFILIATION)));
         var expectedPublicationId = constructExpectedPublicationId(publication);
         assertThat(expandedTicket.getPublication().getPublicationId(), is(equalTo(expectedPublicationId)));
     }

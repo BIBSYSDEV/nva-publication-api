@@ -166,6 +166,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     void shouldCreateMessageWhenCuratorHasValidAccessRightForTicketType(Class<? extends TicketEntry> ticketType,
                                                                         String accessRight)
         throws ApiGatewayException, IOException {
+
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var sender = UserInstance.create(randomString(), publication.getPublisher().getId());

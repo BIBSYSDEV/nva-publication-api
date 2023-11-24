@@ -103,6 +103,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
 
     public static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
     public static final String ACCESS_TOKEN_RESPONSE_BODY = "{ \"access_token\" : \"Bearer token\"}";
+    private static final String PERSON_AFFILIATION_CLAIM = "custom:personAffiliation";
 
     @Mock
     private Environment environment;
@@ -684,6 +685,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         throws JsonProcessingException {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
                    .withBody(ticketDto)
+                   .withAuthorizerClaim(PERSON_AFFILIATION_CLAIM, userCredentials.getUsername())
                    .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
                    .withUserName(userCredentials.getUsername())
                    .withCurrentCustomer(userCredentials.getOrganizationUri())
@@ -696,6 +698,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         throws JsonProcessingException {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
                    .withBody(ticketDto)
+                   .withAuthorizerClaim(PERSON_AFFILIATION_CLAIM, userCredentials.getUsername())
                    .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
                    .withUserName(userCredentials.getUsername())
                    .withCurrentCustomer(userCredentials.getOrganizationUri())
@@ -710,6 +713,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         throws JsonProcessingException {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
                    .withBody(ticketDto)
+                   .withAuthorizerClaim(PERSON_AFFILIATION_CLAIM, customerId.toString())
                    .withAccessRights(customerId, accessRight.toString())
                    .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
                    .withUserName(randomString())

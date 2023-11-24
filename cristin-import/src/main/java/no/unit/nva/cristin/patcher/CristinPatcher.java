@@ -7,9 +7,6 @@ import no.unit.nva.cristin.patcher.exception.PublicationInstanceMismatchExceptio
 import no.unit.nva.cristin.patcher.model.ParentAndChild;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Anthology;
-import no.unit.nva.model.contexttypes.PublicationContext;
-import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.book.BookAnthology;
 import nva.commons.core.paths.UriWrapper;
 
 public final class CristinPatcher {
@@ -22,25 +19,18 @@ public final class CristinPatcher {
     }
 
     public static ParentAndChild updateChildPublication(ParentAndChild parentAndChild) {
-        var childContext =
-            parentAndChild.getChildPublication().getEntityDescription().getReference().getPublicationContext();
-        var parentPublicationInstance =
-            parentAndChild.getParentPublication().getEntityDescription().getReference().getPublicationInstance();
-        if (parentChildPublicationContextMatch(childContext, parentPublicationInstance)) {
-            var anthology = (Anthology) childContext;
+        var child = parentAndChild.getChildPublication();
+        var parent = parentAndChild.getParentPublication();
+        if (ChildParentInstanceComparator.isValidCombination(child, parent)) {
+            var anthology = (Anthology) child.getEntityDescription().getReference().getPublicationContext();
             anthology.setId(createPartOfUri(parentAndChild.getParentPublication()));
         } else {
             throw new PublicationInstanceMismatchException(
                 String.format(CHILD_PARENT_REFERENCE_MISMATCH,
-                              childContext.getClass().getSimpleName(),
-                              parentPublicationInstance.getClass().getSimpleName()));
+                              ChildParentInstanceComparator.getPublicationsInstanceName(child),
+                              ChildParentInstanceComparator.getPublicationsInstanceName(parent)));
         }
         return parentAndChild;
-    }
-
-    private static boolean parentChildPublicationContextMatch(PublicationContext childContext,
-                                                              PublicationInstance parentPublicationInstance) {
-        return childContext instanceof Anthology && parentPublicationInstance instanceof BookAnthology;
     }
 
     private static URI createPartOfUri(Publication parentPublication) {

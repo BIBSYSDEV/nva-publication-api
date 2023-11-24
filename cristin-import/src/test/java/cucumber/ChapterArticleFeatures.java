@@ -3,6 +3,7 @@ package cucumber;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import no.unit.nva.cristin.mapper.CristinBookOrReportPartMetadata;
@@ -42,5 +43,10 @@ public class ChapterArticleFeatures {
         CristinBookOrReportPartMetadata cristinBookOrReportPartMetadata =
             CristinBookOrReportPartMetadata.builder().build();
         this.scenarioContext.getCristinEntry().setBookOrReportPartMetadata(cristinBookOrReportPartMetadata);
+    }
+
+    @And("the Book Report Part has a DOI equal to {string}")
+    public void theBookReportPartHasADoiEqualTo(String doi) {
+        scenarioContext.getCristinEntry().getBookOrReportPartMetadata().setDoi(doi);
     }
 }
