@@ -18,10 +18,14 @@ import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -48,7 +52,9 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -239,6 +245,64 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                    containsString(RESOURCE_IS_MISSING_SCOPUS_IDENTIFIER_ERROR_MESSAGE));
     }
 
+    @Test
+    void shouldCreateNvaResourceBasedOnUserInput() throws NotFoundException, IOException {
+        var importCandidate = createPersistedImportCandidate();
+        var userInput = importCandidate.copyImportCandidate().build();
+        var userInputContributor = randomContributor();
+        userInput.getEntityDescription().setContributors(List.of(userInputContributor));
+        var request = createRequest(userInput);
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var publication = publicationService.getPublicationByIdentifier(getBodyObject(response).getIdentifier());
+        assertThat(publication.getEntityDescription().getContributors(), hasItem(samePropertyValuesAs(userInputContributor)));
+    }
+
+    @Test
+    void shouldOnlyCopyFilesThatWhereKeptByImporter() throws NotFoundException, IOException {
+        var fileKeptByImporter = randomFile();
+        var fileNotKeptByImporter = randomFile();
+        var fileAddedByImporter = randomFile();
+        var importCandidateAssociatedArtifactList = new AssociatedArtifactList(fileKeptByImporter, fileNotKeptByImporter);
+        var importCandidate = createPersistedImportCandidate(importCandidateAssociatedArtifactList);
+        var userInput = importCandidate.copyImportCandidate().build();
+        userInput.setAssociatedArtifacts(new AssociatedArtifactList(fileKeptByImporter, fileAddedByImporter));
+        var request = createRequest(userInput);
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var publication = publicationService.getPublicationByIdentifier(getBodyObject(response).getIdentifier());
+        assertThat(publication.getAssociatedArtifacts(), hasItem(fileKeptByImporter));
+        assertThat(publication.getAssociatedArtifacts(), hasItem(fileAddedByImporter));
+        assertThat(publication.getAssociatedArtifacts(), not(hasItem(fileNotKeptByImporter)));
+        verify(s3Client, atLeastOnce()).copyObject(
+            CopyObjectRequest.builder()
+                .sourceBucket("some-candidate-bucket")
+                .sourceKey(fileKeptByImporter.getIdentifier().toString())
+                .destinationBucket("some-persisted-bucket")
+                .destinationKey(fileKeptByImporter.getIdentifier().toString())
+                .build());
+        verify(s3Client, never()).copyObject(
+            CopyObjectRequest.builder()
+                .sourceBucket("some-candidate-bucket")
+                .sourceKey(fileNotKeptByImporter.getIdentifier().toString())
+                .destinationBucket("some-persisted-bucket")
+                .destinationKey(fileNotKeptByImporter.getIdentifier().toString())
+                .build());
+    }
+
+    private PublishedFile randomFile() {
+        return new PublishedFile(UUID.randomUUID(),
+                                 randomString(),
+                                 "pdf",
+                                 12312L,
+                                 null,
+                                 false,
+                                 false,
+                                 null,
+                                 null,
+                                 null);
+    }
+
     private ImportCandidate createImportCandidateWithoutScopusId() throws NotFoundException {
         var candidate = createImportCandidate();
         candidate.setAdditionalIdentifiers(Set.of());
@@ -282,6 +346,14 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
 
     private ImportCandidate createPersistedImportCandidate() throws NotFoundException {
         var candidate = createImportCandidate();
+        var importCandidate = importCandidateService.persistImportCandidate(candidate);
+        return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
+    }
+
+    private ImportCandidate createPersistedImportCandidate(AssociatedArtifactList associatedArtifacts)
+        throws NotFoundException {
+        var candidate = createImportCandidate();
+        candidate.setAssociatedArtifacts(associatedArtifacts);
         var importCandidate = importCandidateService.persistImportCandidate(candidate);
         return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
     }
@@ -330,6 +402,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         return new Contributor.Builder()
                    .withIdentity(new Identity.Builder().withName(randomString()).build())
                    .withRole(new RoleType(Role.ACTOR))
+                   .withSequence(1)
                    .build();
     }
 }
