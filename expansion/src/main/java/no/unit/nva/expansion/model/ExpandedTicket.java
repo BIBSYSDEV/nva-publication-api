@@ -16,6 +16,7 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -76,6 +77,14 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
         if (ticketEntry instanceof GeneralSupportRequest) {
             return ExpandedGeneralSupportRequest.createEntry(
                 (GeneralSupportRequest) ticketEntry,
+                resourceService,
+                expansionService,
+                ticketService
+            );
+        }
+        if (ticketEntry instanceof UnpublishRequest) {
+            return ExpandedUnpublishRequest.createEntry(
+                (UnpublishRequest) ticketEntry,
                 resourceService,
                 expansionService,
                 ticketService

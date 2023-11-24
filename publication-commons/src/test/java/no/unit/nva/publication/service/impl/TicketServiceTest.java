@@ -7,6 +7,7 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.publication.TestingUtils.createGeneralSupportRequest;
 import static no.unit.nva.publication.TestingUtils.createOrganization;
 import static no.unit.nva.publication.TestingUtils.createUnpersistedPublication;
+import static no.unit.nva.publication.TestingUtils.createUnpublishRequest;
 import static no.unit.nva.publication.TestingUtils.randomOrgUnitId;
 import static no.unit.nva.publication.TestingUtils.randomPublicationWithoutDoi;
 import static no.unit.nva.publication.TestingUtils.randomUserInstance;
@@ -70,6 +71,7 @@ import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UntypedTicketQueryObject;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -795,6 +797,9 @@ public class TicketServiceTest extends ResourcesLocalTest {
         }
         if (GeneralSupportRequest.class.equals(ticketType)) {
             return createGeneralSupportRequest(publication);
+        }
+        if (UnpublishRequest.class.equals(ticketType)) {
+            return createUnpublishRequest(publication);
         }
 
         throw new UnsupportedOperationException();

@@ -60,6 +60,7 @@ import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.testing.TypeProvider;
 import no.unit.nva.publication.testing.http.FakeHttpClient;
@@ -69,6 +70,7 @@ import no.unit.nva.publication.ticket.GeneralSupportRequestDto;
 import no.unit.nva.publication.ticket.PublishingRequestDto;
 import no.unit.nva.publication.ticket.TicketDto;
 import no.unit.nva.publication.ticket.TicketTestLocal;
+import no.unit.nva.publication.ticket.UnpublishRequestDto;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
@@ -660,6 +662,8 @@ class CreateTicketHandlerTest extends TicketTestLocal {
             return PublishingRequestDto.empty();
         } else if (GeneralSupportRequest.class.equals(ticketType)) {
             return GeneralSupportRequestDto.empty();
+        } else if (UnpublishRequest.class.equals(ticketType)) {
+            return UnpublishRequestDto.empty();
         }
 
         throw new RuntimeException("Unrecognized ticket type");

@@ -5,6 +5,7 @@ import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.UnpublishRequest;
 
 public final class TicketDtoParser {
 
@@ -21,6 +22,9 @@ public final class TicketDtoParser {
         }
         if (ticketDto instanceof GeneralSupportRequestDto) {
             return toTicket((GeneralSupportRequestDto) ticketDto);
+        }
+        if (ticketDto instanceof UnpublishRequestDto) {
+            return toTicket((UnpublishRequestDto) ticketDto);
         }
         return null;
     }
@@ -59,6 +63,18 @@ public final class TicketDtoParser {
         ticket.setViewedBy(doiRequestDto.getViewedBy());
         ticket.setAssignee(doiRequestDto.getAssignee());
         return ticket;
+    }
+
+    public static TicketEntry toTicket(UnpublishRequestDto unpublishRequest) {
+        var request = new UnpublishRequest();
+        request.setIdentifier(unpublishRequest.getIdentifier());
+        request.setStatus(getTicketStatus(unpublishRequest.getStatus()));
+        request.setResourceIdentifier(unpublishRequest.getPublicationIdentifier());
+        request.setCreatedDate(unpublishRequest.getCreatedDate());
+        request.setModifiedDate(unpublishRequest.getModifiedDate());
+        request.setViewedBy(unpublishRequest.getViewedBy());
+        request.setAssignee(unpublishRequest.getAssignee());
+        return request;
     }
 
     private static TicketStatus getTicketStatus(TicketDtoStatus ticketDtoStatus) {

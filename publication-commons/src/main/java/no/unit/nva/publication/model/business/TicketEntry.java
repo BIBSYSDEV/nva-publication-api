@@ -28,7 +28,8 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(name = DoiRequest.TYPE, value = DoiRequest.class),
     @JsonSubTypes.Type(name = PublishingRequestCase.TYPE, value = PublishingRequestCase.class),
-    @JsonSubTypes.Type(name = GeneralSupportRequest.TYPE, value = GeneralSupportRequest.class)})
+    @JsonSubTypes.Type(name = GeneralSupportRequest.TYPE, value = GeneralSupportRequest.class),
+    @JsonSubTypes.Type(name = UnpublishRequest.TYPE, value = UnpublishRequest.class)})
 public abstract class TicketEntry implements Entity {
 
     public static final String DOI_REQUEST_EXCEPTION_MESSAGE_WHEN_NON_PUBLISHED = "Can not create DoiRequest ticket "
@@ -69,6 +70,8 @@ public abstract class TicketEntry implements Entity {
             return createOpeningCaseObject(publication);
         } else if (GeneralSupportRequest.class.equals(ticketType)) {
             return GeneralSupportRequest.fromPublication(publication);
+        } else if(UnpublishRequest.class.equals(ticketType)) {
+            return UnpublishRequest.fromPublication(publication);
         }
         throw new RuntimeException("Unrecognized ticket type");
     }
@@ -85,6 +88,9 @@ public abstract class TicketEntry implements Entity {
         if (GeneralSupportRequest.class.equals(ticketType)) {
             return ticketType.cast(GeneralSupportRequest.createQueryObject(customerId, resourceIdentifier));
         }
+        if (UnpublishRequest.class.equals(ticketType)) {
+            return ticketType.cast(UnpublishRequest.createQueryObject(customerId, resourceIdentifier));
+        }
         throw new UnsupportedOperationException();
     }
 
@@ -100,6 +106,13 @@ public abstract class TicketEntry implements Entity {
     public static TicketEntry createNewGeneralSupportRequest(Publication publication,
                                                              Supplier<SortableIdentifier> identifierProvider) {
         var ticket = GeneralSupportRequest.fromPublication(publication);
+        setServiceControlledFields(ticket, identifierProvider);
+        return ticket;
+    }
+
+    public static TicketEntry createNewUnpublishRequest(Publication publication,
+                                                        Supplier<SortableIdentifier> identifierProvider) {
+        var ticket = UnpublishRequest.fromPublication(publication);
         setServiceControlledFields(ticket, identifierProvider);
         return ticket;
     }
@@ -269,6 +282,9 @@ public abstract class TicketEntry implements Entity {
         }
         if (GeneralSupportRequest.class.equals(ticketType)) {
             return createNewGeneralSupportRequest(publication, identifierProvider);
+        }
+        if (UnpublishRequest.class.equals(ticketType)) {
+            return createNewUnpublishRequest(publication, identifierProvider);
         }
         throw new UnsupportedOperationException();
     }

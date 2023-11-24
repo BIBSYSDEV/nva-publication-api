@@ -49,6 +49,7 @@ import no.unit.nva.expansion.model.ExpandedPublishingRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedTicket;
 import no.unit.nva.expansion.model.ExpandedTicketStatus;
+import no.unit.nva.expansion.model.ExpandedUnpublishRequest;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -71,6 +72,7 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -677,6 +679,19 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         return publishingRequest;
     }
 
+    private UnpublishRequest toTicketEntry(ExpandedUnpublishRequest expandedUnpublishRequest) {
+        var ticketEntry = new UnpublishRequest();
+        ticketEntry.setModifiedDate(expandedUnpublishRequest.getModifiedDate());
+        ticketEntry.setCreatedDate(expandedUnpublishRequest.getCreatedDate());
+        ticketEntry.setCustomerId(expandedUnpublishRequest.getCustomerId());
+        ticketEntry.setIdentifier(expandedUnpublishRequest.identifyExpandedEntry());
+        ticketEntry.setResourceIdentifier(expandedUnpublishRequest.getPublication().getIdentifier());
+        ticketEntry.setStatus(getTicketStatus(expandedUnpublishRequest.getStatus()));
+        ticketEntry.setOwner(expandedUnpublishRequest.getOwner().username());
+        ticketEntry.setAssignee(extractUsername(expandedUnpublishRequest.getAssignee()));
+        return ticketEntry;
+    }
+
     private TicketEntry toTicketEntry(ExpandedTicket expandedTicket) {
         if (expandedTicket instanceof ExpandedDoiRequest) {
             return toTicketEntry((ExpandedDoiRequest) expandedTicket);
@@ -686,6 +701,9 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         }
         if (expandedTicket instanceof ExpandedGeneralSupportRequest) {
             return toTicketEntry((ExpandedGeneralSupportRequest) expandedTicket);
+        }
+        if (expandedTicket instanceof ExpandedUnpublishRequest) {
+            return toTicketEntry((ExpandedUnpublishRequest) expandedTicket);
         }
         return null;
     }

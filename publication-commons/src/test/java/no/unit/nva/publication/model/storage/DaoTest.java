@@ -322,6 +322,8 @@ class DaoTest extends ResourcesLocalTest {
         } else if (Message.class.equals(entityType)) {
             var ticket = createTicket(DoiRequest.class);
             return Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
+        } else if (UnpublishRequest.class.equals(entityType)) {
+            return createTicket((Class<? extends TicketEntry>) entityType);
         }
         throw new UnsupportedOperationException();
     }
