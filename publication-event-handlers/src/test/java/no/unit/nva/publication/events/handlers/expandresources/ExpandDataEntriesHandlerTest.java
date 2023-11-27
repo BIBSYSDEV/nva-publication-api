@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
+import static com.github.tomakehurst.wiremock.common.ContentTypes.APPLICATION_JSON;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
@@ -25,6 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
@@ -47,14 +49,20 @@ import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
+import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.ConflictException;
+import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,6 +86,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     private S3Driver s3Driver;
     private FakeS3Client s3Client;
     private ResourceService resourceService;
+    private UriRetriever uriRetriever;
 
     @BeforeEach
     public void init() {
@@ -89,11 +98,11 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
         insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources();
 
-        var mockUriRetriever = mock(UriRetriever.class);
-        when(mockUriRetriever.getRawContent(any(), any())).thenReturn(Optional.empty());
+        uriRetriever = mock(UriRetriever.class);
+        when(uriRetriever.getRawContent(any(), any())).thenReturn(Optional.empty());
 
         ResourceExpansionService resourceExpansionService =
-            new ResourceExpansionServiceImpl(resourceService, ticketService, mockUriRetriever, mockUriRetriever);
+            new ResourceExpansionServiceImpl(resourceService, ticketService, uriRetriever, uriRetriever);
 
         this.expandResourceHandler = new ExpandDataEntriesHandler(s3Client, resourceExpansionService);
         this.s3Driver = new S3Driver(s3Client, "ignoredForFakeS3Client");
@@ -121,6 +130,23 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         expandResourceHandler.handleRequest(request, output, CONTEXT);
         var response = parseHandlerResponse();
         assertThat(response, is(equalTo(emptyEvent(response.getTimestamp()))));
+    }
+
+    @Test
+    void shouldProduceEntryForAllTypeOfTickets() throws ConflictException, IOException, BadRequestException {
+        var publication = createPublicationWithStatus(DRAFT);
+        var persistedPublication = Resource.fromPublication(publication)
+                                       .persistNew(resourceService, UserInstance.fromPublication(publication));
+        var ticket = TicketEntry.createNewTicket(persistedPublication, PublishingRequestCase.class, SortableIdentifier::next);
+        when(uriRetriever.getRawContent(publication.getResourceOwner().getOwnerAffiliation(), APPLICATION_JSON)).thenReturn(Optional.of(IoUtils.stringFromResources(
+            Path.of("expandResources/cristin_org.json"))));
+        var request = emulateEventEmittedByDataEntryUpdateHandler(null, ticket);
+        expandResourceHandler.handleRequest(request, output, CONTEXT);
+        var response = parseHandlerResponse();
+        var eventBlobStoredInS3 = s3Driver.readEvent(response.getUri());
+        var blobObject = JsonUtils.dtoObjectMapper.readValue(eventBlobStoredInS3, ExpandedDataEntry.class);
+
+        assertThat(blobObject.identifyExpandedEntry(), is(equalTo(ticket.getIdentifier())));
     }
 
     @Test
@@ -219,6 +245,8 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
             return Resource.fromPublication((Publication) image);
         } else if (image instanceof DoiRequest) {
             return (DoiRequest) image;
+        } else if (image instanceof PublishingRequestCase) {
+            return (PublishingRequestCase) image;
         } else if (image instanceof Message) {
             return (Message) image;
         } else {

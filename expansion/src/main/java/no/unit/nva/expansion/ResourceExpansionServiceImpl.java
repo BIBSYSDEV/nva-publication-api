@@ -107,7 +107,6 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
             var resourceIdentifier = ticketEntry.getResourceIdentifier();
             var resource = resourceService.getResourceByIdentifier(resourceIdentifier);
             var organizationIds = resource.getResourceOwner().getOwnerAffiliation();
-
             var partOf = attempt(() -> this.organizationRetriever.getRawContent(organizationIds, CONTENT_TYPE)).map(
                     Optional::orElseThrow)
                              .map(str -> createModel(stringToStream(str)))

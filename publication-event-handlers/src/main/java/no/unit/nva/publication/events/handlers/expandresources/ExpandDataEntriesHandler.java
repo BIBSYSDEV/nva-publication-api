@@ -74,10 +74,15 @@ public class ExpandDataEntriesHandler
         if (shouldBeDeleted(blobObject.getNewData())) {
             return createDeleteEventReference(blobObject.getNewData());
         } else if (shouldBeEnriched(blobObject.getNewData())) {
-            return createEnrichedEventReference(blobObject.getNewData()).orElseGet(this::emptyEvent);
+            return createEnrichedEventReference(blobObject.getNewData()).map(this::logEvent).orElseGet(this::emptyEvent);
         } else {
             return emptyEvent();
         }
+    }
+
+    private EventReference logEvent(EventReference eventReference) {
+        logger.info("Emitting event {}", eventReference);
+        return eventReference;
     }
 
     @JacocoGenerated
