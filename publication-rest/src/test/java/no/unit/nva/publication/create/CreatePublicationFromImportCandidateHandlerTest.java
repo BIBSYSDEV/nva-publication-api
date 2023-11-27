@@ -19,11 +19,13 @@ import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
@@ -319,6 +321,21 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
 
         assertThat(response.getBodyObject(Problem.class).getDetail(),
                    containsString(RESOURCE_IS_NOT_PUBLISHABLE));
+    }
+
+    @Test
+    void publishedDateShoulBeSetToTimeWhenPublicationEntersDatabase() throws NotFoundException,
+                                                                             IOException {
+        var start = Instant.now();
+        var importCandidate = createPersistedImportCandidate();
+        var request = createRequest(importCandidate);
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var publication = publicationService.getPublicationByIdentifier(getBodyObject(response).getIdentifier());
+        assertThat(publication.getCreatedDate(), is(equalTo(publication.getPublishedDate())));
+        assertThat(publication.getCreatedDate(), is(equalTo(publication.getModifiedDate())));
+        assertThat(publication.getCreatedDate(), is(greaterThan(start)));
+
     }
 
     private static PublicationResponse getBodyObject(GatewayResponse<PublicationResponse> response)
