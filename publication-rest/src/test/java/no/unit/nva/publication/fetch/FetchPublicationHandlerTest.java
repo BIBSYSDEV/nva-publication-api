@@ -11,6 +11,7 @@ import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiM
 import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ENV_NAME_NVA_FRONTEND_DOMAIN;
+import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -281,9 +282,31 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var expectedTombstone = new PublicationDetail(publication.getIdentifier(),
                                                       publication.getDuplicateOf(),
                                                       publication.getEntityDescription());
+        var resource = JsonUtils.dtoObjectMapper.readTree(gatewayResponse.getBody()).get("resource");
+        var actualTombstone = JsonUtils.dtoObjectMapper.readValue(resource.asText(), PublicationDetail.class);
 
-        assertThat(gatewayResponse.getBody(), is(equalTo(expectedTombstone.toJsonString())));
+        assertThat(actualTombstone, is(equalTo(expectedTombstone)));
+    }
 
+    @Test
+    void handlerRedirectsToDuplicatePublicationWhenDeletedPublicationHasDuplicate()
+        throws ApiGatewayException, IOException {
+        var duplicateOfIdentifier =
+            UriWrapper.fromUri(randomUri()).addChild(SortableIdentifier.next().toString()).getUri();
+        var publication = createDeletedPublicationWithDuplicate(duplicateOfIdentifier);
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output, context);
+        var valueType = restApiMapper.getTypeFactory()
+                            .constructParametricType(
+                                GatewayResponse.class,
+                                Void.class);
+
+        GatewayResponse<Void> response = restApiMapper.readValue(output.toString(), valueType);
+
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_SEE_OTHER)));
+
+        var expectedLandingPage =
+            "https://localhost/registration/" + UriWrapper.fromUri(publication.getDuplicateOf()).getLastPathElement();
+        assertThat(response.getHeaders().get(LOCATION), is(equalTo(expectedLandingPage)));
     }
 
     @Test

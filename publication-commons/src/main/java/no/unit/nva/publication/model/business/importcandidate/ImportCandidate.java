@@ -133,6 +133,7 @@ public class ImportCandidate extends Publication implements JsonSerializable {
             importCandidate.setResourceOwner(publication.getResourceOwner());
             importCandidate.setRightsHolder(publication.getRightsHolder());
             importCandidate.setPublicationNotes(publication.getPublicationNotes());
+            importCandidate.setDuplicateOf(publication.getDuplicateOf());
             return this;
         }
 
@@ -233,6 +234,11 @@ public class ImportCandidate extends Publication implements JsonSerializable {
 
         public Builder withRightsHolder(String rightsHolder) {
             this.importCandidate.setRightsHolder(rightsHolder);
+            return this;
+        }
+
+        public Builder withDuplicateOf(URI duplicateOf) {
+            this.importCandidate.setDuplicateOf(duplicateOf);
             return this;
         }
 

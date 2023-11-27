@@ -27,8 +27,7 @@ import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.doi.DataCiteMetadataDtoMapper;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.GoneProblem;
+import no.unit.nva.publication.PublicationDetail;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
@@ -38,6 +37,7 @@ import no.unit.nva.transformer.Transformer;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.GoneException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnsupportedAcceptHeaderException;
 import nva.commons.core.Environment;
@@ -104,26 +104,26 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         };
     }
 
-    private String produceDeletedResponse(Publication publication) throws GoneProblem {
+    private String produceDeletedResponse(Publication publication) throws GoneException {
         return nonNull(publication.getDuplicateOf())
                    ? produceRedirect(publication.getDuplicateOf())
-                   : throwGoneProblemWithPublicationDetail(publication);
+                   : throwGoneExceptionWithPublicationDetail(publication);
     }
 
-    private String throwGoneProblemWithPublicationDetail(Publication publication) throws GoneProblem {
-        throw new GoneProblem(publication);
+    private String throwGoneExceptionWithPublicationDetail(Publication publication) throws GoneException {
+        throw new GoneException("Publication has been removed", PublicationDetail.fromPublication(publication).toString());
     }
 
     private String produceRedirect(URI duplicateOf) {
         statusCode = HTTP_SEE_OTHER;
         addAdditionalHeaders(() -> Map.of(LOCATION,
-                                        landingPageLocation(SortableIdentifier.fromUri(duplicateOf)).toString()));
+                                          landingPageLocation(SortableIdentifier.fromUri(duplicateOf)).toString()));
         return null;
     }
 
     private String returnDraftPublication(RequestInfo requestInfo, Publication publication)
         throws UnsupportedAcceptHeaderException, NotFoundException {
-        return userIsCuratorOrOwner(publication)
+        return userIsCuratorOrOwner()
                    ? createResponse(requestInfo, publication)
                    : throwNotFoundException();
     }
@@ -145,16 +145,8 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     //TODO: Temporary commented out while getUserName returns null.
     @JacocoGenerated
-    private boolean userIsCuratorOrOwner(Publication publication) {
-        var owner = publication.getResourceOwner().getOwner().getValue();
-        logger.info("Publication owner: {}", owner);
-//        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString())
-//               || owner.equals(requestInfo.getUserName());
+    private boolean userIsCuratorOrOwner() {
         return true;
-    }
-
-    private boolean isDraft(Publication publication) {
-        return PublicationStatus.DRAFT.equals(publication.getStatus());
     }
 
     private String createResponse(RequestInfo requestInfo, Publication publication)

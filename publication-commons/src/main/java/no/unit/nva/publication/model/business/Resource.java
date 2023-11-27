@@ -165,6 +165,7 @@ public class Resource implements Entity {
                 .withRightsHolder(importCandidate.getRightsHolder())
                 .withImportStatus(importCandidate.getImportStatus())
                 .withPublicationNotes(importCandidate.getPublicationNotes())
+                .withDuplicateOf(importCandidate.getDuplicateOf())
                 .build();
     }
 
@@ -288,6 +289,7 @@ public class Resource implements Entity {
                 .withRightsHolder(getRightsHolder())
                 .withImportStatus(getImportStatus().orElse(null))
                 .withPublicationNotes(getPublicationNotes())
+                .withDuplicateOf(getDuplicateOf())
                 .build();
     }
 

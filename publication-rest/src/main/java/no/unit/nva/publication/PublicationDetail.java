@@ -22,6 +22,10 @@ public record PublicationDetail(SortableIdentifier identifier,
                    .build();
     }
 
+    public String toString() {
+       return this.toJsonString();
+    }
+
     private static Builder builder() {
         return new Builder();
     }

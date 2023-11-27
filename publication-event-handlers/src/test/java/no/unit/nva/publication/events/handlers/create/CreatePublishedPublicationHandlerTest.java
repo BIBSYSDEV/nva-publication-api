@@ -112,7 +112,8 @@ class CreatePublishedPublicationHandlerTest extends ResourcesLocalTest {
                    .withPublisher(savedPublication.getPublisher())
                    .withCreatedDate(savedPublication.getCreatedDate())
                    .withModifiedDate(savedPublication.getModifiedDate())
-                   .withIdentifier(savedPublication.getIdentifier());
+                   .withIdentifier(savedPublication.getIdentifier())
+                   .withDuplicateOf(savedPublication.getDuplicateOf());
     }
     
     private PublicationResponse sendMessageToEventHandler(URI s3FileUri) throws JsonProcessingException {
