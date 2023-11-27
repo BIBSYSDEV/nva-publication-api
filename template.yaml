@@ -1905,10 +1905,12 @@ Resources:
                   stageName=properties['StageName'],
                   description='Deployed from Custom Resource'
                 )
-                responseData = response
-            except Exception as error:
+                responseData['deploymentId'] = response
+              else:
+                responseData['requestType'] = event['RequestType']
+            except:
               responseStatus = cfnresponse.FAILED
-              responseData = error
+              responseData['reason'] = 'Something failed'
             finally:
               cfnresponse.send(event, context, responseStatus, responseData)
 
