@@ -54,6 +54,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
     protected static final String ENV_NAME_NVA_FRONTEND_DOMAIN = "NVA_FRONTEND_DOMAIN";
     private static final String REGISTRATION_PATH = "registration";
+    public static final String GONE_MESSAGE = "Publication has been removed";
     private final ResourceService resourceService;
     private final RawContentRetriever uriRetriever;
     private int statusCode = HttpURLConnection.HTTP_OK;
@@ -105,13 +106,11 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     }
 
     private String produceDeletedResponse(Publication publication) throws GoneException {
-        return nonNull(publication.getDuplicateOf())
-                   ? produceRedirect(publication.getDuplicateOf())
-                   : throwGoneExceptionWithPublicationDetail(publication);
-    }
-
-    private String throwGoneExceptionWithPublicationDetail(Publication publication) throws GoneException {
-        throw new GoneException("Publication has been removed", PublicationDetail.fromPublication(publication).toString());
+        if (nonNull(publication.getDuplicateOf())) {
+            return produceRedirect(publication.getDuplicateOf());
+        } else {
+            throw new GoneException(GONE_MESSAGE, PublicationDetail.fromPublication(publication).toString());
+        }
     }
 
     private String produceRedirect(URI duplicateOf) {
@@ -123,9 +122,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     private String returnDraftPublication(RequestInfo requestInfo, Publication publication)
         throws UnsupportedAcceptHeaderException, NotFoundException {
-        return userIsCuratorOrOwner()
-                   ? createResponse(requestInfo, publication)
-                   : throwNotFoundException();
+            return createResponse(requestInfo, publication);
     }
 
     @Override
@@ -141,12 +138,6 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     @JacocoGenerated
     private String throwNotFoundException() throws NotFoundException {
         throw new NotFoundException("Publication is not found");
-    }
-
-    //TODO: Temporary commented out while getUserName returns null.
-    @JacocoGenerated
-    private boolean userIsCuratorOrOwner() {
-        return true;
     }
 
     private String createResponse(RequestInfo requestInfo, Publication publication)

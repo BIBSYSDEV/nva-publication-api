@@ -6,6 +6,7 @@ import static com.google.common.net.HttpHeaders.ACCEPT;
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.HttpHeaders.LOCATION;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.util.UUID.randomUUID;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
@@ -50,6 +51,7 @@ import no.unit.nva.doi.model.Customer;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -289,7 +291,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void handlerRedirectsToDuplicatePublicationWhenDeletedPublicationHasDuplicate()
+    void handlerRedirectToDuplicatePublicationWhenDeletedPublicationHasDuplicate()
         throws ApiGatewayException, IOException {
         var duplicateOfIdentifier =
             UriWrapper.fromUri(randomUri()).addChild(SortableIdentifier.next().toString()).getUri();
@@ -307,6 +309,16 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var expectedLandingPage =
             "https://localhost/registration/" + UriWrapper.fromUri(publication.getDuplicateOf()).getLastPathElement();
         assertThat(response.getHeaders().get(LOCATION), is(equalTo(expectedLandingPage)));
+    }
+
+    @Test
+    void handlerReturnsNotFoundWhenRequestingPublicationWithPublicationStatusNotSupportedByHandler()
+        throws ApiGatewayException, IOException {
+        var publication = createDraftForDeletion();
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output, context);
+        var gatewayResponse = parseFailureResponse();
+
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
     }
 
     @Test
@@ -404,6 +416,13 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         SortableIdentifier publicationIdentifier =
             Resource.fromPublication(publication).persistNew(publicationService, userInstance).getIdentifier();
         return publicationService.getPublicationByIdentifier(publicationIdentifier);
+    }
+
+    private Publication createDraftForDeletion() throws ApiGatewayException {
+        var publication = PublicationGenerator.randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(publicationService, userInstance);
+        return publicationService.markPublicationForDeletion(userInstance, persistedPublication.getIdentifier());
     }
 
     private Publication createPublication(Class<? extends PublicationInstance<?>> instance) throws ApiGatewayException {

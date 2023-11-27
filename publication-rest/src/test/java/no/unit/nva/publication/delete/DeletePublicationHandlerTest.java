@@ -488,7 +488,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
                                                           URI institutionId, AccessRight accessRight,
                                                           SortableIdentifier duplicateOf)
         throws JsonProcessingException {
-        var request = new HandlerRequestBuilder<DeletePublicationRequest>(restApiMapper)
+        var request = new HandlerRequestBuilder<Void>(restApiMapper)
                           .withUserName(username)
                           .withQueryParameters(Map.of("duplicate", duplicateOf.toString()))
                           .withCurrentCustomer(institutionId)
