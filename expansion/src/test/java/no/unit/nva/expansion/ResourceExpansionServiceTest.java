@@ -36,6 +36,7 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -130,7 +131,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         ticket.setOwnerAffiliation(randomUri());
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
-        assertThat(ticket.getOwnerAffiliation(), is(equalTo(expandedTicket.getOrganization().id())));
+        assertThat(expandedTicket.getOrganization().id(), is(equalTo(ticket.getOwnerAffiliation())));
     }
 
     @ParameterizedTest
@@ -273,6 +274,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        assertThat(ticket.getOwnerAffiliation(), is(nullValue()));
         ticket.setOwnerAffiliation(randomUri());
 
         var orgIds = expansionService.getOrganization(ticket).id();
