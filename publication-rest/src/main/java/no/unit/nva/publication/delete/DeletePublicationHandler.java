@@ -81,13 +81,13 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     }
 
     private Publication toPublicationWithDuplicate(String duplicateIdentifier, Publication publication) {
-        return publication.copy()
-                   .withDuplicateOf(nonNull(duplicateIdentifier) ? toPublicationUri(duplicateIdentifier) : null)
-                   .build();
+        return nonNull(duplicateIdentifier)
+                   ? publication.copy().withDuplicateOf(toPublicationUri(duplicateIdentifier)).build()
+                   : publication;
     }
 
     private static URI toPublicationUri(String duplicateIdentifier) {
-        return UriWrapper.fromUri(new Environment().readEnv(API_HOST))
+        return UriWrapper.fromHost(new Environment().readEnv(API_HOST))
                    .addChild(PUBLICATION)
                    .addChild(duplicateIdentifier)
                    .getUri();
