@@ -1,7 +1,9 @@
 package no.unit.nva.publication.events.handlers.persistence;
 
+import static no.unit.nva.expansion.model.ExpandedTicketStatus.NEW;
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocument.createIndexDocument;
 import static no.unit.nva.publication.events.handlers.persistence.PersistenceConfig.PERSISTED_ENTRIES_BUCKET;
+import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES;
 import static no.unit.nva.s3.S3Driver.GZIP_ENDING;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -13,7 +15,6 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedPublishingRequest;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
-import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UnixPath;
@@ -59,20 +60,12 @@ public class ExpandedDataEntriesPersistenceHandler
         return outputEvent;
     }
 
-    private boolean shouldBePersisted(ExpandedDataEntry expandedResourceUpdate) {
-        if (expandedResourceUpdate instanceof ExpandedPublishingRequest) {
-            return shouldPersistPublishingRequest((ExpandedPublishingRequest) expandedResourceUpdate);
+    private boolean shouldBePersisted(ExpandedDataEntry dataEntry) {
+        if (dataEntry instanceof ExpandedPublishingRequest request) {
+            return !REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(request.getWorkflow()) && NEW.equals(request.getStatus());
         } else {
             return true;
         }
-    }
-
-    private boolean shouldPersistPublishingRequest(ExpandedPublishingRequest expandedResourceUpdate) {
-        return !isAutomaticallyApproved(expandedResourceUpdate);
-    }
-
-    private boolean isAutomaticallyApproved(ExpandedPublishingRequest expandedResourceUpdate) {
-        return PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(expandedResourceUpdate.getWorkflow());
     }
 
     private URI writeEntryToS3(PersistedDocument indexDocument) {
