@@ -85,19 +85,14 @@ import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 @ExtendWith(MockitoExtension.class)
 class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest {
 
-    private static final String NVA_PERSISTED_STORAGE_BUCKET_NAME_ENV = "NVA_PERSISTED_STORAGE_BUCKET_NAME";
     public static final String IMPORT_CANDIDATES_STORAGE_BUCKET_ENV = "IMPORT_CANDIDATES_STORAGE_BUCKET";
+    private static final String NVA_PERSISTED_STORAGE_BUCKET_NAME_ENV = "NVA_PERSISTED_STORAGE_BUCKET_NAME";
     private ByteArrayOutputStream output;
     private Context context;
     private ResourceService importCandidateService;
     private ResourceService publicationService;
     private CreatePublicationFromImportCandidateHandler handler;
     private S3Client s3Client;
-
-    private static PublicationResponse getBodyObject(GatewayResponse<PublicationResponse> response)
-        throws JsonProcessingException {
-        return response.getBodyObject(PublicationResponse.class);
-    }
 
     @BeforeEach
     public void setUp(@Mock Environment environment, @Mock Context context, @Mock S3Client s3Client) {
@@ -163,8 +158,8 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     }
 
     @Test
-    void shouldReturnBadGatewayAndNotUpdateBothResourcesWhenPublicationPersistenceFails(@Mock
-                                                                                        ResourceService resourceService)
+    void shouldReturnBadGatewayAndNotUpdateBothResourcesWhenPublicationPersistenceFails(
+        @Mock ResourceService resourceService)
         throws IOException, ApiGatewayException {
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);
@@ -272,7 +267,8 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
         var publication = publicationService.getPublicationByIdentifier(getBodyObject(response).getIdentifier());
-        assertThat(publication.getEntityDescription().getContributors(), hasItem(samePropertyValuesAs(userInputContributor)));
+        assertThat(publication.getEntityDescription().getContributors(),
+                   hasItem(samePropertyValuesAs(userInputContributor)));
     }
 
     @Test
@@ -280,11 +276,13 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         var fileKeptByImporter = randomFile();
         var fileNotKeptByImporter = randomFile();
         var fileAddedByImporter = randomFile();
-        var importCandidateAssociatedArtifactList = new AssociatedArtifactList(fileKeptByImporter, fileNotKeptByImporter);
+        var importCandidateAssociatedArtifactList = new AssociatedArtifactList(fileKeptByImporter,
+                                                                               fileNotKeptByImporter);
         var importCandidate = createPersistedImportCandidate(importCandidateAssociatedArtifactList);
         var userInput = importCandidate
                             .copyImportCandidate()
-                            .withAssociatedArtifacts(new AssociatedArtifactList(fileKeptByImporter, fileAddedByImporter))
+                            .withAssociatedArtifacts(
+                                new AssociatedArtifactList(fileKeptByImporter, fileAddedByImporter))
                             .build();
         var request = createRequest(userInput);
         handler.handleRequest(request, output, context);
@@ -321,6 +319,11 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
 
         assertThat(response.getBodyObject(Problem.class).getDetail(),
                    containsString(RESOURCE_IS_NOT_PUBLISHABLE));
+    }
+
+    private static PublicationResponse getBodyObject(GatewayResponse<PublicationResponse> response)
+        throws JsonProcessingException {
+        return response.getBodyObject(PublicationResponse.class);
     }
 
     private PublishedFile randomFile() {
