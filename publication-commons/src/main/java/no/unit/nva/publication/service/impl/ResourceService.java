@@ -222,6 +222,7 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setPublisher(createOrganization(userInstance));
         newResource.setCreatedDate(currentTime);
         newResource.setModifiedDate(currentTime);
+        newResource.setPublishedDate(currentTime);
         newResource.setStatus(PUBLISHED);
         return insertResource(newResource);
     }
