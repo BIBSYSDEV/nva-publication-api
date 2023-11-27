@@ -80,7 +80,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
 
         return attempt(input::getIdentifier)
                    .map(candidateService::getImportCandidateByIdentifier)
-                   .map(candidate -> injectOrganizationAndOwner(requestInfo, candidate))
+                   .map(candidate -> injectOrganizationAndOwner(requestInfo, input, candidate))
                    .map(publicationService::autoImportPublication)
                    .map(this::copyArtifacts)
                    .map(CreatePublicationFromImportCandidateHandler::toPublicationUriIdentifier)
@@ -116,10 +116,22 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
         return new SortableIdentifier(identifier);
     }
 
-    private ImportCandidate injectOrganizationAndOwner(RequestInfo requestInfo, ImportCandidate importCandidate)
+    private ImportCandidate injectOrganizationAndOwner(RequestInfo requestInfo, ImportCandidate inputCandidate,
+                                                       ImportCandidate persistedCandidate)
         throws UnauthorizedException {
         var organization = new Builder().withId(requestInfo.getCurrentCustomer()).build();
-        return importCandidate.copyImportCandidate()
+        return persistedCandidate.copyImportCandidate()
+                   .withEntityDescription(inputCandidate.getEntityDescription())
+                   .withAssociatedArtifacts(inputCandidate.getAssociatedArtifacts())
+                   .withDoi(inputCandidate.getDoi())
+                   .withAdditionalIdentifiers(inputCandidate.getAdditionalIdentifiers())
+                   .withProjects(inputCandidate.getProjects())
+                   .withSubjects(inputCandidate.getSubjects())
+                   .withFundings(inputCandidate.getFundings())
+                   .withRightsHolder(inputCandidate.getRightsHolder())
+                   .withHandle(inputCandidate.getHandle())
+                   .withLink(inputCandidate.getLink())
+                   .withPublisher(inputCandidate.getPublisher())
                    .withPublisher(organization)
                    .withResourceOwner(new ResourceOwner(new Username(requestInfo.getUserName()), organization.getId()))
                    .build();
