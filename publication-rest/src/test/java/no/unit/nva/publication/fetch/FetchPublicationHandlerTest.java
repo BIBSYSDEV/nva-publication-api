@@ -51,7 +51,6 @@ import no.unit.nva.doi.model.Customer;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -304,7 +303,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
         GatewayResponse<Void> response = restApiMapper.readValue(output.toString(), valueType);
 
-        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_SEE_OTHER)));
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_MOVED_PERM)));
 
         var expectedLandingPage =
             "https://localhost/registration/" + UriWrapper.fromUri(publication.getDuplicateOf()).getLastPathElement();
