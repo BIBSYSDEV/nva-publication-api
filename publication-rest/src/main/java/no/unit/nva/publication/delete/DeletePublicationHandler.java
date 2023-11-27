@@ -1,10 +1,10 @@
 package no.unit.nva.publication.delete;
 
-import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.RequestUtil.createExternalUserInstance;
 import static no.unit.nva.publication.RequestUtil.createInternalUserInstance;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.net.URI;
 import java.time.Clock;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.Publication;
@@ -19,10 +19,14 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UriWrapper;
 import org.apache.http.HttpStatus;
 
-public class DeletePublicationHandler extends ApiGatewayHandler<DeletePublicationRequest, Void> {
-    
+public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
+
+    public static final String API_HOST = "API_HOST";
+    public static final String PUBLICATION = "publication";
+    public static final String DUPLICATE_QUERY_PARAM = "duplicate";
     private final ResourceService resourceService;
     private final IdentityServiceClient identityServiceClient;
 
@@ -43,13 +47,13 @@ public class DeletePublicationHandler extends ApiGatewayHandler<DeletePublicatio
     public DeletePublicationHandler(ResourceService resourceService,
                                     Environment environment,
                                     IdentityServiceClient identityServiceClient) {
-        super(DeletePublicationRequest.class, environment);
+        super(Void.class, environment);
         this.resourceService = resourceService;
         this.identityServiceClient = identityServiceClient;
     }
 
     @Override
-    protected Void processInput(DeletePublicationRequest input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+    protected Void processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
         var userInstance = createUserInstanceFromRequest(requestInfo);
         var publicationIdentifier = RequestUtil.getIdentifier(requestInfo);
 
@@ -61,7 +65,8 @@ public class DeletePublicationHandler extends ApiGatewayHandler<DeletePublicatio
                 if (!PublicationPermissionStrategy.fromRequestInfo(requestInfo).hasPermissionToUnpublish(publication)) {
                     throw new UnauthorizedException();
                 }
-                resourceService.unpublishPublication(toPublicationWithDuplicate(input, publication));
+                var duplicate = requestInfo.getQueryParameterOpt(DUPLICATE_QUERY_PARAM).orElse(null);
+                resourceService.unpublishPublication(toPublicationWithDuplicate(duplicate, publication));
                 break;
             case DRAFT:
                 resourceService.markPublicationForDeletion(userInstance, publicationIdentifier);
@@ -74,8 +79,17 @@ public class DeletePublicationHandler extends ApiGatewayHandler<DeletePublicatio
         return null;
     }
 
-    private Publication toPublicationWithDuplicate(DeletePublicationRequest input, Publication publication) {
-        return nonNull(input) ? publication.copy().withDuplicateOf(input.duplicateOf()).build() : publication;
+    private Publication toPublicationWithDuplicate(String duplicateIdentifier, Publication publication) {
+        return publication.copy()
+                   .withDuplicateOf(toPublicationUri(duplicateIdentifier))
+                   .build();
+    }
+
+    private static URI toPublicationUri(String duplicateIdentifier) {
+        return UriWrapper.fromUri(new Environment().readEnv(API_HOST))
+                   .addChild(PUBLICATION)
+                   .addChild(duplicateIdentifier)
+                   .getUri();
     }
 
     private UserInstance createUserInstanceFromRequest(RequestInfo requestInfo) throws ApiGatewayException {
@@ -85,7 +99,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<DeletePublicatio
     }
 
     @Override
-    protected Integer getSuccessStatusCode(DeletePublicationRequest input, Void output) {
+    protected Integer getSuccessStatusCode(Void input, Void output) {
         return HttpStatus.SC_ACCEPTED;
     }
     
