@@ -57,6 +57,7 @@ public class ImportCandidate extends Publication implements JsonSerializable {
                    .withSubjects(getSubjects())
                    .withFundings(getFundings())
                    .withPublicationNotes(getPublicationNotes())
+                   .withImportStatus(getImportStatus())
                    .withRightsHolder(getRightsHolder());
     }
 

@@ -129,6 +129,22 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     }
 
     @Test
+    void shouldCreatePublicationWithValuesFromRequestBodyAndNotPersistedImportCandidate()
+        throws NotFoundException, IOException {
+        var persistedImportCandidate = createPersistedImportCandidate();
+        var importCandidateRequestBody = persistedImportCandidate.copyImportCandidate().withDoi(randomDoi()).build();
+        var request = createRequest(importCandidateRequestBody);
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var publication = publicationService.getPublicationByIdentifier(getBodyObject(response).getIdentifier());
+        var updatedImportCandidate = importCandidateService
+                                         .getImportCandidateByIdentifier(persistedImportCandidate.getIdentifier());
+
+        assertThat(updatedImportCandidate.getDoi(), is(equalTo(persistedImportCandidate.getDoi())));
+        assertThat(publication.getDoi(), is(equalTo(importCandidateRequestBody.getDoi())));
+    }
+
+    @Test
     void shouldCopyAssociatedResourceFiles() throws NotFoundException, IOException {
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);

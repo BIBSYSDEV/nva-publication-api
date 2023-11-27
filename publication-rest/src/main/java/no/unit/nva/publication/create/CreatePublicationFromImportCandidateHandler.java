@@ -121,7 +121,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
                                                                             RequestInfo requestInfo)
         throws NotFoundException, UnauthorizedException {
         var rawImportCandidate = candidateService.getImportCandidateByIdentifier(input.getIdentifier());
-        var inputWithOwner = injectOrganizationAndOwner(requestInfo, input);
+        var inputWithOwner = injectOrganizationAndOwner(requestInfo, input, rawImportCandidate);
         var nvaPublication = publicationService.autoImportPublication(inputWithOwner);
         copyArtifacts(nvaPublication, rawImportCandidate);
         return nvaPublication;
@@ -155,10 +155,22 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
                                  .build());
     }
 
-    private ImportCandidate injectOrganizationAndOwner(RequestInfo requestInfo, ImportCandidate importCandidate)
+    private ImportCandidate injectOrganizationAndOwner(RequestInfo requestInfo,
+                                                       ImportCandidate userInput,
+                                                       ImportCandidate databaseVersion)
         throws UnauthorizedException {
         var organization = new Builder().withId(requestInfo.getCurrentCustomer()).build();
-        return importCandidate.copyImportCandidate()
+        return databaseVersion.copyImportCandidate()
+                   .withEntityDescription(userInput.getEntityDescription())
+                   .withAssociatedArtifacts(userInput.getAssociatedArtifacts())
+                   .withDoi(userInput.getDoi())
+                   .withAdditionalIdentifiers(userInput.getAdditionalIdentifiers())
+                   .withProjects(userInput.getProjects())
+                   .withSubjects(userInput.getSubjects())
+                   .withFundings(userInput.getFundings())
+                   .withRightsHolder(userInput.getRightsHolder())
+                   .withHandle(userInput.getHandle())
+                   .withLink(userInput.getLink())
                    .withPublisher(organization)
                    .withResourceOwner(new ResourceOwner(new Username(requestInfo.getUserName()), organization.getId()))
                    .build();
