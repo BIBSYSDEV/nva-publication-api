@@ -1,5 +1,6 @@
 package no.unit.nva.publication.delete;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.RequestUtil.createExternalUserInstance;
 import static no.unit.nva.publication.RequestUtil.createInternalUserInstance;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -81,7 +82,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
 
     private Publication toPublicationWithDuplicate(String duplicateIdentifier, Publication publication) {
         return publication.copy()
-                   .withDuplicateOf(toPublicationUri(duplicateIdentifier))
+                   .withDuplicateOf(nonNull(duplicateIdentifier) ? toPublicationUri(duplicateIdentifier) : null)
                    .build();
     }
 
