@@ -169,7 +169,8 @@ class PublicationPermissionStrategyTest {
     }
 
     @Test
-    void shouldDenyAccessRightForCuratorToDeleteDegreePublicationForDifferentInstitution() throws JsonProcessingException {
+    void shouldDenyAccessRightForCuratorToDeleteDegreePublicationForDifferentInstitution()
+        throws JsonProcessingException {
         var curatorName = randomString();
         var resourceOwner = randomString();
         var institution = randomUri();
@@ -179,8 +180,8 @@ class PublicationPermissionStrategyTest {
         var publication = createDegreePhd(resourceOwner, randomUri());
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                  .fromRequestInfo(requestInfo)
-                                  .hasPermissionToUnpublish(publication));
+                                   .fromRequestInfo(requestInfo)
+                                   .hasPermissionToUnpublish(publication));
     }
 
     @Test
