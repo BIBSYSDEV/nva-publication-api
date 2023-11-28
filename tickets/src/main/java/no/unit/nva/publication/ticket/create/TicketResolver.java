@@ -66,7 +66,9 @@ public class TicketResolver {
                    .noneMatch(artifact -> artifact instanceof File);
     }
 
-    private PublishingRequestCase createPublishingRequest(PublishingRequestCase publishingRequestCase, Publication publication, boolean isCurator)
+    private PublishingRequestCase createPublishingRequest(PublishingRequestCase publishingRequestCase,
+                                                          Publication publication,
+                                                          boolean isCurator)
         throws ApiGatewayException {
         if (REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(publishingRequestCase.getWorkflow()) || isCurator) {
             publishPublicationAndFiles(publication);
@@ -79,7 +81,9 @@ public class TicketResolver {
         return (PublishingRequestCase) publishingRequestCase.persistNewTicket(ticketService);
     }
 
-    private PublishingRequestCase createAutoApprovedTicketWhenPublicationContainsMetadataOnly(TicketEntry ticket, Publication publication) throws ApiGatewayException {
+    private PublishingRequestCase createAutoApprovedTicketWhenPublicationContainsMetadataOnly(TicketEntry ticket,
+                                                                                              Publication publication)
+        throws ApiGatewayException {
         if (hasNoFiles(publication)) {
             return createAutoApprovedTicket(ticket);
         } else {
