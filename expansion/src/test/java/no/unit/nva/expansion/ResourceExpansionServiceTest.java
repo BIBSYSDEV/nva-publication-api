@@ -282,7 +282,9 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldUseOwnerAffiliationWhenTicketHasOwnerAffiliation(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws Exception {
+    void shouldUseOwnerAffiliationWhenTicketHasOwnerAffiliation(Class<? extends TicketEntry> ticketType,
+                                                                PublicationStatus status)
+        throws Exception {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         ticket.setOwnerAffiliation(randomUri());
@@ -297,7 +299,9 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldUseResourceOwnerAffiliationWhenTicketHasNoOwnerAffiliation(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws Exception {
+    void shouldUseResourceOwnerAffiliationWhenTicketHasNoOwnerAffiliation(Class<? extends TicketEntry> ticketType,
+                                                                          PublicationStatus status)
+        throws Exception {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, USER, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
 
