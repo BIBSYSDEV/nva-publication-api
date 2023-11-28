@@ -697,6 +697,19 @@ public class TicketServiceTest extends ResourcesLocalTest {
                      () -> ticketService.updateTicketStatus(pendingTicket, PENDING, USERNAME));
     }
 
+    @Test
+    void publishingRequestCaseShouldBeAutoCompleted() throws ApiGatewayException {
+        var ticketType = PublishingRequestCase.class;
+        var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
+        var ticket = TicketTestUtils.createNonPersistedTicket(publication, ticketType);
+
+        var persistedCompletedTicket = ((PublishingRequestCase) ticket).persistAutoComplete(ticketService);
+
+        assertThat(persistedCompletedTicket.getStatus(), is(equalTo(COMPLETED)));
+
+
+    }
+
     private static Username getUsername(Publication publication) {
         return new Username(UserInstance.fromPublication(publication).getUsername());
     }
