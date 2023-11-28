@@ -282,6 +282,37 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldUseOwnerAffiliationWhenTicketHasOwnerAffiliation(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws Exception {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        ticket.setOwnerAffiliation(randomUri());
+
+        var organizationIds = Objects.nonNull(ticket.getOwnerAffiliation())
+                                  ? ticket.getOwnerAffiliation()
+                                  : resourceService.getResourceByIdentifier(ticket.getResourceIdentifier())
+                                      .getResourceOwner().getOwnerAffiliation();
+
+        assertThat(organizationIds, is(equalTo(ticket.getOwnerAffiliation())));
+    }
+
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldUseResourceOwnerAffiliationWhenTicketHasNoOwnerAffiliation(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws Exception {
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, USER, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+
+        var expectedOrgId = publication.getResourceOwner().getOwnerAffiliation();
+
+        var organizationIds = Objects.nonNull(ticket.getOwnerAffiliation())
+                                  ? ticket.getOwnerAffiliation()
+                                  : resourceService.getResourceByIdentifier(ticket.getResourceIdentifier())
+                                      .getResourceOwner().getOwnerAffiliation();
+
+        assertThat(organizationIds, is(equalTo(expectedOrgId)));
+    }
+
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldGetOrganizationPartOfsForAffiliations(Class<? extends TicketEntry> ticketType,
                                                        PublicationStatus status)
         throws ApiGatewayException {
