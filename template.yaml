@@ -1171,6 +1171,7 @@ Resources:
                     - "PublicationService.DoiRequest.Update"
                     - "PublicationService.PublishingRequest.Update"
                     - "PublicationService.GeneralSupportRequest.Update"
+                    - "PublicationService.UnpublishRequest.Update"
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
