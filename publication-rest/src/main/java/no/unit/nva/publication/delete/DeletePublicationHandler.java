@@ -3,16 +3,17 @@ package no.unit.nva.publication.delete;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.RequestUtil.createExternalUserInstance;
 import static no.unit.nva.publication.RequestUtil.createInternalUserInstance;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
-import java.time.Clock;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.RequestUtil;
+import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -29,6 +30,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     public static final String PUBLICATION = "publication";
     public static final String DUPLICATE_QUERY_PARAM = "duplicate";
     private final ResourceService resourceService;
+    private final TicketService ticketService;
     private final IdentityServiceClient identityServiceClient;
 
     /**
@@ -36,20 +38,21 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
      */
     @JacocoGenerated
     public DeletePublicationHandler() {
-        this(defaultService(), new Environment(), IdentityServiceClient.prepare());
+        this(ResourceService.defaultService(), TicketService.defaultService(), new Environment(),
+             IdentityServiceClient.prepare());
     }
-    
+
     /**
      * Constructor for DeletePublicationHandler.
      *
      * @param resourceService resourceService
      * @param environment     environment
      */
-    public DeletePublicationHandler(ResourceService resourceService,
-                                    Environment environment,
-                                    IdentityServiceClient identityServiceClient) {
+    public DeletePublicationHandler(ResourceService resourceService, TicketService ticketService,
+                                    Environment environment, IdentityServiceClient identityServiceClient) {
         super(Void.class, environment);
         this.resourceService = resourceService;
+        this.ticketService = ticketService;
         this.identityServiceClient = identityServiceClient;
     }
 
@@ -68,22 +71,26 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
                 }
                 var duplicate = requestInfo.getQueryParameterOpt(DUPLICATE_QUERY_PARAM).orElse(null);
                 resourceService.unpublishPublication(toPublicationWithDuplicate(duplicate, publication));
+                persistNotification(publication);
                 break;
             case DRAFT:
                 resourceService.markPublicationForDeletion(userInstance, publicationIdentifier);
                 break;
             default:
-                throw new BadRequestException(String.format("Publication status %s is not supported for deletion",
-                                                            publicationStatus));
+                throw new BadRequestException(
+                    String.format("Publication status %s is not supported for deletion", publicationStatus));
         }
 
         return null;
     }
 
-    private Publication toPublicationWithDuplicate(String duplicateIdentifier, Publication publication) {
-        return nonNull(duplicateIdentifier)
-                   ? publication.copy().withDuplicateOf(toPublicationUri(duplicateIdentifier)).build()
-                   : publication;
+    private void persistNotification(Publication publication) throws ApiGatewayException {
+        TicketEntry.requestNewTicket(publication, UnpublishRequest.class).persistNewTicket(ticketService);
+    }
+
+    @Override
+    protected Integer getSuccessStatusCode(Void input, Void output) {
+        return HttpStatus.SC_ACCEPTED;
     }
 
     private static URI toPublicationUri(String duplicateIdentifier) {
@@ -93,19 +100,14 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
                    .getUri();
     }
 
-    private UserInstance createUserInstanceFromRequest(RequestInfo requestInfo) throws ApiGatewayException {
-        return requestInfo.clientIsThirdParty()
-                   ? createExternalUserInstance(requestInfo, identityServiceClient)
-                   : createInternalUserInstance(requestInfo);
+    private Publication toPublicationWithDuplicate(String duplicateIdentifier, Publication publication) {
+        return nonNull(duplicateIdentifier) ? publication.copy()
+                                                  .withDuplicateOf(toPublicationUri(duplicateIdentifier))
+                                                  .build() : publication;
     }
 
-    @Override
-    protected Integer getSuccessStatusCode(Void input, Void output) {
-        return HttpStatus.SC_ACCEPTED;
-    }
-    
-    @JacocoGenerated
-    private static ResourceService defaultService() {
-        return new ResourceService(AmazonDynamoDBClientBuilder.defaultClient(), Clock.systemDefaultZone());
+    private UserInstance createUserInstanceFromRequest(RequestInfo requestInfo) throws ApiGatewayException {
+        return requestInfo.clientIsThirdParty() ? createExternalUserInstance(requestInfo, identityServiceClient)
+                   : createInternalUserInstance(requestInfo);
     }
 }
