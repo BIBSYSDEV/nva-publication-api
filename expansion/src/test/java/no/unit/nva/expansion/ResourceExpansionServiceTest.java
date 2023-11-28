@@ -270,31 +270,15 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldGetOrganizationIdsForAffiliations(Class<? extends TicketEntry> ticketType, PublicationStatus status)
-        throws ApiGatewayException {
-        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        assertThat(ticket.getOwnerAffiliation(), is(nullValue()));
-        ticket.setOwnerAffiliation(randomUri());
-        var orgIds = expansionService.getOrganization(ticket).id();
-        assertThat(orgIds, is(equalTo(ticket.getOwnerAffiliation())));
-    }
-
-    @ParameterizedTest
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldUseOwnerAffiliationWhenTicketHasOwnerAffiliation(Class<? extends TicketEntry> ticketType,
                                                                 PublicationStatus status)
         throws Exception {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         ticket.setOwnerAffiliation(randomUri());
-
-        var organizationIds = Objects.nonNull(ticket.getOwnerAffiliation())
-                                  ? ticket.getOwnerAffiliation()
-                                  : resourceService.getResourceByIdentifier(ticket.getResourceIdentifier())
-                                      .getResourceOwner().getOwnerAffiliation();
-
-        assertThat(organizationIds, is(equalTo(ticket.getOwnerAffiliation())));
+        var expectedOrgId = ticket.getOwnerAffiliation();
+        var organizationIds = expansionService.getOrganization(ticket).id();
+        assertThat(organizationIds, is(equalTo(expectedOrgId)));
     }
 
     @ParameterizedTest
@@ -304,14 +288,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         throws Exception {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, USER, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-
         var expectedOrgId = publication.getResourceOwner().getOwnerAffiliation();
-
-        var organizationIds = Objects.nonNull(ticket.getOwnerAffiliation())
-                                  ? ticket.getOwnerAffiliation()
-                                  : resourceService.getResourceByIdentifier(ticket.getResourceIdentifier())
-                                      .getResourceOwner().getOwnerAffiliation();
-
+        var organizationIds = expansionService.getOrganization(ticket).id();
         assertThat(organizationIds, is(equalTo(expectedOrgId)));
     }
 
