@@ -14,6 +14,9 @@ public class ContributorPermissionStrategy extends PermissionStrategy {
 
     @Override
     public boolean hasPermission(RequestInfo requestInfo, Publication publication) {
+        if (isDegree(publication)) {
+            return false;
+        }
         return attempt(requestInfo::getPersonCristinId)
                            .map(cristinId -> publicationContainsContributor(cristinId, publication))
                            .orElse(fail -> false);
