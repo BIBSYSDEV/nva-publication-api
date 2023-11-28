@@ -695,19 +695,17 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     private TicketEntry toTicketEntry(ExpandedTicket expandedTicket) {
-        if (expandedTicket instanceof ExpandedDoiRequest) {
-            return toTicketEntry((ExpandedDoiRequest) expandedTicket);
+        if (expandedTicket instanceof ExpandedDoiRequest expandedDoiRequest) {
+            return toTicketEntry(expandedDoiRequest);
+        } else if (expandedTicket instanceof ExpandedPublishingRequest expandedPublishingRequest) {
+            return toTicketEntry(expandedPublishingRequest);
+        } else if (expandedTicket instanceof ExpandedGeneralSupportRequest expandedGeneralSupportRequest) {
+            return toTicketEntry(expandedGeneralSupportRequest);
+        } else if (expandedTicket instanceof ExpandedUnpublishRequest expandedUnpublishRequest) {
+            return toTicketEntry(expandedUnpublishRequest);
+        } else {
+            return null;
         }
-        if (expandedTicket instanceof ExpandedPublishingRequest) {
-            return toTicketEntry((ExpandedPublishingRequest) expandedTicket);
-        }
-        if (expandedTicket instanceof ExpandedGeneralSupportRequest) {
-            return toTicketEntry((ExpandedGeneralSupportRequest) expandedTicket);
-        }
-        if (expandedTicket instanceof ExpandedUnpublishRequest) {
-            return toTicketEntry((ExpandedUnpublishRequest) expandedTicket);
-        }
-        return null;
     }
 
     private Username extractUsername(ExpandedPerson expandedPerson) {
