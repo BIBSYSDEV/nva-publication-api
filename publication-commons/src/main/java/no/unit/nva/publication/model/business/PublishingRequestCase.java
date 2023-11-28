@@ -24,6 +24,8 @@ import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.model.storage.PublishingRequestDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.JacocoGenerated;
 
@@ -272,6 +274,11 @@ public class PublishingRequestCase extends TicketEntry {
                && Objects.equals(getWorkflow(), that.getWorkflow())
                && Objects.equals(getAssignee(), that.getAssignee())
                && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation());
+    }
+
+    public PublishingRequestCase persistAutoComplete(TicketService ticketService) throws ApiGatewayException {
+        this.setStatus(TicketStatus.COMPLETED);
+        return ticketService.createTicket(this);
     }
 
     private static PublishingRequestCase createPublishingRequestIdentifyingObject(
