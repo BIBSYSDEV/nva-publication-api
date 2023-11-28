@@ -24,6 +24,7 @@ import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.ViewedBy;
 import nva.commons.core.paths.UriWrapper;
@@ -32,7 +33,8 @@ import nva.commons.core.paths.UriWrapper;
 @JsonSubTypes({
     @JsonSubTypes.Type(DoiRequestDto.class),
     @JsonSubTypes.Type(PublishingRequestDto.class),
-    @JsonSubTypes.Type(GeneralSupportRequestDto.class)
+    @JsonSubTypes.Type(GeneralSupportRequestDto.class),
+    @JsonSubTypes.Type(UnpublishRequestDto.class)
 })
 public abstract class TicketDto implements JsonSerializable {
 
@@ -218,6 +220,17 @@ public abstract class TicketDto implements JsonSerializable {
                                                     viewedBy,
                                                     assignee,
                                                     ownerAffiliation);
+            } else if (UnpublishRequest.class.equals(ticketClass)) {
+                return new UnpublishRequestDto(status,
+                                               createdDate,
+                                               modifiedDate,
+                                               identifier,
+                                               publicationIdentifier,
+                                               id,
+                                               messages,
+                                               viewedBy,
+                                               assignee,
+                                               ownerAffiliation);
             }
             throw new RuntimeException("Unsupported type");
         }
