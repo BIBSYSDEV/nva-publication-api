@@ -276,9 +276,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         assertThat(ticket.getOwnerAffiliation(), is(nullValue()));
         ticket.setOwnerAffiliation(randomUri());
-
         var orgIds = expansionService.getOrganization(ticket).id();
-
         assertThat(orgIds, is(equalTo(ticket.getOwnerAffiliation())));
     }
 
