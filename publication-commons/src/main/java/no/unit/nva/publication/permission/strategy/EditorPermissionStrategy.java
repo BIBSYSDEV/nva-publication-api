@@ -10,7 +10,8 @@ public class EditorPermissionStrategy extends PermissionStrategy {
     @Override
     public boolean hasPermission(RequestInfo requestInfo, Publication publication) {
         if (isDegree(publication)) {
-            return hasAccessRight(requestInfo, PUBLISH_DEGREE);
+            return hasAccessRight(requestInfo, PUBLISH_DEGREE)
+                   && hasAccessRight(requestInfo, EDIT_ALL_NON_DEGREE_RESOURCES);
         }
 
         return hasAccessRight(requestInfo, EDIT_ALL_NON_DEGREE_RESOURCES);

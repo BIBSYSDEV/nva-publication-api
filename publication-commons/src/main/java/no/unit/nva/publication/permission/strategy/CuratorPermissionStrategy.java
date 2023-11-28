@@ -13,8 +13,7 @@ public class CuratorPermissionStrategy extends PermissionStrategy {
         if (!userIsFromSameInstitutionAsPublication(requestInfo, publication)) {
             return false;
         }
-        if (isDegree(publication)
-            && userIsFromSameInstitutionAsPublication(requestInfo, publication)) {
+        if (isDegree(publication)) {
             return hasAccessRight(requestInfo, PUBLISH_DEGREE);
         }
 
