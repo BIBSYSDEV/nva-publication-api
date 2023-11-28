@@ -14,19 +14,17 @@ public final class TicketDtoParser {
     }
 
     public static TicketEntry toTicket(TicketDto ticketDto) {
-        if (ticketDto instanceof DoiRequestDto) {
-            return toTicket((DoiRequestDto) ticketDto);
+        if (ticketDto instanceof DoiRequestDto doiRequestDto) {
+            return toTicket(doiRequestDto);
+        } else if (ticketDto instanceof PublishingRequestDto publishingRequestDto) {
+            return toTicket(publishingRequestDto);
+        } else if (ticketDto instanceof GeneralSupportRequestDto generalSupportRequestDto) {
+            return toTicket(generalSupportRequestDto);
+        } else if (ticketDto instanceof UnpublishRequestDto unpublishRequestDto) {
+            return toTicket(unpublishRequestDto);
+        } else {
+            return null;
         }
-        if (ticketDto instanceof PublishingRequestDto) {
-            return toTicket((PublishingRequestDto) ticketDto);
-        }
-        if (ticketDto instanceof GeneralSupportRequestDto) {
-            return toTicket((GeneralSupportRequestDto) ticketDto);
-        }
-        if (ticketDto instanceof UnpublishRequestDto) {
-            return toTicket((UnpublishRequestDto) ticketDto);
-        }
-        return null;
     }
 
     public static TicketEntry toTicket(GeneralSupportRequestDto generalSupportRequest) {
