@@ -81,17 +81,15 @@ public abstract class TicketEntry implements Entity {
         if (DoiRequest.class.equals(ticketType)) {
             return ticketType.cast(
                 DoiRequest.builder().withResourceIdentifier(resourceIdentifier).withCustomerId(customerId).build());
-        }
-        if (PublishingRequestCase.class.equals(ticketType)) {
+        } else if (PublishingRequestCase.class.equals(ticketType)) {
             return ticketType.cast(PublishingRequestCase.createQueryObject(resourceIdentifier, customerId));
-        }
-        if (GeneralSupportRequest.class.equals(ticketType)) {
+        } else if (GeneralSupportRequest.class.equals(ticketType)) {
             return ticketType.cast(GeneralSupportRequest.createQueryObject(customerId, resourceIdentifier));
-        }
-        if (UnpublishRequest.class.equals(ticketType)) {
+        } else if (UnpublishRequest.class.equals(ticketType)) {
             return ticketType.cast(UnpublishRequest.createQueryObject(customerId, resourceIdentifier));
+        } else {
+            throw new UnsupportedOperationException();
         }
-        throw new UnsupportedOperationException();
     }
 
     public static UntypedTicketQueryObject createQueryObject(UserInstance userInstance,
@@ -280,17 +278,15 @@ public abstract class TicketEntry implements Entity {
 
         if (DoiRequest.class.equals(ticketType)) {
             return createNewDoiRequest(publication, identifierProvider);
-        }
-        if (PublishingRequestCase.class.equals(ticketType)) {
+        } else if (PublishingRequestCase.class.equals(ticketType)) {
             return createNewPublishingRequestEntry(publication, identifierProvider);
-        }
-        if (GeneralSupportRequest.class.equals(ticketType)) {
+        } else if (GeneralSupportRequest.class.equals(ticketType)) {
             return createNewGeneralSupportRequest(publication, identifierProvider);
-        }
-        if (UnpublishRequest.class.equals(ticketType)) {
+        } else if (UnpublishRequest.class.equals(ticketType)) {
             return createNewUnpublishRequest(publication, identifierProvider);
+        } else {
+            throw new UnsupportedOperationException();
         }
-        throw new UnsupportedOperationException();
     }
 
     private static TicketEntry createNewDoiRequest(Publication publication,
