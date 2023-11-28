@@ -151,7 +151,7 @@ class PublicationPermissionStrategyTest {
     }
 
     @Test
-    void shouldGiveCuratorPermissionToDeleteDegreePublicationWhenPublicationIsFromSameInstitutionAndHasPublishDegreeAccessRight()
+    void shouldGiveCuratorPermissionToDeleteDegreePublicationWhenUserHasPublishDegreeAccessRight()
         throws JsonProcessingException {
 
         var curatorName = randomString();
