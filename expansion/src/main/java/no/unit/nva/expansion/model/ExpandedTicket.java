@@ -61,30 +61,27 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
                                            TicketService ticketService)
         throws NotFoundException, JsonProcessingException {
 
-        if (ticketEntry instanceof DoiRequest) {
-            return ExpandedDoiRequest.createEntry((DoiRequest) ticketEntry,
+        if (ticketEntry instanceof DoiRequest doiRequest) {
+            return ExpandedDoiRequest.createEntry(doiRequest,
                                                   expansionService,
                                                   resourceService,
                                                   ticketService);
-        }
-        if (ticketEntry instanceof PublishingRequestCase) {
+        } else if (ticketEntry instanceof PublishingRequestCase publishingRequestCase) {
             return ExpandedPublishingRequest.createEntry(
-                (PublishingRequestCase) ticketEntry,
+                publishingRequestCase,
                 resourceService,
                 expansionService,
                 ticketService);
-        }
-        if (ticketEntry instanceof GeneralSupportRequest) {
+        } else if (ticketEntry instanceof GeneralSupportRequest generalSupportRequest) {
             return ExpandedGeneralSupportRequest.createEntry(
-                (GeneralSupportRequest) ticketEntry,
+                generalSupportRequest,
                 resourceService,
                 expansionService,
                 ticketService
             );
-        }
-        if (ticketEntry instanceof UnpublishRequest) {
+        } else if (ticketEntry instanceof UnpublishRequest unpublishRequest) {
             return ExpandedUnpublishRequest.createEntry(
-                (UnpublishRequest) ticketEntry,
+                unpublishRequest,
                 resourceService,
                 expansionService,
                 ticketService
