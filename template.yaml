@@ -883,6 +883,10 @@ Resources:
           RESOURCE_TABLE_NAME: !Ref NvaResourcesTable
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Sub "nva-resource-storage-${AWS::AccountId}"
           IMPORT_CANDIDATES_STORAGE_BUCKET: !Ref ImportCandidateStorageBucket
+          PIA_SECRETS_NAME: !Ref PiaRestCredentialsTokenName
+          PIA_USERNAME_KEY: !Ref PiaRestUsernameKey
+          PIA_PASSWORD_KEY: !Ref PiaRestUsernamePasswordKey
+          PIA_REST_API: !Ref PiaRestHost
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:

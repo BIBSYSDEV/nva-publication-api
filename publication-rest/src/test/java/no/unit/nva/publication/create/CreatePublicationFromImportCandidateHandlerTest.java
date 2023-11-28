@@ -1,11 +1,15 @@
 package no.unit.nva.publication.create;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
+import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
-import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.IMPORT_CANDIDATES_TABLE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.IMPORT_PROCESS_WENT_WRONG;
-import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.PUBLICATIONS_TABLE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.RESOURCE_HAS_ALREADY_BEEN_IMPORTED_ERROR_MESSAGE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.RESOURCE_IS_MISSING_SCOPUS_IDENTIFIER_ERROR_MESSAGE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.RESOURCE_IS_NOT_PUBLISHABLE;
@@ -15,7 +19,6 @@ import static no.unit.nva.publication.external.services.AuthorizedBackendUriRetr
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -25,17 +28,19 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
@@ -68,12 +73,14 @@ import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.stubs.FakeSecretsManagerClient;
+import no.unit.nva.stubs.WiremockHttpClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.Environment;
+import nva.commons.secrets.SecretsReader;
 import org.apache.hc.core5.http.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -84,11 +91,17 @@ import org.zalando.problem.Problem;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 
+@WireMockTest(httpsEnabled = true)
 @ExtendWith(MockitoExtension.class)
 class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest {
 
-    public static final String IMPORT_CANDIDATES_STORAGE_BUCKET_ENV = "IMPORT_CANDIDATES_STORAGE_BUCKET";
-    private static final String NVA_PERSISTED_STORAGE_BUCKET_NAME_ENV = "NVA_PERSISTED_STORAGE_BUCKET_NAME";
+    public static final String SOME_SECRETS_KEY_NAME = "some-secrets-key-name";
+    public static final String SOME_USERNAME_KEY = "some-username-key";
+    public static final String SOME_PIA_PASSWORD_KEY = "some-pia-password-key";
+    public static final String SOME_PERSISTED_BUCKET = "some-persisted-bucket";
+    public static final String SOME_CANDIDATE_BUCKET = "some-candidate-bucket";
+    public static final String IMPORT_CANDIDATES_TABLE = "import-candidates-table";
+    public static final String PUBLICATIONS_TABLE = "publications-table";
     private ByteArrayOutputStream output;
     private Context context;
     private ResourceService importCandidateService;
@@ -96,18 +109,27 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     private CreatePublicationFromImportCandidateHandler handler;
     private S3Client s3Client;
 
+    private ImportCandidateHandlerConfigs configs;
+    private PiaClientConfig piaClientConfig;
+
     @BeforeEach
-    public void setUp(@Mock Environment environment, @Mock Context context, @Mock S3Client s3Client) {
+    public void setUp(@Mock Context context, @Mock S3Client s3Client,
+                      WireMockRuntimeInfo wireMockRuntimeInfo) {
         this.s3Client = s3Client;
         super.init(IMPORT_CANDIDATES_TABLE, PUBLICATIONS_TABLE);
-        lenient().when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
-        lenient().when(environment.readEnv(IMPORT_CANDIDATES_STORAGE_BUCKET_ENV)).thenReturn("some-candidate-bucket");
-        lenient().when(environment.readEnv(NVA_PERSISTED_STORAGE_BUCKET_NAME_ENV)).thenReturn("some-persisted-bucket");
         importCandidateService = new ResourceService(client, IMPORT_CANDIDATES_TABLE);
         publicationService = new ResourceService(client, PUBLICATIONS_TABLE);
         this.context = context;
         output = new ByteArrayOutputStream();
-        handler = new CreatePublicationFromImportCandidateHandler(importCandidateService, publicationService, s3Client);
+        piaClientConfig = createPiaConfig(wireMockRuntimeInfo);
+        configs = new ImportCandidateHandlerConfigs(SOME_PERSISTED_BUCKET,
+                                                    SOME_CANDIDATE_BUCKET,
+                                                    importCandidateService,
+                                                    publicationService,
+                                                    s3Client,
+                                                    piaClientConfig);
+        handler = new CreatePublicationFromImportCandidateHandler(configs);
+        mockPostAuidWriting();
     }
 
     @Test
@@ -152,23 +174,30 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
 
         verify(s3Client, atLeastOnce()).copyObject(
             CopyObjectRequest.builder()
-                .sourceBucket("some-candidate-bucket")
+                .sourceBucket(SOME_CANDIDATE_BUCKET)
                 .sourceKey(artifactId)
-                .destinationBucket("some-persisted-bucket")
+                .destinationBucket(SOME_PERSISTED_BUCKET)
                 .destinationKey(artifactId)
                 .build());
     }
 
     @Test
     void shouldReturnBadGatewayAndNotUpdateBothResourcesWhenPublicationPersistenceFails(
-        @Mock ResourceService resourceService)
+        @Mock ResourceService resourceService, WireMockRuntimeInfo wireMockRuntimeInfo)
         throws IOException, ApiGatewayException {
-        var importCandidate = createPersistedImportCandidate();
-        var request = createRequest(importCandidate);
+
         publicationService = resourceService;
-        handler = new CreatePublicationFromImportCandidateHandler(importCandidateService, publicationService, s3Client);
+        configs = new ImportCandidateHandlerConfigs(SOME_PERSISTED_BUCKET,
+                                                    SOME_CANDIDATE_BUCKET,
+                                                    importCandidateService,
+                                                    publicationService,
+                                                    s3Client,
+                                                    piaClientConfig);
+        handler = new CreatePublicationFromImportCandidateHandler(configs);
         when(publicationService.autoImportPublication(any())).thenThrow(
             new TransactionFailedException(new Exception()));
+        var importCandidate = createPersistedImportCandidate();
+        var request = createRequest(importCandidate);
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         var notUpdatedImportCandidate = importCandidateService.getImportCandidateByIdentifier(
@@ -181,14 +210,24 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     }
 
     @Test
-    void shouldReturnBadGatewayWhenImportCandidatePersistenceFails(@Mock ResourceService resourceService)
+    void shouldReturnBadGatewayWhenImportCandidatePersistenceFails(@Mock ResourceService resourceService,
+                                                                   WireMockRuntimeInfo wireMockRuntimeInfo)
         throws IOException, ApiGatewayException {
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);
+
         importCandidateService = resourceService;
-        handler = new CreatePublicationFromImportCandidateHandler(importCandidateService, publicationService, s3Client);
+        configs = new ImportCandidateHandlerConfigs(SOME_PERSISTED_BUCKET,
+                                                    SOME_CANDIDATE_BUCKET,
+                                                    importCandidateService,
+                                                    publicationService,
+                                                    s3Client,
+                                                    piaClientConfig
+        );
+        handler = new CreatePublicationFromImportCandidateHandler(configs);
         when(importCandidateService.updateImportStatus(any(), any()))
             .thenThrow(new TransactionFailedException(new Exception()));
+
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
 
@@ -224,10 +263,17 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         var request = createRequest(importCandidate);
         publicationService = resourceService;
         importCandidateService = resourceService;
-        handler = new CreatePublicationFromImportCandidateHandler(importCandidateService, publicationService, s3Client);
+        configs = new ImportCandidateHandlerConfigs(SOME_PERSISTED_BUCKET,
+                                                    SOME_CANDIDATE_BUCKET,
+                                                    importCandidateService,
+                                                    publicationService,
+                                                    s3Client,
+                                                    piaClientConfig);
+        handler = new CreatePublicationFromImportCandidateHandler(configs);
         when(importCandidateService.updateImportStatus(any(), any()))
             .thenCallRealMethod()
             .thenThrow(new NotFoundException(""));
+
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
 
@@ -295,16 +341,16 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         assertThat(publication.getAssociatedArtifacts(), not(hasItem(fileNotKeptByImporter)));
         verify(s3Client, atLeastOnce()).copyObject(
             CopyObjectRequest.builder()
-                .sourceBucket("some-candidate-bucket")
+                .sourceBucket(SOME_CANDIDATE_BUCKET)
                 .sourceKey(fileKeptByImporter.getIdentifier().toString())
-                .destinationBucket("some-persisted-bucket")
+                .destinationBucket(SOME_PERSISTED_BUCKET)
                 .destinationKey(fileKeptByImporter.getIdentifier().toString())
                 .build());
         verify(s3Client, never()).copyObject(
             CopyObjectRequest.builder()
-                .sourceBucket("some-candidate-bucket")
+                .sourceBucket(SOME_CANDIDATE_BUCKET)
                 .sourceKey(fileNotKeptByImporter.getIdentifier().toString())
-                .destinationBucket("some-persisted-bucket")
+                .destinationBucket(SOME_PERSISTED_BUCKET)
                 .destinationKey(fileNotKeptByImporter.getIdentifier().toString())
                 .build());
     }
@@ -337,9 +383,117 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         assertThat(publication.getCreatedDate(), is(greaterThan(start)));
     }
 
+    @Test
+    void shouldWriteToPiaWhenCristinIdHaveBeenUpdatedByUser() throws NotFoundException, IOException {
+        var auid = randomString();
+        var contributorWithAuid = createContributorWithAuid(auid);
+        var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid));
+        var cristinId = randomUri();
+        var contributorUpdatedWithCristinId = updateContributorWithCristinId(contributorWithAuid, cristinId);
+        var userInput = importCandidate.copy().build();
+        userInput.getEntityDescription().setContributors(List.of(contributorUpdatedWithCristinId));
+        var request = createRequest(importCandidate);
+        var expectedBody = List.of(PiaUpdateRequest.toPiaRequest(contributorUpdatedWithCristinId,
+                                                                 extractScopusId(importCandidate)));
+        handler.handleRequest(request, output, context);
+        WireMock.verify(1,
+                        postRequestedFor(urlEqualTo("/sentralimport/authors"))
+                            .withRequestBody(WireMock.equalTo(expectedBody.toString())));
+    }
+
+    @Test
+    void shouldContinueImportingEvenWhenPiaRestRespondsWithErrorCodes()
+        throws NotFoundException, IOException {
+        var auid = randomString();
+        var contributorWithAuid = createContributorWithAuid(auid);
+        var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid));
+        var cristinId = randomUri();
+        var contributorUpdatedWithCristinId = updateContributorWithCristinId(contributorWithAuid, cristinId);
+        var userInput = importCandidate.copy().build();
+        userInput.getEntityDescription().setContributors(List.of(contributorUpdatedWithCristinId));
+        var request = createRequest(importCandidate);
+        mockBadRequestResponseFromPia();
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+    }
+
     private static PublicationResponse getBodyObject(GatewayResponse<PublicationResponse> response)
         throws JsonProcessingException {
         return response.getBodyObject(PublicationResponse.class);
+    }
+
+    private String extractScopusId(ImportCandidate importCandidate) {
+        return
+            importCandidate.getAdditionalIdentifiers()
+                .stream()
+                .filter(additionalIdentifier -> "scopus".equalsIgnoreCase(additionalIdentifier.getSourceName()))
+                .map(
+                    AdditionalIdentifier::getValue).findFirst().get();
+    }
+
+    private PiaClientConfig createPiaConfig(WireMockRuntimeInfo wireMockRuntimeInfo) {
+        return new PiaClientConfig(wireMockRuntimeInfo.getHttpBaseUrl(),
+                                   SOME_USERNAME_KEY,
+                                   SOME_PIA_PASSWORD_KEY,
+                                   SOME_SECRETS_KEY_NAME,
+                                   WiremockHttpClient.create(),
+                                   setupPiaSecrets());
+    }
+
+    private SecretsReader setupPiaSecrets() {
+        var fakeSecretsManagerClient = new FakeSecretsManagerClient();
+        fakeSecretsManagerClient.putSecret(SOME_SECRETS_KEY_NAME, SOME_USERNAME_KEY, randomString());
+        fakeSecretsManagerClient.putSecret(SOME_SECRETS_KEY_NAME, SOME_PIA_PASSWORD_KEY, randomString());
+        return new SecretsReader(fakeSecretsManagerClient);
+    }
+
+    private void mockBadRequestResponseFromPia() {
+        stubFor(WireMock.post(urlMatching("/sentralimport/authors"))
+                    .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_INTERNAL_ERROR)));
+    }
+
+    private void mockPostAuidWriting() {
+        stubFor(WireMock.post(urlMatching("/sentralimport/authors"))
+                    .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_CREATED)));
+    }
+
+    private Contributor updateContributorWithCristinId(Contributor contributorWithAuid, URI cristinId) {
+        var identityWithCristinId = new Identity.Builder()
+                                        .withId(cristinId)
+                                        .withAdditionalIdentifiers(contributorWithAuid.getIdentity()
+                                                                       .getAdditionalIdentifiers())
+                                        .withName(randomString())
+                                        .build();
+        return contributorWithAuid.copy()
+                   .withIdentity(identityWithCristinId)
+                   .build();
+    }
+
+    private Contributor createContributorWithAuid(String auid) {
+        return new Contributor.Builder()
+                   .withSequence(1)
+                   .withIdentity(identityWithAuid(auid))
+                   .withRole(new RoleType(Role.CREATOR))
+                   .withAffiliations(List.of(randomAffiliation()))
+                   .build();
+    }
+
+    private Identity identityWithAuid(String auid) {
+        return new Identity.Builder()
+                   .withName(randomString())
+                   .withAdditionalIdentifiers(List.of(additionalIdentifierFromAuid(auid)))
+                   .build();
+    }
+
+    private AdditionalIdentifier additionalIdentifierFromAuid(String auid) {
+        return new AdditionalIdentifier("scopus-auid", auid);
+    }
+
+    private Organization randomAffiliation() {
+        return new Organization.Builder()
+                   .withId(randomUri())
+                   .build();
     }
 
     private PublishedFile randomFile() {
@@ -365,6 +519,14 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     private ImportCandidate createImportedPersistedImportCandidate() throws NotFoundException {
         var candidate = createImportCandidate();
         candidate.setImportStatus(ImportStatusFactory.createImported(randomPerson(), randomUri()));
+        var importCandidate = importCandidateService.persistImportCandidate(candidate);
+        return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
+    }
+
+    private ImportCandidate createPersistedImportCandidate(List<Contributor> contributors)
+        throws NotFoundException {
+        var candidate = createImportCandidate();
+        candidate.getEntityDescription().setContributors(contributors);
         var importCandidate = importCandidateService.persistImportCandidate(candidate);
         return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
     }

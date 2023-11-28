@@ -2,12 +2,14 @@ package no.unit.nva.publication.create;
 
 import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.util.Objects.isNull;
-import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_S3_CLIENT;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
+import java.util.List;
+import java.util.Objects;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
@@ -36,8 +38,6 @@ import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandler<ImportCandidate,
                                                                                       PublicationResponse> {
 
-    public static final String IMPORT_CANDIDATES_TABLE = new Environment().readEnv("IMPORT_CANDIDATES_TABLE_NAME");
-    public static final String PUBLICATIONS_TABLE = new Environment().readEnv("RESOURCE_TABLE_NAME");
     public static final String API_HOST = new Environment().readEnv("API_HOST");
     public static final String SCOPUS_IDENTIFIER = "Scopus";
     public static final String ROLLBACK_WENT_WRONG_MESSAGE = "Rollback went wrong";
@@ -47,28 +47,28 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
         "Resource is missing scopus identifier";
     public static final String PUBLICATION = "publication";
     public static final String RESOURCE_IS_NOT_PUBLISHABLE = "Resource is not publishable";
+
     private final String persistedStorageBucket;
     private final String importCandidateStorageBucket;
     private final ResourceService candidateService;
     private final ResourceService publicationService;
     private final S3Client ss3Client;
+    private final PiaClient piaClient;
 
     @JacocoGenerated
     public CreatePublicationFromImportCandidateHandler() {
-        this(ResourceService.defaultService(IMPORT_CANDIDATES_TABLE),
-             ResourceService.defaultService(PUBLICATIONS_TABLE),
-             DEFAULT_S3_CLIENT);
+        this(ImportCandidateHandlerConfigs.getDefaultsConfigs());
     }
 
-    public CreatePublicationFromImportCandidateHandler(ResourceService importCandidateService,
-                                                       ResourceService publicationService,
-                                                       S3Client s3Client) {
+    public CreatePublicationFromImportCandidateHandler(
+        ImportCandidateHandlerConfigs configs) {
         super(ImportCandidate.class);
-        this.candidateService = importCandidateService;
-        this.publicationService = publicationService;
-        this.ss3Client = s3Client;
-        this.persistedStorageBucket = environment.readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME");
-        this.importCandidateStorageBucket = environment.readEnv("IMPORT_CANDIDATES_STORAGE_BUCKET");
+        this.candidateService = configs.importCandidateService();
+        this.publicationService = configs.publicationService();
+        this.ss3Client = configs.s3Client();
+        this.persistedStorageBucket = configs.persistedStorageBucket();
+        this.importCandidateStorageBucket = configs.importCandidateStorageBucket();
+        this.piaClient = new PiaClient(configs.piaClientConfig());
     }
 
     @Override
@@ -92,15 +92,19 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
         return ImportStatusFactory.createImported(new Username(requestInfo.getUserName()), uri);
     }
 
-    private static URI toPublicationUriIdentifier(Publication publication) {
+    private static boolean notAuthorizedToProcessImportCandidates(RequestInfo requestInfo) {
+        return !requestInfo.userIsAuthorized(AccessRight.PROCESS_IMPORT_CANDIDATE.name());
+    }
+
+    private static boolean hasDifferentCristinId(Contributor rawContributor, Contributor contributor) {
+        return !Objects.equals(rawContributor.getIdentity().getId(), contributor.getIdentity().getId());
+    }
+
+    private URI toPublicationUriIdentifier(Publication publication) {
         return UriWrapper.fromHost(API_HOST)
                    .addChild(PUBLICATION)
                    .addChild(publication.getIdentifier().toString())
                    .getUri();
-    }
-
-    private static boolean notAuthorizedToProcessImportCandidates(RequestInfo requestInfo) {
-        return !requestInfo.userIsAuthorized(AccessRight.PROCESS_IMPORT_CANDIDATE.name());
     }
 
     private Publication importCandidate(ImportCandidate input, RequestInfo requestInfo)
@@ -124,7 +128,53 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
         var inputWithOwner = injectOrganizationAndOwner(requestInfo, input, rawImportCandidate);
         var nvaPublication = publicationService.autoImportPublication(inputWithOwner);
         copyArtifacts(nvaPublication, rawImportCandidate);
+        updatePiaContributors(input, rawImportCandidate);
         return nvaPublication;
+    }
+
+    private void updatePiaContributors(ImportCandidate input, ImportCandidate rawImportCandidate) {
+        var rawImportCandidateContributors = rawImportCandidate.getEntityDescription().getContributors();
+        var contributorsNeedingUpdate =
+            input.getEntityDescription()
+                .getContributors()
+                .stream()
+                .filter(contributor -> changeInCristinIdentifier(contributor, rawImportCandidateContributors))
+                .toList();
+        piaClient.updateContributor(contributorsNeedingUpdate, extractScopusIdentifier(rawImportCandidate));
+    }
+
+    private String extractScopusIdentifier(ImportCandidate rawImportCandidate) {
+        return rawImportCandidate
+                   .getAdditionalIdentifiers()
+                   .stream()
+                   .filter(additionalIdentifier -> "scopus".equalsIgnoreCase(additionalIdentifier.getSourceName()))
+                   .findFirst()
+                   .map(AdditionalIdentifier::getValue)
+                   .orElseThrow();
+    }
+
+    private boolean changeInCristinIdentifier(Contributor contributor,
+                                              List<Contributor> rawImportCandidateContributors) {
+        return rawImportCandidateContributors.stream()
+                   .anyMatch(rawContributor -> hasSameAuidButDifferentCristinId(rawContributor,
+                                                                                contributor));
+    }
+
+    private boolean hasSameAuidButDifferentCristinId(Contributor rawContributor, Contributor contributor) {
+        return hasDifferentCristinId(rawContributor, contributor)
+               && hasSameAuid(rawContributor, contributor);
+    }
+
+    private boolean hasSameAuid(Contributor rawContributor, Contributor contributor) {
+        var userAuid = extractAuid(contributor);
+        var rawAuid = extractAuid(rawContributor);
+        return Objects.equals(userAuid, rawAuid);
+    }
+
+    private AdditionalIdentifier extractAuid(Contributor contributor) {
+        return contributor.getIdentity().getAdditionalIdentifiers().stream().filter(
+            additionalIdentifier -> "scopus-auid".equals(additionalIdentifier.getSourceName())
+        ).findFirst().orElse(null);
     }
 
     private void copyArtifacts(Publication publication, ImportCandidate importCandidate) {
