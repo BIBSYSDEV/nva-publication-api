@@ -17,6 +17,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -24,6 +25,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +54,8 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     private static final String JSON_LD_CONTEXT_FIELD = "@context";
     private static final String CONTEXT_TYPE_ANTHOLOGY = "Anthology";
     private static final String INSTANCE_TYPE_ACADEMIC_CHAPTER = "AcademicChapter";
+    public static final JsonPointer CONTRIBUTORS_PTR = JsonPointer.compile("/entityDescription/contributors");
+    public static final String CONTRIBUTOR_SEQUENCE = "sequence";
     @JsonAnySetter
     private final Map<String, Object> allFields;
 
@@ -63,7 +67,23 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         throws JsonProcessingException {
         var documentWithId = transformToJsonLd(publication);
         var enrichedJson = enrichJson(uriRetriever, documentWithId);
-        return attempt(() -> objectMapper.readValue(enrichedJson, ExpandedResource.class)).orElseThrow();
+        var sortedJson = strToJsonWithSortedContributors(enrichedJson);
+        return attempt(() -> objectMapper.treeToValue(sortedJson, ExpandedResource.class)).orElseThrow();
+    }
+
+    private static JsonNode strToJsonWithSortedContributors(String jsonStr) {
+        var json = attempt(() -> objectMapper.readTree(jsonStr)).orElseThrow();
+        var contributors = json.at(CONTRIBUTORS_PTR);
+        if (!contributors.isMissingNode()) {
+            var contributorsArray = (ArrayNode) contributors;
+            List<JsonNode> contributorsList = new ArrayList<>();
+            contributorsArray.forEach(contributorsList::add);
+            contributorsList.sort(Comparator.comparingInt(c -> c.get(CONTRIBUTOR_SEQUENCE).asInt()));
+            contributorsArray.removeAll();
+            contributorsArray.addAll(contributorsList);
+        }
+
+        return json;
     }
 
     public static List<URI> extractPublicationContextUris(JsonNode indexDocument) {

@@ -37,6 +37,7 @@ public class ImportCandidate extends Publication implements JsonSerializable {
 
     public Builder copyImportCandidate() {
         return new ImportCandidate.Builder()
+                   .withImportStatus(getImportStatus())
                    .withIdentifier(getIdentifier())
                    .withStatus(getStatus())
                    .withResourceOwner(getResourceOwner())
@@ -56,6 +57,7 @@ public class ImportCandidate extends Publication implements JsonSerializable {
                    .withSubjects(getSubjects())
                    .withFundings(getFundings())
                    .withPublicationNotes(getPublicationNotes())
+                   .withImportStatus(getImportStatus())
                    .withRightsHolder(getRightsHolder());
     }
 

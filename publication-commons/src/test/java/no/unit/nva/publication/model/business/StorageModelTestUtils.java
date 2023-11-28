@@ -3,6 +3,7 @@ package no.unit.nva.publication.model.business;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -28,6 +29,7 @@ public final class StorageModelTestUtils {
         sample.setViewedBy(ViewedBy.addAll(sample.getOwner()));
         sample.setWorkflow(PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
         sample.setAssignee(new Username(randomString()));
+        sample.setOwnerAffiliation(randomUri());
         sample.setFinalizedBy(new Username(randomString()));
         sample.setFinalizedDate(Instant.now());
         return sample;

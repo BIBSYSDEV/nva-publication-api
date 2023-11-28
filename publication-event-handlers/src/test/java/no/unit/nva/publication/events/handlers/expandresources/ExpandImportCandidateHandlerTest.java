@@ -8,9 +8,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -19,7 +16,6 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.commons.json.JsonUtils;
@@ -39,7 +35,6 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
 import no.unit.nva.publication.events.handlers.persistence.PersistedDocument;
-import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -55,7 +50,6 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
     public static final Context CONTEXT = null;
     private ByteArrayOutputStream output;
     private ExpandImportCandidateHandler handler;
-    private AuthorizedBackendUriRetriever uriRetriever;
     private S3Driver s3Reader;
     private S3Driver s3Writer;
 
@@ -67,17 +61,11 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
         var indexBucket = new FakeS3Client();
         s3Writer = new S3Driver(eventsBucket, "eventsBucket");
         s3Reader = new S3Driver(indexBucket, "indexBucket");
-
-        uriRetriever = mock(AuthorizedBackendUriRetriever.class);
-        when(uriRetriever.getRawContent(any(), any())).thenReturn(Optional.empty());
-
-        this.handler = new ExpandImportCandidateHandler(s3Writer, s3Reader, uriRetriever);
+        this.handler = new ExpandImportCandidateHandler(s3Writer, s3Reader);
     }
 
     @Test
     void shouldProduceAnExpandedDataEntryWhenInputHasNewImage() throws IOException {
-        when(uriRetriever.getRawContent(any(), any()))
-            .thenReturn(Optional.of("{\"id\" : \"https://example.com/" + randomString() + "\"}"));
         var oldImage = randomImportCandidate();
         var newImage = updatedVersionOfImportCandidate(oldImage);
         var request = emulateEventEmittedByImportCandidateUpdateHandler(oldImage, newImage);
@@ -109,10 +97,6 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldProduceExpandedImportCandidateWithCollaboration() throws IOException {
-        when(uriRetriever.getRawContent(any(), any()))
-            .thenReturn(Optional.of("{\"id\" : \"https://example.com/" + randomString() + "\"}"),
-                        Optional.of("{\"id\" : \"https://example.com/" + randomString() + "\"}"),
-                        Optional.of("{\"id\" : \"https://example.com/" + randomString() + "\"}"));
         var oldImage = importCandidateWithMultipleContributors();
         var newImage = updatedVersionOfImportCandidate(oldImage);
         var request = emulateEventEmittedByImportCandidateUpdateHandler(oldImage, newImage);

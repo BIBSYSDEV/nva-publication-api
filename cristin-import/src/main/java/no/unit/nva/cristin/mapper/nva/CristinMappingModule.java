@@ -3,6 +3,7 @@ package no.unit.nva.cristin.mapper.nva;
 import static java.util.Objects.isNull;
 import java.util.Optional;
 import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
+import no.unit.nva.cristin.mapper.CristinBookOrReportPartMetadata;
 import no.unit.nva.cristin.mapper.CristinJournalPublication;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
@@ -38,6 +39,12 @@ public class CristinMappingModule {
     protected CristinBookOrReportMetadata extractCristinBookReport() {
         return Optional.ofNullable(cristinObject)
                    .map(CristinObject::getBookOrReportMetadata)
+                   .orElse(null);
+    }
+
+    protected CristinBookOrReportPartMetadata extractCristinBookReportPart() {
+        return Optional.ofNullable(cristinObject)
+                   .map(CristinObject::getBookOrReportPartMetadata)
                    .orElse(null);
     }
 

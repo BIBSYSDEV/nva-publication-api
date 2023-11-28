@@ -3,6 +3,7 @@ package no.unit.nva.publication.service.impl;
 import static com.spotify.hamcrest.optional.OptionalMatchers.emptyOptional;
 import static java.util.Collections.emptyList;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static no.unit.nva.model.PublicationStatus.DELETED;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
@@ -78,6 +79,7 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.InvalidPublicationException;
+import no.unit.nva.publication.exception.NotImplementedException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
@@ -137,6 +139,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private static final String FINALIZED_DATE = "finalizedDate";
     private static final String ASSIGNEE = "assignee";
     private static final String FINALIZED_BY = "finalizedBy";
+    private static final String OWNER_AFFILIATION = "ownerAffiliation";
     private ResourceService resourceService;
 
     private TicketService ticketService;
@@ -709,9 +712,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var expectedDoiRequest = expectedDoiRequestAfterPublicationUpdate(initialPublication, initialDoiRequest,
                                                                           publicationUpdate, updatedDoiRequest);
 
-        assertThat(updatedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of(ASSIGNEE, FINALIZED_BY,
+        assertThat(updatedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of(OWNER_AFFILIATION, ASSIGNEE,
+                                                                                  FINALIZED_BY,
                                                                                   FINALIZED_DATE)));
-        assertThat(expectedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of(ASSIGNEE, FINALIZED_BY,
+        assertThat(expectedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of(OWNER_AFFILIATION, ASSIGNEE,
+                                                                                   FINALIZED_BY,
                                                                                    FINALIZED_DATE)));
         Diff diff = JAVERS.compare(updatedDoiRequest, expectedDoiRequest);
         assertThat(diff.prettyPrint(), updatedDoiRequest, is(equalTo(expectedDoiRequest)));
@@ -962,6 +967,25 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(fetchedContributors.size(), is(equalTo(10000)));
     }
 
+    @Test
+    void shouldThrowBadRequestWhenUnpublishingNotPublishedPublication() throws ApiGatewayException {
+        var publication = createPersistedPublicationWithDoi();
+        assertThrows(BadRequestException.class, () -> resourceService.unpublishPublication(publication));
+    }
+
+    @Test
+    void shouldSetPublicationStatusToDeletedWhenUnpublishingPublication() throws ApiGatewayException {
+        var publication = createPublishedResource();
+        resourceService.unpublishPublication(publication);
+        assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(DELETED)));
+    }
+
+    @Test
+    void shouldThrowNotImplementedExceptionWhenUnpublishingPublicationWithNvaDoi() throws ApiGatewayException {
+        var publication = createPersistedPublicationWithDoi();
+        var publishedPublication = publishResource(publication);
+        assertThrows(NotImplementedException.class, () -> resourceService.unpublishPublication(publishedPublication));
+    }
 
     private static AssociatedArtifactList createEmptyArtifactList() {
         return new AssociatedArtifactList(emptyList());
