@@ -61,6 +61,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
+import nva.commons.core.paths.UriWrapper;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -396,6 +397,26 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldUpdateDeletedResourceWithDuplicateOfValueWhenResourceIsADuplicate()
+        throws ApiGatewayException, IOException {
+        var publication = createAndPersistDegreeWithoutDoi();
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        var duplicate = SortableIdentifier.next();
+        var request = createRequestWithDuplicateOfValue(publication.getIdentifier(),
+                                                        randomString(),
+                                                        publication.getPublisher().getId(),
+                                                        AccessRight.PUBLISH_DEGREE,
+                                                        duplicate);
+        handler.handleRequest(request, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
+        var updatedPublication = publicationService.getPublication(publication);
+        String duplicateIdentifier = UriWrapper.fromUri(updatedPublication.getDuplicateOf()).getLastPathElement();
+
+        assertThat(response.getStatusCode(), is(equalTo(SC_ACCEPTED)));
+        assertThat(duplicateIdentifier, is(equalTo(duplicate.toString())));
+    }
+
+    @Test
     void shouldReturnSuccessWhenCuratorUnpublishesPublishedPublicationFromOwnInstitution()
         throws ApiGatewayException, IOException {
 
@@ -459,6 +480,20 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         if (nonNull(cristinId)) {
             request.withPersonCristinId(cristinId);
         }
+
+        return request.build();
+    }
+
+    private InputStream createRequestWithDuplicateOfValue(SortableIdentifier publicationIdentifier, String username,
+                                                          URI institutionId, AccessRight accessRight,
+                                                          SortableIdentifier duplicateOf)
+        throws JsonProcessingException {
+        var request = new HandlerRequestBuilder<Void>(restApiMapper)
+                          .withUserName(username)
+                          .withQueryParameters(Map.of("duplicate", duplicateOf.toString()))
+                          .withCurrentCustomer(institutionId)
+                          .withAccessRights(institutionId, accessRight.name())
+                          .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString()));
 
         return request.build();
     }

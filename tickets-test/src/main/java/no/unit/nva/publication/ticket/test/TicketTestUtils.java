@@ -38,6 +38,7 @@ public final class TicketTestUtils {
         return Stream.of(Arguments.of(DoiRequest.class, PUBLISHED),
                          Arguments.of(DoiRequest.class, PUBLISHED_METADATA),
                          Arguments.of(PublishingRequestCase.class, DRAFT),
+                         Arguments.of(UnpublishRequest.class, PUBLISHED),
                          Arguments.of(GeneralSupportRequest.class, DRAFT));
     }
 

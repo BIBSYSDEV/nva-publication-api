@@ -987,6 +987,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThrows(NotImplementedException.class, () -> resourceService.unpublishPublication(publishedPublication));
     }
 
+    @Test
+    void shouldThrowIllegalStateExceptionWhenUpdatingStatusWhenUpdatingPublication() throws BadRequestException {
+        var publication = createPersistedPublicationWithDoi();
+        publication.setStatus(PublicationStatus.PUBLISHED_METADATA);
+        assertThrows(IllegalStateException.class, () -> resourceService.updatePublication(publication));
+    }
+
     private static AssociatedArtifactList createEmptyArtifactList() {
         return new AssociatedArtifactList(emptyList());
     }

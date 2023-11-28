@@ -30,6 +30,7 @@ dependencies {
     implementation libs.guava
     implementation libs.aws.sdk2.secrets
     implementation libs.aws.sdk2.s3
+    implementation libs.zalando
 
     testImplementation project(":publication-testing")
     testImplementation project(path: ':tickets-test')

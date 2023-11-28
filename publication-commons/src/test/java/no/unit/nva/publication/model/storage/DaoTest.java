@@ -317,17 +317,14 @@ class DaoTest extends ResourcesLocalTest {
             return Resource.fromPublication(randomPublication());
         } else if (ImportCandidate.class.equals(entityType)) {
             return Resource.fromImportCandidate(randomImportCandidate());
-        } else if (DoiRequest.class.equals(entityType)) {
-            return createTicket((Class<? extends TicketEntry>) entityType);
-        } else if (PublishingRequestCase.class.equals(entityType)) {
-            return createTicket((Class<? extends TicketEntry>) entityType);
-        } else if (GeneralSupportRequest.class.equals(entityType)) {
+        } else if (TicketEntry.class.isAssignableFrom(entityType)) {
             return createTicket((Class<? extends TicketEntry>) entityType);
         } else if (Message.class.equals(entityType)) {
             var ticket = createTicket(DoiRequest.class);
             return Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
+        } else {
+            throw new UnsupportedOperationException();
         }
-        throw new UnsupportedOperationException();
     }
 
     private ImportCandidate randomImportCandidate() {
