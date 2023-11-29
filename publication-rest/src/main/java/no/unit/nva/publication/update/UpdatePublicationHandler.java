@@ -122,7 +122,7 @@ public class UpdatePublicationHandler
         if (isAlreadyPublished(existingPublication) && thereIsNoRelatedPendingPublishingRequest(publicationUpdate)) {
             createPublishingRequestOnFileUpdate(publicationUpdate);
         }
-        if (isAlreadyPublished(existingPublication) && thereIsNoFiles(publicationUpdate)) {
+        if (isAlreadyPublished(existingPublication) && thereAreNoFiles(publicationUpdate)) {
             autoCompletePendingPublishingRequestsIfNeeded(publicationUpdate);
         }
         Publication updatedPublication = resourceService.updatePublication(publicationUpdate);
@@ -141,7 +141,7 @@ public class UpdatePublicationHandler
         return publication.getResourceOwner().getOwner();
     }
 
-    private boolean thereIsNoFiles(Publication publicationUpdate) {
+    private boolean thereAreNoFiles(Publication publicationUpdate) {
         return publicationUpdate.getAssociatedArtifacts().stream()
                    .noneMatch(File.class::isInstance);
     }
