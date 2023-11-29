@@ -132,7 +132,11 @@ public class ScopusConverter {
     }
 
     private static URI constructOwnerAffiliation() {
-        return UriWrapper.fromHost(API_HOST).addChild(CRISTIN).addChild(ORGANIZATION).addChild(CRISTIN_ID_SIKT).getUri();
+        return UriWrapper.fromHost(API_HOST)
+                   .addChild(CRISTIN)
+                   .addChild(ORGANIZATION)
+                   .addChild(CRISTIN_ID_SIKT)
+                   .getUri();
     }
 
     private Organization createOrganization() {
