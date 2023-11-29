@@ -2,6 +2,7 @@ package no.unit.nva.publication.delete;
 
 import static java.util.Collections.singletonMap;
 import static java.util.Objects.nonNull;
+import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
@@ -39,6 +40,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
+import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
@@ -46,6 +48,7 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -571,7 +574,9 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication createAndPersistPublicationWithoutDoi(boolean shouldBePublished) throws ApiGatewayException {
-        var publication = randomPublication().copy().withDoi(null).build();
+        var publication = randomPublication().copy()
+                              .withEntityDescription(randomEntityDescription(JournalArticle.class))
+                              .withDoi(null).build();
         var persistedPublication = Resource.fromPublication(publication)
                                        .persistNew(publicationService, UserInstance.fromPublication(publication));
 
@@ -586,7 +591,9 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     private Publication createPublicationWithoutDoiAndWithContributor(URI contributorId, String contributorName)
         throws ApiGatewayException {
 
-        var publication = randomPublication().copy().withDoi(null).build();
+        var publication =
+            randomPublication().copy().withEntityDescription(randomEntityDescription(JournalArticle.class)).
+                withDoi(null).build();
 
         var identity = new Identity.Builder().withName(contributorName).withId(contributorId).build();
         var contributor = new Contributor.Builder().withIdentity(identity).withRole(new RoleType(Role.CREATOR)).build();
@@ -613,9 +620,10 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         throws BadRequestException {
 
         var publication = randomPublication().copy()
+                              .withEntityDescription(randomEntityDescription(JournalArticle.class))
                               .withDoi(null)
                               .withResourceOwner(new ResourceOwner(new Username(userName), institution))
-                              .withPublisher(new Organization.Builder().withId(institution).build())
+                              .withPublisher(new Builder().withId(institution).build())
                               .build();
 
         return Resource.fromPublication(publication)
