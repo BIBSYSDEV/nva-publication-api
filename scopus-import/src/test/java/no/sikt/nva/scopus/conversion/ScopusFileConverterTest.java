@@ -63,7 +63,6 @@ public class ScopusFileConverterTest {
     void shouldCreateAssociatedArtifactWithEmbargoWhenSumOfDelayAndStartDateIsInFuture()
         throws IOException, InterruptedException {
         mockResponses("crossrefResponseWithEmbargo.json");
-        mockS3HeadResponse();
         var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).get(0);
 
         assertThat(file.getEmbargoDate().orElseThrow(), is(notNullValue()));
@@ -152,11 +151,13 @@ public class ScopusFileConverterTest {
 
     private void mockDownloadUrlResponse() throws IOException, InterruptedException {
         var fetchDownloadUrlResponse = (HttpResponse<InputStream>) mock(HttpResponse.class);
-        when(fetchDownloadUrlResponse.body()).thenReturn(new ByteArrayInputStream(randomString().getBytes()));
+        var body = mock(ByteArrayInputStream.class);
+        when(body.available()).thenReturn(1000);
+        when(body.readAllBytes()).thenReturn(randomString().getBytes());
+        when(fetchDownloadUrlResponse.body()).thenReturn(body);
         when(fetchDownloadUrlResponse.headers()).thenReturn(createDownloadUrlHeaders());
         when(fetchDownloadUrlResponse.statusCode()).thenReturn(200);
         when(httpClient.send(any(), eq(BodyHandlers.ofInputStream()))).thenReturn(fetchDownloadUrlResponse);
-        mockS3HeadResponse();
     }
 
     private void mockDownloadUrlResponseWithZeroBody() throws IOException, InterruptedException {
@@ -194,8 +195,6 @@ public class ScopusFileConverterTest {
         when(fetchDownloadUrlResponse.headers()).thenReturn(createDownloadUrlHeaders());
         when(fetchDownloadUrlResponse.statusCode()).thenReturn(200);
         when(httpClient.send(any(), eq(BodyHandlers.ofInputStream()))).thenReturn(fetchDownloadUrlResponse);
-
-        mockS3HeadResponse();
     }
 
     private void mockResponsesWithoutHeaders(String responseBody) throws IOException, InterruptedException {
@@ -209,17 +208,11 @@ public class ScopusFileConverterTest {
         when(fetchDownloadUrlResponse.statusCode()).thenReturn(200);
         when(httpClient.send(any(), eq(BodyHandlers.ofInputStream()))).thenReturn(fetchDownloadUrlResponse);
 
-        mockS3HeadResponse();
     }
 
     private void mockS3HeadResponseWithZeroContentLength() {
         when(s3Client.headObject(any(HeadObjectRequest.class))).thenReturn(
             HeadObjectResponse.builder().contentType(randomString()).contentLength(0L).build());
-    }
-
-    private void mockS3HeadResponse() {
-        when(s3Client.headObject(any(HeadObjectRequest.class))).thenReturn(
-            HeadObjectResponse.builder().contentType(randomString()).contentLength(100L).build());
     }
 
     private HttpHeaders createDownloadUrlHeaders() {

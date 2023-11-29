@@ -52,8 +52,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
-import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @SuppressWarnings("PMD.GodClass")
@@ -110,16 +108,6 @@ public class ScopusFileConverter {
         return JsonUtils.dtoObjectMapper.readValue(body, CrossrefResponse.class);
     }
 
-    private static File createFile(UUID fileIdentifier, String filename, HeadObjectResponse head) {
-        return File.builder()
-                   .withIdentifier(fileIdentifier)
-                   .withName(filename)
-                   .withMimeType(head.contentType())
-                   .withSize(head.contentLength())
-                   .withLicense(DEFAULT_LICENSE)
-                   .buildPublishedFile();
-    }
-
     private static String getFilename(HttpResponse<InputStream> response) {
         return extractContentDisposition(response).map(ScopusFileConverter::extractFileNameFromContentDisposition)
                    .orElseGet(() -> randomUUID() + FILE_NAME_DELIMITER + PDF_FILE_TYPE);
@@ -128,6 +116,13 @@ public class ScopusFileConverter {
     private static Optional<String> extractContentDisposition(HttpResponse<InputStream> response) {
         var contentDisposition = response.headers().map().getOrDefault(Headers.CONTENT_DISPOSITION, List.of());
         return contentDisposition.isEmpty() ? Optional.empty() : Optional.of(contentDisposition.get(0));
+    }
+
+    private static String getContentType(HttpResponse<InputStream> response) {
+        return Optional.of(response.headers().firstValue(Headers.CONTENT_TYPE))
+                   .map(optional -> optional.orElse(null))
+                   .map(value -> value.split(CONTENT_TYPE_DELIMITER)[0])
+                   .orElse(DEFAULT_CONTENT_TYPE);
     }
 
     private static String extractFileNameFromContentDisposition(String contentType) {
@@ -202,7 +197,6 @@ public class ScopusFileConverter {
                        .collect(collectRemovingDuplicates())
                        .stream()
                        .map(this::saveFile)
-                       .map(this::injectMimeTypeAndSize)
                        .filter(ScopusFileConverter::fileWithContent)
                        .map(ScopusFile::toPublishedAssociatedArtifact)
                        .toList();
@@ -210,11 +204,6 @@ public class ScopusFileConverter {
             logger.info(FETCH_FILE_FROM_DOI_ERROR_MESSAGE, e.getMessage());
             return List.of();
         }
-    }
-
-    private ScopusFile injectMimeTypeAndSize(ScopusFile file) {
-        var head = fetchFileInfo(file.identifier());
-        return file.copy().withContentType(head.contentType()).withSize(head.contentLength()).build();
     }
 
     private ScopusFile fetchFileContent(ScopusFile file) {
@@ -317,12 +306,19 @@ public class ScopusFileConverter {
         }
     }
 
-    private Optional<AssociatedArtifact> convertToAssociatedArtifact(HttpResponse<InputStream> response) {
+    private Optional<AssociatedArtifact> convertToAssociatedArtifact(HttpResponse<InputStream> response)
+        throws IOException {
         var fileIdentifier = randomUUID();
         var filename = getFilename(response);
         saveFile(filename, fileIdentifier, response);
-        var head = fetchFileInfo(fileIdentifier);
-        return Optional.of(createFile(fileIdentifier, filename, head));
+        long available = response.body().available();
+        return Optional.of(File.builder()
+                                      .withIdentifier(fileIdentifier)
+                                      .withName(filename)
+                                      .withMimeType(getContentType(response))
+                                      .withSize(available)
+                                      .withLicense(DEFAULT_LICENSE)
+                                      .buildPublishedFile());
     }
 
     private List<AssociatedArtifact> extractAssociatedArtifactsFromFileReference(DocTp docTp) {
@@ -344,14 +340,6 @@ public class ScopusFileConverter {
         }
     }
 
-    private HeadObjectResponse fetchFileInfo(UUID fileIdentifier) {
-        var request = HeadObjectRequest.builder()
-                          .bucket(IMPORT_CANDIDATES_FILES_BUCKET)
-                          .key(fileIdentifier.toString())
-                          .build();
-        return s3Client.headObject(request);
-    }
-
     private void saveFile(String fileName, UUID fileIdentifier, HttpResponse<InputStream> response) {
         var fileToSave = attempt(() -> response.body().readAllBytes()).orElseThrow();
         s3Client.putObject(PutObjectRequest.builder()
@@ -369,7 +357,7 @@ public class ScopusFileConverter {
                                    String.format(CONTENT_DISPOSITION_FILE_NAME_PATTERN, scopusFile.name()))
                                .key(scopusFile.identifier().toString())
                                .build(), RequestBody.fromBytes(content));
-        return scopusFile;
+        return scopusFile.copy().withSize(content.length).build();
     }
 
     private HttpResponse<InputStream> fetchResponseAsInputStream(URI uri) {
