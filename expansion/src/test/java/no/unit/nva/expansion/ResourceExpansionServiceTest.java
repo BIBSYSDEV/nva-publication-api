@@ -277,8 +277,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         ticket.setOwnerAffiliation(randomUri());
         var expectedOrgId = ticket.getOwnerAffiliation();
-        var organizationIds = expansionService.getOrganization(ticket).id();
-        assertThat(organizationIds, is(equalTo(expectedOrgId)));
+        var actualAffiliation  = expansionService.getOrganization(ticket).id();
+        assertThat(actualAffiliation , is(equalTo(expectedOrgId)));
     }
 
     @ParameterizedTest
@@ -289,8 +289,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, USER, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var expectedOrgId = publication.getResourceOwner().getOwnerAffiliation();
-        var organizationIds = expansionService.getOrganization(ticket).id();
-        assertThat(organizationIds, is(equalTo(expectedOrgId)));
+        var actualAffiliation  = expansionService.getOrganization(ticket).id();
+        assertThat(actualAffiliation , is(equalTo(expectedOrgId)));
     }
 
     @ParameterizedTest
