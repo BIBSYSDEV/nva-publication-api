@@ -66,6 +66,7 @@ public class ContributorExtractor {
         this.cristinConnection = cristinConnection;
         this.nvaCustomerConnection = nvaCustomerConnection;
     }
+
     public List<Contributor> generateContributors() {
         var contributors = authorGroupTps.stream()
                                .map(this::generateContributorsFromAuthorGroup)
