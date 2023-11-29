@@ -147,9 +147,8 @@ public class CristinConnection {
     }
 
     private HttpRequest createOrganizationRequest(URI uri) {
-        var organizationUri = URI.create(uri + QUERY_PARAM_DEPTH_NONE);
         return HttpRequest.newBuilder()
-                   .uri(organizationUri)
+                   .uri(uri)
                    .header(ACCEPT, APPLICATION_JSON_LD.toString() + CRISTIN_VERSION)
                    .GET()
                    .build();
