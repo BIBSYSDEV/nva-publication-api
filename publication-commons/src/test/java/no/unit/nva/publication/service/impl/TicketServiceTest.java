@@ -708,8 +708,6 @@ public class TicketServiceTest extends ResourcesLocalTest {
         var persistedCompletedTicket = ((PublishingRequestCase) ticket).persistAutoComplete(ticketService);
 
         assertThat(persistedCompletedTicket.getStatus(), is(equalTo(COMPLETED)));
-
-
     }
 
     private static Username getUsername(Publication publication) {

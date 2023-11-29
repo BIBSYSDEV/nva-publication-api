@@ -484,6 +484,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(SC_ACCEPTED)));
     }
 
+
+
     private InputStream createHandlerRequest(SortableIdentifier publicationIdentifier, String username,
                                             URI institutionId, AccessRight accessRight)
         throws JsonProcessingException {

@@ -15,7 +15,10 @@ import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_
 import static no.unit.nva.publication.update.UpdatePublicationHandler.UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
-import static no.unit.nva.testutils.RandomDataGenerator.*;
+import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.apigateway.AccessRight.APPROVE_DOI_REQUEST;
 import static nva.commons.apigateway.AccessRight.EDIT_ALL_NON_DEGREE_RESOURCES;
 import static nva.commons.apigateway.AccessRight.EDIT_OWN_INSTITUTION_RESOURCES;
@@ -36,11 +39,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,7 +57,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
@@ -701,6 +701,29 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         assertThat(body.getEntityDescription().getMainTitle(),
                    is(equalTo(publicationUpdate.getEntityDescription().getMainTitle())));
+    }
+
+    @Test
+    void shouldUpdateExistingPendingPublishingRequestWhenPublicationUpdateRemovesFiles()
+        throws IOException, ApiGatewayException {
+        var persistedPublication = Resource
+                                    .fromPublication(publication)
+                                    .persistNew(publicationService, UserInstance.fromPublication(publication));
+        publish(persistedPublication);
+        var existingTicket = TicketEntry.requestNewTicket(persistedPublication, PublishingRequestCase.class)
+                                 .persistNewTicket(ticketService);
+        var updatedPublication = persistedPublication.copy().withAssociatedArtifacts(List.of()).build();
+        var input = ownerUpdatesOwnPublication(updatedPublication.getIdentifier(), updatedPublication);
+        updatePublicationHandler.handleRequest(input, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+
+        assertThat(existingTicket.fetch(ticketService).getStatus(), is(equalTo(TicketStatus.COMPLETED)));
+        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HTTP_OK)));
+    }
+
+    private void publish(Publication persistedPublication) throws ApiGatewayException {
+        publicationService.publishPublication(UserInstance.fromPublication(publication),
+                                              persistedPublication.getIdentifier());
     }
 
     private void injectRandomContributorsWithoutCristinIdAndIdentity(Publication publication) {
