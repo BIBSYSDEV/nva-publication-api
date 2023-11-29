@@ -9,6 +9,7 @@ import no.sikt.nva.brage.migration.mapper.ChannelType;
 import no.sikt.nva.brage.migration.mapper.PublicationContextMapper;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator.Builder;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.UnconfirmedCourse;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Artistic;
 import no.unit.nva.model.contexttypes.Book;
@@ -514,6 +515,7 @@ public final class ReferenceGenerator {
 
     private static Degree generatePublicationContextForDegree(Builder builder)
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        return new Degree.Builder().withIsbnList(Collections.singletonList(builder.getIsbn())).build();
+        return new Degree.Builder().withIsbnList(Collections.singletonList(builder.getIsbn()))
+                   .withCourse(new UnconfirmedCourse(builder.getSubjectCode())).build();
     }
 }

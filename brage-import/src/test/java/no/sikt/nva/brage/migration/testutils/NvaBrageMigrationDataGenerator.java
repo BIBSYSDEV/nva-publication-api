@@ -154,6 +154,7 @@ public class NvaBrageMigrationDataGenerator {
         brageRecord.setRightsHolder(builder.getRightsHolder());
         brageRecord.setLink(builder.getLink());
         brageRecord.setSubjects(builder.getSubjects());
+        brageRecord.setSubjectCode(builder.getSubjectCode());
         return brageRecord;
     }
 
@@ -244,6 +245,7 @@ public class NvaBrageMigrationDataGenerator {
         private String volume;
         private String issue;
         private String articleNumber;
+        private String subjectCode;
 
         public static URI randomHandle() {
             return UriWrapper.fromUri("http://hdl.handle.net/11250/" + randomInteger()).getUri();
@@ -645,6 +647,9 @@ public class NvaBrageMigrationDataGenerator {
             if (isNull(subjects) || subjects.isEmpty()) {
                 subjects = Set.of(randomUri(), randomUri());
             }
+            if (isNull(subjectCode)) {
+                subjectCode = randomString();
+            }
             return new NvaBrageMigrationDataGenerator(this);
         }
 
@@ -672,6 +677,10 @@ public class NvaBrageMigrationDataGenerator {
 
         public String getArticleNumber() {
             return articleNumber;
+        }
+
+        public String getSubjectCode() {
+            return subjectCode;
         }
 
         private static no.unit.nva.model.PublicationDate createPublicationDateForPublication(
