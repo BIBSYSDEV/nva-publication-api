@@ -36,6 +36,7 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -130,9 +131,9 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws Exception {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        var userAffiliation = publication.getResourceOwner().getOwnerAffiliation();
+        ticket.setOwnerAffiliation(randomUri());
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
-        assertThat(userAffiliation, is(equalTo(expandedTicket.getOrganization().id())));
+        assertThat(expandedTicket.getOrganization().id(), is(equalTo(ticket.getOwnerAffiliation())));
     }
 
     @ParameterizedTest
@@ -271,15 +272,27 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldGetOrganizationIdsForAffiliations(Class<? extends TicketEntry> ticketType, PublicationStatus status)
-        throws ApiGatewayException {
+    void shouldUseOwnerAffiliationWhenTicketHasOwnerAffiliation(Class<? extends TicketEntry> ticketType,
+                                                                PublicationStatus status)
+        throws Exception {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        ticket.setOwnerAffiliation(randomUri());
+        var expectedOrgId = ticket.getOwnerAffiliation();
+        var actualAffiliation  = expansionService.getOrganization(ticket).id();
+        assertThat(actualAffiliation, is(equalTo(expectedOrgId)));
+    }
 
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldUseResourceOwnerAffiliationWhenTicketHasNoOwnerAffiliation(Class<? extends TicketEntry> ticketType,
+                                                                          PublicationStatus status)
+        throws Exception {
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, USER, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var expectedOrgId = publication.getResourceOwner().getOwnerAffiliation();
-        var orgIds = expansionService.getOrganization(ticket).id();
-
-        assertThat(orgIds, is(equalTo(expectedOrgId)));
+        var actualAffiliation  = expansionService.getOrganization(ticket).id();
+        assertThat(actualAffiliation, is(equalTo(expectedOrgId)));
     }
 
     @ParameterizedTest

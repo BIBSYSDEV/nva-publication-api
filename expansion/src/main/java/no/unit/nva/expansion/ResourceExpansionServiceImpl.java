@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.Objects;
 import java.util.Optional;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedMessage;
@@ -104,9 +105,11 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     @Override
     public ExpandedOrganization getOrganization(Entity dataEntry) throws NotFoundException {
         if (dataEntry instanceof TicketEntry ticketEntry) {
-            var resourceIdentifier = ticketEntry.getResourceIdentifier();
-            var resource = resourceService.getResourceByIdentifier(resourceIdentifier);
-            var organizationIds = resource.getResourceOwner().getOwnerAffiliation();
+
+            var organizationIds = Objects.nonNull(ticketEntry.getOwnerAffiliation())
+                                      ? ticketEntry.getOwnerAffiliation()
+                                      : resourceService.getResourceByIdentifier(ticketEntry.getResourceIdentifier())
+                                          .getResourceOwner().getOwnerAffiliation();
 
             var partOf = attempt(() -> this.organizationRetriever.getRawContent(organizationIds, CONTENT_TYPE)).map(
                     Optional::orElseThrow)
