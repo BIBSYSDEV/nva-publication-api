@@ -125,7 +125,6 @@ public class ScopusFileConverterTest {
     @Test
     void shouldRemoveFileFromDoiWhenFileIsFromElseveierAndHasPlainTextContentType()
         throws IOException, InterruptedException {
-        scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccessWithDownloadUrl(randomUri()));
         mockResponses("crossrefResponseWithElsveierFileToRemove.json");
 
         var files = fileConverter.fetchAssociatedArtifacts(scopusData.getDocument());
@@ -193,6 +192,7 @@ public class ScopusFileConverterTest {
         var fetchDownloadUrlResponse = (HttpResponse<InputStream>) mock(HttpResponse.class);
         when(fetchDownloadUrlResponse.body()).thenReturn(new ByteArrayInputStream(randomString().getBytes()));
         when(fetchDownloadUrlResponse.headers()).thenReturn(createDownloadUrlHeaders());
+        when(fetchDownloadUrlResponse.statusCode()).thenReturn(200);
         when(httpClient.send(any(), eq(BodyHandlers.ofInputStream()))).thenReturn(fetchDownloadUrlResponse);
 
         mockS3HeadResponse();
@@ -206,6 +206,7 @@ public class ScopusFileConverterTest {
         var fetchDownloadUrlResponse = (HttpResponse<InputStream>) mock(HttpResponse.class);
         when(fetchDownloadUrlResponse.body()).thenReturn(new ByteArrayInputStream(randomString().getBytes()));
         when(fetchDownloadUrlResponse.headers()).thenReturn(emptyHeaders());
+        when(fetchDownloadUrlResponse.statusCode()).thenReturn(200);
         when(httpClient.send(any(), eq(BodyHandlers.ofInputStream()))).thenReturn(fetchDownloadUrlResponse);
 
         mockS3HeadResponse();

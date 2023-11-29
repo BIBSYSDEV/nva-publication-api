@@ -14,6 +14,7 @@ import java.net.http.HttpClient.Redirect;
 import java.util.Random;
 import no.scopus.generated.DocTp;
 import no.sikt.nva.scopus.conversion.CristinConnection;
+import no.sikt.nva.scopus.conversion.NvaCustomerConnection;
 import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.sikt.nva.scopus.conversion.PublicationChannelConnection;
 import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;
@@ -61,6 +62,7 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     private final PiaConnection piaConnection;
     private final CristinConnection cristinConnection;
     private final PublicationChannelConnection publicationChannelConnection;
+    private final NvaCustomerConnection nvaCustomerConnection;
     private final ResourceService resourceService;
     private final ScopusUpdater scopusUpdater;
     private final ScopusFileConverter scopusFileConverter;
@@ -70,17 +72,21 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
         this(S3Driver.defaultS3Client().build(), defaultPiaConnection(), defaultCristinConnection(),
              new PublicationChannelConnection(
                  new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME)),
+             new NvaCustomerConnection(new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL,
+                                                                         BACKEND_CLIENT_SECRET_NAME)),
              ResourceService.defaultService(), new ScopusUpdater(ResourceService.defaultService(), new UriRetriever()),
              new ScopusFileConverter(defaultHttpClientWithRedirect(), S3Driver.defaultS3Client().build()));
     }
 
     public ScopusHandler(S3Client s3Client, PiaConnection piaConnection, CristinConnection cristinConnection,
-                         PublicationChannelConnection publicationChannelConnection, ResourceService resourceService,
+                         PublicationChannelConnection publicationChannelConnection,
+                         NvaCustomerConnection nvaCustomerConnection, ResourceService resourceService,
                          ScopusUpdater scopusUpdater, ScopusFileConverter scopusFileConverter) {
         this.s3Client = s3Client;
         this.piaConnection = piaConnection;
         this.cristinConnection = cristinConnection;
         this.publicationChannelConnection = publicationChannelConnection;
+        this.nvaCustomerConnection = nvaCustomerConnection;
         this.resourceService = resourceService;
         this.scopusUpdater = scopusUpdater;
         this.scopusFileConverter = scopusFileConverter;
@@ -257,7 +263,8 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     }
 
     private ImportCandidate generateImportCandidate(DocTp docTp) {
-        var scopusConverter = new ScopusConverter(docTp, piaConnection, cristinConnection, publicationChannelConnection,
+        var scopusConverter = new ScopusConverter(docTp, piaConnection, cristinConnection,
+                                                  publicationChannelConnection, nvaCustomerConnection,
                                                   scopusFileConverter);
         return scopusConverter.generateImportCandidate();
     }

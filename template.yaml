@@ -1171,6 +1171,7 @@ Resources:
                     - "PublicationService.DoiRequest.Update"
                     - "PublicationService.PublishingRequest.Update"
                     - "PublicationService.GeneralSupportRequest.Update"
+                    - "PublicationService.UnpublishRequest.Update"
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
@@ -1897,18 +1898,22 @@ Resources:
           def lambda_handler(event, context):
             responseData = {}
             responseStatus = cfnresponse.SUCCESS
-            if event['RequestType'] == 'Update':
-              try:
+            try:
+              if event['RequestType'] == 'Update':
                 properties = event['ResourceProperties']
                 response = client.create_deployment(
                   restApiId=properties['RestApiId'],
                   stageName=properties['StageName'],
                   description='Deployed from Custom Resource'
                 )
-              except:
-                responseStatus = cfnresponse.FAILED
-
-            cfnresponse.send(event, context, responseStatus, responseData)
+                responseData['deploymentId'] = response
+              else:
+                responseData['requestType'] = event['RequestType']
+            except:
+              responseStatus = cfnresponse.FAILED
+              responseData['reason'] = 'Something failed'
+            finally:
+              cfnresponse.send(event, context, responseStatus, responseData)
 
   ApiGatewayCreateDeploymentCustomResource:
     Type: AWS::CloudFormation::CustomResource

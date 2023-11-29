@@ -90,7 +90,6 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     private TicketService ticketService;
     private MessageService messageService;
     private UriRetriever uriRetriever;
-    private AuthorizedBackendUriRetriever authorizedBackendUriRetriever;
 
     public static Stream<Class<?>> entryTypes() {
         return TypeProvider.listSubTypes(ExpandedDataEntry.class);
@@ -101,7 +100,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     }
 
     public static Stream<PublicationContext> importCandidateContextTypeProvider()
-        throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        throws InvalidUnconfirmedSeriesException {
         return Stream.of(new Book(null, randomString(), new Publisher(randomUri()), List.of()),
                          new Report(null, randomString(), null, null, List.of()),
                          new MediaContributionPeriodical(randomUri()));
@@ -115,7 +114,6 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         this.messageService = new MessageService(client);
         this.ticketService = new TicketService(client);
         this.uriRetriever = mock(UriRetriever.class);
-        this.authorizedBackendUriRetriever = mock(AuthorizedBackendUriRetriever.class);
         when(uriRetriever.getRawContent(any(), any())).thenReturn(Optional.empty());
 
         this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
@@ -125,9 +123,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     @MethodSource("importCandidateContextTypeProvider")
     void shouldExpandImportCandidateSuccessfully(PublicationContext publicationContext) {
         var importCandidate = randomImportCandidate(publicationContext);
-        when(authorizedBackendUriRetriever.getRawContent(any(), any())).thenReturn(Optional.of(randomString()));
-        var expandedImportCandidate = ExpandedImportCandidate
-                                          .fromImportCandidate(importCandidate, authorizedBackendUriRetriever);
+        var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate);
 
         assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
         this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
@@ -358,8 +354,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                                                                         randomString(),
                                                                         Map.of())),
                                         randomString(), Map.of()).toJsonString()));
-            var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate,
-                                                                                      authorizedBackendClient);
+            var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate);
             return new ExpandedDataEntryWithAssociatedPublication(expandedImportCandidate);
         }
 

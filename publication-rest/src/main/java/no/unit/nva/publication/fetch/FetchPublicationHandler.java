@@ -5,7 +5,9 @@ import static com.google.common.net.MediaType.ANY_TEXT_TYPE;
 import static com.google.common.net.MediaType.HTML_UTF_8;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.google.common.net.MediaType.XHTML_UTF_8;
+import static java.net.HttpURLConnection.HTTP_MOVED_PERM;
 import static java.net.HttpURLConnection.HTTP_SEE_OTHER;
+import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_DATACITE_XML;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
@@ -26,7 +28,7 @@ import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.doi.DataCiteMetadataDtoMapper;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.PublicationDetail;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
@@ -49,11 +51,11 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     public static final Logger logger = LoggerFactory.getLogger(FetchPublicationHandler.class);
     public static final Clock CLOCK = Clock.systemDefaultZone();
-    public static final String GONE_MESSAGE = "Permanently deleted";
     public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
     public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
     protected static final String ENV_NAME_NVA_FRONTEND_DOMAIN = "NVA_FRONTEND_DOMAIN";
     private static final String REGISTRATION_PATH = "registration";
+    public static final String GONE_MESSAGE = "Publication has been removed";
     private final ResourceService resourceService;
     private final RawContentRetriever uriRetriever;
     private int statusCode = HttpURLConnection.HTTP_OK;
@@ -96,11 +98,32 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         var identifier = RequestUtil.getIdentifier(requestInfo);
         var publication = resourceService.getPublicationByIdentifier(identifier);
 
-        return isDraft(publication)
-                   ? userIsCuratorOrOwner(publication)
-                         ? createResponse(requestInfo, publication)
-                         : throwNotFoundException()
-                   : createResponse(requestInfo, publication);
+        return switch (publication.getStatus()) {
+            case DRAFT -> returnDraftPublication(requestInfo, publication);
+            case PUBLISHED -> createResponse(requestInfo, publication);
+            case DELETED -> produceDeletedResponse(publication);
+            default -> throwNotFoundException();
+        };
+    }
+
+    private String produceDeletedResponse(Publication publication) throws GoneException {
+        if (nonNull(publication.getDuplicateOf())) {
+            return produceRedirect(publication.getDuplicateOf());
+        } else {
+            throw new GoneException(GONE_MESSAGE, PublicationDetail.fromPublication(publication).toString());
+        }
+    }
+
+    private String produceRedirect(URI duplicateOf) {
+        statusCode = HTTP_MOVED_PERM;
+        addAdditionalHeaders(() -> Map.of(LOCATION,
+                                          landingPageLocation(SortableIdentifier.fromUri(duplicateOf)).toString()));
+        return null;
+    }
+
+    private String returnDraftPublication(RequestInfo requestInfo, Publication publication)
+        throws UnsupportedAcceptHeaderException, NotFoundException {
+            return createResponse(requestInfo, publication);
     }
 
     @Override
@@ -118,30 +141,8 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         throw new NotFoundException("Publication is not found");
     }
 
-    //TODO: Temporary commented out while getUserName returns null.
-    @JacocoGenerated
-    private boolean userIsCuratorOrOwner(Publication publication) {
-        var owner = publication.getResourceOwner().getOwner().getValue();
-        logger.info("Publication owner: {}", owner);
-//        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString())
-//               || owner.equals(requestInfo.getUserName());
-        return true;
-    }
-
-    private boolean isDraft(Publication publication) {
-        return PublicationStatus.DRAFT.equals(publication.getStatus());
-    }
-
-    private boolean publicationIsLogicallyDeleted(Publication publication) {
-        return PublicationStatus.DELETED.equals(publication.getStatus());
-    }
-
     private String createResponse(RequestInfo requestInfo, Publication publication)
-        throws UnsupportedAcceptHeaderException, GoneException {
-
-        if (publicationIsLogicallyDeleted(publication)) {
-            throw new GoneException(GONE_MESSAGE);
-        }
+        throws UnsupportedAcceptHeaderException {
 
         String response = null;
         var contentType = getDefaultResponseContentTypeHeaderValue(requestInfo);

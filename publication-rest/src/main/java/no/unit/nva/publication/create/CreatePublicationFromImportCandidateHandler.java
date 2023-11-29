@@ -7,7 +7,6 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
 import no.unit.nva.api.PublicationResponse;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
@@ -39,8 +38,6 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
 
     public static final String IMPORT_CANDIDATES_TABLE = new Environment().readEnv("IMPORT_CANDIDATES_TABLE_NAME");
     public static final String PUBLICATIONS_TABLE = new Environment().readEnv("RESOURCE_TABLE_NAME");
-    private final String persistedStorageBucket;
-    private final String importCandidateStorageBucket;
     public static final String API_HOST = new Environment().readEnv("API_HOST");
     public static final String SCOPUS_IDENTIFIER = "Scopus";
     public static final String ROLLBACK_WENT_WRONG_MESSAGE = "Rollback went wrong";
@@ -49,6 +46,9 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     public static final String RESOURCE_IS_MISSING_SCOPUS_IDENTIFIER_ERROR_MESSAGE =
         "Resource is missing scopus identifier";
     public static final String PUBLICATION = "publication";
+    public static final String RESOURCE_IS_NOT_PUBLISHABLE = "Resource is not publishable";
+    private final String persistedStorageBucket;
+    private final String importCandidateStorageBucket;
     private final ResourceService candidateService;
     private final ResourceService publicationService;
     private final S3Client ss3Client;
@@ -78,51 +78,14 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
         validateAccessRight(requestInfo);
         validateImportCandidate(input);
 
-        return attempt(input::getIdentifier)
-                   .map(candidateService::getImportCandidateByIdentifier)
-                   .map(candidate -> injectOrganizationAndOwner(requestInfo, candidate))
-                   .map(publicationService::autoImportPublication)
-                   .map(this::copyArtifacts)
-                   .map(CreatePublicationFromImportCandidateHandler::toPublicationUriIdentifier)
-                   .map(identifier -> candidateService.updateImportStatus(input.getIdentifier(),
-                                                                          toImportStatus(requestInfo, identifier)))
-                   .map(importCandidate -> publicationService.getPublicationByIdentifier(
-                       extractPublicationId(importCandidate)))
+        return attempt(() -> importCandidate(input, requestInfo))
                    .map(PublicationResponse::fromPublication)
-                   .orElseThrow(failure -> rollbackAndThrowException(input));
+                   .orElseThrow(fail -> rollbackAndThrowException(input));
     }
 
-    private Publication copyArtifacts(Publication publication) {
-        publication.getAssociatedArtifacts().stream()
-            .filter(File.class::isInstance)
-            .map(File.class::cast)
-            .forEach(
-                a -> copyS3file(importCandidateStorageBucket, persistedStorageBucket, a.getIdentifier().toString()));
-        return publication;
-    }
-
-    private void copyS3file(String source, String destination, String key) {
-        ss3Client.copyObject(CopyObjectRequest.builder()
-                                 .sourceBucket(source)
-                                 .sourceKey(key)
-                                 .destinationBucket(destination)
-                                 .destinationKey(key)
-                                 .build());
-    }
-
-    private static SortableIdentifier extractPublicationId(ImportCandidate importCandidate) {
-        var identifier = UriWrapper.fromUri(importCandidate.getImportStatus().nvaPublicationId())
-                             .getLastPathElement();
-        return new SortableIdentifier(identifier);
-    }
-
-    private ImportCandidate injectOrganizationAndOwner(RequestInfo requestInfo, ImportCandidate importCandidate)
-        throws UnauthorizedException {
-        var organization = new Builder().withId(requestInfo.getCurrentCustomer()).build();
-        return importCandidate.copyImportCandidate()
-                   .withPublisher(organization)
-                   .withResourceOwner(new ResourceOwner(new Username(requestInfo.getUserName()), organization.getId()))
-                   .build();
+    @Override
+    protected Integer getSuccessStatusCode(ImportCandidate input, PublicationResponse output) {
+        return HTTP_CREATED;
     }
 
     private static ImportStatus toImportStatus(RequestInfo requestInfo, URI uri) throws UnauthorizedException {
@@ -136,13 +99,81 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
                    .getUri();
     }
 
-    @Override
-    protected Integer getSuccessStatusCode(ImportCandidate input, PublicationResponse output) {
-        return HTTP_CREATED;
-    }
-
     private static boolean notAuthorizedToProcessImportCandidates(RequestInfo requestInfo) {
         return !requestInfo.userIsAuthorized(AccessRight.PROCESS_IMPORT_CANDIDATE.name());
+    }
+
+    private Publication importCandidate(ImportCandidate input, RequestInfo requestInfo)
+        throws NotFoundException, UnauthorizedException {
+        var nvaPublication = createNvaPublicationFromImportCandidateAndUserInput(input, requestInfo);
+        updateImportCandidate(input, requestInfo, nvaPublication);
+        return publicationService.getPublicationByIdentifier(nvaPublication.getIdentifier());
+    }
+
+    private void updateImportCandidate(ImportCandidate input, RequestInfo requestInfo, Publication nvaPublication)
+        throws NotFoundException, UnauthorizedException {
+        var nvaPublicationUri = toPublicationUriIdentifier(nvaPublication);
+        candidateService.updateImportStatus(input.getIdentifier(), toImportStatus(requestInfo,
+                                                                                  nvaPublicationUri));
+    }
+
+    private Publication createNvaPublicationFromImportCandidateAndUserInput(ImportCandidate input,
+                                                                            RequestInfo requestInfo)
+        throws NotFoundException, UnauthorizedException {
+        var rawImportCandidate = candidateService.getImportCandidateByIdentifier(input.getIdentifier());
+        var inputWithOwner = injectOrganizationAndOwner(requestInfo, input, rawImportCandidate);
+        var nvaPublication = publicationService.autoImportPublication(inputWithOwner);
+        copyArtifacts(nvaPublication, rawImportCandidate);
+        return nvaPublication;
+    }
+
+    private void copyArtifacts(Publication publication, ImportCandidate importCandidate) {
+        importCandidate.getAssociatedArtifacts().stream()
+            .filter(File.class::isInstance)
+            .filter(file -> wasKeptByImporter((File) file, publication))
+            .map(File.class::cast)
+            .forEach(
+                a -> copyS3file(importCandidateStorageBucket, persistedStorageBucket, a.getIdentifier().toString()));
+    }
+
+    private boolean wasKeptByImporter(File file, Publication publication) {
+        return publication.getAssociatedArtifacts().stream()
+                   .filter(File.class::isInstance)
+                   .anyMatch(publicationFile -> isSameFile((File) publicationFile, file));
+    }
+
+    private boolean isSameFile(File a, File b) {
+        return a.getIdentifier().equals(b.getIdentifier());
+    }
+
+    private void copyS3file(String source, String destination, String key) {
+        ss3Client.copyObject(CopyObjectRequest.builder()
+                                 .sourceBucket(source)
+                                 .sourceKey(key)
+                                 .destinationBucket(destination)
+                                 .destinationKey(key)
+                                 .build());
+    }
+
+    private ImportCandidate injectOrganizationAndOwner(RequestInfo requestInfo,
+                                                       ImportCandidate userInput,
+                                                       ImportCandidate databaseVersion)
+        throws UnauthorizedException {
+        var organization = new Builder().withId(requestInfo.getCurrentCustomer()).build();
+        return databaseVersion.copyImportCandidate()
+                   .withEntityDescription(userInput.getEntityDescription())
+                   .withAssociatedArtifacts(userInput.getAssociatedArtifacts())
+                   .withDoi(userInput.getDoi())
+                   .withAdditionalIdentifiers(userInput.getAdditionalIdentifiers())
+                   .withProjects(userInput.getProjects())
+                   .withSubjects(userInput.getSubjects())
+                   .withFundings(userInput.getFundings())
+                   .withRightsHolder(userInput.getRightsHolder())
+                   .withHandle(userInput.getHandle())
+                   .withLink(userInput.getLink())
+                   .withPublisher(organization)
+                   .withResourceOwner(new ResourceOwner(new Username(requestInfo.getUserName()), organization.getId()))
+                   .build();
     }
 
     private void validateImportCandidate(ImportCandidate importCandidate) throws BadRequestException {
@@ -151,6 +182,9 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
         }
         if (isNull(getScopusIdentifier(importCandidate))) {
             throw new BadRequestException(RESOURCE_IS_MISSING_SCOPUS_IDENTIFIER_ERROR_MESSAGE);
+        }
+        if (!importCandidate.isPublishable()) {
+            throw new BadRequestException(RESOURCE_IS_NOT_PUBLISHABLE);
         }
     }
 

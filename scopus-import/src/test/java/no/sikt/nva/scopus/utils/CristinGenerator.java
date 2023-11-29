@@ -13,12 +13,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
-import no.sikt.nva.scopus.conversion.model.cristin.CristinOrganization;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.conversion.model.cristin.Role;
 import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
 import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import nva.commons.core.paths.UriWrapper;
 
 public class CristinGenerator {
@@ -57,22 +57,23 @@ public class CristinGenerator {
     }
 
     public static SearchOrganizationResponse generateSearchCristinOrganizationResponse(String organizationName) {
-        var cristinOrganization = new CristinOrganization(randomUri(),
-                                                                          Map.of(randomString(), organizationName),
-                                                                          randomString());
+        var cristinOrganization = new CristinOrganization(randomUri(), randomUri(), randomString(), List.of(),
+                                                          randomString(), Map.of(randomString(), organizationName));
         return new SearchOrganizationResponse(List.of(cristinOrganization), 1);
     }
 
     public static CristinOrganization generateOtherCristinOrganization(URI cristinId) {
-        return new CristinOrganization(cristinId, Map.of(randomString(), "Andre institusjoner"), "NO");
+        return new CristinOrganization(cristinId, randomUri(), randomString(), List.of(), "NO",
+                                       Map.of(randomString(), "Andre institusjoner"));
     }
 
     public static CristinOrganization generateCristinOrganization(URI cristinId) {
-        return new CristinOrganization(cristinId, randomLabels(), randomString());
+        return new CristinOrganization(cristinId, randomUri(), randomString(), List.of(), randomString(),
+                                       randomLabels());
     }
 
     public static CristinOrganization generateCristinOrganizationWithCountry(String country) {
-        return new CristinOrganization(randomUri(), randomLabels(), country);
+        return new CristinOrganization(randomUri(), randomUri(), randomString(), List.of(), country, randomLabels());
     }
 
     public static String convertOrganizationToJson(CristinOrganization organization) throws JsonProcessingException {

@@ -39,6 +39,8 @@ entityDescription.reference.publicationInstance.manifestations.concertProgramme.
 entityDescription.reference.publicationInstance.manifestations.extent
 entityDescription.reference.publicationInstance.manifestations.musicalWorks.composer
 
+entityDescription.contributors.identity.additionalIdentifiers
+
 entityDescription.abstract
 entityDescription.tags
 entityDescription.npiSubjectHeading

@@ -36,6 +36,7 @@ import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.conversion.ContributorExtractor;
 import no.sikt.nva.scopus.conversion.CristinConnection;
 import no.sikt.nva.scopus.conversion.LanguageExtractor;
+import no.sikt.nva.scopus.conversion.NvaCustomerConnection;
 import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.sikt.nva.scopus.conversion.PublicationChannelConnection;
 import no.sikt.nva.scopus.conversion.PublicationContextCreator;
@@ -72,16 +73,19 @@ public class ScopusConverter {
     private final DocTp docTp;
     private final PiaConnection piaConnection;
     private final CristinConnection cristinConnection;
+    private final NvaCustomerConnection nvaCustomerConnection;
     private final PublicationChannelConnection publicationChannelConnection;
     private final ScopusFileConverter scopusFileConverter;
 
     public ScopusConverter(DocTp docTp, PiaConnection piaConnection, CristinConnection cristinConnection,
                            PublicationChannelConnection publicationChannelConnection,
+                           NvaCustomerConnection nvaCustomerConnection,
                            ScopusFileConverter scopusFileConverter) {
         this.docTp = docTp;
         this.piaConnection = piaConnection;
         this.cristinConnection = cristinConnection;
         this.publicationChannelConnection = publicationChannelConnection;
+        this.nvaCustomerConnection = nvaCustomerConnection;
         this.scopusFileConverter = scopusFileConverter;
     }
 
@@ -172,7 +176,7 @@ public class ScopusConverter {
         entityDescription.setAbstract(extractMainAbstract());
         entityDescription.setContributors(
             new ContributorExtractor(extractCorrespondence(), extractAuthorGroup(), piaConnection,
-                                     cristinConnection).generateContributors());
+                                     cristinConnection, nvaCustomerConnection).generateContributors());
         entityDescription.setTags(generateTags());
         entityDescription.setPublicationDate(extractPublicationDate());
         entityDescription.setLanguage(new LanguageExtractor(extractCitationLanguages()).extractLanguage());

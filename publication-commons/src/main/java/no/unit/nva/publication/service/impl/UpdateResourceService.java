@@ -136,7 +136,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     public void unpublishPublication(Publication publication) {
         publication.setStatus(DELETED);
-
+        publication.setDuplicateOf(publication.getDuplicateOf());
         publication.setModifiedDate(clockForTimestamps.instant());
         var resource = Resource.fromPublication(publication);
 

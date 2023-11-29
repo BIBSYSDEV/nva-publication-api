@@ -11,8 +11,8 @@ import java.util.stream.Collectors;
 import no.scopus.generated.AffiliationType;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.OrganizationTp;
-import no.sikt.nva.scopus.conversion.model.cristin.CristinOrganization;
 import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
+import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.language.LanguageMapper;
 import no.unit.nva.model.Organization;
 import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
@@ -29,8 +29,8 @@ public final class AffiliationGenerator {
     }
 
     public static List<Organization> fromCristinOrganization(CristinOrganization cristinOrganization) {
-        return List.of(new Organization.Builder().withId(cristinOrganization.getId())
-                           .withLabels(cristinOrganization.getLabels())
+        return List.of(new Organization.Builder().withId(cristinOrganization.id())
+                           .withLabels(cristinOrganization.labels())
                            .build());
     }
 
@@ -49,8 +49,8 @@ public final class AffiliationGenerator {
 
     private static Organization toOrganization(CristinOrganization cristinOrganization) {
         return new Organization.Builder()
-                   .withId(cristinOrganization.getId())
-                   .withLabels(cristinOrganization.getLabels())
+                   .withId(cristinOrganization.id())
+                   .withLabels(cristinOrganization.labels())
                    .build();
     }
 

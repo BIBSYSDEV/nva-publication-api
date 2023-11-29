@@ -49,6 +49,9 @@ public class ArtisticEvent {
     @JsonProperty("stedangivelse")
     private String place;
 
+    @JsonProperty("arrangornavn")
+    private String organizerName;
+
     @JacocoGenerated
     public ArtisticEvent() {
 

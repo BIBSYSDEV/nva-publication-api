@@ -127,6 +127,7 @@ import no.scopus.generated.UpwOpenAccessType;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.conversion.ContributorExtractor;
 import no.sikt.nva.scopus.conversion.CristinConnection;
+import no.sikt.nva.scopus.conversion.NvaCustomerConnection;
 import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.sikt.nva.scopus.conversion.PublicationChannelConnection;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
@@ -264,6 +265,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private PiaConnection piaConnection;
     private CristinConnection cristinConnection;
     private PublicationChannelConnection publicationChannelConnection;
+    private NvaCustomerConnection nvaCustomerConnection;
     private ScopusGenerator scopusData;
     private ResourceService resourceService;
     private ScopusUpdater scopusUpdater;
@@ -301,6 +303,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         cristinConnection = new CristinConnection(httpClient);
         authorizedBackendUriRetriever = mock(AuthorizedBackendUriRetriever.class);
         publicationChannelConnection = new PublicationChannelConnection(authorizedBackendUriRetriever);
+        nvaCustomerConnection = mockCustomerConnection();
         resourceService = new ResourceService(client, Clock.systemDefaultZone());
         uriRetriever = mock(UriRetriever.class);
         scopusUpdater = new ScopusUpdater(resourceService, uriRetriever);
@@ -308,8 +311,14 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         when(environment.readEnv(CROSSREF_URI_ENV_VAR_NAME)).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
         scopusFileConverter = new ScopusFileConverter(httpClient, s3Client, environment);
         scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
-                                          resourceService, scopusUpdater, scopusFileConverter);
+                                          nvaCustomerConnection, resourceService, scopusUpdater, scopusFileConverter);
         scopusData = new ScopusGenerator();
+    }
+
+    private static NvaCustomerConnection mockCustomerConnection() {
+        var customerConnection = mock(NvaCustomerConnection.class);
+        when(customerConnection.isNvaCustomer(any())).thenReturn(true);
+        return customerConnection;
     }
 
     @AfterEach
@@ -324,7 +333,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var expectedMessage = randomString();
         s3Client = new FakeS3ClientThrowingException(expectedMessage);
         scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
-                                          resourceService, scopusUpdater, scopusFileConverter);
+                                          nvaCustomerConnection, resourceService, scopusUpdater, scopusFileConverter);
         assertThrows(RuntimeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
     }
@@ -1177,7 +1186,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var fakeResourceServiceThrowingException = resourceServiceThrowingExceptionWhenSavingResource();
         var s3Event = createNewScopusPublicationEvent();
         var handler = new ScopusHandler(this.s3Client, this.piaConnection, this.cristinConnection,
-                                        this.publicationChannelConnection, fakeResourceServiceThrowingException,
+                                        this.publicationChannelConnection, nvaCustomerConnection,
+                                        fakeResourceServiceThrowingException,
                                         scopusUpdater, scopusFileConverter);
         assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
     }
@@ -1285,7 +1295,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
     private static Optional<String> toResponse(ImportCandidate importCandidate) {
         return Optional.of(String.valueOf(new ImportCandidateSearchApiResponse(
-            List.of(ExpandedImportCandidate.fromImportCandidate(importCandidate, null)), 1)));
+            List.of(ExpandedImportCandidate.fromImportCandidate(importCandidate)), 1)));
     }
 
     private static List<Affiliation> getActiveAffiliations(CristinPerson expectedCristinPerson) {

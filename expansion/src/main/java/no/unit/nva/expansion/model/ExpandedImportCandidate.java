@@ -1,24 +1,14 @@
 package no.unit.nva.expansion.model;
 
-import static java.util.Objects.nonNull;
-import static no.unit.nva.expansion.ResourceExpansionServiceImpl.CONTENT_TYPE;
-import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Getter;
-import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.expansion.model.cristin.CristinOrganization;
-import no.unit.nva.expansion.model.customer.Customer;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
@@ -37,7 +27,6 @@ import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
-import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import nva.commons.core.Environment;
@@ -65,16 +54,12 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     public static final String PUBLICATION_YEAR_FIELD = "publicationYear";
     public static final String PUBLICATION_INSTANCE_FIELD = "publicationInstance";
     public static final String CREATED_DATE_FIELD = "createdDate";
-    public static final String CRISTIN = "cristin";
-    public static final String ORGANIZATION = "organization";
     public static final String CONTRIBUTORS_FIELD = "contributors";
     public static final String IMPORT_CANDIDATE = "import-candidate";
     public static final String ASSOCIATED_ARTIFACTS_FIELD = "associatedArtifacts";
     public static final String COLLABORATION_TYPE_FIELD = "collaborationType";
     public static final String PRINT_ISSN_FIELD = "printIssn";
     public static final String ONLINE_ISSN_FIELD = "onlineIssn";
-    private static final String CUSTOMER = "customer";
-    private static final String CRISTIN_ID = "cristinId";
     @JsonProperty(ID_FIELD)
     private URI identifier;
     @JsonProperty(ADDITIONAL_IDENTIFIERS_FIELD)
@@ -113,9 +98,8 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     @JsonProperty(ONLINE_ISSN_FIELD)
     private String onlineIssn;
 
-    public static ExpandedImportCandidate fromImportCandidate(ImportCandidate importCandidate,
-                                                              AuthorizedBackendUriRetriever uriRetriever) {
-        var organizations = extractOrganizations(importCandidate, uriRetriever);
+    public static ExpandedImportCandidate fromImportCandidate(ImportCandidate importCandidate) {
+        var organizations = extractOrganizations(importCandidate);
         return new ExpandedImportCandidate.Builder().withIdentifier(generateIdentifier(importCandidate.getIdentifier()))
                    .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
                    .withPublicationInstance(extractPublicationInstance(importCandidate))
@@ -430,68 +414,13 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .orElse(String.valueOf(new DateTime().getYear()));
     }
 
-    private static Set<Organization> extractOrganizations(ImportCandidate importCandidate,
-                                                          AuthorizedBackendUriRetriever uriRetriever) {
+    private static Set<Organization> extractOrganizations(ImportCandidate importCandidate) {
         return importCandidate.getEntityDescription()
                    .getContributors()
                    .stream()
                    .map(Contributor::getAffiliations)
                    .flatMap(List::stream)
-                   .filter(organization -> nonNull(organization.getId()))
-                   .map(org -> toNvaCustomer(org.getId(), uriRetriever))
-                   .filter(Objects::nonNull)
                    .collect(Collectors.toSet());
-    }
-
-    //TODO: should be refactored when we have updated commons version. Should return false if response status is 404
-    // Should use getResponse() method of uriRetriever instead of getRawContent()
-    private static Organization toNvaCustomer(URI id, AuthorizedBackendUriRetriever uriRetriever) {
-        return attempt(() -> getCristinIdentifier(id)).map(ExpandedImportCandidate::toCristinOrgUri)
-                   .map(uri -> fetchTopLevelOrg(uri, uriRetriever))
-                   .map(Optional::get)
-                   .map(ExpandedImportCandidate::toCristinOrganization)
-                   .map(CristinOrganization::getTopLevelOrg)
-                   .map(org -> fetchCustomer(uriRetriever, org))
-                   .orElse(failure -> null);
-    }
-
-    private static Organization fetchCustomer(AuthorizedBackendUriRetriever uriRetriever,
-                                              CristinOrganization organization) {
-        return attempt(() -> toFetchCustomerByCristinIdUri(organization.id())).map(
-                uri -> uriRetriever.getRawContent(uri, CONTENT_TYPE))
-                   .map(Optional::get)
-                   .map(string -> attempt(
-                       () -> JsonUtils.dtoObjectMapper.readValue(string, Customer.class)).orElseThrow())
-                   .map(customer -> toOrganization(customer, organization))
-                   .orElseThrow();
-    }
-
-    private static Organization toOrganization(Customer organization, CristinOrganization cristinOrganization) {
-        return new Organization.Builder().withLabels(cristinOrganization.getTopLevelOrg().labels())
-                   .withId(organization.getId())
-                   .build();
-    }
-
-    private static CristinOrganization toCristinOrganization(String response) throws JsonProcessingException {
-        return JsonUtils.dtoObjectMapper.readValue(response, CristinOrganization.class);
-    }
-
-    private static Optional<String> fetchTopLevelOrg(URI uri, AuthorizedBackendUriRetriever uriRetriever) {
-        return uriRetriever.getRawContent(uri, CONTENT_TYPE);
-    }
-
-    private static String getCristinIdentifier(URI id) {
-        return UriWrapper.fromUri(id).getLastPathElement();
-    }
-
-    private static URI toCristinOrgUri(String cristinId) {
-        return UriWrapper.fromHost(API_HOST).addChild(CRISTIN).addChild(ORGANIZATION).addChild(cristinId).getUri();
-    }
-
-    private static URI toFetchCustomerByCristinIdUri(URI topLevelOrganization) {
-        var getCustomerEndpoint = UriWrapper.fromHost(API_HOST).addChild(CUSTOMER).addChild(CRISTIN_ID).getUri();
-        return URI.create(
-            getCustomerEndpoint + "/" + URLEncoder.encode(topLevelOrganization.toString(), StandardCharsets.UTF_8));
     }
 
     public static final class Builder {

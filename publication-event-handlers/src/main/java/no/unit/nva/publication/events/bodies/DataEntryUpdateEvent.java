@@ -15,6 +15,7 @@ import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UnpublishRequest;
 import nva.commons.core.JacocoGenerated;
 
 public class DataEntryUpdateEvent implements JsonSerializable {
@@ -25,6 +26,7 @@ public class DataEntryUpdateEvent implements JsonSerializable {
     public static final String GENERAL_SUPPORT_REQUEST_UPDATE_EVENT_TOPIC =
         "PublicationService.GeneralSupportRequest.Update";
     private static final String DOI_REQUEST_UPDATE_EVENT_TOPIC = "PublicationService.DoiRequest.Update";
+    private static final String UNPUBLISH_REQUEST_UPDATE_EVENT_TOPIC = "PublicationService.UnpublishRequest.Update";
     private static final String ACTION = "action";
     private static final String OLD_DATA = "oldData";
     private static final String NEW_DATA = "newData";
@@ -34,7 +36,8 @@ public class DataEntryUpdateEvent implements JsonSerializable {
         DoiRequest.class, DOI_REQUEST_UPDATE_EVENT_TOPIC,
         PublishingRequestCase.class, PUBLISHING_REQUEST_UPDATE_EVENT_TOPIC,
         Message.class, MESSAGE_UPDATE_EVENT_TOPIC,
-        GeneralSupportRequest.class, GENERAL_SUPPORT_REQUEST_UPDATE_EVENT_TOPIC
+        GeneralSupportRequest.class, GENERAL_SUPPORT_REQUEST_UPDATE_EVENT_TOPIC,
+        UnpublishRequest.class, UNPUBLISH_REQUEST_UPDATE_EVENT_TOPIC
     );
     @JsonProperty(ACTION)
     private final String action;
