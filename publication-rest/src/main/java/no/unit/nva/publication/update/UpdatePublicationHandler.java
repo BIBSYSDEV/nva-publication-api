@@ -10,17 +10,14 @@ import static nva.commons.apigateway.AccessRight.EDIT_ALL_NON_DEGREE_RESOURCES;
 import static nva.commons.apigateway.AccessRight.EDIT_OWN_INSTITUTION_RESOURCES;
 import static nva.commons.apigateway.AccessRight.PUBLISH_DEGREE;
 import static nva.commons.core.attempt.Try.attempt;
-
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-
 import java.net.URI;
 import java.time.Clock;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
@@ -31,9 +28,8 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.Username;
 import no.unit.nva.model.Reference;
-
+import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
@@ -126,8 +122,28 @@ public class UpdatePublicationHandler
         if (isAlreadyPublished(existingPublication) && thereIsNoRelatedPendingPublishingRequest(publicationUpdate)) {
             createPublishingRequestOnFileUpdate(publicationUpdate);
         }
+        if (isAlreadyPublished(existingPublication) && thereIsNoFiles(publicationUpdate)) {
+            autoCompletePendingPublishingRequestsIfNeeded(publicationUpdate);
+        }
         Publication updatedPublication = resourceService.updatePublication(publicationUpdate);
         return PublicationResponseElevatedUser.fromPublication(updatedPublication);
+    }
+
+    private void autoCompletePendingPublishingRequestsIfNeeded(Publication publication) {
+        ticketService.fetchTicketsForUser(UserInstance.fromPublication(publication))
+            .filter(PublishingRequestCase.class::isInstance)
+            .filter(UpdatePublicationHandler::isPending)
+            .map(PublishingRequestCase.class::cast)
+            .forEach(ticket -> ticket.complete(publication, getOwner(publication)).persistUpdate(ticketService));
+    }
+
+    private static Username getOwner(Publication publication) {
+        return publication.getResourceOwner().getOwner();
+    }
+
+    private boolean thereIsNoFiles(Publication publicationUpdate) {
+        return publicationUpdate.getAssociatedArtifacts().stream()
+                   .noneMatch(File.class::isInstance);
     }
 
     @Override
@@ -228,7 +244,7 @@ public class UpdatePublicationHandler
     }
 
     private boolean userIsPublicationOwner(UserInstance userInstance, Publication publication) {
-        return publication.getResourceOwner().getOwner().equals(new Username(userInstance.getUsername()));
+        return getOwner(publication).equals(new Username(userInstance.getUsername()));
     }
 
     private boolean userUnauthorizedToPublishThesisAndIsNotExternalClient(RequestInfo requestInfo) {
