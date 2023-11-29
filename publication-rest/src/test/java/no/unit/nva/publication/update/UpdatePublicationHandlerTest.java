@@ -710,8 +710,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                     .fromPublication(publication)
                                     .persistNew(publicationService, UserInstance.fromPublication(publication));
         publish(persistedPublication);
-        var existingTicket =
-            TicketEntry.requestNewTicket(persistedPublication, PublishingRequestCase.class).persistNewTicket(ticketService);
+        var existingTicket = TicketEntry.requestNewTicket(persistedPublication, PublishingRequestCase.class)
+                                 .persistNewTicket(ticketService);
         var updatedPublication = persistedPublication.copy().withAssociatedArtifacts(List.of()).build();
         var input = ownerUpdatesOwnPublication(updatedPublication.getIdentifier(), updatedPublication);
         updatePublicationHandler.handleRequest(input, output, context);
