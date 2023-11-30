@@ -40,7 +40,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
-import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
@@ -623,7 +622,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
                               .withEntityDescription(randomEntityDescription(JournalArticle.class))
                               .withDoi(null)
                               .withResourceOwner(new ResourceOwner(new Username(userName), institution))
-                              .withPublisher(new Builder().withId(institution).build())
+                              .withPublisher(new Organization.Builder().withId(institution).build())
                               .build();
 
         return Resource.fromPublication(publication)
