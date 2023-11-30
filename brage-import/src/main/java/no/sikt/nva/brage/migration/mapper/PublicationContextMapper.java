@@ -23,6 +23,8 @@ import no.sikt.nva.brage.migration.record.Publication;
 import no.sikt.nva.brage.migration.record.PublicationDate;
 import no.sikt.nva.brage.migration.record.PublicationDateNva;
 import no.sikt.nva.brage.migration.record.Record;
+import no.unit.nva.model.Course;
+import no.unit.nva.model.UnconfirmedCourse;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Artistic;
 import no.unit.nva.model.contexttypes.Book;
@@ -337,7 +339,12 @@ public final class PublicationContextMapper {
                    .withSeries(extractSeries(brageRecord))
                    .withPublisher(extractPublisher(brageRecord))
                    .withSeriesNumber(extractSeriesNumber(brageRecord))
+                   .withCourse(extractCourse(brageRecord))
                    .build();
+    }
+
+    private static Course extractCourse(Record brageRecord) {
+        return nonNull(brageRecord.getSubjectCode()) ? new UnconfirmedCourse(brageRecord.getSubjectCode()) : null;
     }
 
     private static List<String> extractIsbnList(Record brageRecord) {
