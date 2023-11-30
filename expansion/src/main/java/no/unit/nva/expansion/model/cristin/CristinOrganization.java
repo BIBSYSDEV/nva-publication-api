@@ -37,7 +37,7 @@ public record CristinOrganization(@JsonProperty(ID) URI id,
     @JacocoGenerated
     @JsonIgnore
     public CristinOrganization getTopLevelOrg() {
-        if (nonNull(partOf())) {
+        if (hasPartOf(this)) {
 
             var organization = partOf().stream().collect(SingletonCollector.collect());
 

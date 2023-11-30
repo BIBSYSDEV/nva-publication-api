@@ -215,6 +215,7 @@ import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -1149,7 +1150,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
             .forEach(contributor -> assertNull(contributor.getIdentity().getId()));
     }
 
-    @Test
+    @RepeatedTest(100)
     void shouldHandlePiaConnectionException() throws IOException {
         mockedPiaException();
         var s3Event = createNewScopusPublicationEvent();
