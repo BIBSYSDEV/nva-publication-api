@@ -346,10 +346,6 @@ public class ResourceService extends ServiceWithTransactions {
             throw new BadRequestException(ONLY_PUBLISHED_PUBLICATIONS_CAN_BE_UNPUBLISHED_ERROR_MESSAGE);
         }
 
-        if (nonNull(publication.getDoi())) {
-            throw new NotImplementedException();
-        }
-
         updateResourceService.unpublishPublication(publication);
     }
 
