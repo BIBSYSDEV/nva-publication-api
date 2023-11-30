@@ -247,9 +247,9 @@ public abstract class Dao
             case RESOURCE ->
                 Map.entry(keyField.getKeyField(), new AttributeValue(ResourceDao.TYPE + KEY_FIELDS_DELIMITER));
             case MESSAGE -> Map.entry(keyField.getKeyField(),
-                                      new AttributeValue(TicketDao.TICKETS_INDEXING_TYPE + KEY_FIELDS_DELIMITER));
+                                      new AttributeValue(MessageDao.TYPE + KEY_FIELDS_DELIMITER));
             case TICKET ->
-                Map.entry(keyField.getKeyField(), new AttributeValue(MessageDao.TYPE + KEY_FIELDS_DELIMITER));
+                Map.entry(keyField.getKeyField(), new AttributeValue(TicketDao.TICKETS_INDEXING_TYPE + KEY_FIELDS_DELIMITER));
             case DOI_REQUEST ->
                 Map.entry(keyField.getKeyField(), new AttributeValue("DoiRequest" + KEY_FIELDS_DELIMITER));
         };

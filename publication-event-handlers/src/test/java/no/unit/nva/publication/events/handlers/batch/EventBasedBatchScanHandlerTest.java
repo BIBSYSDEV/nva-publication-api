@@ -125,6 +125,30 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         assertThat(updatedTicketDao.getVersion(), is(equalTo(originalTicketDao.getVersion())));
     }
 
+
+    @Test
+    void shouldUpdateTicketsWhenRequestContainsTicketKeyFieldOnly()
+        throws ApiGatewayException {
+        var createdPublication = createPublication(PublicationGenerator.randomPublication());
+        var initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
+        var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
+        var originalTicket = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
+                                 .persistNewTicket(ticketService);
+        var originalTicketDao = fetchTicketDao(originalTicket.getIdentifier());
+
+        handler.handleRequest(eventToInputStream(ScanDatabaseRequest.builder()
+                                                     .withPageSize(LARGE_PAGE)
+                                                     .withStartMarker(START_FROM_BEGINNING)
+                                                     .withTopic(TOPIC)
+                                                     .withTypes(List.of(KeyField.TICKET))
+                                                     .build()), output, context);
+        var updatedDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
+        var updatedTicketDao = fetchTicketDao(originalTicket.getIdentifier());
+
+        assertThat(updatedTicketDao.getVersion(), is(not(equalTo(originalTicketDao.getVersion()))));
+        assertThat(updatedDao.getVersion(), is(equalTo(originalDao.getVersion())));
+    }
+
     @Test
     void shouldUpdateDataEntriesDefaultTypesWhenRequestDoesNotContainType()
         throws ApiGatewayException {
