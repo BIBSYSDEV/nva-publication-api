@@ -591,9 +591,9 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     private Publication createPublicationWithoutDoiAndWithContributor(URI contributorId, String contributorName)
         throws ApiGatewayException {
 
-        var publication =
-            randomPublication().copy().withEntityDescription(randomEntityDescription(JournalArticle.class)).
-                withDoi(null).build();
+        var publication = randomPublication().copy()
+                              .withEntityDescription(randomEntityDescription(JournalArticle.class))
+                              .withDoi(null).build();
 
         var identity = new Identity.Builder().withName(contributorName).withId(contributorId).build();
         var contributor = new Contributor.Builder().withIdentity(identity).withRole(new RoleType(Role.CREATOR)).build();
