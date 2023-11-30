@@ -13,7 +13,7 @@ import nva.commons.core.JacocoGenerated;
 @JsonPropertyOrder({"customer", "resourceOwner", "brageLocation", "id", "cristinId", "doi", "link", "publishedDate",
     "publisherAuthority", "rightsholder", "type", "partOf", "hasPart", "publisherAuthority", "spatialCoverage", "date",
     "language", "publication", "entityDescription", "recordContent", "errors", "warnings"})
-@SuppressWarnings("PMD.TooManyFields")
+@SuppressWarnings({"PMD.TooManyFields", "PMD.GodClass"})
 public class Record {
 
     private ResourceOwner resourceOwner;
@@ -36,6 +36,8 @@ public class Record {
     private List<ErrorDetails> errors;
     private List<WarningDetails> warnings;
     private Set<URI> subjects;
+    private String subjectCode;
+
 
     public Record() {
         // Default constructor
@@ -80,6 +82,17 @@ public class Record {
                && Objects.equals(getErrors(), record.getErrors())
                && Objects.equals(getWarnings(), record.getWarnings())
                && Objects.equals(getSubjects(), record.getSubjects());
+    }
+
+    @JacocoGenerated
+    @JsonProperty("subjectCode")
+    public String getSubjectCode() {
+        return subjectCode;
+    }
+
+    @JacocoGenerated
+    public void setSubjectCode(String subjectCode) {
+        this.subjectCode = subjectCode;
     }
 
     @JacocoGenerated

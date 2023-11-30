@@ -21,6 +21,7 @@ entityDescription.reference.publicationContext.level
 entityDescription.reference.publicationContext.url
 entityDescription.reference.publicationContext.linkedContext
 entityDescription.reference.publicationContext.additionalIdentifiers
+entityDescription.reference.publicationContext.course
 
 entityDescription.reference.publicationInstance.manifestations.concertSeries
 entityDescription.reference.publicationInstance.manifestations.performanceType
@@ -38,6 +39,8 @@ entityDescription.reference.publicationInstance.manifestations.time
 entityDescription.reference.publicationInstance.manifestations.concertProgramme.title
 entityDescription.reference.publicationInstance.manifestations.extent
 entityDescription.reference.publicationInstance.manifestations.musicalWorks.composer
+
+entityDescription.contributors.identity.additionalIdentifiers
 
 entityDescription.abstract
 entityDescription.tags

@@ -38,6 +38,7 @@ public final class ResourceBuilder {
     private String rightsHolder;
     private ImportStatus importStatus;
     private List<PublicationNote> publicationNotes;
+    private URI duplicateOf;
 
     ResourceBuilder() {
     }
@@ -142,6 +143,11 @@ public final class ResourceBuilder {
         return this;
     }
 
+    public ResourceBuilder withDuplicateOf(URI duplicateOf) {
+        this.duplicateOf = duplicateOf;
+        return this;
+    }
+
     public Resource build() {
         Resource resource = new Resource();
         resource.setIdentifier(identifier);
@@ -164,6 +170,7 @@ public final class ResourceBuilder {
         resource.setRightsHolder(rightsHolder);
         resource.setImportStatus(importStatus);
         resource.setPublicationNotes(publicationNotes);
+        resource.setDuplicateOf(duplicateOf);
         return resource;
     }
 }

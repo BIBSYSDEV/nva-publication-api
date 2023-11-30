@@ -10,6 +10,7 @@ import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.r
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.apigateway.AccessRight.PUBLISH_DEGREE;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.apache.http.HttpStatus.SC_ACCEPTED;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -20,6 +21,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -49,9 +51,11 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.TestHeaders;
@@ -61,6 +65,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
+import nva.commons.core.paths.UriWrapper;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -80,6 +85,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     private Environment environment;
     private ByteArrayOutputStream outputStream;
     private GetExternalClientResponse getExternalClientResponse;
+    private TicketService ticketService;
 
     @BeforeEach
     public void setUp() throws NotFoundException {
@@ -87,7 +93,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         prepareEnvironment();
         prepareIdentityServiceClient();
         publicationService = new ResourceService(client, Clock.systemDefaultZone());
-        handler = new DeletePublicationHandler(publicationService, environment, identityServiceClient);
+        ticketService = new TicketService(client);
+        handler = new DeletePublicationHandler(publicationService, ticketService, environment, identityServiceClient);
         outputStream = new ByteArrayOutputStream();
     }
 
@@ -359,7 +366,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         var publisherUri = publication.getPublisher().getId();
         var inputStream = createHandlerRequest(publication.getIdentifier(), randomString(), publisherUri,
-                                               AccessRight.PUBLISH_DEGREE);
+                                               PUBLISH_DEGREE);
         handler.handleRequest(inputStream, outputStream, context);
 
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
@@ -378,6 +385,26 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(SC_UNAUTHORIZED)));
+    }
+
+    @Test
+    void shouldUpdateDeletedResourceWithDuplicateOfValueWhenResourceIsADuplicate()
+        throws ApiGatewayException, IOException {
+        var publication = createAndPersistDegreeWithoutDoi();
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        var duplicate = SortableIdentifier.next();
+        var request = createRequestWithDuplicateOfValue(publication.getIdentifier(),
+                                                        randomString(),
+                                                        publication.getPublisher().getId(),
+                                                        PUBLISH_DEGREE,
+                                                        duplicate);
+        handler.handleRequest(request, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
+        var updatedPublication = publicationService.getPublication(publication);
+        String duplicateIdentifier = UriWrapper.fromUri(updatedPublication.getDuplicateOf()).getLastPathElement();
+
+        assertThat(response.getStatusCode(), is(equalTo(SC_ACCEPTED)));
+        assertThat(duplicateIdentifier, is(equalTo(duplicate.toString())));
     }
 
     @Test
@@ -424,6 +451,25 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(SC_UNAUTHORIZED)));
     }
 
+    @Test
+    void shouldPersistUnpublishRequestWhenDeletingPublishedPublication()
+        throws ApiGatewayException, IOException {
+        var publication = createAndPersistDegreeWithoutDoi();
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        var publisherUri = publication.getPublisher().getId();
+        var request = createHandlerRequest(publication.getIdentifier(), randomString(), publisherUri, PUBLISH_DEGREE);
+        handler.handleRequest(request, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
+        var persistedTicket = ticketService.fetchTicketByResourceIdentifier(publication.getPublisher().getId(),
+                                                                            publication.getIdentifier(),
+                                                                            UnpublishRequest.class);
+
+        assertTrue(persistedTicket.isPresent());
+        assertThat(response.getStatusCode(), is(equalTo(SC_ACCEPTED)));
+    }
+
+
+
     private InputStream createHandlerRequest(SortableIdentifier publicationIdentifier, String username,
                                             URI institutionId, AccessRight accessRight)
         throws JsonProcessingException {
@@ -444,6 +490,20 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         if (nonNull(cristinId)) {
             request.withPersonCristinId(cristinId);
         }
+
+        return request.build();
+    }
+
+    private InputStream createRequestWithDuplicateOfValue(SortableIdentifier publicationIdentifier, String username,
+                                                          URI institutionId, AccessRight accessRight,
+                                                          SortableIdentifier duplicateOf)
+        throws JsonProcessingException {
+        var request = new HandlerRequestBuilder<Void>(restApiMapper)
+                          .withUserName(username)
+                          .withQueryParameters(Map.of("duplicate", duplicateOf.toString()))
+                          .withCurrentCustomer(institutionId)
+                          .withAccessRights(institutionId, accessRight.name())
+                          .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString()));
 
         return request.build();
     }

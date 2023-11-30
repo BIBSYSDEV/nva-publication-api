@@ -16,6 +16,7 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -60,22 +61,27 @@ public abstract class ExpandedTicket implements ExpandedDataEntry {
                                            TicketService ticketService)
         throws NotFoundException, JsonProcessingException {
 
-        if (ticketEntry instanceof DoiRequest) {
-            return ExpandedDoiRequest.createEntry((DoiRequest) ticketEntry,
+        if (ticketEntry instanceof DoiRequest doiRequest) {
+            return ExpandedDoiRequest.createEntry(doiRequest,
                                                   expansionService,
                                                   resourceService,
                                                   ticketService);
-        }
-        if (ticketEntry instanceof PublishingRequestCase) {
+        } else if (ticketEntry instanceof PublishingRequestCase publishingRequestCase) {
             return ExpandedPublishingRequest.createEntry(
-                (PublishingRequestCase) ticketEntry,
+                publishingRequestCase,
                 resourceService,
                 expansionService,
                 ticketService);
-        }
-        if (ticketEntry instanceof GeneralSupportRequest) {
+        } else if (ticketEntry instanceof GeneralSupportRequest generalSupportRequest) {
             return ExpandedGeneralSupportRequest.createEntry(
-                (GeneralSupportRequest) ticketEntry,
+                generalSupportRequest,
+                resourceService,
+                expansionService,
+                ticketService
+            );
+        } else if (ticketEntry instanceof UnpublishRequest unpublishRequest) {
+            return ExpandedUnpublishRequest.createEntry(
+                unpublishRequest,
                 resourceService,
                 expansionService,
                 ticketService

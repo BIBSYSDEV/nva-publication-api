@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.lambda.PublicationContextException;
 import no.sikt.nva.brage.migration.record.EntityDescription;
@@ -22,6 +23,8 @@ import no.sikt.nva.brage.migration.record.Publication;
 import no.sikt.nva.brage.migration.record.PublicationDate;
 import no.sikt.nva.brage.migration.record.PublicationDateNva;
 import no.sikt.nva.brage.migration.record.Record;
+import no.unit.nva.model.Course;
+import no.unit.nva.model.UnconfirmedCourse;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Artistic;
 import no.unit.nva.model.contexttypes.Book;
@@ -48,6 +51,7 @@ import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import nva.commons.core.Environment;
+import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.joda.time.DateTime;
 
@@ -335,13 +339,21 @@ public final class PublicationContextMapper {
                    .withSeries(extractSeries(brageRecord))
                    .withPublisher(extractPublisher(brageRecord))
                    .withSeriesNumber(extractSeriesNumber(brageRecord))
+                   .withCourse(extractCourse(brageRecord))
                    .build();
+    }
+
+    private static Course extractCourse(Record brageRecord) {
+        return nonNull(brageRecord.getSubjectCode()) ? new UnconfirmedCourse(brageRecord.getSubjectCode()) : null;
     }
 
     private static List<String> extractIsbnList(Record brageRecord) {
         return Optional.ofNullable(brageRecord.getPublication())
                    .map(Publication::getIsbnList)
-                   .orElse(Collections.emptyList());
+                   .orElse(Collections.emptyList())
+                   .stream()
+                   .filter(StringUtils::isNotBlank)
+                   .collect(Collectors.toList());
     }
 
     private static String extractYear(Record brageRecord) {

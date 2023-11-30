@@ -12,10 +12,10 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Optional;
-import no.sikt.nva.scopus.conversion.model.cristin.CristinOrganization;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
@@ -147,9 +147,8 @@ public class CristinConnection {
     }
 
     private HttpRequest createOrganizationRequest(URI uri) {
-        var organizationUri = URI.create(uri + QUERY_PARAM_DEPTH_NONE);
         return HttpRequest.newBuilder()
-                   .uri(organizationUri)
+                   .uri(uri)
                    .header(ACCEPT, APPLICATION_JSON_LD.toString() + CRISTIN_VERSION)
                    .GET()
                    .build();

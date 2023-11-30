@@ -22,6 +22,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
     @JsonSubTypes.Type(name = "Resource", value = ResourceDao.class),
     @JsonSubTypes.Type(name = "DoiRequest", value = DoiRequestDao.class),
     @JsonSubTypes.Type(name = "PublishingRequest", value = PublishingRequestDao.class),
+    @JsonSubTypes.Type(name = "UnpublishRequest", value = UnpublishRequestDao.class),
     @JsonSubTypes.Type(name = "MessageDao", value = MessageDao.class),
 })
 public interface JoinWithResource {

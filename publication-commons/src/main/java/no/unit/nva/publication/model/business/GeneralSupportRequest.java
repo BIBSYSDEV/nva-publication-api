@@ -5,6 +5,7 @@ import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREAT
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.MODIFIED_DATE_FIELD;
+import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_AFFILIATION_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.STATUS_FIELD;
 import static nva.commons.core.attempt.Try.attempt;
@@ -44,6 +45,8 @@ public class GeneralSupportRequest extends TicketEntry {
     private TicketStatus status;
     @JsonProperty(ASSIGNEE_FIELD)
     private Username assignee;
+    @JsonProperty(OWNER_AFFILIATION_FIELD)
+    private URI ownerAffiliation;
 
     public GeneralSupportRequest() {
         super();
@@ -162,6 +165,7 @@ public class GeneralSupportRequest extends TicketEntry {
         copy.setOwner(this.getOwner());
         copy.setViewedBy(this.getViewedBy());
         copy.setAssignee(this.getAssignee());
+        copy.setOwnerAffiliation(this.getOwnerAffiliation());
         return copy;
     }
 
@@ -186,6 +190,16 @@ public class GeneralSupportRequest extends TicketEntry {
     }
 
     @Override
+    public URI getOwnerAffiliation() {
+        return ownerAffiliation;
+    }
+
+    @Override
+    public void setOwnerAffiliation(URI ownerAffiliation) {
+        this.ownerAffiliation = ownerAffiliation;
+    }
+
+    @Override
     public void validateAssigneeRequirements(Publication publication) {
     }
 
@@ -193,7 +207,7 @@ public class GeneralSupportRequest extends TicketEntry {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getIdentifier(), getCreatedDate(), getModifiedDate(), getOwner(), getCustomerId(),
-                            getResourceIdentifier(), getStatus(), getAssignee());
+                            getResourceIdentifier(), getStatus(), getAssignee(), getOwnerAffiliation());
     }
 
     @Override
@@ -212,7 +226,8 @@ public class GeneralSupportRequest extends TicketEntry {
                && Objects.equals(getOwner(), that.getOwner())
                && Objects.equals(getCustomerId(), that.getCustomerId())
                && getStatus() == that.getStatus()
-               && Objects.equals(getAssignee(), that.getAssignee());
+               && Objects.equals(getAssignee(), that.getAssignee())
+               && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation());
     }
 
     private static URI extractCustomerId(Publication publication) {

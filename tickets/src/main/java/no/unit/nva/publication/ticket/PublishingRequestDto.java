@@ -54,8 +54,9 @@ public class PublishingRequestDto extends TicketDto {
                                 @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
                                 @JsonProperty(VIEWED_BY) Set<User> viewedBy,
                                 @JsonProperty(ASSIGNEE_FIELD) Username assignee,
+                                @JsonProperty(OWNER_AFFILIATION_FIELD) URI ownerAffiliation,
                                 @JsonProperty(WORKFLOW_FIELD) PublishingWorkflow workflow) {
-        super(status, messages, viewedBy, assignee, publicationIdentifier);
+        super(status, messages, viewedBy, assignee, publicationIdentifier, ownerAffiliation);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
@@ -64,7 +65,7 @@ public class PublishingRequestDto extends TicketDto {
     }
 
     public static TicketDto empty() {
-        return new PublishingRequestDto(null, null, null, null, null, null, null, null, null, null);
+        return new PublishingRequestDto(null, null, null, null, null, null, null, null, null, null, null);
     }
 
     public Instant getCreatedDate() {
@@ -92,7 +93,8 @@ public class PublishingRequestDto extends TicketDto {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getStatus(), getCreatedDate(), getModifiedDate(), getIdentifier(),
-                            getPublicationIdentifier(), id, getMessages(), getAssignee(), getWorkflow());
+                            getPublicationIdentifier(), id, getMessages(), getAssignee(), getOwnerAffiliation(),
+                            getWorkflow());
     }
 
     @Override
@@ -113,6 +115,7 @@ public class PublishingRequestDto extends TicketDto {
                && Objects.equals(id, that.id)
                && Objects.equals(getMessages(), that.getMessages())
                && Objects.equals(getAssignee(), that.getAssignee())
+               && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation())
                && Objects.equals(getWorkflow(), that.getWorkflow());
     }
 }

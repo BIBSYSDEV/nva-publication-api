@@ -1,12 +1,16 @@
 package no.sikt.nva.scopus.conversion;
 
+import static no.sikt.nva.scopus.conversion.ContributorExtractor.MISSING_CONTRIBUTORS_OF_NVA_CUSTOMERS_MESSAGE;
+import static no.sikt.nva.scopus.conversion.ContributorExtractor.SCOPUS_AUID;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -16,16 +20,19 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import no.scopus.generated.AffiliationTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.DocTp;
 import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
-import no.sikt.nva.scopus.conversion.model.cristin.CristinOrganization;
 import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
+import no.sikt.nva.scopus.exception.MissingNvaContributorException;
 import no.sikt.nva.scopus.utils.CristinGenerator;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
+import no.unit.nva.expansion.model.cristin.CristinOrganization;
+import no.unit.nva.model.AdditionalIdentifier;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,11 +43,14 @@ public class ContributorExtractorTest {
     public static final URI CRISTIN_ID = randomUri();
     public CristinConnection cristinConnection;
     private PiaConnection piaConnection;
+    private NvaCustomerConnection nvaCustomerConnection;
 
     @BeforeEach
     void init() {
         piaConnection = mock(PiaConnection.class);
         cristinConnection = mock(CristinConnection.class);
+        nvaCustomerConnection = mock(NvaCustomerConnection.class);
+        when(nvaCustomerConnection.isNvaCustomer(any())).thenReturn(true);
     }
 
     @Test
@@ -123,7 +133,7 @@ public class ContributorExtractorTest {
                               .stream()
                               .collect(SingletonCollector.collect());
 
-        assertThat(contributor.getAffiliations().get(0).getId(), is(equalTo(organization.getId())));
+        assertThat(contributor.getAffiliations().get(0).getId(), is(equalTo(organization.id())));
     }
 
     @Test
@@ -141,15 +151,55 @@ public class ContributorExtractorTest {
         assertThat(actualOrganizations.get(0).getId(), is(equalTo(expectedAffiliations.get(0).getOrganization())));
     }
 
-    private CristinPerson mockCristinPersonWithSingleActiveAffiliationResponse() {
-        var personCristinId = randomUri();
-        when(piaConnection.getCristinPersonIdentifier(any())).thenReturn(Optional.of(personCristinId));
-        var person = CristinGenerator.generateCristinPersonWithSingleActiveAffiliation(personCristinId,
-                                                                                                randomString(),
-                                                                                                randomString());
-        when(cristinConnection.getCristinPersonByCristinId(personCristinId)).thenReturn(Optional.of(
-            person));
-        return person;
+    @Test
+    void shouldThrowMissingNvaContributorsExceptionWhenNoContributorsBelongingToNvaCustomer() {
+        var document = ScopusGenerator.createWithNumberOfContributorsFromAuthorTp(1).getDocument();
+        var orcId = getOrcidFromScopusDocument(document);
+        mockCristinPersonByOrcIdResponse(orcId);
+        mockRandomCristinOrgResponse();
+        when(nvaCustomerConnection.isNvaCustomer(any())).thenReturn(false);
+
+        assertThrows(MissingNvaContributorException.class,
+                     () -> contributorExtractorFromDocument(document).generateContributors(),
+                     MISSING_CONTRIBUTORS_OF_NVA_CUSTOMERS_MESSAGE);
+    }
+
+    @Test
+    void shouldPreserveAuidWhenConvertingToNvaContributor() {
+        var auid = randomString();
+        var expectedAdditionalIdentifier = new AdditionalIdentifier(SCOPUS_AUID, auid);
+        var document = ScopusGenerator.createWithOneAuthorGroupAndAffiliation(createAuthorWithAuid(auid)).getDocument();
+        mockRandomCristinOrgResponse();
+        var nvaContributor = contributorExtractorFromDocument(document).generateContributors().get(0);
+        assertThat(nvaContributor.getIdentity().getAdditionalIdentifiers(), hasItem(expectedAdditionalIdentifier));
+    }
+
+    @Test
+    void shouldPreserveAuidEvenWhenReplacingWithCristinContributor() {
+        var auid = randomString();
+        var expectedAdditionalIdentifier = new AdditionalIdentifier(SCOPUS_AUID, auid);
+        var document = ScopusGenerator.createWithOneAuthorGroupAndAffiliation(createAuthorWithAuid(auid)).getDocument();
+        mockCristinPersonWithoutAffiliationResponse();
+        mockRandomCristinOrgResponse();
+        var nvaContributor = contributorExtractorFromDocument(document).generateContributors().get(0);
+        assertThat(nvaContributor.getIdentity().getAdditionalIdentifiers(), hasItem(expectedAdditionalIdentifier));
+    }
+
+
+    private AuthorGroupTp createAuthorWithAuid(String auid) {
+        var authorTp = new AuthorTp();
+        authorTp.setAuid(auid);
+        authorTp.setSurname(randomString());
+        authorTp.setGivenName(randomString());
+        authorTp.setIndexedName(randomString());
+        authorTp.setSeq("1");
+        var affiliationTp = new AffiliationTp();
+        affiliationTp.setAfid(randomString());
+        affiliationTp.setCountry("NO");
+        var authorGp = new AuthorGroupTp();
+        authorGp.setAffiliation(affiliationTp);
+        authorGp.getAuthorOrCollaboration().add(authorTp);
+        return authorGp;
     }
 
     private static String getOrcidFromScopusDocument(DocTp document) {
@@ -171,10 +221,20 @@ public class ContributorExtractorTest {
         return document.getItem().getItem().getBibrecord().getHead().getCorrespondence();
     }
 
+    private CristinPerson mockCristinPersonWithSingleActiveAffiliationResponse() {
+        var personCristinId = randomUri();
+        when(piaConnection.getCristinPersonIdentifier(any())).thenReturn(Optional.of(personCristinId));
+        var person = CristinGenerator.generateCristinPersonWithSingleActiveAffiliation(personCristinId, randomString(),
+                                                                                       randomString());
+        when(cristinConnection.getCristinPersonByCristinId(personCristinId)).thenReturn(Optional.of(person));
+        return person;
+    }
+
     private CristinOrganization mockSearchOrganizationResponse() {
-        var organization = new CristinOrganization(randomUri(), Map.of(randomString(), randomString()), randomString());
-        when(cristinConnection.searchCristinOrganization(anyString())).thenReturn(Optional.of(
-            new SearchOrganizationResponse(List.of(organization), 1)));
+        var organization = new CristinOrganization(randomUri(), randomUri(), randomString(),
+                                                   List.of(), randomString(), Map.of(randomString(), randomString()));
+        when(cristinConnection.searchCristinOrganization(anyString())).thenReturn(
+            Optional.of(new SearchOrganizationResponse(List.of(organization), 1)));
         return organization;
     }
 
@@ -222,6 +282,6 @@ public class ContributorExtractorTest {
 
     private ContributorExtractor contributorExtractorFromDocument(DocTp document) {
         return new ContributorExtractor(getCorrespondence(document), getAuthorGroup(document), piaConnection,
-                                        cristinConnection);
+                                        cristinConnection, nvaCustomerConnection);
     }
 }

@@ -27,6 +27,7 @@ import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -134,7 +135,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         return false;
     }
 
-    private List<Publication> searchForPublicationsByDoi(URI doi) {
+    private List<ResourceWithId> searchForPublicationsByDoi(URI doi) {
         var searchUri = constructSearchUri(doi);
         return getResponseBody(searchUri)
                 .map(this::toResponse)

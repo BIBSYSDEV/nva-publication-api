@@ -40,7 +40,8 @@ import nva.commons.core.SingletonCollector;
     @JsonSubTypes.Type(name = DoiRequestDao.TYPE, value = DoiRequestDao.class),
     @JsonSubTypes.Type(name = PublishingRequestDao.TYPE, value = PublishingRequestDao.class),
     @JsonSubTypes.Type(name = GeneralSupportRequestDao.TYPE, value = GeneralSupportRequestDao.class),
-    @JsonSubTypes.Type(name = GeneralSupportRequestDao.LEGACY_TYPE, value = GeneralSupportRequestDao.class)
+    @JsonSubTypes.Type(name = GeneralSupportRequestDao.LEGACY_TYPE, value = GeneralSupportRequestDao.class),
+    @JsonSubTypes.Type(name = UnpublishRequestDao.TYPE, value = UnpublishRequestDao.class)
 })
 public abstract class TicketDao extends Dao implements JoinWithResource {
     
@@ -50,7 +51,7 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
     public static final String ALPHABETICALLY_ORDERED_FIRST_TICKET_TYPE =
         DoiRequestDao.JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX;
     public static final String ALPHABETICALLY_ORDERED_LAST_TICKET_TYPE =
-        GeneralSupportRequestDao.JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX;
+        UnpublishRequestDao.JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX;
     private static final String TICKET_IDENTIFIER_FIELD_NAME = "ticketIdentifier";
 
 

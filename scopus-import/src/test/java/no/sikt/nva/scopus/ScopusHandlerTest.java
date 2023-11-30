@@ -8,11 +8,11 @@ import static java.util.Objects.nonNull;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.ERROR_BUCKET_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.PATH_SEPERATOR;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM_DD_HH_FORMAT;
-import static no.sikt.nva.scopus.ScopusConstants.SCOPUS_IDENTIFIER;
 import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_ELECTRONIC;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_PRINT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
+import static no.sikt.nva.scopus.ScopusConstants.SCOPUS_IDENTIFIER;
 import static no.sikt.nva.scopus.ScopusHandler.SCOPUS_IMPORT_BUCKET;
 import static no.sikt.nva.scopus.ScopusHandler.SUCCESS_BUCKET_PATH;
 import static no.sikt.nva.scopus.conversion.PiaConnection.API_HOST;
@@ -38,6 +38,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
+import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.StringUtils.isNotBlank;
@@ -127,6 +128,7 @@ import no.scopus.generated.UpwOpenAccessType;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.conversion.ContributorExtractor;
 import no.sikt.nva.scopus.conversion.CristinConnection;
+import no.sikt.nva.scopus.conversion.NvaCustomerConnection;
 import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.sikt.nva.scopus.conversion.PublicationChannelConnection;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
@@ -211,9 +213,9 @@ import nva.commons.logutils.TestAppender;
 import nva.commons.secrets.SecretsReader;
 import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -257,8 +259,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private static final String PIA_SECRET_NAME = "someSecretName";
     private static final String PIA_USERNAME_SECRET_KEY = "someUserNameKey";
     private static final String PIA_PASSWORD_SECRET_KEY = "somePasswordNameKey";
-    @Rule
-    public Map<String, String> environmentVariables = new HashMap<>();
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
     private ScopusHandler scopusHandler;
@@ -267,6 +267,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private PiaConnection piaConnection;
     private CristinConnection cristinConnection;
     private PublicationChannelConnection publicationChannelConnection;
+    private NvaCustomerConnection nvaCustomerConnection;
     private ScopusGenerator scopusData;
     private ResourceService resourceService;
     private ScopusUpdater scopusUpdater;
@@ -304,6 +305,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         cristinConnection = new CristinConnection(httpClient);
         authorizedBackendUriRetriever = mock(AuthorizedBackendUriRetriever.class);
         publicationChannelConnection = new PublicationChannelConnection(authorizedBackendUriRetriever);
+        nvaCustomerConnection = mockCustomerConnection();
         resourceService = new ResourceService(client, Clock.systemDefaultZone());
         uriRetriever = mock(UriRetriever.class);
         scopusUpdater = new ScopusUpdater(resourceService, uriRetriever);
@@ -311,8 +313,14 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         when(environment.readEnv(CROSSREF_URI_ENV_VAR_NAME)).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
         scopusFileConverter = new ScopusFileConverter(httpClient, s3Client, environment);
         scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
-                                          resourceService, scopusUpdater, scopusFileConverter);
+                                          nvaCustomerConnection, resourceService, scopusUpdater, scopusFileConverter);
         scopusData = new ScopusGenerator();
+    }
+
+    private static NvaCustomerConnection mockCustomerConnection() {
+        var customerConnection = mock(NvaCustomerConnection.class);
+        when(customerConnection.isNvaCustomer(any())).thenReturn(true);
+        return customerConnection;
     }
 
     @AfterEach
@@ -327,7 +335,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var expectedMessage = randomString();
         s3Client = new FakeS3ClientThrowingException(expectedMessage);
         scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
-                                          resourceService, scopusUpdater, scopusFileConverter);
+                                          nvaCustomerConnection, resourceService, scopusUpdater, scopusFileConverter);
         assertThrows(RuntimeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
     }
@@ -342,22 +350,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualAdditionalIdentifiers = publication.getAdditionalIdentifiers();
         assertThat(actualAdditionalIdentifiers, hasItem(expectedAdditionalIdentifier));
-    }
-
-    @Test
-    void shouldDownloadFileFromUrlAndPersistIntoS3BucketAndMapToAssociatedArtifact(
-        WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException {
-        scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccess(wireMockRuntimeInfo));
-        createEmptyPiaMock();
-        var expectedFilenames = mockFetchFilesResponses(scopusData);
-        var s3Event = createNewScopusPublicationEvent();
-        var importCandidate = scopusHandler.handleRequest(s3Event, CONTEXT);
-
-        var actualFiles = importCandidate.getAssociatedArtifacts().stream().map(file -> (File) file).toList();
-
-        assertThat(actualFiles.stream().map(File::getName).toList(),
-                   containsInAnyOrder(expectedFilenames.toArray(String[]::new)));
-        actualFiles.forEach(this::assertThatFileHasBeenPersisted);
     }
 
     @Test
@@ -1158,7 +1150,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
             .forEach(contributor -> assertNull(contributor.getIdentity().getId()));
     }
 
-    @Test
+    @RepeatedTest(100)
     void shouldHandlePiaConnectionException() throws IOException {
         mockedPiaException();
         var s3Event = createNewScopusPublicationEvent();
@@ -1180,7 +1172,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var fakeResourceServiceThrowingException = resourceServiceThrowingExceptionWhenSavingResource();
         var s3Event = createNewScopusPublicationEvent();
         var handler = new ScopusHandler(this.s3Client, this.piaConnection, this.cristinConnection,
-                                        this.publicationChannelConnection, fakeResourceServiceThrowingException,
+                                        this.publicationChannelConnection, nvaCustomerConnection,
+                                        fakeResourceServiceThrowingException,
                                         scopusUpdater, scopusFileConverter);
         assertThrows(RuntimeException.class, () -> handler.handleRequest(s3Event, CONTEXT));
     }
@@ -1223,17 +1216,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var testUrl = "/" + UriWrapper.fromUri(locationType.getUpwUrlForPdf()).getLastPathElement();
         stubFor(WireMock.get(urlPathEqualTo(testUrl))
                     .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_BAD_REQUEST)));
-    }
-
-    private static String mockFileResponse(UpwOaLocationType locationType) {
-        var filename = randomString() + ".pdf";
-        var testUrl = "/" + UriWrapper.fromUri(locationType.getUpwUrlForPdf()).getLastPathElement();
-        stubFor(WireMock.get(urlPathEqualTo(testUrl))
-                    .willReturn(aResponse().withBody("")
-                                    .withHeader("Content-Type", "application/pdf;charset=UTF-8")
-                                    .withHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"")
-                                    .withStatus(HttpURLConnection.HTTP_OK)));
-        return filename;
     }
 
     private static void hasNoAffiliationWithId(Contributor contributor) {
@@ -1288,7 +1270,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
     private static Optional<String> toResponse(ImportCandidate importCandidate) {
         return Optional.of(String.valueOf(new ImportCandidateSearchApiResponse(
-            List.of(ExpandedImportCandidate.fromImportCandidate(importCandidate, null)), 1)));
+            List.of(ExpandedImportCandidate.fromImportCandidate(importCandidate)), 1)));
     }
 
     private static List<Affiliation> getActiveAffiliations(CristinPerson expectedCristinPerson) {
@@ -1303,7 +1285,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var filename = randomString() + ".pdf";
         var testUrl = "/" + UriWrapper.fromUri(downloadUrl.getLastPathElement()).getLastPathElement();
         stubFor(WireMock.get(urlPathEqualTo(testUrl))
-                    .willReturn(aResponse().withBody("")
+                    .willReturn(aResponse().withBody("abcde")
                                     .withHeader("Content-Type", "application/pdf;charset=UTF-8")
                                     .withHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"")
                                     .withStatus(HttpURLConnection.HTTP_OK)));
@@ -1345,18 +1327,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var string = UriWrapper.fromUri(wireMockRuntimeInfo.getHttpsBaseUrl()).addChild(randomString()).toString();
         location.setUpwUrlForPdf(string);
         return location;
-    }
-
-    private List<String> mockFetchFilesResponses(ScopusGenerator scopusData) {
-        return scopusData.getDocument()
-                   .getMeta()
-                   .getOpenAccess()
-                   .getUpwOpenAccess()
-                   .getUpwOaLocations()
-                   .getUpwOaLocation()
-                   .stream()
-                   .map(ScopusHandlerTest::mockFileResponse)
-                   .toList();
     }
 
     private ImportCandidate createPersistedImportCandidate() {

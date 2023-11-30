@@ -36,6 +36,7 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -49,6 +50,7 @@ import no.unit.nva.expansion.model.ExpandedPublishingRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedTicket;
 import no.unit.nva.expansion.model.ExpandedTicketStatus;
+import no.unit.nva.expansion.model.ExpandedUnpublishRequest;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -71,6 +73,7 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -103,6 +106,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private static final String FINALIZED_DATE = "finalizedDate";
     private static final String WORKFLOW = "workflow";
     private static final String ASSIGNEE = "assignee";
+    private static final String OWNERAFFILIATION = "ownerAffiliation";
     private static final String FINALIZED_BY = "finalizedBy";
     private ResourceExpansionService expansionService;
     private ResourceService resourceService;
@@ -127,9 +131,9 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         Class<? extends TicketEntry> ticketType, PublicationStatus status) throws Exception {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        var userAffiliation = publication.getResourceOwner().getOwnerAffiliation();
+        ticket.setOwnerAffiliation(randomUri());
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
-        assertThat(userAffiliation, is(equalTo(expandedTicket.getOrganization().id())));
+        assertThat(expandedTicket.getOrganization().id(), is(equalTo(ticket.getOwnerAffiliation())));
     }
 
     @ParameterizedTest
@@ -162,7 +166,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
         assertThat(regeneratedTicket, is(equalTo(ticket)));
         assertThat(ticket,
-                   doesNotHaveEmptyValuesIgnoringFields(Set.of(WORKFLOW, ASSIGNEE, FINALIZED_BY, FINALIZED_DATE)));
+                   doesNotHaveEmptyValuesIgnoringFields(Set.of(WORKFLOW, ASSIGNEE, FINALIZED_BY,
+                                                               FINALIZED_DATE, OWNERAFFILIATION)));
         var expectedPublicationId = constructExpectedPublicationId(publication);
         assertThat(expandedTicket.getPublication().getPublicationId(), is(equalTo(expectedPublicationId)));
     }
@@ -267,15 +272,27 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldGetOrganizationIdsForAffiliations(Class<? extends TicketEntry> ticketType, PublicationStatus status)
-        throws ApiGatewayException {
+    void shouldUseOwnerAffiliationWhenTicketHasOwnerAffiliation(Class<? extends TicketEntry> ticketType,
+                                                                PublicationStatus status)
+        throws Exception {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        ticket.setOwnerAffiliation(randomUri());
+        var expectedOrgId = ticket.getOwnerAffiliation();
+        var actualAffiliation  = expansionService.getOrganization(ticket).id();
+        assertThat(actualAffiliation, is(equalTo(expectedOrgId)));
+    }
 
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldUseResourceOwnerAffiliationWhenTicketHasNoOwnerAffiliation(Class<? extends TicketEntry> ticketType,
+                                                                          PublicationStatus status)
+        throws Exception {
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, USER, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var expectedOrgId = publication.getResourceOwner().getOwnerAffiliation();
-        var orgIds = expansionService.getOrganization(ticket).id();
-
-        assertThat(orgIds, is(equalTo(expectedOrgId)));
+        var actualAffiliation  = expansionService.getOrganization(ticket).id();
+        assertThat(actualAffiliation, is(equalTo(expectedOrgId)));
     }
 
     @ParameterizedTest
@@ -677,17 +694,31 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         return publishingRequest;
     }
 
+    private UnpublishRequest toTicketEntry(ExpandedUnpublishRequest expandedUnpublishRequest) {
+        var ticketEntry = new UnpublishRequest();
+        ticketEntry.setModifiedDate(expandedUnpublishRequest.getModifiedDate());
+        ticketEntry.setCreatedDate(expandedUnpublishRequest.getCreatedDate());
+        ticketEntry.setCustomerId(expandedUnpublishRequest.getCustomerId());
+        ticketEntry.setIdentifier(expandedUnpublishRequest.identifyExpandedEntry());
+        ticketEntry.setResourceIdentifier(expandedUnpublishRequest.getPublication().getIdentifier());
+        ticketEntry.setStatus(getTicketStatus(expandedUnpublishRequest.getStatus()));
+        ticketEntry.setOwner(expandedUnpublishRequest.getOwner().username());
+        ticketEntry.setAssignee(extractUsername(expandedUnpublishRequest.getAssignee()));
+        return ticketEntry;
+    }
+
     private TicketEntry toTicketEntry(ExpandedTicket expandedTicket) {
-        if (expandedTicket instanceof ExpandedDoiRequest) {
-            return toTicketEntry((ExpandedDoiRequest) expandedTicket);
+        if (expandedTicket instanceof ExpandedDoiRequest expandedDoiRequest) {
+            return toTicketEntry(expandedDoiRequest);
+        } else if (expandedTicket instanceof ExpandedPublishingRequest expandedPublishingRequest) {
+            return toTicketEntry(expandedPublishingRequest);
+        } else if (expandedTicket instanceof ExpandedGeneralSupportRequest expandedGeneralSupportRequest) {
+            return toTicketEntry(expandedGeneralSupportRequest);
+        } else if (expandedTicket instanceof ExpandedUnpublishRequest expandedUnpublishRequest) {
+            return toTicketEntry(expandedUnpublishRequest);
+        } else {
+            return null;
         }
-        if (expandedTicket instanceof ExpandedPublishingRequest) {
-            return toTicketEntry((ExpandedPublishingRequest) expandedTicket);
-        }
-        if (expandedTicket instanceof ExpandedGeneralSupportRequest) {
-            return toTicketEntry((ExpandedGeneralSupportRequest) expandedTicket);
-        }
-        return null;
     }
 
     private Username extractUsername(ExpandedPerson expandedPerson) {

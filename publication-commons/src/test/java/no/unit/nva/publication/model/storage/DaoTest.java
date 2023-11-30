@@ -60,6 +60,7 @@ class DaoTest extends ResourcesLocalTest {
     private static final String DATA_ASSIGNEE = "data.assignee";
     public static final String DATA_IMPORT_STATUS = "data.importStatus";
     public static final String RESOURCE_IMPORT_STATUS = "resource.importStatus";
+    private static final String DATA_OWNER_AFFILIATION = "data.ownerAffiliation";
 
     public static Stream<Class<?>> entityProvider() {
         return TypeProvider.listSubTypes(Entity.class);
@@ -185,7 +186,8 @@ class DaoTest extends ResourcesLocalTest {
                 .withKey(originalResource.primaryKey()));
         Dao retrievedResource = parseAttributeValuesMap(getItemResult.getItem(), originalResource.getClass());
         
-        assertThat(originalResource, doesNotHaveEmptyValuesIgnoringFields(Set.of(DATA_ASSIGNEE, DATA_FINALIZED_BY,
+        assertThat(originalResource, doesNotHaveEmptyValuesIgnoringFields(Set.of(DATA_OWNER_AFFILIATION,
+                                                                                 DATA_ASSIGNEE, DATA_FINALIZED_BY,
                                                                                  DATA_FINALIZED_DATE, DATA_IMPORT_STATUS,
                 RESOURCE_IMPORT_STATUS)));
         assertThat(originalResource, is(equalTo(retrievedResource)));
@@ -207,7 +209,8 @@ class DaoTest extends ResourcesLocalTest {
     @MethodSource("instanceProvider")
     void parseAttributeValuesMapCreatesDaoWithoutLossOfInformation(Dao originalDao) {
         
-        assertThat(originalDao, doesNotHaveEmptyValuesIgnoringFields(Set.of(DATA_ASSIGNEE, DATA_FINALIZED_BY,
+        assertThat(originalDao, doesNotHaveEmptyValuesIgnoringFields(Set.of(DATA_OWNER_AFFILIATION, DATA_ASSIGNEE,
+                                                                            DATA_FINALIZED_BY,
                                                                             DATA_FINALIZED_DATE, DATA_IMPORT_STATUS, RESOURCE_IMPORT_STATUS)));
         Map<String, AttributeValue> dynamoMap = originalDao.toDynamoFormat();
         Dao parsedDao = parseAttributeValuesMap(dynamoMap, originalDao.getClass());
@@ -227,7 +230,8 @@ class DaoTest extends ResourcesLocalTest {
     
         Dao retrievedDao = parseAttributeValuesMap(savedMap, originalDao.getClass());
         assertThat(retrievedDao, doesNotHaveEmptyValuesIgnoringFields(
-                Set.of(DATA_ASSIGNEE, DATA_FINALIZED_BY, DATA_FINALIZED_DATE, DATA_IMPORT_STATUS, RESOURCE_IMPORT_STATUS)));
+                Set.of(DATA_OWNER_AFFILIATION, DATA_ASSIGNEE, DATA_FINALIZED_BY, DATA_FINALIZED_DATE,
+                       DATA_IMPORT_STATUS, RESOURCE_IMPORT_STATUS)));
         assertThat(retrievedDao, is(equalTo(originalDao)));
     }
     
@@ -313,17 +317,14 @@ class DaoTest extends ResourcesLocalTest {
             return Resource.fromPublication(randomPublication());
         } else if (ImportCandidate.class.equals(entityType)) {
             return Resource.fromImportCandidate(randomImportCandidate());
-        } else if (DoiRequest.class.equals(entityType)) {
-            return createTicket((Class<? extends TicketEntry>) entityType);
-        } else if (PublishingRequestCase.class.equals(entityType)) {
-            return createTicket((Class<? extends TicketEntry>) entityType);
-        } else if (GeneralSupportRequest.class.equals(entityType)) {
+        } else if (TicketEntry.class.isAssignableFrom(entityType)) {
             return createTicket((Class<? extends TicketEntry>) entityType);
         } else if (Message.class.equals(entityType)) {
             var ticket = createTicket(DoiRequest.class);
             return Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
+        } else {
+            throw new UnsupportedOperationException();
         }
-        throw new UnsupportedOperationException();
     }
 
     private ImportCandidate randomImportCandidate() {

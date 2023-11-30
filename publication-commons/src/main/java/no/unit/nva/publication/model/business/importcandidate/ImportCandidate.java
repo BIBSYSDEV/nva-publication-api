@@ -37,6 +37,7 @@ public class ImportCandidate extends Publication implements JsonSerializable {
 
     public Builder copyImportCandidate() {
         return new ImportCandidate.Builder()
+                   .withImportStatus(getImportStatus())
                    .withIdentifier(getIdentifier())
                    .withStatus(getStatus())
                    .withResourceOwner(getResourceOwner())
@@ -56,6 +57,7 @@ public class ImportCandidate extends Publication implements JsonSerializable {
                    .withSubjects(getSubjects())
                    .withFundings(getFundings())
                    .withPublicationNotes(getPublicationNotes())
+                   .withImportStatus(getImportStatus())
                    .withRightsHolder(getRightsHolder());
     }
 
@@ -133,6 +135,7 @@ public class ImportCandidate extends Publication implements JsonSerializable {
             importCandidate.setResourceOwner(publication.getResourceOwner());
             importCandidate.setRightsHolder(publication.getRightsHolder());
             importCandidate.setPublicationNotes(publication.getPublicationNotes());
+            importCandidate.setDuplicateOf(publication.getDuplicateOf());
             return this;
         }
 
@@ -233,6 +236,11 @@ public class ImportCandidate extends Publication implements JsonSerializable {
 
         public Builder withRightsHolder(String rightsHolder) {
             this.importCandidate.setRightsHolder(rightsHolder);
+            return this;
+        }
+
+        public Builder withDuplicateOf(URI duplicateOf) {
+            this.importCandidate.setDuplicateOf(duplicateOf);
             return this;
         }
 

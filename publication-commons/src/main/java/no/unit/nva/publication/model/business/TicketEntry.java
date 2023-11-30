@@ -28,7 +28,8 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(name = DoiRequest.TYPE, value = DoiRequest.class),
     @JsonSubTypes.Type(name = PublishingRequestCase.TYPE, value = PublishingRequestCase.class),
-    @JsonSubTypes.Type(name = GeneralSupportRequest.TYPE, value = GeneralSupportRequest.class)})
+    @JsonSubTypes.Type(name = GeneralSupportRequest.TYPE, value = GeneralSupportRequest.class),
+    @JsonSubTypes.Type(name = UnpublishRequest.TYPE, value = UnpublishRequest.class)})
 public abstract class TicketEntry implements Entity {
 
     public static final String DOI_REQUEST_EXCEPTION_MESSAGE_WHEN_NON_PUBLISHED = "Can not create DoiRequest ticket "
@@ -69,6 +70,8 @@ public abstract class TicketEntry implements Entity {
             return createOpeningCaseObject(publication);
         } else if (GeneralSupportRequest.class.equals(ticketType)) {
             return GeneralSupportRequest.fromPublication(publication);
+        } else if (UnpublishRequest.class.equals(ticketType)) {
+            return UnpublishRequest.fromPublication(publication);
         }
         throw new RuntimeException("Unrecognized ticket type");
     }
@@ -78,14 +81,15 @@ public abstract class TicketEntry implements Entity {
         if (DoiRequest.class.equals(ticketType)) {
             return ticketType.cast(
                 DoiRequest.builder().withResourceIdentifier(resourceIdentifier).withCustomerId(customerId).build());
-        }
-        if (PublishingRequestCase.class.equals(ticketType)) {
+        } else if (PublishingRequestCase.class.equals(ticketType)) {
             return ticketType.cast(PublishingRequestCase.createQueryObject(resourceIdentifier, customerId));
-        }
-        if (GeneralSupportRequest.class.equals(ticketType)) {
+        } else if (GeneralSupportRequest.class.equals(ticketType)) {
             return ticketType.cast(GeneralSupportRequest.createQueryObject(customerId, resourceIdentifier));
+        } else if (UnpublishRequest.class.equals(ticketType)) {
+            return ticketType.cast(UnpublishRequest.createQueryObject(customerId, resourceIdentifier));
+        } else {
+            throw new UnsupportedOperationException();
         }
-        throw new UnsupportedOperationException();
     }
 
     public static UntypedTicketQueryObject createQueryObject(UserInstance userInstance,
@@ -100,6 +104,13 @@ public abstract class TicketEntry implements Entity {
     public static TicketEntry createNewGeneralSupportRequest(Publication publication,
                                                              Supplier<SortableIdentifier> identifierProvider) {
         var ticket = GeneralSupportRequest.fromPublication(publication);
+        setServiceControlledFields(ticket, identifierProvider);
+        return ticket;
+    }
+
+    public static TicketEntry createNewUnpublishRequest(Publication publication,
+                                                        Supplier<SortableIdentifier> identifierProvider) {
+        var ticket = UnpublishRequest.fromPublication(publication);
         setServiceControlledFields(ticket, identifierProvider);
         return ticket;
     }
@@ -190,6 +201,10 @@ public abstract class TicketEntry implements Entity {
 
     public abstract void setAssignee(Username assignee);
 
+    public abstract URI getOwnerAffiliation();
+
+    public abstract void setOwnerAffiliation(URI ownerAffiliation);
+
     public final List<Message> fetchMessages(TicketService ticketService) {
         return ticketService.fetchTicketMessages(this);
     }
@@ -263,14 +278,15 @@ public abstract class TicketEntry implements Entity {
 
         if (DoiRequest.class.equals(ticketType)) {
             return createNewDoiRequest(publication, identifierProvider);
-        }
-        if (PublishingRequestCase.class.equals(ticketType)) {
+        } else if (PublishingRequestCase.class.equals(ticketType)) {
             return createNewPublishingRequestEntry(publication, identifierProvider);
-        }
-        if (GeneralSupportRequest.class.equals(ticketType)) {
+        } else if (GeneralSupportRequest.class.equals(ticketType)) {
             return createNewGeneralSupportRequest(publication, identifierProvider);
+        } else if (UnpublishRequest.class.equals(ticketType)) {
+            return createNewUnpublishRequest(publication, identifierProvider);
+        } else {
+            throw new UnsupportedOperationException();
         }
-        throw new UnsupportedOperationException();
     }
 
     private static TicketEntry createNewDoiRequest(Publication publication,
@@ -302,6 +318,7 @@ public abstract class TicketEntry implements Entity {
         public static final String IDENTIFIER_FIELD = "identifier";
         public static final String WORKFLOW = "workflow";
         public static final String ASSIGNEE_FIELD = "assignee";
+        public static final String OWNER_AFFILIATION_FIELD = "ownerAffiliation";
 
         private Constants() {
 

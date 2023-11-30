@@ -35,6 +35,7 @@ public class GeneralSupportRequestDto extends TicketDto {
     @JsonProperty(IDENTIFIER_FIELD)
     private final SortableIdentifier identifier;
 
+    @SuppressWarnings({"PMD.ExcessiveParameterList"})
     public GeneralSupportRequestDto(@JsonProperty(STATUS_FIELD) TicketDtoStatus status,
                                     @JsonProperty(CREATED_DATE_FIELD) Instant createdDate,
                                     @JsonProperty(MODIFIED_DATE_FIELD) Instant modifiedDate,
@@ -43,8 +44,9 @@ public class GeneralSupportRequestDto extends TicketDto {
                                     @JsonProperty(ID_FIELD) URI id,
                                     @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
                                     @JsonProperty(VIEWED_BY) Set<User> viewedBy,
-                                    @JsonProperty(ASSIGNEE_FIELD) Username assignee) {
-        super(status, messages, viewedBy, assignee, publicationIdentifier);
+                                    @JsonProperty(ASSIGNEE_FIELD) Username assignee,
+                                    @JsonProperty(OWNER_AFFILIATION_FIELD) URI ownerAffiliation) {
+        super(status, messages, viewedBy, assignee, publicationIdentifier, ownerAffiliation);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
@@ -52,7 +54,7 @@ public class GeneralSupportRequestDto extends TicketDto {
     }
 
     public static GeneralSupportRequestDto empty() {
-        return new GeneralSupportRequestDto(null, null, null, null, null, null, null, null, null);
+        return new GeneralSupportRequestDto(null, null, null, null, null, null, null, null, null, null);
     }
 
     public URI getId() {
@@ -81,7 +83,7 @@ public class GeneralSupportRequestDto extends TicketDto {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getId(), getStatus(), getCreatedDate(), getModifiedDate(), getIdentifier(),
-                            getPublicationIdentifier(), getMessages(), getAssignee());
+                            getPublicationIdentifier(), getMessages(), getAssignee(), getOwnerAffiliation());
     }
 
     @Override
@@ -101,6 +103,7 @@ public class GeneralSupportRequestDto extends TicketDto {
                && Objects.equals(getIdentifier(), that.getIdentifier())
                && Objects.equals(getPublicationIdentifier(), that.getPublicationIdentifier())
                && Objects.equals(getMessages(), that.getMessages())
-               && Objects.equals(getAssignee(), that.getAssignee());
+               && Objects.equals(getAssignee(), that.getAssignee())
+               && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation());
     }
 }

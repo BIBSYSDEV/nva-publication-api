@@ -7,6 +7,7 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.publication.TestingUtils.createGeneralSupportRequest;
 import static no.unit.nva.publication.TestingUtils.createOrganization;
 import static no.unit.nva.publication.TestingUtils.createUnpersistedPublication;
+import static no.unit.nva.publication.TestingUtils.createUnpublishRequest;
 import static no.unit.nva.publication.TestingUtils.randomOrgUnitId;
 import static no.unit.nva.publication.TestingUtils.randomPublicationWithoutDoi;
 import static no.unit.nva.publication.TestingUtils.randomUserInstance;
@@ -70,6 +71,7 @@ import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UntypedTicketQueryObject;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -103,6 +105,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     private static final Username USERNAME = new Username(randomString());
     private static final String FINALIZED_DATE = "finalizedDate";
     private static final String ASSIGNEE = "assignee";
+    private static final String ONWER_AFFILIATION = "ownerAffiliation";
     private static final String FINALIZED_BY = "finalizedBy";
     private static final String DOI = "doi";
     private ResourceService resourceService;
@@ -140,7 +143,8 @@ public class TicketServiceTest extends ResourcesLocalTest {
         assertThat(persistedTicket.getCreatedDate(), is(greaterThanOrEqualTo(now)));
         assertThat(persistedTicket, is(equalTo(ticket)));
         assertThat(persistedTicket,
-                   doesNotHaveEmptyValuesIgnoringFields(Set.of(DOI, ASSIGNEE, FINALIZED_BY, FINALIZED_DATE)));
+                   doesNotHaveEmptyValuesIgnoringFields(Set.of(ONWER_AFFILIATION, DOI, ASSIGNEE, FINALIZED_BY,
+                                                               FINALIZED_DATE)));
     }
 
     @ParameterizedTest(name = "Publication status: {0}")
@@ -168,7 +172,8 @@ public class TicketServiceTest extends ResourcesLocalTest {
         assertThat(persistedTicket.getCreatedDate(), is(greaterThanOrEqualTo(now)));
         assertThat(persistedTicket, is(equalTo(ticket)));
         assertThat(persistedTicket,
-                   doesNotHaveEmptyValuesIgnoringFields(Set.of(ASSIGNEE, FINALIZED_BY, FINALIZED_DATE)));
+                   doesNotHaveEmptyValuesIgnoringFields(Set.of(ONWER_AFFILIATION, ASSIGNEE, FINALIZED_BY,
+                                                               FINALIZED_DATE)));
     }
 
     @Test
@@ -180,7 +185,8 @@ public class TicketServiceTest extends ResourcesLocalTest {
         assertThat(persistedTicket.getCreatedDate(), is(greaterThanOrEqualTo(now)));
         assertThat(persistedTicket, is(equalTo(ticket)));
         assertThat(persistedTicket,
-                   doesNotHaveEmptyValuesIgnoringFields(Set.of(ASSIGNEE, FINALIZED_BY, FINALIZED_DATE)));
+                   doesNotHaveEmptyValuesIgnoringFields(Set.of(ONWER_AFFILIATION, ASSIGNEE, FINALIZED_BY,
+                                                               FINALIZED_DATE)));
     }
 
     // This action fails with a TransactionFailedException which contains no information about why the transaction
@@ -693,6 +699,17 @@ public class TicketServiceTest extends ResourcesLocalTest {
                      () -> ticketService.updateTicketStatus(pendingTicket, PENDING, USERNAME));
     }
 
+    @Test
+    void publishingRequestCaseShouldBeAutoCompleted() throws ApiGatewayException {
+        var ticketType = PublishingRequestCase.class;
+        var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
+        var ticket = TicketTestUtils.createNonPersistedTicket(publication, ticketType);
+
+        var persistedCompletedTicket = ((PublishingRequestCase) ticket).persistAutoComplete(ticketService);
+
+        assertThat(persistedCompletedTicket.getStatus(), is(equalTo(COMPLETED)));
+    }
+
     private static Username getUsername(Publication publication) {
         return new Username(UserInstance.fromPublication(publication).getUsername());
     }
@@ -795,6 +812,9 @@ public class TicketServiceTest extends ResourcesLocalTest {
         }
         if (GeneralSupportRequest.class.equals(ticketType)) {
             return createGeneralSupportRequest(publication);
+        }
+        if (UnpublishRequest.class.equals(ticketType)) {
+            return createUnpublishRequest(publication);
         }
 
         throw new UnsupportedOperationException();

@@ -5,6 +5,7 @@ import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.UnpublishRequest;
 
 public final class TicketDtoParser {
 
@@ -13,16 +14,17 @@ public final class TicketDtoParser {
     }
 
     public static TicketEntry toTicket(TicketDto ticketDto) {
-        if (ticketDto instanceof DoiRequestDto) {
-            return toTicket((DoiRequestDto) ticketDto);
+        if (ticketDto instanceof DoiRequestDto doiRequestDto) {
+            return toTicket(doiRequestDto);
+        } else if (ticketDto instanceof PublishingRequestDto publishingRequestDto) {
+            return toTicket(publishingRequestDto);
+        } else if (ticketDto instanceof GeneralSupportRequestDto generalSupportRequestDto) {
+            return toTicket(generalSupportRequestDto);
+        } else if (ticketDto instanceof UnpublishRequestDto unpublishRequestDto) {
+            return toTicket(unpublishRequestDto);
+        } else {
+            return null;
         }
-        if (ticketDto instanceof PublishingRequestDto) {
-            return toTicket((PublishingRequestDto) ticketDto);
-        }
-        if (ticketDto instanceof GeneralSupportRequestDto) {
-            return toTicket((GeneralSupportRequestDto) ticketDto);
-        }
-        return null;
     }
 
     public static TicketEntry toTicket(GeneralSupportRequestDto generalSupportRequest) {
@@ -34,6 +36,7 @@ public final class TicketDtoParser {
         request.setModifiedDate(generalSupportRequest.getModifiedDate());
         request.setViewedBy(generalSupportRequest.getViewedBy());
         request.setAssignee(generalSupportRequest.getAssignee());
+        request.setOwnerAffiliation(generalSupportRequest.getOwnerAffiliation());
         return request;
     }
 
@@ -46,6 +49,7 @@ public final class TicketDtoParser {
         ticket.setResourceIdentifier(publishingRequestDto.getPublicationIdentifier());
         ticket.setViewedBy(publishingRequestDto.getViewedBy());
         ticket.setAssignee(publishingRequestDto.getAssignee());
+        ticket.setOwnerAffiliation(publishingRequestDto.getOwnerAffiliation());
         return ticket;
     }
 
@@ -58,7 +62,21 @@ public final class TicketDtoParser {
         ticket.setResourceIdentifier(doiRequestDto.getPublicationIdentifier());
         ticket.setViewedBy(doiRequestDto.getViewedBy());
         ticket.setAssignee(doiRequestDto.getAssignee());
+        ticket.setOwnerAffiliation(doiRequestDto.getOwnerAffiliation());
         return ticket;
+    }
+
+    public static TicketEntry toTicket(UnpublishRequestDto unpublishRequest) {
+        var request = new UnpublishRequest();
+        request.setIdentifier(unpublishRequest.getIdentifier());
+        request.setStatus(getTicketStatus(unpublishRequest.getStatus()));
+        request.setResourceIdentifier(unpublishRequest.getPublicationIdentifier());
+        request.setCreatedDate(unpublishRequest.getCreatedDate());
+        request.setModifiedDate(unpublishRequest.getModifiedDate());
+        request.setViewedBy(unpublishRequest.getViewedBy());
+        request.setAssignee(unpublishRequest.getAssignee());
+        request.setOwnerAffiliation(unpublishRequest.getOwnerAffiliation());
+        return request;
     }
 
     private static TicketStatus getTicketStatus(TicketDtoStatus ticketDtoStatus) {

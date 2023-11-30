@@ -37,6 +37,7 @@ public class DoiRequestDto extends TicketDto {
     @JsonProperty(ID_FIELD)
     private final URI id;
 
+    @SuppressWarnings({"PMD.ExcessiveParameterList"})
     @JsonCreator
     public DoiRequestDto(@JsonProperty(STATUS_FIELD) TicketDtoStatus status,
                          @JsonProperty(CREATED_DATE_FIELD) Instant createdDate,
@@ -46,8 +47,9 @@ public class DoiRequestDto extends TicketDto {
                          @JsonProperty(ID_FIELD) URI id,
                          @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
                          @JsonProperty(VIEWED_BY) Set<User> viewedBy,
-                         @JsonProperty(ASSIGNEE_FIELD) Username assignee) {
-        super(status, messages, viewedBy, assignee, publicationIdentifier);
+                         @JsonProperty(ASSIGNEE_FIELD) Username assignee,
+                         @JsonProperty(OWNER_AFFILIATION_FIELD) URI ownerAffiliation) {
+        super(status, messages, viewedBy, assignee, publicationIdentifier, ownerAffiliation);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
@@ -55,7 +57,7 @@ public class DoiRequestDto extends TicketDto {
     }
 
     public static TicketDto empty() {
-        return new DoiRequestDto(null, null, null, null, null, null, null, null, null);
+        return new DoiRequestDto(null, null, null, null, null, null, null, null, null, null);
     }
 
     public Instant getCreatedDate() {
@@ -79,7 +81,7 @@ public class DoiRequestDto extends TicketDto {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getStatus(), getCreatedDate(), getModifiedDate(), getIdentifier(),
-                            getPublicationIdentifier(), id, getMessages(), getAssignee());
+                            getPublicationIdentifier(), id, getMessages(), getAssignee(), getOwnerAffiliation());
     }
 
     @Override
@@ -99,6 +101,7 @@ public class DoiRequestDto extends TicketDto {
                && Objects.equals(getPublicationIdentifier(), that.getPublicationIdentifier())
                && Objects.equals(id, that.id)
                && Objects.equals(getMessages(), that.getMessages())
-               && Objects.equals(getAssignee(), that.getAssignee());
+               && Objects.equals(getAssignee(), that.getAssignee())
+               && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation());
     }
 }

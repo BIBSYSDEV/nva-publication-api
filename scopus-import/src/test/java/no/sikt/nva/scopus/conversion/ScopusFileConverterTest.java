@@ -1,8 +1,11 @@
 package no.sikt.nva.scopus.conversion;
 
+import static java.io.InputStream.nullInputStream;
+import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyIterable;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.ArgumentMatchers.any;
@@ -12,15 +15,21 @@ import static org.mockito.Mockito.when;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import jdk.jfr.Description;
+import no.scopus.generated.OpenAccessType;
+import no.scopus.generated.UpwOaLocationType;
+import no.scopus.generated.UpwOaLocationsType;
+import no.scopus.generated.UpwOpenAccessType;
 import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
@@ -44,7 +53,6 @@ public class ScopusFileConverterTest {
         httpClient = mock(HttpClient.class);
         s3Client = mock(S3Client.class);
         fileConverter = new ScopusFileConverter(httpClient, s3Client);
-        fileConverter = new ScopusFileConverter(httpClient, s3Client);
 
         scopusData = new ScopusGenerator();
         scopusData.getDocument().getMeta().setOpenAccess(null);
@@ -55,7 +63,6 @@ public class ScopusFileConverterTest {
     void shouldCreateAssociatedArtifactWithEmbargoWhenSumOfDelayAndStartDateIsInFuture()
         throws IOException, InterruptedException {
         mockResponses("crossrefResponseWithEmbargo.json");
-
         var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).get(0);
 
         assertThat(file.getEmbargoDate().orElseThrow(), is(notNullValue()));
@@ -82,7 +89,7 @@ public class ScopusFileConverterTest {
     @Test
     void shouldBeAbleToSetDefaultValuesToFileWhenDoiDoesNotContainEnoughData()
         throws IOException, InterruptedException {
-        mockResponses("crossrefResponseMissingFields.json");
+        mockResponsesWithoutHeaders("crossrefResponseMissingFields.json");
 
         var files = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).get(0);
 
@@ -101,6 +108,83 @@ public class ScopusFileConverterTest {
         assertThat(files, is(emptyIterable()));
     }
 
+    @Test
+    void shouldReturnSingleAssociatedArtifactsWhenMultipleArtifactsWithTheSameFileName()
+        throws IOException, InterruptedException {
+        var firstUrl = randomUri();
+        var secondUrl = randomUri();
+        scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccessWithDownloadUrl(firstUrl, secondUrl));
+        mockDownloadUrlResponse();
+
+        var files = fileConverter.fetchAssociatedArtifacts(scopusData.getDocument());
+
+        assertThat(files, hasSize(1));
+    }
+
+    @Test
+    void shouldRemoveFileFromDoiWhenFileIsFromElseveierAndHasPlainTextContentType()
+        throws IOException, InterruptedException {
+        mockResponses("crossrefResponseWithElsveierFileToRemove.json");
+
+        var files = fileConverter.fetchAssociatedArtifacts(scopusData.getDocument());
+
+        assertThat(files, is(emptyIterable()));
+    }
+
+    @Test
+    void shouldNotCreateAssociatedArtifactFromInputStreamWithSizeZero() throws IOException, InterruptedException {
+        scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccessWithDownloadUrl(randomUri()));
+        mockDownloadUrlResponseWithZeroBody();
+        mockS3HeadResponseWithZeroContentLength();
+
+        var files = fileConverter.fetchAssociatedArtifacts(scopusData.getDocument());
+
+        assertThat(files, is(emptyIterable()));
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenFailingToCreateAssociatedArtifactFromXml() {
+        var files = fileConverter.fetchAssociatedArtifacts(null);
+
+        assertThat(files, is(emptyIterable()));
+    }
+
+    private void mockDownloadUrlResponse() throws IOException, InterruptedException {
+        var fetchDownloadUrlResponse = (HttpResponse<InputStream>) mock(HttpResponse.class);
+        var body = mock(ByteArrayInputStream.class);
+        when(body.available()).thenReturn(1000);
+        when(body.readAllBytes()).thenReturn(randomString().getBytes());
+        when(fetchDownloadUrlResponse.body()).thenReturn(body);
+        when(fetchDownloadUrlResponse.headers()).thenReturn(createDownloadUrlHeaders());
+        when(fetchDownloadUrlResponse.statusCode()).thenReturn(200);
+        when(httpClient.send(any(), eq(BodyHandlers.ofInputStream()))).thenReturn(fetchDownloadUrlResponse);
+    }
+
+    private void mockDownloadUrlResponseWithZeroBody() throws IOException, InterruptedException {
+        var fetchDownloadUrlResponse = (HttpResponse<InputStream>) mock(HttpResponse.class);
+        when(fetchDownloadUrlResponse.body()).thenReturn(new ByteArrayInputStream(nullInputStream().readAllBytes()));
+        when(fetchDownloadUrlResponse.headers()).thenReturn(createDownloadUrlHeaders());
+        when(fetchDownloadUrlResponse.statusCode()).thenReturn(200);
+        when(httpClient.send(any(), eq(BodyHandlers.ofInputStream()))).thenReturn(fetchDownloadUrlResponse);
+    }
+
+    private UpwOaLocationType randomLocation(URI uri) {
+        var location = new UpwOaLocationType();
+        location.setUpwUrlForPdf(uri.toString());
+        return location;
+    }
+
+    private OpenAccessType randomOpenAccessWithDownloadUrl(URI... uri) {
+        var openAccess = new OpenAccessType();
+        var upwOpenAccess = new UpwOpenAccessType();
+        var locations = new UpwOaLocationsType();
+        var locationList = Arrays.stream(uri).map(this::randomLocation).toList();
+        locations.getUpwOaLocation().addAll(locationList);
+        upwOpenAccess.setUpwOaLocations(locations);
+        openAccess.setUpwOpenAccess(upwOpenAccess);
+        return openAccess;
+    }
+
     private void mockResponses(String responseBody) throws IOException, InterruptedException {
         var doiResponse = (HttpResponse<String>) mock(HttpResponse.class);
         when(doiResponse.body()).thenReturn(IoUtils.stringFromResources(Path.of(responseBody)));
@@ -109,15 +193,34 @@ public class ScopusFileConverterTest {
         var fetchDownloadUrlResponse = (HttpResponse<InputStream>) mock(HttpResponse.class);
         when(fetchDownloadUrlResponse.body()).thenReturn(new ByteArrayInputStream(randomString().getBytes()));
         when(fetchDownloadUrlResponse.headers()).thenReturn(createDownloadUrlHeaders());
+        when(fetchDownloadUrlResponse.statusCode()).thenReturn(200);
+        when(httpClient.send(any(), eq(BodyHandlers.ofInputStream()))).thenReturn(fetchDownloadUrlResponse);
+    }
+
+    private void mockResponsesWithoutHeaders(String responseBody) throws IOException, InterruptedException {
+        var doiResponse = (HttpResponse<String>) mock(HttpResponse.class);
+        when(doiResponse.body()).thenReturn(IoUtils.stringFromResources(Path.of(responseBody)));
+        when(httpClient.send(any(), eq(BodyHandlers.ofString()))).thenReturn(doiResponse);
+
+        var fetchDownloadUrlResponse = (HttpResponse<InputStream>) mock(HttpResponse.class);
+        when(fetchDownloadUrlResponse.body()).thenReturn(new ByteArrayInputStream(randomString().getBytes()));
+        when(fetchDownloadUrlResponse.headers()).thenReturn(emptyHeaders());
+        when(fetchDownloadUrlResponse.statusCode()).thenReturn(200);
         when(httpClient.send(any(), eq(BodyHandlers.ofInputStream()))).thenReturn(fetchDownloadUrlResponse);
 
+    }
+
+    private void mockS3HeadResponseWithZeroContentLength() {
         when(s3Client.headObject(any(HeadObjectRequest.class))).thenReturn(
-            HeadObjectResponse.builder().contentType(randomString()).contentLength(100L).build());
+            HeadObjectResponse.builder().contentType(randomString()).contentLength(0L).build());
     }
 
     private HttpHeaders createDownloadUrlHeaders() {
-        return HttpHeaders.of(Map.of("Content-Type",
-                                     List.of("application/pdf;charset=UTF-8"), "Content-Disposition",
-                                     List.of("attachment; filename=\"someFile\"")), (s, s2) -> false);
+        return HttpHeaders.of(Map.of("Content-Type", List.of("application/pdf;charset=UTF-8"), "Content-Disposition",
+                                     List.of("attachment; filename=\"someFile\"")), (s, s2) -> true);
+    }
+
+    private HttpHeaders emptyHeaders() {
+        return HttpHeaders.of(Map.of(), (s, s2) -> true);
     }
 }

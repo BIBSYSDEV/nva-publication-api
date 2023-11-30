@@ -47,12 +47,11 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
+import org.apache.http.entity.ContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
-import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @SuppressWarnings("PMD.GodClass")
@@ -72,13 +71,16 @@ public class ScopusFileConverter {
     public static final String CREATIVECOMMONS_DOMAIN = "creativecommons.org";
     public static final String HTML_CONTENT_TYPE = "text/html";
     public static final String XML_CONTENT_TYPE = "text/xml";
-    private static final Logger logger = LoggerFactory.getLogger(ScopusFileConverter.class);
-    private static final String CONTENT_DISPOSITION_FILE_NAME_PATTERN = "filename=\"%s\"";
-    private static final URI DEFAULT_LICENSE = URI.create("https://creativecommons.org/licenses/by/4.0/");
     public static final String FILENAME_CONTENT_TYPE_HEADER_VALUE = "filename=";
     public static final String QUOTE = "\"";
     public static final String WHITESPACE = " ";
     public static final String ENCODED_WHITESPACE = "%20";
+    public static final int ZERO_LENGTH_CONTENT = 0;
+    public static final String ELSEVIER_HOST = "api.elsevier.com";
+    private static final Logger logger = LoggerFactory.getLogger(ScopusFileConverter.class);
+    private static final String CONTENT_DISPOSITION_FILE_NAME_PATTERN = "filename=\"%s\"";
+    private static final URI DEFAULT_LICENSE = URI.create("https://creativecommons.org/licenses/by/4.0/");
+    public static final String FETCH_FILE_ERROR_MESSAGE = "Could not fetch file: ";
     public final String crossRefUri;
     private final HttpClient httpClient;
     private final S3Client s3Client;
@@ -106,35 +108,14 @@ public class ScopusFileConverter {
         return JsonUtils.dtoObjectMapper.readValue(body, CrossrefResponse.class);
     }
 
-    private static File createFile(UUID fileIdentifier, String filename, HeadObjectResponse head) {
-        return File.builder()
-                   .withIdentifier(fileIdentifier)
-                   .withName(filename)
-                   .withMimeType(head.contentType())
-                   .withSize(head.contentLength())
-                   .withLicense(DEFAULT_LICENSE)
-                   .buildPublishedFile();
-    }
-
     private static String getFilename(HttpResponse<InputStream> response) {
-        return extractContentType(response)
-                   .map(ScopusFileConverter::extractFileNameFromContentType)
+        return extractContentDisposition(response).map(ScopusFileConverter::extractFileNameFromContentDisposition)
                    .orElseGet(() -> randomUUID() + FILE_NAME_DELIMITER + PDF_FILE_TYPE);
     }
 
-    private static Optional<String> extractContentType(HttpResponse<InputStream> response) {
-        var contentDisposition =  response.headers().map().getOrDefault(Headers.CONTENT_DISPOSITION, List.of());
+    private static Optional<String> extractContentDisposition(HttpResponse<InputStream> response) {
+        var contentDisposition = response.headers().map().getOrDefault(Headers.CONTENT_DISPOSITION, List.of());
         return contentDisposition.isEmpty() ? Optional.empty() : Optional.of(contentDisposition.get(0));
-    }
-
-    private static String extractFileNameFromContentType(String contentType) {
-        return contentType.split(FILENAME_CONTENT_TYPE_HEADER_VALUE)[1]
-                   .split(CONTENT_TYPE_DELIMITER)[0]
-                   .replace(QUOTE, StringUtils.EMPTY_STRING);
-    }
-
-    private static HttpRequest constructRequest(URI uri) {
-        return HttpRequest.newBuilder().GET().uri(uri).build();
     }
 
     private static String getContentType(HttpResponse<InputStream> response) {
@@ -142,6 +123,16 @@ public class ScopusFileConverter {
                    .map(optional -> optional.orElse(null))
                    .map(value -> value.split(CONTENT_TYPE_DELIMITER)[0])
                    .orElse(DEFAULT_CONTENT_TYPE);
+    }
+
+    private static String extractFileNameFromContentDisposition(String contentType) {
+        return contentType.split(FILENAME_CONTENT_TYPE_HEADER_VALUE)[1]
+                   .split(CONTENT_TYPE_DELIMITER)[0]
+                   .replace(QUOTE, StringUtils.EMPTY_STRING);
+    }
+
+    private static HttpRequest constructRequest(URI uri) {
+        return HttpRequest.newBuilder().GET().uri(uri).build();
     }
 
     private static LocalDate toEmbargoDate(License license) {
@@ -167,8 +158,33 @@ public class ScopusFileConverter {
                                  ArrayList::new);
     }
 
+    private static Collector<File, Object, ArrayList<AssociatedArtifact>> collectRemovingDuplicatedFiles() {
+        return collectingAndThen(toCollection(() -> new TreeSet<>(comparing(File::getName))), ArrayList::new);
+    }
+
     private static boolean isCreativeCommonsLicense(URI uri) {
         return uri.toString().contains(CREATIVECOMMONS_DOMAIN);
+    }
+
+    private static boolean hasSameVersion(CrossrefLink crossrefLink, License license) {
+        return license.getContentVersion().equals(crossrefLink.getContentVersion());
+    }
+
+    private static URI toUri(String string) {
+        return attempt(() -> new URI(string.replace(WHITESPACE, ENCODED_WHITESPACE))).orElseThrow();
+    }
+
+    private static boolean fileWithContent(ScopusFile file) {
+        return file.size() != ZERO_LENGTH_CONTENT;
+    }
+
+    private static boolean fileWithContent(AssociatedArtifact associatedArtifact) {
+        return ((File) associatedArtifact).getSize() != ZERO_LENGTH_CONTENT;
+    }
+
+    private static boolean isElsevierPlainTextResource(CrossrefLink crossrefLink) {
+        return ELSEVIER_HOST.equals(crossrefLink.getUri().getHost())
+               && crossrefLink.getContentType().equals(ContentType.TEXT_PLAIN.getMimeType());
     }
 
     private List<AssociatedArtifact> extractAssociatedArtifactsFromDoi(DocTp docTp) {
@@ -181,6 +197,7 @@ public class ScopusFileConverter {
                        .collect(collectRemovingDuplicates())
                        .stream()
                        .map(this::saveFile)
+                       .filter(ScopusFileConverter::fileWithContent)
                        .map(ScopusFile::toPublishedAssociatedArtifact)
                        .toList();
         } catch (Exception e) {
@@ -189,14 +206,10 @@ public class ScopusFileConverter {
         }
     }
 
-    private ScopusFile fetchFileContent(ScopusFile file) throws IOException {
+    private ScopusFile fetchFileContent(ScopusFile file) {
         var fetchFileResponse = fetchResponseAsInputStream(file.downloadFileUrl());
         var content = fetchFileResponse.body();
-        return file.copy()
-                   .withContent(content)
-                   .withSize(content.available())
-                   .withName(getFilename(fetchFileResponse))
-                   .build();
+        return file.copy().withContent(content).withName(getFilename(fetchFileResponse)).build();
     }
 
     private List<ScopusFile> getScopusFiles(CrossrefResponse response) {
@@ -206,10 +219,15 @@ public class ScopusFileConverter {
                    .getLinks()
                    .stream()
                    .filter(this::hasSupportedContentType)
+                   .filter(this::shouldBeIgnored)
                    .filter(crossrefLink -> isNotResource(crossrefLink, resource))
                    .map(crossrefLink -> toScopusFile(crossrefLink, licenses))
                    .distinct()
                    .toList();
+    }
+
+    private boolean shouldBeIgnored(CrossrefLink crossrefLink) {
+        return !isElsevierPlainTextResource(crossrefLink);
     }
 
     private boolean isNotResource(CrossrefLink crossrefLink, URI resource) {
@@ -231,7 +249,7 @@ public class ScopusFileConverter {
                    .withPublisherAuthority(VOR.equals(crossrefLink.getContentVersion()))
                    .withLicense(extractLicenseForLink(crossrefLink, licenses))
                    .withEmbargo(calculateEmbargo(crossrefLink, licenses))
-                   .withContentType(crossrefLink.getContentType())
+                   .withContentType(Optional.ofNullable(crossrefLink.getContentType()).orElse(DEFAULT_CONTENT_TYPE))
                    .build();
     }
 
@@ -249,10 +267,6 @@ public class ScopusFileConverter {
             return embargoDate.isAfter(Instant.now()) ? embargoDate : null;
         }
         return null;
-    }
-
-    private static boolean hasSameVersion(CrossrefLink crossrefLink, License license) {
-        return license.getContentVersion().equals(crossrefLink.getContentVersion());
     }
 
     private boolean hasSupportedContentType(CrossrefLink link) {
@@ -292,15 +306,19 @@ public class ScopusFileConverter {
         }
     }
 
-    private Optional<AssociatedArtifact> convertToAssociatedArtifact(HttpResponse<InputStream> response) {
-        if (isSuccess(response)) {
-            var fileIdentifier = randomUUID();
-            var filename = getFilename(response);
-            saveFile(filename, fileIdentifier, response);
-            var head = fetchFileInfo(fileIdentifier);
-            return Optional.of(createFile(fileIdentifier, filename, head));
-        }
-        throw new RuntimeException();
+    private Optional<AssociatedArtifact> convertToAssociatedArtifact(HttpResponse<InputStream> response)
+        throws IOException {
+        var fileIdentifier = randomUUID();
+        var filename = getFilename(response);
+        saveFile(filename, fileIdentifier, response);
+        long available = response.body().available();
+        return Optional.of(File.builder()
+                                      .withIdentifier(fileIdentifier)
+                                      .withName(filename)
+                                      .withMimeType(getContentType(response))
+                                      .withSize(available)
+                                      .withLicense(DEFAULT_LICENSE)
+                                      .buildPublishedFile());
     }
 
     private List<AssociatedArtifact> extractAssociatedArtifactsFromFileReference(DocTp docTp) {
@@ -313,23 +331,13 @@ public class ScopusFileConverter {
                        .map(this::convertToAssociatedArtifact)
                        .filter(Optional::isPresent)
                        .map(Optional::get)
-                       .toList();
+                       .filter(ScopusFileConverter::fileWithContent)
+                       .map(associatedArtifact -> (File) associatedArtifact)
+                       .collect(collectRemovingDuplicatedFiles());
         } catch (Exception e) {
             logger.error(FETCH_FILE_FROM_XML_MESSAGE_ERROR_MESSAGE, e.getMessage());
             return List.of();
         }
-    }
-    
-    private static URI toUri(String string) {
-        return attempt(() -> new URI(string.replace(WHITESPACE, ENCODED_WHITESPACE))).orElseThrow();
-    }
-
-    private HeadObjectResponse fetchFileInfo(UUID fileIdentifier) {
-        var request = HeadObjectRequest.builder()
-                          .bucket(IMPORT_CANDIDATES_FILES_BUCKET)
-                          .key(fileIdentifier.toString())
-                          .build();
-        return s3Client.headObject(request);
     }
 
     private void saveFile(String fileName, UUID fileIdentifier, HttpResponse<InputStream> response) {
@@ -337,7 +345,6 @@ public class ScopusFileConverter {
         s3Client.putObject(PutObjectRequest.builder()
                                .bucket(IMPORT_CANDIDATES_FILES_BUCKET)
                                .contentDisposition(String.format(CONTENT_DISPOSITION_FILE_NAME_PATTERN, fileName))
-                               .contentType(getContentType(response))
                                .key(fileIdentifier.toString())
                                .build(), RequestBody.fromBytes(fileToSave));
     }
@@ -348,15 +355,19 @@ public class ScopusFileConverter {
                                .bucket(IMPORT_CANDIDATES_FILES_BUCKET)
                                .contentDisposition(
                                    String.format(CONTENT_DISPOSITION_FILE_NAME_PATTERN, scopusFile.name()))
-                               .contentType(
-                                   nonNull(scopusFile.contentType()) ? scopusFile.contentType() : DEFAULT_CONTENT_TYPE)
                                .key(scopusFile.identifier().toString())
                                .build(), RequestBody.fromBytes(content));
-        return scopusFile;
+        return scopusFile.copy().withSize(content.length).build();
     }
 
     private HttpResponse<InputStream> fetchResponseAsInputStream(URI uri) {
-        return attempt(() -> httpClient.send(constructRequest(uri), BodyHandlers.ofInputStream())).orElseThrow();
+        var response = attempt(() -> httpClient.send(constructRequest(uri), BodyHandlers.ofInputStream()))
+                           .orElseThrow();
+        if (isSuccess(response)) {
+            return response;
+        } else {
+            throw new RuntimeException(FETCH_FILE_ERROR_MESSAGE);
+        }
     }
 
     private List<UpwOaLocationType> getLocations(DocTp docTp) {

@@ -138,6 +138,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private static final String FINALIZED_DATE = "finalizedDate";
     private static final String ASSIGNEE = "assignee";
     private static final String FINALIZED_BY = "finalizedBy";
+    private static final String OWNER_AFFILIATION = "ownerAffiliation";
     private ResourceService resourceService;
 
     private TicketService ticketService;
@@ -710,9 +711,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var expectedDoiRequest = expectedDoiRequestAfterPublicationUpdate(initialPublication, initialDoiRequest,
                                                                           publicationUpdate, updatedDoiRequest);
 
-        assertThat(updatedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of(ASSIGNEE, FINALIZED_BY,
+        assertThat(updatedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of(OWNER_AFFILIATION, ASSIGNEE,
+                                                                                  FINALIZED_BY,
                                                                                   FINALIZED_DATE)));
-        assertThat(expectedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of(ASSIGNEE, FINALIZED_BY,
+        assertThat(expectedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of(OWNER_AFFILIATION, ASSIGNEE,
+                                                                                   FINALIZED_BY,
                                                                                    FINALIZED_DATE)));
         Diff diff = JAVERS.compare(updatedDoiRequest, expectedDoiRequest);
         assertThat(diff.prettyPrint(), updatedDoiRequest, is(equalTo(expectedDoiRequest)));
@@ -974,6 +977,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var publication = createPublishedResource();
         resourceService.unpublishPublication(publication);
         assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(DELETED)));
+    }
+
+    @Test
+    void shouldThrowIllegalStateExceptionWhenUpdatingStatusWhenUpdatingPublication() throws BadRequestException {
+        var publication = createPersistedPublicationWithDoi();
+        publication.setStatus(PublicationStatus.PUBLISHED_METADATA);
+        assertThrows(IllegalStateException.class, () -> resourceService.updatePublication(publication));
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {
