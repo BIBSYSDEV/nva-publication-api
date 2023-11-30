@@ -36,7 +36,7 @@ public class NvaCustomerConnection {
                    .map(this::fetchResponse)
                    .map(HttpResponse::statusCode)
                    .map(NvaCustomerConnection::isHttpOk)
-                   .orElseThrow();
+                   .orElse(failure -> false);
     }
 
     private static boolean isHttpOk(Integer code) {
