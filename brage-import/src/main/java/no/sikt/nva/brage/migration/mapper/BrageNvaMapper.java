@@ -139,8 +139,9 @@ public final class BrageNvaMapper {
     private static void assertPublicationDoesNotHaveEmptyFields(Publication publication) {
         // TODO: Fix this so we don't depend on JUnit.
         try {
+            Set<String> ignoredAndPossiblyEmptyPublicationFields = MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS;
             assertThat(publication, doesNotHaveEmptyValuesIgnoringFields(
-                MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS));
+                ignoredAndPossiblyEmptyPublicationFields));
         } catch (Error error) {
             String message = error.getMessage();
             throw new MissingFieldsException(message);

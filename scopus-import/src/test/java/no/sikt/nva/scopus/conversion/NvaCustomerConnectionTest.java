@@ -1,11 +1,9 @@
 package no.sikt.nva.scopus.conversion;
 
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -46,15 +44,15 @@ public class NvaCustomerConnectionTest {
     }
 
     @Test
-    void shouldReturnFalseWhenCristinOrgIdIsNull() {
-        assertFalse(nvaCustomerConnection.isNvaCustomer(cristinOrgWithId(null)));
+    void shouldThrowExceptionWhenSomethingGoesWrongFetchingCustomer() {
+        assertThrows(NullPointerException.class, () -> nvaCustomerConnection.isNvaCustomer(cristinOrgWithId(null)));
     }
 
     @Test
-    void shouldReturnFalseWhenEmptyResponseFromCustomerApi() {
+    void shouldThrowExceptionWhenFetchedResponseIsEmpty() {
         when(uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.empty());
 
-        assertFalse(nvaCustomerConnection.isNvaCustomer(cristinOrgWithId(randomUri())));
+        assertThrows(RuntimeException.class, () -> nvaCustomerConnection.isNvaCustomer(cristinOrgWithId(randomUri())));
     }
 
     private static CristinOrganization cristinOrgWithId(URI id) {
