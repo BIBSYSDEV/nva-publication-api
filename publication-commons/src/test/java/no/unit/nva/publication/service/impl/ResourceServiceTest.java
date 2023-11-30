@@ -79,19 +79,18 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.InvalidPublicationException;
-import no.unit.nva.publication.exception.NotImplementedException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
@@ -975,13 +974,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var publication = createPublishedResource();
         resourceService.unpublishPublication(publication);
         assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(DELETED)));
-    }
-
-    @Test
-    void shouldThrowNotImplementedExceptionWhenUnpublishingPublicationWithNvaDoi() throws ApiGatewayException {
-        var publication = createPersistedPublicationWithDoi();
-        var publishedPublication = publishResource(publication);
-        assertThrows(NotImplementedException.class, () -> resourceService.unpublishPublication(publishedPublication));
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {
