@@ -403,7 +403,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     }
 
     @Test
-    void shouldWriteToPiaWithSeveralContributorsAtOnce () throws NotFoundException, IOException {
+    void shouldWriteToPiaWithSeveralContributorsAtOnce() throws NotFoundException, IOException {
         var auid1 = randomString();
         var contributorWithAuid1 = createContributorWithAuid(auid1, 1);
         var auid2 = randomString();
