@@ -66,6 +66,8 @@ import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import no.unit.nva.publication.create.pia.PiaClientConfig;
+import no.unit.nva.publication.create.pia.PiaUpdateRequest;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
@@ -386,7 +388,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     @Test
     void shouldWriteToPiaWhenCristinIdHaveBeenUpdatedByUser() throws NotFoundException, IOException {
         var auid = randomString();
-        var contributorWithAuid = createContributorWithAuid(auid);
+        var contributorWithAuid = createContributorWithAuid(auid, 1);
         var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid));
         var cristinId = randomUri();
         var contributorUpdatedWithCristinId = updateContributorWithCristinId(contributorWithAuid, cristinId);
@@ -396,7 +398,32 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         var expectedBody = List.of(PiaUpdateRequest.toPiaRequest(contributorUpdatedWithCristinId,
                                                                  extractScopusId(importCandidate)));
         handler.handleRequest(request, output, context);
-        WireMock.verify(1,
+        WireMock.verify(postRequestedFor(urlEqualTo("/sentralimport/authors"))
+                            .withRequestBody(WireMock.equalTo(expectedBody.toString())));
+    }
+
+    @Test
+    void shouldWriteToPiaWithSeveralContributorsAtOnce () throws NotFoundException, IOException {
+        var auid1 = randomString();
+        var contributorWithAuid1 = createContributorWithAuid(auid1, 1);
+        var auid2 = randomString();
+        var contributorWithAuid2 = createContributorWithAuid(auid2, 2);
+        var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid1, contributorWithAuid2));
+        var cristinId1 = randomUri();
+        var cristinId2 = randomUri();
+        var contributorUpdatedWithCristinId1 = updateContributorWithCristinId(contributorWithAuid1, cristinId1);
+        var contributorUpdatedWithCristinId2 = updateContributorWithCristinId(contributorWithAuid2, cristinId2);
+        var userInput = importCandidate.copy().build();
+        userInput.getEntityDescription().setContributors(List.of(contributorUpdatedWithCristinId1,
+                                                                 contributorUpdatedWithCristinId2));
+        var request = createRequest(importCandidate);
+        handler.handleRequest(request, output, context);
+        var expectedNumberOfTimesPostRequestIsSent = 1;
+        var expectedBody = List.of(PiaUpdateRequest.toPiaRequest(contributorUpdatedWithCristinId1,
+                                                                 extractScopusId(importCandidate)),
+                                   PiaUpdateRequest.toPiaRequest(contributorUpdatedWithCristinId2,
+                                                                 extractScopusId(importCandidate)));
+        WireMock.verify(expectedNumberOfTimesPostRequestIsSent,
                         postRequestedFor(urlEqualTo("/sentralimport/authors"))
                             .withRequestBody(WireMock.equalTo(expectedBody.toString())));
     }
@@ -405,7 +432,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     void shouldContinueImportingEvenWhenPiaRestRespondsWithErrorCodes()
         throws NotFoundException, IOException {
         var auid = randomString();
-        var contributorWithAuid = createContributorWithAuid(auid);
+        var contributorWithAuid = createContributorWithAuid(auid, 1);
         var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid));
         var cristinId = randomUri();
         var contributorUpdatedWithCristinId = updateContributorWithCristinId(contributorWithAuid, cristinId);
@@ -470,9 +497,9 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                    .build();
     }
 
-    private Contributor createContributorWithAuid(String auid) {
+    private Contributor createContributorWithAuid(String auid, int sequence) {
         return new Contributor.Builder()
-                   .withSequence(1)
+                   .withSequence(sequence)
                    .withIdentity(identityWithAuid(auid))
                    .withRole(new RoleType(Role.CREATOR))
                    .withAffiliations(List.of(randomAffiliation()))

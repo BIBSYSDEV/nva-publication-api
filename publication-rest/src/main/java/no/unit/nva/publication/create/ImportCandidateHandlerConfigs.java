@@ -1,5 +1,6 @@
 package no.unit.nva.publication.create;
 
+import no.unit.nva.publication.create.pia.PiaClientConfig;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;

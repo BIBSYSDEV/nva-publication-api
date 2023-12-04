@@ -15,6 +15,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.publication.create.pia.PiaClient;
 import no.unit.nva.publication.exception.NotAuthorizedException;
 import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;

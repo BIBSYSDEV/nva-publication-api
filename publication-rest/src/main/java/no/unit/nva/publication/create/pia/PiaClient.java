@@ -1,7 +1,7 @@
-package no.unit.nva.publication.create;
+package no.unit.nva.publication.create.pia;
 
 import static java.net.HttpURLConnection.HTTP_CREATED;
-import static no.unit.nva.publication.create.PiaUpdateRequest.toPiaRequest;
+import static no.unit.nva.publication.create.pia.PiaUpdateRequest.toPiaRequest;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;

@@ -1,4 +1,4 @@
-package no.unit.nva.publication.create;
+package no.unit.nva.publication.create.pia;
 
 import java.util.Optional;
 import no.unit.nva.commons.json.JsonSerializable;

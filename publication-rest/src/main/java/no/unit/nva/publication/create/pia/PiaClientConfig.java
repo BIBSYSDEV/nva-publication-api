@@ -1,4 +1,4 @@
-package no.unit.nva.publication.create;
+package no.unit.nva.publication.create.pia;
 
 import java.net.http.HttpClient;
 import nva.commons.core.Environment;
