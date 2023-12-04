@@ -1,5 +1,6 @@
 package no.sikt.nva.scopus.conversion;
 
+import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -30,6 +31,10 @@ public class NvaCustomerConnection {
     }
 
     public boolean isNvaCustomer(CristinOrganization cristinOrganization) {
+        return isPresentAndHasTopLevelOrg(cristinOrganization) && isCustomer(cristinOrganization);
+    }
+
+    private Boolean isCustomer(CristinOrganization cristinOrganization) {
         return attempt(cristinOrganization::getTopLevelOrg)
                    .map(CristinOrganization::id)
                    .map(NvaCustomerConnection::toFetchCustomerUri)
@@ -37,6 +42,10 @@ public class NvaCustomerConnection {
                    .map(HttpResponse::statusCode)
                    .map(NvaCustomerConnection::isHttpOk)
                    .orElseThrow();
+    }
+
+    private static boolean isPresentAndHasTopLevelOrg(CristinOrganization cristinOrganization) {
+        return nonNull(cristinOrganization) && nonNull(cristinOrganization.getTopLevelOrg());
     }
 
     private static boolean isHttpOk(Integer code) {

@@ -39,16 +39,10 @@ import nva.commons.core.JacocoGenerated;
 @SuppressWarnings("PMD.EmptyMethodInAbstractClassShouldBeAbstract")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 
-@JsonSubTypes({
-    @JsonSubTypes.Type(name = ResourceDao.TYPE, value = ResourceDao.class),
-    @JsonSubTypes.Type(TicketDao.class),
-    @JsonSubTypes.Type(name = MessageDao.TYPE, value = MessageDao.class)
-})
+@JsonSubTypes({@JsonSubTypes.Type(name = ResourceDao.TYPE, value = ResourceDao.class),
+    @JsonSubTypes.Type(TicketDao.class), @JsonSubTypes.Type(name = MessageDao.TYPE, value = MessageDao.class)})
 public abstract class Dao
-    implements DynamoEntry,
-               WithPrimaryKey,
-               DynamoEntryByIdentifier,
-               WithByTypeCustomerStatusIndex {
+    implements DynamoEntry, WithPrimaryKey, DynamoEntryByIdentifier, WithByTypeCustomerStatusIndex {
 
     public static final String URI_PATH_SEPARATOR = "/";
     public static final String VERSION_FIELD = "version";
@@ -151,8 +145,7 @@ public abstract class Dao
         String publisherId = customerIdentifier();
         Optional<String> publicationStatus = extractStatus();
 
-        return publicationStatus
-                   .map(status -> formatByTypeCustomerStatusIndexPartitionKey(publisherId, status))
+        return publicationStatus.map(status -> formatByTypeCustomerStatusIndexPartitionKey(publisherId, status))
                    .orElse(null);
     }
 
@@ -207,16 +200,13 @@ public abstract class Dao
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Dao)) {
+        if (!(o instanceof Dao dao)) {
             return false;
         }
-        Dao dao = (Dao) o;
-        return Objects.equals(getData(), dao.getData())
-               && Objects.equals(getVersion(), dao.getVersion());
+        return Objects.equals(getData(), dao.getData()) && Objects.equals(getVersion(), dao.getVersion());
     }
 
-    protected static Stream<Dao> fetchAllQueryResults(AmazonDynamoDB client,
-                                                      QueryRequest queryRequest) {
+    protected static Stream<Dao> fetchAllQueryResults(AmazonDynamoDB client, QueryRequest queryRequest) {
         var queryIterator = new QuerySpliterator(client, queryRequest, RESULT_SET_SIZE_FOR_DYNAMODB_QUERIES);
         return StreamSupport.stream(queryIterator, SINGLE_THREADED)
                    .map(item -> parseAttributeValuesMap(item, Dao.class));
@@ -246,27 +236,21 @@ public abstract class Dao
         return switch (keyField) {
             case RESOURCE ->
                 Map.entry(keyField.getKeyField(), new AttributeValue(ResourceDao.TYPE + KEY_FIELDS_DELIMITER));
-            case MESSAGE -> Map.entry(keyField.getKeyField(),
-                                      new AttributeValue(TicketDao.TICKETS_INDEXING_TYPE + KEY_FIELDS_DELIMITER));
-            case TICKET ->
+            case MESSAGE ->
                 Map.entry(keyField.getKeyField(), new AttributeValue(MessageDao.TYPE + KEY_FIELDS_DELIMITER));
+            case TICKET -> Map.entry(keyField.getKeyField(),
+                                     new AttributeValue(TicketDao.TICKETS_INDEXING_TYPE + KEY_FIELDS_DELIMITER));
             case DOI_REQUEST ->
                 Map.entry(keyField.getKeyField(), new AttributeValue("DoiRequest" + KEY_FIELDS_DELIMITER));
         };
     }
 
     private String formatByTypeCustomerStatusIndexPartitionKey(String publisherId, String status) {
-        return String.format(BY_TYPE_CUSTOMER_STATUS_PK_FORMAT,
-                             indexingType(),
-                             publisherId,
-                             status);
+        return String.format(BY_TYPE_CUSTOMER_STATUS_PK_FORMAT, indexingType(), publisherId, status);
     }
 
     private Optional<String> extractStatus() {
-        return attempt(this::getData)
-                   .map(Entity.class::cast)
-                   .map(Entity::getStatusString)
-                   .toOptional();
+        return attempt(this::getData).map(Entity.class::cast).map(Entity::getStatusString).toOptional();
     }
 
     private String customerIdentifier() {

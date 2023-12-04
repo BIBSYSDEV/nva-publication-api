@@ -123,14 +123,27 @@ class PublicationPermissionStrategyTest {
     }
 
     @Test
-    void shouldDenyPermissionToDeleteDegreeWhenUserIsNonEditor() throws JsonProcessingException {
+    void shouldDenyPermissionToDeleteDegreeWhenUserIsDoesNotHaveAccessRightPublishDegree()
+        throws JsonProcessingException {
         var username = randomString();
         var institution = randomUri();
-
         var requestInfo = createRequestInfo(username, institution, getCuratorAccessRights());
         var publication = createDegreePhd(username, institution);
 
-        // TODO: Venter på svar fra Jan Erik
+        Assertions.assertFalse(PublicationPermissionStrategy
+                                   .fromRequestInfo(requestInfo)
+                                   .hasPermissionToUnpublish(publication));
+    }
+
+    @Test
+    void shouldAllowPermissionToDeleteDegreeWhenUserIsCuratorWithPermissionToPublishDegree()
+        throws JsonProcessingException {
+        var username = randomString();
+        var institution = randomUri();
+        var requestInfo = createRequestInfo(username,
+                                            institution,
+                                            getCuratorWithPublishDegreeAccessRight());
+        var publication = createDegreePhd(username, institution);
 
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .fromRequestInfo(requestInfo)
@@ -138,19 +151,37 @@ class PublicationPermissionStrategyTest {
     }
 
     @Test
-    void shouldGiveCuratorPermissionToDeletePublicationWhenPublicationIsFromSameInstitution()
+    void shouldGiveCuratorPermissionToDeleteDegreePublicationWhenUserHasPublishDegreeAccessRight()
         throws JsonProcessingException {
 
         var curatorName = randomString();
         var resourceOwner = randomString();
         var institution = randomUri();
 
-        var requestInfo = createRequestInfo(curatorName, institution, getCuratorAccessRights());
+        var requestInfo = createRequestInfo(curatorName,
+                                            institution,
+                                            getCuratorWithPublishDegreeAccessRight());
         var publication = createDegreePhd(resourceOwner, institution);
 
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .fromRequestInfo(requestInfo)
                                   .hasPermissionToUnpublish(publication));
+    }
+
+    @Test
+    void shouldDenyAccessRightForCuratorToDeleteDegreePublicationForDifferentInstitution()
+        throws JsonProcessingException {
+        var curatorName = randomString();
+        var resourceOwner = randomString();
+        var institution = randomUri();
+        var requestInfo = createRequestInfo(curatorName,
+                                            institution,
+                                            getCuratorWithPublishDegreeAccessRight());
+        var publication = createDegreePhd(resourceOwner, randomUri());
+
+        Assertions.assertFalse(PublicationPermissionStrategy
+                                   .fromRequestInfo(requestInfo)
+                                   .hasPermissionToUnpublish(publication));
     }
 
     @Test
@@ -209,6 +240,16 @@ class PublicationPermissionStrategyTest {
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .fromRequestInfo(requestInfo)
                                   .hasPermissionToUnpublish(publication));
+    }
+
+    private static Function<AccessRight, String> getCognitoGroup(URI institutionId) {
+        return accessRight -> accessRight.name() + AT + institutionId.toString();
+    }
+
+    private List<AccessRight> getCuratorWithPublishDegreeAccessRight() {
+        var curatorAccessRight = getCuratorAccessRights();
+        curatorAccessRight.add(AccessRight.PUBLISH_DEGREE);
+        return curatorAccessRight;
     }
 
     private Publication createPublication(String resourceOwner, URI customer) {
@@ -299,10 +340,6 @@ class PublicationPermissionStrategyTest {
         requestInfo.setRequestContext(getRequestContextForClaim(claims));
 
         return requestInfo;
-    }
-
-    private static Function<AccessRight, String> getCognitoGroup(URI institutionId) {
-        return accessRight -> accessRight.name() + AT + institutionId.toString();
     }
 
     private JsonNode getRequestContextForClaim(Map<String, String> claimKeyValuePairs) throws JsonProcessingException {

@@ -6,6 +6,7 @@ identifier
 indexedDate
 link
 doiRequest
+duplicateOf
 publisher.labels
 entityDescription.contributors.affiliations.labels
 entityDescription.contributors.identity.id

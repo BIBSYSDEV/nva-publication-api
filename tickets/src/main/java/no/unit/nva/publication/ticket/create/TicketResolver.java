@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -19,7 +18,6 @@ import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -51,11 +49,10 @@ public class TicketResolver {
     public TicketEntry resolveAndPersistTicket(TicketEntry ticket,
                                                Publication publication,
                                                URI customerId,
-                                               Username finalizedBy, boolean isCurator) throws ApiGatewayException {
+                                               boolean isCurator) throws ApiGatewayException {
         if (isPublishingRequestCase(ticket)) {
             var publishingRequestCase = updatePublishingRequestWorkflow((PublishingRequestCase) ticket, customerId);
-            persistTicket(publishingRequestCase);
-            return resolvePublishingRequest(publishingRequestCase, publication, finalizedBy, isCurator);
+            return createPublishingRequest(publishingRequestCase, publication, isCurator);
         }
         return persistTicket(ticket);
     }
@@ -69,29 +66,33 @@ public class TicketResolver {
                    .noneMatch(artifact -> artifact instanceof File);
     }
 
-    private PublishingRequestCase resolvePublishingRequest(PublishingRequestCase publishingRequestCase, Publication publication,
-                                                           Username username, boolean isCurator)
+    private PublishingRequestCase createPublishingRequest(PublishingRequestCase publishingRequestCase,
+                                                          Publication publication,
+                                                          boolean isCurator)
         throws ApiGatewayException {
         if (REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(publishingRequestCase.getWorkflow()) || isCurator) {
             publishPublicationAndFiles(publication);
-            approveTicket(publishingRequestCase, username);
+            return createAutoApprovedTicket(publishingRequestCase);
         }
         if (REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(publishingRequestCase.getWorkflow())) {
             publishMetadata(publication);
-            approveTicketWhenPublicationContainsMetadataOnly(publishingRequestCase, publication, username);
+            return createAutoApprovedTicketWhenPublicationContainsMetadataOnly(publishingRequestCase, publication);
         }
-        return publishingRequestCase;
+        return (PublishingRequestCase) publishingRequestCase.persistNewTicket(ticketService);
     }
 
-    private void approveTicketWhenPublicationContainsMetadataOnly(TicketEntry ticket, Publication publication,
-                                                                  Username username) throws ApiGatewayException {
+    private PublishingRequestCase createAutoApprovedTicketWhenPublicationContainsMetadataOnly(TicketEntry ticket,
+                                                                                              Publication publication)
+        throws ApiGatewayException {
         if (hasNoFiles(publication)) {
-            approveTicket(ticket, username);
+            return createAutoApprovedTicket(ticket);
+        } else {
+            return (PublishingRequestCase) ticket.persistNewTicket(ticketService);
         }
     }
 
-    private void approveTicket(TicketEntry ticket, Username username) throws ApiGatewayException {
-        ticketService.updateTicketStatus(ticket, TicketStatus.COMPLETED, username);
+    private PublishingRequestCase createAutoApprovedTicket(TicketEntry ticket) throws ApiGatewayException {
+        return ((PublishingRequestCase) ticket).persistAutoComplete(ticketService);
     }
 
     private PublishingRequestCase updatePublishingRequestWorkflow(PublishingRequestCase ticket, URI customerId)

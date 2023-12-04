@@ -34,7 +34,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.exception.NotImplementedException;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
@@ -342,13 +341,9 @@ public class ResourceService extends ServiceWithTransactions {
         return updateResourceService.updateImportCandidate(importCandidate);
     }
 
-    public void unpublishPublication(Publication publication) throws BadRequestException, NotImplementedException {
+    public void unpublishPublication(Publication publication) throws BadRequestException {
         if (!PUBLISHED.equals(publication.getStatus())) {
             throw new BadRequestException(ONLY_PUBLISHED_PUBLICATIONS_CAN_BE_UNPUBLISHED_ERROR_MESSAGE);
-        }
-
-        if (nonNull(publication.getDoi())) {
-            throw new NotImplementedException();
         }
 
         updateResourceService.unpublishPublication(publication);

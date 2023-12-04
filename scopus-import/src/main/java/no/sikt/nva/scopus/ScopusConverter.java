@@ -2,10 +2,10 @@ package no.sikt.nva.scopus;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
-import static no.sikt.nva.scopus.ScopusConstants.SCOPUS_IDENTIFIER;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.sikt.nva.scopus.ScopusConstants.INF_END;
 import static no.sikt.nva.scopus.ScopusConstants.INF_START;
+import static no.sikt.nva.scopus.ScopusConstants.SCOPUS_IDENTIFIER;
 import static no.sikt.nva.scopus.ScopusConstants.SUP_END;
 import static no.sikt.nva.scopus.ScopusConstants.SUP_START;
 import static nva.commons.core.StringUtils.isEmpty;
@@ -14,6 +14,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -23,6 +24,7 @@ import no.scopus.generated.AuthorKeywordTp;
 import no.scopus.generated.AuthorKeywordsTp;
 import no.scopus.generated.CitationInfoTp;
 import no.scopus.generated.CitationLanguageTp;
+import no.scopus.generated.CitationTitleTp;
 import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
@@ -57,13 +59,17 @@ import nva.commons.core.paths.UriWrapper;
 @SuppressWarnings("PMD.GodClass")
 public class ScopusConverter {
 
-    public static final URI HARDCODED_ID = URI.create(
-        "https://api.sandbox.nva.aws.unit" + ".no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934");
     public static final String RESOURCE_OWNER_SIKT = "sikt@20754";
     public static final String CRISTIN_ID_SIKT = "20754.0.0.0";
     public static final String CRISTIN = "cristin";
     public static final String ORGANIZATION = "organization";
-    public static final String API_HOST = "API_HOST";
+    public static final String API_HOST = new Environment().readEnv("API_HOST");
+    public static final String PROD = "prod";
+    private static final Map<String, String> CUSTOMER_MAP = Map.of("sandbox", "bb3d0c0c-5065-4623-9b98-5810983c2478",
+                                                                   "dev", "bb3d0c0c-5065-4623-9b98-5810983c2478",
+                                                                   "test", "0baf8fcb-b18d-4c09-88bb-956b4f659103",
+                                                                   "prod", "22139870-8d31-4df9-bc45-14eb68287c4a");
+    public static final String CUSTOMER = "customer";
     private final DocTp docTp;
     private final PiaConnection piaConnection;
     private final CristinConnection cristinConnection;
@@ -116,7 +122,8 @@ public class ScopusConverter {
     }
 
     public ImportCandidate generateImportCandidate() {
-        return new ImportCandidate.Builder().withPublisher(new Organization.Builder().withId(HARDCODED_ID).build())
+        return new ImportCandidate.Builder()
+                   .withPublisher(createOrganization())
                    .withResourceOwner(constructResourceOwner())
                    .withAdditionalIdentifiers(generateAdditionalIdentifiers())
                    .withEntityDescription(generateEntityDescription())
@@ -129,8 +136,25 @@ public class ScopusConverter {
     }
 
     private static URI constructOwnerAffiliation() {
-        var apiHost = new Environment().readEnv(API_HOST);
-        return UriWrapper.fromHost(apiHost).addChild(CRISTIN).addChild(ORGANIZATION).addChild(CRISTIN_ID_SIKT).getUri();
+        return UriWrapper.fromHost(API_HOST)
+                   .addChild(CRISTIN)
+                   .addChild(ORGANIZATION)
+                   .addChild(CRISTIN_ID_SIKT)
+                   .getUri();
+    }
+
+    private Organization createOrganization() {
+        return new Organization.Builder()
+                   .withId(UriWrapper.fromHost(API_HOST).addChild(CUSTOMER).addChild(getId()).getUri())
+                   .build();
+    }
+
+    private static String getId() {
+        return CUSTOMER_MAP.keySet()
+                   .stream()
+                   .filter(API_HOST::contains)
+                   .findFirst()
+                   .orElse(CUSTOMER_MAP.get(PROD));
     }
 
     private ResourceOwner constructResourceOwner() {
@@ -262,15 +286,14 @@ public class ScopusConverter {
     }
 
     private Optional<TitletextTp> getMainTitleTextTp() {
-        return getTitleText().stream().filter(this::isTitleOriginal).findFirst();
+        return Optional.ofNullable(extractHead())
+                   .map(HeadTp::getCitationTitle)
+                   .map(CitationTitleTp::getTitletext)
+                   .flatMap(text -> text.stream().filter(this::isTitleOriginal).findFirst());
     }
 
     private boolean isTitleOriginal(TitletextTp titletextTp) {
-        return titletextTp.getOriginal().equals(YesnoAtt.Y);
-    }
-
-    private List<TitletextTp> getTitleText() {
-        return extractHead().getCitationTitle().getTitletext();
+        return nonNull(titletextTp) && titletextTp.getOriginal().equals(YesnoAtt.Y);
     }
 
     private Set<AdditionalIdentifier> generateAdditionalIdentifiers() {

@@ -6,16 +6,16 @@ import static com.google.common.net.HttpHeaders.ACCEPT;
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.HttpHeaders.LOCATION;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.util.UUID.randomUUID;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ENV_NAME_NVA_FRONTEND_DOMAIN;
-import static no.unit.nva.publication.fetch.FetchPublicationHandler.GONE_MESSAGE;
+import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
-import static org.apache.http.HttpStatus.SC_GONE;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
@@ -54,6 +54,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.PublicationDetail;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -274,15 +275,49 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    @DisplayName("Handler returns Gone Response when when publication has status Deleted")
-    void handlerReturnsGoneErrorResponseWhenPublicationHasStatusDeleted()
+    void handlerReturnsGoneWithPublicationDetailWhenPublicationIsDeletedAndDuplicateOfValueIsNotPresent()
         throws ApiGatewayException, IOException {
-        var publicationIdentifier = createDeletedPublication();
-        fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier), output, context);
+        var publication = createDeletedPublicationWithDuplicate(null);
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output, context);
         var gatewayResponse = parseFailureResponse();
-        var actualDetail = getProblemDetail(gatewayResponse);
-        assertEquals(SC_GONE, gatewayResponse.getStatusCode());
-        assertThat(actualDetail, containsString(GONE_MESSAGE));
+        var expectedTombstone = new PublicationDetail(publication.getIdentifier(),
+                                                      publication.getDuplicateOf(),
+                                                      publication.getEntityDescription());
+        var resource = JsonUtils.dtoObjectMapper.readTree(gatewayResponse.getBody()).get("resource");
+        var actualTombstone = JsonUtils.dtoObjectMapper.readValue(resource.asText(), PublicationDetail.class);
+
+        assertThat(actualTombstone, is(equalTo(expectedTombstone)));
+    }
+
+    @Test
+    void handlerRedirectToDuplicatePublicationWhenDeletedPublicationHasDuplicate()
+        throws ApiGatewayException, IOException {
+        var duplicateOfIdentifier =
+            UriWrapper.fromUri(randomUri()).addChild(SortableIdentifier.next().toString()).getUri();
+        var publication = createDeletedPublicationWithDuplicate(duplicateOfIdentifier);
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output, context);
+        var valueType = restApiMapper.getTypeFactory()
+                            .constructParametricType(
+                                GatewayResponse.class,
+                                Void.class);
+
+        GatewayResponse<Void> response = restApiMapper.readValue(output.toString(), valueType);
+
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_MOVED_PERM)));
+
+        var expectedLandingPage =
+            "https://localhost/registration/" + UriWrapper.fromUri(publication.getDuplicateOf()).getLastPathElement();
+        assertThat(response.getHeaders().get(LOCATION), is(equalTo(expectedLandingPage)));
+    }
+
+    @Test
+    void handlerReturnsNotFoundWhenRequestingPublicationWithPublicationStatusNotSupportedByHandler()
+        throws ApiGatewayException, IOException {
+        var publication = createDraftForDeletion();
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output, context);
+        var gatewayResponse = parseFailureResponse();
+
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
     }
 
     @Test
@@ -332,11 +367,12 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private String createDeletedPublication() throws ApiGatewayException {
+    private Publication createDeletedPublicationWithDuplicate(URI duplicateOf) throws ApiGatewayException {
         var createdPublication = createPublication();
+        publicationService.updatePublication(createdPublication.copy().withDuplicateOf(duplicateOf).build());
         var publicationIdentifier = createdPublication.getIdentifier();
         publicationService.updatePublishedStatusToDeleted(publicationIdentifier);
-        return publicationIdentifier.toString();
+        return publicationService.getPublication(createdPublication);
     }
 
     private GatewayResponse<PublicationResponse> parseHandlerResponse() throws JsonProcessingException {
@@ -379,6 +415,13 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         SortableIdentifier publicationIdentifier =
             Resource.fromPublication(publication).persistNew(publicationService, userInstance).getIdentifier();
         return publicationService.getPublicationByIdentifier(publicationIdentifier);
+    }
+
+    private Publication createDraftForDeletion() throws ApiGatewayException {
+        var publication = PublicationGenerator.randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(publicationService, userInstance);
+        return publicationService.markPublicationForDeletion(userInstance, persistedPublication.getIdentifier());
     }
 
     private Publication createPublication(Class<? extends PublicationInstance<?>> instance) throws ApiGatewayException {

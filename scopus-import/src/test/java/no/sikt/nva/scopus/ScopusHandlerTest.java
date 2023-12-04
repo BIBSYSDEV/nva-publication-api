@@ -38,6 +38,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
+import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.StringUtils.isNotBlank;
@@ -214,6 +215,7 @@ import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -348,22 +350,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualAdditionalIdentifiers = publication.getAdditionalIdentifiers();
         assertThat(actualAdditionalIdentifiers, hasItem(expectedAdditionalIdentifier));
-    }
-
-    @Test
-    void shouldDownloadFileFromUrlAndPersistIntoS3BucketAndMapToAssociatedArtifact(
-        WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException {
-        scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccess(wireMockRuntimeInfo));
-        createEmptyPiaMock();
-        var expectedFilenames = mockFetchFilesResponses(scopusData);
-        var s3Event = createNewScopusPublicationEvent();
-        var importCandidate = scopusHandler.handleRequest(s3Event, CONTEXT);
-
-        var actualFiles = importCandidate.getAssociatedArtifacts().stream().map(file -> (File) file).toList();
-
-        assertThat(actualFiles.stream().map(File::getName).toList(),
-                   containsInAnyOrder(expectedFilenames.toArray(String[]::new)));
-        actualFiles.forEach(this::assertThatFileHasBeenPersisted);
     }
 
     @Test
@@ -1164,7 +1150,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
             .forEach(contributor -> assertNull(contributor.getIdentity().getId()));
     }
 
-    @Test
+    @RepeatedTest(100)
     void shouldHandlePiaConnectionException() throws IOException {
         mockedPiaException();
         var s3Event = createNewScopusPublicationEvent();
@@ -1230,17 +1216,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var testUrl = "/" + UriWrapper.fromUri(locationType.getUpwUrlForPdf()).getLastPathElement();
         stubFor(WireMock.get(urlPathEqualTo(testUrl))
                     .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_BAD_REQUEST)));
-    }
-
-    private static String mockFileResponse(UpwOaLocationType locationType) {
-        var filename = randomString() + ".pdf";
-        var testUrl = "/" + UriWrapper.fromUri(locationType.getUpwUrlForPdf()).getLastPathElement();
-        stubFor(WireMock.get(urlPathEqualTo(testUrl))
-                    .willReturn(aResponse().withBody("")
-                                    .withHeader("Content-Type", "application/pdf;charset=UTF-8")
-                                    .withHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"")
-                                    .withStatus(HttpURLConnection.HTTP_OK)));
-        return filename;
     }
 
     private static void hasNoAffiliationWithId(Contributor contributor) {
@@ -1352,18 +1327,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var string = UriWrapper.fromUri(wireMockRuntimeInfo.getHttpsBaseUrl()).addChild(randomString()).toString();
         location.setUpwUrlForPdf(string);
         return location;
-    }
-
-    private List<String> mockFetchFilesResponses(ScopusGenerator scopusData) {
-        return scopusData.getDocument()
-                   .getMeta()
-                   .getOpenAccess()
-                   .getUpwOpenAccess()
-                   .getUpwOaLocations()
-                   .getUpwOaLocation()
-                   .stream()
-                   .map(ScopusHandlerTest::mockFileResponse)
-                   .toList();
     }
 
     private ImportCandidate createPersistedImportCandidate() {

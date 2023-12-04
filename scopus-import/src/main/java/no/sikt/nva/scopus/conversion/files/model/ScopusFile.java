@@ -30,6 +30,8 @@ public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, Inpu
         return File.builder()
                    .withIdentifier(identifier)
                    .withName(name)
+                   .withMimeType(contentType)
+                   .withSize(size)
                    .withLicense(license)
                    .withPublisherAuthority(publisherAuthority)
                    .withEmbargoDate(embargo)
