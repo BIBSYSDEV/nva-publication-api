@@ -120,7 +120,7 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_PROBLEM_TYPE =
-            restApiMapper.getTypeFactory().constructParametricType(GatewayResponse.class, Problem.class);
+        restApiMapper.getTypeFactory().constructParametricType(GatewayResponse.class, Problem.class);
     public static final String ACCESS_TOKEN_RESPONSE_BODY = "{ \"access_token\" : \"Bearer token\"}";
 
     public static final String SOME_MESSAGE = "SomeMessage";
@@ -128,8 +128,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private static final String EXTERNAL_CLIENT_ID = "external-client-id";
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
     private final GetExternalClientResponse getExternalClientResponse = mock(GetExternalClientResponse.class);
-    private ResourceService publicationService;
     private final Context context = new FakeContext();
+    private ResourceService publicationService;
     private ByteArrayOutputStream output;
     private UpdatePublicationHandler updatePublicationHandler;
     private Publication publication;
@@ -137,33 +137,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private IdentityServiceClient identityServiceClient;
     private TicketService ticketService;
     private FakeSecretsManagerClient secretsManagerClient;
-
-    static Stream<Arguments> allDegreeInstances() {
-        return Stream.of(
-                Arguments.of(DegreeMaster.class),
-                Arguments.of(DegreeBachelor.class),
-                Arguments.of(DegreePhd.class)
-        );
-    }
-
-    private static FakeHttpClient<String> getHttpClientWithPublisherAllowingPublishing() {
-        return new FakeHttpClient<>(FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY, HTTP_OK),
-                mockIdentityServiceResponseAllowingAutoApprovalOfPublishingRequests());
-    }
-
-    private static FakeHttpResponse<String> mockIdentityServiceResponseAllowingAutoApprovalOfPublishingRequests() {
-        return FakeHttpResponse.create(IoUtils.stringFromResources(Path.of("customer_allowing_publishing.json")),
-                HTTP_OK);
-    }
-
-    private static FakeHttpClient<String> getHttpClientWithUnresolvableClient() {
-        return new FakeHttpClient<>(FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY,
-                HTTP_OK), unresolvableCustomer());
-    }
-
-    private static FakeHttpResponse<String> unresolvableCustomer() {
-        return FakeHttpResponse.create(randomString(), HTTP_NOT_FOUND);
-    }
 
     /**
      * Set up environment.
@@ -190,6 +163,14 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 new UpdatePublicationHandler(publicationService, ticketService, environment, identityServiceClient,
                         uriRetriever);
         publication = createNonDegreePublication();
+    }
+
+    static Stream<Arguments> allDegreeInstances() {
+        return Stream.of(
+            Arguments.of(DegreeMaster.class),
+            Arguments.of(DegreeBachelor.class),
+            Arguments.of(DegreePhd.class)
+        );
     }
 
     @Test
@@ -273,7 +254,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void handlerDoesNotCreateNewPublishingRequestWhenThereExistsPendingAndCompletedPublishingRequest()
-            throws ApiGatewayException, IOException {
+        throws ApiGatewayException, IOException {
         var publishedPublication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED,
                 publicationService);
         persistCompletedPublishingRequest(publishedPublication);
@@ -603,7 +584,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldUpdateNonDegreePublicationWhenUserHasAccessRightEditAllNonDegreePublications()
-            throws ApiGatewayException, IOException {
+        throws ApiGatewayException, IOException {
         Publication savedPublication = createSamplePublication();
         Publication publicationUpdate = updateTitle(savedPublication);
         InputStream event = userWithEditAllNonDegreePublicationsUpdatesPublication(publicationUpdate);
@@ -669,19 +650,14 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HttpURLConnection.HTTP_FORBIDDEN)));
     }
 
-    private Publication savePublication(Publication degreePublication) throws BadRequestException {
-        UserInstance userInstance = UserInstance.fromPublication(degreePublication);
-        return Resource.fromPublication(degreePublication).persistNew(publicationService, userInstance);
-    }
-
     @Test
     void handlerUpdatesDegreePublicationWhenInputIsValidAndUserIsExternalClient()
         throws IOException, BadRequestException {
 
         var thesisPublication = publication.copy().withEntityDescription(thesisPublishableEntityDescription()).build();
         var savedThesis = Resource
-            .fromPublication(thesisPublication)
-            .persistNew(publicationService, UserInstance.fromPublication(publication));
+                              .fromPublication(thesisPublication)
+                              .persistNew(publicationService, UserInstance.fromPublication(publication));
         var publicationUpdate = updateTitle(savedThesis);
 
         InputStream inputStream =
@@ -724,6 +700,30 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private void publish(Publication persistedPublication) throws ApiGatewayException {
         publicationService.publishPublication(UserInstance.fromPublication(publication),
                                               persistedPublication.getIdentifier());
+    }
+
+    private static FakeHttpClient<String> getHttpClientWithPublisherAllowingPublishing() {
+        return new FakeHttpClient<>(FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY, HTTP_OK),
+                                    mockIdentityServiceResponseAllowingAutoApprovalOfPublishingRequests());
+    }
+
+    private static FakeHttpResponse<String> mockIdentityServiceResponseAllowingAutoApprovalOfPublishingRequests() {
+        return FakeHttpResponse.create(IoUtils.stringFromResources(Path.of("customer_allowing_publishing.json")),
+                                       HTTP_OK);
+    }
+
+    private static FakeHttpClient<String> getHttpClientWithUnresolvableClient() {
+        return new FakeHttpClient<>(FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY,
+                                                            HTTP_OK), unresolvableCustomer());
+    }
+
+    private static FakeHttpResponse<String> unresolvableCustomer() {
+        return FakeHttpResponse.create(randomString(), HTTP_NOT_FOUND);
+    }
+
+    private Publication savePublication(Publication degreePublication) throws BadRequestException {
+        UserInstance userInstance = UserInstance.fromPublication(degreePublication);
+        return Resource.fromPublication(degreePublication).persistNew(publicationService, userInstance);
     }
 
     private void injectRandomContributorsWithoutCristinIdAndIdentity(Publication publication) {
