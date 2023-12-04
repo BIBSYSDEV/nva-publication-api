@@ -305,9 +305,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_MOVED_PERM)));
 
-        var expectedLandingPage =
-            "https://localhost/registration/" + UriWrapper.fromUri(publication.getDuplicateOf()).getLastPathElement();
-        assertThat(response.getHeaders().get(LOCATION), is(equalTo(expectedLandingPage)));
+        assertThat(response.getHeaders().get(LOCATION), is(equalTo(publication.getDuplicateOf().toString())));
     }
 
     @Test

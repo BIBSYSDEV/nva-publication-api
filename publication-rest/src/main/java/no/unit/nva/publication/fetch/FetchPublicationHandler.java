@@ -116,8 +116,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     private String produceRedirect(URI duplicateOf) {
         statusCode = HTTP_MOVED_PERM;
-        addAdditionalHeaders(() -> Map.of(LOCATION,
-                                          landingPageLocation(SortableIdentifier.fromUri(duplicateOf)).toString()));
+        addAdditionalHeaders(() -> Map.of(LOCATION, duplicateOf.toString()));
         return null;
     }
 
