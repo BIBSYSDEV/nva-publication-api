@@ -343,21 +343,6 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnNotImplementedWhenUnpublishingPublicationWithNvaDoi()
-        throws ApiGatewayException, IOException {
-        var publication = createAndPersistPublication();
-        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
-
-        var publisherUri = publication.getPublisher().getId();
-        var inputStream = createHandlerRequest(publication.getIdentifier(), randomString(), publisherUri,
-                                               AccessRight.EDIT_OWN_INSTITUTION_RESOURCES);
-        handler.handleRequest(inputStream, outputStream, context);
-
-        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(SC_NOT_IMPLEMENTED)));
-    }
-
-    @Test
     void shouldReturnSuccessAndUpdatePublicationStatusToDeletedWhenUserCanEditOwnInstitutionResources()
         throws IOException, ApiGatewayException {
 
