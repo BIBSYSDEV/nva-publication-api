@@ -386,7 +386,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     }
 
     @Test
-    void shouldWriteToPiaWhenCristinIdHaveBeenUpdatedByUser() throws NotFoundException, IOException {
+    void shouldWriteToPiaWhenCristinIdHasBeenUpdatedByUser() throws NotFoundException, IOException {
         var auid = randomString();
         var contributorWithAuid = createContributorWithAuid(auid, 1);
         var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid));
