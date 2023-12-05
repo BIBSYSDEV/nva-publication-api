@@ -4,6 +4,7 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import java.net.URI;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
@@ -11,6 +12,9 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import nva.commons.core.StringUtils;
 
 public class CristinImportPublicationMerger {
+
+    private static final String DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS
+        = "unis";
 
     private final Publication cristinPublication;
     private final Publication bragePublication;
@@ -31,8 +35,16 @@ public class CristinImportPublicationMerger {
     private Set<AdditionalIdentifier> mergeAdditionalIdentifiers() {
         var additionalIdentifiers = new HashSet<>(cristinPublication.getAdditionalIdentifiers());
         additionalIdentifiers.addAll(bragePublication.getAdditionalIdentifiers());
-        additionalIdentifiers.add(extractBrageHandleAsAdditionalIdentifier());
+        if (shouldAddBrageHandleToAdditionalIdentifiers()) {
+            additionalIdentifiers.add(extractBrageHandleAsAdditionalIdentifier());
+        }
         return additionalIdentifiers;
+    }
+
+    private boolean shouldAddBrageHandleToAdditionalIdentifiers() {
+        return nonNull(cristinPublication.getHandle())
+               && nonNull(bragePublication.getHandle())
+               && !isDummyHandle();
     }
 
     private AdditionalIdentifier extractBrageHandleAsAdditionalIdentifier() {
@@ -42,7 +54,21 @@ public class CristinImportPublicationMerger {
     private URI determineHandle() {
         return nonNull(cristinPublication.getHandle())
                    ? cristinPublication.getHandle()
-                   : bragePublication.getHandle();
+                   : getBrageHandleAsLongAsItIsNotADummyHandle().orElse(null);
+    }
+
+    private boolean isDummyHandle() {
+        return nonNull(bragePublication.getHandle())
+               && bragePublication
+                      .getHandle()
+                      .toString()
+                      .contains(DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS);
+    }
+
+    private Optional<URI> getBrageHandleAsLongAsItIsNotADummyHandle() {
+        return isDummyHandle()
+                   ? Optional.empty()
+                   : Optional.of(bragePublication.getHandle());
     }
 
     private Publication fillNewPublicationWithMetadataFromBrage(Publication publicationForUpdating) {

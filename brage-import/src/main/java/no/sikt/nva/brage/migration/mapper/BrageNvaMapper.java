@@ -210,7 +210,8 @@ public final class BrageNvaMapper {
 
     private static EntityDescription extractEntityDescription(Record brageRecord)
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        return new EntityDescription.Builder().withLanguage(extractLanguage(brageRecord))
+        return new EntityDescription.Builder()
+                   .withLanguage(extractLanguage(brageRecord))
                    .withAbstract(extractAbstract(brageRecord))
                    .withDescription(extractDescription(brageRecord))
                    .withPublicationDate(extractDate(brageRecord))
@@ -250,8 +251,8 @@ public final class BrageNvaMapper {
 
     private static Reference extractReference(Record brageRecord)
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        return new Reference.Builder().withPublishingContext(
-                PublicationContextMapper.buildPublicationContext(brageRecord))
+        return new Reference.Builder()
+                   .withPublishingContext(PublicationContextMapper.buildPublicationContext(brageRecord))
                    .withPublicationInstance(PublicationInstanceMapper.buildPublicationInstance(brageRecord))
                    .withDoi(extractDoi(brageRecord))
                    .build();
