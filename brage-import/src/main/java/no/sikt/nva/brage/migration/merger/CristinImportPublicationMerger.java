@@ -14,7 +14,7 @@ import nva.commons.core.StringUtils;
 public class CristinImportPublicationMerger {
 
     private static final String DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS
-        = "unis";
+        = "dymmy_handle_unis";
 
     private final Publication cristinPublication;
     private final Publication bragePublication;

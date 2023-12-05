@@ -76,6 +76,7 @@ import no.sikt.nva.brage.migration.record.PublicationDate;
 import no.sikt.nva.brage.migration.record.PublicationDateNva;
 import no.sikt.nva.brage.migration.record.PublisherAuthority;
 import no.sikt.nva.brage.migration.record.Record;
+import no.sikt.nva.brage.migration.record.ResourceOwner;
 import no.sikt.nva.brage.migration.record.Type;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
@@ -1123,6 +1124,21 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         assertThat(storedHandleString, is(not(nullValue())));
     }
 
+    @Test
+    void whenCristinPublicationIsMissingImportingMinimalRecordShouldNotCreateNewPublication() throws IOException {
+        var cristinIdentifier = randomString();
+        var minimalRecord = createMinimalRecord(cristinIdentifier);
+        var contentFile = createContentFile();
+        minimalRecord.setContentBundle(new ResourceContent(List.of(contentFile)));
+        var s3Event = createNewBrageRecordEvent(minimalRecord);
+        handler.handleRequest(s3Event, CONTEXT);
+        var publications = resourceService.getPublicationsByCristinIdentifier(cristinIdentifier);
+        assertThat(publications, hasSize(0));
+        var s3Driver = new S3Driver(s3Client, new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
+        var errorFiles = s3Driver.getFiles(UnixPath.of("ERROR"));
+        assertThat(errorFiles, hasSize(1));
+    }
+
     private static Publication copyPublication(NvaBrageMigrationDataGenerator brageGenerator)
         throws JsonProcessingException {
         return JsonUtils.dtoObjectMapper.readValue(
@@ -1158,10 +1174,11 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     private Record createMinimalRecord(String cristinIdentifier) {
         var minimalRecord = new Record();
-        var fakeDummyHandle = UriWrapper.fromUri("1/unis").getUri();
+        var fakeDummyHandle = UriWrapper.fromUri("dymmy_handle_unis/1").getUri();
         minimalRecord.setId(fakeDummyHandle);
         minimalRecord.setPublisherAuthority(new PublisherAuthority(List.of(),
                                                                    IS_PUBLISHER_AUTHORITY));
+        minimalRecord.setResourceOwner(new ResourceOwner("unis@186.0.0.0", randomUri()));
         minimalRecord.setCristinId(cristinIdentifier);
         minimalRecord.setEntityDescription(new EntityDescription());
         minimalRecord.setType(new Type(List.of(), CRISTIN_RECORD.getValue()));
@@ -1170,7 +1187,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     private ContentFile createContentFile() {
         var contentFile = new ContentFile();
-        contentFile.setFilename("Myawsomeunisfile.pdf");
+        contentFile.setFilename("MyAwsomeUnisFile.pdf");
         contentFile.setBundleType(BundleType.ORIGINAL);
         contentFile.setIdentifier(java.util.UUID.randomUUID());
         contentFile.setLicense(new License("", new NvaLicense(randomUri())));
