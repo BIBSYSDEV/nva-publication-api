@@ -1,6 +1,7 @@
 package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.model.PublicationStatus.DELETED;
+import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.publication.model.business.PublishingRequestCase.assertThatPublicationHasMinimumMandatoryFields;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION;
@@ -33,12 +34,12 @@ import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DynamoEntry;
@@ -135,7 +136,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     public void unpublishPublication(Publication publication) {
-        publication.setStatus(DELETED);
+        publication.setStatus(UNPUBLISHED);
         publication.setDuplicateOf(publication.getDuplicateOf());
         publication.setModifiedDate(clockForTimestamps.instant());
         var resource = Resource.fromPublication(publication);
@@ -144,6 +145,31 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
         var request = new TransactWriteItemsRequest().withTransactItems(updateResourceTransactionItem);
         sendTransactionWriteRequest(request);
+    }
+
+    public void deletePublication(Publication publication) {
+
+        var deletePublication = toDeletedPublication(publication);
+        var resource = Resource.fromPublication(deletePublication);
+
+        var updateResourceTransactionItem = updateResource(resource);
+
+        var request = new TransactWriteItemsRequest().withTransactItems(updateResourceTransactionItem);
+        sendTransactionWriteRequest(request);
+    }
+
+    private Publication toDeletedPublication(Publication publication) {
+        return new Publication.Builder()
+                   .withIdentifier(publication.getIdentifier())
+                   .withStatus(DELETED)
+                   .withDoi(publication.getDoi())
+                   .withPublisher(publication.getPublisher())
+                   .withResourceOwner(publication.getResourceOwner())
+                   .withEntityDescription(publication.getEntityDescription())
+                   .withCreatedDate(publication.getCreatedDate())
+                   .withPublishedDate(publication.getPublishedDate())
+                   .withModifiedDate(clockForTimestamps.instant())
+                   .build();
     }
 
     protected static DeletePublicationStatusResponse deletionStatusIsCompleted() {
