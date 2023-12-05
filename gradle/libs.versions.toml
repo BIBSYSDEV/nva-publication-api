@@ -1,18 +1,18 @@
 [versions]
 
 
-nva = { strictly = '1.36.1' }
-nvaDatamodel = { strictly = '0.20.62' }
+nva = { strictly = '1.36.2' }
+nvaDatamodel = { strictly = '0.20.66' }
 nvaDoiPartnerData = { strictly = '0.5.8' }
 jackson = { strictly = '2.15.2' }
 awsSdk = { strictly = '1.12.544' }
 awsSdk2 = { strictly = '2.20.141' }
-log4j = { strictly = '2.18.0' }
+log4j = { strictly = '2.22.0' }
 # slf4j takes "require", not "strictly" as wiremock has multiple versions
-slf4j = { require = '2.0.9' }
+slf4j = { require = '2.0.5' }
 zalandoProblem = { strictly = '0.27.1' }
 awsLambdaCore = { strictly = '1.2.2' }
-awsLambdaEvents = { strictly = '3.11.2' }
+awsLambdaEvents = { strictly = '3.11.4' }
 # jsonld and awssdk have different versions. update libraries and check again
 httpcore = { require = '4.4.13' }
 dynamoDbLocal = { strictly = '2.0.0' }
@@ -141,7 +141,7 @@ cucumber-picocontainer = { group = 'io.cucumber', name = 'cucumber-picocontainer
 
 log4j-core = { group = 'org.apache.logging.log4j', name = 'log4j-core', version.ref = 'log4j' }
 log4j-api = { group = 'org.apache.logging.log4j', name = 'log4j-api', version.ref = 'log4j' }
-log4j-slf4j18-impl = { group = 'org.apache.logging.log4j', name = 'log4j-slf4j18-impl', version.ref = 'log4j' }
+log4j-slf4j-impl = { group = 'org.apache.logging.log4j', name = 'log4j-slf4j2-impl', version.ref = 'log4j' }
 slf4j-api = { group = 'org.slf4j', name = 'slf4j-api', version.ref = 'slf4j' }
 
 karate-core = { group = 'com.intuit.karate', name = 'karate-core', version.ref = 'karate-core' }
@@ -171,7 +171,7 @@ testing = ['junit-jupiter-params', 'junit-jupiter-api', 'junit-vintage-engine', 
     'junit-jupiter-engine', 'mockito-core', 'mockito-junit', 'hamcrest-base', 'hamcrest-core',
     'hamcrest-optional', 'logutils', 'nva-testutils', 'nva-datamodel-testutils', 'javers', 'zalando',
     'mockito-junit-jupiter','datafaker']
-logging = ['log4j-core', 'log4j-api', 'log4j-slf4j18-impl', 'slf4j-api']
+logging = ['log4j-core', 'log4j-api', 'log4j-slf4j-impl', 'slf4j-api']
 jackson = ['jackson-core', 'jackson-datatype-jdk8', 'jackson-datatype-jsr310', 'jackson-databind', 'jackson-annotations', 'jackson-module-parameter-names', 'jackson-datatype-problem']
 jaxb = ['xsd2java-api', 'jaxb-runtime', 'xsd2java-jakarta']
 jena = ['jena-core', 'jena-arq']

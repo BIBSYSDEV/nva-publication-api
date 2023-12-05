@@ -101,12 +101,12 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         return switch (publication.getStatus()) {
             case DRAFT -> returnDraftPublication(requestInfo, publication);
             case PUBLISHED -> createResponse(requestInfo, publication);
-            case DELETED -> produceDeletedResponse(publication);
+            case UNPUBLISHED -> produceUnpublishedPublicationResponse(publication);
             default -> throwNotFoundException();
         };
     }
 
-    private String produceDeletedResponse(Publication publication) throws GoneException {
+    private String produceUnpublishedPublicationResponse(Publication publication) throws GoneException {
         if (nonNull(publication.getDuplicateOf())) {
             return produceRedirect(publication.getDuplicateOf());
         } else {

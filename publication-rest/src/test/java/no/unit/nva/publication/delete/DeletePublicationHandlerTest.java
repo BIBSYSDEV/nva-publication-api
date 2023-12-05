@@ -358,7 +358,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(SC_ACCEPTED)));
 
         var unpublishedPublication = publicationService.getPublication(publication);
-        assertThat(unpublishedPublication.getStatus(), is(equalTo(PublicationStatus.DELETED)));
+        assertThat(unpublishedPublication.getStatus(), is(equalTo(PublicationStatus.UNPUBLISHED)));
     }
 
     @Test

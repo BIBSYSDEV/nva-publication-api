@@ -38,6 +38,7 @@ import java.util.stream.Stream;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.publication.model.business.ResourceTest.REVISION;
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
 import static no.unit.nva.publication.model.storage.DaoUtils.toPutItemRequest;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
@@ -211,7 +212,8 @@ class DaoTest extends ResourcesLocalTest {
         
         assertThat(originalDao, doesNotHaveEmptyValuesIgnoringFields(Set.of(DATA_OWNER_AFFILIATION, DATA_ASSIGNEE,
                                                                             DATA_FINALIZED_BY,
-                                                                            DATA_FINALIZED_DATE, DATA_IMPORT_STATUS, RESOURCE_IMPORT_STATUS)));
+                                                                            DATA_FINALIZED_DATE, DATA_IMPORT_STATUS,
+                                                                            RESOURCE_IMPORT_STATUS, REVISION)));
         Map<String, AttributeValue> dynamoMap = originalDao.toDynamoFormat();
         Dao parsedDao = parseAttributeValuesMap(dynamoMap, originalDao.getClass());
         assertThat(parsedDao, is(equalTo(originalDao)));
@@ -231,7 +233,7 @@ class DaoTest extends ResourcesLocalTest {
         Dao retrievedDao = parseAttributeValuesMap(savedMap, originalDao.getClass());
         assertThat(retrievedDao, doesNotHaveEmptyValuesIgnoringFields(
                 Set.of(DATA_OWNER_AFFILIATION, DATA_ASSIGNEE, DATA_FINALIZED_BY, DATA_FINALIZED_DATE,
-                       DATA_IMPORT_STATUS, RESOURCE_IMPORT_STATUS)));
+                       DATA_IMPORT_STATUS, RESOURCE_IMPORT_STATUS, REVISION)));
         assertThat(retrievedDao, is(equalTo(originalDao)));
     }
     

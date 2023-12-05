@@ -85,7 +85,7 @@ public class PublicationContextCreator {
         String seriesNumber = null;
         PublishingHouse publishingHouse = createPublisher();
         List<String> isbnList = findIsbn();
-        return attempt(() -> new Book(bookSeries, seriesNumber, publishingHouse, isbnList)).orElseThrow();
+        return attempt(() -> new Book(bookSeries, seriesNumber, publishingHouse, isbnList, null)).orElseThrow();
     }
 
     public Book createBookInSeries() {
@@ -93,7 +93,7 @@ public class PublicationContextCreator {
         String seriesNumber = null;
         PublishingHouse publishingHouse = createPublisher();
         List<String> isbnList = findIsbn();
-        return attempt(() -> new Book(bookSeries, seriesNumber, publishingHouse, isbnList)).orElseThrow();
+        return attempt(() -> new Book(bookSeries, seriesNumber, publishingHouse, isbnList, null)).orElseThrow();
     }
 
     public Book createReport() {
