@@ -70,7 +70,8 @@ public final class BrageNvaMapper {
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var publication = new Publication.Builder().withHandle(extractHandle(brageRecord))
                               .withEntityDescription(extractEntityDescription(brageRecord))
-                              .withCreatedDate(extractPublishedDate(brageRecord))
+                              .withCreatedDate(Instant.now())
+                              .withModifiedDate(Instant.now())
                               .withPublishedDate(extractPublishedDate(brageRecord))
                               .withPublisher(extractPublisher(brageRecord))
                               .withAssociatedArtifacts(extractAssociatedArtifacts(brageRecord))
