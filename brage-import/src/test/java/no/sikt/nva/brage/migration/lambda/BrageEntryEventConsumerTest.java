@@ -21,6 +21,7 @@ import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.UPDATE_
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM_DD_HH_FORMAT;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.NOT_SUPPORTED_TYPE;
 import static no.sikt.nva.brage.migration.merger.AssociatedArtifactMover.COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE;
+import static no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger.DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.TEST_DESCRIPTION;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
@@ -1174,7 +1175,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     private Record createMinimalRecord(String cristinIdentifier) {
         var minimalRecord = new Record();
-        var fakeDummyHandle = UriWrapper.fromUri("dymmy_handle_unis/1").getUri();
+        var fakeDummyHandle = UriWrapper.fromUri(DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS
+                                                 + "/1").getUri();
         minimalRecord.setId(fakeDummyHandle);
         minimalRecord.setPublisherAuthority(new PublisherAuthority(List.of(),
                                                                    IS_PUBLISHER_AUTHORITY));
