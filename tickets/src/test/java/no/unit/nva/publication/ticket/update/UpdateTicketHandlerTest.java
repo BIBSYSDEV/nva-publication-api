@@ -439,6 +439,27 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     }
 
     @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldMarkTicketAsReadWhenCuratorOpensNotViewedTicket(Class<? extends TicketEntry> ticketType,
+                                                                 PublicationStatus status)
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = setupUnassignedPersistedTicket(ticketType, publication);
+        var curator = new User(randomString());
+
+        var httpRequest = curatorMarksTicket(publication, ticket, ViewStatus.READ, curator);
+        handler.handleRequest(httpRequest, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+
+        var updatedTicket = ticketService.fetchTicket(ticket);
+        var viewedByList = updatedTicket.getViewedBy().stream().toList();
+
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
+        assertThat(viewedByList.size(), is(equalTo(2)));
+        assertThat(viewedByList, hasItem(curator));
+    }
+
+    @ParameterizedTest
     @DisplayName("should mark ticket as Unread for assignee when user is curator and assignee and and marks it as "
                  + "unread")
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
@@ -460,25 +481,6 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var updatedTicket = ticket.fetch(ticketService);
         assertThat(updatedTicket.getViewedBy(), hasItem(ticket.getOwner()));
         assertThat(updatedTicket.getViewedBy(), not(hasItem(expectedAssigneeUsername)));
-    }
-
-    @ParameterizedTest
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldNotMarkTicketAsReadByAssigneeIfTicketIsUnassigned(Class<? extends TicketEntry> ticketType,
-                                                                 PublicationStatus status)
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        var ticket = setupUnassignedPersistedTicket(ticketType, publication);
-        assertThat(ticket.getViewedBy().size(), is(equalTo(1)));
-        assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
-
-        var httpRequest = curatorMarksTicket(publication, ticket);
-        handler.handleRequest(httpRequest, output, CONTEXT);
-
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
-        assertThat(ticket.getViewedBy().size(), is(equalTo(1)));
-        assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
     }
 
     @ParameterizedTest
@@ -563,10 +565,10 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     }
 
     private static InputStream elevatedUserMarksTicket(Publication publication, TicketEntry ticket,
-                                                       ViewStatus viewStatus, URI customerId)
+                                                       ViewStatus viewStatus, URI customerId, User curator)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<UpdateTicketRequest>(JsonUtils.dtoObjectMapper).withCurrentCustomer(customerId)
-                   .withUserName(randomString())
+                   .withUserName(curator.toString())
                    .withAccessRights(customerId, AccessRight.APPROVE_DOI_REQUEST.toString())
                    .withBody(new UpdateTicketRequest(ticket.getStatus(), null, viewStatus))
                    .withPathParameters(createPathParameters(ticket, publication.getIdentifier()))
@@ -675,11 +677,13 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
 
     private InputStream alienCuratorMarksTicket(Publication publication, TicketEntry ticket)
         throws JsonProcessingException {
-        return elevatedUserMarksTicket(publication, ticket, ViewStatus.UNREAD, RandomPersonServiceResponse.randomUri());
+        return elevatedUserMarksTicket(publication, ticket, ViewStatus.UNREAD, RandomPersonServiceResponse.randomUri(),
+                                       new User(randomString()));
     }
 
-    private InputStream curatorMarksTicket(Publication publication, TicketEntry ticket) throws JsonProcessingException {
-        return elevatedUserMarksTicket(publication, ticket, ViewStatus.UNREAD, ticket.getCustomerId());
+    private InputStream curatorMarksTicket(Publication publication, TicketEntry ticket, ViewStatus viewStatus,
+                                           User curator) throws JsonProcessingException {
+        return elevatedUserMarksTicket(publication, ticket, viewStatus, ticket.getCustomerId(), curator);
     }
 
     private void mockBadResponseFromDoiRegistrar(URI doi) {

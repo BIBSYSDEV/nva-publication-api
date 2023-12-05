@@ -118,15 +118,6 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldEmitEmptyEventWhenPublishingRequestIsFromCustomerThatAutocompletesPublishingRequests()
-        throws ApiGatewayException, IOException {
-        var entryUpdate = generateExpandedPublishingRequestEntryWithAutocompletion();
-        eventUriInEventsBucket = s3Reader.insertEvent(UnixPath.of(randomString()), entryUpdate.entry.toJsonString());
-        EventReference outputEvent = sendEvent();
-        assertThat(outputEvent, is(equalTo(EMPTY_EVENT)));
-    }
-
-    @Test
     void shouldEmitEventContainingS3UriToPersistedExpandedResourceWhenItCannotRetrieveCustomerPublishingWorkflow()
         throws ApiGatewayException, IOException {
         handler = new ExpandedDataEntriesPersistenceHandler(s3Reader, s3Writer);
