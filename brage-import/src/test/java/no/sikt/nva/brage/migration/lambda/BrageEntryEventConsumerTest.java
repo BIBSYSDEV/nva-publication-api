@@ -74,6 +74,7 @@ import no.sikt.nva.brage.migration.merger.UnmappableCristinRecordException;
 import no.sikt.nva.brage.migration.record.EntityDescription;
 import no.sikt.nva.brage.migration.record.PublicationDate;
 import no.sikt.nva.brage.migration.record.PublicationDateNva;
+import no.sikt.nva.brage.migration.record.PublisherAuthority;
 import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.record.Type;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
@@ -202,6 +203,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;
     private static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     private static final String INPUT_BUCKET_NAME = "some-input-bucket-name";
+    private static final Boolean IS_PUBLISHER_AUTHORITY = true;
     private final String persistedStorageBucket = new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME");
     private BrageEntryEventConsumer handler;
     private S3Driver s3Driver;
@@ -1109,6 +1111,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         assertThat(publishedFile.getName(), is(equalTo(contentFile.getFilename())));
         assertThat(publishedFile.getIdentifier(), is(equalTo(contentFile.getIdentifier())));
         assertThat(publishedFile.getLicense(), is(equalTo(contentFile.getLicense().getNvaLicense().getLicense())));
+        assertThat(publishedFile.isPublisherAuthority(), is(equalTo(minimalRecord.getPublisherAuthority().getNva())));
 
         //assert that we are storing reports based on the dummy handles:
         var updateHandleReporstFolder = UnixPath.of(UPDATE_REPORTS_PATH);
@@ -1157,6 +1160,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var minimalRecord = new Record();
         var fakeDummyHandle = UriWrapper.fromUri("1/unis").getUri();
         minimalRecord.setId(fakeDummyHandle);
+        minimalRecord.setPublisherAuthority(new PublisherAuthority(List.of(),
+                                                                   IS_PUBLISHER_AUTHORITY));
         minimalRecord.setCristinId(cristinIdentifier);
         minimalRecord.setEntityDescription(new EntityDescription());
         minimalRecord.setType(new Type(List.of(), CRISTIN_RECORD.getValue()));
