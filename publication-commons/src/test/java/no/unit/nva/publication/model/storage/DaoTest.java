@@ -212,7 +212,8 @@ class DaoTest extends ResourcesLocalTest {
         
         assertThat(originalDao, doesNotHaveEmptyValuesIgnoringFields(Set.of(DATA_OWNER_AFFILIATION, DATA_ASSIGNEE,
                                                                             DATA_FINALIZED_BY,
-                                                                            DATA_FINALIZED_DATE, DATA_IMPORT_STATUS, RESOURCE_IMPORT_STATUS)));
+                                                                            DATA_FINALIZED_DATE, DATA_IMPORT_STATUS,
+                                                                            RESOURCE_IMPORT_STATUS, REVISION)));
         Map<String, AttributeValue> dynamoMap = originalDao.toDynamoFormat();
         Dao parsedDao = parseAttributeValuesMap(dynamoMap, originalDao.getClass());
         assertThat(parsedDao, is(equalTo(originalDao)));

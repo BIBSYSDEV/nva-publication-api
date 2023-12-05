@@ -108,6 +108,7 @@ import org.hamcrest.Matchers;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
+import org.junit.Ignore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -876,16 +877,40 @@ class ResourceServiceTest extends ResourcesLocalTest {
 //        assertThat(actualPublicationInDatabaseAfterStatusUpdate.getPublishedDate(), is(equalTo(null)));
 //    }
 
+    @Test
+    void testThatShouldFailAfterWeHaveMigrated() throws ApiGatewayException {
+        var publishedResource = createPublishedResource();
+        var publicationIdentifier = publishedResource.getIdentifier();
+        var expectedUpdateStatus = UpdateResourceService.deletionStatusChangeInProgress();
+        var actualUpdateStatus = resourceService.updatePublishedStatusToDeleted(publicationIdentifier);
+        assertThat(actualUpdateStatus, is(equalTo(expectedUpdateStatus)));
+        var actualPublicationInDatabaseAfterStatusUpdate =
+            resourceService.getPublicationByIdentifier(publicationIdentifier);
+        assertThat(actualPublicationInDatabaseAfterStatusUpdate.getStatus(), is(equalTo(UNPUBLISHED)));
+        assertThat(actualPublicationInDatabaseAfterStatusUpdate.getPublishedDate(), is(equalTo(null)));
+    }
+
     //TODO: This test should be uncommented after we have migrated publicationStatus
-//    @Test
-//    void updatePublishedStatusToDeletedShouldReturnResourceAlreadyDeletedMessage() throws ApiGatewayException {
-//        var publishedResource = createPublishedResource();
-//        var publicationIdentifier = publishedResource.getIdentifier();
-//        var expectedUpdateStatus = UpdateResourceService.deletionStatusIsCompleted();
-//        resourceService.updatePublishedStatusToDeleted(publicationIdentifier);
-//        var actualUpdateStatus = resourceService.updatePublishedStatusToDeleted(publicationIdentifier);
+    @Ignore
+    @Test
+    void updatePublishedStatusToDeletedShouldReturnResourceAlreadyDeletedMessage() throws ApiGatewayException {
+        var publishedResource = createPublishedResource();
+        var publicationIdentifier = publishedResource.getIdentifier();
+        var expectedUpdateStatus = UpdateResourceService.deletionStatusIsCompleted();
+        resourceService.updatePublishedStatusToDeleted(publicationIdentifier);
+        var actualUpdateStatus = resourceService.updatePublishedStatusToDeleted(publicationIdentifier);
 //        assertThat(expectedUpdateStatus, is(equalTo(actualUpdateStatus)));
-//    }
+    }
+
+    @Test
+    void anotherThatShouldFailAfterWeHaveMigrated() throws ApiGatewayException {
+        var publishedResource = createPublishedResource();
+        var publicationIdentifier = publishedResource.getIdentifier();
+        var expectedUpdateStatus = UpdateResourceService.deletionStatusChangeInProgress();
+        resourceService.updatePublishedStatusToDeleted(publicationIdentifier);
+        var actualUpdateStatus = resourceService.updatePublishedStatusToDeleted(publicationIdentifier);
+        assertThat(expectedUpdateStatus, is(equalTo(actualUpdateStatus)));
+    }
 
     @Test
     void shouldCreateResourceFromImportCandidate() throws NotFoundException {

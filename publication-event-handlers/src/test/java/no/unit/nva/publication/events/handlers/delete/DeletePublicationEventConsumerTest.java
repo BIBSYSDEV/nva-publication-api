@@ -28,6 +28,7 @@ import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
 import nva.commons.core.paths.UnixPath;
+import org.junit.Ignore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -66,21 +67,37 @@ public class DeletePublicationEventConsumerTest {
     }
 
     //TODO: This test should be uncommented after we have migrated publicationStatus
-    //    @Test
-//    void shouldReturnDeleteResourceEventWhenAPublicationWithStatusDeletedIsUpdated() throws IOException {
-//        var publication = randomPublication().copy()
-//                              .withIdentifier(SortableIdentifier.next())
-//                              .withStatus(PublicationStatus.DELETED)
-//                              .build();
-//
-//        var event = createEventReference(publication);
-//        handler.handleRequest(event, outputStream, context);
-//        var response =
-//            objectMapper.readValue(outputStream.toString(), DeleteResourceEvent.class);
+    @Ignore
+    @Test
+    void shouldReturnDeleteResourceEventWhenAPublicationWithStatusDeletedIsUpdated() throws IOException {
+        var publication = randomPublication().copy()
+                              .withIdentifier(SortableIdentifier.next())
+                              .withStatus(PublicationStatus.DELETED)
+                              .build();
+
+        var event = createEventReference(publication);
+        handler.handleRequest(event, outputStream, context);
+        var response =
+            objectMapper.readValue(outputStream.toString(), DeleteResourceEvent.class);
 //        assertThat(response.getIdentifier(), notNullValue());
 //        assertThat(response.getTopic(), is(equalTo(DeleteResourceEvent.EVENT_TOPIC)));
 //        assertThatDeleteObjectHasBeenDoneOnceWithCorrectObjectKey(publication);
-//    }
+    }
+
+    @Deprecated
+    @Test
+    void testThatShouldFailAfterWeHaveMigrated() throws IOException {
+        var publication = randomPublication().copy()
+                              .withIdentifier(SortableIdentifier.next())
+                              .withStatus(PublicationStatus.DELETED)
+                              .build();
+
+        var event = createEventReference(publication);
+        handler.handleRequest(event, outputStream, context);
+        var response =
+            objectMapper.readValue(outputStream.toString(), DeleteResourceEvent.class);
+        assertThat(response, is(nullValue()));
+    }
 
     private void assertThatDeleteObjectHasBeenDoneOnceWithCorrectObjectKey(Publication publication) {
         var fakeS3ClientSupportingDeleteObject = (FakeS3ClientSupportingDeleteObject) s3Client;
