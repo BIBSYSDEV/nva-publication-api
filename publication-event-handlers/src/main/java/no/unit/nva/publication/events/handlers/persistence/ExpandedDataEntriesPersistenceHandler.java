@@ -11,9 +11,7 @@ import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
-import no.unit.nva.expansion.model.ExpandedPublishingRequest;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
-import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UnixPath;
@@ -46,9 +44,7 @@ public class ExpandedDataEntriesPersistenceHandler
         AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
         Context context) {
         ExpandedDataEntry expandedResourceUpdate = readEvent(input);
-        return shouldBePersisted(expandedResourceUpdate)
-            ? createOutPutEventAndPersistDocument(expandedResourceUpdate)
-            : EMPTY_EVENT;
+        return createOutPutEventAndPersistDocument(expandedResourceUpdate);
     }
 
     private EventReference createOutPutEventAndPersistDocument(ExpandedDataEntry expandedResourceUpdate) {
@@ -57,22 +53,6 @@ public class ExpandedDataEntriesPersistenceHandler
         var outputEvent = new EventReference(EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC, uri);
         logger.info(outputEvent.toJsonString());
         return outputEvent;
-    }
-
-    private boolean shouldBePersisted(ExpandedDataEntry expandedResourceUpdate) {
-        if (expandedResourceUpdate instanceof ExpandedPublishingRequest) {
-            return shouldPersistPublishingRequest((ExpandedPublishingRequest) expandedResourceUpdate);
-        } else {
-            return true;
-        }
-    }
-
-    private boolean shouldPersistPublishingRequest(ExpandedPublishingRequest expandedResourceUpdate) {
-        return !isAutomaticallyApproved(expandedResourceUpdate);
-    }
-
-    private boolean isAutomaticallyApproved(ExpandedPublishingRequest expandedResourceUpdate) {
-        return PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(expandedResourceUpdate.getWorkflow());
     }
 
     private URI writeEntryToS3(PersistedDocument indexDocument) {

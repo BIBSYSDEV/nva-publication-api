@@ -16,6 +16,7 @@ import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -204,7 +205,23 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
             markTicketForAssignee(ticketRequest, ticket);
         } else if (userIsTicketOwner(ticket, requestInfo.getUserName())) {
             markTicketForOwner(ticketRequest, ticket);
+        } else if (userHasAccessRightToOperateOnTicket(requestInfo)) {
+            markTicketForCurator(ticketRequest, ticket, requestInfo.getUserName());
         }
+    }
+
+    private void markTicketForCurator(UpdateTicketRequest ticketRequest, TicketEntry ticket, String userName) {
+        if (ViewStatus.READ.equals(ticketRequest.getViewStatus())) {
+            ticket.markReadByUser(new User(userName)).persistUpdate(ticketService);
+        } else if (ViewStatus.UNREAD.equals(ticketRequest.getViewStatus())) {
+            ticket.markReadByUser(new User(userName)).persistUpdate(ticketService);
+        } else {
+            throw new UnsupportedOperationException(UNKNOWN_VIEWED_STATUS_MESSAGE);
+        }
+    }
+
+    private boolean userHasAccessRightToOperateOnTicket(RequestInfo requestInfo) {
+        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString());
     }
 
     private boolean userIsTicketOwner(TicketEntry ticket, String userName) {
