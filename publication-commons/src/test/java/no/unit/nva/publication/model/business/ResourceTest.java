@@ -22,12 +22,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-class ResourceTest {
+public class ResourceTest {
 
     public static final User SOME_OWNER = new User("some@owner.no");
     public static final URI SOME_HOST = URI.create("https://example.org/");
     public static final String DOI_REQUEST_FIELD = "doiRequest";
     public static final String IMPORT_STATUS = "importStatus";
+    public static final String REVISION = "entityDescription.reference.publicationContext.revision";
     private final Javers javers = JaversBuilder.javers().build();
     private final SortableIdentifier sampleIdentifier = SortableIdentifier.next();
 
@@ -35,7 +36,7 @@ class ResourceTest {
     @MethodSource("publicationInstanceProvider")
     void builderContainsAllFields(Class<?> publicationInstanceType) {
         Resource resource = sampleResource(publicationInstanceType);
-        assertThat(resource, doesNotHaveEmptyValuesIgnoringFields(Set.of(IMPORT_STATUS)));
+        assertThat(resource, doesNotHaveEmptyValuesIgnoringFields(Set.of(IMPORT_STATUS, REVISION)));
     }
 
     @ParameterizedTest(name = "copy contains all fields: {0}")
@@ -45,7 +46,7 @@ class ResourceTest {
         Resource copy = resource.copy().build();
         JsonNode resourceJson = dynamoDbObjectMapper.convertValue(resource, JsonNode.class);
         JsonNode copyJson = dynamoDbObjectMapper.convertValue(copy, JsonNode.class);
-        assertThat(resource, doesNotHaveEmptyValuesIgnoringFields(Set.of(IMPORT_STATUS)));
+        assertThat(resource, doesNotHaveEmptyValuesIgnoringFields(Set.of(IMPORT_STATUS, REVISION)));
         assertThat(copy, is(equalTo(resource)));
         assertThat(resourceJson, is(equalTo(copyJson)));
     }
@@ -66,7 +67,7 @@ class ResourceTest {
     @MethodSource("publicationInstanceProvider")
     void toDtoReturnsDtoWithoutLossOfInformation(Class<?> publicationInstanceType) {
         Resource resource = sampleResource(publicationInstanceType);
-        assertThat(resource, doesNotHaveEmptyValuesIgnoringFields(Set.of(IMPORT_STATUS)));
+        assertThat(resource, doesNotHaveEmptyValuesIgnoringFields(Set.of(IMPORT_STATUS, REVISION)));
         Publication publication = resource.toPublication();
         Resource fromPublication = Resource.fromPublication(publication);
         Diff diff = javers.compare(resource, fromPublication);
@@ -77,7 +78,7 @@ class ResourceTest {
     @MethodSource("publicationInstanceProvider")
     void fromDtoToDaoToDtoReturnsDtoWithoutLossOfInformation(Class<?> publicationInstanceType) {
         var expected = PublicationGenerator.randomPublication(publicationInstanceType);
-        assertThat(expected, doesNotHaveEmptyValuesIgnoringFields(Set.of(DOI_REQUEST_FIELD)));
+        assertThat(expected, doesNotHaveEmptyValuesIgnoringFields(Set.of(DOI_REQUEST_FIELD, REVISION)));
 
         var transformed = Resource.fromPublication(expected).toPublication();
 

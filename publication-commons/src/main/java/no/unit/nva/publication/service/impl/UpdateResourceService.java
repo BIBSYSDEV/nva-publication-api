@@ -1,6 +1,7 @@
 package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.model.PublicationStatus.DELETED;
+import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.publication.model.business.PublishingRequestCase.assertThatPublicationHasMinimumMandatoryFields;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION;
@@ -135,7 +136,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     public void unpublishPublication(Publication publication) {
-        publication.setStatus(DELETED);
+        publication.setStatus(UNPUBLISHED);
         publication.setDuplicateOf(publication.getDuplicateOf());
         publication.setModifiedDate(clockForTimestamps.instant());
         var resource = Resource.fromPublication(publication);

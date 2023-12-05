@@ -18,6 +18,7 @@ entityDescription.reference.publicationInstance.architectureOutput
 entityDescription.reference.publicationInstance.subtype.description
 entityDescription.reference.publicationInstance.outputs
 
+.entityDescription.reference.publicationContext.revision
 entityDescription.reference.publicationContext.onlineIssn
 entityDescription.reference.publicationContext.printIssn
 entityDescription.reference.publicationContext.level
