@@ -277,7 +277,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void handlerReturnsGoneWithPublicationDetailWhenPublicationIsUnpublishedAndDuplicateOfValueIsNotPresent()
         throws ApiGatewayException, IOException {
-        var publication = createDeletedPublicationWithDuplicate(null);
+        var publication = createUnpublishedPublicationWithDuplicate(null);
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output, context);
         var gatewayResponse = parseFailureResponse();
         var expectedTombstone = new PublicationDetail(publication.getIdentifier(),
@@ -294,7 +294,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var duplicateOfIdentifier =
             UriWrapper.fromUri(randomUri()).addChild(SortableIdentifier.next().toString()).getUri();
-        var publication = createDeletedPublicationWithDuplicate(duplicateOfIdentifier);
+        var publication = createUnpublishedPublicationWithDuplicate(duplicateOfIdentifier);
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output, context);
         var valueType = restApiMapper.getTypeFactory()
                             .constructParametricType(
@@ -365,12 +365,14 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private Publication createDeletedPublicationWithDuplicate(URI duplicateOf) throws ApiGatewayException {
-        var createdPublication = createPublication();
-        publicationService.updatePublication(createdPublication.copy().withDuplicateOf(duplicateOf).build());
-        var publicationIdentifier = createdPublication.getIdentifier();
-        publicationService.updatePublishedStatusToDeleted(publicationIdentifier);
-        return publicationService.getPublication(createdPublication);
+    private Publication createUnpublishedPublicationWithDuplicate(URI duplicateOf) throws ApiGatewayException {
+        var publication = createPublication();
+        publicationService.updatePublication(publication.copy().withDuplicateOf(duplicateOf).build());
+        publicationService.publishPublication(UserInstance.fromPublication(publication),
+                                              publication.getIdentifier());
+        var publishedPublication = publicationService.getPublication(publication);
+        publicationService.unpublishPublication(publishedPublication);
+        return publicationService.getPublication(publication);
     }
 
     private GatewayResponse<PublicationResponse> parseHandlerResponse() throws JsonProcessingException {

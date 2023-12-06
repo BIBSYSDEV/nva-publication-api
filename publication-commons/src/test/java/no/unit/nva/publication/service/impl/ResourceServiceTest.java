@@ -3,7 +3,6 @@ package no.unit.nva.publication.service.impl;
 import static com.spotify.hamcrest.optional.OptionalMatchers.emptyOptional;
 import static java.util.Collections.emptyList;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
-import static no.unit.nva.model.PublicationStatus.DELETED;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
@@ -108,7 +107,6 @@ import org.hamcrest.Matchers;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
-import org.junit.Ignore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -863,22 +861,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(persistedPublished.getAssociatedArtifacts(), everyItem(is(instanceOf(AssociatedLink.class))));
     }
 
-    //TODO: This test should be uncommented after we have migrated publicationStatus
-//    @Test
-//    void shouldBePossibleToSetPublicationStatusToDeletedForPublishedPublication() throws ApiGatewayException {
-//        var publishedResource = createPublishedResource();
-//        var publicationIdentifier = publishedResource.getIdentifier();
-//        var expectedUpdateStatus = UpdateResourceService.deletionStatusChangeInProgress();
-//        var actualUpdateStatus = resourceService.updatePublishedStatusToDeleted(publicationIdentifier);
-//        assertThat(actualUpdateStatus, is(equalTo(expectedUpdateStatus)));
-//        var actualPublicationInDatabaseAfterStatusUpdate =
-//            resourceService.getPublicationByIdentifier(publicationIdentifier);
-//        assertThat(actualPublicationInDatabaseAfterStatusUpdate.getStatus(), is(equalTo(PublicationStatus.DELETED)));
-//        assertThat(actualPublicationInDatabaseAfterStatusUpdate.getPublishedDate(), is(equalTo(null)));
-//    }
-
     @Test
-    void testThatShouldFailAfterWeHaveMigrated() throws ApiGatewayException {
+    void shouldBePossibleToSetPublicationStatusToDeletedForPublishedPublication() throws ApiGatewayException {
         var publishedResource = createPublishedResource();
         var publicationIdentifier = publishedResource.getIdentifier();
         var expectedUpdateStatus = UpdateResourceService.deletionStatusChangeInProgress();
@@ -886,27 +870,15 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(actualUpdateStatus, is(equalTo(expectedUpdateStatus)));
         var actualPublicationInDatabaseAfterStatusUpdate =
             resourceService.getPublicationByIdentifier(publicationIdentifier);
-        assertThat(actualPublicationInDatabaseAfterStatusUpdate.getStatus(), is(equalTo(UNPUBLISHED)));
+        assertThat(actualPublicationInDatabaseAfterStatusUpdate.getStatus(), is(equalTo(PublicationStatus.DELETED)));
         assertThat(actualPublicationInDatabaseAfterStatusUpdate.getPublishedDate(), is(equalTo(null)));
     }
 
-    //TODO: This test should be uncommented after we have migrated publicationStatus
-    @Ignore
     @Test
     void updatePublishedStatusToDeletedShouldReturnResourceAlreadyDeletedMessage() throws ApiGatewayException {
         var publishedResource = createPublishedResource();
         var publicationIdentifier = publishedResource.getIdentifier();
         var expectedUpdateStatus = UpdateResourceService.deletionStatusIsCompleted();
-        resourceService.updatePublishedStatusToDeleted(publicationIdentifier);
-        var actualUpdateStatus = resourceService.updatePublishedStatusToDeleted(publicationIdentifier);
-//        assertThat(expectedUpdateStatus, is(equalTo(actualUpdateStatus)));
-    }
-
-    @Test
-    void anotherThatShouldFailAfterWeHaveMigrated() throws ApiGatewayException {
-        var publishedResource = createPublishedResource();
-        var publicationIdentifier = publishedResource.getIdentifier();
-        var expectedUpdateStatus = UpdateResourceService.deletionStatusChangeInProgress();
         resourceService.updatePublishedStatusToDeleted(publicationIdentifier);
         var actualUpdateStatus = resourceService.updatePublishedStatusToDeleted(publicationIdentifier);
         assertThat(expectedUpdateStatus, is(equalTo(actualUpdateStatus)));
