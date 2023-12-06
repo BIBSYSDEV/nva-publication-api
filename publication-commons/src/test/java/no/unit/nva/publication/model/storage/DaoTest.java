@@ -62,6 +62,7 @@ class DaoTest extends ResourcesLocalTest {
     public static final String DATA_IMPORT_STATUS = "data.importStatus";
     public static final String RESOURCE_IMPORT_STATUS = "resource.importStatus";
     private static final String DATA_OWNER_AFFILIATION = "data.ownerAffiliation";
+    public static final String RESOURCE_REVISION = "resource.entityDescription.reference.publicationContext.revision";
 
     public static Stream<Class<?>> entityProvider() {
         return TypeProvider.listSubTypes(Entity.class);
@@ -233,7 +234,7 @@ class DaoTest extends ResourcesLocalTest {
         Dao retrievedDao = parseAttributeValuesMap(savedMap, originalDao.getClass());
         assertThat(retrievedDao, doesNotHaveEmptyValuesIgnoringFields(
                 Set.of(DATA_OWNER_AFFILIATION, DATA_ASSIGNEE, DATA_FINALIZED_BY, DATA_FINALIZED_DATE,
-                       DATA_IMPORT_STATUS, RESOURCE_IMPORT_STATUS, REVISION)));
+                       DATA_IMPORT_STATUS, RESOURCE_IMPORT_STATUS, RESOURCE_REVISION)));
         assertThat(retrievedDao, is(equalTo(originalDao)));
     }
     

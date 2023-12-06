@@ -11,7 +11,7 @@ public final class PublicationPermissionStrategy {
     private PublicationPermissionStrategy(RequestInfo requestInfo) {
         this.requestInfo = requestInfo;
         this.permissionStrategies = Set.of(
-            new EditorPermissionStrategy(),
+            new EditorPermissionStrategy(requestInfo),
             new CuratorPermissionStrategy(),
             new ContributorPermissionStrategy(),
             new ResourceOwnerPermissionStrategy()

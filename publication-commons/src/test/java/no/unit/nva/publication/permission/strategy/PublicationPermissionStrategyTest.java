@@ -242,6 +242,20 @@ class PublicationPermissionStrategyTest {
                                   .hasPermissionToUnpublish(publication));
     }
 
+    @Test
+    void shouldGivePermissionToOperateOnPublicationWhenEditor() throws JsonProcessingException {
+        var editorName = randomString();
+        var editorInstitution = randomUri();
+        var resourceOwner = randomString();
+
+        var requestInfo = createRequestInfo(editorName, editorInstitution, getEditorAccessRights());
+        var publication = createPublication(resourceOwner, editorInstitution);
+
+        Assertions.assertTrue(EditorPermissionStrategy
+                                  .fromRequestInfo(requestInfo)
+                                  .hasPermission(publication));
+    }
+
     private static Function<AccessRight, String> getCognitoGroup(URI institutionId) {
         return accessRight -> accessRight.name() + AT + institutionId.toString();
     }

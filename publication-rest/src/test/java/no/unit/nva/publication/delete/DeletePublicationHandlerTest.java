@@ -11,14 +11,16 @@ import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.r
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.apigateway.AccessRight.EDIT_OWN_INSTITUTION_RESOURCES;
 import static nva.commons.apigateway.AccessRight.PUBLISH_DEGREE;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.apache.http.HttpStatus.SC_ACCEPTED;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
-import static org.apache.http.HttpStatus.SC_NOT_IMPLEMENTED;
 import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyIterable;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -470,7 +472,30 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(SC_ACCEPTED)));
     }
 
+    @Test
+    void shouldDeleteUnpublishedPublicationWhenUserIsEditor()
+        throws ApiGatewayException, IOException {
+        var publication = createUnpublishedPublication();
 
+        var publisherUri = publication.getPublisher().getId();
+        var request = createHandlerRequest(publication.getIdentifier(), randomString(),
+                                           publisherUri, EDIT_OWN_INSTITUTION_RESOURCES);
+        handler.handleRequest(request, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
+
+        var deletePublication = publicationService.getPublication(publication);
+
+        assertThat(response.getStatusCode(), is(equalTo(SC_ACCEPTED)));
+        assertThat(deletePublication.getStatus(), is(equalTo(PublicationStatus.DELETED)));
+        assertThat(deletePublication.getAssociatedArtifacts(), is(emptyIterable()));
+    }
+
+    private Publication createUnpublishedPublication() throws ApiGatewayException {
+        var publication = createAndPersistDegreeWithoutDoi();
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        publicationService.unpublishPublication(publicationService.getPublication(publication));
+        return publicationService.getPublication(publication);
+    }
 
     private InputStream createHandlerRequest(SortableIdentifier publicationIdentifier, String username,
                                             URI institutionId, AccessRight accessRight)

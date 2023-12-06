@@ -6,14 +6,17 @@ import static no.unit.nva.publication.RequestUtil.createInternalUserInstance;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.permission.strategy.EditorPermissionStrategy;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -62,30 +65,15 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
         var publicationIdentifier = RequestUtil.getIdentifier(requestInfo);
 
         var publication = resourceService.getPublicationByIdentifier(publicationIdentifier);
-        var publicationStatus = publication.getStatus();
 
-        switch (publicationStatus) {
-            case PUBLISHED:
-                if (!PublicationPermissionStrategy.fromRequestInfo(requestInfo).hasPermissionToUnpublish(publication)) {
-                    throw new UnauthorizedException();
-                }
-                var duplicate = requestInfo.getQueryParameterOpt(DUPLICATE_QUERY_PARAM).orElse(null);
-                resourceService.unpublishPublication(toPublicationWithDuplicate(duplicate, publication));
-                persistNotification(publication);
-                break;
-            case DRAFT:
-                resourceService.markPublicationForDeletion(userInstance, publicationIdentifier);
-                break;
-            default:
-                throw new BadRequestException(
-                    String.format("Publication status %s is not supported for deletion", publicationStatus));
+        switch (publication.getStatus()) {
+            case DRAFT -> handleDraftDeletion(userInstance, publicationIdentifier);
+            case PUBLISHED -> handleSoftDeletion(requestInfo, publication);
+            case UNPUBLISHED -> handleHardDeletion(requestInfo, publication);
+            default -> unsupportedPublicationForDeletion(publication);
         }
 
         return null;
-    }
-
-    private void persistNotification(Publication publication) throws ApiGatewayException {
-        TicketEntry.requestNewTicket(publication, UnpublishRequest.class).persistNewTicket(ticketService);
     }
 
     @Override
@@ -93,11 +81,56 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
         return HttpStatus.SC_ACCEPTED;
     }
 
+    private static void validateHardDeletionRequest(RequestInfo requestInfo, Publication publication)
+        throws UnauthorizedException {
+        if (isEditor(requestInfo, publication) || canEditOwnInstitutionResources(requestInfo)) {
+            return;
+        }
+        throw new UnauthorizedException();
+    }
+
+    private static boolean isEditor(RequestInfo requestInfo, Publication publication) {
+        return EditorPermissionStrategy.fromRequestInfo(requestInfo).hasPermission(publication);
+    }
+
+    private static boolean canEditOwnInstitutionResources(RequestInfo requestInfo) {
+        return requestInfo.userIsAuthorized(AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.name());
+    }
+
+    private static void unsupportedPublicationForDeletion(Publication publication) throws BadRequestException {
+        throw new BadRequestException(
+            String.format("Publication status %s is not supported for deletion", publication.getStatus()));
+    }
+
     private static URI toPublicationUri(String duplicateIdentifier) {
         return UriWrapper.fromHost(new Environment().readEnv(API_HOST))
                    .addChild(PUBLICATION)
                    .addChild(duplicateIdentifier)
                    .getUri();
+    }
+
+    private void handleHardDeletion(RequestInfo requestInfo, Publication publication)
+        throws UnauthorizedException, BadRequestException {
+        validateHardDeletionRequest(requestInfo, publication);
+        resourceService.deletePublication(publication);
+    }
+
+    private void handleDraftDeletion(UserInstance userInstance, SortableIdentifier publicationIdentifier)
+        throws ApiGatewayException {
+        resourceService.markPublicationForDeletion(userInstance, publicationIdentifier);
+    }
+
+    private void handleSoftDeletion(RequestInfo requestInfo, Publication publication) throws ApiGatewayException {
+        if (!PublicationPermissionStrategy.fromRequestInfo(requestInfo).hasPermissionToUnpublish(publication)) {
+            throw new UnauthorizedException();
+        }
+        var duplicate = requestInfo.getQueryParameterOpt(DUPLICATE_QUERY_PARAM).orElse(null);
+        resourceService.unpublishPublication(toPublicationWithDuplicate(duplicate, publication));
+        persistNotification(publication);
+    }
+
+    private void persistNotification(Publication publication) throws ApiGatewayException {
+        TicketEntry.requestNewTicket(publication, UnpublishRequest.class).persistNewTicket(ticketService);
     }
 
     private Publication toPublicationWithDuplicate(String duplicateIdentifier, Publication publication) {

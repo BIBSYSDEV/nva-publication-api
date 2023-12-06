@@ -2,6 +2,7 @@ package no.unit.nva.publication.service.impl;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
 import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
@@ -83,6 +84,7 @@ public class ResourceService extends ServiceWithTransactions {
     private static final String SEPARATOR_ITEM = ",";
     private static final String SEPARATOR_TABLE = ";";
     private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
+    public static final String DELETE_PUBLICATION_ERROR_MESSAGE = "Only unpublished publication can be deleted";
     private final String tableName;
     private final Clock clockForTimestamps;
     private final Supplier<SortableIdentifier> identifierSupplier;
@@ -347,6 +349,13 @@ public class ResourceService extends ServiceWithTransactions {
         }
 
         updateResourceService.unpublishPublication(publication);
+    }
+
+    public void deletePublication(Publication publication) throws BadRequestException {
+        if (!UNPUBLISHED.equals(publication.getStatus())) {
+            throw new BadRequestException(DELETE_PUBLICATION_ERROR_MESSAGE);
+        }
+        updateResourceService.deletePublication(publication);
     }
 
     private Resource fetchResourceForElevatedUser(URI customerId, SortableIdentifier publicationIdentifier)

@@ -65,7 +65,6 @@ public class DeletePublicationEventConsumerTest {
         assertThat(response, nullValue());
     }
 
-
     @Test
     void shouldReturnDeleteResourceEventWhenAPublicationWithStatusDeletedIsUpdated() throws IOException {
         var publication = randomPublication().copy()
