@@ -8,6 +8,7 @@ import nva.commons.apigateway.RequestInfo;
 public class EditorPermissionStrategy extends PermissionStrategy {
 
     private final RequestInfo requestInfo;
+
     public EditorPermissionStrategy(RequestInfo requestInfo) {
         super();
         this.requestInfo = requestInfo;
