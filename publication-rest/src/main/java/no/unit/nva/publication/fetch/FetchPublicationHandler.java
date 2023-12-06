@@ -99,14 +99,14 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         var publication = resourceService.getPublicationByIdentifier(identifier);
 
         return switch (publication.getStatus()) {
-            case DRAFT -> returnDraftPublication(requestInfo, publication);
-            case PUBLISHED -> createResponse(requestInfo, publication);
-            case DELETED -> produceDeletedResponse(publication);
+            case DRAFT -> produceDraftPublicationResponse(requestInfo, publication);
+            case PUBLISHED -> producePublishedPublicationResponse(requestInfo, publication);
+            case UNPUBLISHED, DELETED -> produceRemovedPublicationResponse(publication);
             default -> throwNotFoundException();
         };
     }
 
-    private String produceDeletedResponse(Publication publication) throws GoneException {
+    private String produceRemovedPublicationResponse(Publication publication) throws GoneException {
         if (nonNull(publication.getDuplicateOf())) {
             return produceRedirect(publication.getDuplicateOf());
         } else {
@@ -120,9 +120,9 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         return null;
     }
 
-    private String returnDraftPublication(RequestInfo requestInfo, Publication publication)
+    private String produceDraftPublicationResponse(RequestInfo requestInfo, Publication publication)
         throws UnsupportedAcceptHeaderException, NotFoundException {
-            return createResponse(requestInfo, publication);
+            return producePublishedPublicationResponse(requestInfo, publication);
     }
 
     @Override
@@ -140,7 +140,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         throw new NotFoundException("Publication is not found");
     }
 
-    private String createResponse(RequestInfo requestInfo, Publication publication)
+    private String producePublishedPublicationResponse(RequestInfo requestInfo, Publication publication)
         throws UnsupportedAcceptHeaderException {
 
         String response = null;

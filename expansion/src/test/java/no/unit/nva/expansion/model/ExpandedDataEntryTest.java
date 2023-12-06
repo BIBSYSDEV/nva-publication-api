@@ -39,6 +39,7 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Revision;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.MediaContributionPeriodical;
@@ -101,7 +102,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
     public static Stream<PublicationContext> importCandidateContextTypeProvider()
         throws InvalidUnconfirmedSeriesException {
-        return Stream.of(new Book(null, randomString(), new Publisher(randomUri()), List.of()),
+        return Stream.of(new Book(null, randomString(), new Publisher(randomUri()), List.of(), Revision.UNREVISED),
                          new Report(null, randomString(), null, null, List.of()),
                          new MediaContributionPeriodical(randomUri()));
     }

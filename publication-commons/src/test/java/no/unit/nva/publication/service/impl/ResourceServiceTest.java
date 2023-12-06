@@ -3,9 +3,9 @@ package no.unit.nva.publication.service.impl;
 import static com.spotify.hamcrest.optional.OptionalMatchers.emptyOptional;
 import static java.util.Collections.emptyList;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
-import static no.unit.nva.model.PublicationStatus.DELETED;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedLink;
@@ -973,10 +973,10 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldSetPublicationStatusToDeletedWhenUnpublishingPublication() throws ApiGatewayException {
+    void shouldSetPublicationStatusToUnpublishedWhenUnpublishingPublication() throws ApiGatewayException {
         var publication = createPublishedResource();
         resourceService.unpublishPublication(publication);
-        assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(DELETED)));
+        assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(UNPUBLISHED)));
     }
 
     @Test

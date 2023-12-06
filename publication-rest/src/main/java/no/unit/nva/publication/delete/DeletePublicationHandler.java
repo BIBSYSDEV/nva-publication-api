@@ -67,8 +67,8 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
         var publication = resourceService.getPublicationByIdentifier(publicationIdentifier);
 
         switch (publication.getStatus()) {
+            case DRAFT -> handleDraftDeletion(userInstance, publicationIdentifier);
             case PUBLISHED -> handleSoftDeletion(requestInfo, publication);
-            case DRAFT -> handleDraftForDeletion(userInstance, publicationIdentifier);
             case UNPUBLISHED -> handleHardDeletion(requestInfo, publication);
             default -> unsupportedPublicationForDeletion(publication);
         }
@@ -115,7 +115,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
         resourceService.deletePublication(publication);
     }
 
-    private void handleDraftForDeletion(UserInstance userInstance, SortableIdentifier publicationIdentifier)
+    private void handleDraftDeletion(UserInstance userInstance, SortableIdentifier publicationIdentifier)
         throws ApiGatewayException {
         resourceService.markPublicationForDeletion(userInstance, publicationIdentifier);
     }
