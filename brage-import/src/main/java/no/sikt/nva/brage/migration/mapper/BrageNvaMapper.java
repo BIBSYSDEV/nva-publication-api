@@ -5,7 +5,6 @@ import static java.util.Objects.nonNull;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.SOURCE_CRISTIN;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.HTTPS_PREFIX;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
-import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import java.net.URI;
 import java.time.Instant;
@@ -68,10 +67,12 @@ public final class BrageNvaMapper {
 
     public static Publication toNvaPublication(Record brageRecord)
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var now = Instant.now();
         var publication = new Publication.Builder().withHandle(extractHandle(brageRecord))
                               .withEntityDescription(extractEntityDescription(brageRecord))
-                              .withCreatedDate(extractPublishedDate(brageRecord))
-                              .withPublishedDate(extractPublishedDate(brageRecord))
+                              .withCreatedDate(now)
+                              .withModifiedDate(now)
+                              .withPublishedDate(now)
                               .withPublisher(extractPublisher(brageRecord))
                               .withAssociatedArtifacts(extractAssociatedArtifacts(brageRecord))
                               .withResourceOwner(extractResourceOwner(brageRecord))
@@ -95,11 +96,6 @@ public final class BrageNvaMapper {
 
     private static String joinByNewLine(List<String> values) {
         return values.stream().collect(Collectors.joining(System.lineSeparator()));
-    }
-
-    private static Instant extractPublishedDate(Record brageRecord) {
-        return attempt(() -> brageRecord.getPublishedDate().getNvaDate()).map(Instant::parse)
-                   .orElse(failure -> Instant.now());
     }
 
     private static List<URI> extractSubjects(Record brageRecord) {
