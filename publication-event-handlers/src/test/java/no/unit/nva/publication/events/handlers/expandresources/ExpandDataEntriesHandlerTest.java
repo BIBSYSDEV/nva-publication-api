@@ -57,7 +57,6 @@ import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.logutils.LogUtils;
-import org.junit.Ignore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -168,8 +167,6 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         assertThat(eventReference, is(equalTo(emptyEvent(eventReference.getTimestamp()))));
     }
 
-    //TODO: This test should be uncommented after we have migrated publicationStatus
-    @Ignore
     @Test
     void shouldEmitDeleteEventForPublicationStatusDeleted() throws IOException {
         var oldImage = randomPublication().copy()
@@ -182,23 +179,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
         expandResourceHandler.handleRequest(request, output, CONTEXT);
         var eventReference = parseHandlerResponse();
-//        assertThat(eventReference.getTopic(), is(equalTo(EXPANDED_ENTRY_DELETE_EVENT_TOPIC)));
-    }
-
-    @Deprecated
-    @Test
-    void testToRemoveAfterWeHaveMigrated() throws IOException {
-        var oldImage = randomPublication().copy()
-                           .withIdentifier(SortableIdentifier.next())
-                           .withDoi(null)
-                           .withStatus(PublicationStatus.PUBLISHED).build();
-        var newImage = oldImage.copy()
-                           .withStatus(PublicationStatus.DELETED)
-                           .build();
-        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
-        expandResourceHandler.handleRequest(request, output, CONTEXT);
-        var eventReference = parseHandlerResponse();
-        assertThat(eventReference.getTopic(), is(equalTo(EMPTY_EVENT_TOPIC)));
+        assertThat(eventReference.getTopic(), is(equalTo(EXPANDED_ENTRY_DELETE_EVENT_TOPIC)));
     }
 
     @Test
