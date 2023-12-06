@@ -986,6 +986,26 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThrows(IllegalStateException.class, () -> resourceService.updatePublication(publication));
     }
 
+    @Test
+    void shouldDeleteUnpublishedPublication() throws ApiGatewayException {
+        var publication = createPersistedPublicationWithDoi();
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        resourceService.unpublishPublication(resourceService.getPublication(publication));
+        resourceService.deletePublication(resourceService.getPublication(publication));
+
+        var deletedPublication = resourceService.getPublication(publication);
+        assertThat(deletedPublication.getStatus(), is(equalTo(PublicationStatus.DELETED)));
+    }
+
+    @Test
+    void shouldThrowBadRequestWhenAttemptingToDeletePublishedPublication() throws ApiGatewayException {
+        var publication = createPersistedPublicationWithDoi();
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+
+        assertThrows(BadRequestException.class,
+                     () -> resourceService.deletePublication(resourceService.getPublication(publication)));
+    }
+
     private static AssociatedArtifactList createEmptyArtifactList() {
         return new AssociatedArtifactList(emptyList());
     }

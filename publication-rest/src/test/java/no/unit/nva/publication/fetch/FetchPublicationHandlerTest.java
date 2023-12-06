@@ -316,7 +316,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var duplicateOfIdentifier =
             UriWrapper.fromUri(randomUri()).addChild(SortableIdentifier.next().toString()).getUri();
-        var publication = createUnpublishedPublicationWithDuplicate(duplicateOfIdentifier);
+        var publication = createDeletedPublicationWithDuplicate(duplicateOfIdentifier);
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output, context);
         var valueType = restApiMapper.getTypeFactory()
                             .constructParametricType(

@@ -28,11 +28,13 @@ public class EditorPermissionStrategy extends PermissionStrategy {
     }
 
     public boolean hasPermission(Publication publication) {
-        if (isDegree(publication)) {
-            return hasAccessRight(requestInfo, PUBLISH_DEGREE)
-                   && hasAccessRight(requestInfo, EDIT_ALL_NON_DEGREE_RESOURCES);
-        }
+        return hasPermissionToOperateOnDegree(publication)
+               || hasAccessRight(requestInfo, EDIT_ALL_NON_DEGREE_RESOURCES);
+    }
 
-        return hasAccessRight(requestInfo, EDIT_ALL_NON_DEGREE_RESOURCES);
+    private boolean hasPermissionToOperateOnDegree(Publication publication) {
+        return isDegree(publication)
+               && hasAccessRight(requestInfo, PUBLISH_DEGREE)
+               && hasAccessRight(requestInfo, EDIT_ALL_NON_DEGREE_RESOURCES);
     }
 }

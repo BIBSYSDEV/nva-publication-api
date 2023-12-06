@@ -33,7 +33,6 @@ java {
 }
 
 repositories {
-    mavenLocal()
     mavenCentral()
     maven { url 'https://jitpack.io' }
     maven { url "https://s3.eu-central-1.amazonaws.com/dynamodb-local-frankfurt/release" }
@@ -82,7 +81,7 @@ jacocoTestCoverageVerification {
             limit {
                 counter = 'METHOD'
                 value = 'COVEREDRATIO'
-                minimum = 0.900
+                minimum = 1.000
             }
         }
 
@@ -90,7 +89,7 @@ jacocoTestCoverageVerification {
             limit {
                 counter = 'CLASS'
                 value = 'COVEREDRATIO'
-                minimum = 0.900
+                minimum = 1.000
             }
         }
     }
