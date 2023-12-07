@@ -1,10 +1,46 @@
 package no.unit.nva.publication.model.storage;
 
-import com.amazonaws.services.dynamodbv2.model.*;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
+import static no.unit.nva.publication.model.storage.DaoUtils.toPutItemRequest;
+import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.CUSTOMER_INDEX_FIELD_PREFIX;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.STATUS_INDEX_FIELD_PREFIX;
+import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.startsWith;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.hamcrest.text.IsEmptyString.emptyString;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
+import com.amazonaws.services.dynamodbv2.model.GetItemResult;
+import com.amazonaws.services.dynamodbv2.model.QueryRequest;
+import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
@@ -20,7 +56,12 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
-import no.unit.nva.publication.model.business.*;
+import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -33,27 +74,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.*;
-import java.util.stream.Stream;
-
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.publication.model.business.ResourceTest.REVISION;
-import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
-import static no.unit.nva.publication.model.storage.DaoUtils.toPutItemRequest;
-import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.*;
-import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.nullValue;
-import static org.hamcrest.text.IsEmptyString.emptyString;
-
 class DaoTest extends ResourcesLocalTest {
 
     private static final String DATA_FINALIZED_BY = "data.finalizedBy";
@@ -63,6 +83,7 @@ class DaoTest extends ResourcesLocalTest {
     public static final String RESOURCE_IMPORT_STATUS = "resource.importStatus";
     private static final String DATA_OWNER_AFFILIATION = "data.ownerAffiliation";
     public static final String RESOURCE_REVISION = "resource.entityDescription.reference.publicationContext.revision";
+    public static final String DATA_REVISION = "data.entityDescription.reference.publicationContext.revision";
 
     public static Stream<Class<?>> entityProvider() {
         return TypeProvider.listSubTypes(Entity.class);
@@ -191,7 +212,7 @@ class DaoTest extends ResourcesLocalTest {
         assertThat(originalResource, doesNotHaveEmptyValuesIgnoringFields(Set.of(DATA_OWNER_AFFILIATION,
                                                                                  DATA_ASSIGNEE, DATA_FINALIZED_BY,
                                                                                  DATA_FINALIZED_DATE, DATA_IMPORT_STATUS,
-                RESOURCE_IMPORT_STATUS)));
+                RESOURCE_IMPORT_STATUS, RESOURCE_REVISION, DATA_REVISION)));
         assertThat(originalResource, is(equalTo(retrievedResource)));
     }
     
@@ -206,7 +227,7 @@ class DaoTest extends ResourcesLocalTest {
                                .collect(SingletonCollector.collect());
         assertThat(retrievedDao, is(equalTo(originalDao)));
     }
-    
+
     @ParameterizedTest
     @MethodSource("instanceProvider")
     void parseAttributeValuesMapCreatesDaoWithoutLossOfInformation(Dao originalDao) {
@@ -214,7 +235,8 @@ class DaoTest extends ResourcesLocalTest {
         assertThat(originalDao, doesNotHaveEmptyValuesIgnoringFields(Set.of(DATA_OWNER_AFFILIATION, DATA_ASSIGNEE,
                                                                             DATA_FINALIZED_BY,
                                                                             DATA_FINALIZED_DATE, DATA_IMPORT_STATUS,
-                                                                            RESOURCE_IMPORT_STATUS, REVISION)));
+                                                                            RESOURCE_IMPORT_STATUS, RESOURCE_REVISION,
+                                                                            DATA_REVISION)));
         Map<String, AttributeValue> dynamoMap = originalDao.toDynamoFormat();
         Dao parsedDao = parseAttributeValuesMap(dynamoMap, originalDao.getClass());
         assertThat(parsedDao, is(equalTo(originalDao)));
@@ -234,7 +256,7 @@ class DaoTest extends ResourcesLocalTest {
         Dao retrievedDao = parseAttributeValuesMap(savedMap, originalDao.getClass());
         assertThat(retrievedDao, doesNotHaveEmptyValuesIgnoringFields(
                 Set.of(DATA_OWNER_AFFILIATION, DATA_ASSIGNEE, DATA_FINALIZED_BY, DATA_FINALIZED_DATE,
-                       DATA_IMPORT_STATUS, RESOURCE_IMPORT_STATUS, RESOURCE_REVISION)));
+                       DATA_IMPORT_STATUS, RESOURCE_IMPORT_STATUS, RESOURCE_REVISION, DATA_REVISION)));
         assertThat(retrievedDao, is(equalTo(originalDao)));
     }
     
