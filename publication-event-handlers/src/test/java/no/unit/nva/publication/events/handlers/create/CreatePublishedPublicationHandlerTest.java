@@ -17,7 +17,7 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.create.CreatePublicationRequest;
+import no.unit.nva.publication.events.bodies.CreatePublicationRequest;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;

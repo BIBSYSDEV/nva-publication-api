@@ -15,7 +15,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
-import no.unit.nva.publication.create.CreatePublicationRequest;
+import no.unit.nva.publication.events.bodies.CreatePublicationRequest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
@@ -23,7 +23,7 @@ import nva.commons.core.paths.UriWrapper;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public class CreatePublishedPublicationHandler extends EventHandler<EventReference, PublicationResponseElevatedUser> {
-    
+
     private final S3Client s3Client;
     private final ResourceService resourceService;
     

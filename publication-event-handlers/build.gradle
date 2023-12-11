@@ -2,7 +2,6 @@ dependencies {
     implementation project(":publication-doi-commons")
     implementation project(":expansion")
     implementation project(":publication-commons")
-    implementation project(":publication-rest")
     implementation project(":tickets-test")
 
     implementation(libs.nva.datamodel.core) {

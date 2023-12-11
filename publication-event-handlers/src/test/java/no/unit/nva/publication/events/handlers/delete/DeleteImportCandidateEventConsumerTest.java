@@ -1,6 +1,6 @@
 package no.unit.nva.publication.events.handlers.delete;
 
-import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.SCOPUS_IDENTIFIER;
+import static no.unit.nva.publication.events.bodies.ImportCandidateDeleteEvent.SCOPUS_IDENTIFIER;
 import static no.unit.nva.publication.events.handlers.delete.DeleteImportCandidateEventConsumer.NO_IMPORT_CANDIDATE_FOUND;
 import static no.unit.nva.publication.service.impl.ResourceService.IMPORT_CANDIDATE_HAS_BEEN_DELETED_MESSAGE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;

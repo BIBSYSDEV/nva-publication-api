@@ -7,6 +7,8 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
+import static no.unit.nva.publication.delete.DeletePublicationHandler.LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS;
+import static no.unit.nva.publication.delete.DeletePublicationHandler.NVA_PUBLICATION_DELETE_SOURCE;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
@@ -20,12 +22,12 @@ import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyIterable;
-import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -61,6 +63,7 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.stubs.FakeContext;
+import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.TestHeaders;
 import nva.commons.apigateway.AccessRight;
@@ -73,7 +76,6 @@ import nva.commons.core.paths.UriWrapper;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.zalando.problem.Problem;
 
 class DeletePublicationHandlerTest extends ResourcesLocalTest {
@@ -82,6 +84,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     public static final String SOME_USER = "some_other_user";
     private static final String EXTERNAL_CLIENT_ID = "external-client-id";
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
+    private static final String EVENT_BUS_NAME = "test-event-bus-name";
     private final Context context = new FakeContext();
     private DeletePublicationHandler handler;
     private ResourceService publicationService;
@@ -90,6 +93,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     private ByteArrayOutputStream outputStream;
     private GetExternalClientResponse getExternalClientResponse;
     private TicketService ticketService;
+    private FakeEventBridgeClient eventBridgeClient;
 
     @BeforeEach
     public void setUp() throws NotFoundException {
@@ -98,7 +102,9 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         prepareIdentityServiceClient();
         publicationService = new ResourceService(client, Clock.systemDefaultZone());
         ticketService = new TicketService(client);
-        handler = new DeletePublicationHandler(publicationService, ticketService, environment, identityServiceClient);
+        eventBridgeClient = new FakeEventBridgeClient(EVENT_BUS_NAME);
+        handler = new DeletePublicationHandler(publicationService, ticketService, environment, identityServiceClient,
+                                               eventBridgeClient);
         outputStream = new ByteArrayOutputStream();
     }
 
@@ -278,6 +284,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         var userName = randomString();
 
         var publication = createPublicationWithoutDoiAndWithContributor(userCristinId, userName);
+
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         var inputStream = createHandlerRequest(publication.getIdentifier(), userName, randomUri(), AccessRight.USER,
@@ -286,6 +293,28 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(SC_ACCEPTED)));
+    }
+
+    @Test
+    void shouldProduceUpdateDoiEventWhenUnpublishingIsSuccessful()
+            throws ApiGatewayException, IOException {
+
+            var userCristinId = randomUri();
+            var userName = randomString();
+            var doi = randomUri();
+
+            var publication = createPublicationWithContributorAndDoi(userCristinId, userName, doi);
+
+            publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+
+            var inputStream = createHandlerRequest(publication.getIdentifier(), userName, randomUri(), AccessRight.USER,
+                                                   userCristinId);
+            handler.handleRequest(inputStream, outputStream, context);
+
+            assertTrue(eventBridgeClient.getRequestEntries()
+                           .stream()
+                           .anyMatch(entry -> entry.source().equals(NVA_PUBLICATION_DELETE_SOURCE)
+                                      && entry.detailType().equals(LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS)));
     }
 
     @Test
@@ -536,7 +565,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private void prepareIdentityServiceClient() throws NotFoundException {
-        identityServiceClient = Mockito.mock(IdentityServiceClient.class);
+        identityServiceClient = mock(IdentityServiceClient.class);
 
         getExternalClientResponse = new GetExternalClientResponse(
             EXTERNAL_CLIENT_ID,
@@ -548,12 +577,12 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private void prepareIdentityServiceClientForNotFound() throws NotFoundException {
-        identityServiceClient = Mockito.mock(IdentityServiceClient.class);
+        identityServiceClient = mock(IdentityServiceClient.class);
         when(identityServiceClient.getExternalClient(any())).thenThrow(NotFoundException.class);
     }
 
     private void prepareEnvironment() {
-        environment = Mockito.mock(Environment.class);
+        environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
     }
 
@@ -597,12 +626,13 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         return persistedPublication;
     }
 
-    private Publication createPublicationWithoutDoiAndWithContributor(URI contributorId, String contributorName)
+    private Publication createPublicationWithContributorAndDoi(URI contributorId, String contributorName,
+                                                                      URI doi)
         throws ApiGatewayException {
 
         var publication = randomPublication().copy()
                               .withEntityDescription(randomEntityDescription(JournalArticle.class))
-                              .withDoi(null).build();
+                              .withDoi(doi).build();
 
         var identity = new Identity.Builder().withName(contributorName).withId(contributorId).build();
         var contributor = new Contributor.Builder().withIdentity(identity).withRole(new RoleType(Role.CREATOR)).build();
@@ -611,6 +641,12 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         return Resource.fromPublication(publicationWithContributor)
                    .persistNew(publicationService, UserInstance.fromPublication(publication));
+    }
+
+    private Publication createPublicationWithoutDoiAndWithContributor(URI contributorId, String contributorName)
+        throws ApiGatewayException {
+
+        return createPublicationWithContributorAndDoi(contributorId, contributorName, null);
     }
 
     private Publication createAndPersistDegreeWithoutDoi() throws BadRequestException {
