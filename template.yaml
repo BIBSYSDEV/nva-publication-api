@@ -674,6 +674,7 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
+          DOMAIN_NAME: !Ref ApiDomain
       Role: !GetAtt LambdaRole.Arn
       Events:
         PutEvent:

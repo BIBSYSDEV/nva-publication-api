@@ -18,6 +18,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.RequestUtil;
+import no.unit.nva.publication.events.bodies.CreatePublicationRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;

@@ -6,6 +6,7 @@ dependencies {
     implementation project(':datacite-commons')
     implementation project(':schema-org-metadata')
     implementation project(":tickets")
+    implementation project(":publication-event-handlers")
 
     implementation libs.nva.apigateway
     implementation libs.nva.core
@@ -31,6 +32,8 @@ dependencies {
     implementation libs.aws.sdk2.secrets
     implementation libs.aws.sdk2.s3
     implementation libs.zalando
+    implementation libs.aws.sdk2.eventbridge
+    implementation libs.aws.sdk2.urlconnectionclient
 
     testImplementation project(":publication-testing")
     testImplementation project(path: ':tickets-test')
@@ -61,6 +64,7 @@ test {
     environment "EXTERNAL_USER_POOL_URI", "https://external-user-pool.example.com"
     environment "API_HOST", "https://api-host.example.com"
     environment "CUSTOM_DOMAIN_BASE_PATH", "publication"
+    environment "DOMAIN_NAME", "example.com"
     environment "IMPORT_CANDIDATES_TABLE_NAME", "import-candidates-table"
     environment "RESOURCE_TABLE_NAME", "publications-table"
     environment "NVA_PERSISTED_STORAGE_BUCKET_NAME", "some-persisted-bucket"

@@ -20,13 +20,15 @@ import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyIterable;
-import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.hamcrest.MockitoHamcrest.argThat;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
@@ -71,10 +73,16 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.http.HttpStatus;
+import org.hamcrest.Description;
+import org.hamcrest.TypeSafeMatcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
 import org.zalando.problem.Problem;
+import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
+import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
+import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 
 class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
@@ -90,6 +98,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     private ByteArrayOutputStream outputStream;
     private GetExternalClientResponse getExternalClientResponse;
     private TicketService ticketService;
+    private EventBridgeClient eventBridgeClient;
 
     @BeforeEach
     public void setUp() throws NotFoundException {
@@ -98,7 +107,10 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         prepareIdentityServiceClient();
         publicationService = new ResourceService(client, Clock.systemDefaultZone());
         ticketService = new TicketService(client);
-        handler = new DeletePublicationHandler(publicationService, ticketService, environment, identityServiceClient);
+        eventBridgeClient = mock(EventBridgeClient.class);
+        when(eventBridgeClient.putEvents(PutEventsRequest.builder().build())).thenReturn(PutEventsResponse.builder().build());
+        handler = new DeletePublicationHandler(publicationService, ticketService, environment, identityServiceClient,
+                                               eventBridgeClient);
         outputStream = new ByteArrayOutputStream();
     }
 
@@ -278,6 +290,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         var userName = randomString();
 
         var publication = createPublicationWithoutDoiAndWithContributor(userCristinId, userName);
+
+        when(eventBridgeClient.putEvents(any(PutEventsRequest.class))).thenReturn(PutEventsResponse.builder().build());
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         var inputStream = createHandlerRequest(publication.getIdentifier(), userName, randomUri(), AccessRight.USER,
@@ -286,6 +300,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(SC_ACCEPTED)));
+
+        verify(eventBridgeClient, Mockito.times(1)).putEvents(argThat(new EventBridgeRequestMatcher()));
     }
 
     @Test
@@ -536,7 +552,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private void prepareIdentityServiceClient() throws NotFoundException {
-        identityServiceClient = Mockito.mock(IdentityServiceClient.class);
+        identityServiceClient = mock(IdentityServiceClient.class);
 
         getExternalClientResponse = new GetExternalClientResponse(
             EXTERNAL_CLIENT_ID,
@@ -548,12 +564,12 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private void prepareIdentityServiceClientForNotFound() throws NotFoundException {
-        identityServiceClient = Mockito.mock(IdentityServiceClient.class);
+        identityServiceClient = mock(IdentityServiceClient.class);
         when(identityServiceClient.getExternalClient(any())).thenThrow(NotFoundException.class);
     }
 
     private void prepareEnvironment() {
-        environment = Mockito.mock(Environment.class);
+        environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
     }
 
@@ -637,5 +653,18 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         return Resource.fromPublication(publication)
                    .persistNew(publicationService, UserInstance.fromPublication(publication));
+    }
+
+    private class EventBridgeRequestMatcher extends TypeSafeMatcher<PutEventsRequest> {
+        static final String EXPECTED_SOURCE = "nva.publication.delete";
+        @Override
+        public void describeTo(Description description) {
+            description.appendText("PutEventsRequest with source: ").appendValue(EXPECTED_SOURCE);
+        }
+
+        @Override
+        protected boolean matchesSafely(PutEventsRequest request) {
+            return EXPECTED_SOURCE.equals(request.entries().stream().findFirst().orElseThrow().source());
+        }
     }
 }

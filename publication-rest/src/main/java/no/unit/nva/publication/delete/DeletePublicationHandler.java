@@ -9,6 +9,7 @@ import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.RequestUtil;
+import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -26,8 +27,15 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.http.HttpStatus;
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
+import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
+import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
+import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 
 public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
+
+    public static final String LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS = "Lambda Function Invocation Result - Success";
+    public static final String NVA_PUBLICATION_DELETE_SOURCE = "nva.publication.delete";
 
     public static final String API_HOST = "API_HOST";
     public static final String PUBLICATION = "publication";
@@ -35,14 +43,14 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     private final ResourceService resourceService;
     private final TicketService ticketService;
     private final IdentityServiceClient identityServiceClient;
+    private final EventBridgeClient eventBridgeClient;
 
     /**
      * Default constructor for DeletePublicationHandler.
      */
     @JacocoGenerated
     public DeletePublicationHandler() {
-        this(ResourceService.defaultService(), TicketService.defaultService(), new Environment(),
-             IdentityServiceClient.prepare());
+        this(ResourceService.defaultService(), TicketService.defaultService(), new Environment(), IdentityServiceClient.prepare(), defaultEventBridgeClient());
     }
 
     /**
@@ -50,13 +58,17 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
      *
      * @param resourceService resourceService
      * @param environment     environment
+     * @param eventBridgeClient eventBridgeClient
      */
-    public DeletePublicationHandler(ResourceService resourceService, TicketService ticketService,
-                                    Environment environment, IdentityServiceClient identityServiceClient) {
+    public DeletePublicationHandler(ResourceService resourceService,TicketService ticketService,
+                                    Environment environment,
+                                    IdentityServiceClient identityServiceClient,
+                                    EventBridgeClient eventBridgeClient) {
         super(Void.class, environment);
         this.resourceService = resourceService;
         this.ticketService = ticketService;
         this.identityServiceClient = identityServiceClient;
+        this.eventBridgeClient = eventBridgeClient;
     }
 
     @Override
@@ -127,6 +139,12 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
         var duplicate = requestInfo.getQueryParameterOpt(DUPLICATE_QUERY_PARAM).orElse(null);
         resourceService.unpublishPublication(toPublicationWithDuplicate(duplicate, publication));
         persistNotification(publication);
+        eventBridgeClient.putEvents(PutEventsRequest.builder().entries(PutEventsRequestEntry.builder()
+           .source(NVA_PUBLICATION_DELETE_SOURCE)
+           .detailType(LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS)
+           .detail(DoiMetadataUpdateEvent.createUpdateDoiEvent(publication).toJsonString())
+           .resources(publication.getIdentifier().toString())
+           .build()).build());
     }
 
     private void persistNotification(Publication publication) throws ApiGatewayException {
@@ -143,4 +161,10 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
         return requestInfo.clientIsThirdParty() ? createExternalUserInstance(requestInfo, identityServiceClient)
                    : createInternalUserInstance(requestInfo);
     }
+
+    @JacocoGenerated
+    private static EventBridgeClient defaultEventBridgeClient() {
+        return EventBridgeClient.builder()
+                   .httpClientBuilder(UrlConnectionHttpClient.builder())
+                   .build();    }
 }
