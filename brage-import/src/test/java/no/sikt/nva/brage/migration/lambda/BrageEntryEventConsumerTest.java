@@ -21,8 +21,10 @@ import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.UPDATE_
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM_DD_HH_FORMAT;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.NOT_SUPPORTED_TYPE;
 import static no.sikt.nva.brage.migration.merger.AssociatedArtifactMover.COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE;
+import static no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger.DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.TEST_DESCRIPTION;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
@@ -35,6 +37,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -69,9 +72,12 @@ import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.merger.AssociatedArtifactException;
 import no.sikt.nva.brage.migration.merger.DuplicatePublicationException;
 import no.sikt.nva.brage.migration.merger.UnmappableCristinRecordException;
+import no.sikt.nva.brage.migration.record.EntityDescription;
 import no.sikt.nva.brage.migration.record.PublicationDate;
 import no.sikt.nva.brage.migration.record.PublicationDateNva;
+import no.sikt.nva.brage.migration.record.PublisherAuthority;
 import no.sikt.nva.brage.migration.record.Record;
+import no.sikt.nva.brage.migration.record.ResourceOwner;
 import no.sikt.nva.brage.migration.record.Type;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
@@ -88,6 +94,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
@@ -198,6 +205,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;
     private static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     private static final String INPUT_BUCKET_NAME = "some-input-bucket-name";
+    private static final Boolean IS_PUBLISHER_AUTHORITY = true;
     private final String persistedStorageBucket = new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME");
     private BrageEntryEventConsumer handler;
     private S3Driver s3Driver;
@@ -1080,6 +1088,58 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         assertThat(storedHandleString, is(not(nullValue())));
     }
 
+    @Test
+    void shouldMergeCristinPublicationEvenWhenMostDataIsMissing()
+        throws BadRequestException, IOException, nva.commons.apigateway.exceptions.NotFoundException {
+        var cristinIdentifier = randomString();
+        var cristinPublication = createCristinPublication(cristinIdentifier);
+        var minimalRecord = createMinimalRecord(cristinIdentifier);
+        var contentFile = createContentFile();
+        minimalRecord.setContentBundle(new ResourceContent(List.of(contentFile)));
+        var s3Event = createNewBrageRecordEvent(minimalRecord);
+        handler.handleRequest(s3Event, CONTEXT);
+        var updatedPublication = resourceService.getPublication(cristinPublication);
+
+        //assert that dummy handles has not been stored in the updated publication
+        assertThat(updatedPublication.getHandle(), not(equalTo(minimalRecord.getId())));
+        assertThat(updatedPublication.getAdditionalIdentifiers(), not(hasItem(
+            new AdditionalIdentifier("handle",
+                                     minimalRecord.getId().toString()))));
+        var associatedArtifacts = updatedPublication.getAssociatedArtifacts();
+
+        // assert that  contentFile was copied
+        assertThat(associatedArtifacts, hasSize(1));
+        var publishedFile = (PublishedFile) associatedArtifacts.get(0);
+        assertThat(publishedFile.getName(), is(equalTo(contentFile.getFilename())));
+        assertThat(publishedFile.getIdentifier(), is(equalTo(contentFile.getIdentifier())));
+        assertThat(publishedFile.getLicense(), is(equalTo(contentFile.getLicense().getNvaLicense().getLicense())));
+        assertThat(publishedFile.isPublisherAuthority(), is(equalTo(minimalRecord.getPublisherAuthority().getNva())));
+
+        //assert that we are storing reports based on the dummy handles:
+        var updateHandleReporstFolder = UnixPath.of(UPDATE_REPORTS_PATH);
+        var filesInUpdatedHandleReportsFolder = s3Driver.getFiles(updateHandleReporstFolder);
+        assertThat(filesInUpdatedHandleReportsFolder, is(not(empty())));
+        var storedHandleString = extractUpdateReportFromS3(s3Event,
+                                                           cristinPublication,
+                                                           minimalRecord.getId());
+        assertThat(storedHandleString, is(not(nullValue())));
+    }
+
+    @Test
+    void whenCristinPublicationIsMissingImportingMinimalRecordShouldNotCreateNewPublication() throws IOException {
+        var cristinIdentifier = randomString();
+        var minimalRecord = createMinimalRecord(cristinIdentifier);
+        var contentFile = createContentFile();
+        minimalRecord.setContentBundle(new ResourceContent(List.of(contentFile)));
+        var s3Event = createNewBrageRecordEvent(minimalRecord);
+        handler.handleRequest(s3Event, CONTEXT);
+        var publications = resourceService.getPublicationsByCristinIdentifier(cristinIdentifier);
+        assertThat(publications, hasSize(0));
+        var s3Driver = new S3Driver(s3Client, new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
+        var errorFiles = s3Driver.getFiles(UnixPath.of("ERROR"));
+        assertThat(errorFiles, hasSize(1));
+    }
+
     private static Publication copyPublication(NvaBrageMigrationDataGenerator brageGenerator)
         throws JsonProcessingException {
         return JsonUtils.dtoObjectMapper.readValue(
@@ -1101,6 +1161,39 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                     throw new RuntimeException(e);
                 }
             });
+    }
+
+    private Publication createCristinPublication(String cristinIdentifier) throws BadRequestException {
+        var publication = randomPublication().copy()
+                              .withAdditionalIdentifiers(
+                                  Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)))
+                              .withAssociatedArtifacts(List.of())
+                              .build();
+        return Resource.fromPublication(publication)
+                   .persistNew(resourceService, UserInstance.fromPublication(publication));
+    }
+
+    private Record createMinimalRecord(String cristinIdentifier) {
+        var minimalRecord = new Record();
+        var fakeDummyHandle = UriWrapper.fromUri(DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS
+                                                 + "/1").getUri();
+        minimalRecord.setId(fakeDummyHandle);
+        minimalRecord.setPublisherAuthority(new PublisherAuthority(List.of(),
+                                                                   IS_PUBLISHER_AUTHORITY));
+        minimalRecord.setResourceOwner(new ResourceOwner("unis@186.0.0.0", randomUri()));
+        minimalRecord.setCristinId(cristinIdentifier);
+        minimalRecord.setEntityDescription(new EntityDescription());
+        minimalRecord.setType(new Type(List.of(), CRISTIN_RECORD.getValue()));
+        return minimalRecord;
+    }
+
+    private ContentFile createContentFile() {
+        var contentFile = new ContentFile();
+        contentFile.setFilename("MyAwsomeUnisFile.pdf");
+        contentFile.setBundleType(BundleType.ORIGINAL);
+        contentFile.setIdentifier(java.util.UUID.randomUUID());
+        contentFile.setLicense(new License("", new NvaLicense(randomUri())));
+        return contentFile;
     }
 
     private Publication persistPublicationWithCristinIdAndHandle(String cristinIdentifier, URI handle)
