@@ -108,7 +108,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         publicationService = new ResourceService(client, Clock.systemDefaultZone());
         ticketService = new TicketService(client);
         eventBridgeClient = mock(EventBridgeClient.class);
-        when(eventBridgeClient.putEvents(PutEventsRequest.builder().build())).thenReturn(PutEventsResponse.builder().build());
+        when(eventBridgeClient.putEvents(PutEventsRequest.builder().build()))
+            .thenReturn(PutEventsResponse.builder().build());
         handler = new DeletePublicationHandler(publicationService, ticketService, environment, identityServiceClient,
                                                eventBridgeClient);
         outputStream = new ByteArrayOutputStream();
@@ -657,6 +658,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
     private class EventBridgeRequestMatcher extends TypeSafeMatcher<PutEventsRequest> {
         static final String EXPECTED_SOURCE = "nva.publication.delete";
+
         @Override
         public void describeTo(Description description) {
             description.appendText("PutEventsRequest with source: ").appendValue(EXPECTED_SOURCE);

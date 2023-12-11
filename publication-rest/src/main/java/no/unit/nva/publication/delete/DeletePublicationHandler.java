@@ -34,7 +34,8 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 
 public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
 
-    public static final String LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS = "Lambda Function Invocation Result - Success";
+    public static final String LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS =
+        "Lambda Function Invocation Result - Success";
     public static final String NVA_PUBLICATION_DELETE_SOURCE = "nva.publication.delete";
 
     public static final String API_HOST = "API_HOST";
@@ -50,7 +51,8 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
      */
     @JacocoGenerated
     public DeletePublicationHandler() {
-        this(ResourceService.defaultService(), TicketService.defaultService(), new Environment(), IdentityServiceClient.prepare(), defaultEventBridgeClient());
+        this(ResourceService.defaultService(), TicketService.defaultService(), new Environment(),
+             IdentityServiceClient.prepare(), defaultEventBridgeClient());
     }
 
     /**
@@ -140,11 +142,11 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
         resourceService.unpublishPublication(toPublicationWithDuplicate(duplicate, publication));
         persistNotification(publication);
         eventBridgeClient.putEvents(PutEventsRequest.builder().entries(PutEventsRequestEntry.builder()
-           .source(NVA_PUBLICATION_DELETE_SOURCE)
-           .detailType(LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS)
-           .detail(DoiMetadataUpdateEvent.createUpdateDoiEvent(publication).toJsonString())
-           .resources(publication.getIdentifier().toString())
-           .build()).build());
+               .source(NVA_PUBLICATION_DELETE_SOURCE)
+               .detailType(LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS)
+               .detail(DoiMetadataUpdateEvent.createUpdateDoiEvent(publication).toJsonString())
+               .resources(publication.getIdentifier().toString())
+               .build()).build());
     }
 
     private void persistNotification(Publication publication) throws ApiGatewayException {
@@ -166,5 +168,6 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     private static EventBridgeClient defaultEventBridgeClient() {
         return EventBridgeClient.builder()
                    .httpClientBuilder(UrlConnectionHttpClient.builder())
-                   .build();    }
+                   .build();
+    }
 }
