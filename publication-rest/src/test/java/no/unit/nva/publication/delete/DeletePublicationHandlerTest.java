@@ -26,9 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.hamcrest.MockitoHamcrest.argThat;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
@@ -63,6 +61,7 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.stubs.FakeContext;
+import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.TestHeaders;
 import nva.commons.apigateway.AccessRight;
@@ -73,16 +72,9 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.http.HttpStatus;
-import org.hamcrest.Description;
-import org.hamcrest.TypeSafeMatcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatcher;
-import org.mockito.Mockito;
 import org.zalando.problem.Problem;
-import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
-import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
-import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 
 class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
@@ -90,6 +82,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     public static final String SOME_USER = "some_other_user";
     private static final String EXTERNAL_CLIENT_ID = "external-client-id";
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
+    private static final String EVENT_BUS_NAME = "test-event-bus-name";
     private final Context context = new FakeContext();
     private DeletePublicationHandler handler;
     private ResourceService publicationService;
@@ -98,7 +91,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     private ByteArrayOutputStream outputStream;
     private GetExternalClientResponse getExternalClientResponse;
     private TicketService ticketService;
-    private EventBridgeClient eventBridgeClient;
+    private FakeEventBridgeClient eventBridgeClient;
 
     @BeforeEach
     public void setUp() throws NotFoundException {
@@ -107,9 +100,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         prepareIdentityServiceClient();
         publicationService = new ResourceService(client, Clock.systemDefaultZone());
         ticketService = new TicketService(client);
-        eventBridgeClient = mock(EventBridgeClient.class);
-        when(eventBridgeClient.putEvents(PutEventsRequest.builder().build()))
-            .thenReturn(PutEventsResponse.builder().build());
+        eventBridgeClient = new FakeEventBridgeClient(EVENT_BUS_NAME);
         handler = new DeletePublicationHandler(publicationService, ticketService, environment, identityServiceClient,
                                                eventBridgeClient);
         outputStream = new ByteArrayOutputStream();
@@ -292,7 +283,6 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         var publication = createPublicationWithoutDoiAndWithContributor(userCristinId, userName);
 
-        when(eventBridgeClient.putEvents(any(PutEventsRequest.class))).thenReturn(PutEventsResponse.builder().build());
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         var inputStream = createHandlerRequest(publication.getIdentifier(), userName, randomUri(), AccessRight.USER,
@@ -301,8 +291,26 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(SC_ACCEPTED)));
+    }
 
-        verify(eventBridgeClient, Mockito.times(1)).putEvents(argThat(new EventBridgeRequestMatcher()));
+    @Test
+    void shouldProduceUpdateDoiEventWhenUnpublishingIsSuccessful()
+            throws ApiGatewayException, IOException {
+
+            var userCristinId = randomUri();
+            var userName = randomString();
+
+            var publication = createPublicationWithContributorAndDoi(userCristinId, userName, randomUri());
+
+            publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+
+            var inputStream = createHandlerRequest(publication.getIdentifier(), userName, randomUri(), AccessRight.USER,
+                                                   userCristinId);
+            handler.handleRequest(inputStream, outputStream, context);
+
+            assertTrue(eventBridgeClient.getRequestEntries()
+                           .stream()
+                           .anyMatch(entry -> entry.source().equals("nva.publication.delete")));
     }
 
     @Test
@@ -614,12 +622,13 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         return persistedPublication;
     }
 
-    private Publication createPublicationWithoutDoiAndWithContributor(URI contributorId, String contributorName)
+    private Publication createPublicationWithContributorAndDoi(URI contributorId, String contributorName,
+                                                                      URI doi)
         throws ApiGatewayException {
 
         var publication = randomPublication().copy()
                               .withEntityDescription(randomEntityDescription(JournalArticle.class))
-                              .withDoi(null).build();
+                              .withDoi(doi).build();
 
         var identity = new Identity.Builder().withName(contributorName).withId(contributorId).build();
         var contributor = new Contributor.Builder().withIdentity(identity).withRole(new RoleType(Role.CREATOR)).build();
@@ -628,6 +637,12 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         return Resource.fromPublication(publicationWithContributor)
                    .persistNew(publicationService, UserInstance.fromPublication(publication));
+    }
+
+    private Publication createPublicationWithoutDoiAndWithContributor(URI contributorId, String contributorName)
+        throws ApiGatewayException {
+
+        return createPublicationWithContributorAndDoi(contributorId, contributorName, null);
     }
 
     private Publication createAndPersistDegreeWithoutDoi() throws BadRequestException {
@@ -654,19 +669,5 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         return Resource.fromPublication(publication)
                    .persistNew(publicationService, UserInstance.fromPublication(publication));
-    }
-
-    private class EventBridgeRequestMatcher extends TypeSafeMatcher<PutEventsRequest> {
-        static final String EXPECTED_SOURCE = "nva.publication.delete";
-
-        @Override
-        public void describeTo(Description description) {
-            description.appendText("PutEventsRequest with source: ").appendValue(EXPECTED_SOURCE);
-        }
-
-        @Override
-        protected boolean matchesSafely(PutEventsRequest request) {
-            return EXPECTED_SOURCE.equals(request.entries().stream().findFirst().orElseThrow().source());
-        }
     }
 }

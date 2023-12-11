@@ -141,12 +141,18 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
         var duplicate = requestInfo.getQueryParameterOpt(DUPLICATE_QUERY_PARAM).orElse(null);
         resourceService.unpublishPublication(toPublicationWithDuplicate(duplicate, publication));
         persistNotification(publication);
-        eventBridgeClient.putEvents(PutEventsRequest.builder().entries(PutEventsRequestEntry.builder()
-               .source(NVA_PUBLICATION_DELETE_SOURCE)
-               .detailType(LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS)
-               .detail(DoiMetadataUpdateEvent.createUpdateDoiEvent(publication).toJsonString())
-               .resources(publication.getIdentifier().toString())
-               .build()).build());
+        updateNvaDoi(publication);
+    }
+
+    private void updateNvaDoi(Publication publication) {
+        if (nonNull(publication.getDoi())) {
+            eventBridgeClient.putEvents(PutEventsRequest.builder().entries(PutEventsRequestEntry.builder()
+                   .source(NVA_PUBLICATION_DELETE_SOURCE)
+                   .detailType(LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS)
+                   .detail(DoiMetadataUpdateEvent.createUpdateDoiEvent(publication).toJsonString())
+                   .resources(publication.getIdentifier().toString())
+                   .build()).build());
+        }
     }
 
     private void persistNotification(Publication publication) throws ApiGatewayException {
