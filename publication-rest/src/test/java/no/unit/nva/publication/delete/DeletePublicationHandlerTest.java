@@ -299,8 +299,9 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
             var userCristinId = randomUri();
             var userName = randomString();
+            var doi = randomUri();
 
-            var publication = createPublicationWithContributorAndDoi(userCristinId, userName, randomUri());
+            var publication = createPublicationWithContributorAndDoi(userCristinId, userName, doi);
 
             publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
