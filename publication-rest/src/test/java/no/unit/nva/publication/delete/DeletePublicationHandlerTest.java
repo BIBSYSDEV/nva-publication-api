@@ -7,6 +7,8 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
+import static no.unit.nva.publication.delete.DeletePublicationHandler.LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS;
+import static no.unit.nva.publication.delete.DeletePublicationHandler.NVA_PUBLICATION_DELETE_SOURCE;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
@@ -311,7 +313,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
             assertTrue(eventBridgeClient.getRequestEntries()
                            .stream()
-                           .anyMatch(entry -> entry.source().equals("nva.publication.delete")));
+                           .anyMatch(entry -> entry.source().equals(NVA_PUBLICATION_DELETE_SOURCE)
+                                      && entry.detailType().equals(LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS)));
     }
 
     @Test
