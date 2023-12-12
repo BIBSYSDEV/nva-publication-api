@@ -165,8 +165,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
                    .build()).build());
 
             logger.info("failedEntryCount={}", ebResult.failedEntryCount());
-        }
-        else {
+        } else {
             logger.info("Publication {} has no NVA-DOI, no event sent to EventBridge", publication.getIdentifier());
         }
     }
