@@ -27,6 +27,8 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
@@ -47,6 +49,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     private final TicketService ticketService;
     private final IdentityServiceClient identityServiceClient;
     private final EventBridgeClient eventBridgeClient;
+    private final Logger logger = LoggerFactory.getLogger(DeletePublicationHandler.class);
 
     /**
      * Default constructor for DeletePublicationHandler.
@@ -149,13 +152,21 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
 
     private void updateNvaDoi(Publication publication) {
         if (nonNull(publication.getDoi())) {
-            eventBridgeClient.putEvents(PutEventsRequest.builder().entries(PutEventsRequestEntry.builder()
+            logger.info("Publication {} has NVA-DOI, sending event to EventBridge", publication.getIdentifier());
+            var ebResult =
+                    eventBridgeClient.putEvents(PutEventsRequest.builder().entries(PutEventsRequestEntry.builder()
                    .eventBusName(nvaEventBusName)
                    .source(NVA_PUBLICATION_DELETE_SOURCE)
                    .detailType(LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS)
-                   .detail(DoiMetadataUpdateEvent.createUpdateDoiEvent(publication).toJsonString())
+                   .detail(new LambdaDestinationInvocationDetail<>(
+                            DoiMetadataUpdateEvent.createUpdateDoiEvent(publication)
+                        ).toJsonString())
                    .resources(publication.getIdentifier().toString())
                    .build()).build());
+
+            logger.info("failedEntryCount={}", ebResult.failedEntryCount());
+        } else {
+            logger.info("Publication {} has no NVA-DOI, no event sent to EventBridge", publication.getIdentifier());
         }
     }
 
