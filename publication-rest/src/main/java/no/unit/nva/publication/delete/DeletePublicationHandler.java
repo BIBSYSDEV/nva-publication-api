@@ -158,7 +158,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
                    .eventBusName(nvaEventBusName)
                    .source(NVA_PUBLICATION_DELETE_SOURCE)
                    .detailType(LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS)
-                   .detail(new LambdaDestinationInvocationResult(
+                   .detail(new LambdaDestinationInvocationDetail<>(
                             DoiMetadataUpdateEvent.createUpdateDoiEvent(publication)
                         ).toJsonString())
                    .resources(publication.getIdentifier().toString())
