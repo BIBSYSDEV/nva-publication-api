@@ -41,6 +41,8 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     public static final String API_HOST = "API_HOST";
     public static final String PUBLICATION = "publication";
     public static final String DUPLICATE_QUERY_PARAM = "duplicate";
+    public static final String NVA_EVENT_BUS_NAME_KEY = "NVA_EVENT_BUS_NAME";
+    private final String nvaEventBusName;
     private final ResourceService resourceService;
     private final TicketService ticketService;
     private final IdentityServiceClient identityServiceClient;
@@ -71,6 +73,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
         this.ticketService = ticketService;
         this.identityServiceClient = identityServiceClient;
         this.eventBridgeClient = eventBridgeClient;
+        this.nvaEventBusName = new Environment().readEnv(NVA_EVENT_BUS_NAME_KEY);
     }
 
     @Override
@@ -147,6 +150,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     private void updateNvaDoi(Publication publication) {
         if (nonNull(publication.getDoi())) {
             eventBridgeClient.putEvents(PutEventsRequest.builder().entries(PutEventsRequestEntry.builder()
+                   .eventBusName(nvaEventBusName)
                    .source(NVA_PUBLICATION_DELETE_SOURCE)
                    .detailType(LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS)
                    .detail(DoiMetadataUpdateEvent.createUpdateDoiEvent(publication).toJsonString())

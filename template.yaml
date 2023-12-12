@@ -675,6 +675,7 @@ Resources:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
           DOMAIN_NAME: !Ref ApiDomain
+          NVA_EVENT_BUS_NAME: !Ref NewNvaEventBusName
       Role: !GetAtt LambdaRole.Arn
       Events:
         PutEvent:
