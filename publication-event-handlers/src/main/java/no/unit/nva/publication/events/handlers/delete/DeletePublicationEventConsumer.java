@@ -26,8 +26,8 @@ public class DeletePublicationEventConsumer extends
                                                                                    DeleteResourceEvent> {
 
     public static final String RESOURCES = "resources/";
-    public static final String RECEIVED_EVENTREFERENCE = "Received eventreference: %s";
-    public static final String DELETING_PUBLICATION = "Deleting publication: %s";
+    public static final String RECEIVED_EVENTREFERENCE = "Received eventreference: ";
+    public static final String DELETING_PUBLICATION = "Deleting publication: ";
     private static final Logger logger = LoggerFactory.getLogger(DeletePublicationEventConsumer.class);
     private final S3Client s3Client;
 
@@ -45,7 +45,7 @@ public class DeletePublicationEventConsumer extends
     protected DeleteResourceEvent processInputPayload(EventReference input,
                                                       AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
                                                       Context context) {
-        logger.info(RECEIVED_EVENTREFERENCE, input.toJsonString());
+        logger.info(RECEIVED_EVENTREFERENCE + input.toJsonString());
         var publication = readEvent(input);
         if (isDeleted(publication)) {
             logger.info(DELETING_PUBLICATION + publication.getIdentifier().toString());
