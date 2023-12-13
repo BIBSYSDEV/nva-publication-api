@@ -27,8 +27,8 @@ public class DeletePublicationEventConsumer extends
 
     public static final String RESOURCES = "resources/";
     public static final String RECEIVED_EVENTREFERENCE = "Received eventreference: %s";
-    private static final Logger logger = LoggerFactory.getLogger(DeletePublicationEventConsumer.class);
     public static final String DELETING_PUBLICATION = "Deleting publication: %s";
+    private static final Logger logger = LoggerFactory.getLogger(DeletePublicationEventConsumer.class);
     private final S3Client s3Client;
 
     @JacocoGenerated
@@ -69,6 +69,11 @@ public class DeletePublicationEventConsumer extends
                    .build();
     }
 
+    private static boolean hasSoftOrHardDeletedStatus(Publication publication) {
+        return PublicationStatus.DELETED.equals(publication.getStatus())
+               || PublicationStatus.UNPUBLISHED.equals(publication.getStatus());
+    }
+
     private Publication readEvent(EventReference input) {
         var s3Reader = new S3Driver(s3Client, EVENTS_BUCKET);
         String data = s3Reader.readEvent(input.getUri());
@@ -86,7 +91,8 @@ public class DeletePublicationEventConsumer extends
     }
 
     private boolean isDeleted(Publication publication) {
-        return nonNull(publication) && PublicationStatus.DELETED.equals(publication.getStatus())
+        return nonNull(publication)
+               && hasSoftOrHardDeletedStatus(publication)
                && nonNull(publication.getIdentifier());
     }
 }
