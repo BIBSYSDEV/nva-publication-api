@@ -9,10 +9,12 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.MessageStatus;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
@@ -23,7 +25,8 @@ import nva.commons.core.JacocoGenerated;
 public class MessageService extends ServiceWithTransactions {
     
     public static final String MESSAGE_NOT_FOUND_ERROR = "Could not find message with identifier:";
-    
+    public static final String FOR_USER = " for user: ";
+
     private final String tableName;
     
     private final TicketService ticketService;
@@ -63,7 +66,17 @@ public class MessageService extends ServiceWithTransactions {
                    .map(Message.class::cast)
                    .toOptional();
     }
-    
+
+    public void deleteMessage(UserInstance userInstance, SortableIdentifier messageIdentifier)
+        throws NotFoundException {
+        var message = getMessage(userInstance, messageIdentifier);
+        message.setModifiedDate(Instant.now());
+        message.setStatus(MessageStatus.DELETED);
+        var dao = message.toDao();
+        var transactionRequest = dao.createInsertionTransactionRequest();
+        getClient().transactWriteItems(transactionRequest);
+    }
+
     private Message getMessageByIdentifier(Message message) {
         return getMessageByIdentifier(message.getIdentifier()).orElseThrow();
     }
@@ -79,7 +92,10 @@ public class MessageService extends ServiceWithTransactions {
         Map<String, AttributeValue> item = queryResult.getItem();
         
         if (isNull(item) || item.isEmpty()) {
-            throw new NotFoundException(MESSAGE_NOT_FOUND_ERROR + queryObject.getIdentifier().toString());
+            throw new NotFoundException(MESSAGE_NOT_FOUND_ERROR
+                                        + queryObject.getIdentifier().toString()
+                                        + FOR_USER
+                                        + queryObject.getData().getOwner().toString());
         }
         return item;
     }

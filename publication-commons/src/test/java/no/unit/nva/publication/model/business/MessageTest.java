@@ -52,6 +52,19 @@ class MessageTest extends TestDataSource {
         assertThat(message, doesNotHaveEmptyValues());
         assertThat(copy, is(equalTo(message)));
     }
+
+    @Test
+    void shouldSerializeMessageWithStatusActiveWhenMessageIsNull() throws JsonProcessingException {
+        var message = Message.builder().build();
+        var serializedMessage = dynamoDbObjectMapper.readValue(message.toString(), Message.class);
+
+        assertThat(serializedMessage.getStatus(), is(equalTo(MessageStatus.ACTIVE)));
+    }
+
+    @Test
+    void shouldThrowIllegalArgumentExceptionWhenNotSupportedMessageStatus() {
+        assertThrows(IllegalArgumentException.class, () -> MessageStatus.lookup(randomString()));
+    }
     
     private static Publication randomPublicationEligibleForDoiRequest() {
         return randomPublication().copy().withStatus(PublicationStatus.DRAFT).withDoi(null).build();

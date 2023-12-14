@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business;
 
+import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -23,6 +24,8 @@ public class Message implements Entity, JsonSerializable {
 
     @JsonProperty("identifier")
     private SortableIdentifier identifier;
+    @JsonProperty("status")
+    private MessageStatus status;
     @JsonProperty("owner")
     private User owner;
     @JsonProperty("customerId")
@@ -59,6 +62,7 @@ public class Message implements Entity, JsonSerializable {
                                  String message) {
         var now = Instant.now();
         return builder()
+                   .withStatus(MessageStatus.ACTIVE)
                    .withCreatedDate(now)
                    .withModifiedDate(now)
                    .withCustomerId(ticket.getCustomerId())
@@ -84,7 +88,7 @@ public class Message implements Entity, JsonSerializable {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getIdentifier(), getOwner(), getCustomerId(), getSender(), getResourceIdentifier(),
-                            getTicketIdentifier(), getText(), getCreatedDate(), getModifiedDate(), getResourceTitle());
+                            getTicketIdentifier(), getText(), getCreatedDate(), getModifiedDate(), getResourceTitle(), getStatus());
     }
 
     @Override
@@ -93,10 +97,9 @@ public class Message implements Entity, JsonSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Message)) {
+        if (!(o instanceof Message message)) {
             return false;
         }
-        Message message = (Message) o;
         return Objects.equals(getIdentifier(), message.getIdentifier())
                && Objects.equals(getOwner(), message.getOwner())
                && Objects.equals(getCustomerId(), message.getCustomerId())
@@ -106,7 +109,8 @@ public class Message implements Entity, JsonSerializable {
                && Objects.equals(getText(), message.getText())
                && Objects.equals(getCreatedDate(), message.getCreatedDate())
                && Objects.equals(getModifiedDate(), message.getModifiedDate())
-               && Objects.equals(getResourceTitle(), message.getResourceTitle());
+               && Objects.equals(getResourceTitle(), message.getResourceTitle())
+               && Objects.equals(getStatus(), message.getStatus());
     }
 
     @Override
@@ -143,6 +147,14 @@ public class Message implements Entity, JsonSerializable {
     @Override
     public void setCreatedDate(Instant createdDate) {
         this.createdDate = createdDate;
+    }
+
+    public MessageStatus getStatus() {
+        return nonNull(status) ? status : MessageStatus.ACTIVE;
+    }
+
+    public void setStatus(MessageStatus status) {
+        this.status = status;
     }
 
     @Override
@@ -201,6 +213,7 @@ public class Message implements Entity, JsonSerializable {
 
     public Message copy() {
         return Message.builder()
+                   .withStatus(this.getStatus())
                    .withCreatedDate(this.getCreatedDate())
                    .withCustomerId(this.getCustomerId())
                    .withIdentifier(this.getIdentifier())
@@ -285,6 +298,11 @@ public class Message implements Entity, JsonSerializable {
 
         public Builder withResourceTitle(String resourceTitle) {
             message.setResourceTitle(resourceTitle);
+            return this;
+        }
+
+        public Builder withStatus(MessageStatus status) {
+            message.setStatus(status);
             return this;
         }
 

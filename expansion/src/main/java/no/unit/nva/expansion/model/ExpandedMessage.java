@@ -9,6 +9,7 @@ import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.MessageStatus;
 import no.unit.nva.publication.model.business.User;
 import nva.commons.core.JacocoGenerated;
 
@@ -33,6 +34,7 @@ public class ExpandedMessage implements JsonSerializable {
     public static final String MODIFIED_TIME = "modifiedTime";
     public static final String MODIFIED_DATE = "modifiedDate";
     public static final String RESOURCE_TITLE = "resourceTitle";
+    public static final String STATUS = "status";
     @JsonProperty(IDENTIFIER_JSON_NAME)
     private SortableIdentifier identifier;
     @JsonProperty(OWNER_JSON_NAME)
@@ -57,6 +59,8 @@ public class ExpandedMessage implements JsonSerializable {
     private Instant modifiedDate;
     @JsonProperty(RESOURCE_TITLE)
     private String resourceTitle;
+    @JsonProperty(STATUS)
+    private MessageStatus status;
 
     @JacocoGenerated
     public ExpandedMessage() {
@@ -76,6 +80,7 @@ public class ExpandedMessage implements JsonSerializable {
                 .withResourceTitle(message.getResourceTitle())
                 .withModifiedDate(message.getModifiedDate())
                 .withTicketIdentifier(message.getTicketIdentifier())
+                .withStatus(message.getStatus())
                 .build();
 
     }
@@ -98,6 +103,14 @@ public class ExpandedMessage implements JsonSerializable {
 
     public void setOwner(User owner) {
         this.owner = owner;
+    }
+
+    public MessageStatus getStatus() {
+        return status;
+    }
+
+    private void setStatus(MessageStatus status) {
+        this.status = status;
     }
 
     public URI getCustomerId() {
@@ -176,6 +189,7 @@ public class ExpandedMessage implements JsonSerializable {
                 .withResourceTitle(this.getResourceTitle())
                 .withModifiedDate(this.getModifiedDate())
                 .withTicketIdentifier(this.getTicketIdentifier())
+                .withStatus(this.getStatus())
                 .build();
     }
 
@@ -204,7 +218,8 @@ public class ExpandedMessage implements JsonSerializable {
                 && Objects.equals(getText(), that.getText())
                 && Objects.equals(getCreatedDate(), that.getCreatedDate())
                 && Objects.equals(getModifiedDate(), that.getModifiedDate())
-                && Objects.equals(getResourceTitle(), that.getResourceTitle());
+                && Objects.equals(getResourceTitle(), that.getResourceTitle())
+                && Objects.equals(getStatus(), that.getStatus());
     }
 
     @JacocoGenerated
@@ -219,7 +234,8 @@ public class ExpandedMessage implements JsonSerializable {
                 getText(),
                 getCreatedDate(),
                 getModifiedDate(),
-                getResourceTitle());
+                getResourceTitle(),
+                getStatus());
     }
 
     public static final class Builder {
@@ -282,6 +298,11 @@ public class ExpandedMessage implements JsonSerializable {
 
         public ExpandedMessage build() {
             return message;
+        }
+
+        public Builder withStatus(MessageStatus status) {
+            message.setStatus(status);
+            return this;
         }
     }
 }

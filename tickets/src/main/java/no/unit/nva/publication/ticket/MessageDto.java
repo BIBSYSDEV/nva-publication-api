@@ -14,6 +14,7 @@ import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.MessageStatus;
 import no.unit.nva.publication.model.business.User;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -24,6 +25,7 @@ public class MessageDto implements JsonSerializable {
     
     public static final String TEXT_FIELD = "text";
     public static final String TYPE = "Message";
+    public static final String NO_TEXT = null;
     @JsonProperty("id")
     private URI messageId;
     @JsonProperty("identifier")
@@ -39,18 +41,24 @@ public class MessageDto implements JsonSerializable {
     private Instant createdDate;
     @JsonProperty("messageType")
     private String messageType;
+    @JsonProperty("status")
+    private MessageStatus status;
     
     public static MessageDto fromMessage(Message message) {
         MessageDto messageDto = new MessageDto();
         messageDto.setOwnerIdentifier(message.getOwner());
         messageDto.setSenderIdentifier(message.getSender());
-        messageDto.setText(message.getText());
+        messageDto.setText(getMessageText(message));
         messageDto.setCreatedDate(message.getCreatedDate());
         messageDto.setMessageId(constructMessageId(message));
         messageDto.setMessageIdentifier(message.getIdentifier());
         return messageDto;
     }
-    
+
+    private static String getMessageText(Message message) {
+        return MessageStatus.ACTIVE.equals(message.getStatus()) ? message.getText() : NO_TEXT;
+    }
+
     public static URI constructMessageId(Message message) {
         if (nonNull(message.getIdentifier())) {
             return UriWrapper.fromUri(PUBLICATION_HOST_URI)
@@ -83,7 +91,8 @@ public class MessageDto implements JsonSerializable {
                             getOwnerIdentifier(),
                             getText(),
                             getCreatedDate(),
-                            getMessageType());
+                            getMessageType(),
+                            getStatus());
     }
     
     @JacocoGenerated
@@ -102,7 +111,8 @@ public class MessageDto implements JsonSerializable {
                && Objects.equals(getSenderIdentifier(), that.getSenderIdentifier())
                && Objects.equals(getOwnerIdentifier(), that.getOwnerIdentifier())
                && Objects.equals(getText(), that.getText())
-               && Objects.equals(getCreatedDate(), that.getCreatedDate());
+               && Objects.equals(getCreatedDate(), that.getCreatedDate())
+               && Objects.equals(getStatus(), that.getStatus());
     }
     
     @Override
@@ -169,5 +179,15 @@ public class MessageDto implements JsonSerializable {
     @JacocoGenerated
     public void setOwnerIdentifier(User ownerIdentifier) {
         this.ownerIdentifier = ownerIdentifier;
+    }
+
+    @JacocoGenerated
+    public MessageStatus getStatus() {
+        return nonNull(status) ? status : MessageStatus.ACTIVE;
+    }
+
+    @JacocoGenerated
+    public void setStatus(MessageStatus status) {
+        this.status = status;
     }
 }
