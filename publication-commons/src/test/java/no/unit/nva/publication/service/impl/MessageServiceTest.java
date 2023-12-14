@@ -87,8 +87,10 @@ class MessageServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldThrowUnauthorizedWhenAttemptingToDeleteMessageUserDoesNotOwn() throws ApiGatewayException {
-        var publication = TicketTestUtils.createPersistedPublicationWithOwner(PublicationStatus.PUBLISHED, owner, resourceService);
+    void shouldThrowUnauthorizedWhenAttemptingToDeleteMessageUserDoesNotOwn()
+        throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(
+            PublicationStatus.PUBLISHED, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, DoiRequest.class, ticketService);
         var persistedMessage = messageService.createMessage(ticket, owner, randomString());
 

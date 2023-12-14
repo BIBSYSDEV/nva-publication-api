@@ -84,14 +84,16 @@ class DeleteMessageHandlerTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @ValueSource(classes = {DoiRequest.class, PublishingRequestCase.class, GeneralSupportRequest.class})
-    void shouldReturnUnauthorizedWhenUserIsAttemptingToDeleteTicketUserDoesNotOwn(Class<? extends TicketEntry> ticketType)
+    void shouldReturnUnauthorizedWhenUserIsAttemptingToDeleteTicketUserDoesNotOwn(
+        Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException, IOException {
         var ticket = persistRandomTicket(ticketType);
         var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
 
         handler.handleRequest(deleteForeignMessageRequest(message), output, CONTEXT);
 
-        assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
+        assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(),
+                   is(equalTo(HTTP_UNAUTHORIZED)));
     }
 
     private TicketEntry persistRandomTicket(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {

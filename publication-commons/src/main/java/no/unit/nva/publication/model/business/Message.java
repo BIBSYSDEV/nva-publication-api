@@ -87,8 +87,9 @@ public class Message implements Entity, JsonSerializable {
     @Override
     @JacocoGenerated
     public int hashCode() {
-        return Objects.hash(getIdentifier(), getOwner(), getCustomerId(), getSender(), getResourceIdentifier(),
-                            getTicketIdentifier(), getText(), getCreatedDate(), getModifiedDate(), getResourceTitle(), getStatus());
+        return Objects.hash(getIdentifier(), getOwner(), getCustomerId(), getSender(),
+                            getResourceIdentifier(), getTicketIdentifier(), getText(),
+                            getCreatedDate(), getModifiedDate(), getResourceTitle(), getStatus());
     }
 
     @Override
