@@ -33,6 +33,7 @@ import static java.util.Objects.isNull;
 import static no.unit.nva.model.PublicationStatus.DELETED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
+import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
 import static nva.commons.core.attempt.Try.attempt;
@@ -108,12 +109,17 @@ public class ExpandDataEntriesHandler
     }
 
     private boolean shouldBeDeleted(Entity entity) {
-        return getPublicationStatus(entity).map(DELETED::equals).orElse(false);
+        return getPublicationStatus(entity)
+                   .map(this::isDeletedStatus)
+                   .orElse(false);
+    }
+
+    private boolean isDeletedStatus(PublicationStatus status) {
+        return DELETED.equals(status) || UNPUBLISHED.equals(status);
     }
 
     private Optional<PublicationStatus> getPublicationStatus(Entity entity) {
-        if (entity instanceof Resource) {
-            Resource resource = (Resource) entity;
+        if (entity instanceof Resource resource) {
             return Optional.of(resource.getStatus());
         } else {
             return Optional.empty();

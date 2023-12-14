@@ -113,7 +113,10 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = PublicationStatus.class, mode = EXCLUDE, names = {"PUBLISHED", "PUBLISHED_METADATA", "DELETED"})
+    @EnumSource(value = PublicationStatus.class, mode = EXCLUDE, names = {"PUBLISHED",
+        "PUBLISHED_METADATA",
+        "DELETED",
+        "UNPUBLISHED"})
     void shouldNotProduceEntryWhenNotPublishedOrDeletedEntry(PublicationStatus status) throws IOException {
         var oldImage = createPublicationWithStatus(status);
         var newImage = createUpdatedVersionOfPublication(oldImage);
@@ -175,6 +178,21 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
                            .withStatus(PublicationStatus.PUBLISHED).build();
         var newImage = oldImage.copy()
                            .withStatus(PublicationStatus.DELETED)
+                           .build();
+        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
+        expandResourceHandler.handleRequest(request, output, CONTEXT);
+        var eventReference = parseHandlerResponse();
+        assertThat(eventReference.getTopic(), is(equalTo(EXPANDED_ENTRY_DELETE_EVENT_TOPIC)));
+    }
+
+    @Test
+    void shouldEmitDeleteEventForPublicationStatusUnpublished() throws IOException {
+        var oldImage = randomPublication().copy()
+                           .withIdentifier(SortableIdentifier.next())
+                           .withDoi(null)
+                           .withStatus(PublicationStatus.PUBLISHED).build();
+        var newImage = oldImage.copy()
+                           .withStatus(PublicationStatus.UNPUBLISHED)
                            .build();
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
         expandResourceHandler.handleRequest(request, output, CONTEXT);

@@ -81,6 +81,23 @@ public class DeletePublicationEventConsumerTest {
         assertThatDeleteObjectHasBeenDoneOnceWithCorrectObjectKey(publication);
     }
 
+    @Test
+    void shouldReturnDeleteResourceEventWhenAPublicationWithStatusUnpublishedIsUpdated()
+        throws IOException {
+        var publication = randomPublication().copy()
+                              .withIdentifier(SortableIdentifier.next())
+                              .withStatus(PublicationStatus.UNPUBLISHED)
+                              .build();
+
+        var event = createEventReference(publication);
+        handler.handleRequest(event, outputStream, context);
+        var response =
+            objectMapper.readValue(outputStream.toString(), DeleteResourceEvent.class);
+        assertThat(response.getIdentifier(), notNullValue());
+        assertThat(response.getTopic(), is(equalTo(DeleteResourceEvent.EVENT_TOPIC)));
+        assertThatDeleteObjectHasBeenDoneOnceWithCorrectObjectKey(publication);
+    }
+
     private void assertThatDeleteObjectHasBeenDoneOnceWithCorrectObjectKey(Publication publication) {
         var fakeS3ClientSupportingDeleteObject = (FakeS3ClientSupportingDeleteObject) s3Client;
         var objectKeysRequestedForDeletion = fakeS3ClientSupportingDeleteObject.getDeletedObjectKeys();
