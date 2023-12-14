@@ -39,6 +39,7 @@ import java.net.URI;
 import java.time.Clock;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -52,6 +53,7 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
+import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
@@ -653,7 +655,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     private Publication createAndPersistDegreeWithoutDoi() throws BadRequestException {
         var publication = randomPublication().copy().withDoi(null).build();
 
-        var degreePhd = new DegreePhd(new MonographPages(), new PublicationDate());
+        var degreePhd = new DegreePhd(new MonographPages(), new PublicationDate(),
+                                      Set.of(new UnconfirmedDocument(randomString())));
         var reference = new Reference.Builder().withPublicationInstance(degreePhd).build();
         var entityDescription = publication.getEntityDescription().copy().withReference(reference).build();
         var publicationOfTypeDegree = publication.copy().withEntityDescription(entityDescription).build();
