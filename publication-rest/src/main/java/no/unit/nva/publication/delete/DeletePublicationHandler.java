@@ -17,7 +17,6 @@ import no.unit.nva.publication.permission.strategy.EditorPermissionStrategy;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
-import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -103,7 +102,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
 
     private static void validateHardDeletionRequest(RequestInfo requestInfo, Publication publication)
         throws UnauthorizedException {
-        if (isEditor(requestInfo, publication) || canEditOwnInstitutionResources(requestInfo)) {
+        if (isEditor(requestInfo, publication)) {
             return;
         }
         throw new UnauthorizedException();
@@ -111,10 +110,6 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
 
     private static boolean isEditor(RequestInfo requestInfo, Publication publication) {
         return EditorPermissionStrategy.fromRequestInfo(requestInfo).hasPermission(publication);
-    }
-
-    private static boolean canEditOwnInstitutionResources(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.name());
     }
 
     private static void unsupportedPublicationForDeletion(Publication publication) throws BadRequestException {

@@ -14,6 +14,7 @@ entityDescription.reference.publicationInstance.outputs
 entityDescription.reference.publicationInstance.description
 entityDescription.reference.publicationInstance.venues
 entityDescription.reference.publicationInstance.architectureOutput
+.entityDescription.reference.publicationInstance.related
 
 .entityDescription.reference.publicationContext.revision
 entityDescription.reference.publicationContext.onlineIssn

@@ -24,9 +24,11 @@ import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isScie
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isStudentPaper;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isTextbook;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.PublicationDate;
@@ -58,6 +60,8 @@ import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
+import no.unit.nva.model.instancetypes.degree.RelatedDocument;
+import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
 import no.unit.nva.model.instancetypes.event.ConferencePoster;
 import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.event.OtherPresentation;
@@ -447,7 +451,16 @@ public final class PublicationInstanceMapper {
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenDoctoralThesis(Record brageRecord) {
-        return new DegreePhd(extractMonographPages(brageRecord), extractPublicationDate(brageRecord));
+        return new DegreePhd(extractMonographPages(brageRecord), extractPublicationDate(brageRecord),
+                             extractUnconfirmedDocuments(brageRecord));
+    }
+
+    private static Set<RelatedDocument> extractUnconfirmedDocuments(Record brageRecord) {
+        return Optional.ofNullable(brageRecord.getPart())
+                   .orElseGet(Collections::emptyList)
+                   .stream()
+                   .map(UnconfirmedDocument::new)
+                   .collect(Collectors.toCollection(HashSet::new));
     }
 
     private static MonographPages extractMonographPages(Record brageRecord) {

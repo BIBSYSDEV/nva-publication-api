@@ -47,7 +47,7 @@ public class ReportBuilder extends AbstractBookReportBuilder {
     }
 
     private PublicationInstance<? extends Pages> createDegreePhd() {
-        return new DegreePhd(createMonographPages(), null);
+        return new DegreePhd(createMonographPages(), null, Set.of());
     }
 
     private PublicationInstance<? extends Pages> createDegreeMaster() {
