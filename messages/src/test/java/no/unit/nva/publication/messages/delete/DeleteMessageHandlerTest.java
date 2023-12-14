@@ -2,6 +2,7 @@ package no.unit.nva.publication.messages.delete;
 
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
+import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.messages.MessageApiConfig.MESSAGE_IDENTIFIER_PATH_PARAMETER;
@@ -41,7 +42,7 @@ import org.zalando.problem.Problem;
 
 class DeleteMessageHandlerTest extends ResourcesLocalTest {
 
-    private final static FakeContext CONTEXT = new FakeContext();
+    private static final FakeContext CONTEXT = new FakeContext();
     private DeleteMessageHandler handler;
     private ByteArrayOutputStream output;
     private ResourceService resourceService;
@@ -83,14 +84,14 @@ class DeleteMessageHandlerTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @ValueSource(classes = {DoiRequest.class, PublishingRequestCase.class, GeneralSupportRequest.class})
-    void shouldReturnNotFoundWhenUserIsAttemptingToDeleteTicketUserDoesNotOwn(Class<? extends TicketEntry> ticketType)
+    void shouldReturnUnauthorizedWhenUserIsAttemptingToDeleteTicketUserDoesNotOwn(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException, IOException {
         var ticket = persistRandomTicket(ticketType);
         var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
 
         handler.handleRequest(deleteForeignMessageRequest(message), output, CONTEXT);
 
-        assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
+        assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
     }
 
     private TicketEntry persistRandomTicket(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {

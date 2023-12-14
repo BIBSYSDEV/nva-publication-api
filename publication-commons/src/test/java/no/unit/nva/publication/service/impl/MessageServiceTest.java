@@ -20,14 +20,14 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class MessageServiceTest extends ResourcesLocalTest {
     
@@ -76,23 +76,24 @@ class MessageServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldDeleteMessageForMessageOwner() throws ApiGatewayException {
-        var publication = TicketTestUtils.createPersistedPublicationWithOwner(PublicationStatus.PUBLISHED, owner, resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(
+            PublicationStatus.PUBLISHED, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, DoiRequest.class, ticketService);
         var persistedMessage = messageService.createMessage(ticket, owner, randomString());
-        messageService.deleteMessage(UserInstance.fromMessage(persistedMessage), persistedMessage.getIdentifier());
+        messageService.deleteMessage(UserInstance.fromMessage(persistedMessage), persistedMessage);
         var deletedMessage = messageService.getMessage(owner, persistedMessage.getIdentifier());
 
         assertThat(deletedMessage.getStatus(), is(equalTo(MessageStatus.DELETED)));
     }
 
     @Test
-    void shouldThrowNotFoundWhenAttemptingToDeleteMessageUserDoesNotOwn() throws ApiGatewayException {
+    void shouldThrowUnauthorizedWhenAttemptingToDeleteMessageUserDoesNotOwn() throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(PublicationStatus.PUBLISHED, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, DoiRequest.class, ticketService);
         var persistedMessage = messageService.createMessage(ticket, owner, randomString());
 
-        assertThrows(NotFoundException.class,
-                     () -> messageService.deleteMessage(randomUserInstance(), persistedMessage.getIdentifier()));
+        assertThrows(UnauthorizedException.class,
+                     () -> messageService.deleteMessage(randomUserInstance(), persistedMessage));
     }
 
     private static UserInstance randomUserInstance() {

@@ -20,12 +20,13 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.MessageDao;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.JacocoGenerated;
 
 public class MessageService extends ServiceWithTransactions {
-    
+
+    public static final String OWNER_ONLY_MESSAGE = "Message owner only can perform this action!";
     public static final String MESSAGE_NOT_FOUND_ERROR = "Could not find message with identifier:";
-    public static final String FOR_USER = " for user: ";
 
     private final String tableName;
     
@@ -67,9 +68,10 @@ public class MessageService extends ServiceWithTransactions {
                    .toOptional();
     }
 
-    public void deleteMessage(UserInstance userInstance, SortableIdentifier messageIdentifier)
-        throws NotFoundException {
-        var message = getMessage(userInstance, messageIdentifier);
+    public void deleteMessage(UserInstance userInstance, Message message) throws UnauthorizedException {
+        if (!userInstance.isOwner(message)) {
+            throw new UnauthorizedException(OWNER_ONLY_MESSAGE);
+        }
         message.setModifiedDate(Instant.now());
         message.setStatus(MessageStatus.DELETED);
         var dao = message.toDao();
@@ -92,10 +94,7 @@ public class MessageService extends ServiceWithTransactions {
         Map<String, AttributeValue> item = queryResult.getItem();
         
         if (isNull(item) || item.isEmpty()) {
-            throw new NotFoundException(MESSAGE_NOT_FOUND_ERROR
-                                        + queryObject.getIdentifier().toString()
-                                        + FOR_USER
-                                        + queryObject.getData().getOwner().toString());
+            throw new NotFoundException(MESSAGE_NOT_FOUND_ERROR + queryObject.getIdentifier().toString());
         }
         return item;
     }

@@ -109,7 +109,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
         var ticket = (PublishingRequestCase) createPersistedTicket(PublishingRequestCase.class, publication);
         var userInstance = UserInstance.fromTicket(ticket);
         var message = messageService.createMessage(ticket, userInstance, randomString());
-        messageService.deleteMessage(userInstance, message.getIdentifier());
+        messageService.deleteMessage(userInstance, message);
         var request = createHttpRequest(publication, ticket).build();
 
         handler.handleRequest(request, output, CONTEXT);

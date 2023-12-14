@@ -54,9 +54,9 @@ class MessageTest extends TestDataSource {
     }
 
     @Test
-    void shouldSerializeMessageWithStatusActiveWhenMessageIsNull() throws JsonProcessingException {
-        var message = Message.builder().build();
-        var serializedMessage = dynamoDbObjectMapper.readValue(message.toString(), Message.class);
+    void shouldSerializeMessageWithStatusActiveWhenMessageStatusIsNull() throws JsonProcessingException {
+        var message = "{\"type\":\"Message\"}";
+        var serializedMessage = dynamoDbObjectMapper.readValue(message, Message.class);
 
         assertThat(serializedMessage.getStatus(), is(equalTo(MessageStatus.ACTIVE)));
     }
