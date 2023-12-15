@@ -109,12 +109,6 @@ public class DoiRequestDao extends TicketDao implements JoinWithResource, JsonSe
         return toJsonString();
     }
 
-    private TransactWriteItem createUniqueDoiRequestEntry() {
-        UniqueDoiRequestEntry uniqueDoiRequestEntry = new UniqueDoiRequestEntry(
-            getTicketEntry().getResourceIdentifier().toString());
-        return newPutTransactionItem(uniqueDoiRequestEntry);
-    }
-
     private TransactWriteItem createDoiRequestInsertionEntry() {
         return newPutTransactionItem(new DoiRequestDao((DoiRequest) getTicketEntry()));
     }

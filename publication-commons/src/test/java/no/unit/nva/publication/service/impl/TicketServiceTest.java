@@ -190,20 +190,6 @@ public class TicketServiceTest extends ResourcesLocalTest {
                                                                FINALIZED_DATE)));
     }
 
-    // This action fails with a TransactionFailedException which contains no information about why the transaction
-    // failed, which may fail because of multiple reasons including what we are testing for here.
-    @Test
-    void shouldThrowExceptionOnMoreThanOneDoiRequestsForTheSamePublication() throws ApiGatewayException {
-        var publication = persistPublication(owner, DRAFT);
-
-        var firstTicket = createUnpersistedTicket(publication, DoiRequest.class);
-        attempt(() -> firstTicket.persistNewTicket(ticketService)).orElseThrow();
-
-        var secondTicket = createUnpersistedTicket(publication, DoiRequest.class);
-        Executable action = () -> secondTicket.persistNewTicket(ticketService);
-        assertThrows(TransactionFailedException.class, action);
-    }
-
     @Test
     void shouldAllowCreationOfPublishingRequestTicketForAlreadyPublishedPublication() throws ApiGatewayException {
         var publication = persistPublication(owner, PUBLISHED);
@@ -717,7 +703,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
         var ticket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
                          .persistNewTicket(ticketService);
-        ticket.remove(ticketService);
+        ticket.remove(UserInstance.fromTicket(ticket), ticketService);
 
         var persistedTicket = ticket.fetch(ticketService);
         assertThat(persistedTicket.getStatus(), is(equalTo(REMOVED)));
@@ -729,7 +715,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
         var ticket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
                          .persistNewTicket(ticketService);
-        ticket.remove(ticketService);
+        ticket.remove(UserInstance.fromTicket(ticket), ticketService);
 
         var secondTicket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
                        .persistNewTicket(ticketService);

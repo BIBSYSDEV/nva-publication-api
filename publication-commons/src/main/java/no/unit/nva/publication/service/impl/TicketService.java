@@ -1,39 +1,37 @@
 package no.unit.nva.publication.service.impl;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.Username;
-import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.business.UntypedTicketQueryObject;
-import no.unit.nva.publication.model.storage.Dao;
-import no.unit.nva.publication.model.storage.MessageDao;
-import no.unit.nva.publication.model.storage.TicketDao;
-import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.BadRequestException;
-import nva.commons.apigateway.exceptions.ForbiddenException;
-import nva.commons.apigateway.exceptions.ConflictException;
-import nva.commons.core.JacocoGenerated;
-import nva.commons.core.attempt.FunctionWithException;
-
-import java.net.URI;
-import java.time.Clock;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import static java.util.Objects.isNull;
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
 import static no.unit.nva.publication.model.business.TicketEntry.setServiceControlledFields;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import java.net.URI;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.Username;
+import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.UntypedTicketQueryObject;
+import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.storage.Dao;
+import no.unit.nva.publication.model.storage.MessageDao;
+import no.unit.nva.publication.model.storage.TicketDao;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.ConflictException;
+import nva.commons.apigateway.exceptions.ForbiddenException;
+import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.core.attempt.FunctionWithException;
 
 public class TicketService extends ServiceWithTransactions {
 
@@ -170,14 +168,16 @@ public class TicketService extends ServiceWithTransactions {
     }
 
     public void removeTicket(TicketEntry ticketEntry) throws ApiGatewayException {
-        attempt(() -> fetchTicketByIdentifier(ticketEntry.getIdentifier()))
-                         .or(() -> fetchByResourceIdentifierForLegacyDoiRequestsAndPublishingRequests(ticketEntry))
-                         .map(TicketEntry::remove)
-                         .map(Entity::toDao)
-                         .map(TicketDao.class::cast)
-                         .map(TicketDao::createPutItemRequest)
-                         .map(getClient()::putItem)
-                         .orElseThrow(fail -> notFoundException());
+        ticketEntry.setStatus(TicketStatus.REMOVED);
+        var now = Instant.now();
+        ticketEntry.setModifiedDate(now);
+        ticketEntry.setFinalizedDate(now);
+
+        attempt(ticketEntry::toDao)
+            .map(TicketDao.class::cast)
+            .map(TicketDao::createPutItemRequest)
+            .map(getClient()::putItem)
+            .orElseThrow(fail -> notFoundException());
     }
 
     protected TicketEntry completeTicket(TicketEntry ticketEntry, Username username) throws ApiGatewayException {

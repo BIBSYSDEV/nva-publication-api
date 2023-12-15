@@ -23,6 +23,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.FinalizeOverloaded"})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -42,6 +43,8 @@ public abstract class TicketEntry implements Entity {
     private static final String FINALIZED_BY = "finalizedBy";
     private static final String FINALIZED_DATE = "finalizedDate";
     private static final String RESOURCE_IDENTIFIER = "resourceIdentifier";
+    public static final String REMOVE_NON_PENDING_TICKET_MESSAGE = "Cannot remove a ticket that has any other status than %s";
+    public static final String UNAUTHENTICATED_TO_REMOVE_TICKET_MESSAGE = "Ticket owner only can remove ticket!";
     @JsonProperty(VIEWED_BY_FIELD)
     private ViewedBy viewedBy;
     @JsonProperty(RESOURCE_IDENTIFIER)
@@ -183,13 +186,9 @@ public abstract class TicketEntry implements Entity {
         return updated;
     }
 
-    public final TicketEntry remove() throws ApiGatewayException {
-        validateRemovingRequirements();
-        this.setStatus(TicketStatus.REMOVED);
-        var now = Instant.now();
-        this.setModifiedDate(now);
-        this.setFinalizedDate(now);
-        return this;
+    public final void remove(UserInstance userInstance, TicketService ticketService) throws ApiGatewayException {
+        validateRemovingRequirements(userInstance);
+        ticketService.removeTicket(this);
     }
 
     public void validateClosingRequirements() throws ApiGatewayException {
@@ -200,12 +199,30 @@ public abstract class TicketEntry implements Entity {
         }
     }
 
-    public void validateRemovingRequirements() throws ApiGatewayException {
-        if (!getStatus().equals(TicketStatus.PENDING)) {
-            var errorMessage = String.format("Cannot remove a ticket that has any other status than %s",
-                                             TicketStatus.PENDING);
+    public void validateRemovingRequirements(UserInstance userInstance) throws ApiGatewayException {
+        validateTicketForRemovalStatusRequirement();
+        validateTicketOwner(userInstance);
+    }
+
+    private void validateTicketOwner(UserInstance userInstance) throws UnauthorizedException {
+        if (isNotTicketOwner(userInstance)) {
+            throw new UnauthorizedException(UNAUTHENTICATED_TO_REMOVE_TICKET_MESSAGE);
+        }
+    }
+
+    private void validateTicketForRemovalStatusRequirement() throws BadRequestException {
+        if (isNotPending()) {
+            var errorMessage = String.format(REMOVE_NON_PENDING_TICKET_MESSAGE, TicketStatus.PENDING);
             throw new BadRequestException(errorMessage);
         }
+    }
+
+    private boolean isNotPending() {
+        return !TicketStatus.PENDING.equals(getStatus());
+    }
+
+    private boolean isNotTicketOwner(UserInstance userInstance) {
+        return !userInstance.getUser().equals(getOwner());
     }
 
     public abstract TicketEntry copy();
@@ -279,10 +296,6 @@ public abstract class TicketEntry implements Entity {
         updated.setAssignee(assignee);
         updated.setModifiedDate(Instant.now());
         return updated;
-    }
-
-    public void remove(TicketService ticketService) throws ApiGatewayException {
-        ticketService.removeTicket(this);
     }
 
     private static TicketEntry requestDoiRequestTicket(Publication publication) throws BadRequestException {
