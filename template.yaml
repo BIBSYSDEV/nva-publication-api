@@ -779,7 +779,7 @@ Resources:
           Type: Api
           Properties:
             Path: /{publicationIdentifier}/ticket/{ticketIdentifier}
-            Method: put
+            Method: delete
             RestApiId: !Ref NvaPublicationApi
 
   CreateTicketFunction:

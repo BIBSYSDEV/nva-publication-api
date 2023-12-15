@@ -722,6 +722,16 @@ public class TicketServiceTest extends ResourcesLocalTest {
         assertThat(secondTicket.getStatus(), is(equalTo(PENDING)));
     }
 
+    @Test
+    void shouldThrowNotFoundWhenAttemptingToDeleteNonExistentTicket() throws ApiGatewayException {
+        var type = DoiRequest.class;
+        var publication = persistPublication(owner, validPublicationStatusForTicketApproval(type));
+        var ticket = TicketEntry.createNewTicket(publication, type, SortableIdentifier::next);
+
+        assertThrows(NotFoundException.class,
+                     () -> ticket.remove(UserInstance.fromTicket(ticket), ticketService));
+    }
+
     private static Username getUsername(Publication publication) {
         return new Username(UserInstance.fromPublication(publication).getUsername());
     }
