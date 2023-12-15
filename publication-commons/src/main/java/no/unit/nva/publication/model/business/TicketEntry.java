@@ -43,8 +43,10 @@ public abstract class TicketEntry implements Entity {
     private static final String FINALIZED_BY = "finalizedBy";
     private static final String FINALIZED_DATE = "finalizedDate";
     private static final String RESOURCE_IDENTIFIER = "resourceIdentifier";
-    public static final String REMOVE_NON_PENDING_TICKET_MESSAGE = "Cannot remove a ticket that has any other status than %s";
-    public static final String UNAUTHENTICATED_TO_REMOVE_TICKET_MESSAGE = "Ticket owner only can remove ticket!";
+    public static final String REMOVE_NON_PENDING_TICKET_MESSAGE =
+        "Cannot remove a ticket that has any other status than %s";
+    public static final String UNAUTHENTICATED_TO_REMOVE_TICKET_MESSAGE =
+        "Ticket owner only can remove ticket!";
     @JsonProperty(VIEWED_BY_FIELD)
     private ViewedBy viewedBy;
     @JsonProperty(RESOURCE_IDENTIFIER)
