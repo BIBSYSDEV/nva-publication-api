@@ -19,9 +19,8 @@ import nva.commons.core.attempt.Failure;
 
 public class DeleteMessageHandler extends ApiGatewayHandler<Void, Void> {
 
-    public static final String SOMETHING_WENT_WRONG_MESSAGE = "Something went wrong!";
+    public static final String SOMETHING_WENT_WRONG_MESSAGE = "An unknown exception occurred!";
     public static final String MESSAGE_NOT_FOUND = "Message not found!";
-    public static final String OWNER_ONLY_MESSAGE = "Message owner only can perform this action!";
     private final MessageService messageService;
 
     @JacocoGenerated
