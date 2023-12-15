@@ -9,21 +9,25 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.MessageStatus;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.MessageDao;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.JacocoGenerated;
 
 public class MessageService extends ServiceWithTransactions {
-    
+
+    public static final String OWNER_ONLY_MESSAGE = "Message owner only can perform this action!";
     public static final String MESSAGE_NOT_FOUND_ERROR = "Could not find message with identifier:";
-    
+
     private final String tableName;
     
     private final TicketService ticketService;
@@ -63,7 +67,18 @@ public class MessageService extends ServiceWithTransactions {
                    .map(Message.class::cast)
                    .toOptional();
     }
-    
+
+    public void deleteMessage(UserInstance userInstance, Message message) throws UnauthorizedException {
+        if (!userInstance.isOwner(message)) {
+            throw new UnauthorizedException(OWNER_ONLY_MESSAGE);
+        }
+        message.setModifiedDate(Instant.now());
+        message.setStatus(MessageStatus.DELETED);
+        var dao = message.toDao();
+        var transactionRequest = dao.createInsertionTransactionRequest();
+        getClient().transactWriteItems(transactionRequest);
+    }
+
     private Message getMessageByIdentifier(Message message) {
         return getMessageByIdentifier(message.getIdentifier()).orElseThrow();
     }
