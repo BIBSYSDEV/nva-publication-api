@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
@@ -23,6 +24,7 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
+import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -277,7 +279,8 @@ class PublicationPermissionStrategyTest {
     private Publication createDegreePhd(String resourceOwner, URI customer) {
         var publication = createPublication(resourceOwner, customer);
 
-        var degreePhd = new DegreePhd(new MonographPages(), new PublicationDate());
+        var degreePhd = new DegreePhd(new MonographPages(), new PublicationDate(),
+                                      Set.of(new UnconfirmedDocument(randomString())));
         var reference = new Reference.Builder().withPublicationInstance(degreePhd).build();
         var entityDescription = publication.getEntityDescription().copy().withReference(reference).build();
 
