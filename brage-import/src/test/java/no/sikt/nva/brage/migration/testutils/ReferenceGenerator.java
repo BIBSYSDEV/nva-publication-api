@@ -2,8 +2,11 @@ package no.sikt.nva.brage.migration.testutils;
 
 import static java.util.Objects.nonNull;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.mapper.ChannelType;
 import no.sikt.nva.brage.migration.mapper.PublicationContextMapper;
@@ -61,6 +64,8 @@ import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
+import no.unit.nva.model.instancetypes.degree.RelatedDocument;
+import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
 import no.unit.nva.model.instancetypes.event.ConferencePoster;
 import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.event.OtherPresentation;
@@ -489,7 +494,17 @@ public final class ReferenceGenerator {
     }
 
     private static DegreePhd generatePublicationInstanceForPhd(Builder builder) {
-        return new DegreePhd(builder.getMonographPages(), builder.getPublicationDateForPublication());
+        return new DegreePhd(builder.getMonographPages(), builder.getPublicationDateForPublication(),
+                             extractUnconfirmedDocuments(builder));
+    }
+
+    private static HashSet<RelatedDocument> extractUnconfirmedDocuments(Builder builder) {
+        return Optional.ofNullable(builder)
+                   .map(Builder::getHasPart)
+                   .orElseGet(Collections::emptySet)
+                   .stream()
+                   .map(UnconfirmedDocument::new)
+                   .collect(Collectors.toCollection(HashSet::new));
     }
 
     private static ReportBasic generatePublicationInstanceForReport(Builder builder) {

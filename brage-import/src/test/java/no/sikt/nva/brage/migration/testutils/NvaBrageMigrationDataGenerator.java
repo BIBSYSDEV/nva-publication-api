@@ -10,6 +10,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomLocalDate;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import com.amazonaws.services.dynamodbv2.xspec.S;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -155,6 +156,8 @@ public class NvaBrageMigrationDataGenerator {
         brageRecord.setLink(builder.getLink());
         brageRecord.setSubjects(builder.getSubjects());
         brageRecord.setSubjectCode(builder.getSubjectCode());
+        brageRecord.setPart(Optional.ofNullable(builder.getHasPart())
+                                .orElse(Set.of()).stream().toList());
         return brageRecord;
     }
 
@@ -246,9 +249,14 @@ public class NvaBrageMigrationDataGenerator {
         private String issue;
         private String articleNumber;
         private String subjectCode;
+        private Set<String> hasPart;
 
         public static URI randomHandle() {
             return UriWrapper.fromUri("http://hdl.handle.net/11250/" + randomInteger()).getUri();
+        }
+
+        public Set<String> getHasPart() {
+            return hasPart;
         }
 
         public String getRightsHolder() {
@@ -374,6 +382,11 @@ public class NvaBrageMigrationDataGenerator {
 
         public Builder withAssociatedArtifacts(List<AssociatedArtifact> associatedArtifacts) {
             this.associatedArtifacts = associatedArtifacts;
+            return this;
+        }
+
+        public Builder withHasPart(Set<String> hasPart) {
+            this.hasPart = hasPart;
             return this;
         }
 

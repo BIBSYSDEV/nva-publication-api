@@ -404,7 +404,21 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertPhdToNvaPublication() throws IOException {
-        var brageGenerator = buildGeneratorForPhd();
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_PHD)
+                                 .withPublicationDate(PUBLICATION_DATE)
+                                 .build();
+        var expectedPublication = brageGenerator.getNvaPublication();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThatPublicationsMatch(actualPublication, expectedPublication);
+    }
+
+    @Test
+    void shouldConvertPhdWithPartsToNvaPublication() throws IOException {
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_PHD)
+                                 .withPublicationDate(PUBLICATION_DATE)
+                                 .withHasPart(Set.of(randomString(), randomString()))
+                                 .build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -1299,12 +1313,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                           .withMonth("08")
                                                           .build())
                    .withSpatialCoverage(List.of("Norway"))
-                   .build();
-    }
-
-    private NvaBrageMigrationDataGenerator buildGeneratorForPhd() {
-        return new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_PHD)
-                   .withPublicationDate(PUBLICATION_DATE)
                    .build();
     }
 
