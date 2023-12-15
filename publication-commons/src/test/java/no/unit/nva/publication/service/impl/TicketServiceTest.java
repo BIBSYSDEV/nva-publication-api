@@ -14,6 +14,7 @@ import static no.unit.nva.publication.TestingUtils.randomUserInstance;
 import static no.unit.nva.publication.model.business.TicketStatus.CLOSED;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
+import static no.unit.nva.publication.model.business.TicketStatus.REMOVED;
 import static no.unit.nva.publication.model.business.UserInstance.fromTicket;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
@@ -708,6 +709,31 @@ public class TicketServiceTest extends ResourcesLocalTest {
         var persistedCompletedTicket = ((PublishingRequestCase) ticket).persistAutoComplete(ticketService);
 
         assertThat(persistedCompletedTicket.getStatus(), is(equalTo(COMPLETED)));
+    }
+
+    @ParameterizedTest(name = "ticket type:{0}")
+    @MethodSource("ticketTypeProvider")
+    void shouldBeAbleToRemoveTicket(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
+        var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
+        var ticket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                         .persistNewTicket(ticketService);
+        ticket.remove(ticketService);
+
+        var persistedTicket = ticket.fetch(ticketService);
+        assertThat(persistedTicket.getStatus(), is(equalTo(REMOVED)));
+    }
+
+    @Test
+    void shouldBeAbleToRemoveDoiRequestAndCreateNewDoiRequest() throws ApiGatewayException {
+        var ticketType = DoiRequest.class;
+        var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
+        var ticket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                         .persistNewTicket(ticketService);
+        ticket.remove(ticketService);
+
+        var secondTicket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                       .persistNewTicket(ticketService);
+        assertThat(secondTicket.getStatus(), is(equalTo(PENDING)));
     }
 
     private static Username getUsername(Publication publication) {

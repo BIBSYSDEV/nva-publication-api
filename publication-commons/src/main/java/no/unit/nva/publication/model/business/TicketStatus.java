@@ -4,6 +4,7 @@ import static java.util.Collections.emptySet;
 import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.PENDING_STATUS;
 import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.COMPLETED_STATUS;
 import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.CLOSED_STATUS;
+import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.REMOVED_STATUS;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -16,7 +17,8 @@ import nva.commons.core.SingletonCollector;
 public enum TicketStatus {
     PENDING(PENDING_STATUS, "REQUESTED"),
     COMPLETED(COMPLETED_STATUS, "APPROVED"),
-    CLOSED(CLOSED_STATUS, "REJECTED");
+    CLOSED(CLOSED_STATUS, "REJECTED"),
+    REMOVED(REMOVED_STATUS, "REMOVED");
     
     public static final String ERROR_MESSAGE_NOT_ALLOWED_TO_CHANGE_STATUS_FROM_S_TO_S =
         "Not allowed to change status from %s to %s";
@@ -102,6 +104,7 @@ public enum TicketStatus {
         public static final String PENDING_STATUS = "Pending";
         public static final String COMPLETED_STATUS = "Completed";
         public static final String CLOSED_STATUS = "Closed";
+        public static final String REMOVED_STATUS = "Removed";
         public static final String READ_STATUS = "Read";
         public static final String UNREAD_STATUS = "Unread";
         

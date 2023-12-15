@@ -183,9 +183,26 @@ public abstract class TicketEntry implements Entity {
         return updated;
     }
 
+    public final TicketEntry remove() throws ApiGatewayException {
+        validateRemovingRequirements();
+        this.setStatus(TicketStatus.REMOVED);
+        var now = Instant.now();
+        this.setModifiedDate(now);
+        this.setFinalizedDate(now);
+        return this;
+    }
+
     public void validateClosingRequirements() throws ApiGatewayException {
         if (!getStatus().equals(TicketStatus.PENDING)) {
             var errorMessage = String.format("Cannot close a ticket that has any other status than %s",
+                                             TicketStatus.PENDING);
+            throw new BadRequestException(errorMessage);
+        }
+    }
+
+    public void validateRemovingRequirements() throws ApiGatewayException {
+        if (!getStatus().equals(TicketStatus.PENDING)) {
+            var errorMessage = String.format("Cannot remove a ticket that has any other status than %s",
                                              TicketStatus.PENDING);
             throw new BadRequestException(errorMessage);
         }
@@ -262,6 +279,10 @@ public abstract class TicketEntry implements Entity {
         updated.setAssignee(assignee);
         updated.setModifiedDate(Instant.now());
         return updated;
+    }
+
+    public void remove(TicketService ticketService) throws ApiGatewayException {
+        ticketService.removeTicket(this);
     }
 
     private static TicketEntry requestDoiRequestTicket(Publication publication) throws BadRequestException {

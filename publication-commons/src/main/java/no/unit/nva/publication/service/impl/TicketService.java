@@ -4,6 +4,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -166,6 +167,17 @@ public class TicketService extends ServiceWithTransactions {
         var putItemRequest = dao.createPutItemRequest();
         getClient().putItem(putItemRequest);
         return updatedAssignee;
+    }
+
+    public void removeTicket(TicketEntry ticketEntry) throws ApiGatewayException {
+        attempt(() -> fetchTicketByIdentifier(ticketEntry.getIdentifier()))
+                         .or(() -> fetchByResourceIdentifierForLegacyDoiRequestsAndPublishingRequests(ticketEntry))
+                         .map(TicketEntry::remove)
+                         .map(Entity::toDao)
+                         .map(TicketDao.class::cast)
+                         .map(TicketDao::createPutItemRequest)
+                         .map(getClient()::putItem)
+                         .orElseThrow(fail -> notFoundException());
     }
 
     protected TicketEntry completeTicket(TicketEntry ticketEntry, Username username) throws ApiGatewayException {
