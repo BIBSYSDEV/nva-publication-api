@@ -413,6 +413,16 @@ paths:
   /{publicationIdentifier}/ticket/{ticketIdentifier}/message/{messageIdentifier}:
     parameters:
       - in: path
+        name: publicationIdentifier
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: ticketIdentifier
+        schema:
+          type: string
+        required: true
+      - in: path
         name: messageIdentifier
         schema:
           type: string
