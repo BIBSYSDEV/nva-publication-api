@@ -1,5 +1,6 @@
 package no.unit.nva.publication.ticket.read;
 
+import static java.net.HttpURLConnection.HTTP_GONE;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.publication.ticket.TicketDtoParser.toTicket;
@@ -22,6 +23,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationServiceConfig;
+import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
@@ -86,6 +88,19 @@ class GetTicketHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, PublishingRequestDto.class);
         var publishingRequestDto = response.getBodyObject(PublishingRequestDto.class);
         assertThat(publishingRequestDto.getWorkflow(), is(equalTo(ticket.getWorkflow())));
+    }
+
+    @Test
+    void shouldReturnGoneWhenTicketHasBeenRemoved()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+        var ticket = (DoiRequest) createPersistedTicket(DoiRequest.class, publication);
+        ticket.remove(UserInstance.fromTicket(ticket), ticketService);
+        var request = createHttpRequest(publication, ticket).build();
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, PublishingRequestDto.class);
+
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_GONE)));
     }
 
     @Test

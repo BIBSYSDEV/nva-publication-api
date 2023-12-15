@@ -63,7 +63,12 @@ public final class UntypedTicketQueryObject extends TicketDao {
         
         return fetchAllQueryResults(client, queryRequest)
                    .map(Dao::getData)
-                   .map(TicketEntry.class::cast);
+                   .map(TicketEntry.class::cast)
+                   .filter(UntypedTicketQueryObject::isNotRemoved);
+    }
+
+    private static boolean isNotRemoved(TicketEntry ticket) {
+        return !TicketStatus.REMOVED.equals(ticket.getStatus());
     }
     
     @JacocoGenerated

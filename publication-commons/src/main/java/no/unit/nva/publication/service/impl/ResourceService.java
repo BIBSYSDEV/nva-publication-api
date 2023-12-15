@@ -42,6 +42,7 @@ import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
@@ -321,7 +322,8 @@ public class ResourceService extends ServiceWithTransactions {
         return dao.fetchAllTickets(getClient())
                    .stream()
                    .map(TicketDao::getData)
-                   .map(TicketEntry.class::cast);
+                   .map(TicketEntry.class::cast)
+                   .filter(ResourceService::isNotRemoved);
     }
 
     public Stream<TicketEntry> fetchAllTicketsForPublication(
@@ -329,7 +331,11 @@ public class ResourceService extends ServiceWithTransactions {
         SortableIdentifier publicationIdentifier)
         throws ApiGatewayException {
         var resource = readResourceService.getResource(userInstance, publicationIdentifier);
-        return resource.fetchAllTickets(this);
+        return resource.fetchAllTickets(this).filter(ResourceService::isNotRemoved);
+    }
+
+    private static boolean isNotRemoved(TicketEntry ticket) {
+        return !TicketStatus.REMOVED.equals(ticket.getStatus());
     }
 
     public Stream<TicketEntry> fetchAllTicketsForElevatedUser(UserInstance userInstance,
