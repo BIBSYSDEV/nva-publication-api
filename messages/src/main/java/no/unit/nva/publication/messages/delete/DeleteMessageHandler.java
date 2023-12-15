@@ -52,13 +52,11 @@ public class DeleteMessageHandler extends ApiGatewayHandler<Void, Void> {
     }
 
     private ApiGatewayException mapException(Failure<Void> failure) {
-        if (failure.getException() instanceof NotFoundException) {
-            return (ApiGatewayException) failure.getException();
-        }
-        if (failure.getException() instanceof UnauthorizedException) {
-            return (ApiGatewayException) failure.getException();
-        }
-        return new BadGatewayException(SOMETHING_WENT_WRONG_MESSAGE);
+        return switch (failure.getException()) {
+            case NotFoundException ex -> ex;
+            case UnauthorizedException ex -> ex;
+            default -> new BadGatewayException(SOMETHING_WENT_WRONG_MESSAGE);
+        };
     }
 
     private SortableIdentifier extractMessageIdentifier(RequestInfo requestInfo) {
