@@ -73,7 +73,9 @@ public class PublicationContextCreator {
                 return createJournal();
             }
         }
-        throw new UnsupportedSrcTypeException(String.format(UNSUPPORTED_SOURCE_TYPE, getSourceType(), docTp.getMeta().getEid()));
+        throw new UnsupportedSrcTypeException(String.format(UNSUPPORTED_SOURCE_TYPE,
+                                                            getSourceType(),
+                                                            docTp.getMeta().getEid()));
     }
 
     public Periodical createJournal() {

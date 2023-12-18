@@ -29,8 +29,10 @@ import no.unit.nva.model.pages.Range;
 
 public class PublicationInstanceCreator {
 
-    public static final String UNSUPPORTED_CITATION_TYPE_MESSAGE = "Unsupported citation type %s, cannot convert eid %s";
-    public static final String MISSING_CITATION_TYPE_MESSAGE = "Missing citation type, cannot convert eid %s";
+    public static final String UNSUPPORTED_CITATION_TYPE_MESSAGE =
+        "Unsupported citation type %s, cannot convert eid %s";
+    public static final String MISSING_CITATION_TYPE_MESSAGE =
+        "Missing citation type, cannot convert eid %s";
     private final DocTp docTp;
     private final PublicationContext publicationContext;
 

@@ -917,7 +917,9 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         // eid is chosen because it seems to match the file name in the bucket.
         var eid = getEid();
         var s3Event = createNewScopusPublicationEvent();
-        var expectedMessage = String.format(PublicationInstanceCreator.UNSUPPORTED_CITATION_TYPE_MESSAGE, citationtypeAtt.value(), eid);
+        var expectedMessage = String.format(
+            PublicationInstanceCreator.UNSUPPORTED_CITATION_TYPE_MESSAGE,
+            citationtypeAtt.value(), eid);
         assertThrows(UnsupportedCitationTypeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
     }
