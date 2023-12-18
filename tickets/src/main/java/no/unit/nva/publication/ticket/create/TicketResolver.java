@@ -13,7 +13,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -114,35 +113,9 @@ public class TicketResolver {
         return ticket instanceof PublishingRequestCase;
     }
 
-    private TicketEntry persistTicket(TicketEntry newTicket) throws ApiGatewayException {
+    private TicketEntry persistTicket(TicketEntry newTicket) {
         return attempt(() -> newTicket.persistNewTicket(ticketService))
-                   .orElse(fail -> handleCreationException(fail.getException(), newTicket));
-    }
-
-    private TicketEntry updateAlreadyExistingTicket(TicketEntry newTicket) {
-        var customerId = newTicket.getCustomerId();
-        var resourceIdentifier = newTicket.getResourceIdentifier();
-        return ticketService.fetchTicketByResourceIdentifier(customerId, resourceIdentifier, newTicket.getClass())
-                   .map(this::updateTicket)
                    .orElseThrow();
-    }
-
-    private TicketEntry updateTicket(TicketEntry ticket) {
-        ticket.persistUpdate(ticketService);
-        return ticket;
-    }
-
-    private TicketEntry handleCreationException(Exception exception, TicketEntry newTicket) throws ApiGatewayException {
-        if (exception instanceof TransactionFailedException) {
-            return updateAlreadyExistingTicket(newTicket);
-        }
-        if (exception instanceof RuntimeException) {
-            throw (RuntimeException) exception;
-        }
-        if (exception instanceof ApiGatewayException) {
-            throw (ApiGatewayException) exception;
-        }
-        throw new RuntimeException(exception);
     }
 
     private void publishPublicationAndFiles(Publication publication) {

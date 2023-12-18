@@ -73,9 +73,8 @@ public class DoiRequestDao extends TicketDao implements JoinWithResource, JsonSe
     public TransactWriteItemsRequest createInsertionTransactionRequest() {
         TransactWriteItem doiRequestEntry = createDoiRequestInsertionEntry();
         TransactWriteItem identifierEntry = createUniqueIdentifierEntry();
-        TransactWriteItem uniqueDoiRequestEntry = createUniqueDoiRequestEntry();
 
-        return new TransactWriteItemsRequest().withTransactItems(identifierEntry, uniqueDoiRequestEntry,
+        return new TransactWriteItemsRequest().withTransactItems(identifierEntry,
                                                                  doiRequestEntry);
     }
 
@@ -108,12 +107,6 @@ public class DoiRequestDao extends TicketDao implements JoinWithResource, JsonSe
     @JacocoGenerated
     public String toString() {
         return toJsonString();
-    }
-
-    private TransactWriteItem createUniqueDoiRequestEntry() {
-        UniqueDoiRequestEntry uniqueDoiRequestEntry = new UniqueDoiRequestEntry(
-            getTicketEntry().getResourceIdentifier().toString());
-        return newPutTransactionItem(uniqueDoiRequestEntry);
     }
 
     private TransactWriteItem createDoiRequestInsertionEntry() {

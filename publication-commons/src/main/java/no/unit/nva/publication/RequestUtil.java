@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 public final class RequestUtil {
     
     public static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
+    public static final String TICKET_IDENTIFIER = "ticketIdentifier";
     public static final String IDENTIFIER_IS_NOT_A_VALID_UUID = "Identifier is not a valid UUID: ";
     private static final Logger logger = LoggerFactory.getLogger(RequestUtil.class);
     

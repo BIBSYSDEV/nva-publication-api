@@ -14,6 +14,7 @@ import static no.unit.nva.publication.TestingUtils.randomUserInstance;
 import static no.unit.nva.publication.model.business.TicketStatus.CLOSED;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
+import static no.unit.nva.publication.model.business.TicketStatus.REMOVED;
 import static no.unit.nva.publication.model.business.UserInstance.fromTicket;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
@@ -187,20 +188,6 @@ public class TicketServiceTest extends ResourcesLocalTest {
         assertThat(persistedTicket,
                    doesNotHaveEmptyValuesIgnoringFields(Set.of(ONWER_AFFILIATION, ASSIGNEE, FINALIZED_BY,
                                                                FINALIZED_DATE)));
-    }
-
-    // This action fails with a TransactionFailedException which contains no information about why the transaction
-    // failed, which may fail because of multiple reasons including what we are testing for here.
-    @Test
-    void shouldThrowExceptionOnMoreThanOneDoiRequestsForTheSamePublication() throws ApiGatewayException {
-        var publication = persistPublication(owner, DRAFT);
-
-        var firstTicket = createUnpersistedTicket(publication, DoiRequest.class);
-        attempt(() -> firstTicket.persistNewTicket(ticketService)).orElseThrow();
-
-        var secondTicket = createUnpersistedTicket(publication, DoiRequest.class);
-        Executable action = () -> secondTicket.persistNewTicket(ticketService);
-        assertThrows(TransactionFailedException.class, action);
     }
 
     @Test
@@ -708,6 +695,31 @@ public class TicketServiceTest extends ResourcesLocalTest {
         var persistedCompletedTicket = ((PublishingRequestCase) ticket).persistAutoComplete(ticketService);
 
         assertThat(persistedCompletedTicket.getStatus(), is(equalTo(COMPLETED)));
+    }
+
+    @ParameterizedTest(name = "ticket type:{0}")
+    @MethodSource("ticketTypeProvider")
+    void shouldBeAbleToRemoveTicket(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
+        var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
+        var ticket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                         .persistNewTicket(ticketService);
+        ticket.remove(UserInstance.fromTicket(ticket)).persistUpdate(ticketService);
+
+        var persistedTicket = ticket.fetch(ticketService);
+        assertThat(persistedTicket.getStatus(), is(equalTo(REMOVED)));
+    }
+
+    @Test
+    void shouldBeAbleToRemoveDoiRequestAndCreateNewDoiRequest() throws ApiGatewayException {
+        var ticketType = DoiRequest.class;
+        var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
+        var ticket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                         .persistNewTicket(ticketService);
+        ticket.remove(UserInstance.fromTicket(ticket)).persistUpdate(ticketService);
+
+        var secondTicket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                       .persistNewTicket(ticketService);
+        assertThat(secondTicket.getStatus(), is(equalTo(PENDING)));
     }
 
     private static Username getUsername(Publication publication) {

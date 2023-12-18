@@ -62,10 +62,9 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
         var ticketEntries = userIsAuthorizedToViewOtherUsersTickets(requestInfo)
                    ? fetchTicketsForElevatedUser(userInstance, publicationIdentifier)
                    : fetchTicketsForPublicationOwner(publicationIdentifier, userInstance);
-
         return ticketEntries.map(this::createDto).collect(Collectors.toList());
     }
-    
+
     private Stream<TicketEntry> fetchTicketsForPublicationOwner(SortableIdentifier publicationIdentifier,
                                                               UserInstance userInstance)
         throws ApiGatewayException {

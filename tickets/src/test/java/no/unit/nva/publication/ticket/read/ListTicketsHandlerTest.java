@@ -4,6 +4,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
@@ -68,6 +69,21 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
         var body = response.getBodyObject(TicketCollection.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_OK)));
         assertThat(body.getTickets(), containsInAnyOrder(expectedTickets.toArray(TicketDto[]::new)));
+    }
+
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldNotReturnRemovedTicket(Class<? extends TicketEntry> ticketType,
+                                      PublicationStatus status)
+        throws IOException, ApiGatewayException {
+        var user = randomResourcesOwner();
+        generateTickets(ticketType, status, user);
+        var request = buildHttpRequest(user);
+        handler.handleRequest(request, outputStream, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(outputStream, TicketCollection.class);
+        var body = response.getBodyObject(TicketCollection.class);
+
+        assertThat(body.getTickets(), is(emptyIterable()));
     }
 
     @ParameterizedTest
