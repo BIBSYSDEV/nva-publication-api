@@ -726,7 +726,7 @@ Resources:
   DeleteMessageHandler:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: messagesD
+      CodeUri: messages
       Handler: no.unit.nva.publication.messages.delete.DeleteMessageHandler::handleRequest
       Runtime: java17
       Environment:
