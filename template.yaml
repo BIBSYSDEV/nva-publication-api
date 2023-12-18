@@ -723,6 +723,25 @@ Resources:
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
+  DeleteMessageHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: messages
+      Handler: no.unit.nva.publication.messages.delete.DeleteMessageHandler::handleRequest
+      Runtime: java17
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /{publicationIdentifier}/ticket/{ticketIdentifier}/message/{messageIdentifier}
+            Method: delete
+            RestApiId: !Ref NvaPublicationApi
+
   ListTicketsHandler:
     Type: AWS::Serverless::Function
     Properties:

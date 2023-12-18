@@ -20,6 +20,7 @@ import lombok.Getter;
 import lombok.Setter;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingBuilder;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
 @Builder(
@@ -62,6 +63,11 @@ public class CristinGrant {
 
     @JsonProperty(YEAR_TO_FIELD)
     private Integer yearTo;
+
+    @JacocoGenerated
+    public CristinGrant() {
+
+    }
 
     @JsonIgnore
     public Funding toNvaFunding() {

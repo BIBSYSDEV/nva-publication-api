@@ -447,6 +447,60 @@ paths:
         httpMethod: POST
         type: AWS_PROXY
 
+  /{publicationIdentifier}/ticket/{ticketIdentifier}/message/{messageIdentifier}:
+    parameters:
+      - in: path
+        name: publicationIdentifier
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: ticketIdentifier
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: messageIdentifier
+        schema:
+          type: string
+        required: true
+    delete:
+      description: Deleting message
+      responses:
+        '200':
+          description: "Ok"
+          headers:
+            "Location":
+              description: Message has been successfully deleted
+              schema:
+                type: string
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      security:
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DeleteMessageHandler.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+
   /tickets:
     get:
       description: List tickets for user

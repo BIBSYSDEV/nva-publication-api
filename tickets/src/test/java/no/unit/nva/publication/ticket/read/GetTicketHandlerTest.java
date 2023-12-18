@@ -10,6 +10,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.apigateway.AccessRight.APPROVE_DOI_REQUEST;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsIn.in;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -114,6 +115,24 @@ class GetTicketHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
         var ticketDto = response.getBodyObject(TicketDto.class);
         assertThat(ticketDto.getStatus(), is(equalTo(TicketDtoStatus.NEW)));
+    }
+
+    @Test
+    void shouldReturnTicketWithMessageWithoutTextWhenMessageHasStatusDeleted()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.DRAFT, resourceService);
+        var ticket = (PublishingRequestCase) createPersistedTicket(PublishingRequestCase.class, publication);
+        var userInstance = UserInstance.fromTicket(ticket);
+        var message = messageService.createMessage(ticket, userInstance, randomString());
+        messageService.deleteMessage(userInstance, message);
+        var request = createHttpRequest(publication, ticket).build();
+
+        handler.handleRequest(request, output, CONTEXT);
+
+        var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
+        var ticketDto = response.getBodyObject(TicketDto.class);
+
+        assertThat(ticketDto.getMessages().get(0).getText(),  is(nullValue()));
     }
 
     @ParameterizedTest
