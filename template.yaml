@@ -739,7 +739,7 @@ Resources:
           Type: Api
           Properties:
             Path: /{publicationIdentifier}/ticket/{ticketIdentifier}/message/{messageIdentifier}
-            Method: post
+            Method: delete
             RestApiId: !Ref NvaPublicationApi
 
   ListTicketsHandler:
