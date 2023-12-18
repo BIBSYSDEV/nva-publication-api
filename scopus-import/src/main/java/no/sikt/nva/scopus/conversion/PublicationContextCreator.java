@@ -38,7 +38,7 @@ import nva.commons.core.SingletonCollector;
 @SuppressWarnings({"PMD.PrematureDeclaration", "PMD.UnusedLocalVariable", "PMD.GodClass"})
 public class PublicationContextCreator {
 
-    public static final String UNSUPPORTED_SOURCE_TYPE = "Unsupported source type, in %s";
+    public static final String UNSUPPORTED_SOURCE_TYPE = "Unsupported source type %s, in %s";
     public static final String DASH = "-";
     public static final int START_YEAR_FOR_LEVEL_INFO = 2004;
     public static final String NOT_APPLICABLE = "NA";
@@ -73,7 +73,7 @@ public class PublicationContextCreator {
                 return createJournal();
             }
         }
-        throw new UnsupportedSrcTypeException(String.format(UNSUPPORTED_SOURCE_TYPE, docTp.getMeta().getEid()));
+        throw new UnsupportedSrcTypeException(String.format(UNSUPPORTED_SOURCE_TYPE, getSourceType(), docTp.getMeta().getEid()));
     }
 
     public Periodical createJournal() {
@@ -117,6 +117,13 @@ public class PublicationContextCreator {
                    .map(MetaTp::getSrctype)
                    .map(srcType -> srcType.equals(SourcetypeAtt.J.value()))
                    .orElse(false);
+    }
+
+    private String getSourceType() {
+        return Optional.ofNullable(docTp)
+                   .map(DocTp::getMeta)
+                   .map(MetaTp::getSrctype)
+                   .orElse(null);
     }
 
     private boolean isChapter() {
