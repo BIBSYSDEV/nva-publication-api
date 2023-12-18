@@ -29,8 +29,10 @@ import no.unit.nva.model.pages.Range;
 
 public class PublicationInstanceCreator {
 
-    public static final String UNSUPPORTED_CITATION_TYPE_MESSAGE = "Unsupported citation type, cannot convert eid %s";
-
+    public static final String UNSUPPORTED_CITATION_TYPE_MESSAGE =
+        "Unsupported citation type %s, cannot convert eid %s";
+    public static final String MISSING_CITATION_TYPE_MESSAGE =
+        "Missing citation type, cannot convert eid %s";
     private final DocTp docTp;
     private final PublicationContext publicationContext;
 
@@ -40,14 +42,21 @@ public class PublicationInstanceCreator {
     }
 
     public PublicationInstance<? extends Pages> getPublicationInstance() {
-        return getCitationTypeCode()
-                   .flatMap(this::convertCitationTypeCodeToPublicationInstance)
-                   .orElseThrow(this::getUnsupportedCitationTypeException);
+        var citationTypeCode = getCitationTypeCode();
+        return citationTypeCode.isPresent()
+                   ? citationTypeCode.flatMap(this::convertCitationTypeCodeToPublicationInstance)
+                         .orElseThrow(() -> getUnsupportedCitationTypeException(citationTypeCode.get()))
+                   : missingCitationTypeException();
     }
 
-    private UnsupportedCitationTypeException getUnsupportedCitationTypeException() {
+    private UnsupportedCitationTypeException getUnsupportedCitationTypeException(CitationtypeAtt citationtypeAtt) {
         return new UnsupportedCitationTypeException(
-            String.format(UNSUPPORTED_CITATION_TYPE_MESSAGE, docTp.getMeta().getEid()));
+            String.format(UNSUPPORTED_CITATION_TYPE_MESSAGE, citationtypeAtt.value(), docTp.getMeta().getEid()));
+    }
+
+    private PublicationInstance<? extends Pages> missingCitationTypeException() {
+        throw new UnsupportedCitationTypeException(
+            String.format(MISSING_CITATION_TYPE_MESSAGE, docTp.getMeta().getEid()));
     }
 
     /*

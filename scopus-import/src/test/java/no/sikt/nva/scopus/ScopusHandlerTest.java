@@ -343,7 +343,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldExtractOnlyScopusIdentifierIgnoreAllOtherIdentifiersAndStoreItInPublication() throws IOException {
         createEmptyPiaMock();
-        var scopusIdentifiers = scopusData.getDocument().getMeta().getEid();
+        var scopusIdentifiers = getEid();
         var expectedAdditionalIdentifier = new AdditionalIdentifier(SCOPUS_IDENTIFIER,
                                                                     scopusIdentifiers);
         var s3Event = createNewScopusPublicationEvent();
@@ -705,10 +705,18 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     void shouldThrowExceptionWhenSrcTypeIsNotSupported() throws IOException {
         createEmptyPiaMock();
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.X);
-        var expectedMessage = String.format(UNSUPPORTED_SOURCE_TYPE, scopusData.getDocument().getMeta().getEid());
+        var expectedMessage = String.format(UNSUPPORTED_SOURCE_TYPE, getSrctype(), getEid());
         var s3Event = createNewScopusPublicationEvent();
         assertThrows(UnsupportedSrcTypeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
+    }
+
+    private String getEid() {
+        return scopusData.getDocument().getMeta().getEid();
+    }
+
+    private String getSrctype() {
+        return scopusData.getDocument().getMeta().getSrctype();
     }
 
     @Test
@@ -907,9 +915,24 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         createEmptyPiaMock();
         scopusData = ScopusGenerator.create(citationtypeAtt);
         // eid is chosen because it seems to match the file name in the bucket.
-        var eid = scopusData.getDocument().getMeta().getEid();
+        var eid = getEid();
         var s3Event = createNewScopusPublicationEvent();
-        var expectedMessage = String.format(PublicationInstanceCreator.UNSUPPORTED_CITATION_TYPE_MESSAGE, eid);
+        var expectedMessage = String.format(
+            PublicationInstanceCreator.UNSUPPORTED_CITATION_TYPE_MESSAGE,
+            citationtypeAtt.value(), eid);
+        assertThrows(UnsupportedCitationTypeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
+        assertThat(appender.getMessages(), containsString(expectedMessage));
+    }
+
+    @Test
+    void shouldNotCreateImportCandidateWhenMissingPublicationType()
+        throws IOException {
+        createEmptyPiaMock();
+        scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getCitationInfo()
+            .getCitationType().clear();
+        var eid = getEid();
+        var s3Event = createNewScopusPublicationEvent();
+        var expectedMessage = String.format(PublicationInstanceCreator.MISSING_CITATION_TYPE_MESSAGE, eid);
         assertThrows(UnsupportedCitationTypeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
     }
