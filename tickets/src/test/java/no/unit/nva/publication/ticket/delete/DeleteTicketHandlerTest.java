@@ -112,9 +112,9 @@ class DeleteTicketHandlerTest extends ResourcesLocalTest {
                       ticketIdentifier.toString());
     }
 
-    private TicketService ticketServiceThrowingException() throws ApiGatewayException {
+    private TicketService ticketServiceThrowingException() {
         ticketService = mock(TicketService.class);
-        doThrow(new BadRequestException(randomString())).when(ticketService).removeTicket(any());
+        doThrow(new RuntimeException()).when(ticketService).updateTicket(any());
         return ticketService;
     }
 

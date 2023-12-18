@@ -96,7 +96,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
         var ticket = (DoiRequest) createPersistedTicket(DoiRequest.class, publication);
-        ticket.remove(UserInstance.fromTicket(ticket), ticketService);
+        ticket.remove(UserInstance.fromTicket(ticket)).persistUpdate(ticketService);
         var request = createHttpRequest(publication, ticket).build();
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, PublishingRequestDto.class);

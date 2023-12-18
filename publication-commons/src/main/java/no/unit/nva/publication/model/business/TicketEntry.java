@@ -188,9 +188,14 @@ public abstract class TicketEntry implements Entity {
         return updated;
     }
 
-    public final void remove(UserInstance userInstance, TicketService ticketService) throws ApiGatewayException {
+    public final TicketEntry remove(UserInstance userInstance) throws ApiGatewayException {
         validateRemovingRequirements(userInstance);
-        ticketService.removeTicket(this);
+        var updated = this.copy();
+        updated.setStatus(TicketStatus.REMOVED);
+        var now = Instant.now();
+        updated.setModifiedDate(now);
+        updated.setFinalizedDate(now);
+        return updated;
     }
 
     public void validateClosingRequirements() throws ApiGatewayException {

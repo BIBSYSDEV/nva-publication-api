@@ -65,7 +65,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         throws IOException, ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        ticket.remove(UserInstance.fromTicket(ticket), ticketService);
+        ticket.remove(UserInstance.fromTicket(ticket)).persistUpdate(ticketService);
         var request = ownerRequestsTicketsForPublication(publication);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, TicketCollection.class);

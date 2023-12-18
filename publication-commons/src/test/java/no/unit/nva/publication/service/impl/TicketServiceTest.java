@@ -703,7 +703,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
         var ticket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
                          .persistNewTicket(ticketService);
-        ticket.remove(UserInstance.fromTicket(ticket), ticketService);
+        ticket.remove(UserInstance.fromTicket(ticket)).persistUpdate(ticketService);
 
         var persistedTicket = ticket.fetch(ticketService);
         assertThat(persistedTicket.getStatus(), is(equalTo(REMOVED)));
@@ -715,21 +715,11 @@ public class TicketServiceTest extends ResourcesLocalTest {
         var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
         var ticket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
                          .persistNewTicket(ticketService);
-        ticket.remove(UserInstance.fromTicket(ticket), ticketService);
+        ticket.remove(UserInstance.fromTicket(ticket)).persistUpdate(ticketService);
 
         var secondTicket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
                        .persistNewTicket(ticketService);
         assertThat(secondTicket.getStatus(), is(equalTo(PENDING)));
-    }
-
-    @Test
-    void shouldThrowNotFoundWhenAttemptingToDeleteNonExistentTicket() throws ApiGatewayException {
-        var type = DoiRequest.class;
-        var publication = persistPublication(owner, validPublicationStatusForTicketApproval(type));
-        var ticket = TicketEntry.createNewTicket(publication, type, SortableIdentifier::next);
-
-        assertThrows(NotFoundException.class,
-                     () -> ticket.remove(UserInstance.fromTicket(ticket), ticketService));
     }
 
     private static Username getUsername(Publication publication) {

@@ -39,7 +39,8 @@ public class DeleteTicketHandler extends TicketHandler<Void, Void> {
 
         attempt(() -> extractTicketIdentifier(requestInfo))
             .map(ticketService::fetchTicketByIdentifier)
-            .forEach(ticket -> ticket.remove(userInstance, ticketService))
+            .map(ticket -> ticket.remove(userInstance))
+            .forEach(ticketEntry -> ticketEntry.persistUpdate(ticketService))
             .orElseThrow(this::mapException);
 
         return null;

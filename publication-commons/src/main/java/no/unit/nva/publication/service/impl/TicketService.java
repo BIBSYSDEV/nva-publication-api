@@ -8,7 +8,6 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import java.net.URI;
 import java.time.Clock;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -165,19 +164,6 @@ public class TicketService extends ServiceWithTransactions {
         var putItemRequest = dao.createPutItemRequest();
         getClient().putItem(putItemRequest);
         return updatedAssignee;
-    }
-
-    public void removeTicket(TicketEntry ticketEntry) throws ApiGatewayException {
-        ticketEntry.setStatus(TicketStatus.REMOVED);
-        var now = Instant.now();
-        ticketEntry.setModifiedDate(now);
-        ticketEntry.setFinalizedDate(now);
-
-        attempt(ticketEntry::toDao)
-            .map(TicketDao.class::cast)
-            .map(TicketDao::createPutItemRequest)
-            .map(getClient()::putItem)
-            .orElseThrow(fail -> notFoundException());
     }
 
     protected TicketEntry completeTicket(TicketEntry ticketEntry, Username username) throws ApiGatewayException {
