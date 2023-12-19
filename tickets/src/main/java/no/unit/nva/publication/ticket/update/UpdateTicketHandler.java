@@ -49,8 +49,6 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
                                                                                                  + "DOI requirements";
     public static final String UNKNOWN_VIEWED_STATUS_MESSAGE = "Unknown ViewedStatus";
     private static final Logger logger = LoggerFactory.getLogger(UpdateTicketHandler.class);
-    private static final String ACCESS_RIGHT_APPROVE_PUBLISH_REQUEST = AccessRight.APPROVE_PUBLISH_REQUEST.toString();
-    private static final String ACCESS_RIGHT_APPROVE_DOI_REQUEST = AccessRight.APPROVE_DOI_REQUEST.toString();
     private final TicketService ticketService;
     private final ResourceService resourceService;
     private final DoiClient doiClient;
@@ -122,11 +120,11 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     }
 
     private static boolean userIsAuthorizedToApprovePublishingRequest(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(ACCESS_RIGHT_APPROVE_PUBLISH_REQUEST);
+        return requestInfo.userIsAuthorized(AccessRight.MANAGE_PUBLISHING_REQUESTS);
     }
 
     private static boolean userIsAuthorizedToApproveDoiRequest(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(ACCESS_RIGHT_APPROVE_DOI_REQUEST);
+        return requestInfo.userIsAuthorized(AccessRight.MANAGE_DOI);
     }
 
     private static boolean isUserFromSameCustomerAsTicket(RequestInfo requestInfo, TicketEntry ticket)
@@ -221,7 +219,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     }
 
     private boolean userHasAccessRightToOperateOnTicket(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString());
+        return requestInfo.userIsAuthorized(AccessRight.MANAGE_DOI);
     }
 
     private boolean userIsTicketOwner(TicketEntry ticket, String userName) {

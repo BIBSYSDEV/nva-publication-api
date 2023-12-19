@@ -5,6 +5,7 @@ import static no.unit.nva.publication.create.CreatePublicationFromImportCandidat
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.apigateway.AccessRight.MANAGE_IMPORT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -77,7 +78,7 @@ public class UpdateImportStatusHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnNotFoundWhenAttemptingToUpdateStatusOnNonExistingImportCandidate() throws IOException {
         var importCandidate = createImportCandidate();
-        var request = request(importCandidate, notApplicableImportStatus(), AccessRight.PROCESS_IMPORT_CANDIDATE);
+        var request = request(importCandidate, notApplicableImportStatus(), MANAGE_IMPORT);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, ImportCandidate.class);
 
@@ -87,7 +88,7 @@ public class UpdateImportStatusHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldUpdateImportStatusSuccessfully() throws NotFoundException, IOException {
         var importCandidate = createPersistedImportCandidate();
-        var request = request(importCandidate, notApplicableImportStatus(), AccessRight.PROCESS_IMPORT_CANDIDATE);
+        var request = request(importCandidate, notApplicableImportStatus(), MANAGE_IMPORT);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, ImportCandidate.class);
         var updatedImportCandidate = importCandidateService
@@ -110,7 +111,7 @@ public class UpdateImportStatusHandlerTest extends ResourcesLocalTest {
                    .withUserName(importCandidate.getResourceOwner().getOwner().getValue())
                    .withCurrentCustomer(customerId)
                    .withBody(toImportStatusDto(importStatus))
-                   .withAccessRights(customerId, accessRight.name())
+                   .withAccessRights(customerId, accessRight)
                    .withPathParameters(pathParameters)
                    .build();
     }

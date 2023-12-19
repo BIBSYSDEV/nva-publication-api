@@ -3,6 +3,7 @@ package no.unit.nva.publication.ticket.read;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
@@ -27,7 +28,6 @@ import no.unit.nva.publication.ticket.TicketDtoParser;
 import no.unit.nva.publication.ticket.TicketTestLocal;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import no.unit.nva.testutils.HandlerRequestBuilder;
-import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.BeforeEach;
@@ -169,7 +169,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .withPathParameters(constructPathParameters(publication))
                    .withCurrentCustomer(customerId)
                    .withUserName(randomString())
-                   .withAccessRights(customerId, AccessRight.APPROVE_DOI_REQUEST.toString())
+                   .withAccessRights(customerId, MANAGE_DOI)
                    .build();
     }
 
@@ -179,7 +179,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .withPathParameters(constructPathParameters(publication))
                    .withCurrentCustomer(publication.getPublisher().getId())
                    .withUserName(randomString())
-                   .withAccessRights(publication.getPublisher().getId(), AccessRight.APPROVE_DOI_REQUEST.toString())
+                   .withAccessRights(publication.getPublisher().getId(), MANAGE_DOI)
                    .build();
     }
 

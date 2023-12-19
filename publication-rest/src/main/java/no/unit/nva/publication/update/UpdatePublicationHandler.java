@@ -5,10 +5,10 @@ import static no.unit.nva.publication.RequestUtil.createExternalUserInstance;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_AUTH_URL;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_SECRET_NAME;
-import static nva.commons.apigateway.AccessRight.APPROVE_DOI_REQUEST;
-import static nva.commons.apigateway.AccessRight.EDIT_ALL_NON_DEGREE_RESOURCES;
-import static nva.commons.apigateway.AccessRight.EDIT_OWN_INSTITUTION_RESOURCES;
-import static nva.commons.apigateway.AccessRight.PUBLISH_DEGREE;
+import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
+import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_ALL;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -218,7 +218,7 @@ public class UpdatePublicationHandler
                                                                              UserInstance userInstance,
                                                                              Publication existingPublication) {
 
-        var accessRight = EDIT_OWN_INSTITUTION_RESOURCES.name();
+        var accessRight = MANAGE_RESOURCES_STANDARD;
         return !requestInfo.clientIsThirdParty() && requestInfo.userIsAuthorized(accessRight)
                 && userIsFromSameOrganizationAsPublication(userInstance, existingPublication);
     }
@@ -248,7 +248,7 @@ public class UpdatePublicationHandler
     }
 
     private boolean userUnauthorizedToPublishThesisAndIsNotExternalClient(RequestInfo requestInfo) {
-        return !requestInfo.userIsAuthorized(PUBLISH_DEGREE.name()) && !requestInfo.clientIsThirdParty();
+        return !requestInfo.userIsAuthorized(MANAGE_PUBLISHING_REQUESTS) && !requestInfo.clientIsThirdParty();
     }
 
     private CustomerPublishingWorkflowResponse getCustomerPublishingWorkflowResponse(URI customerId)
@@ -311,7 +311,7 @@ public class UpdatePublicationHandler
 
 
     private boolean userCanEditAllNonDegreePublications(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(EDIT_ALL_NON_DEGREE_RESOURCES.name());
+        return requestInfo.userIsAuthorized(MANAGE_RESOURCES_ALL);
     }
 
     private Publication fetchPublication(SortableIdentifier identifierInPath) throws NotFoundException {
@@ -382,6 +382,6 @@ public class UpdatePublicationHandler
     }
 
     private boolean userIsAuthorizedToApproveDoiRequest(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(APPROVE_DOI_REQUEST.name());
+        return requestInfo.userIsAuthorized(MANAGE_DOI);
     }
 }

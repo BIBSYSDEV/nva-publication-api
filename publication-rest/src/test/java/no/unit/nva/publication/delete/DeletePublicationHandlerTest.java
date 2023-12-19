@@ -13,9 +13,9 @@ import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.r
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static nva.commons.apigateway.AccessRight.EDIT_ALL_NON_DEGREE_RESOURCES;
-import static nva.commons.apigateway.AccessRight.EDIT_OWN_INSTITUTION_RESOURCES;
-import static nva.commons.apigateway.AccessRight.PUBLISH_DEGREE;
+import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_ALL;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.apache.http.HttpStatus.SC_ACCEPTED;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -343,7 +343,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         var publisherUri = unpublishedPublication.getPublisher().getId();
 
         var inputStream = createHandlerRequest(unpublishedPublication.getIdentifier(), randomString(), publisherUri,
-                                               AccessRight.EDIT_ALL_NON_DEGREE_RESOURCES);
+                                               MANAGE_RESOURCES_ALL);
         handler.handleRequest(inputStream, outputStream, context);
 
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
@@ -369,7 +369,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         var publisherUri = publication.getPublisher().getId();
         var inputStream = createHandlerRequest(persistedPublication.getIdentifier(), randomString(), publisherUri,
-                                               AccessRight.EDIT_OWN_INSTITUTION_RESOURCES);
+                                               AccessRight.MANAGE_RESOURCES_STANDARD);
         handler.handleRequest(inputStream, outputStream, context);
 
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
@@ -385,7 +385,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         var publisherUri = publication.getPublisher().getId();
         var inputStream = createHandlerRequest(publication.getIdentifier(), randomString(), publisherUri,
-                                               AccessRight.EDIT_OWN_INSTITUTION_RESOURCES);
+                                               MANAGE_RESOURCES_STANDARD);
         handler.handleRequest(inputStream, outputStream, context);
 
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
@@ -402,7 +402,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         var publisherUri = publication.getPublisher().getId();
         var inputStream = createHandlerRequest(publication.getIdentifier(), randomString(), publisherUri,
-                                               PUBLISH_DEGREE);
+                                               MANAGE_PUBLISHING_REQUESTS);
         handler.handleRequest(inputStream, outputStream, context);
 
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
@@ -432,7 +432,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         var request = createRequestWithDuplicateOfValue(publication.getIdentifier(),
                                                         randomString(),
                                                         publication.getPublisher().getId(),
-                                                        PUBLISH_DEGREE,
+                                                        MANAGE_PUBLISHING_REQUESTS,
                                                         duplicate);
         handler.handleRequest(request, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
@@ -449,7 +449,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         var institutionId = randomUri();
         var curatorUsername = randomString();
-        var curatorAccessRight = AccessRight.EDIT_OWN_INSTITUTION_RESOURCES;
+        var curatorAccessRight = MANAGE_RESOURCES_STANDARD;
         var resourceOwnerUsername = randomString();
 
         var publication = createAndPersistPublicationWithoutDoiAndWithResourceOwner(resourceOwnerUsername,
@@ -470,7 +470,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         var curatorUsername = randomString();
         var curatorInstitutionId = randomUri();
-        var curatorAccessRight = AccessRight.EDIT_OWN_INSTITUTION_RESOURCES;
+        var curatorAccessRight = MANAGE_RESOURCES_STANDARD;
 
         var resourceOwnerUsername = randomString();
         var resourceOwnerInstitutionId = randomUri();
@@ -493,7 +493,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         var publication = createAndPersistDegreeWithoutDoi();
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         var publisherUri = publication.getPublisher().getId();
-        var request = createHandlerRequest(publication.getIdentifier(), randomString(), publisherUri, PUBLISH_DEGREE);
+        var request = createHandlerRequest(publication.getIdentifier(), randomString(), publisherUri, MANAGE_PUBLISHING_REQUESTS);
         handler.handleRequest(request, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
         var persistedTicket = ticketService.fetchTicketByResourceIdentifier(publication.getPublisher().getId(),
@@ -511,7 +511,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         var publisherUri = publication.getPublisher().getId();
         var request = createHandlerRequest(publication.getIdentifier(), randomString(),
-                                           publisherUri, EDIT_ALL_NON_DEGREE_RESOURCES);
+                                           publisherUri, MANAGE_RESOURCES_ALL);
         handler.handleRequest(request, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
 
@@ -542,7 +542,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         var request = new HandlerRequestBuilder<Void>(restApiMapper)
                    .withUserName(username)
                    .withCurrentCustomer(institutionId)
-                   .withAccessRights(institutionId, accessRight.name())
+                   .withAccessRights(institutionId, accessRight)
                    .withPathParameters(
                        Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString()));
 
@@ -561,7 +561,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
                           .withUserName(username)
                           .withQueryParameters(Map.of("duplicate", duplicateOf.toString()))
                           .withCurrentCustomer(institutionId)
-                          .withAccessRights(institutionId, accessRight.name())
+                          .withAccessRights(institutionId, accessRight)
                           .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString()));
 
         return request.build();

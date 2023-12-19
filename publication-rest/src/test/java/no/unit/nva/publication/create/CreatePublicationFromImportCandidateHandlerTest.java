@@ -19,6 +19,7 @@ import static no.unit.nva.publication.external.services.AuthorizedBackendUriRetr
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.apigateway.AccessRight.MANAGE_IMPORT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -78,7 +79,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
 import no.unit.nva.stubs.WiremockHttpClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
-import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -581,7 +581,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                    .withUserName(randomString())
                    .withBody(importCandidate)
                    .withCurrentCustomer(user.getOrganizationUri())
-                   .withAccessRights(user.getOrganizationUri(), AccessRight.PROCESS_IMPORT_CANDIDATE.name())
+                   .withAccessRights(user.getOrganizationUri(), MANAGE_IMPORT)
                    .build();
     }
 

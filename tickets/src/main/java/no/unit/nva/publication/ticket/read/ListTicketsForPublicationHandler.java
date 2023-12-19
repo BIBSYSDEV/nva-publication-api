@@ -1,5 +1,6 @@
 package no.unit.nva.publication.ticket.read;
 
+import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
@@ -13,7 +14,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketDto;
 import no.unit.nva.publication.ticket.TicketHandler;
-import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
@@ -53,7 +53,7 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
     }
     
     private static boolean userIsAuthorizedToViewOtherUsersTickets(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString());
+        return requestInfo.userIsAuthorized(MANAGE_DOI);
     }
     
     private List<TicketDto> fetchTickets(RequestInfo requestInfo,

@@ -1,7 +1,7 @@
 package no.unit.nva.publication.permission.strategy;
 
-import static nva.commons.apigateway.AccessRight.EDIT_OWN_INSTITUTION_RESOURCES;
-import static nva.commons.apigateway.AccessRight.PUBLISH_DEGREE;
+import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.core.attempt.Try.attempt;
 import no.unit.nva.model.Publication;
 import nva.commons.apigateway.RequestInfo;
@@ -14,10 +14,10 @@ public class CuratorPermissionStrategy extends PermissionStrategy {
             return false;
         }
         if (isDegree(publication)) {
-            return hasAccessRight(requestInfo, PUBLISH_DEGREE);
+            return hasAccessRight(requestInfo, MANAGE_PUBLISHING_REQUESTS);
         }
 
-        return hasAccessRight(requestInfo, EDIT_OWN_INSTITUTION_RESOURCES);
+        return hasAccessRight(requestInfo, MANAGE_RESOURCES_STANDARD);
     }
 
     private static Boolean userIsFromSameInstitutionAsPublication(RequestInfo requestInfo, Publication publication) {

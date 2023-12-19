@@ -1,5 +1,6 @@
 package no.unit.nva.publication.update;
 
+import static nva.commons.apigateway.AccessRight.MANAGE_IMPORT;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
 import java.time.Instant;
@@ -9,7 +10,6 @@ import no.unit.nva.publication.ImportStatusDto;
 import no.unit.nva.publication.exception.NotAuthorizedException;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.service.impl.ResourceService;
-import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -55,7 +55,7 @@ public class UpdateImportStatusHandler extends ApiGatewayHandler<ImportStatusDto
     }
 
     private boolean isNotAuthorized(RequestInfo requestInfo) {
-        return !requestInfo.userIsAuthorized(AccessRight.PROCESS_IMPORT_CANDIDATE.name());
+        return !requestInfo.userIsAuthorized(MANAGE_IMPORT);
     }
 
     private void validateAccessRights(RequestInfo requestInfo) throws NotAuthorizedException {

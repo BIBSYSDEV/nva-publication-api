@@ -5,6 +5,8 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_ALL;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
@@ -259,12 +261,12 @@ class PublicationPermissionStrategyTest {
     }
 
     private static Function<AccessRight, String> getCognitoGroup(URI institutionId) {
-        return accessRight -> accessRight.name() + AT + institutionId.toString();
+        return accessRight -> accessRight.toPersistedString() + AT + institutionId.toString();
     }
 
     private List<AccessRight> getCuratorWithPublishDegreeAccessRight() {
         var curatorAccessRight = getCuratorAccessRights();
-        curatorAccessRight.add(AccessRight.PUBLISH_DEGREE);
+        curatorAccessRight.add(MANAGE_PUBLISHING_REQUESTS);
         return curatorAccessRight;
     }
 
@@ -307,14 +309,14 @@ class PublicationPermissionStrategyTest {
 
     private List<AccessRight> getEditorAccessRights() {
         var accessRights = new ArrayList<AccessRight>();
-        accessRights.add(AccessRight.PUBLISH_DEGREE);
-        accessRights.add(AccessRight.EDIT_ALL_NON_DEGREE_RESOURCES);
+        accessRights.add(MANAGE_PUBLISHING_REQUESTS);
+        accessRights.add(MANAGE_RESOURCES_ALL);
         return accessRights;
     }
 
     private List<AccessRight> getCuratorAccessRights() {
         var accessRights = new ArrayList<AccessRight>();
-        accessRights.add(AccessRight.EDIT_OWN_INSTITUTION_RESOURCES);
+        accessRights.add(AccessRight.MANAGE_RESOURCES_STANDARD);
         return accessRights;
     }
 

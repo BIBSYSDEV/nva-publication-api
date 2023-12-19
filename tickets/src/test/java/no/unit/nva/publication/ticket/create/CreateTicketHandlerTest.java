@@ -14,6 +14,7 @@ import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_SECRET_NAME;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.LOCATION_HEADER;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.everyItem;
@@ -306,7 +307,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var publicationOwner = publication.getPublisher().getId();
         var requestBody = constructDto(DoiRequest.class);
         var request = createHttpTicketCreationRequestWithApprovedAccessRight(requestBody, publication, publicationOwner,
-                                                                             AccessRight.APPROVE_DOI_REQUEST);
+                                                                             MANAGE_DOI);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
@@ -318,7 +319,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var publicationOwner = publication.getPublisher().getId();
         var requestBody = constructDto(DoiRequest.class);
         var request = createHttpTicketCreationRequestWithApprovedAccessRight(requestBody, publication, publicationOwner,
-                                                                             AccessRight.REJECT_DOI_REQUEST);
+                                                                             MANAGE_DOI);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
@@ -332,7 +333,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(customerId, is(not(equalTo(publication.getPublisher().getId()))));
         var requestBody = constructDto(DoiRequest.class);
         var request = createHttpTicketCreationRequestWithApprovedAccessRight(requestBody, publication, customerId,
-                                                                             AccessRight.REJECT_DOI_REQUEST);
+                                                                             MANAGE_DOI);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
@@ -700,7 +701,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                    .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
                    .withUserName(userCredentials.getUsername())
                    .withCurrentCustomer(userCredentials.getOrganizationUri())
-                   .withAccessRights(publication.getPublisher().getId(), AccessRight.APPROVE_DOI_REQUEST.name())
+                   .withAccessRights(publication.getPublisher().getId(), MANAGE_DOI)
                    .build();
     }
 
@@ -712,7 +713,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
                    .withBody(ticketDto)
                    .withAuthorizerClaim(PERSON_AFFILIATION_CLAIM, customerId.toString())
-                   .withAccessRights(customerId, accessRight.toString())
+                   .withAccessRights(customerId, accessRight)
                    .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
                    .withUserName(randomString())
                    .withCurrentCustomer(customerId)

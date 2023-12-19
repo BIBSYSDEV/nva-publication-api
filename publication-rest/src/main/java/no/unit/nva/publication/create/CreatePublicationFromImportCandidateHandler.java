@@ -2,6 +2,7 @@ package no.unit.nva.publication.create;
 
 import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.util.Objects.isNull;
+import static nva.commons.apigateway.AccessRight.MANAGE_IMPORT;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
@@ -22,7 +23,6 @@ import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.impl.ResourceService;
-import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -94,7 +94,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     }
 
     private static boolean notAuthorizedToProcessImportCandidates(RequestInfo requestInfo) {
-        return !requestInfo.userIsAuthorized(AccessRight.PROCESS_IMPORT_CANDIDATE.name());
+        return !requestInfo.userIsAuthorized(MANAGE_IMPORT);
     }
 
     private static boolean hasDifferentCristinId(Contributor rawContributor, Contributor contributor) {

@@ -1,7 +1,7 @@
 package no.unit.nva.publication.permission.strategy;
 
-import static nva.commons.apigateway.AccessRight.EDIT_ALL_NON_DEGREE_RESOURCES;
-import static nva.commons.apigateway.AccessRight.PUBLISH_DEGREE;
+import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_ALL;
 import no.unit.nva.model.Publication;
 import nva.commons.apigateway.RequestInfo;
 
@@ -21,20 +21,20 @@ public class EditorPermissionStrategy extends PermissionStrategy {
     @Override
     public boolean hasPermission(RequestInfo requestInfo, Publication publication) {
         if (isDegree(publication)) {
-            return hasAccessRight(requestInfo, PUBLISH_DEGREE)
-                   && hasAccessRight(requestInfo, EDIT_ALL_NON_DEGREE_RESOURCES);
+            return hasAccessRight(requestInfo, MANAGE_PUBLISHING_REQUESTS)
+                   && hasAccessRight(requestInfo, MANAGE_RESOURCES_ALL);
         }
 
-        return hasAccessRight(requestInfo, EDIT_ALL_NON_DEGREE_RESOURCES);
+        return hasAccessRight(requestInfo, MANAGE_RESOURCES_ALL);
     }
 
     public boolean hasPermission(Publication publication) {
         return hasPermissionToOperateOnDegree(publication)
-               || hasAccessRight(requestInfo, EDIT_ALL_NON_DEGREE_RESOURCES);
+               || hasAccessRight(requestInfo, MANAGE_RESOURCES_ALL);
     }
 
     private boolean hasPermissionToOperateOnDegree(Publication publication) {
-        return isDegree(publication) && hasAccessRight(requestInfo, PUBLISH_DEGREE)
-               && hasAccessRight(requestInfo, EDIT_ALL_NON_DEGREE_RESOURCES);
+        return isDegree(publication) && hasAccessRight(requestInfo, MANAGE_PUBLISHING_REQUESTS)
+               && hasAccessRight(requestInfo, MANAGE_RESOURCES_ALL);
     }
 }

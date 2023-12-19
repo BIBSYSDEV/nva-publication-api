@@ -7,7 +7,7 @@ import static no.unit.nva.publication.ticket.TicketDtoParser.toTicket;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static nva.commons.apigateway.AccessRight.APPROVE_DOI_REQUEST;
+import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.nullValue;
@@ -172,7 +172,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var request =
-            createHttpRequestForElevatedUser(ticket, ticket.getCustomerId(), APPROVE_DOI_REQUEST).build();
+            createHttpRequestForElevatedUser(ticket, ticket.getCustomerId(), MANAGE_DOI).build();
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, TicketDto.class);
         var ticketDto = response.getBodyObject(TicketDto.class);
@@ -188,7 +188,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        var request = createHttpRequestForElevatedUser(ticket, randomUri(), APPROVE_DOI_REQUEST).build();
+        var request = createHttpRequestForElevatedUser(ticket, randomUri(), MANAGE_DOI).build();
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
@@ -203,7 +203,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var wrongAccessRights = new HashSet<>(Arrays.asList(AccessRight.values()));
-        wrongAccessRights.remove(APPROVE_DOI_REQUEST);
+        wrongAccessRights.remove(MANAGE_DOI);
         var request =
             createHttpRequestForElevatedUser(ticket, ticket.getCustomerId(), randomElement(wrongAccessRights)).build();
         handler.handleRequest(request, output, CONTEXT);
@@ -286,7 +286,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
         return createHttpRequest(ticket)
                    .withCustomerId(customerId)
                    .withNvaUsername(randomString())
-                   .withAccessRights(ticket.getCustomerId(), accessRight.toString());
+                   .withAccessRights(ticket.getCustomerId(), accessRight);
     }
 
     private TicketEntry createPersistedTicket(Class<? extends TicketEntry> ticketType, Publication publication)

@@ -3,6 +3,7 @@ package no.unit.nva.publication.ticket.create;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
+import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
@@ -20,7 +21,6 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketDto;
-import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -64,7 +64,7 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
         logger.info("ownerAffiliation {}", requestInfo.getPersonAffiliation());
         newTicket.setOwnerAffiliation(requestInfo.getPersonAffiliation());
         var customer = requestInfo.getCurrentCustomer();
-        var isCurator = requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.name());
+        var isCurator = requestInfo.userIsAuthorized(MANAGE_DOI);
         var persistedTicket = ticketResolver.resolveAndPersistTicket(newTicket, publication, customer, isCurator);
         var ticketLocation = createTicketLocation(publicationIdentifier, persistedTicket);
         addAdditionalHeaders(() -> Map.of(LOCATION_HEADER, ticketLocation));
@@ -95,8 +95,7 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
     }
 
     private static boolean hasValidAccessRights(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString())
-               || requestInfo.userIsAuthorized(AccessRight.REJECT_DOI_REQUEST.toString());
+        return requestInfo.userIsAuthorized(MANAGE_DOI);
     }
 
     private Publication fetchPublication(SortableIdentifier publicationIdentifier, UserInstance user,
