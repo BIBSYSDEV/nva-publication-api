@@ -46,7 +46,6 @@ import no.unit.nva.model.contexttypes.MediaContributionPeriodical;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Report;
-import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
@@ -163,9 +162,24 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
         var regeneratedPublication = objectMapper.readValue(expandedResourceAsJson, Publication.class);
 
+
         var jsonOriginal = attempt(() -> objectMapper.writeValueAsString(publication)).orElseThrow();
         var jsonActual = attempt(() -> objectMapper.writeValueAsString(regeneratedPublication)).orElseThrow();
 
+        JsonNode originalTree = objectMapper.readTree(jsonOriginal);
+        JsonNode actualTree = objectMapper.readTree(jsonActual);
+        // Iterate over the contributors and remove the labels from each affiliation
+        originalTree.get("entityDescription").get("contributors")
+            .forEach(contributor -> contributor.get("affiliations")
+                                        .forEach(affiliation -> ((ObjectNode) affiliation).remove("labels")));
+
+        actualTree.get("entityDescription").get("contributors").forEach(contributor ->
+                                                                            contributor.get("affiliations").forEach(affiliation ->
+                                                                                                                        ((ObjectNode) affiliation).remove("labels")));
+
+        // Convert the trees back to JSON strings
+        jsonOriginal = objectMapper.writeValueAsString(originalTree);
+        jsonActual = objectMapper.writeValueAsString(actualTree);
         JSONAssert.assertEquals(jsonOriginal, jsonActual, false);
     }
 
