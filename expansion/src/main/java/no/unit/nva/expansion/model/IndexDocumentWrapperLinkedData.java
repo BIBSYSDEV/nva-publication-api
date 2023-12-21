@@ -56,14 +56,14 @@ public class IndexDocumentWrapperLinkedData {
     public String toFramedJsonLd(JsonNode indexDocument) {
         var frame = SearchIndexFrame.FRAME_SRC;
         var inputStreams = getInputStreams(indexDocument);
-        return new FramedJsonGenerator(inputStreams, frame).getFramedJson();
+        return new FramedJsonGenerator(indexDocument, inputStreams, frame).getFramedJson();
     }
 
     //TODO: parallelize
 
     private List<InputStream> getInputStreams(JsonNode indexDocument) {
         final List<InputStream> inputStreams = new ArrayList<>();
-        inputStreams.add(stringToStream(toJsonString(indexDocument)));
+//        inputStreams.add(stringToStream(toJsonString(indexDocument)));
         fetchAnthologyContent(indexDocument).ifPresent(inputStreams::add);
         inputStreams.addAll(fetchAllAffiliationContent(indexDocument));
         inputStreams.addAll(fetchAll(extractPublicationContextUris(indexDocument)));

@@ -2,6 +2,9 @@ package no.unit.nva.expansion.utils;
 
 import static java.util.Objects.isNull;
 import static no.unit.nva.expansion.utils.JsonLdDefaults.frameJsonLd;
+import static no.unit.nva.expansion.utils.JsonLdUtils.toJsonString;
+import static nva.commons.core.ioutils.IoUtils.stringToStream;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.InputStream;
 import java.util.List;
 import nva.commons.core.JacocoGenerated;
@@ -11,6 +14,7 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RiotException;
+import org.apache.jena.update.UpdateAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,9 +24,17 @@ public class FramedJsonGenerator {
     private static final Logger logger = LoggerFactory.getLogger(FramedJsonGenerator.class);
     private final String framedJson;
 
-    public FramedJsonGenerator(List<InputStream> streams, String frame) {
-        var model = createModel(streams);
+    public FramedJsonGenerator(JsonNode indexDocument, List<InputStream> streams, String frame) {
+        var indexDocumentInputStream = stringToStream(toJsonString(indexDocument));
+        var model = createModel(List.of(indexDocumentInputStream));
+        removeOrganizationLabels(model);
+        var model2 = createModel(streams);
+        model.add(model2);
         framedJson = frameJsonLd(model, frame);
+    }
+
+    private void removeOrganizationLabels(Model model) {
+        UpdateAction.parseExecute(AffiliationQueries.REMOVE_ORGANIZATIONS_LABELS, model);
     }
 
     public String getFramedJson() {

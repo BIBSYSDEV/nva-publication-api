@@ -14,11 +14,11 @@ public final class JsonLdDefaults {
 
     public static String frameJsonLd(Model model, String frame) {
         return RDFWriter.create()
-                   .format(RDFFormat.JSONLD10_FRAME_PRETTY)
-                   .context(getJsonLdWriteContext(frame))
-                   .source(model)
-                   .build()
-                   .asString();
+                            .format(RDFFormat.JSONLD10_FRAME_PRETTY)
+                            .context(getJsonLdWriteContext(frame))
+                            .source(model)
+                            .build()
+                            .asString();
     }
 
     private static JsonLdOptions getJsonLdOptions() {

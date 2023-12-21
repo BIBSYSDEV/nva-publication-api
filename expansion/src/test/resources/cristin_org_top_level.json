@@ -3,7 +3,7 @@
   "type": "Organization",
   "id": "__REPLACE_AFFILIATION_ID__",
   "labels": {
-    "en": "Some University"
+    "en": "__RANDOM_LABEL__"
   },
   "country": "NO",
   "partOf": [],

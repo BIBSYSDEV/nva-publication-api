@@ -15,6 +15,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.AllOf.allOf;
@@ -32,16 +33,15 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -72,10 +72,10 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.external.services.UriRetriever;
-import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UriWrapper;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -88,6 +88,7 @@ class ExpandedResourceTest {
     public static final String JSON_PTR_HAS_PART = "/hasPart";
     public static final String CRISTIN_ORG_JSON = "cristin_org.json";
     public static final String TOP_LEVEL_CRISTIN_ORG_JSON = "cristin_org_top_level.json";
+    public static final String NEW_LABEL = "_new";
     private static final String SERIES_LEVEL_JSON_PTR =
         "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
         + "/series/level";
@@ -106,6 +107,8 @@ class ExpandedResourceTest {
         "/entityDescription/reference/publicationContext/series/name";
     private static final String ID_NAMESPACE = System.getenv("ID_NAMESPACE");
     private static final URI HOST_URI = PublicationServiceConfig.PUBLICATION_HOST_URI;
+    public static final String OLD_LABEL = "_old";
+    public static final String EN_LABEL = "en";
     private UriRetriever uriRetriever;
 
     @BeforeEach
@@ -197,7 +200,7 @@ class ExpandedResourceTest {
         assertThat(deepestNestedSubUnit.at(JSON_PTR_ID).textValue(), is(equalTo(affiliationToBeExpanded.toString())));
     }
 
-    @Test
+    @RepeatedTest(100)
     void shouldReturnIndexDocumentWithSortedContributorsByTheirSequence()
         throws Exception {
         final var publication = randomBookWithManyContributors();
@@ -205,7 +208,6 @@ class ExpandedResourceTest {
 
         final var mockUriRetriever = mock(UriRetriever.class);
         mockOrganizationResponseForTopLevelAffiliation(affiliationToBeExpanded, mockUriRetriever);
-
         var framedResultNode = fromPublication(mockUriRetriever, publication).asJsonNode();
         var contributorsJson = framedResultNode.at("/entityDescription/contributors");
 
@@ -217,6 +219,59 @@ class ExpandedResourceTest {
             Comparator.comparing(Contributor::getSequence)).toList();
 
         assertThat(contributors, is(equalTo(sortedContributors)));
+    }
+
+    @Test
+    void shouldSubstituteAffiliationsLabelsWithLabelsFromFetchOrganizationResponse()
+        throws JsonProcessingException {
+        final var publication = randomBookWithManyContributors();
+        var labels = extractLabels(publication);
+        var affiliationToBeExpanded = extractAffiliationsUris(publication);
+        final var mockUriRetriever = mock(UriRetriever.class);
+        injectEnglishLabels(publication);
+        mockFetchAffiliationsResponses(affiliationToBeExpanded, mockUriRetriever);
+        var framedResultNode = fromPublication(mockUriRetriever, publication).asJsonNode();
+        var contributorsJson = framedResultNode.at("/entityDescription/contributors");
+        List<Contributor> contributors = objectMapper
+                                             .convertValue(contributorsJson, objectMapper.getTypeFactory()
+                                                                       .constructCollectionType(List.class,
+                                                                                                Contributor.class));
+        var persistedLabels = contributors.stream()
+                                     .map(Contributor::getAffiliations)
+                                     .flatMap(List::stream)
+                                     .map(Organization::getLabels)
+                                     .toList();
+
+        assertThat(persistedLabels, not(contains(labels)));
+        persistedLabels.forEach(label -> assertThat(label.get(EN_LABEL), containsString(NEW_LABEL)));
+
+    }
+
+    private void injectEnglishLabels(Publication publication) {
+        publication.getEntityDescription().getContributors().stream()
+                   .map(Contributor::getAffiliations)
+                   .flatMap(List::stream)
+                   .forEach(aff -> aff.setLabels(Map.of(EN_LABEL, randomString() + OLD_LABEL)));
+    }
+
+    private void mockFetchAffiliationsResponses(List<URI> affiliations, UriRetriever mockUriRetriever) {
+        affiliations.forEach(affiliation -> mockAffiliationResponse(affiliation, mockUriRetriever));
+    }
+
+    private void mockAffiliationResponse(URI affiliation, UriRetriever mockUriRetriever) {
+        var response = stringFromResources(Path.of(TOP_LEVEL_CRISTIN_ORG_JSON))
+                           .replace(
+                               "__REPLACE_AFFILIATION_ID__", affiliation.toString())
+                           .replace("__RANDOM_LABEL__", randomString() + "_new");
+        when(mockUriRetriever.getRawContent(eq(affiliation), any())).thenReturn(Optional.of(response));
+    }
+
+    private List<Map<String, String>> extractLabels(Publication publication) {
+        return publication.getEntityDescription().getContributors().stream()
+                   .map(Contributor::getAffiliations)
+                   .flatMap(List::stream)
+                   .map(Organization::getLabels)
+                   .toList();
     }
 
     @Test
