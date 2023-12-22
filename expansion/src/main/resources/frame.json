@@ -12,7 +12,7 @@
     "InteractiveFilm": "https://nva.sikt.no/ontology/publication#InteractiveFilm",
     "AugmentedVirtualRealityFilm": "https://nva.sikt.no/ontology/publication#AugmentedVirtualRealityFilm",
     "source": {
-      "@id": "source"
+      "@type": "@id"
     },
     "approvedBy": {
       "@context": {

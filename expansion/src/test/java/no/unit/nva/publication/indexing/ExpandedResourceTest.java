@@ -276,10 +276,12 @@ class ExpandedResourceTest {
             sourceUri1,
             getPublicationSampleFundingSourceWithoutContext(sourceUri1));
 
+        ObjectNode jsonNode = fromPublication(mockUriRetriever, publication).asJsonNode();
+
         assertHasExpectedFundings(
             sourceUri0,
             sourceUri1,
-            fromPublication(mockUriRetriever, publication).asJsonNode());
+            jsonNode);
     }
 
     @Test
