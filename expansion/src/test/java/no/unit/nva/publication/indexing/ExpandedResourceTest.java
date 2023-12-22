@@ -25,12 +25,14 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -278,6 +280,18 @@ class ExpandedResourceTest {
             sourceUri0,
             sourceUri1,
             fromPublication(mockUriRetriever, publication).asJsonNode());
+    }
+
+    @Test
+    void shouldReturnIndexDocumentWithValidExpandedFundingSourceWhenFailingFetchingFunding()
+        throws JsonProcessingException {
+        final var publication = randomBookWithConfirmedPublisher();
+        final var mockUriRetriever = mock(UriRetriever.class);
+
+        var expandedResource = fromPublication(mockUriRetriever, publication).asJsonNode();
+
+        assertTrue(expandedResource.at(JsonPointer.compile("/fundings/0/source")).has("id"));
+        assertTrue(expandedResource.at(JsonPointer.compile("/fundings/1/source")).has("id"));
     }
 
     @Test
