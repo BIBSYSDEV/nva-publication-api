@@ -1,8 +1,0 @@
-PREFIX  nva: <https://nva.sikt.no/ontology/publication#>
-
-DELETE {
- ?uri nva:Label ?Label
-} WHERE {
- ?uri a nva:Organization ;
-      nva:Label ?Label .
-}

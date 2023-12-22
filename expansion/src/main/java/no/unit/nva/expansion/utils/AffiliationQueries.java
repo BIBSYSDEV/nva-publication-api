@@ -6,8 +6,6 @@ import nva.commons.core.ioutils.IoUtils;
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public final class AffiliationQueries {
 
-    public static final String REMOVE_ORGANIZATIONS_LABELS =
-        IoUtils.stringFromResources(Path.of("remove_organization_labels.sparql"));
     public static final String TOP_LEVEL_AFFILIATION =
         IoUtils.stringFromResources(Path.of("topLevelAffiliationQuery.sparql"));
 

@@ -101,7 +101,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     }
 
     public static Set<URI> extractAffiliationUris(JsonNode indexDocument) {
-        ArrayNode root = affiliationNodes(indexDocument);
+        var root = affiliationNodes(indexDocument);
         root.forEach(affiliation -> ((ObjectNode) affiliation).remove("labels"));
         return extractUris(root, "id");
     }

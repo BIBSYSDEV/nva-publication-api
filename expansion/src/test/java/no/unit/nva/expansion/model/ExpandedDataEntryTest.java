@@ -162,25 +162,20 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
         var regeneratedPublication = objectMapper.readValue(expandedResourceAsJson, Publication.class);
 
+        var originalTree = objectMapper.readTree(publication.toString());
+        var actualTree = objectMapper.readTree(regeneratedPublication.toString());
 
-        var jsonOriginal = attempt(() -> objectMapper.writeValueAsString(publication)).orElseThrow();
-        var jsonActual = attempt(() -> objectMapper.writeValueAsString(regeneratedPublication)).orElseThrow();
+        removeLabels(originalTree);
+        removeLabels(actualTree);
 
-        JsonNode originalTree = objectMapper.readTree(jsonOriginal);
-        JsonNode actualTree = objectMapper.readTree(jsonActual);
-        // Iterate over the contributors and remove the labels from each affiliation
-        originalTree.get("entityDescription").get("contributors")
+        JSONAssert.assertEquals(originalTree.asText(), actualTree.asText(), false);
+    }
+
+    private static void removeLabels(JsonNode actualTree) {
+        actualTree.get("entityDescription").get("contributors")
             .forEach(contributor -> contributor.get("affiliations")
-                                        .forEach(affiliation -> ((ObjectNode) affiliation).remove("labels")));
-
-        actualTree.get("entityDescription").get("contributors").forEach(contributor ->
-                                                                            contributor.get("affiliations").forEach(affiliation ->
-                                                                                                                        ((ObjectNode) affiliation).remove("labels")));
-
-        // Convert the trees back to JSON strings
-        jsonOriginal = objectMapper.writeValueAsString(originalTree);
-        jsonActual = objectMapper.writeValueAsString(actualTree);
-        JSONAssert.assertEquals(jsonOriginal, jsonActual, false);
+                                        .forEach(affiliation -> ((ObjectNode) affiliation)
+                                                                    .remove("labels")));
     }
 
     @ParameterizedTest(name = "Expanded resource should inherit type from publication for instance type {0}")

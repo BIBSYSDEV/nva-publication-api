@@ -15,7 +15,6 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RiotException;
-import org.apache.jena.update.UpdateAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,10 +45,6 @@ public class FramedJsonGenerator {
         if (affiliations instanceof ObjectNode) {
             ((ObjectNode) affiliations).putObject("labels");
         }
-    }
-
-    private void removeOrganizationLabels(Model model) {
-        UpdateAction.parseExecute(AffiliationQueries.REMOVE_ORGANIZATIONS_LABELS, model);
     }
 
     public String getFramedJson() {
