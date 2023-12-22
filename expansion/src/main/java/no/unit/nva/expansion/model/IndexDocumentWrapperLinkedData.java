@@ -83,26 +83,6 @@ public class IndexDocumentWrapperLinkedData {
                    .stream()
                    .map(this::addPotentiallyMissingContext)
                    .collect(toList());
-//        return fetchFundings(indexDocument).stream()
-//                   .map(IoUtils::stringToStream)
-//                   .map(this::addPotentiallyMissingContext)
-//                   .collect(toList());
-    }
-
-    private Collection<String> fetchFundings(JsonNode indexDocument) {
-        var uris = extractUris(fundingNodes(indexDocument), SOURCE);
-        var mapOfUrisAndBodies = new HashMap<URI, String>();
-        for (URI uri : uris) {
-            mapOfUrisAndBodies.put(uri, this.fetchUri(uri));
-        }
-        mapOfUrisAndBodies.replaceAll(IndexDocumentWrapperLinkedData::replaceNotFetchedFundingSource);
-        return mapOfUrisAndBodies.values();
-    }
-
-    private static String replaceNotFetchedFundingSource(URI key, String value) {
-        return nonNull(value)
-                   ? value
-                   : String.valueOf(new FundingSource(key));
     }
 
     @Deprecated
@@ -169,11 +149,6 @@ public class IndexDocumentWrapperLinkedData {
     private Optional<String> fetch(URI externalReference) {
         return uriRetriever.getRawContent(externalReference, APPLICATION_JSON_LD.toString());
     }
-
-    private String fetchUri(URI externalReference) {
-        return uriRetriever.getRawContent(externalReference, APPLICATION_JSON_LD.toString()).orElse(null);
-    }
-
     private Optional<CristinOrganization> fetchOrganization(URI externalReference) {
         var rawContent = uriRetriever.getRawContent(externalReference, MEDIA_TYPE_JSON_LD_V2);
         return rawContent.isPresent()
