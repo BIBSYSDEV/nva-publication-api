@@ -1,5 +1,7 @@
 package no.unit.nva.publication.indexing;
 
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static java.net.HttpURLConnection.HTTP_OK;
 import static java.util.Objects.isNull;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
@@ -13,6 +15,7 @@ import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPu
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSampleSeries;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
@@ -27,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -40,6 +44,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.net.URI;
+import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Comparator;
@@ -74,7 +79,6 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.external.services.UriRetriever;
-import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UriWrapper;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
@@ -243,19 +247,25 @@ class ExpandedResourceTest {
         final var sourceUri1 = publication.getFundings().get(1).getSource();
         final var mockUriRetriever = mock(UriRetriever.class);
 
-        mockGetRawContentResponse(
-            mockUriRetriever,
-            sourceUri0,
-            getPublicationSampleFundingSource(sourceUri0));
-        mockGetRawContentResponse(
-            mockUriRetriever,
-            sourceUri1,
-            getPublicationSampleFundingSource(sourceUri1));
+        var firstResponse = mockResponseWithStatusCodeAndBody(HTTP_OK, getPublicationSampleFundingSource(sourceUri0));
+
+        var secondResponse = mockResponseWithStatusCodeAndBody(HTTP_OK, getPublicationSampleFundingSource(sourceUri1));
+        when(mockUriRetriever.fetchResponse(sourceUri0, APPLICATION_JSON_LD.toString()))
+            .thenReturn(Optional.of(firstResponse));
+        when(mockUriRetriever.fetchResponse(sourceUri1, APPLICATION_JSON_LD.toString()))
+            .thenReturn(Optional.of(secondResponse));
 
         final var framedResultNode = fromPublication(mockUriRetriever, publication).asJsonNode();
         final var extractedSourceId = extractSourceId(framedResultNode);
 
         assertThat(extractedSourceId, hasItems(sourceUri0, sourceUri1));
+    }
+
+    private static HttpResponse mockResponseWithStatusCodeAndBody(int statusCode, String body) {
+        var firstResponse = mock(HttpResponse.class);
+        when(firstResponse.statusCode()).thenReturn(statusCode);
+        when(firstResponse.body()).thenReturn(body);
+        return firstResponse;
     }
 
     @Test
@@ -265,16 +275,15 @@ class ExpandedResourceTest {
         final var sourceUri0 = publication.getFundings().get(0).getSource();
         final var sourceUri1 = publication.getFundings().get(1).getSource();
         final var mockUriRetriever = mock(UriRetriever.class);
+        var firstResponse = mockResponseWithStatusCodeAndBody(
+            HTTP_OK, getPublicationSampleFundingSourceWithoutContext(sourceUri0));
+        var secondResponse = mockResponseWithStatusCodeAndBody(
+            HTTP_OK, getPublicationSampleFundingSourceWithoutContext(sourceUri1));
 
-        mockGetRawContentResponse(
-            mockUriRetriever,
-            sourceUri0,
-            getPublicationSampleFundingSourceWithoutContext(sourceUri0));
-
-        mockGetRawContentResponse(
-            mockUriRetriever,
-            sourceUri1,
-            getPublicationSampleFundingSourceWithoutContext(sourceUri1));
+        when(mockUriRetriever.fetchResponse(sourceUri0, APPLICATION_JSON_LD.toString()))
+            .thenReturn(Optional.of(firstResponse));
+        when(mockUriRetriever.fetchResponse(sourceUri1, APPLICATION_JSON_LD.toString()))
+            .thenReturn(Optional.of(secondResponse));
 
         assertHasExpectedFundings(
             sourceUri0,
@@ -283,11 +292,12 @@ class ExpandedResourceTest {
     }
 
     @Test
-    void shouldReturnIndexDocumentWithValidExpandedFundingSourceWhenFailingFetchingFunding()
+    void shouldReturnIndexDocumentWithValidExpandedFundingSourceWhenFetchFundingReturnNotFound()
         throws JsonProcessingException {
         final var publication = randomBookWithConfirmedPublisher();
         final var mockUriRetriever = mock(UriRetriever.class);
-
+        var httpResponse = mockResponseWithStatusCodeAndBody(HTTP_NOT_FOUND, randomString());
+        when(mockUriRetriever.fetchResponse(any(), anyString())).thenReturn(Optional.of(httpResponse));
         var expandedResource = fromPublication(mockUriRetriever, publication).asJsonNode();
 
         assertTrue(expandedResource.at(JsonPointer.compile("/fundings/0/source")).has("id"));

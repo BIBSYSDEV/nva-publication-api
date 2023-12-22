@@ -1,5 +1,6 @@
 package no.unit.nva.expansion.model;
 
+import static java.net.HttpURLConnection.HTTP_OK;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toList;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
@@ -19,6 +20,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -164,7 +166,13 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     private String fetchUri(URI externalReference) {
-        return uriRetriever.getRawContent(externalReference, APPLICATION_JSON_LD.toString()).orElse(null);
+        var response = uriRetriever.fetchResponse(externalReference, APPLICATION_JSON_LD.toString());
+        return Optional.ofNullable(response)
+                   .filter(Optional::isPresent)
+                   .map(Optional::get)
+                   .filter(httpResponse -> httpResponse.statusCode() == HTTP_OK)
+                   .map(HttpResponse::body)
+                   .orElse(null);
     }
 
     private Optional<CristinOrganization> fetchOrganization(URI externalReference) {
