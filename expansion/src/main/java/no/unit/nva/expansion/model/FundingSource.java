@@ -15,12 +15,13 @@ public class FundingSource implements JsonSerializable {
     public static final String TYPE = "FundingSource";
     private final URI id;
 
-    public static FundingSource withId(URI id) {
-        return new FundingSource(id);
-    }
     @JsonCreator
     public FundingSource(@JsonProperty("id") URI id) {
         this.id = id;
+    }
+
+    public static FundingSource withId(URI id) {
+        return new FundingSource(id);
     }
 
     public URI getId() {

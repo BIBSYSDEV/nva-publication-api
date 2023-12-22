@@ -83,13 +83,13 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     private Collection<String> fetchFundings(JsonNode indexDocument) {
-        var uris = extractUris(fundingNodes(indexDocument), SOURCE);
-        var mapOfUrisAndBodies = new HashMap<URI, String>();
-        for (URI uri : uris) {
-            mapOfUrisAndBodies.put(uri, this.fetchUri(uri));
+        var fundingIdentifiers = extractUris(fundingNodes(indexDocument), SOURCE);
+        var fundingMap = new HashMap<URI, String>();
+        for (URI uri : fundingIdentifiers) {
+            fundingMap.put(uri, this.fetchUri(uri));
         }
-        mapOfUrisAndBodies.replaceAll(IndexDocumentWrapperLinkedData::replaceNotFetchedFundingSource);
-        return mapOfUrisAndBodies.values();
+        fundingMap.replaceAll(IndexDocumentWrapperLinkedData::replaceNotFetchedFundingSource);
+        return fundingMap.values();
     }
 
     private static String replaceNotFetchedFundingSource(URI key, String value) {
