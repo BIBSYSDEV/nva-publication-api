@@ -1,5 +1,6 @@
 package no.unit.nva.expansion.model;
 
+import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toList;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.extractAffiliationUris;
@@ -20,9 +21,13 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.expansion.utils.FramedJsonGenerator;
 import no.unit.nva.expansion.utils.SearchIndexFrame;
@@ -78,6 +83,26 @@ public class IndexDocumentWrapperLinkedData {
                    .stream()
                    .map(this::addPotentiallyMissingContext)
                    .collect(toList());
+//        return fetchFundings(indexDocument).stream()
+//                   .map(IoUtils::stringToStream)
+//                   .map(this::addPotentiallyMissingContext)
+//                   .collect(toList());
+    }
+
+    private Collection<String> fetchFundings(JsonNode indexDocument) {
+        var uris = extractUris(fundingNodes(indexDocument), SOURCE);
+        var mapOfUrisAndBodies = new HashMap<URI, String>();
+        for (URI uri : uris) {
+            mapOfUrisAndBodies.put(uri, this.fetchUri(uri));
+        }
+        mapOfUrisAndBodies.replaceAll(IndexDocumentWrapperLinkedData::replaceNotFetchedFundingSource);
+        return mapOfUrisAndBodies.values();
+    }
+
+    private static String replaceNotFetchedFundingSource(URI key, String value) {
+        return nonNull(value)
+                   ? value
+                   : String.valueOf(new FundingSource(key));
     }
 
     @Deprecated
@@ -143,6 +168,10 @@ public class IndexDocumentWrapperLinkedData {
 
     private Optional<String> fetch(URI externalReference) {
         return uriRetriever.getRawContent(externalReference, APPLICATION_JSON_LD.toString());
+    }
+
+    private String fetchUri(URI externalReference) {
+        return uriRetriever.getRawContent(externalReference, APPLICATION_JSON_LD.toString()).orElse(null);
     }
 
     private Optional<CristinOrganization> fetchOrganization(URI externalReference) {

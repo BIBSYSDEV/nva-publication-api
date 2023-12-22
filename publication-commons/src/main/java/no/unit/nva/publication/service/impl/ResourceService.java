@@ -151,6 +151,7 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResource(newResource);
     }
 
+    @JacocoGenerated
     public void setStatusOnNewPublication(UserInstance userInstance,
                                           Publication fromPublication,
                                           Resource toResource) throws BadRequestException {
