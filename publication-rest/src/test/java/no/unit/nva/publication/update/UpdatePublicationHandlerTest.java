@@ -798,7 +798,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withPathParameters(pathParameters)
                 .withCurrentCustomer(customerId)
                 .withBody(publicationUpdate)
-                .withAccessRights(customerId, PUBLISH_DEGREE.name(), PUBLISH_DEGREE.name())
+                .withAccessRights(customerId, PUBLISH_DEGREE, PUBLISH_DEGREE)
                 .build();
     }
 
@@ -810,7 +810,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withPathParameters(pathParameters)
                 .withCurrentCustomer(customerId)
                 .withBody(publicationUpdate)
-                .withAccessRights(customerId, EDIT_ALL_NON_DEGREE_RESOURCES.toString())
+                .withAccessRights(customerId, EDIT_ALL_NON_DEGREE_RESOURCES)
                 .withUserName(SOME_CURATOR)
                 .build();
     }
@@ -823,7 +823,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withPathParameters(pathParameters)
                 .withCurrentCustomer(customerId)
                 .withBody(publicationUpdate)
-                .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.toString())
+                .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES)
                 .withUserName(SOME_CURATOR)
                 .build();
     }
@@ -839,7 +839,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withCurrentCustomer(customerId)
                 .withPersonCristinId(cristinId)
                 .withBody(publicationUpdate)
-                .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.name())
+                .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES)
                 .build();
     }
 
@@ -864,7 +864,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withPathParameters(pathParameters)
                 .withCurrentCustomer(customerId)
                 .withBody(publicationUpdate)
-                .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_DEGREE.name())
+                .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES, PUBLISH_DEGREE)
                 .build();
     }
 
@@ -990,7 +990,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withPathParameters(pathParameters)
                 .withCurrentCustomer(customerId)
                 .withBody(publicationUpdate)
-                .withAccessRights(customerId, APPROVE_DOI_REQUEST.name())
+                .withAccessRights(customerId, APPROVE_DOI_REQUEST)
                 .build();
     }
 }

@@ -542,7 +542,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         var request = new HandlerRequestBuilder<Void>(restApiMapper)
                    .withUserName(username)
                    .withCurrentCustomer(institutionId)
-                   .withAccessRights(institutionId, accessRight.name())
+                   .withAccessRights(institutionId, accessRight)
                    .withPathParameters(
                        Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString()));
 
@@ -561,7 +561,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
                           .withUserName(username)
                           .withQueryParameters(Map.of("duplicate", duplicateOf.toString()))
                           .withCurrentCustomer(institutionId)
-                          .withAccessRights(institutionId, accessRight.name())
+                          .withAccessRights(institutionId, accessRight)
                           .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString()));
 
         return request.build();

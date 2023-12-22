@@ -53,7 +53,7 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
     }
     
     private static boolean userIsAuthorizedToViewOtherUsersTickets(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString());
+        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST);
     }
     
     private List<TicketDto> fetchTickets(RequestInfo requestInfo,

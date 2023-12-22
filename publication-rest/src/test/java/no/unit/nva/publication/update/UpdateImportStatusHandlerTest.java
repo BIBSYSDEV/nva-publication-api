@@ -110,7 +110,7 @@ public class UpdateImportStatusHandlerTest extends ResourcesLocalTest {
                    .withUserName(importCandidate.getResourceOwner().getOwner().getValue())
                    .withCurrentCustomer(customerId)
                    .withBody(toImportStatusDto(importStatus))
-                   .withAccessRights(customerId, accessRight.name())
+                   .withAccessRights(customerId, accessRight)
                    .withPathParameters(pathParameters)
                    .build();
     }
