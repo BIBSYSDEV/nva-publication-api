@@ -379,7 +379,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
             .withCurrentCustomer(testOrgId)
             .withTopLevelCristinOrgId(topLevelCristinOrgId)
             .withBody(request)
-            .withAccessRights(testOrgId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_DEGREE.name())
+            .withAccessRights(testOrgId, EDIT_OWN_INSTITUTION_RESOURCES, PUBLISH_DEGREE)
             .build();
     }
 
@@ -400,7 +400,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
             .withCurrentCustomer(testOrgId)
             .withTopLevelCristinOrgId(topLevelCristinOrgId)
             .withBody(request)
-            .withAccessRights(testOrgId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_DEGREE.name())
+            .withAccessRights(testOrgId, EDIT_OWN_INSTITUTION_RESOURCES, PUBLISH_DEGREE)
             .build();
     }
 

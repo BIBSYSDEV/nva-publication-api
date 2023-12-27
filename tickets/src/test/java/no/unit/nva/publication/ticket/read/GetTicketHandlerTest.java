@@ -286,7 +286,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
         return createHttpRequest(ticket)
                    .withCustomerId(customerId)
                    .withNvaUsername(randomString())
-                   .withAccessRights(ticket.getCustomerId(), accessRight.toString());
+                   .withAccessRights(ticket.getCustomerId(), accessRight);
     }
 
     private TicketEntry createPersistedTicket(Class<? extends TicketEntry> ticketType, Publication publication)

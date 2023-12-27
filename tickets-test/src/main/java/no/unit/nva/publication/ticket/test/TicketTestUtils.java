@@ -43,13 +43,13 @@ public final class TicketTestUtils {
     }
 
     public static Stream<Arguments> ticketTypeAndAccessRightProvider() {
-        return Stream.of(Arguments.of(DoiRequest.class, AccessRight.APPROVE_DOI_REQUEST.toString()),
-                Arguments.of(PublishingRequestCase.class, AccessRight.APPROVE_PUBLISH_REQUEST.toString()));
+        return Stream.of(Arguments.of(DoiRequest.class, AccessRight.APPROVE_DOI_REQUEST),
+                Arguments.of(PublishingRequestCase.class, AccessRight.APPROVE_PUBLISH_REQUEST));
     }
 
     public static Stream<Arguments> invalidAccessRightForTicketTypeProvider() {
-        return Stream.of(Arguments.of(DoiRequest.class, AccessRight.APPROVE_PUBLISH_REQUEST.toString()),
-                Arguments.of(PublishingRequestCase.class, AccessRight.APPROVE_DOI_REQUEST.toString()));
+        return Stream.of(Arguments.of(DoiRequest.class, AccessRight.APPROVE_PUBLISH_REQUEST),
+                Arguments.of(PublishingRequestCase.class, AccessRight.APPROVE_DOI_REQUEST));
     }
 
     public static Publication createNonPersistedPublication(PublicationStatus status) {

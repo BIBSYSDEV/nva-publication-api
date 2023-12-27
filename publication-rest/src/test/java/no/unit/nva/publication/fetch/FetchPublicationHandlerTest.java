@@ -365,7 +365,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
                    .withHeaders(Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType()))
                    .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
                    .withCurrentCustomer(publication.getPublisher().getId())
-                   .withAccessRights(publication.getPublisher().getId(), AccessRight.APPROVE_DOI_REQUEST.toString())
+                   .withAccessRights(publication.getPublisher().getId(), AccessRight.APPROVE_DOI_REQUEST)
                    .build();
     }
 

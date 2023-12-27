@@ -2,6 +2,8 @@ package no.unit.nva.publication.messages.create;
 
 import static java.util.Objects.isNull;
 import static no.unit.nva.publication.messages.MessageApiConfig.LOCATION_HEADER;
+import static nva.commons.apigateway.AccessRight.APPROVE_DOI_REQUEST;
+import static nva.commons.apigateway.AccessRight.APPROVE_PUBLISH_REQUEST;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
@@ -19,7 +21,6 @@ import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.TicketService;
-import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -30,8 +31,6 @@ import nva.commons.core.JacocoGenerated;
 
 public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest, Void> {
 
-    private static final String ACCESS_RIGHT_APPROVE_PUBLISH_REQUEST = AccessRight.APPROVE_PUBLISH_REQUEST.toString();
-    private static final String ACCESS_RIGHT_APPROVE_DOI_REQUEST = AccessRight.APPROVE_DOI_REQUEST.toString();
     private final MessageService messageService;
     private final TicketService ticketService;
 
@@ -83,11 +82,11 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
     }
 
     private static boolean userIsAuthorizedToApprovePublishingRequest(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(ACCESS_RIGHT_APPROVE_PUBLISH_REQUEST);
+        return requestInfo.userIsAuthorized(APPROVE_PUBLISH_REQUEST);
     }
 
     private static boolean userIsAuthorizedToApproveDoiRequest(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(ACCESS_RIGHT_APPROVE_DOI_REQUEST);
+        return requestInfo.userIsAuthorized(APPROVE_DOI_REQUEST);
     }
 
     private void updateStatusToPendingWhenCompletedGeneralSupportRequest(TicketEntry ticket) {

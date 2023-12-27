@@ -700,7 +700,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                    .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
                    .withUserName(userCredentials.getUsername())
                    .withCurrentCustomer(userCredentials.getOrganizationUri())
-                   .withAccessRights(publication.getPublisher().getId(), AccessRight.APPROVE_DOI_REQUEST.name())
+                   .withAccessRights(publication.getPublisher().getId(), AccessRight.APPROVE_DOI_REQUEST)
                    .build();
     }
 
@@ -712,7 +712,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
                    .withBody(ticketDto)
                    .withAuthorizerClaim(PERSON_AFFILIATION_CLAIM, customerId.toString())
-                   .withAccessRights(customerId, accessRight.toString())
+                   .withAccessRights(customerId, accessRight)
                    .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
                    .withUserName(randomString())
                    .withCurrentCustomer(customerId)

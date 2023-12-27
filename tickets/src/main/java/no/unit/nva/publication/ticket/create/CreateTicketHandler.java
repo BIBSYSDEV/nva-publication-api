@@ -64,7 +64,7 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
         logger.info("ownerAffiliation {}", requestInfo.getPersonAffiliation());
         newTicket.setOwnerAffiliation(requestInfo.getPersonAffiliation());
         var customer = requestInfo.getCurrentCustomer();
-        var isCurator = requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.name());
+        var isCurator = requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST);
         var persistedTicket = ticketResolver.resolveAndPersistTicket(newTicket, publication, customer, isCurator);
         var ticketLocation = createTicketLocation(publicationIdentifier, persistedTicket);
         addAdditionalHeaders(() -> Map.of(LOCATION_HEADER, ticketLocation));
@@ -95,8 +95,8 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
     }
 
     private static boolean hasValidAccessRights(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString())
-               || requestInfo.userIsAuthorized(AccessRight.REJECT_DOI_REQUEST.toString());
+        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST)
+               || requestInfo.userIsAuthorized(AccessRight.REJECT_DOI_REQUEST);
     }
 
     private Publication fetchPublication(SortableIdentifier publicationIdentifier, UserInstance user,
