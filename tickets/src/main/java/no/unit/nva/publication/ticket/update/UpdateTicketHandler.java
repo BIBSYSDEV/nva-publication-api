@@ -4,8 +4,8 @@ import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.ticket.TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME;
-import static nva.commons.apigateway.AccessRight.APPROVE_DOI_REQUEST;
-import static nva.commons.apigateway.AccessRight.APPROVE_PUBLISH_REQUEST;
+import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
+import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
@@ -121,11 +121,11 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     }
 
     private static boolean userIsAuthorizedToApprovePublishingRequest(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(APPROVE_PUBLISH_REQUEST);
+        return requestInfo.userIsAuthorized(MANAGE_PUBLISHING_REQUESTS);
     }
 
     private static boolean userIsAuthorizedToApproveDoiRequest(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(APPROVE_DOI_REQUEST);
+        return requestInfo.userIsAuthorized(MANAGE_DOI);
     }
 
     private static boolean isUserFromSameCustomerAsTicket(RequestInfo requestInfo, TicketEntry ticket)
@@ -220,7 +220,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     }
 
     private boolean userHasAccessRightToOperateOnTicket(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(APPROVE_DOI_REQUEST);
+        return requestInfo.userIsAuthorized(MANAGE_DOI);
     }
 
     private boolean userIsTicketOwner(TicketEntry ticket, String userName) {

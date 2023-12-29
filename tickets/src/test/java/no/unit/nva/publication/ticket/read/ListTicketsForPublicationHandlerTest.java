@@ -169,7 +169,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .withPathParameters(constructPathParameters(publication))
                    .withCurrentCustomer(customerId)
                    .withUserName(randomString())
-                   .withAccessRights(customerId, AccessRight.APPROVE_DOI_REQUEST)
+                   .withAccessRights(customerId, AccessRight.MANAGE_DOI)
                    .build();
     }
 
@@ -179,7 +179,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .withPathParameters(constructPathParameters(publication))
                    .withCurrentCustomer(publication.getPublisher().getId())
                    .withUserName(randomString())
-                   .withAccessRights(publication.getPublisher().getId(), AccessRight.APPROVE_DOI_REQUEST)
+                   .withAccessRights(publication.getPublisher().getId(), AccessRight.MANAGE_DOI)
                    .build();
     }
 

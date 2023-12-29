@@ -77,7 +77,7 @@ public class UpdateImportStatusHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnNotFoundWhenAttemptingToUpdateStatusOnNonExistingImportCandidate() throws IOException {
         var importCandidate = createImportCandidate();
-        var request = request(importCandidate, notApplicableImportStatus(), AccessRight.PROCESS_IMPORT_CANDIDATE);
+        var request = request(importCandidate, notApplicableImportStatus(), AccessRight.MANAGE_IMPORT);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, ImportCandidate.class);
 
@@ -87,7 +87,7 @@ public class UpdateImportStatusHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldUpdateImportStatusSuccessfully() throws NotFoundException, IOException {
         var importCandidate = createPersistedImportCandidate();
-        var request = request(importCandidate, notApplicableImportStatus(), AccessRight.PROCESS_IMPORT_CANDIDATE);
+        var request = request(importCandidate, notApplicableImportStatus(), AccessRight.MANAGE_IMPORT);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, ImportCandidate.class);
         var updatedImportCandidate = importCandidateService

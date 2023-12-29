@@ -10,7 +10,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomLocalDate;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import com.amazonaws.services.dynamodbv2.xspec.S;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;

@@ -263,12 +263,12 @@ class PublicationPermissionStrategyTest {
     }
 
     private static Function<AccessRight, String> getCognitoGroup(URI institutionId) {
-        return accessRight -> accessRight.name() + AT + institutionId.toString();
+        return accessRight -> accessRight.toPersistedString() + AT + institutionId.toString();
     }
 
     private List<AccessRight> getCuratorWithPublishDegreeAccessRight() {
         var curatorAccessRight = getCuratorAccessRights();
-        curatorAccessRight.add(AccessRight.PUBLISH_DEGREE);
+        curatorAccessRight.add(AccessRight.MANAGE_DEGREE);
         return curatorAccessRight;
     }
 
@@ -331,14 +331,14 @@ class PublicationPermissionStrategyTest {
 
     private List<AccessRight> getEditorAccessRights() {
         var accessRights = new ArrayList<AccessRight>();
-        accessRights.add(AccessRight.PUBLISH_DEGREE);
-        accessRights.add(AccessRight.EDIT_ALL_NON_DEGREE_RESOURCES);
+        accessRights.add(AccessRight.MANAGE_DEGREE);
+        accessRights.add(AccessRight.MANAGE_RESOURCES_ALL);
         return accessRights;
     }
 
     private List<AccessRight> getCuratorAccessRights() {
         var accessRights = new ArrayList<AccessRight>();
-        accessRights.add(AccessRight.EDIT_OWN_INSTITUTION_RESOURCES);
+        accessRights.add(AccessRight.MANAGE_RESOURCES_ALL);
         return accessRights;
     }
 

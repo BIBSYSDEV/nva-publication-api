@@ -15,6 +15,7 @@ public class Customer {
         this.name = name;
 
     }
+
     public String getName() {
         return name;
     }

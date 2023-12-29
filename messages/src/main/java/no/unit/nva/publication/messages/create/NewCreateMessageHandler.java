@@ -2,8 +2,8 @@ package no.unit.nva.publication.messages.create;
 
 import static java.util.Objects.isNull;
 import static no.unit.nva.publication.messages.MessageApiConfig.LOCATION_HEADER;
-import static nva.commons.apigateway.AccessRight.APPROVE_DOI_REQUEST;
-import static nva.commons.apigateway.AccessRight.APPROVE_PUBLISH_REQUEST;
+import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
+import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
@@ -82,11 +82,11 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
     }
 
     private static boolean userIsAuthorizedToApprovePublishingRequest(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(APPROVE_PUBLISH_REQUEST);
+        return requestInfo.userIsAuthorized(MANAGE_PUBLISHING_REQUESTS);
     }
 
     private static boolean userIsAuthorizedToApproveDoiRequest(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(APPROVE_DOI_REQUEST);
+        return requestInfo.userIsAuthorized(MANAGE_DOI);
     }
 
     private void updateStatusToPendingWhenCompletedGeneralSupportRequest(TicketEntry ticket) {

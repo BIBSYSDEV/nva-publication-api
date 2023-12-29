@@ -7,8 +7,8 @@ import static no.unit.nva.publication.messages.MessageApiConfig.LOCATION_HEADER;
 import static no.unit.nva.publication.messages.MessageApiConfig.TICKET_IDENTIFIER_PATH_PARAMETER;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static nva.commons.apigateway.AccessRight.APPROVE_DOI_REQUEST;
-import static nva.commons.apigateway.AccessRight.APPROVE_PUBLISH_REQUEST;
+import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
+import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
@@ -110,7 +110,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var sender = UserInstance.create(randomString(), randomUri());
         var expectedText = randomString();
         var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText,
-                                                             APPROVE_DOI_REQUEST);
+                                                             MANAGE_DOI);
 
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -127,7 +127,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
         var expectedText = randomString();
         var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText,
-                                                             APPROVE_DOI_REQUEST, APPROVE_PUBLISH_REQUEST);
+                                                             MANAGE_DOI, MANAGE_PUBLISHING_REQUESTS);
 
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -149,7 +149,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var expectedText = randomString();
         var request = createNewMessageRequestForElevatedUser(publication, ticket, curatorAndOwner, expectedText,
-                                                             APPROVE_DOI_REQUEST, APPROVE_PUBLISH_REQUEST);
+                                                             MANAGE_DOI, MANAGE_PUBLISHING_REQUESTS);
 
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -191,7 +191,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var curator = UserInstance.create("CURATOR", publication.getPublisher().getId());
         var request = createNewMessageRequestForElevatedUser(publication, ticket, curator, randomString(),
-                                                             APPROVE_DOI_REQUEST, APPROVE_PUBLISH_REQUEST);
+                                                             MANAGE_DOI, MANAGE_PUBLISHING_REQUESTS);
         handler.handleRequest(request, output, context);
         var updatedTicket = ticket.fetch(ticketService);
         assertThat(updatedTicket.getViewedBy(), hasSize(1));
