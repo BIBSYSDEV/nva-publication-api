@@ -338,7 +338,7 @@ class PublicationPermissionStrategyTest {
 
     private List<AccessRight> getCuratorAccessRights() {
         var accessRights = new ArrayList<AccessRight>();
-        accessRights.add(AccessRight.MANAGE_RESOURCES_ALL);
+        accessRights.add(AccessRight.MANAGE_RESOURCES_STANDARD);
         return accessRights;
     }
 
