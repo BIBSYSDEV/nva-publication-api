@@ -306,7 +306,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var publicationOwner = publication.getPublisher().getId();
         var requestBody = constructDto(DoiRequest.class);
         var request = createHttpTicketCreationRequestWithApprovedAccessRight(requestBody, publication, publicationOwner,
-                                                                             AccessRight.APPROVE_DOI_REQUEST);
+                                                                             AccessRight.MANAGE_DOI);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
@@ -318,7 +318,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var publicationOwner = publication.getPublisher().getId();
         var requestBody = constructDto(DoiRequest.class);
         var request = createHttpTicketCreationRequestWithApprovedAccessRight(requestBody, publication, publicationOwner,
-                                                                             AccessRight.REJECT_DOI_REQUEST);
+                                                                             AccessRight.MANAGE_DOI);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
@@ -332,7 +332,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(customerId, is(not(equalTo(publication.getPublisher().getId()))));
         var requestBody = constructDto(DoiRequest.class);
         var request = createHttpTicketCreationRequestWithApprovedAccessRight(requestBody, publication, customerId,
-                                                                             AccessRight.REJECT_DOI_REQUEST);
+                                                                             AccessRight.MANAGE_DOI);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
@@ -700,7 +700,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                    .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
                    .withUserName(userCredentials.getUsername())
                    .withCurrentCustomer(userCredentials.getOrganizationUri())
-                   .withAccessRights(publication.getPublisher().getId(), AccessRight.APPROVE_DOI_REQUEST)
+                   .withAccessRights(publication.getPublisher().getId(), AccessRight.MANAGE_DOI)
                    .build();
     }
 

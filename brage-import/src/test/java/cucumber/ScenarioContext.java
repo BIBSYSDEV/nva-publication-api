@@ -2,10 +2,8 @@ package cucumber;
 
 import static java.util.Objects.isNull;
 import static nva.commons.core.attempt.Try.attempt;
-import io.cucumber.java.bs.A;
 import java.util.Set;
 import no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
