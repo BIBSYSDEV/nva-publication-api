@@ -112,7 +112,7 @@ public final class BrageNvaMapper {
     }
 
     private static List<String> filterOutEmptyValues(List<String> descriptions) {
-        return descriptions.stream().filter(StringUtils::isBlank).toList();
+        return descriptions.stream().filter(StringUtils::isNotBlank).toList();
     }
 
     private static List<AssociatedArtifact> extractAssociatedArtifacts(Record brageRecord) {
