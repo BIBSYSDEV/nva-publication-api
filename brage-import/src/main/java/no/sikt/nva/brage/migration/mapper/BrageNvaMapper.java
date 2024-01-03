@@ -50,6 +50,7 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
 
@@ -111,7 +112,7 @@ public final class BrageNvaMapper {
     }
 
     private static List<String> filterOutEmptyValues(List<String> descriptions) {
-        return descriptions.stream().filter(string -> !string.isBlank()).toList();
+        return descriptions.stream().filter(StringUtils::isBlank).toList();
     }
 
     private static List<AssociatedArtifact> extractAssociatedArtifacts(Record brageRecord) {
