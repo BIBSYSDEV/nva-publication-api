@@ -62,7 +62,11 @@ paths:
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchPublicationFunction.Arn}:live/invocations
-        responses: { }
+        responses:
+          301:
+            statusCode: "301"
+            responseParameters:
+              method.response.header.Location: "integration.response.body.redirect.url"
         httpMethod: POST
         type: AWS_PROXY
       responses:
