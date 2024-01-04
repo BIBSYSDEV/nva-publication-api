@@ -156,6 +156,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     void shouldReturnExpandedResourceWithoutLossOfInformation(Class<?> instanceType)
         throws JsonProcessingException, BadRequestException, JSONException {
         var publication = createPublicationWithoutDoi(instanceType);
+        publication.setFundings(List.of());
         var expandedResource = fromPublication(uriRetriever, publication);
 
         var expandedResourceAsJson = expandedResource.toJsonString();

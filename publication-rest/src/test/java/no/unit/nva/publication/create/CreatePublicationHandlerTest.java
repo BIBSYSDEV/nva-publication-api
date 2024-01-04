@@ -9,8 +9,8 @@ import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.r
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static nva.commons.apigateway.AccessRight.EDIT_OWN_INSTITUTION_RESOURCES;
-import static nva.commons.apigateway.AccessRight.PUBLISH_DEGREE;
+import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -379,7 +379,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
             .withCurrentCustomer(testOrgId)
             .withTopLevelCristinOrgId(topLevelCristinOrgId)
             .withBody(request)
-            .withAccessRights(testOrgId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_DEGREE.name())
+            .withAccessRights(testOrgId, MANAGE_RESOURCES_STANDARD, MANAGE_DEGREE)
             .build();
     }
 
@@ -400,7 +400,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
             .withCurrentCustomer(testOrgId)
             .withTopLevelCristinOrgId(topLevelCristinOrgId)
             .withBody(request)
-            .withAccessRights(testOrgId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_DEGREE.name())
+            .withAccessRights(testOrgId, MANAGE_RESOURCES_STANDARD, MANAGE_DEGREE)
             .build();
     }
 

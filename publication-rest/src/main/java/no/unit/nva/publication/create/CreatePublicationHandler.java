@@ -1,6 +1,6 @@
 package no.unit.nva.publication.create;
 
-import static nva.commons.apigateway.AccessRight.PUBLISH_DEGREE;
+import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -126,7 +126,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
 
     private boolean isThesisAndHasNoRightsToPublishThesAndIsNotExternalClient(CreatePublicationRequest request, RequestInfo requestInfo) {
 
-        return isThesis(request) && !requestInfo.userIsAuthorized(PUBLISH_DEGREE.name()) && !requestInfo.clientIsThirdParty();
+        return isThesis(request) && !requestInfo.userIsAuthorized(MANAGE_DEGREE) && !requestInfo.clientIsThirdParty();
     }
 
     private boolean isThesis(CreatePublicationRequest request) {

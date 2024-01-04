@@ -15,7 +15,7 @@ import nva.commons.apigateway.RequestInfo;
 public abstract class PermissionStrategy {
 
     public static boolean hasAccessRight(RequestInfo requestInfo, AccessRight accessRight) {
-        return requestInfo.userIsAuthorized(accessRight.name());
+        return requestInfo.userIsAuthorized(accessRight);
     }
 
     public abstract boolean hasPermission(RequestInfo requestInfo, Publication publication);

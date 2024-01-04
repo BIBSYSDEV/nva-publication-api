@@ -45,7 +45,7 @@ public class PublishedFileTransformer {
         if (rightsRetentionStrategy.isPresent()) {
             logger.warn("Rights retention strategy for Brage is not supported on record: " + entry.get("identifier"));
         }
-        return NullRightsRetentionStrategy.defaultRightsRetentionStrategy();
+        return NullRightsRetentionStrategy.create();
     }
 
     private static Instant parseDate(String candidate) {

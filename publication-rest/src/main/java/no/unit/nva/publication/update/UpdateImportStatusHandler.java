@@ -55,7 +55,7 @@ public class UpdateImportStatusHandler extends ApiGatewayHandler<ImportStatusDto
     }
 
     private boolean isNotAuthorized(RequestInfo requestInfo) {
-        return !requestInfo.userIsAuthorized(AccessRight.PROCESS_IMPORT_CANDIDATE.name());
+        return !requestInfo.userIsAuthorized(AccessRight.MANAGE_IMPORT);
     }
 
     private void validateAccessRights(RequestInfo requestInfo) throws NotAuthorizedException {
