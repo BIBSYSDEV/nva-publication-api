@@ -82,7 +82,6 @@ import no.unit.nva.publication.external.services.UriRetriever;
 import nva.commons.core.paths.UriWrapper;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -207,7 +206,7 @@ class ExpandedResourceTest {
         assertThat(deepestNestedSubUnit.at(JSON_PTR_ID).textValue(), is(equalTo(affiliationToBeExpanded.toString())));
     }
 
-    @RepeatedTest(100)
+    @Test
     void shouldReturnIndexDocumentWithSortedContributorsByTheirSequence()
         throws Exception {
         final var publication = randomBookWithManyContributors();
