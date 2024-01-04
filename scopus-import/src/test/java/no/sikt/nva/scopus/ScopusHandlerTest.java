@@ -38,7 +38,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
-import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.StringUtils.isNotBlank;
@@ -215,7 +214,6 @@ import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -1173,7 +1171,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
             .forEach(contributor -> assertNull(contributor.getIdentity().getId()));
     }
 
-    @RepeatedTest(100)
+    @Test
     void shouldHandlePiaConnectionException() throws IOException {
         mockedPiaException();
         var s3Event = createNewScopusPublicationEvent();

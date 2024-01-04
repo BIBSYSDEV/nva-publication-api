@@ -5,7 +5,6 @@ import static no.unit.nva.expansion.utils.JsonLdDefaults.frameJsonLd;
 import static no.unit.nva.expansion.utils.JsonLdUtils.toJsonString;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.InputStream;
 import java.util.List;
 import nva.commons.core.JacocoGenerated;
@@ -25,26 +24,10 @@ public class FramedJsonGenerator {
     private final String framedJson;
 
     public FramedJsonGenerator(JsonNode indexDocument, List<InputStream> streams, String frame) {
-        removeAffiliationLabels(indexDocument);
         var indexDocumentInputStream = stringToStream(toJsonString(indexDocument));
         streams.add(indexDocumentInputStream);
         var model = createModel(streams);
         framedJson = frameJsonLd(model, frame);
-    }
-
-    private static void removeAffiliationLabels(JsonNode indexDocument) {
-        indexDocument.at("/entityDescription/contributors")
-            .forEach(contributor -> emptyAffiliationLabels(contributor.get("affiliations")));
-    }
-
-    private static void emptyAffiliationLabels(JsonNode affiliations) {
-        affiliations.forEach(affiliation -> emptyLabels(affiliations));
-    }
-
-    private static void emptyLabels(JsonNode affiliations) {
-        if (affiliations instanceof ObjectNode) {
-            ((ObjectNode) affiliations).putObject("labels");
-        }
     }
 
     public String getFramedJson() {

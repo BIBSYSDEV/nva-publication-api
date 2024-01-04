@@ -150,6 +150,7 @@ public class ResourceService extends ServiceWithTransactions {
         setStatusOnNewPublication(userInstance, inputData, newResource);
         return insertResource(newResource);
     }
+
     @JacocoGenerated
     public void setStatusOnNewPublication(UserInstance userInstance,
                                           Publication fromPublication,
