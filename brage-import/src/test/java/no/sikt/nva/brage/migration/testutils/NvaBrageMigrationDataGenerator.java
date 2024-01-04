@@ -249,6 +249,7 @@ public class NvaBrageMigrationDataGenerator {
         private String articleNumber;
         private String subjectCode;
         private Set<String> hasPart;
+        private List<String> ismnList;
 
         public static URI randomHandle() {
             return UriWrapper.fromUri("http://hdl.handle.net/11250/" + randomInteger()).getUri();
@@ -593,6 +594,11 @@ public class NvaBrageMigrationDataGenerator {
             return this;
         }
 
+        public Builder withIsmn(List<String> ismnList) {
+            this.ismnList = ismnList;
+            return this;
+        }
+
         public Builder withDescription(List<String> descriptions) {
             this.descriptions = descriptions;
             return this;
@@ -753,6 +759,7 @@ public class NvaBrageMigrationDataGenerator {
             publication.getPublicationContext().setSeries(new Series(seriesId));
             publication.setPartOfSeries(seriesNumberRecord);
             publication.setIsbnList(List.of(isbn));
+            publication.setIsmnList(ismnList);
             publication.setIssnList(issnList);
             publication.setJournal(journal);
             return publication;
