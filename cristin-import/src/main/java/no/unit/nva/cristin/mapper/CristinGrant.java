@@ -82,13 +82,13 @@ public class CristinGrant {
     }
 
     private URI generateSourceUri() {
-        return URI.create(NVA_API_DOMAIN +
-                          UnixPath.PATH_DELIMITER +
-                          CRISTIN +
-                          UnixPath.PATH_DELIMITER +
-                          FUNDING_SOURCES +
-                          UnixPath.PATH_DELIMITER +
-                          urlEncode(sourceCode));
+        return URI.create(NVA_API_DOMAIN
+                          + UnixPath.PATH_DELIMITER
+                          + CRISTIN
+                          + UnixPath.PATH_DELIMITER
+                          + FUNDING_SOURCES
+                          + UnixPath.PATH_DELIMITER
+                          + urlEncode(sourceCode));
     }
 
     private Instant convertDateToInstant(Integer yearOrNull) {
