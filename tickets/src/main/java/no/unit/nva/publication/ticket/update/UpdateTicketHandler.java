@@ -3,6 +3,7 @@ package no.unit.nva.publication.ticket.update;
 import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static no.unit.nva.publication.model.business.TicketStatus.CLOSED;
 import static no.unit.nva.publication.ticket.TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME;
 import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
@@ -10,12 +11,16 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.util.List;
 import no.unit.nva.doi.DataCiteDoiClient;
 import no.unit.nva.doi.DoiClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
@@ -187,7 +192,34 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         if (ticket instanceof DoiRequest) {
             doiTicketSideEffects(ticketRequest, requestInfo);
         }
+        if (ticket instanceof PublishingRequestCase publishingRequestCase) {
+            publishingRequestSideEffects(publishingRequestCase, ticketRequest);
+        }
         ticketService.updateTicketStatus(ticket, ticketRequest.getStatus(), getUsername(requestInfo));
+    }
+
+    private void publishingRequestSideEffects(PublishingRequestCase ticket,
+                                              UpdateTicketRequest ticketRequest)
+        throws NotFoundException {
+        if (CLOSED.equals(ticketRequest.getStatus())) {
+            updateUnpublishedFilesToUnpublishable(ticket.getResourceIdentifier());
+        }
+    }
+
+    private void updateUnpublishedFilesToUnpublishable(SortableIdentifier publicationIdentifier)
+        throws NotFoundException {
+        var publication = resourceService.getPublicationByIdentifier(publicationIdentifier);
+        var updatedPublication = publication.copy()
+                                     .withAssociatedArtifacts(updateUnpublishedFiles(publication))
+                                     .build();
+        resourceService.updatePublication(updatedPublication);
+    }
+
+    private List<AssociatedArtifact> updateUnpublishedFiles(Publication publication) {
+        var associatedArtifacts = publication.getAssociatedArtifacts();
+        return associatedArtifacts.stream()
+                   .map(file -> file instanceof UnpublishedFile ? ((UnpublishedFile) file).toUnpublishableFile() : file)
+                   .toList();
     }
 
     private TicketEntry fetchTicketForElevatedUser(SortableIdentifier ticketIdentifier, UserInstance userInstance)
@@ -286,7 +318,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         if (TicketStatus.COMPLETED.equals(status)) {
             findableDoiTicketSideEffects(requestInfo);
         }
-        if (TicketStatus.CLOSED.equals(status) && hasDoi(getPublication(requestInfo))) {
+        if (CLOSED.equals(status) && hasDoi(getPublication(requestInfo))) {
             deleteDoiTicketSideEffects(getPublication(requestInfo));
         }
     }
