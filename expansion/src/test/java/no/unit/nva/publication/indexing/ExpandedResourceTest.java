@@ -67,6 +67,9 @@ import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Series;
+import no.unit.nva.model.funding.ConfirmedFunding;
+import no.unit.nva.model.funding.Funding;
+import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
@@ -290,6 +293,34 @@ class ExpandedResourceTest {
     }
 
     @Test
+    void shouldExpandMultipleFundingsWithTheSameSource() throws JsonProcessingException {
+        final var publication = randomBookWithConfirmedPublisher();
+        var source = randomUri();
+        publication.setFundings(List.of(fundingWithSource(source), fundingWithSource(source)));
+        final var sourceUri0 = publication.getFundings().get(0).getSource();
+        final var sourceUri1 = publication.getFundings().get(1).getSource();
+        final var mockUriRetriever = mock(UriRetriever.class);
+        var firstResponse = mockResponseWithStatusCodeAndBody(
+            HTTP_OK, getPublicationSampleFundingSourceWithoutContext(sourceUri0));
+        var secondResponse = mockResponseWithStatusCodeAndBody(
+            HTTP_OK, getPublicationSampleFundingSourceWithoutContext(sourceUri1));
+
+        when(mockUriRetriever.fetchResponse(sourceUri0, APPLICATION_JSON_LD.toString()))
+            .thenReturn(Optional.of(firstResponse));
+        when(mockUriRetriever.fetchResponse(sourceUri1, APPLICATION_JSON_LD.toString()))
+            .thenReturn(Optional.of(secondResponse));
+
+        var expandedResource = fromPublication(mockUriRetriever, publication).asJsonNode();
+
+        assertTrue(expandedResource.at(JsonPointer.compile("/fundings/1/source")).has("id"));
+        assertTrue(expandedResource.at(JsonPointer.compile("/fundings/0/source")).has("id"));
+    }
+
+    private static Funding fundingWithSource(URI source) {
+        return new FundingBuilder().withId(randomUri()).withSource(source).build();
+    }
+
+    @Test
     void shouldReturnIndexDocumentWithValidExpandedFundingSourceWhenFetchFundingReturnNotFound()
         throws JsonProcessingException {
         final var publication = randomBookWithConfirmedPublisher();
@@ -298,8 +329,8 @@ class ExpandedResourceTest {
         when(mockUriRetriever.fetchResponse(any(), anyString())).thenReturn(Optional.of(httpResponse));
         var expandedResource = fromPublication(mockUriRetriever, publication).asJsonNode();
 
-        assertTrue(expandedResource.at(JsonPointer.compile("/fundings/0/source")).has("id"));
         assertTrue(expandedResource.at(JsonPointer.compile("/fundings/1/source")).has("id"));
+        assertTrue(expandedResource.at(JsonPointer.compile("/fundings/0/source")).has("id"));
     }
 
     @Test
