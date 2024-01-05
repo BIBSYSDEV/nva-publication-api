@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -69,18 +70,38 @@ public class TicketResolver {
                                                           Publication publication,
                                                           boolean isCurator)
         throws ApiGatewayException {
-        if (REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(publishingRequestCase.getWorkflow()) || isCurator) {
+        return isCurator
+                   ? createPublishingRequestForCurator(publishingRequestCase, publication)
+                   : createPublishingRequestForNonCurator(publishingRequestCase, publication);
+    }
+
+    private PublishingRequestCase createPublishingRequestForCurator(PublishingRequestCase publishingRequestCase,
+                                                           Publication publication) throws ApiGatewayException {
+        publishPublicationAndFiles(publication);
+        return createAutoApprovedTicketForCurator(publishingRequestCase);
+    }
+
+    private PublishingRequestCase createPublishingRequestForNonCurator(PublishingRequestCase publishingRequestCase,
+                                                           Publication publication) throws ApiGatewayException {
+        if (REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(publishingRequestCase.getWorkflow())) {
             publishPublicationAndFiles(publication);
             return createAutoApprovedTicket(publishingRequestCase);
         }
         if (REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(publishingRequestCase.getWorkflow())) {
             publishMetadata(publication);
             return createAutoApprovedTicketWhenPublicationContainsMetadataOnly(publishingRequestCase, publication);
+        } else {
+            return (PublishingRequestCase) publishingRequestCase.persistNewTicket(ticketService);
         }
-        return (PublishingRequestCase) publishingRequestCase.persistNewTicket(ticketService);
     }
 
-    private PublishingRequestCase createAutoApprovedTicketWhenPublicationContainsMetadataOnly(TicketEntry ticket,
+    private PublishingRequestCase createAutoApprovedTicketForCurator(PublishingRequestCase publishingRequestCase)
+        throws ApiGatewayException {
+        publishingRequestCase.setAssignee(new Username(publishingRequestCase.getOwner().toString()));
+        return publishingRequestCase.persistAutoComplete(ticketService);
+    }
+
+    private PublishingRequestCase createAutoApprovedTicketWhenPublicationContainsMetadataOnly(PublishingRequestCase ticket,
                                                                                               Publication publication)
         throws ApiGatewayException {
         if (hasNoFiles(publication)) {
@@ -90,8 +111,8 @@ public class TicketResolver {
         }
     }
 
-    private PublishingRequestCase createAutoApprovedTicket(TicketEntry ticket) throws ApiGatewayException {
-        return ((PublishingRequestCase) ticket).persistAutoComplete(ticketService);
+    private PublishingRequestCase createAutoApprovedTicket(PublishingRequestCase ticket) throws ApiGatewayException {
+        return ticket.persistAutoComplete(ticketService);
     }
 
     private PublishingRequestCase updatePublishingRequestWorkflow(PublishingRequestCase ticket, URI customerId)

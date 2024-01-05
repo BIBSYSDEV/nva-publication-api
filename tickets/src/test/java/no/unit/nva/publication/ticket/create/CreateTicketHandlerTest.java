@@ -449,6 +449,24 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     }
 
     @Test
+    void shouldSetCuratorAsAssigneeWhenCuratorPublishesPublicationAndCustomerAllowsPublishingMetadataOnly()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
+        var requestBody = constructDto(PublishingRequestCase.class);
+        var owner = UserInstance.fromPublication(publication);
+        ticketResolver = new TicketResolver(resourceService, ticketService,
+                                            getUriRetriever(getHttpClientWithCustomerAllowingPublishingMetadataOnly(),
+                                                            secretsManagerClient));
+        handler = new CreateTicketHandler(resourceService, ticketResolver);
+        handler.handleRequest(createHttpTicketCreationRequestByCurator(requestBody, publication, owner), output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+        var completedPublishingRequest = fetchTicket(publication, PublishingRequestCase.class);
+
+        assertThat(completedPublishingRequest.getAssignee().getValue(), is(equalTo(completedPublishingRequest.getOwner().toString())));
+    }
+
+    @Test
     void shouldPublishPublicationWhenPublicationIsWithoutFilesAndWhenCustomerAllowsPublishingMetadataOnly()
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithAssociatedLink(DRAFT, resourceService);
@@ -522,6 +540,13 @@ class CreateTicketHandlerTest extends TicketTestLocal {
 
         assertThat(problem.getDetail(), is(equalTo("Unable to fetch customer publishing workflow from upstream")));
         assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(DRAFT)));
+    }
+
+    private PublishingRequestCase fetchTicket(Publication publishedPublication,
+                                              Class<PublishingRequestCase> ticketType) {
+        return ticketService.fetchTicketByResourceIdentifier(publishedPublication.getPublisher().getId(),
+                                                             publishedPublication.getIdentifier(),
+                                                             ticketType).orElseThrow();
     }
 
     private static Username getResourceOwner(Publication publication) {
