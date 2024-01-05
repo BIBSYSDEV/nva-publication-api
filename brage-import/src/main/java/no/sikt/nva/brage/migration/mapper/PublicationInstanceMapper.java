@@ -339,7 +339,7 @@ public final class PublicationInstanceMapper {
     }
 
     private static Ismn createIsmn(String ismn) {
-        return attempt(() -> (new Ismn(ismn))).orElseThrow(e -> new InvalidIsmnRuntimeException(e.getException()));
+        return attempt(() -> new Ismn(ismn)).orElseThrow(e -> new InvalidIsmnRuntimeException(e.getException()));
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenDesignProduct() {
