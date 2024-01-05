@@ -218,7 +218,9 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     private List<AssociatedArtifact> updateUnpublishedFiles(Publication publication) {
         var associatedArtifacts = publication.getAssociatedArtifacts();
         return associatedArtifacts.stream()
-                   .map(file -> file instanceof UnpublishedFile ? ((UnpublishedFile) file).toUnpublishableFile() : file)
+                   .map(file -> file instanceof UnpublishedFile unpublishedFile
+                                    ? unpublishedFile.toUnpublishableFile()
+                                    : file)
                    .toList();
     }
 

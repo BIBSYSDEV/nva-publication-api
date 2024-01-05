@@ -550,7 +550,8 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     void shouldUpdateUnpublishedFilesToUnpublishableWhenRejectingPublishingRequest()
         throws ApiGatewayException, IOException {
 
-        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(PublicationStatus.DRAFT, resourceService);
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
+            PublicationStatus.DRAFT, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
         var closedTicket = ticket.close(new Username(randomString()));
         var httpRequest = createCompleteTicketHttpRequest(closedTicket,
