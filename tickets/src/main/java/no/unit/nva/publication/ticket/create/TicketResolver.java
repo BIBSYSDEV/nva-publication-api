@@ -101,8 +101,8 @@ public class TicketResolver {
         return publishingRequestCase.persistAutoComplete(ticketService);
     }
 
-    private PublishingRequestCase createAutoApprovedTicketWhenPublicationContainsMetadataOnly(PublishingRequestCase ticket,
-                                                                                              Publication publication)
+    private PublishingRequestCase createAutoApprovedTicketWhenPublicationContainsMetadataOnly(
+        PublishingRequestCase ticket, Publication publication)
         throws ApiGatewayException {
         if (hasNoFiles(publication)) {
             return createAutoApprovedTicket(ticket);

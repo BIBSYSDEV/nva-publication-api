@@ -463,7 +463,8 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
         var completedPublishingRequest = fetchTicket(publication, PublishingRequestCase.class);
 
-        assertThat(completedPublishingRequest.getAssignee().getValue(), is(equalTo(completedPublishingRequest.getOwner().toString())));
+        assertThat(completedPublishingRequest.getAssignee().getValue(),
+                   is(equalTo(completedPublishingRequest.getOwner().toString())));
     }
 
     @Test
