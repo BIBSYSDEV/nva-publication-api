@@ -97,7 +97,7 @@ public class Publication {
     @JacocoGenerated
     @JsonProperty("ismnList")
     public List<String> getIsmnList() {
-        if (isNull(isbnList)) {
+        if (isNull(ismnList)) {
             return Collections.emptyList();
         }
         return ismnList;
