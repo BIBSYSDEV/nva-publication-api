@@ -62,7 +62,11 @@ paths:
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchPublicationFunction.Arn}:live/invocations
-        responses: { }
+        responses:
+          301:
+            statusCode: "301"
+            responseParameters:
+              method.response.header.Location: "integration.response.body.redirect.url"
         httpMethod: POST
         type: AWS_PROXY
       responses:
@@ -81,6 +85,14 @@ paths:
             application/vnd.schemaorg.ld+json:
               schema:
                 $ref: '#/components/schemas/PublicationSchemaOrg'
+        '301':
+          description: MOVED PERMANENTLY
+          headers:
+            Location:
+              description: URI to the new location
+              schema:
+                type: string
+                format: URI
         '410':
           description: Permanently gone
           content:

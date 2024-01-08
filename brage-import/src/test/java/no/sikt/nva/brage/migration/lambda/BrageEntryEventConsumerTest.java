@@ -69,6 +69,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.IntStream;
 import no.sikt.nva.brage.migration.NvaType;
+import no.sikt.nva.brage.migration.mapper.InvalidIsmnRuntimeException;
 import no.sikt.nva.brage.migration.merger.AssociatedArtifactException;
 import no.sikt.nva.brage.migration.merger.DuplicatePublicationException;
 import no.sikt.nva.brage.migration.merger.UnmappableCristinRecordException;
@@ -95,6 +96,10 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.instancetypes.artistic.music.InvalidIsmnException;
+import no.unit.nva.model.instancetypes.artistic.music.Ismn;
+import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
+import no.unit.nva.model.instancetypes.artistic.music.MusicScore;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
@@ -1152,6 +1157,54 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Driver = new S3Driver(s3Client, new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
         var errorFiles = s3Driver.getFiles(UnixPath.of("ERROR"));
         assertThat(errorFiles, hasSize(1));
+    }
+
+    @Test
+    void shouldStoreValidIsmnInIsmnObjectWhenConvertingMusicalPieces() throws IOException, InvalidIsmnException {
+        var validIsmn1 = "9790900514608";
+        var validIsmn2 = "9790900514615";
+        var brageGenerator = new NvaBrageMigrationDataGenerator
+                                     .Builder()
+                                 .withType(TYPE_MUSIC)
+                                 .withIsmn(List.of(validIsmn1, validIsmn2))
+
+                                 .build();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var publication = handler.handleRequest(s3Event, CONTEXT);
+        var musicPerformance = (MusicPerformance) publication.getEntityDescription()
+                                                      .getReference()
+                                                      .getPublicationInstance();
+        var actualManifestation = musicPerformance.getManifestations();
+        assertThat(actualManifestation, containsInAnyOrder(new MusicScore[]{
+            new MusicScore(null,
+                           null,
+                           null,
+                           null,
+                           new Ismn(validIsmn1)),
+            new MusicScore(null,
+                           null,
+                           null,
+                           null,
+                           new Ismn(validIsmn2))}));
+    }
+
+    @Test
+    void shouldStoreErrorReportIfTheMusicalPerformanceHasInvalidIsmn() throws IOException {
+        var invalidIsmn = "invalid ismn 1";
+        var brageGenerator = new NvaBrageMigrationDataGenerator
+                                     .Builder()
+                                 .withType(TYPE_MUSIC)
+                                 .withIsmn(List.of(invalidIsmn))
+                                 .build();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        handler.handleRequest(s3Event, CONTEXT);
+        var publication = handler.handleRequest(s3Event, CONTEXT);
+        assertThat(publication, is(nullValue()));
+
+        var actualReport = extractActualReportFromS3Client(s3Event, InvalidIsmnRuntimeException.class.getSimpleName(),
+                                                           brageGenerator.getBrageRecord());
+        var exception = actualReport.get("exception").asText();
+        assertThat(exception, containsString(invalidIsmn));
     }
 
     private static Publication copyPublication(NvaBrageMigrationDataGenerator brageGenerator)

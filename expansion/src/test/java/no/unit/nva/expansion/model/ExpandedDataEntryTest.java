@@ -46,7 +46,6 @@ import no.unit.nva.model.contexttypes.MediaContributionPeriodical;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Report;
-import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
@@ -157,6 +156,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     void shouldReturnExpandedResourceWithoutLossOfInformation(Class<?> instanceType)
         throws JsonProcessingException, BadRequestException, JSONException {
         var publication = createPublicationWithoutDoi(instanceType);
+        publication.setFundings(List.of());
         var expandedResource = fromPublication(uriRetriever, publication);
 
         var expandedResourceAsJson = expandedResource.toJsonString();

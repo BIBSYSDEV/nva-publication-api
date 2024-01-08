@@ -20,7 +20,6 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 class DeletionProcessInitializationHandlerTest extends ResourcesLocalTest {
     

@@ -1,6 +1,6 @@
 package no.unit.nva.publication.create;
 
-import static nva.commons.apigateway.AccessRight.PUBLISH_DEGREE;
+import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -96,7 +96,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         var customerAwareUserContext = getCustomerAwareUserContextFromLoginInformation(requestInfo);
 
         try {
-            publicationValidator.validate(newPublication, customerAwareUserContext.customerUri());
+            publicationValidator.validate(newPublication, customerAwareUserContext.getCustomerUri());
         } catch (PublicationValidationException e) {
             throw new BadRequestException(e.getMessage());
         } catch (ConfigNotAvailableException e) {
@@ -105,7 +105,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         }
 
         var createdPublication = Resource.fromPublication(newPublication)
-                                     .persistNew(publicationService, customerAwareUserContext.userInstance());
+                                     .persistNew(publicationService, customerAwareUserContext.getUserInstance());
         setLocationHeader(createdPublication.getIdentifier());
 
         return PublicationResponse.fromPublication(createdPublication);
@@ -144,9 +144,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     private boolean isThesisAndHasNoRightsToPublishThesAndIsNotExternalClient(CreatePublicationRequest request,
                                                                               RequestInfo requestInfo) {
 
-        return isThesis(request)
-               && !requestInfo.userIsAuthorized(PUBLISH_DEGREE.name())
-               && !requestInfo.clientIsThirdParty();
+        return isThesis(request) && !requestInfo.userIsAuthorized(MANAGE_DEGREE) && !requestInfo.clientIsThirdParty();
     }
 
     private boolean isThesis(CreatePublicationRequest request) {
@@ -159,9 +157,9 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
 
     private interface CustomerAwareUserContext {
 
-        URI customerUri();
+        URI getCustomerUri();
 
-        UserInstance userInstance();
+        UserInstance getUserInstance();
     }
 
     private static class ExternalUserCustomerAwareUserContext implements CustomerAwareUserContext {
@@ -186,12 +184,12 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         }
 
         @Override
-        public URI customerUri() {
+        public URI getCustomerUri() {
             return customerUri;
         }
 
         @Override
-        public UserInstance userInstance() {
+        public UserInstance getUserInstance() {
             return userInstance;
         }
     }
@@ -209,12 +207,12 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         }
 
         @Override
-        public URI customerUri() {
+        public URI getCustomerUri() {
             return customerUri;
         }
 
         @Override
-        public UserInstance userInstance() {
+        public UserInstance getUserInstance() {
             return userInstance;
         }
     }

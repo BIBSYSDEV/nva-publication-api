@@ -50,7 +50,7 @@ public class GetTicketHandler extends ApiGatewayHandler<Void, TicketDto> {
     }
     
     private static boolean isElevatedUser(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString());
+        return requestInfo.userIsAuthorized(AccessRight.MANAGE_DOI);
     }
     
     private static void validateThatUserWorksForInstitution(RequestInfo requestInfo, TicketEntry ticket)

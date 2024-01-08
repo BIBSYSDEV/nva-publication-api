@@ -43,4 +43,10 @@ public class UriRetriever implements RawContentRetriever {
                    .GET()
                    .build();
     }
+
+    public Optional<HttpResponse<String>> fetchResponse(URI uri, String mediaType) {
+        return attempt(() -> httpClient.send(createHttpRequest(uri, mediaType),
+                                             BodyHandlers.ofString(StandardCharsets.UTF_8)))
+                   .toOptional();
+    }
 }

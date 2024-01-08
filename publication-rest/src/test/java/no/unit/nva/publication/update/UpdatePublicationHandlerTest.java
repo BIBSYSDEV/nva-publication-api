@@ -19,10 +19,10 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static nva.commons.apigateway.AccessRight.APPROVE_DOI_REQUEST;
-import static nva.commons.apigateway.AccessRight.EDIT_ALL_NON_DEGREE_RESOURCES;
-import static nva.commons.apigateway.AccessRight.EDIT_OWN_INSTITUTION_RESOURCES;
-import static nva.commons.apigateway.AccessRight.PUBLISH_DEGREE;
+import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
+import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_ALL;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -798,7 +798,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withPathParameters(pathParameters)
                 .withCurrentCustomer(customerId)
                 .withBody(publicationUpdate)
-                .withAccessRights(customerId, PUBLISH_DEGREE.name(), PUBLISH_DEGREE.name())
+                .withAccessRights(customerId, MANAGE_DEGREE)
                 .build();
     }
 
@@ -810,7 +810,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withPathParameters(pathParameters)
                 .withCurrentCustomer(customerId)
                 .withBody(publicationUpdate)
-                .withAccessRights(customerId, EDIT_ALL_NON_DEGREE_RESOURCES.toString())
+                .withAccessRights(customerId, MANAGE_RESOURCES_ALL)
                 .withUserName(SOME_CURATOR)
                 .build();
     }
@@ -823,7 +823,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withPathParameters(pathParameters)
                 .withCurrentCustomer(customerId)
                 .withBody(publicationUpdate)
-                .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.toString())
+                .withAccessRights(customerId, MANAGE_RESOURCES_STANDARD)
                 .withUserName(SOME_CURATOR)
                 .build();
     }
@@ -839,7 +839,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withCurrentCustomer(customerId)
                 .withPersonCristinId(cristinId)
                 .withBody(publicationUpdate)
-                .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.name())
+                .withAccessRights(customerId, MANAGE_RESOURCES_STANDARD)
                 .build();
     }
 
@@ -864,7 +864,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withPathParameters(pathParameters)
                 .withCurrentCustomer(customerId)
                 .withBody(publicationUpdate)
-                .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_DEGREE.name())
+                .withAccessRights(customerId, MANAGE_RESOURCES_STANDARD, MANAGE_DEGREE)
                 .build();
     }
 
@@ -990,7 +990,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withPathParameters(pathParameters)
                 .withCurrentCustomer(customerId)
                 .withBody(publicationUpdate)
-                .withAccessRights(customerId, APPROVE_DOI_REQUEST.name())
+                .withAccessRights(customerId, MANAGE_DOI)
                 .build();
     }
 }

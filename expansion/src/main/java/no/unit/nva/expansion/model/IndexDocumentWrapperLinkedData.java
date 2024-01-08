@@ -1,5 +1,7 @@
 package no.unit.nva.expansion.model;
 
+import static java.net.HttpURLConnection.HTTP_OK;
+import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toList;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.extractAffiliationUris;
@@ -18,8 +20,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -74,10 +78,26 @@ public class IndexDocumentWrapperLinkedData {
 
     @Deprecated
     private Collection<? extends InputStream> fetchFundingSources(JsonNode indexDocument) {
-        return fetchAll(extractUris(fundingNodes(indexDocument), SOURCE))
-                   .stream()
+        return fetchFundings(indexDocument).stream()
+                   .map(IoUtils::stringToStream)
                    .map(this::addPotentiallyMissingContext)
                    .collect(toList());
+    }
+
+    private Collection<String> fetchFundings(JsonNode indexDocument) {
+        var fundingIdentifiers = extractUris(fundingNodes(indexDocument), SOURCE);
+        var fundingMap = new HashMap<URI, String>();
+        for (URI uri : fundingIdentifiers) {
+            fundingMap.put(uri, this.fetchUri(uri));
+        }
+        fundingMap.replaceAll(IndexDocumentWrapperLinkedData::replaceNotFetchedFundingSource);
+        return fundingMap.values();
+    }
+
+    private static String replaceNotFetchedFundingSource(URI key, String value) {
+        return nonNull(value)
+                   ? value
+                   : FundingSource.withId(key).toJsonString();
     }
 
     @Deprecated
@@ -143,6 +163,16 @@ public class IndexDocumentWrapperLinkedData {
 
     private Optional<String> fetch(URI externalReference) {
         return uriRetriever.getRawContent(externalReference, APPLICATION_JSON_LD.toString());
+    }
+
+    private String fetchUri(URI externalReference) {
+        var response = uriRetriever.fetchResponse(externalReference, APPLICATION_JSON_LD.toString());
+        return Optional.ofNullable(response)
+                   .filter(Optional::isPresent)
+                   .map(Optional::get)
+                   .filter(httpResponse -> httpResponse.statusCode() == HTTP_OK)
+                   .map(HttpResponse::body)
+                   .orElse(null);
     }
 
     private Optional<CristinOrganization> fetchOrganization(URI externalReference) {

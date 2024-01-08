@@ -20,7 +20,12 @@ import nva.commons.core.JacocoGenerated;
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"produkttypenavn", "produkttypenavn_engelsk", "produkttypenavn_nynorsk"})
+@JsonIgnoreProperties({"produkttypenavn",
+    "produksjonstypenavn",
+    "produksjonstypenavn_engelsk",
+    "produksjonstypenavn_nynorsk",
+    "produkttypenavn_engelsk",
+    "produkttypenavn_nynorsk"})
 public class ArtisticProductionType {
 
     @JsonProperty("produkttypekode")

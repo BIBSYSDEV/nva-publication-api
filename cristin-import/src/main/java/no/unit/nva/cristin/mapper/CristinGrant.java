@@ -21,6 +21,7 @@ import lombok.Setter;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingBuilder;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 
 @Builder(
@@ -81,11 +82,13 @@ public class CristinGrant {
     }
 
     private URI generateSourceUri() {
-        return UriWrapper.fromUri(NVA_API_DOMAIN)
-                   .addChild(CRISTIN)
-                   .addChild(FUNDING_SOURCES)
-                   .addChild(urlEncode(sourceCode))
-                   .getUri();
+        return URI.create(NVA_API_DOMAIN
+                          + UnixPath.PATH_DELIMITER
+                          + CRISTIN
+                          + UnixPath.PATH_DELIMITER
+                          + FUNDING_SOURCES
+                          + UnixPath.PATH_DELIMITER
+                          + urlEncode(sourceCode));
     }
 
     private Instant convertDateToInstant(Integer yearOrNull) {

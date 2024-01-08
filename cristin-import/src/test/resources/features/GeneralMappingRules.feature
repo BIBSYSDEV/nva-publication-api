@@ -345,6 +345,18 @@ Feature: Mappings that hold for all types of Cristin Results
       | 3013       |                      |                      | https://api.test.nva.aws.unit.no/cristin/funding-sources/KI | 456                 |
 
 
+  Scenario: When CristinGrants should not be url encoded twice
+    Given that Cristin Result has grants:
+      | finansieringslopenr | finansieringskildekode | arstall_fra | arstall_til | finansieringsreferanse |
+      | 17157               | MILJØDIR               | 2005        | 2006        | 17011442               |
+      | 10228               | EC/H2020               | 2005        | 2006        | 642080                 |
+    When the Cristin Result is converted to an NVA Resource
+    Then publication should have a nva Fundings:
+      | identifier | activeFrom           | activeTo             | source                                                                 | label    |
+      | 17157      | 2005-01-01T00:00:00Z | 2006-01-01T00:00:00Z | https://api.test.nva.aws.unit.no/cristin/funding-sources/MILJ%C3%98DIR | 17011442 |
+      | 10228      | 2005-01-01T00:00:00Z | 2006-01-01T00:00:00Z | https://api.test.nva.aws.unit.no/cristin/funding-sources/EC%2FH2020 | 642080   |
+
+
   Scenario: When a eierkode_opprettet matches one of the vitenskapeligarbeid_lokal, the institution is used as owner
     Given that Cristin Result has eierkode_opprett "FHI"
     And the Cristin Result has vitenskapeligarbeid_lokal:
