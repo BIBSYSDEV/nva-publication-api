@@ -16,6 +16,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
@@ -33,6 +34,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -542,6 +544,26 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         handler.handleRequest(httpRequest, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+    }
+
+    @Test
+    void shouldUpdateUnpublishedFilesToUnpublishableWhenRejectingPublishingRequest()
+        throws ApiGatewayException, IOException {
+
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
+            PublicationStatus.DRAFT, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
+        var closedTicket = ticket.close(new Username(randomString()));
+        var httpRequest = createCompleteTicketHttpRequest(closedTicket,
+                                                          AccessRight.MANAGE_PUBLISHING_REQUESTS,
+                                                          ticket.getCustomerId());
+        handler.handleRequest(httpRequest, output, CONTEXT);
+
+        var updatedPublication = resourceService.getPublication(publication);
+
+        var file = updatedPublication.getAssociatedArtifacts().get(0);
+        assertThat(file, is(instanceOf(AdministrativeAgreement.class)));
+        assertThat(((AdministrativeAgreement) file).isAdministrativeAgreement(), is(false));
     }
 
     private static Map<String, String> pathParameters(Publication publication, TicketEntry ticket) {
