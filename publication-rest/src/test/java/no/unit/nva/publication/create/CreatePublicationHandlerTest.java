@@ -1,5 +1,9 @@
 package no.unit.nva.publication.create;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
@@ -22,19 +26,27 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.util.UUID;
+import java.util.stream.Stream;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
@@ -50,7 +62,10 @@ import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.events.bodies.CreatePublicationRequest;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.validation.CustomerApiFilesAllowedForTypesConfigSupplier;
+import no.unit.nva.publication.validation.DefaultPublicationValidator;
 import no.unit.nva.stubs.FakeContext;
+import no.unit.nva.stubs.WiremockHttpClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.GatewayResponse;
@@ -63,12 +78,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.Problem;
 
 @ExtendWith(MockitoExtension.class)
+@WireMockTest(httpsEnabled = true)
 class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
     public static final String NVA_UNIT_NO = "nva.unit.no";
@@ -77,7 +94,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     public static final Clock CLOCK = Clock.systemDefaultZone();
     public static final String ASSOCIATED_ARTIFACTS_FIELD = "associatedArtifacts";
     private String testUserName;
-    private URI testOrgId;
+    private URI customerId;
     private CreatePublicationHandler handler;
     private ByteArrayOutputStream outputStream;
     private final Context context = new FakeContext();
@@ -87,27 +104,51 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
     private static final String EXTERNAL_CLIENT_ID = "external-client-id";
     private GetExternalClientResponse getExternalClientResponse;
+    private HttpClient configClient;
+    private ResourceService resourceService;
+    private Environment environmentMock;
+    private IdentityServiceClient identityServiceClient;
+
+    public static Stream<Exception> httpClientExceptionsProvider() {
+        return Stream.of(new ConnectException(), new InterruptedException());
+    }
 
     /**
      * Setting up test environment.
      */
     @BeforeEach
-    public void setUp(@Mock Environment environmentMock,
-                      @Mock IdentityServiceClient identityServiceClient) throws NotFoundException {
+    public void setUp(WireMockRuntimeInfo wireMockRuntimeInfo) throws NotFoundException {
         super.init();
-        getExternalClientResponse = new GetExternalClientResponse(EXTERNAL_CLIENT_ID, "someone@123", randomUri(),
-            randomUri());
+
+        customerId = URI.create(wireMockRuntimeInfo.getHttpsBaseUrl() + "/customer/" + UUID.randomUUID());
+
+        stubCustomerRequestWhereAllTypesAllowFiles(customerId);
+
+        getExternalClientResponse = new GetExternalClientResponse(EXTERNAL_CLIENT_ID,
+                                                                  "someone@123",
+                                                                  customerId,
+                                                                  randomUri());
+
+        environmentMock = mock(Environment.class);
+        identityServiceClient = mock(IdentityServiceClient.class);
 
         lenient().when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
         when(environmentMock.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
         when(environmentMock.readEnv(API_HOST)).thenReturn(NVA_UNIT_NO);
 
-        ResourceService resourceService = new ResourceService(client, CLOCK);
-        handler = new CreatePublicationHandler(resourceService, environmentMock, identityServiceClient);
+        resourceService = new ResourceService(client, CLOCK);
+        configClient = WiremockHttpClient.create();
+
+        var publicationValidator =
+            new DefaultPublicationValidator(new CustomerApiFilesAllowedForTypesConfigSupplier(configClient));
+
+        handler = new CreatePublicationHandler(resourceService,
+                                               environmentMock,
+                                               identityServiceClient,
+                                               publicationValidator);
         outputStream = new ByteArrayOutputStream();
         samplePublication = randomPublication();
         testUserName = samplePublication.getResourceOwner().getOwner().getValue();
-        testOrgId = samplePublication.getPublisher().getId();
         topLevelCristinOrgId = randomUri();
     }
 
@@ -123,7 +164,8 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
     }
 
-    @Test void requestToHandlerReturnsMinRequiredFieldsWhenRequestBodyIsEmpty()
+    @Test
+    void requestToHandlerReturnsMinRequiredFieldsWhenRequestBodyIsEmpty()
         throws Exception {
         var inputStream = createPublicationRequest(null);
         handler.handleRequest(inputStream, outputStream, context);
@@ -160,7 +202,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest(name = "requestToHandlerWithStatusFromAnExternalClientShouldPersistDocumentWithSameStatus with"
-        + " status: \"{0}\"")
+                              + " status: \"{0}\"")
     @ValueSource(strings = {"DRAFT", "PUBLISHED"})
     void shouldPersistProvidedStatusWhenMachineUserPersistsPublicationWithAnyStatus(String statusString)
         throws Exception {
@@ -218,6 +260,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         request.setEntityDescription(randomPublishableEntityDescription());
 
         var inputStream = createPublicationRequest(request);
+
         handler.handleRequest(inputStream, outputStream, context);
 
         var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
@@ -258,8 +301,8 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnForbiddenWhenNoAccessRight() throws IOException {
         var thesisPublication = samplePublication.copy()
-            .withEntityDescription(thesisPublishableEntityDescription())
-            .build();
+                                    .withEntityDescription(thesisPublishableEntityDescription())
+                                    .build();
         var event = requestWithoutAccessRights(CreatePublicationRequest.fromPublication(thesisPublication));
         handler.handleRequest(event, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
@@ -269,12 +312,34 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldPersistDegreePublicationWhenUserIsExternalClient() throws IOException {
         var thesisPublication = samplePublication.copy()
-            .withEntityDescription(thesisPublishableEntityDescription())
-            .build();
+                                    .withEntityDescription(thesisPublishableEntityDescription())
+                                    .build();
         var event = requestFromExternalClient(CreatePublicationRequest.fromPublication(thesisPublication));
         handler.handleRequest(event, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
+    }
+
+    private void stubCustomerRequestWhereAllTypesAllowFiles(URI customerUri) {
+        stubCustomerRequestWithResponse(customerUri, allInstanceTypes());
+    }
+
+    private void stubCustomerRequestWhereNoTypesAllowFiles(URI customerUri) {
+        stubCustomerRequestWithResponse(customerUri, noInstanceTypes());
+    }
+
+    private void stubCustomerRequestWithResponse(URI customerUri, String response) {
+        stubFor(get(urlEqualTo(customerUri.getPath()))
+                    .willReturn(aResponse().withBody(response).withStatus(200))
+        );
+    }
+
+    private String allInstanceTypes() {
+        return IoUtils.stringFromResources(Path.of("customerResponseFileUploadAllowedForAllTypes.json"));
+    }
+
+    private String noInstanceTypes() {
+        return IoUtils.stringFromResources(Path.of("customerResponseFileUploadAllowedForNoTypes.json"));
     }
 
     @Test
@@ -293,6 +358,119 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
         var body = response.getBodyObject(Problem.class);
         assertThat(body.getDetail(), containsString("AssociatedArtifact"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("httpClientExceptionsProvider")
+    void shouldReturnBadGatewayIfCustomerApiHttpClientThrowsException(Exception exceptionToThrow)
+        throws IOException, InterruptedException {
+        var event = prepareRequestWithFileForTypeWhereNotAllowed();
+        WireMock.reset();
+        configClient = mock(HttpClient.class);
+
+        when(configClient.send(any(), any())).thenThrow(exceptionToThrow);
+
+        var publicationValidator =
+            new DefaultPublicationValidator(new CustomerApiFilesAllowedForTypesConfigSupplier(configClient));
+
+        handler = new CreatePublicationHandler(resourceService,
+                                               environmentMock,
+                                               identityServiceClient,
+                                               publicationValidator);
+
+        handler.handleRequest(event, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_GATEWAY)));
+        var body = response.getBodyObject(Problem.class);
+        assertThat(body.getDetail(), containsString("Gateway not responding or not responding as expected!"));
+    }
+
+    @Test
+    void shouldReturnBadGatewayIfCustomerApiDoesNotRespondWithSuccessOk() throws IOException {
+        var event = prepareRequestWithFileForTypeWhereNotAllowed();
+        WireMock.reset();
+        handler.handleRequest(event, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_GATEWAY)));
+        var body = response.getBodyObject(Problem.class);
+        assertThat(body.getDetail(), containsString("Gateway not responding or not responding as expected!"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"{}", "{\"allowFileUploadForTypes\": {}}"})
+    void shouldReturnBadRequestIfMalformedConfigReceivedFromCustomerApi(String customerResponse) throws IOException {
+        var event = prepareRequestWithFileForTypeWhereNotAllowed();
+        WireMock.reset();
+        stubCustomerRequestWithResponse(customerId, customerResponse);
+        handler.handleRequest(event, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_GATEWAY)));
+        var body = response.getBodyObject(Problem.class);
+        assertThat(body.getDetail(), containsString("Gateway not responding or not responding as expected!"));
+    }
+
+    @Test
+    void shouldReturnBadRequestIfProvidingOneOrMoreFilesWhenNotAllowedInCustomerConfiguration() throws IOException {
+        var event = prepareRequestWithFileForTypeWhereNotAllowed();
+        WireMock.reset();
+        stubCustomerRequestWhereNoTypesAllowFiles(customerId);
+        handler.handleRequest(event, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
+        var body = response.getBodyObject(Problem.class);
+        assertThat(body.getDetail(), containsString("Files not allowed for instance type"));
+    }
+
+    @Test
+    void shouldValidateOkIfEntityDescriptionIsNotSet() throws IOException {
+        var event = createPublicationRequestFromString("{}");
+
+        handler.handleRequest(event, outputStream, context);
+
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
+    }
+
+    @Test
+    void shouldValidateOkIfReferenceIsNotSet() throws IOException {
+        var body = """
+            {
+                "entityDescription": {
+                    "type": "EntityDescription"
+                }
+            }
+            """;
+        var event = createPublicationRequestFromString(body);
+
+        handler.handleRequest(event, outputStream, context);
+
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
+    }
+
+    @Test
+    void shouldValidateOkIfInstanceTypeIsNotSet() throws IOException {
+        var body = """
+            {
+                "entityDescription": {
+                    "type": "EntityDescription",
+                    "reference": {
+                        "type": "Reference"
+                    }
+                }
+            }
+            """;
+        var event = createPublicationRequestFromString(body);
+
+        handler.handleRequest(event, outputStream, context);
+
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
+    }
+
+    private InputStream prepareRequestWithFileForTypeWhereNotAllowed() throws JsonProcessingException {
+        var publicationRequestJsonObject = createCreatePublicationRequestAsJsonObject();
+        return createPublicationRequestFromString(dtoObjectMapper.writeValueAsString(publicationRequestJsonObject));
     }
 
     private InputStream createPublicationRequestEventWithInvalidAssociatedArtifacts() throws JsonProcessingException {
@@ -326,41 +504,41 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     private PublicationResponse constructResponseSettingFieldsThatAreNotCopiedByTheRequest(
         Publication samplePublication, PublicationResponse actualPublicationResponse) {
         var expectedPublication = setAllFieldsThatAreNotCopiedFromTheCreateRequest(samplePublication,
-            actualPublicationResponse);
+                                                                                   actualPublicationResponse);
         return PublicationResponse.fromPublication(expectedPublication);
     }
 
     private Publication setAllFieldsThatAreNotCopiedFromTheCreateRequest(
         Publication samplePublication, PublicationResponse actualPublicationResponse) {
         return attempt(() -> removeAllFieldsThatAreNotCopiedFromTheCreateRequest(samplePublication))
-            .map(publication ->
-                setAllFieldsThatAreAutomaticallySetByResourceService(publication,
-                    actualPublicationResponse))
-            .orElseThrow();
+                   .map(publication ->
+                            setAllFieldsThatAreAutomaticallySetByResourceService(publication,
+                                                                                 actualPublicationResponse))
+                   .orElseThrow();
     }
 
     private Publication setAllFieldsThatAreAutomaticallySetByResourceService(
         Publication samplePublication,
         PublicationResponse actualPublicationResponse) {
         return samplePublication.copy()
-            .withIdentifier(actualPublicationResponse.getIdentifier())
-            .withCreatedDate(actualPublicationResponse.getCreatedDate())
-            .withModifiedDate(actualPublicationResponse.getModifiedDate())
-            .withIndexedDate(actualPublicationResponse.getIndexedDate())
-            .withStatus(PublicationStatus.DRAFT)
-            .withResourceOwner(actualPublicationResponse.getResourceOwner())
-            .build();
+                   .withIdentifier(actualPublicationResponse.getIdentifier())
+                   .withCreatedDate(actualPublicationResponse.getCreatedDate())
+                   .withModifiedDate(actualPublicationResponse.getModifiedDate())
+                   .withIndexedDate(actualPublicationResponse.getIndexedDate())
+                   .withStatus(PublicationStatus.DRAFT)
+                   .withResourceOwner(actualPublicationResponse.getResourceOwner())
+                   .build();
     }
 
     private Publication removeAllFieldsThatAreNotCopiedFromTheCreateRequest(Publication samplePublication) {
         return samplePublication.copy()
-            .withDoi(null)
-            .withHandle(null)
-            .withLink(null)
-            .withPublishedDate(null)
-            .withPublisher(new Organization.Builder().withLabels(null).withId(testOrgId).build())
-            .withResourceOwner(null)
-            .build();
+                   .withDoi(null)
+                   .withHandle(null)
+                   .withLink(null)
+                   .withPublishedDate(null)
+                   .withPublisher(new Organization.Builder().withLabels(null).withId(customerId).build())
+                   .withResourceOwner(null)
+                   .build();
     }
 
     private void assertExistenceOfMinimumRequiredFields(PublicationResponse publicationResponse) {
@@ -369,85 +547,85 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(publicationResponse.getCreatedDate(), is(not(nullValue())));
         assertThat(publicationResponse.getResourceOwner().getOwner().getValue(), is(equalTo(testUserName)));
         assertThat(publicationResponse.getResourceOwner().getOwnerAffiliation(), is(equalTo(topLevelCristinOrgId)));
-        assertThat(publicationResponse.getPublisher().getId(), is(equalTo(testOrgId)));
+        assertThat(publicationResponse.getPublisher().getId(), is(equalTo(customerId)));
     }
 
     private InputStream createPublicationRequest(CreatePublicationRequest request) throws JsonProcessingException {
 
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
-            .withUserName(testUserName)
-            .withCurrentCustomer(testOrgId)
-            .withTopLevelCristinOrgId(topLevelCristinOrgId)
-            .withBody(request)
-            .withAccessRights(testOrgId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_DEGREE.name())
-            .build();
+                   .withUserName(testUserName)
+                   .withCurrentCustomer(customerId)
+                   .withTopLevelCristinOrgId(topLevelCristinOrgId)
+                   .withBody(request)
+                   .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_DEGREE.name())
+                   .build();
     }
 
     private InputStream requestWithoutAccessRights(CreatePublicationRequest request) throws JsonProcessingException {
 
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
-            .withUserName(testUserName)
-            .withCurrentCustomer(testOrgId)
-            .withTopLevelCristinOrgId(topLevelCristinOrgId)
-            .withBody(request)
-            .build();
+                   .withUserName(testUserName)
+                   .withCurrentCustomer(customerId)
+                   .withTopLevelCristinOrgId(topLevelCristinOrgId)
+                   .withBody(request)
+                   .build();
     }
 
     private InputStream createPublicationRequestFromString(String request) throws JsonProcessingException {
 
         return new HandlerRequestBuilder<String>(dtoObjectMapper)
-            .withUserName(testUserName)
-            .withCurrentCustomer(testOrgId)
-            .withTopLevelCristinOrgId(topLevelCristinOrgId)
-            .withBody(request)
-            .withAccessRights(testOrgId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_DEGREE.name())
-            .build();
+                   .withUserName(testUserName)
+                   .withCurrentCustomer(customerId)
+                   .withTopLevelCristinOrgId(topLevelCristinOrgId)
+                   .withBody(request)
+                   .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_DEGREE.name())
+                   .build();
     }
 
     private InputStream requestFromExternalClient(CreatePublicationRequest request) throws JsonProcessingException {
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
-            .withBody(request)
-            .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
-            .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
-            .build();
+                   .withBody(request)
+                   .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
+                   .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
+                   .build();
     }
 
     private InputStream requestFromExternalClientWithoutClientId(CreatePublicationRequest request)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
-            .withBody(request)
-            .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
-            .build();
+                   .withBody(request)
+                   .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
+                   .build();
     }
 
     private InputStream requestWithoutUsername(CreatePublicationRequest request) throws JsonProcessingException {
 
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
-            .withCurrentCustomer(testOrgId)
-            .withBody(request)
-            .build();
+                   .withCurrentCustomer(customerId)
+                   .withBody(request)
+                   .build();
     }
 
     private EntityDescription randomPublishableEntityDescription() {
         return new EntityDescription.Builder()
-            .withMainTitle(randomString())
-            .withReference(
-                new Reference.Builder()
-                    .withDoi(RandomDataGenerator.randomDoi())
-                    .withPublicationInstance(PublicationInstanceBuilder.randomPublicationInstance())
-                    .build())
-            .build();
+                   .withMainTitle(randomString())
+                   .withReference(
+                       new Reference.Builder()
+                           .withDoi(RandomDataGenerator.randomDoi())
+                           .withPublicationInstance(PublicationInstanceBuilder.randomPublicationInstance())
+                           .build())
+                   .build();
     }
 
     private EntityDescription thesisPublishableEntityDescription() {
         return new EntityDescription.Builder()
-            .withMainTitle(randomString())
-            .withReference(
-                new Reference.Builder()
-                    .withDoi(RandomDataGenerator.randomDoi())
-                    .withPublicationInstance(
-                        PublicationInstanceBuilder.randomPublicationInstance(DegreeMaster.class))
-                    .build())
-            .build();
+                   .withMainTitle(randomString())
+                   .withReference(
+                       new Reference.Builder()
+                           .withDoi(RandomDataGenerator.randomDoi())
+                           .withPublicationInstance(
+                               PublicationInstanceBuilder.randomPublicationInstance(DegreeMaster.class))
+                           .build())
+                   .build();
     }
 }

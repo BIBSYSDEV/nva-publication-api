@@ -17,14 +17,20 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
-import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.events.bodies.CreatePublicationRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.validation.ConfigNotAvailableException;
+import no.unit.nva.publication.validation.CustomerApiFilesAllowedForTypesConfigSupplier;
+import no.unit.nva.publication.validation.DefaultPublicationValidator;
+import no.unit.nva.publication.validation.PublicationValidationException;
+import no.unit.nva.publication.validation.PublicationValidator;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
@@ -41,6 +47,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     private static final Logger logger = LoggerFactory.getLogger(CreatePublicationHandler.class);
     private static final List<String> THESIS_INSTANCE_TYPES = List.of("DegreeBachelor", "DegreeMaster", "DegreePhd");
     private final ResourceService publicationService;
+    private final PublicationValidator publicationValidator;
     private final String apiHost;
     private final IdentityServiceClient identityServiceClient;
 
@@ -50,10 +57,11 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     @JacocoGenerated
     public CreatePublicationHandler() {
         this(new ResourceService(
-                AmazonDynamoDBClientBuilder.defaultClient(),
-                Clock.systemDefaultZone()),
-            new Environment(),
-            IdentityServiceClient.prepare());
+                 AmazonDynamoDBClientBuilder.defaultClient(),
+                 Clock.systemDefaultZone()),
+             new Environment(),
+             IdentityServiceClient.prepare(),
+             new DefaultPublicationValidator(new CustomerApiFilesAllowedForTypesConfigSupplier()));
     }
 
     /**
@@ -64,11 +72,13 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
      */
     public CreatePublicationHandler(ResourceService publicationService,
                                     Environment environment,
-                                    IdentityServiceClient identityServiceClient) {
+                                    IdentityServiceClient identityServiceClient,
+                                    PublicationValidator publicationValidator) {
         super(CreatePublicationRequest.class, environment);
         this.publicationService = publicationService;
         this.apiHost = environment.readEnv(API_HOST);
         this.identityServiceClient = identityServiceClient;
+        this.publicationValidator = publicationValidator;
     }
 
     @Override
@@ -79,10 +89,23 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
             throw new ForbiddenException();
         }
         var newPublication = Optional.ofNullable(input)
-            .map(CreatePublicationRequest::toPublication)
-            .orElseGet(Publication::new);
-        var userInstance = createUserInstanceFromLoginInformation(requestInfo);
-        var createdPublication = Resource.fromPublication(newPublication).persistNew(publicationService, userInstance);
+                                 .map(CreatePublicationRequest::toPublication)
+                                 .orElseGet(Publication::new);
+
+
+        var customerAwareUserContext = getCustomerAwareUserContextFromLoginInformation(requestInfo);
+
+        try {
+            publicationValidator.validate(newPublication, customerAwareUserContext.customerUri());
+        } catch (PublicationValidationException e) {
+            throw new BadRequestException(e.getMessage());
+        } catch (ConfigNotAvailableException e) {
+            logger.error("Failed to obtain config to perform validation", e);
+            throw new BadGatewayException("Gateway not responding or not responding as expected!");
+        }
+
+        var createdPublication = Resource.fromPublication(newPublication)
+                                     .persistNew(publicationService, customerAwareUserContext.userInstance());
         setLocationHeader(createdPublication.getIdentifier());
 
         return PublicationResponse.fromPublication(createdPublication);
@@ -97,24 +120,18 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         return URI.create(String.format(LOCATION_TEMPLATE, API_SCHEME, apiHost, identifier));
     }
 
-    private UserInstance createUserInstanceForInternalUser(RequestInfo requestInfo) throws UnauthorizedException {
-        var resourceOwner = createInternalResourceOwner(requestInfo);
-
-        var customerId = requestInfo.getCurrentCustomer();
-        return UserInstance.create(resourceOwner, customerId);
-    }
-
-    private UserInstance createUserInstanceFromLoginInformation(RequestInfo requestInfo) throws UnauthorizedException {
+    private CustomerAwareUserContext getCustomerAwareUserContextFromLoginInformation(RequestInfo requestInfo)
+        throws UnauthorizedException {
         return requestInfo.clientIsThirdParty()
-            ? RequestUtil.createExternalUserInstance(requestInfo, identityServiceClient)
-            : createUserInstanceForInternalUser(requestInfo);
+                   ? new ExternalUserCustomerAwareUserContext(requestInfo, identityServiceClient)
+                   : new InternalUserCustomerAwareUserContext(requestInfo);
     }
 
-    private ResourceOwner createInternalResourceOwner(RequestInfo requestInfo) throws UnauthorizedException {
+    private static ResourceOwner createInternalResourceOwner(RequestInfo requestInfo) throws UnauthorizedException {
         return attempt(() -> requestInfo.getTopLevelOrgCristinId().orElseThrow())
-            .map(topLevelOrgCristinId -> new ResourceOwner(new Username(requestInfo.getUserName()),
-                topLevelOrgCristinId))
-            .orElseThrow(fail -> new UnauthorizedException());
+                   .map(topLevelOrgCristinId -> new ResourceOwner(new Username(requestInfo.getUserName()),
+                                                                  topLevelOrgCristinId))
+                   .orElseThrow(fail -> new UnauthorizedException());
     }
 
     private void setLocationHeader(SortableIdentifier identifier) {
@@ -124,9 +141,12 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         );
     }
 
-    private boolean isThesisAndHasNoRightsToPublishThesAndIsNotExternalClient(CreatePublicationRequest request, RequestInfo requestInfo) {
+    private boolean isThesisAndHasNoRightsToPublishThesAndIsNotExternalClient(CreatePublicationRequest request,
+                                                                              RequestInfo requestInfo) {
 
-        return isThesis(request) && !requestInfo.userIsAuthorized(PUBLISH_DEGREE.name()) && !requestInfo.clientIsThirdParty();
+        return isThesis(request)
+               && !requestInfo.userIsAuthorized(PUBLISH_DEGREE.name())
+               && !requestInfo.clientIsThirdParty();
     }
 
     private boolean isThesis(CreatePublicationRequest request) {
@@ -135,5 +155,67 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
                 .toOptional();
 
         return requestInstanceType.isPresent() && THESIS_INSTANCE_TYPES.contains(requestInstanceType.get());
+    }
+
+    private interface CustomerAwareUserContext {
+
+        URI customerUri();
+
+        UserInstance userInstance();
+    }
+
+    private static class ExternalUserCustomerAwareUserContext implements CustomerAwareUserContext {
+
+        final UserInstance userInstance;
+        final URI customerUri;
+
+        public ExternalUserCustomerAwareUserContext(final RequestInfo requestInfo,
+                                                    final IdentityServiceClient identityServiceClient)
+            throws UnauthorizedException {
+            var client = attempt(() -> requestInfo.getClientId().orElseThrow())
+                             .map(identityServiceClient::getExternalClient)
+                             .orElseThrow(fail -> new UnauthorizedException());
+
+            this.customerUri = client.getCustomerUri();
+            var resourceOwner = new ResourceOwner(
+                new Username(client.getActingUser()),
+                client.getCristinUrgUri()
+            );
+
+            this.userInstance = UserInstance.createExternalUser(resourceOwner, client.getCustomerUri());
+        }
+
+        @Override
+        public URI customerUri() {
+            return customerUri;
+        }
+
+        @Override
+        public UserInstance userInstance() {
+            return userInstance;
+        }
+    }
+
+    private static class InternalUserCustomerAwareUserContext implements CustomerAwareUserContext {
+        final UserInstance userInstance;
+        final URI customerUri;
+
+        public InternalUserCustomerAwareUserContext(final RequestInfo requestInfo) throws UnauthorizedException {
+            var resourceOwner = createInternalResourceOwner(requestInfo);
+
+            this.customerUri = requestInfo.getCurrentCustomer();
+            this.userInstance = UserInstance.create(resourceOwner, customerUri);
+
+        }
+
+        @Override
+        public URI customerUri() {
+            return customerUri;
+        }
+
+        @Override
+        public UserInstance userInstance() {
+            return userInstance;
+        }
     }
 }
