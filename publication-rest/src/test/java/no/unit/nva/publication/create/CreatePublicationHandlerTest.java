@@ -62,7 +62,7 @@ import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.events.bodies.CreatePublicationRequest;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.validation.CustomerApiFilesAllowedForTypesConfigSupplier;
+import no.unit.nva.publication.validation.config.CustomerApiFilesAllowedForTypesConfigSupplier;
 import no.unit.nva.publication.validation.DefaultPublicationValidator;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.WiremockHttpClient;
@@ -363,7 +363,6 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     @MethodSource("httpClientExceptionsProvider")
     void shouldReturnBadGatewayIfCustomerApiHttpClientThrowsException(Exception exceptionToThrow)
         throws IOException, InterruptedException {
-        var event = prepareRequestWithFileForTypeWhereNotAllowed();
         WireMock.reset();
         configClient = mock(HttpClient.class);
 
@@ -377,6 +376,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                                                identityServiceClient,
                                                publicationValidator);
 
+        var event = prepareRequestWithFileForTypeWhereNotAllowed();
         handler.handleRequest(event, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_GATEWAY)));
@@ -432,13 +432,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldValidateOkIfReferenceIsNotSet() throws IOException {
-        var body = """
-            {
-                "entityDescription": {
-                    "type": "EntityDescription"
-                }
-            }
-            """;
+        var body = bodyWithNoReference();
         var event = createPublicationRequestFromString(body);
 
         handler.handleRequest(event, outputStream, context);
@@ -449,7 +443,27 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldValidateOkIfInstanceTypeIsNotSet() throws IOException {
-        var body = """
+        var body = bodyWithEmptyReference();
+        var event = createPublicationRequestFromString(body);
+
+        handler.handleRequest(event, outputStream, context);
+
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
+    }
+
+    private static String bodyWithNoReference() {
+        return """
+            {
+                "entityDescription": {
+                    "type": "EntityDescription"
+                }
+            }
+            """;
+    }
+
+    private static String bodyWithEmptyReference() {
+        return """
             {
                 "entityDescription": {
                     "type": "EntityDescription",
@@ -459,12 +473,6 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                 }
             }
             """;
-        var event = createPublicationRequestFromString(body);
-
-        handler.handleRequest(event, outputStream, context);
-
-        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
-        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
     }
 
     private InputStream prepareRequestWithFileForTypeWhereNotAllowed() throws JsonProcessingException {

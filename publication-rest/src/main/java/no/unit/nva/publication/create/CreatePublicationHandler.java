@@ -22,7 +22,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.validation.ConfigNotAvailableException;
-import no.unit.nva.publication.validation.CustomerApiFilesAllowedForTypesConfigSupplier;
+import no.unit.nva.publication.validation.config.CustomerApiFilesAllowedForTypesConfigSupplier;
 import no.unit.nva.publication.validation.DefaultPublicationValidator;
 import no.unit.nva.publication.validation.PublicationValidationException;
 import no.unit.nva.publication.validation.PublicationValidator;
@@ -95,20 +95,25 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
 
         var customerAwareUserContext = getCustomerAwareUserContextFromLoginInformation(requestInfo);
 
-        try {
-            publicationValidator.validate(newPublication, customerAwareUserContext.getCustomerUri());
-        } catch (PublicationValidationException e) {
-            throw new BadRequestException(e.getMessage());
-        } catch (ConfigNotAvailableException e) {
-            logger.error("Failed to obtain config to perform validation", e);
-            throw new BadGatewayException("Gateway not responding or not responding as expected!");
-        }
+        validatePublication(newPublication, customerAwareUserContext.getCustomerUri());
 
         var createdPublication = Resource.fromPublication(newPublication)
                                      .persistNew(publicationService, customerAwareUserContext.getUserInstance());
         setLocationHeader(createdPublication.getIdentifier());
 
         return PublicationResponse.fromPublication(createdPublication);
+    }
+
+    private void validatePublication(Publication newPublication, URI customerUri)
+        throws BadRequestException, BadGatewayException {
+        try {
+            publicationValidator.validate(newPublication, customerUri);
+        } catch (PublicationValidationException e) {
+            throw new BadRequestException(e.getMessage());
+        } catch (ConfigNotAvailableException e) {
+            logger.error("Failed to obtain config to perform validation", e);
+            throw new BadGatewayException("Gateway not responding or not responding as expected!");
+        }
     }
 
     @Override

@@ -1,4 +1,4 @@
-package no.unit.nva.publication.validation;
+package no.unit.nva.publication.validation.config;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -8,6 +8,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.HashSet;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.publication.validation.ConfigNotAvailableException;
+import no.unit.nva.publication.validation.FilesAllowedForTypesSupplier;
 import nva.commons.core.JacocoGenerated;
 
 public class CustomerApiFilesAllowedForTypesConfigSupplier implements FilesAllowedForTypesSupplier {

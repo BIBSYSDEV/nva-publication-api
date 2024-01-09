@@ -31,7 +31,7 @@ public class DefaultPublicationValidator implements PublicationValidator {
                               entityDescription
                                   .getReference()
                                   .getPublicationInstance()
-                                  .getInstanceType())); // TODO: need a proper exception
+                                  .getInstanceType()));
         }
     }
 
