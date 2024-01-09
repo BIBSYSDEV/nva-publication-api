@@ -1,7 +1,6 @@
 package no.sikt.nva.scopus.conversion;
 
 import static java.util.Collections.emptyList;
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
@@ -127,12 +126,7 @@ public class ContributorExtractor {
 
     private void extractContributorFromAuthorOrCollaboration(Object authorOrCollaboration,
                                                              AuthorGroupTp authorGroupTp) {
-        var existingContributor = getExistingContributor(authorOrCollaboration);
-        if (existingContributor.isPresent()) {
-            replaceExistingContributor(existingContributor.get(), authorGroupTp);
-        } else {
-            generateContributorFromAuthorOrCollaboration(authorOrCollaboration, authorGroupTp);
-        }
+        generateContributorFromAuthorOrCollaboration(authorOrCollaboration, authorGroupTp);
     }
 
     private PersonalnameType getCorrespondencePerson() {
@@ -150,37 +144,9 @@ public class ContributorExtractor {
                    .findAny();
     }
 
-    private void replaceExistingContributor(NvaCustomerContributor existingContributor, AuthorGroupTp authorGroupTp) {
-        if (isNull(existingContributor.getIdentity().getId())) {
-            var optionalNewAffiliations = generateAffiliationFromAuthorGroupTp(authorGroupTp);
-            optionalNewAffiliations.ifPresent(
-                organizations -> updateContributorWithAdditionalAffiliationsInContributorList(organizations,
-                                                                                              existingContributor));
-        }
-    }
-
-    private void updateContributorWithAdditionalAffiliationsInContributorList(
-        Organization newAffiliation, NvaCustomerContributor matchingContributor) {
-        var newContributor = cloneContributorAddingAffiliation(matchingContributor, newAffiliation);
-        replaceContributor(matchingContributor, newContributor);
-    }
-
     private void replaceContributor(NvaCustomerContributor oldContributor, NvaCustomerContributor newContributor) {
         contributors.remove(oldContributor);
         contributors.add(newContributor);
-    }
-
-    private NvaCustomerContributor cloneContributorAddingAffiliation(NvaCustomerContributor existingContributor,
-                                                                     Organization newAffiliation) {
-        var affiliations = new ArrayList<>(existingContributor.getAffiliations());
-        affiliations.add(newAffiliation);
-
-        return new NvaCustomerContributor.Builder().withIdentity(existingContributor.getIdentity())
-                   .withAffiliations(affiliations)
-                   .withRole(existingContributor.getRole())
-                   .withSequence(existingContributor.getSequence())
-                   .withCorrespondingAuthor(existingContributor.isCorrespondingAuthor())
-                   .build();
     }
 
     private boolean compareContributorToAuthorOrCollaboration(NvaCustomerContributor contributor,
@@ -270,9 +236,7 @@ public class ContributorExtractor {
     }
 
     private Optional<Organization> generateAffiliationFromCristinOrganization(CristinOrganization cristinOrganization) {
-        return Optional.of(new Organization.Builder().withId(cristinOrganization.id())
-                               .withLabels(cristinOrganization.labels())
-                               .build());
+        return Optional.of(new Organization.Builder().withId(cristinOrganization.id()).build());
     }
 
     private void generateContributorFromCollaborationTp(CollaborationTp collaboration, AuthorGroupTp authorGroupTp,
@@ -297,7 +261,7 @@ public class ContributorExtractor {
     private Optional<Organization> generateAffiliation(CristinOrganization cristinOrganization,
                                                        AuthorGroupTp authorGroupTp) {
         return nonNull(cristinOrganization) ? generateAffiliationFromCristinOrganization(cristinOrganization)
-                   : generateAffiliationFromAuthorGroupTp(authorGroupTp);
+                   : Optional.empty();
     }
 
     private Identity generateContributorIdentityFromAuthorTp(AuthorTp authorTp) {
@@ -316,11 +280,6 @@ public class ContributorExtractor {
 
     private static AdditionalIdentifier createAuidAdditionalIdentifier(AuthorTp authorTp) {
         return new AdditionalIdentifier(SCOPUS_AUID, authorTp.getAuid());
-    }
-
-    private Optional<Organization> generateAffiliationFromAuthorGroupTp(AuthorGroupTp authorGroup) {
-        return getOrganizationLabels(authorGroup).filter(ContributorExtractor::isNotNorway)
-                   .map(this::generateOrganizationWithLabel);
     }
 
     private boolean isCorrespondingAuthor(CollaborationTp collaboration, PersonalnameType correspondencePerson) {
@@ -353,12 +312,6 @@ public class ContributorExtractor {
 
     private String getOrcidAsUriString(AuthorTp authorTp) {
         return isNotBlank(authorTp.getOrcid()) ? craftOrcidUriString(authorTp.getOrcid()) : null;
-    }
-
-    private Organization generateOrganizationWithLabel(Map<String, String> label) {
-        Organization organization = new Organization();
-        organization.setLabels(label);
-        return organization;
     }
 
     private Optional<Map<String, String>> getOrganizationLabels(AuthorGroupTp authorGroup) {

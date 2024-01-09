@@ -358,7 +358,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
             .withHandle(null)
             .withLink(null)
             .withPublishedDate(null)
-            .withPublisher(new Organization.Builder().withLabels(null).withId(testOrgId).build())
+            .withPublisher(new Organization.Builder().withId(testOrgId).build())
             .withResourceOwner(null)
             .build();
     }

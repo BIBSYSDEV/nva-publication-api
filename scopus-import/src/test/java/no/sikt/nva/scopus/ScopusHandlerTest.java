@@ -28,8 +28,6 @@ import static no.sikt.nva.scopus.utils.ScopusGenerator.randomYear;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.language.LanguageConstants.BOKMAAL;
 import static no.unit.nva.language.LanguageConstants.ENGLISH;
-import static no.unit.nva.language.LanguageConstants.FRENCH;
-import static no.unit.nva.language.LanguageConstants.ITALIAN;
 import static no.unit.nva.language.LanguageConstants.MISCELLANEOUS;
 import static no.unit.nva.language.LanguageConstants.MULTIPLE;
 import static no.unit.nva.language.LanguageConstants.NORWEGIAN;
@@ -87,7 +85,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
@@ -96,7 +93,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -1006,42 +1002,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                    startsWith(correspondingAuthorTp.getGivenName()));
     }
 
-    @Test
-    void shouldAssignCorrectLanguageForAffiliationNames() throws IOException {
-        createEmptyPiaMock();
-        var frenchName = new String("Collège de France, Lab. de Physique Corpusculaire".getBytes(),
-                                    StandardCharsets.UTF_8);
-        var italianName = "Dipartimento di Fisica, Università di Bologna";
-        var norwegianName = "Institutt for fysikk, Universitetet i Bergen";
-        var englishName = "Department of Physics, Iowa State University";
-        var nonDeterminableName = "NTNU";
-        var institutionNameWithTags = "GA2LENGlobal Allergy and Asthma European Network";
-        var thaiNotSupportedByNvaName = "มหาวิทยาลัยมหิดล";
-        var expectedLabels = List.of(Map.of(ENGLISH.getIso6391Code(), englishName),
-                                     Map.of(FRENCH.getIso6391Code(), frenchName),
-                                     Map.of(BOKMAAL.getIso6391Code(), norwegianName),
-                                     Map.of(ITALIAN.getIso6391Code(), italianName),
-                                     Map.of(ENGLISH.getIso6391Code(), nonDeterminableName),
-                                     Map.of(ENGLISH.getIso6391Code(), thaiNotSupportedByNvaName),
-                                     Map.of(ENGLISH.getIso6391Code(), institutionNameWithTags));
-        scopusData = ScopusGenerator.createWithSpecifiedAffiliations(languageAffiliations(
-            List.of(List.of("GA", generateSup("2"), "LEN", generateInf("Global Allergy and Asthma European Network")),
-                    List.of(thaiNotSupportedByNvaName), List.of(frenchName), List.of(italianName),
-                    List.of(norwegianName), List.of(englishName), List.of(nonDeterminableName))));
-        var s3Event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
-        var organizations = publication.getEntityDescription()
-                                .getContributors()
-                                .stream()
-                                .map(Contributor::getAffiliations)
-                                .flatMap(Collection::stream)
-                                .collect(Collectors.toSet());
-        var actualOrganizationsLabels = organizations.stream()
-                                            .map(Organization::getLabels)
-                                            .collect(Collectors.toList());
-        assertThat(actualOrganizationsLabels, containsInAnyOrder(expectedLabels.toArray()));
-    }
-
     @ParameterizedTest(name = "Should have entityDescription with language:{1}")
     @MethodSource("providedLanguagesAndExpectedOutput")
     void shouldExtractLanguage(List<Language> languageCodes, URI expectedLanguageUri) throws IOException {
@@ -1557,20 +1517,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         return new ContentWrapper(contentWithSupInftagsScopus14244261628());
     }
 
-    private void checkAffiliationForAuthor(AuthorTp author, List<Contributor> actualContributors,
-                                           List<AuthorGroupTp> authorGroupTps) {
-        //when we remove duplicates this will have better CPU performance.
-        var expectedAffiliationsNames = getAffiliationNameForSequenceNumber(authorGroupTps, author.getSeq());
-        var actualAffiliationNames = findContributorsBySequence(author.getSeq(), actualContributors).stream()
-                                         .map(Contributor::getAffiliations)
-                                         .flatMap(Collection::stream)
-                                         .map(Organization::getLabels)
-                                         .map(Map::values)
-                                         .flatMap(Collection::stream)
-                                         .collect(Collectors.toList());
-        assertThat(actualAffiliationNames, containsInAnyOrder(expectedAffiliationsNames.toArray()));
-    }
-
     private List<String> getAffiliationNameForSequenceNumber(List<AuthorGroupTp> authorGroupTps,
                                                              String sequenceNumber) {
         return authorGroupTps.stream()
@@ -1657,19 +1603,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
         assertThat(actualOrganizationFromAffiliation, containsInAnyOrder(
             expectedOrganizationFromAffiliation.stream().map(Matchers::equalTo).collect(Collectors.toList())));
-
-        var actualAffiliationLabels = contributor.getAffiliations()
-                                          .stream()
-                                          .map(Organization::getLabels)
-                                          .collect(Collectors.toList());
-        var expectedAffiliationLabels = expectedCristinPerson.getAffiliations()
-                                            .stream()
-                                            .filter(Affiliation::isActive)
-                                            .map(organization -> organization.getRole().getLabels())
-                                            .toList();
-
-        assertThat(actualAffiliationLabels, containsInAnyOrder(
-            expectedAffiliationLabels.stream().map(Matchers::equalTo).collect(Collectors.toList())));
     }
 
     private String calculateExpectedNameFromCristinPerson(CristinPerson cristinPerson) {

@@ -87,9 +87,7 @@ public final class CristinContributorExtractor {
     }
 
     private static Organization convertToOrganization(Affiliation affiliation) {
-        return new Organization.Builder().withId(affiliation.getOrganization())
-                   .withLabels(affiliation.getRole().getLabels())
-                   .build();
+        return new Organization.Builder().withId(affiliation.getOrganization()).build();
     }
 
     private static Stream<Organization> createOrganizationFromCristinOrganization(
@@ -98,9 +96,7 @@ public final class CristinContributorExtractor {
     }
 
     private static Organization toOrganization(CristinOrganization cristinOrganization) {
-        return new Organization.Builder().withId(cristinOrganization.id())
-                   .withLabels(cristinOrganization.labels())
-                   .build();
+        return new Organization.Builder().withId(cristinOrganization.id()).build();
     }
 
     private static int getSequenceNumber(AuthorTp authorTp) {
