@@ -29,3 +29,20 @@ Feature: Event conversion rules
       | POPVIT_FOREDRAG   | Lecture           |
       | ANNEN_PRESENTASJ  | OtherPresentation |
       | UTST_WEB          | OtherPresentation |
+
+
+  Scenario Outline: Cristin Result of type foredrag is converted to NVA Resource
+  with Publication Context of type "Event"
+    Given a valid Cristin Result with secondary category "<secondaryCategory>"
+    And the Cristin Result has a non empty LectureOrPoster.
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a PublicationContext of type "Event"
+    And the Event has values label, agent, time, place and period
+    Examples:
+      | secondaryCategory |
+      | VIT_FOREDRAG      |
+      | POSTER            |
+      | FOREDRAG_FAG      |
+      | POPVIT_FOREDRAG   |
+      | ANNEN_PRESENTASJ  |
+      | UTST_WEB          |

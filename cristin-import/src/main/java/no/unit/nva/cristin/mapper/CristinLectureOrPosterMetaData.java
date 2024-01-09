@@ -19,13 +19,17 @@ import nva.commons.core.JacocoGenerated;
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"status_invitert", "status_referee_ordning", "status_plenar", "hendelse"})
+@JsonIgnoreProperties({"status_invitert", "status_referee_ordning", "status_plenar"})
 public class CristinLectureOrPosterMetaData {
 
     public static final String NUMBER_OF_PAGES = "antall_sider_totalt";
+    public static final String EVENT = "hendelse";
 
     @JsonProperty(NUMBER_OF_PAGES)
     private String numberOfPages;
+
+    @JsonProperty(EVENT)
+    private Event event;
 
     @JacocoGenerated
     public CristinLectureOrPosterMetaData() {
