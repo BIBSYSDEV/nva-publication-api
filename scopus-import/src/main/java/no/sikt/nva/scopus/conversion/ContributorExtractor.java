@@ -324,7 +324,8 @@ public class ContributorExtractor {
     private Optional<Corporation> generateAffiliationFromAuthorGroupTp(AuthorGroupTp authorGroup) {
         var name =  getOrganizationNameFromAuthorGroup(authorGroup);
         var labels =  name.isPresent() && !name.get().isEmpty() ? name.map(
-            organizationName -> Map.of(getLanguageIso6391Code(organizationName), organizationName)) : extractCountryNameAsAffiliation(authorGroup);
+            organizationName -> Map.of(getLanguageIso6391Code(organizationName), organizationName))
+                          : extractCountryNameAsAffiliation(authorGroup);
         return isNotNorway(labels.orElse(Map.of()))
                    ? Optional.of(new UnconfirmedOrganization(name.orElse(null)))
                    : Optional.empty();

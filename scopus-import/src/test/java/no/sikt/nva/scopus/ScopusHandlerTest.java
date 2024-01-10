@@ -8,7 +8,6 @@ import static java.util.Objects.nonNull;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.ERROR_BUCKET_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.PATH_SEPERATOR;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM_DD_HH_FORMAT;
-import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_ELECTRONIC;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_PRINT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
@@ -28,8 +27,6 @@ import static no.sikt.nva.scopus.utils.ScopusGenerator.randomYear;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.language.LanguageConstants.BOKMAAL;
 import static no.unit.nva.language.LanguageConstants.ENGLISH;
-import static no.unit.nva.language.LanguageConstants.FRENCH;
-import static no.unit.nva.language.LanguageConstants.ITALIAN;
 import static no.unit.nva.language.LanguageConstants.MISCELLANEOUS;
 import static no.unit.nva.language.LanguageConstants.MULTIPLE;
 import static no.unit.nva.language.LanguageConstants.NORWEGIAN;
@@ -87,7 +84,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
@@ -96,7 +92,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -214,7 +209,6 @@ import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -1527,46 +1521,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         return new ContentWrapper(contentWithSupInftagsScopus14244261628());
     }
 
-//    private void checkAffiliationForAuthor(AuthorTp author, List<Contributor> actualContributors,
-//                                           List<AuthorGroupTp> authorGroupTps) {
-//        //when we remove duplicates this will have better CPU performance.
-//        var expectedAffiliationsNames = getAffiliationNameForSequenceNumber(authorGroupTps, author.getSeq());
-//        var actualAffiliationNames = findContributorsBySequence(author.getSeq(), actualContributors).stream()
-//                                         .map(Contributor::getAffiliations)
-//                                         .flatMap(Collection::stream)
-//                                         .map(Organization::getLabels)
-//                                         .map(Map::values)
-//                                         .flatMap(Collection::stream)
-//                                         .collect(Collectors.toList());
-//        assertThat(actualAffiliationNames, containsInAnyOrder(expectedAffiliationsNames.toArray()));
-//    }
-
-    private List<String> getAffiliationNameForSequenceNumber(List<AuthorGroupTp> authorGroupTps,
-                                                             String sequenceNumber) {
-        return authorGroupTps.stream()
-                   .filter(authorGroupTp -> authorGroupContainAuthorWithSequenceNumber(authorGroupTp, sequenceNumber))
-                   .collect(Collectors.toList())
-                   .stream()
-                   .map(this::expectedAffiliationName)
-                   .collect(Collectors.toList());
-    }
-
-    private String expectedAffiliationName(AuthorGroupTp authorGroupsWithAuthorsWithSequenceNumber) {
-        return authorGroupsWithAuthorsWithSequenceNumber.getAffiliation()
-                   .getOrganization()
-                   .stream()
-                   .map(organizationTp -> organizationTp.getContent()
-                                              .stream()
-                                              .map(Object::toString)
-                                              .collect(Collectors.joining()))
-                   .collect(Collectors.joining(AFFILIATION_DELIMITER));
-    }
-
-    private boolean authorGroupContainAuthorWithSequenceNumber(AuthorGroupTp authorGroupTp, String sequenceNumber) {
-        return keepOnlyTheAuthors(authorGroupTp).stream()
-                   .anyMatch(authorTp -> sequenceNumber.equals(authorTp.getSeq()));
-    }
-
     private void checkForDuplicateContributors(List<Contributor> contributors) {
         List<Integer> sequenceNumbers = new ArrayList<>();
         List<String> orcids = new ArrayList<>();
@@ -1864,14 +1818,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                    .collect(Collectors.toList());
     }
 
-    private List<AuthorTp> keepOnlyTheAuthors(AuthorGroupTp authorGroupTp) {
-        return authorGroupTp.getAuthorOrCollaboration()
-                   .stream()
-                   .filter(this::isAuthorTp)
-                   .map(author -> (AuthorTp) author)
-                   .collect(Collectors.toList());
-    }
-
     private List<CollaborationTp> keepOnlyTheCollaborations() {
         return keepOnlyTheCollaborationsAndAuthors().stream()
                    .filter(this::isCollaborationTp)
@@ -1980,10 +1926,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                        .contentLength(SOME_CONTENT_LENGTH)
                        .contentType(APPLICATION_PDF_MIMETYPE)
                        .build();
-        }
-
-        public List<CopyObjectRequest> getCopyObjectRequestList() {
-            return copyObjectRequestList;
         }
     }
 }

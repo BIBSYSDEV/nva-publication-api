@@ -31,7 +31,8 @@ public class ContributorFlattenedDetails implements JsonSerializable {
     public static ContributorFlattenedDetails extractNameSequenceAndAffiliationUri(Contributor contributor) {
         String name = contributor.getIdentity().getName();
         int sequence = contributor.getSequence();
-        URI affiliationUri = ((Organization) contributor.getAffiliations().stream().collect(SingletonCollector.collect())).getId();
+        URI affiliationUri = ((Organization) contributor.getAffiliations().stream()
+                                                 .collect(SingletonCollector.collect())).getId();
         return new ContributorFlattenedDetails(name, sequence, affiliationUri);
     }
 
