@@ -31,6 +31,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,6 +42,7 @@ import java.util.Map;
 import java.util.Set;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
@@ -58,6 +60,7 @@ import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -79,6 +82,7 @@ import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
+import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 
 class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
@@ -87,6 +91,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     private static final String EXTERNAL_CLIENT_ID = "external-client-id";
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
     private static final String EVENT_BUS_NAME = "test-event-bus-name";
+    private static final String API_HOST = "API_HOST";
+    private static final String PUBLICATION = "publication";
     private final Context context = new FakeContext();
     private DeletePublicationHandler handler;
     private ResourceService publicationService;
@@ -317,6 +323,36 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
                            .stream()
                            .anyMatch(entry -> entry.source().equals(NVA_PUBLICATION_DELETE_SOURCE)
                                       && entry.detailType().equals(LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS)));
+    }
+
+    @Test
+    void shouldProduceUpdateDoiEventWithDuplicateWhenUnpublishing()
+        throws ApiGatewayException, IOException {
+
+        var userCristinId = randomUri();
+        var userName = randomString();
+        var doi = randomUri();
+        var duplicate = SortableIdentifier.next();
+
+        var publication = createPublicationWithOwnerAndDoi(userCristinId, userName, doi);
+
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+
+        var inputStream = createRequestWithDuplicateOfValue(publication.getIdentifier(), userName, randomUri(),
+                                                            AccessRight.USER, duplicate);
+
+        handler.handleRequest(inputStream, outputStream, context);
+
+        assertThat(eventBridgeClient.getRequestEntries()
+                       .stream()
+                       .filter(a -> a.source().equals(NVA_PUBLICATION_DELETE_SOURCE))
+                       .map(DeletePublicationHandlerTest::getDoiMetadataUpdateEvent)
+                       .map(LambdaDestinationInvocationDetail::responsePayload)
+                       .filter(a -> nonNull(a.getDuplicateOf()))
+                       .findFirst()
+                       .orElseThrow()
+                       .getDuplicateOf(),
+                   is(equalTo(toPublicationUri(duplicate.toString()))));
     }
 
     @Test
@@ -645,6 +681,25 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
                    .persistNew(publicationService, UserInstance.fromPublication(publication));
     }
 
+    private Publication createPublicationWithOwnerAndDoi(URI contributorId, String owner,
+                                                         URI doi)
+        throws ApiGatewayException {
+        var identity = new Identity.Builder().withName(owner).withId(contributorId).build();
+        var contributor = new Contributor.Builder().withIdentity(identity).withRole(new RoleType(Role.CREATOR)).build();
+        var entityDescription = randomEntityDescription(JournalArticle.class).copy()
+                                    .withContributors(List.of(contributor))
+                                    .build();
+
+        var publication = randomPublication().copy()
+                              .withEntityDescription(entityDescription)
+                              .withDuplicateOf(null)
+                              .withResourceOwner(new ResourceOwner(new Username(owner), randomUri()))
+                              .withDoi(doi).build();
+
+        return Resource.fromPublication(publication)
+                   .persistNew(publicationService, UserInstance.fromPublication(publication));
+    }
+
     private Publication createPublicationWithoutDoiAndWithContributor(URI contributorId, String contributorName)
         throws ApiGatewayException {
 
@@ -676,5 +731,21 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         return Resource.fromPublication(publication)
                    .persistNew(publicationService, UserInstance.fromPublication(publication));
+    }
+
+    private static URI toPublicationUri(String identifier) {
+        return UriWrapper.fromHost(new Environment().readEnv(API_HOST))
+                   .addChild(PUBLICATION)
+                   .addChild(identifier)
+                   .getUri();
+    }
+
+    private static LambdaDestinationInvocationDetail<DoiMetadataUpdateEvent> getDoiMetadataUpdateEvent(
+        PutEventsRequestEntry a) {
+        try {
+            return JsonUtils.dtoObjectMapper.readValue(a.detail(), new TypeReference<>() {});
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
