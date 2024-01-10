@@ -182,3 +182,15 @@ Feature: Book conversion rules
       | POPVIT_BOK        |
       | OPPSLAGSVERK      |
       | ANTOLOGI          |
+
+  Scenario: Should map revision status
+    Given a valid Cristin Result with secondary category "MONOGRAFI"
+    And the cristin Book Report has revision status equal to "N"
+    When the Cristin Result is converted to an NVA Resource
+    And the NVA Resource has a publication context Book with a revision equal to "Unrevised"
+
+  Scenario: Should map revision status
+    Given a valid Cristin Result with secondary category "MONOGRAFI"
+    And the cristin Book Report has revision status equal to "J"
+    When the Cristin Result is converted to an NVA Resource
+    And the NVA Resource has a publication context Book with a revision equal to "Revised"

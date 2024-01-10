@@ -12,6 +12,7 @@ import no.unit.nva.cristin.mapper.CristinPublisher;
 import no.unit.nva.cristin.mapper.Nsd;
 import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
 import no.unit.nva.cristin.mapper.nva.exceptions.NoPublisherException;
+import no.unit.nva.model.Revision;
 import no.unit.nva.model.contexttypes.BookSeries;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.PublishingHouse;
@@ -104,5 +105,11 @@ public class NvaBookLikeBuilder extends CristinMappingModule {
         return extractBookOrReportMetadata()
                    .map(CristinBookOrReportMetadata::getPublisherName)
                    .orElse(null);
+    }
+
+    protected Revision lookupRevision() {
+        return Optional.ofNullable(cristinObject.getBookOrReportMetadata())
+                   .map(CristinBookOrReportMetadata::convertRevisionStatusToNvaRevision)
+                   .orElse(Revision.UNREVISED);
     }
 }
