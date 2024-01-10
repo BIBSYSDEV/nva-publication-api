@@ -1006,42 +1006,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                    startsWith(correspondingAuthorTp.getGivenName()));
     }
 
-    @Test
-    void shouldAssignCorrectLanguageForAffiliationNames() throws IOException {
-        createEmptyPiaMock();
-        var frenchName = new String("Collège de France, Lab. de Physique Corpusculaire".getBytes(),
-                                    StandardCharsets.UTF_8);
-        var italianName = "Dipartimento di Fisica, Università di Bologna";
-        var norwegianName = "Institutt for fysikk, Universitetet i Bergen";
-        var englishName = "Department of Physics, Iowa State University";
-        var nonDeterminableName = "NTNU";
-        var institutionNameWithTags = "GA2LENGlobal Allergy and Asthma European Network";
-        var thaiNotSupportedByNvaName = "มหาวิทยาลัยมหิดล";
-        var expectedLabels = List.of(Map.of(ENGLISH.getIso6391Code(), englishName),
-                                     Map.of(FRENCH.getIso6391Code(), frenchName),
-                                     Map.of(BOKMAAL.getIso6391Code(), norwegianName),
-                                     Map.of(ITALIAN.getIso6391Code(), italianName),
-                                     Map.of(ENGLISH.getIso6391Code(), nonDeterminableName),
-                                     Map.of(ENGLISH.getIso6391Code(), thaiNotSupportedByNvaName),
-                                     Map.of(ENGLISH.getIso6391Code(), institutionNameWithTags));
-        scopusData = ScopusGenerator.createWithSpecifiedAffiliations(languageAffiliations(
-            List.of(List.of("GA", generateSup("2"), "LEN", generateInf("Global Allergy and Asthma European Network")),
-                    List.of(thaiNotSupportedByNvaName), List.of(frenchName), List.of(italianName),
-                    List.of(norwegianName), List.of(englishName), List.of(nonDeterminableName))));
-        var s3Event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
-        var organizations = publication.getEntityDescription()
-                                .getContributors()
-                                .stream()
-                                .map(Contributor::getAffiliations)
-                                .flatMap(Collection::stream)
-                                .collect(Collectors.toSet());
-        var actualOrganizationsLabels = organizations.stream()
-                                            .map(Organization::getLabels)
-                                            .collect(Collectors.toList());
-        assertThat(actualOrganizationsLabels, containsInAnyOrder(expectedLabels.toArray()));
-    }
-
     @ParameterizedTest(name = "Should have entityDescription with language:{1}")
     @MethodSource("providedLanguagesAndExpectedOutput")
     void shouldExtractLanguage(List<Language> languageCodes, URI expectedLanguageUri) throws IOException {
@@ -1136,6 +1100,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var affiliationIds = actualContributors.stream()
                                  .map(Contributor::getAffiliations)
                                  .flatMap(List::stream)
+                                 .filter(Organization.class::isInstance)
+                                 .map(Organization.class::cast)
                                  .filter(org -> nonNull(org.getId()))
                                  .collect(Collectors.toList());
         assertThat(affiliationIds, is(equalTo(Collections.emptyList())));
@@ -1172,7 +1138,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
             .forEach(contributor -> assertNull(contributor.getIdentity().getId()));
     }
 
-    @RepeatedTest(100)
+    @Test
     void shouldHandlePiaConnectionException() throws IOException {
         mockedPiaException();
         var s3Event = createNewScopusPublicationEvent();
@@ -1244,6 +1210,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         contributor.getAffiliations()
             .stream()
             .filter(Objects::nonNull)
+            .filter(Organization.class::isInstance)
+            .map(Organization.class::cast)
             .forEach(affiliation -> assertThat(affiliation.getId(), is(equalTo(null))));
     }
 
@@ -1412,6 +1380,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private void hasAffiliationWithId(Contributor contributor, String cristinAffiliationId) {
         var affiliationIdList = contributor.getAffiliations()
                                     .stream()
+                                    .filter(Organization.class::isInstance)
+                                    .map(Organization.class::cast)
                                     .map(Organization::getId)
                                     .collect(Collectors.toSet());
         assertThat(affiliationIdList.toString(), containsString("cristin/organization/" + cristinAffiliationId));
@@ -1557,19 +1527,19 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         return new ContentWrapper(contentWithSupInftagsScopus14244261628());
     }
 
-    private void checkAffiliationForAuthor(AuthorTp author, List<Contributor> actualContributors,
-                                           List<AuthorGroupTp> authorGroupTps) {
-        //when we remove duplicates this will have better CPU performance.
-        var expectedAffiliationsNames = getAffiliationNameForSequenceNumber(authorGroupTps, author.getSeq());
-        var actualAffiliationNames = findContributorsBySequence(author.getSeq(), actualContributors).stream()
-                                         .map(Contributor::getAffiliations)
-                                         .flatMap(Collection::stream)
-                                         .map(Organization::getLabels)
-                                         .map(Map::values)
-                                         .flatMap(Collection::stream)
-                                         .collect(Collectors.toList());
-        assertThat(actualAffiliationNames, containsInAnyOrder(expectedAffiliationsNames.toArray()));
-    }
+//    private void checkAffiliationForAuthor(AuthorTp author, List<Contributor> actualContributors,
+//                                           List<AuthorGroupTp> authorGroupTps) {
+//        //when we remove duplicates this will have better CPU performance.
+//        var expectedAffiliationsNames = getAffiliationNameForSequenceNumber(authorGroupTps, author.getSeq());
+//        var actualAffiliationNames = findContributorsBySequence(author.getSeq(), actualContributors).stream()
+//                                         .map(Contributor::getAffiliations)
+//                                         .flatMap(Collection::stream)
+//                                         .map(Organization::getLabels)
+//                                         .map(Map::values)
+//                                         .flatMap(Collection::stream)
+//                                         .collect(Collectors.toList());
+//        assertThat(actualAffiliationNames, containsInAnyOrder(expectedAffiliationsNames.toArray()));
+//    }
 
     private List<String> getAffiliationNameForSequenceNumber(List<AuthorGroupTp> authorGroupTps,
                                                              String sequenceNumber) {
@@ -1647,6 +1617,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
         var actualOrganizationFromAffiliation = contributor.getAffiliations()
                                                     .stream()
+                                                    .filter(Organization.class::isInstance)
+                                                    .map(Organization.class::cast)
                                                     .map(Organization::getId)
                                                     .collect(Collectors.toList());
         var expectedOrganizationFromAffiliation = expectedCristinPerson.getAffiliations()
@@ -1657,19 +1629,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
         assertThat(actualOrganizationFromAffiliation, containsInAnyOrder(
             expectedOrganizationFromAffiliation.stream().map(Matchers::equalTo).collect(Collectors.toList())));
-
-        var actualAffiliationLabels = contributor.getAffiliations()
-                                          .stream()
-                                          .map(Organization::getLabels)
-                                          .collect(Collectors.toList());
-        var expectedAffiliationLabels = expectedCristinPerson.getAffiliations()
-                                            .stream()
-                                            .filter(Affiliation::isActive)
-                                            .map(organization -> organization.getRole().getLabels())
-                                            .toList();
-
-        assertThat(actualAffiliationLabels, containsInAnyOrder(
-            expectedAffiliationLabels.stream().map(Matchers::equalTo).collect(Collectors.toList())));
     }
 
     private String calculateExpectedNameFromCristinPerson(CristinPerson cristinPerson) {

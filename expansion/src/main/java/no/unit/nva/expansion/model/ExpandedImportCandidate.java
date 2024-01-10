@@ -13,8 +13,8 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ContributorVerificationStatus;
+import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
@@ -82,7 +82,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     @JsonProperty(CONTRIBUTORS_FIELD)
     private List<Contributor> contributors;
     @JsonProperty(ORGANIZATIONS_FIELD)
-    private Set<Organization> organizations;
+    private Set<Corporation> organizations;
     @JsonProperty(COLLABORATION_TYPE_FIELD)
     private CollaborationType collaborationType;
     @JsonProperty(IMPORT_STATUS_FIELD)
@@ -114,7 +114,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .withJournal(extractJournal(importCandidate))
                    .withPublisher(extractPublisher(importCandidate))
                    .withCreatedDate(importCandidate.getCreatedDate())
-                   .withCooperation(extractCooperation(organizations))
+                   .withCooperation(extractCorporation(organizations))
                    .withAssociatedArtifacts(importCandidate.getAssociatedArtifacts())
                    .withPrintIssn(extractPrintIssn(importCandidate))
                    .withOnlineIssn(extractOnlineIssn(importCandidate))
@@ -251,11 +251,11 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     @JacocoGenerated
-    public Set<Organization> getOrganizations() {
+    public Set<Corporation> getOrganizations() {
         return organizations;
     }
 
-    public void setOrganizations(Set<Organization> organizations) {
+    public void setOrganizations(Set<Corporation> organizations) {
         this.organizations = organizations;
     }
 
@@ -305,7 +305,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .orElse(null);
     }
 
-    private static CollaborationType extractCooperation(Set<Organization> organizations) {
+    private static CollaborationType extractCorporation(Set<Corporation> organizations) {
         return organizations.size() > 1 ? CollaborationType.COLLABORATIVE : CollaborationType.NON_COLLABORATIVE;
     }
 
@@ -414,7 +414,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .orElse(String.valueOf(new DateTime().getYear()));
     }
 
-    private static Set<Organization> extractOrganizations(ImportCandidate importCandidate) {
+    private static Set<Corporation> extractOrganizations(ImportCandidate importCandidate) {
         return importCandidate.getEntityDescription()
                    .getContributors()
                    .stream()
@@ -486,7 +486,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
             return this;
         }
 
-        public Builder withOrganizations(Set<Organization> organizations) {
+        public Builder withOrganizations(Set<Corporation> organizations) {
             expandedImportCandidate.setOrganizations(organizations);
             return this;
         }

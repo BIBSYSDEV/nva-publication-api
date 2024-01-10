@@ -19,8 +19,8 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
+import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_ALL;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
@@ -62,6 +62,7 @@ import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
@@ -422,7 +423,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        Problem problem = response.getBodyObject(Problem.class);
 
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_FORBIDDEN)));
     }
@@ -564,7 +564,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var cristinId = randomUri();
         var contributor = createContributorForPublicationUpdate(cristinId);
         injectContributor(savedPublication, contributor);
-        var customerId = contributor.getAffiliations().get(0).getId();
+        var customerId = ((Organization) contributor.getAffiliations().get(0)).getId();
 
         Publication publicationUpdate = updateTitle(savedPublication);
 
@@ -754,12 +754,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .build();
     }
 
-    private List<Organization> getListOfRandomOrganizations() {
+    private List<Corporation> getListOfRandomOrganizations() {
         return List.of(new Organization.Builder().withId(RandomPersonServiceResponse.randomUri()).build());
     }
 
     private boolean containsOneCompletedAndOnePendingPublishingRequest(List<TicketEntry> tickets) {
-        var statuses = tickets.stream().map(TicketEntry::getStatus).collect(Collectors.toList());
+        var statuses = tickets.stream().map(TicketEntry::getStatus).toList();
         return statuses.stream().anyMatch(TicketStatus.COMPLETED::equals)
                 && statuses.stream().anyMatch(TicketStatus.PENDING::equals);
     }
