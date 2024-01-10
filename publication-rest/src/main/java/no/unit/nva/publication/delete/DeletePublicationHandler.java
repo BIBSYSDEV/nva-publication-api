@@ -140,9 +140,10 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
             throw new UnauthorizedException();
         }
         var duplicate = requestInfo.getQueryParameterOpt(DUPLICATE_QUERY_PARAM).orElse(null);
-        resourceService.unpublishPublication(toPublicationWithDuplicate(duplicate, publication));
-        persistNotification(publication);
-        updateNvaDoi(publication);
+        var updatedPublication = toPublicationWithDuplicate(duplicate, publication);
+        resourceService.unpublishPublication(updatedPublication);
+        persistNotification(updatedPublication);
+        updateNvaDoi(updatedPublication);
     }
 
     private void updateNvaDoi(Publication publication) {
