@@ -25,8 +25,7 @@ import nva.commons.core.paths.UriWrapper;
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"brukernavn_opprettet", "dato_opprettet", "brukernavn_siste_endring", "dato_siste_endring",
-    "status_kontrollert", "brukernavn_kontrollert", "dato_kontrollert", "status_bekreftet_arkivsporsmal",
+@JsonIgnoreProperties({"brukernavn_opprettet", "dato_opprettet", "brukernavn_siste_endring", "dato_siste_endring", "status_bekreftet_arkivsporsmal",
     "brukernavn_avlvrt_arkivsystem", "dato_avlvrt_arkivsystem", "status_fulgt_medf_reg",
     "brukernavn_svart_medforf_reg", "dato_svart_medforf_regel"})
 public class CristinLocale {
@@ -40,6 +39,9 @@ public class CristinLocale {
     public static final String CRISTIN = "cristin";
     public static final String ORGANIZATION = "organization";
     private static final String RESOURCE_OWNER_FORMAT = "%s@%s";
+    public static final String CONTROLLED_BY_FIELD = "brukernavn_kontrollert";
+    public static final String DATE_CONTROLLED_FIELD = "dato_kontrollert";
+    public static final String CONTROL_STATUS_FIELD = "status_kontrollert";
     @JsonProperty(OWNER_CODE_FIELD)
     private String ownerCode;
 
@@ -54,6 +56,16 @@ public class CristinLocale {
 
     @JsonProperty(GROUP_IDENTIFIER_FIELD)
     private String groupIdentifier;
+
+    @JsonProperty(CONTROLLED_BY_FIELD)
+    private String controlledBy;
+
+    @JsonProperty(DATE_CONTROLLED_FIELD)
+    private String dateControlled;
+
+    @JsonProperty(CONTROL_STATUS_FIELD)
+    private String controlStatus;
+
 
     @JacocoGenerated
     public CristinLocale() {

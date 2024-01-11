@@ -66,9 +66,13 @@ public class CristinMapper extends CristinMappingModule {
     public static final int FIRST_DAY_OF_MONTH = 1;
     public static final String CRISTIN_INSTITUTION_CODE = "CRIS";
     public static final String UNIT_INSTITUTION_CODE = "UNIT";
-    public static final ResourceOwner SIKT_OWNER = new CristinLocale("SIKT", "20754", "0", "0",
-                                                                     "0").toResourceOwner();
-
+    public static final ResourceOwner SIKT_OWNER = CristinLocale.builder()
+                                                       .withOwnerCode("SIKT")
+                                                       .withInstitutionIdentifier("20754")
+                                                       .withDepartmentIdentifier("0")
+                                                       .withSubDepartmentIdentifier("0")
+                                                       .withGroupIdentifier("0").build()
+                                                       .toResourceOwner();
     public CristinMapper(CristinObject cristinObject) {
         super(cristinObject, ChannelRegistryMapper.getInstance());
     }
@@ -157,11 +161,13 @@ public class CristinMapper extends CristinMappingModule {
     private ResourceOwner extractResourceOwner() {
         var cristinLocales = getValidCristinLocales();
         if (shouldUseOwnerCodeCreated(cristinLocales)) {
-            return new CristinLocale(cristinObject.getOwnerCodeCreated(),
-                                     cristinObject.getInstitutionIdentifierCreated(),
-                                     cristinObject.getDepartmentIdentifierCreated(),
-                                     cristinObject.getSubDepartmendIdentifierCreated(),
-                                     cristinObject.getGroupIdentifierCreated()).toResourceOwner();
+            return CristinLocale.builder()
+                       .withOwnerCode(cristinObject.getOwnerCodeCreated())
+                       .withInstitutionIdentifier(cristinObject.getInstitutionIdentifierCreated())
+                       .withDepartmentIdentifier(cristinObject.getDepartmentIdentifierCreated())
+                       .withSubDepartmentIdentifier(cristinObject.getSubDepartmendIdentifierCreated())
+                       .withGroupIdentifier(cristinObject.getGroupIdentifierCreated())
+                       .build().toResourceOwner();
         }
         if (cristinLocalesContainsCristinOwnerCodeCreated(cristinLocales)) {
             return bestMatchingResourceOwner(cristinLocales);
