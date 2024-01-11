@@ -1635,6 +1635,7 @@ Resources:
     DependsOn:
       - CristinImportDataEntryQueue
       - CristinImportPatchQueue
+      - CristinImportNviPatchQueue
     Properties:
       CodeUri: s3-import-commons
       Handler: no.unit.nva.publication.s3imports.FileEntriesEventEmitter::handleRequest
@@ -1659,7 +1660,7 @@ Resources:
             Pattern:
               detail:
                 topic: [ "PublicationService.DataImport.Filename" ]
-                subtopic: [ "PublicationService.CristinData.DataEntry", "PublicationService.CristinData.PatchEntry" ]
+                subtopic: [ "PublicationService.CristinData.DataEntry", "PublicationService.CristinData.PatchEntry", "PublicationService.CristinData.NviPatch" ]
 
 
   CreatePublishedPublicationHandler:
