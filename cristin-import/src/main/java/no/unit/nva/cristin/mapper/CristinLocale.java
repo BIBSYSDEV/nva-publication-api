@@ -25,7 +25,8 @@ import nva.commons.core.paths.UriWrapper;
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"brukernavn_opprettet", "dato_opprettet", "brukernavn_siste_endring", "dato_siste_endring", "status_bekreftet_arkivsporsmal",
+@JsonIgnoreProperties({"brukernavn_opprettet", "dato_opprettet", "brukernavn_siste_endring",
+    "dato_siste_endring", "status_bekreftet_arkivsporsmal",
     "brukernavn_avlvrt_arkivsystem", "dato_avlvrt_arkivsystem", "status_fulgt_medf_reg",
     "brukernavn_svart_medforf_reg", "dato_svart_medforf_regel"})
 public class CristinLocale {
