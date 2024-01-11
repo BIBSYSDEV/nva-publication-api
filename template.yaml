@@ -1650,6 +1650,7 @@ Resources:
           BATCH_EMISSION_INTERVAL_MILLIS: 700
           CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL: !Ref CristinImportDataEntryQueue
           CRISTIN_IMPORT_PATCH_QUEUE_URL: !Ref CristinImportPatchQueue
+          CRISTIN_IMPORT_NVI_PATCH_QUEUE_URL: !Ref CristinImportNviPatchQueue
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -1840,6 +1841,8 @@ Resources:
   CristinImportDataEntryQueue:
     Type: "AWS::SQS::Queue"
   CristinImportPatchQueue:
+    Type: "AWS::SQS::Queue"
+  CristinImportNviPatchQueue:
     Type: "AWS::SQS::Queue"
   CristinImportDLQ:
     Type: "AWS::SQS::Queue"
