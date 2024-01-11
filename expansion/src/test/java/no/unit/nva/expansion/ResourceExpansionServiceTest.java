@@ -51,9 +51,9 @@ import no.unit.nva.expansion.model.ExpandedTicketStatus;
 import no.unit.nva.expansion.model.ExpandedUnpublishRequest;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
@@ -552,7 +552,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private Contributor createContributor(Role role,
                                           URI id,
                                           String name,
-                                          List<Organization> affiliations,
+                                          List<Corporation> affiliations,
                                           int sequence) {
         return new Contributor.Builder()
                    .withIdentity(new Identity.Builder()

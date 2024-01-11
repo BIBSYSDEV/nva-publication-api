@@ -533,6 +533,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                  false,
                                  null,
                                  null,
+                                 null,
                                  null);
     }
 
