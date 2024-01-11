@@ -992,6 +992,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldSetStatusPublishedWhenPublishingDeletedPublication() throws ApiGatewayException {
         var publication = createPublishedResource();
+        resourceService.unpublishPublication(publication);
         resourceService.deletePublication(publication);
         resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(PUBLISHED)));
