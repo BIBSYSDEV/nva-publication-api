@@ -1,5 +1,17 @@
 package no.unit.nva.publication.ticket.test;
 
+import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
+import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -12,23 +24,19 @@ import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.License;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.model.business.*;
+import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.UnpublishRequest;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import org.junit.jupiter.params.provider.Arguments;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static no.unit.nva.model.PublicationStatus.*;
-import static no.unit.nva.model.testing.PublicationGenerator.*;
 
 public final class TicketTestUtils {
 
@@ -96,6 +104,20 @@ public final class TicketTestUtils {
         return persistedPublication;
     }
 
+    public static Publication createPersistedPublicationWithPublishedFiles(PublicationStatus status,
+                                                                             ResourceService resourceService)
+        throws ApiGatewayException {
+        var publication = randomPublicationWithPublishedFiles(status);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
+                                                                                    UserInstance.fromPublication(
+                                                                                        publication));
+        if (isPublished(publication)) {
+            publishPublication(resourceService, persistedPublication);
+            return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+        }
+        return persistedPublication;
+    }
+
     public static Publication createPersistedPublicationWithAssociatedLink(PublicationStatus status,
                                                                              ResourceService resourceService)
         throws ApiGatewayException {
@@ -150,6 +172,15 @@ public final class TicketTestUtils {
                    .persistNewTicket(ticketService).close(new Username("Username"));
     }
 
+    public static TicketEntry createCompletedTicket(Publication publication, Class<? extends TicketEntry> ticketType,
+                                                 TicketService ticketService)
+        throws ApiGatewayException {
+        var completedTicket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                   .persistNewTicket(ticketService).complete(publication, new Username("Username"));
+        completedTicket.persistUpdate(ticketService);
+        return completedTicket;
+    }
+
     public static TicketEntry createNonPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType)
         throws ConflictException {
         return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next);
@@ -186,6 +217,14 @@ public final class TicketTestUtils {
         return publication;
     }
 
+    private static Publication randomPublicationWithPublishedFiles(PublicationStatus status) {
+        var publication = randomPublication().copy()
+                              .withStatus(status)
+                              .build();
+        publishFiles(publication);
+        return publication;
+    }
+
     private static Publication randomPublicationWithAssociatedLink(PublicationStatus status) {
         return randomPublication().copy()
                               .withStatus(status)
@@ -199,6 +238,16 @@ public final class TicketTestUtils {
                        .filter(artifact -> artifact instanceof File)
                        .map(File.class::cast)
                        .map(File::toUnpublishedFile)
+                       .collect(Collectors.toCollection(() -> new ArrayList<AssociatedArtifact>()));
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(list));
+    }
+
+    private static void publishFiles(Publication publication) {
+        var list = publication.getAssociatedArtifacts()
+                       .stream()
+                       .filter(artifact -> artifact instanceof File)
+                       .map(File.class::cast)
+                       .map(File::toPublishedFile)
                        .collect(Collectors.toCollection(() -> new ArrayList<AssociatedArtifact>()));
         publication.setAssociatedArtifacts(new AssociatedArtifactList(list));
     }

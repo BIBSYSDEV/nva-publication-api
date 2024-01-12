@@ -78,14 +78,14 @@ public class TicketResolver {
     private PublishingRequestCase createPublishingRequestForCurator(PublishingRequestCase publishingRequestCase,
                                                            Publication publication) throws ApiGatewayException {
         publishPublicationAndFiles(publication);
-        return createAutoApprovedTicketForCurator(publishingRequestCase);
+        return createAutoApprovedTicketForCurator(publishingRequestCase, publication);
     }
 
     private PublishingRequestCase createPublishingRequestForNonCurator(PublishingRequestCase publishingRequestCase,
                                                            Publication publication) throws ApiGatewayException {
         if (REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(publishingRequestCase.getWorkflow())) {
             publishPublicationAndFiles(publication);
-            return createAutoApprovedTicket(publishingRequestCase);
+            return createAutoApprovedTicket(publishingRequestCase, publication);
         }
         if (REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(publishingRequestCase.getWorkflow())) {
             publishMetadata(publication);
@@ -95,24 +95,26 @@ public class TicketResolver {
         }
     }
 
-    private PublishingRequestCase createAutoApprovedTicketForCurator(PublishingRequestCase publishingRequestCase)
+    private PublishingRequestCase createAutoApprovedTicketForCurator(PublishingRequestCase publishingRequestCase,
+                                                                     Publication publication)
         throws ApiGatewayException {
         publishingRequestCase.setAssignee(new Username(publishingRequestCase.getOwner().toString()));
-        return publishingRequestCase.persistAutoComplete(ticketService);
+        return publishingRequestCase.persistAutoComplete(ticketService, publication);
     }
 
     private PublishingRequestCase createAutoApprovedTicketWhenPublicationContainsMetadataOnly(
         PublishingRequestCase ticket, Publication publication)
         throws ApiGatewayException {
         if (hasNoFiles(publication)) {
-            return createAutoApprovedTicket(ticket);
+            return createAutoApprovedTicket(ticket, publication);
         } else {
             return (PublishingRequestCase) ticket.persistNewTicket(ticketService);
         }
     }
 
-    private PublishingRequestCase createAutoApprovedTicket(PublishingRequestCase ticket) throws ApiGatewayException {
-        return ticket.persistAutoComplete(ticketService);
+    private PublishingRequestCase createAutoApprovedTicket(PublishingRequestCase ticket, Publication publication)
+        throws ApiGatewayException {
+        return ticket.persistAutoComplete(ticketService, publication);
     }
 
     private PublishingRequestCase updatePublishingRequestWorkflow(PublishingRequestCase ticket, URI customerId)
