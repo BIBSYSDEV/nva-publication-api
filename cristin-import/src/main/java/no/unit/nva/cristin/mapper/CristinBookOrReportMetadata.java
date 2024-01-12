@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
@@ -7,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import no.unit.nva.model.Revision;
 import nva.commons.core.JacocoGenerated;
 
 @Builder(
@@ -19,13 +21,13 @@ import nva.commons.core.JacocoGenerated;
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"utgave", "utgave_fra", "status_revidert", "status_elektronisk_publisert",
+@JsonIgnoreProperties({"utgave", "utgave_fra", "status_elektronisk_publisert",
     "status_utgitt_av_forlag", "stedangivelse_utgiver", "landkode_utgiver", "institusjonsnr_utgiver",
     "avdnr_utgiver", "undavdnr_utgiver", "gruppenr_utgiver", "tidsskriftnr_serie",
     "sprakkode_oversatt_fra", "sprakkode_oversatt_til", "originalforfatter", "originaltittel",
     "arkivpost"})
 public class CristinBookOrReportMetadata {
-    
+
     public static final String ISBN_LIST = "isbn";
     public static final String PUBLISHER_NAME = "utgivernavn";
     public static final String NUMBER_OF_PAGES = "antall_sider_totalt";
@@ -57,6 +59,8 @@ public class CristinBookOrReportMetadata {
     private CristinPublisher cristinPublisher;
     @JsonProperty(DOI)
     private String doi;
+    @JsonProperty("status_revidert")
+    private String statusRevision;
 
     public CristinBookOrReportMetadata() {
 
@@ -73,5 +77,17 @@ public class CristinBookOrReportMetadata {
     @JacocoGenerated
     public CristinBookOrReportMetadata.CristinBookReportBuilder copy() {
         return this.toBuilder();
+    }
+
+    @JsonIgnore
+    public Revision convertRevisionStatusToNvaRevision() {
+        return isRevised()
+                   ? Revision.REVISED
+                   : Revision.UNREVISED;
+    }
+
+    @JsonIgnore
+    private boolean isRevised() {
+        return "J".equalsIgnoreCase(statusRevision);
     }
 }

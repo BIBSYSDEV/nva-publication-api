@@ -282,6 +282,17 @@ public class BookFeatures {
         assertThat(publisherId.getPath(), containsString(year.toString()));
     }
 
+    @And("the cristin Book Report has revision status equal to {string}")
+    public void theCristinBookReportHasRevisionStatusEqualTo(String revision) {
+        scenarioContext.getCristinEntry().getBookOrReportMetadata().setStatusRevision(revision);
+    }
+
+    @And("the NVA Resource has a publication context Book with a revision equal to {string}")
+    public void theNvaResourceHasAPublicationContextBookWithARevisionEqualTo(String revision) {
+        var book = (Book) scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationContext();
+        assertThat(book.getRevision().getValue(), is(equalTo(revision)));
+    }
+
     private Book extractNvaBook() {
         var context = this.scenarioContext.getNvaEntry()
                           .getEntityDescription()
