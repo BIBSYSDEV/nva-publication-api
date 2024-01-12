@@ -22,7 +22,6 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.User;
@@ -208,7 +207,7 @@ public abstract class TicketDto implements JsonSerializable {
             if (DoiRequest.class.equals(ticketClass)) {
                 return createDoiRequestDto();
             } else if (PublishingRequestCase.class.equals(ticketClass)) {
-                return createPublishingRequestDto(((PublishingRequestCase) ticketEntry).getWorkflow());
+                return createPublishingRequestDto((PublishingRequestCase) ticketEntry);
             } else if (GeneralSupportRequest.class.equals(ticketClass)) {
                 return new GeneralSupportRequestDto(status,
                                                     createdDate,
@@ -240,7 +239,7 @@ public abstract class TicketDto implements JsonSerializable {
             return this;
         }
 
-        private PublishingRequestDto createPublishingRequestDto(PublishingWorkflow workflow) {
+        private PublishingRequestDto createPublishingRequestDto(PublishingRequestCase publishingRequestCase) {
             return new PublishingRequestDto(status,
                                             createdDate,
                                             modifiedDate,
@@ -251,7 +250,8 @@ public abstract class TicketDto implements JsonSerializable {
                                             viewedBy,
                                             assignee,
                                             ownerAffiliation,
-                                            workflow);
+                                            publishingRequestCase.getWorkflow(),
+                                            publishingRequestCase.getApprovedFiles());
         }
 
         private DoiRequestDto createDoiRequestDto() {
