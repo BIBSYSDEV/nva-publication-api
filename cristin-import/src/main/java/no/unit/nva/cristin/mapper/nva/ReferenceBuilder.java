@@ -18,7 +18,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -31,6 +31,7 @@ import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
 import no.unit.nva.cristin.mapper.MediaPeriodicalBuilder;
 import no.unit.nva.cristin.mapper.PeriodicalBuilder;
+import no.unit.nva.cristin.mapper.PresentationEvent;
 import no.unit.nva.cristin.mapper.PublicationInstanceBuilderImpl;
 import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
 import no.unit.nva.model.Agent;
@@ -168,7 +169,7 @@ public class ReferenceBuilder extends CristinMappingModule {
         return Optional.ofNullable(cristinObject)
                    .map(CristinObject::getLectureOrPosterMetaData)
                    .map(CristinLectureOrPosterMetaData::getEvent)
-                   .map(no.unit.nva.cristin.mapper.Event::getFrom)
+                   .map(PresentationEvent::getFrom)
                    .map(this::toInstant)
                    .orElse(null);
     }
@@ -177,14 +178,14 @@ public class ReferenceBuilder extends CristinMappingModule {
         return Optional.ofNullable(cristinObject)
                    .map(CristinObject::getLectureOrPosterMetaData)
                    .map(CristinLectureOrPosterMetaData::getEvent)
-                   .map(no.unit.nva.cristin.mapper.Event::getTo)
+                   .map(PresentationEvent::getTo)
                    .map(this::toInstant)
                    .orElse(null);
     }
 
     private Instant toInstant(String date) {
         var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
-        return LocalDateTime.parse(date, formatter).atZone(ZoneId.systemDefault()).toInstant();
+        return LocalDateTime.parse(date, formatter).toInstant(ZoneOffset.UTC);
     }
 
     private Place extractPlace() {
@@ -195,10 +196,10 @@ public class ReferenceBuilder extends CristinMappingModule {
                    .orElse(null);
     }
 
-    private Place toUnconfirmedPlace(no.unit.nva.cristin.mapper.Event event) {
+    private Place toUnconfirmedPlace(PresentationEvent event) {
         return new UnconfirmedPlace(
-            Optional.ofNullable(event).map(no.unit.nva.cristin.mapper.Event::getPlace).orElse(null),
-            Optional.ofNullable(event).map(no.unit.nva.cristin.mapper.Event::getCountryCode).orElse(null)
+            Optional.ofNullable(event).map(PresentationEvent::getPlace).orElse(null),
+            Optional.ofNullable(event).map(PresentationEvent::getCountryCode).orElse(null)
             );
     }
 
@@ -206,7 +207,7 @@ public class ReferenceBuilder extends CristinMappingModule {
         return Optional.ofNullable(cristinObject)
                    .map(CristinObject::getLectureOrPosterMetaData)
                    .map(CristinLectureOrPosterMetaData::getEvent)
-                   .map(no.unit.nva.cristin.mapper.Event::getAgent)
+                   .map(PresentationEvent::getAgent)
                    .map(UnconfirmedOrganization::new)
                    .orElse(null);
     }
@@ -215,7 +216,7 @@ public class ReferenceBuilder extends CristinMappingModule {
         return Optional.ofNullable(cristinObject)
                    .map(CristinObject::getLectureOrPosterMetaData)
                    .map(CristinLectureOrPosterMetaData::getEvent)
-                   .map(no.unit.nva.cristin.mapper.Event::getTitle)
+                   .map(PresentationEvent::getTitle)
                    .orElse(null);
     }
 

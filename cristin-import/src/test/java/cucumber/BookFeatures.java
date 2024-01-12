@@ -11,7 +11,6 @@ import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import java.net.URI;
-import java.time.Period;
 import java.util.Optional;
 import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.cristin.lambda.constants.MappingConstants;
@@ -19,7 +18,6 @@ import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinSubjectField;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.BookSeries;
-import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.Series;
@@ -229,20 +227,6 @@ public class BookFeatures {
                           .getReference()
                           .getPublicationContext();
         assertThat(context.getClass().getSimpleName(), is(equalTo(publicationContextType)));
-    }
-
-    @Then("the Event has values label, agent, time, place and period")
-    public void theEventHasValuesLabelAndAgentAndTimeAndPlaceAndPeriod () {
-        var context = scenarioContext.getNvaEntry()
-                          .getEntityDescription()
-                          .getReference()
-                          .getPublicationContext();
-        var event = (Event) context;
-        assertThat(event.getAgent(), is(notNullValue()));
-        assertThat(event.getLabel(), is(notNullValue()));
-        assertThat(event.getTime(), is(notNullValue()));
-        assertThat(event.getPlace(), is(notNullValue()));
-        assertThat(event.getTime(), is(notNullValue()));
     }
 
     @Then("the Cristin Result does not have an ISBN")

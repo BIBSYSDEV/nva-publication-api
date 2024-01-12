@@ -23,7 +23,7 @@ import nva.commons.core.JacocoGenerated;
     "antall_internasjonale_deltakere", "antall_nasjonale_deltakere", "landkode",
     "institusjonsnr_arrangor", "avdnr_arrangor", "undavdnr_arrangor", "gruppenr_arrangor", "stedangivelse",
     "utbredelsesomrade", "url", "personlopenr_arrangor"})
-public class Event {
+public class PresentationEvent {
 
     public static final String TITLE = "titteltekst";
     public static final String FROM_DATE = "dato_fra";
@@ -51,11 +51,11 @@ public class Event {
     private String place;
 
     @JacocoGenerated
-    public Event() {
+    public PresentationEvent() {
     }
 
     @JacocoGenerated
-    public Event.EventBuilder copy() {
+    public PresentationEvent.EventBuilder copy() {
         return this.toBuilder();
     }
 }
