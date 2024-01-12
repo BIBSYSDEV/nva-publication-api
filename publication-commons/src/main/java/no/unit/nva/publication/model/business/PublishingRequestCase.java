@@ -49,7 +49,8 @@ public class PublishingRequestCase extends TicketEntry {
     public static final String MARKED_FOR_DELETION_ERROR =
         "Publication is marked for deletion and cannot be published.";
     public static final String APPROVED_FILES_FIELD = "approvedFiles";
-    public static final String NOT_COMPLETED_PUBLISHING_REQUEST_MESSAGE = "Not allowed to set approved files for not Completed PublishingRequest";
+    public static final String NOT_COMPLETED_PUBLISHING_REQUEST_MESSAGE =
+        "Not allowed to set approved files for not Completed PublishingRequest";
 
     @JsonProperty(IDENTIFIER_FIELD)
     private SortableIdentifier identifier;
@@ -208,7 +209,7 @@ public class PublishingRequestCase extends TicketEntry {
      *                      when approving PublishingRequestCase.
      *
      * @throws UnsupportedOperationException if this method is called when
-     * PublishingRequestCase is not in the Completed status
+     *     PublishingRequestCase is not in the Completed status
      */
 
     public void setApprovedFiles(Set<UUID> approvedFiles) {
