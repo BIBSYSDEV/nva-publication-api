@@ -1,6 +1,8 @@
 package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.model.PublicationStatus.DELETED;
+import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.publication.model.business.PublishingRequestCase.assertThatPublicationHasMinimumMandatoryFields;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
@@ -30,6 +32,7 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.exception.UnsupportedPublicationStatusTransition;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -63,6 +66,12 @@ public class UpdateResourceService extends ServiceWithTransactions {
     private final String tableName;
     private final Clock clockForTimestamps;
     private final ReadResourceService readResourceService;
+    private static final List<PublicationStatus> allowedPublicationStatusesForPublishing = List.of(
+        DRAFT,
+        PUBLISHED_METADATA,
+        UNPUBLISHED,
+        DELETED
+    );
 
     public UpdateResourceService(AmazonDynamoDB client,
                                  String tableName,
@@ -86,7 +95,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         throws NotFoundException {
         var persistedPublication = attempt(() -> fetchExistingPublication(publicationUpdate))
                                        .orElseThrow(failure -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
-        if (persistedPublication.getStatus().equals(PublicationStatus.DRAFT)) {
+        if (persistedPublication.getStatus().equals(DRAFT)) {
             publicationUpdate.setStatus(PublicationStatus.DRAFT_FOR_DELETION);
             return updatePublicationIncludingStatus(publicationUpdate);
         }
@@ -188,11 +197,14 @@ public class UpdateResourceService extends ServiceWithTransactions {
         var publication = readResourceService.getPublication(userInstance, resourceIdentifier);
         if (publicationIsPublished(publication)) {
             return publishCompletedStatus();
-        } else if (publicationIsDraftOrPublishedMetadataOnly(publication)) {
+        } else if (publicationIsAllowedForPublishing(publication)) {
             publishPublication(publication);
             return publishingInProgressStatus();
         } else {
-            throw new UnsupportedOperationException("Functionality not specified");
+            throw new UnsupportedPublicationStatusTransition(String.format(
+                "Publication status %s is not al1lowed for publishing",
+                publication.getStatus()
+            ));
         }
     }
 
@@ -249,12 +261,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
         updatePublicationIncludingStatus(publication);
     }
 
-    private boolean publicationIsDraftOrPublishedMetadataOnly(Publication publication) {
-        var status = publication.getStatus();
-        return PublicationStatus.DRAFT.equals(status)
-               || PublicationStatus.PUBLISHED_METADATA.equals(status);
-    }
-
     private Publication fetchExistingPublication(Publication publication) {
         return attempt(() -> readResourceService.getPublication(publication))
                    .orElseThrow(fail -> new TransactionFailedException(fail.getException()));
@@ -309,5 +315,9 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     private PublishPublicationStatusResponse publishCompletedStatus() {
         return new PublishPublicationStatusResponse(PUBLISH_COMPLETED, HttpURLConnection.HTTP_NO_CONTENT);
+    }
+
+    private boolean publicationIsAllowedForPublishing(Publication publication) {
+        return allowedPublicationStatusesForPublishing.contains(publication.getStatus());
     }
 }

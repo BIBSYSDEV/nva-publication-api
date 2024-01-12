@@ -80,6 +80,7 @@ import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.exception.UnsupportedPublicationStatusTransition;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -888,7 +889,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void shouldCreateResourceFromImportCandidate() throws NotFoundException {
         var importCandidate = randomImportCandidate();
         var persistedImportCandidate = resourceService.persistImportCandidate(importCandidate);
-        var fetchedImportCandidate = resourceService.getImportCandidateByIdentifier(persistedImportCandidate.getIdentifier());
+        var fetchedImportCandidate = resourceService.getImportCandidateByIdentifier(
+            persistedImportCandidate.getIdentifier());
         assertThat(persistedImportCandidate.getImportStatus(), is(equalTo(fetchedImportCandidate.getImportStatus())));
         assertThat(persistedImportCandidate, is(equalTo(fetchedImportCandidate)));
     }
@@ -915,8 +917,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void shouldProvidePublicationNotesWhenTheyAreSet() throws BadRequestException, NotFoundException {
         var publication = randomPublication();
         publication.setPublicationNotes(List.of(new PublicationNote(randomString())));
-        var result =  Resource.fromPublication(publication).persistNew(resourceService,
-                                                                UserInstance.fromPublication(publication));
+        var result = Resource.fromPublication(publication).persistNew(resourceService,
+                                                                      UserInstance.fromPublication(publication));
         var storedPublication = resourceService.getPublication(result);
         assertThat(storedPublication.getPublicationNotes(), is(equalTo(publication.getPublicationNotes())));
     }
@@ -980,6 +982,33 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldSetStatusPublishedWhenPublishingUnpublishedPublication() throws ApiGatewayException {
+        var publication = createPublishedResource();
+        resourceService.unpublishPublication(publication);
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(PUBLISHED)));
+    }
+
+    @Test
+    void shouldSetStatusPublishedWhenPublishingDeletedPublication() throws ApiGatewayException {
+        var publication = createPublishedResource();
+        resourceService.unpublishPublication(publication);
+        resourceService.deletePublication(publication);
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(PUBLISHED)));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenPublishingWrongStatus() throws ApiGatewayException {
+        var publication = createPersistedPublicationWithoutDoi();
+        resourceService.markPublicationForDeletion(UserInstance.fromPublication(publication),
+                                                   publication.getIdentifier());
+        assertThrows(UnsupportedPublicationStatusTransition.class,
+                     () -> resourceService.publishPublication(UserInstance.fromPublication(publication),
+                                                              publication.getIdentifier()));
+    }
+
+    @Test
     void shouldThrowIllegalStateExceptionWhenUpdatingStatusWhenUpdatingPublication() throws BadRequestException {
         var publication = createPersistedPublicationWithDoi();
         publication.setStatus(PublicationStatus.PUBLISHED_METADATA);
@@ -1036,7 +1065,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private ImportCandidate randomImportCandidate() {
         return new ImportCandidate.Builder()
                    .withStatus(PublicationStatus.PUBLISHED)
-                   .withImportStatus( ImportStatusFactory.createNotImported())
+                   .withImportStatus(ImportStatusFactory.createNotImported())
                    .withLink(randomUri())
                    .withDoi(randomDoi())
                    .withHandle(randomUri())
@@ -1091,7 +1120,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    .withAffiliations(List.of())
                    .build();
     }
-
 
     private Publication draftPublicationWithoutDoiAndAssociatedLink() {
 
