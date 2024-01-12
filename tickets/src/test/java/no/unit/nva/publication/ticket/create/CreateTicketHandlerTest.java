@@ -16,6 +16,7 @@ import static no.unit.nva.publication.ticket.create.CreateTicketHandler.LOCATION
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
@@ -541,6 +542,33 @@ class CreateTicketHandlerTest extends TicketTestLocal {
 
         assertThat(problem.getDetail(), is(equalTo("Unable to fetch customer publishing workflow from upstream")));
         assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(DRAFT)));
+    }
+
+    @Test
+    void shouldSetApprovedFilesForPublishingRequestWhenUserCanPublishFiles()
+        throws ApiGatewayException, IOException {
+        var publication =
+            TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
+        var requestBody = constructDto(PublishingRequestCase.class);
+        var owner = UserInstance.fromPublication(publication);
+        ticketResolver = new TicketResolver(resourceService, ticketService,
+                                            getUriRetriever(getHttpClientWithPublisherAllowingPublishing(),
+                                                            secretsManagerClient));
+        handler = new CreateTicketHandler(resourceService, ticketResolver);
+        handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+
+        var publishingRequest = ticketService.fetchTicketByResourceIdentifier(
+            publication.getPublisher().getId(), publication.getIdentifier(), PublishingRequestCase.class);
+
+        var expectedApprovedFiles = publication.getAssociatedArtifacts().stream()
+                                .filter(UnpublishedFile.class::isInstance)
+                                .map(File.class::cast)
+                                .map(File::getIdentifier)
+                                .toArray();
+
+        assertThat(publishingRequest.orElseThrow().getApprovedFiles(), containsInAnyOrder(expectedApprovedFiles));
     }
 
     private PublishingRequestCase fetchTicket(Publication publishedPublication,

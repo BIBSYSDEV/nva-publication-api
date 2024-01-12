@@ -490,7 +490,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldExpandApprovedFilesForPublishingRequest()
         throws ApiGatewayException, JsonProcessingException {
         var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(PUBLISHED, resourceService);
-        var ticket = createCompletedTicketAndPublishPublishFiles(publication);
+        var ticket = createCompletedTicketAndPublishFiles(publication);
         var expandedTicket = (ExpandedPublishingRequest) expansionService.expandEntry(ticket);
         var regeneratedTicket = (PublishingRequestCase) toTicketEntry(expandedTicket);
 
@@ -506,17 +506,17 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                    containsInAnyOrder(publishedFilesFromExpandedPublishingRequest.toArray()));
     }
 
-    private TicketEntry createCompletedTicketAndPublishPublishFiles(Publication publication) throws ApiGatewayException {
+    private TicketEntry createCompletedTicketAndPublishFiles(Publication publication) throws ApiGatewayException {
         var ticket = TicketTestUtils.createCompletedTicket(publication, PublishingRequestCase.class, ticketService);
         publishFiles(publication);
         return ticket;
     }
 
-    private Publication publishFiles(Publication publication) {
+    private void publishFiles(Publication publication) {
         var updatedPublication = publication.copy()
                                      .withAssociatedArtifacts(convertUnpublishedFilesToPublished(publication))
                                      .build();
-        return resourceService.updatePublication(updatedPublication);
+        resourceService.updatePublication(updatedPublication);
     }
 
     private static List<AssociatedArtifact> convertUnpublishedFilesToPublished(Publication publication) {

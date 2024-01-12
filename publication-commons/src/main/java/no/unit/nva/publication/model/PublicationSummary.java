@@ -16,7 +16,6 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
-import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.PublicationServiceConfig;
@@ -46,8 +45,6 @@ public class PublicationSummary {
     private Instant publishedDate;
     @JsonProperty
     private List<Contributor> contributors;
-    @JsonProperty
-    private List<File> approvedFiles;
 
     public static PublicationSummary create(Publication publication) {
         var publicationSummary = new PublicationSummary();

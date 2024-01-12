@@ -49,6 +49,7 @@ public class PublishingRequestCase extends TicketEntry {
     public static final String MARKED_FOR_DELETION_ERROR =
         "Publication is marked for deletion and cannot be published.";
     public static final String APPROVED_FILES_FIELD = "approvedFiles";
+    public static final String NOT_COMPLETED_PUBLISHING_REQUEST_MESSAGE = "Not allowed to set approved files for not Completed PublishingRequest";
 
     @JsonProperty(IDENTIFIER_FIELD)
     private SortableIdentifier identifier;
@@ -201,19 +202,24 @@ public class PublishingRequestCase extends TicketEntry {
     }
 
     /**
-     * Should be used only when completing/approving PublishingRequestCase
-     * @param approvedFiles the files that have been approved when approving publishingRequestCase
+     * This method should be used ONLY when completing/approving PublishingRequestCase.
+     *
+     * @param approvedFiles Set of UUIDs representing the files that have been published
+     *                      when approving PublishingRequestCase.
+     *
+     * @throws UnsupportedOperationException if this method is called when
+     * PublishingRequestCase is not in the Completed status
      */
 
     public void setApprovedFiles(Set<UUID> approvedFiles) {
-        if (approvedFiles.isEmpty()) {
-            this.approvedFiles = Set.of();
-            return;
-        }
-        if (!COMPLETED.equals(getStatus())) {
-            throw new UnsupportedOperationException("");
+        if (settingApprovedFilesForNotCompletedStatus(approvedFiles)) {
+            throw new UnsupportedOperationException(NOT_COMPLETED_PUBLISHING_REQUEST_MESSAGE);
         }
         this.approvedFiles = approvedFiles;
+    }
+
+    private boolean settingApprovedFilesForNotCompletedStatus(Set<UUID> approvedFiles) {
+        return !approvedFiles.isEmpty() && !COMPLETED.equals(getStatus());
     }
 
     @Override
@@ -319,9 +325,10 @@ public class PublishingRequestCase extends TicketEntry {
                && Objects.equals(getApprovedFiles(), that.getApprovedFiles());
     }
 
-    public PublishingRequestCase persistAutoComplete(TicketService ticketService) throws ApiGatewayException {
-        this.setStatus(COMPLETED);
-        return ticketService.createTicket(this);
+    public PublishingRequestCase persistAutoComplete(TicketService ticketService, Publication publication)
+        throws ApiGatewayException {
+        var completed = this.complete(publication, publication.getResourceOwner().getOwner());
+        return ticketService.createTicket(completed);
     }
 
     private static PublishingRequestCase createPublishingRequestIdentifyingObject(

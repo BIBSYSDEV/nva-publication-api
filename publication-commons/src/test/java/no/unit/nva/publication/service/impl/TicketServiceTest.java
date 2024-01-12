@@ -693,7 +693,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
         var ticket = TicketTestUtils.createNonPersistedTicket(publication, ticketType);
 
-        var persistedCompletedTicket = ((PublishingRequestCase) ticket).persistAutoComplete(ticketService);
+        var persistedCompletedTicket = ((PublishingRequestCase) ticket).persistAutoComplete(ticketService, publication);
 
         assertThat(persistedCompletedTicket.getStatus(), is(equalTo(COMPLETED)));
     }
