@@ -109,6 +109,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     private static final String ONWER_AFFILIATION = "ownerAffiliation";
     private static final String FINALIZED_BY = "finalizedBy";
     private static final String DOI = "doi";
+    public static final String APPROVED_FILES = "approvedFiles";
     private ResourceService resourceService;
     private TicketService ticketService;
     private UserInstance owner;
@@ -174,7 +175,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         assertThat(persistedTicket, is(equalTo(ticket)));
         assertThat(persistedTicket,
                    doesNotHaveEmptyValuesIgnoringFields(Set.of(ONWER_AFFILIATION, ASSIGNEE, FINALIZED_BY,
-                                                               FINALIZED_DATE)));
+                                                               FINALIZED_DATE, APPROVED_FILES)));
     }
 
     @Test

@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.ASSIGNEE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CREATED_DATE_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.CUSTOMER_ID_FIELD;
@@ -9,17 +10,23 @@ import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.STATUS_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.WORKFLOW;
+import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.model.storage.PublishingRequestDao;
 import no.unit.nva.publication.model.storage.TicketDao;
@@ -41,6 +48,7 @@ public class PublishingRequestCase extends TicketEntry {
     public static final String TYPE = "PublishingRequestCase";
     public static final String MARKED_FOR_DELETION_ERROR =
         "Publication is marked for deletion and cannot be published.";
+    public static final String APPROVED_FILES_FIELD = "approvedFiles";
 
     @JsonProperty(IDENTIFIER_FIELD)
     private SortableIdentifier identifier;
@@ -62,6 +70,8 @@ public class PublishingRequestCase extends TicketEntry {
     private Username assignee;
     @JsonProperty(OWNER_AFFILIATION_FIELD)
     private URI ownerAffiliation;
+    @JsonProperty(APPROVED_FILES_FIELD)
+    private Set<UUID> approvedFiles;
 
     public PublishingRequestCase() {
         super();
@@ -125,7 +135,17 @@ public class PublishingRequestCase extends TicketEntry {
 
     @Override
     public PublishingRequestCase complete(Publication publication, Username finalizedBy) {
-        return (PublishingRequestCase) super.complete(publication, finalizedBy);
+        var completed = (PublishingRequestCase) super.complete(publication, finalizedBy);
+        completed.setApprovedFiles(getFilesToApprove(publication));
+        return completed;
+    }
+
+    private static Set<UUID> getFilesToApprove(Publication publication) {
+        return publication.getAssociatedArtifacts().stream()
+                   .filter(UnpublishedFile.class::isInstance)
+                   .map(UnpublishedFile.class::cast)
+                   .map(UnpublishedFile::getIdentifier)
+                   .collect(Collectors.toSet());
     }
 
     @Override
@@ -142,6 +162,7 @@ public class PublishingRequestCase extends TicketEntry {
         copy.setWorkflow(this.getWorkflow());
         copy.setAssignee(this.getAssignee());
         copy.setOwnerAffiliation(this.getOwnerAffiliation());
+        copy.setApprovedFiles(this.getApprovedFiles().isEmpty() ? Set.of() : this.getApprovedFiles());
         return copy;
     }
 
@@ -173,6 +194,26 @@ public class PublishingRequestCase extends TicketEntry {
     @Override
     public void setOwnerAffiliation(URI ownerAffiliation) {
         this.ownerAffiliation = ownerAffiliation;
+    }
+
+    public Set<UUID> getApprovedFiles() {
+        return nonNull(approvedFiles) ? approvedFiles : Collections.emptySet();
+    }
+
+    /**
+     * Should be used only when completing/approving PublishingRequestCase
+     * @param approvedFiles the files that have been approved when approving publishingRequestCase
+     */
+
+    public void setApprovedFiles(Set<UUID> approvedFiles) {
+        if (approvedFiles.isEmpty()) {
+            this.approvedFiles = Set.of();
+            return;
+        }
+        if (!COMPLETED.equals(getStatus())) {
+            throw new UnsupportedOperationException("");
+        }
+        this.approvedFiles = approvedFiles;
     }
 
     @Override
@@ -252,7 +293,8 @@ public class PublishingRequestCase extends TicketEntry {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getIdentifier(), getStatus(), getCustomerId(), getOwner(), getModifiedDate(),
-                            getCreatedDate(), getAssignee(), getWorkflow(), getOwnerAffiliation());
+                            getCreatedDate(), getAssignee(), getWorkflow(), getOwnerAffiliation(),
+                            getApprovedFiles());
     }
 
     @Override
@@ -273,11 +315,12 @@ public class PublishingRequestCase extends TicketEntry {
                && Objects.equals(getCreatedDate(), that.getCreatedDate())
                && Objects.equals(getWorkflow(), that.getWorkflow())
                && Objects.equals(getAssignee(), that.getAssignee())
-               && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation());
+               && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation())
+               && Objects.equals(getApprovedFiles(), that.getApprovedFiles());
     }
 
     public PublishingRequestCase persistAutoComplete(TicketService ticketService) throws ApiGatewayException {
-        this.setStatus(TicketStatus.COMPLETED);
+        this.setStatus(COMPLETED);
         return ticketService.createTicket(this);
     }
 
