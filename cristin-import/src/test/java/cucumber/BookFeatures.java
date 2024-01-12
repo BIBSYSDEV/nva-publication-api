@@ -288,7 +288,7 @@ public class BookFeatures {
     }
 
     @And("the NVA Resource has a publication context Book with a revision equal to {string}")
-    public void theNVAResourceHasAPublicationContextBookWithARevisionEqualTo(String revision) {
+    public void theNvaResourceHasAPublicationContextBookWithARevisionEqualTo(String revision) {
         var book = (Book) scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationContext();
         assertThat(book.getRevision().getValue(), is(equalTo(revision)));
     }
