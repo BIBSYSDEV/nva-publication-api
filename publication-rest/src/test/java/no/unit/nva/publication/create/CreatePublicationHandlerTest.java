@@ -329,6 +329,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
     private void stubCustomerRequestWithResponse(URI customerUri, String response) {
         stubFor(get(urlEqualTo(customerUri.getPath()))
+                    .withHeader("Accept", WireMock.equalTo("application/json"))
                     .willReturn(aResponse().withBody(response).withStatus(200))
         );
     }

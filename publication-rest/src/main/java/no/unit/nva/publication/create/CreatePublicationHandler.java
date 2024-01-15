@@ -92,13 +92,12 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
                                  .map(CreatePublicationRequest::toPublication)
                                  .orElseGet(Publication::new);
 
-
         var customerAwareUserContext = getCustomerAwareUserContextFromLoginInformation(requestInfo);
 
-        validatePublication(newPublication, customerAwareUserContext.getCustomerUri());
+        validatePublication(newPublication, customerAwareUserContext.customerUri());
 
         var createdPublication = Resource.fromPublication(newPublication)
-                                     .persistNew(publicationService, customerAwareUserContext.getUserInstance());
+                                     .persistNew(publicationService, customerAwareUserContext.userInstance());
         setLocationHeader(createdPublication.getIdentifier());
 
         return PublicationResponse.fromPublication(createdPublication);
@@ -128,8 +127,8 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     private CustomerAwareUserContext getCustomerAwareUserContextFromLoginInformation(RequestInfo requestInfo)
         throws UnauthorizedException {
         return requestInfo.clientIsThirdParty()
-                   ? new ExternalUserCustomerAwareUserContext(requestInfo, identityServiceClient)
-                   : new InternalUserCustomerAwareUserContext(requestInfo);
+                   ? customerAwareUserContextFromExternalClient(requestInfo, identityServiceClient)
+                   : customerAwareUserContextFromInternalUser(requestInfo);
     }
 
     private static ResourceOwner createInternalResourceOwner(RequestInfo requestInfo) throws UnauthorizedException {
@@ -160,65 +159,33 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         return requestInstanceType.isPresent() && THESIS_INSTANCE_TYPES.contains(requestInstanceType.get());
     }
 
-    private interface CustomerAwareUserContext {
+    private CustomerAwareUserContext customerAwareUserContextFromExternalClient(
+        final RequestInfo requestInfo,
+        final IdentityServiceClient identityServiceClient) throws UnauthorizedException {
 
-        URI getCustomerUri();
+        var client = attempt(() -> requestInfo.getClientId().orElseThrow())
+                         .map(identityServiceClient::getExternalClient)
+                         .orElseThrow(fail -> new UnauthorizedException());
 
-        UserInstance getUserInstance();
+        final var customerUri = client.getCustomerUri();
+        var resourceOwner = new ResourceOwner(
+            new Username(client.getActingUser()),
+            client.getCristinUrgUri()
+        );
+
+        final var userInstance = UserInstance.createExternalUser(resourceOwner, client.getCustomerUri());
+
+        return new CustomerAwareUserContext(userInstance, customerUri);
     }
 
-    private static class ExternalUserCustomerAwareUserContext implements CustomerAwareUserContext {
-
-        final UserInstance userInstance;
-        final URI customerUri;
-
-        public ExternalUserCustomerAwareUserContext(final RequestInfo requestInfo,
-                                                    final IdentityServiceClient identityServiceClient)
-            throws UnauthorizedException {
-            var client = attempt(() -> requestInfo.getClientId().orElseThrow())
-                             .map(identityServiceClient::getExternalClient)
-                             .orElseThrow(fail -> new UnauthorizedException());
-
-            this.customerUri = client.getCustomerUri();
-            var resourceOwner = new ResourceOwner(
-                new Username(client.getActingUser()),
-                client.getCristinUrgUri()
-            );
-
-            this.userInstance = UserInstance.createExternalUser(resourceOwner, client.getCustomerUri());
-        }
-
-        @Override
-        public URI getCustomerUri() {
-            return customerUri;
-        }
-
-        @Override
-        public UserInstance getUserInstance() {
-            return userInstance;
-        }
+    private CustomerAwareUserContext customerAwareUserContextFromInternalUser(RequestInfo requestInfo)
+        throws UnauthorizedException {
+        var resourceOwner = createInternalResourceOwner(requestInfo);
+        var customerUri = requestInfo.getCurrentCustomer();
+        return new CustomerAwareUserContext(UserInstance.create(resourceOwner, customerUri), customerUri);
     }
 
-    private static class InternalUserCustomerAwareUserContext implements CustomerAwareUserContext {
-        final UserInstance userInstance;
-        final URI customerUri;
+    private record CustomerAwareUserContext(UserInstance userInstance, URI customerUri) {
 
-        public InternalUserCustomerAwareUserContext(final RequestInfo requestInfo) throws UnauthorizedException {
-            var resourceOwner = createInternalResourceOwner(requestInfo);
-
-            this.customerUri = requestInfo.getCurrentCustomer();
-            this.userInstance = UserInstance.create(resourceOwner, customerUri);
-
-        }
-
-        @Override
-        public URI getCustomerUri() {
-            return customerUri;
-        }
-
-        @Override
-        public UserInstance getUserInstance() {
-            return userInstance;
-        }
     }
 }
