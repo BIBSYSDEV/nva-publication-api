@@ -5,7 +5,6 @@ import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
 import static no.sikt.nva.scopus.ScopusConverter.extractContentString;
 import static no.unit.nva.language.LanguageConstants.ENGLISH;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import no.scopus.generated.AffiliationType;
@@ -14,7 +13,9 @@ import no.scopus.generated.OrganizationTp;
 import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.language.LanguageMapper;
+import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Organization;
+import no.unit.nva.model.UnconfirmedOrganization;
 import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -28,13 +29,12 @@ public final class AffiliationGenerator {
     private AffiliationGenerator() {
     }
 
-    public static List<Organization> fromCristinOrganization(CristinOrganization cristinOrganization) {
+    public static List<Corporation> fromCristinOrganization(CristinOrganization cristinOrganization) {
         return List.of(new Organization.Builder().withId(cristinOrganization.id())
-                           .withLabels(cristinOrganization.labels())
                            .build());
     }
 
-    public static List<Organization> fromAuthorGroupTp(AuthorGroupTp authorGroup, CristinConnection cristinConnection) {
+    public static List<Corporation> fromAuthorGroupTp(AuthorGroupTp authorGroup, CristinConnection cristinConnection) {
         var organizationNames = extractOrganizationNames(authorGroup);
         var cristinOrganizations = fetchCristinOrganizations(cristinConnection, organizationNames);
         return cristinOrganizations.isEmpty()
@@ -42,15 +42,14 @@ public final class AffiliationGenerator {
                    : cristinOrganizations.stream().map(AffiliationGenerator::toOrganization).toList();
     }
 
-    private static List<Organization> getOrganizationsFromAuthorGroup(AuthorGroupTp authorGroup) {
-        return List.of(
-            new Organization.Builder().withLabels(getOrganizationLabels(authorGroup).orElseGet(Map::of)).build());
+    private static List<Corporation> getOrganizationsFromAuthorGroup(AuthorGroupTp authorGroup) {
+        var name = getOrganizationNameFromAuthorGroup(authorGroup).orElse(null);
+        return List.of(new UnconfirmedOrganization(name));
     }
 
-    private static Organization toOrganization(CristinOrganization cristinOrganization) {
+    private static Corporation toOrganization(CristinOrganization cristinOrganization) {
         return new Organization.Builder()
                    .withId(cristinOrganization.id())
-                   .withLabels(cristinOrganization.labels())
                    .build();
     }
 
@@ -108,12 +107,7 @@ public final class AffiliationGenerator {
                    .collect(Collectors.joining(AFFILIATION_DELIMITER));
     }
 
-    private static Optional<Map<String, String>> getOrganizationLabels(AuthorGroupTp authorGroup) {
-        return getOrganizationNameFromAuthorGroup(authorGroup).map(
-            organizationName -> Map.of(getLanguageIso6391Code(organizationName), organizationName));
-    }
-
-    private static String getLanguageIso6391Code(String textToBeGuessedLanguageCodeFrom) {
+    public static String getLanguageIso6391Code(String textToBeGuessedLanguageCodeFrom) {
         var detector = new OptimaizeLangDetector().loadModels();
         var result = detector.detect(textToBeGuessedLanguageCodeFrom);
         return result.isReasonablyCertain() ? getIso6391LanguageCodeForSupportedNvaLanguage(result.getLanguage())

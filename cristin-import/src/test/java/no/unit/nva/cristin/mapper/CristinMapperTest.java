@@ -132,7 +132,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
                 .map(CristinObject::getCristinSources)
                 .flatMap(Collection::stream)
                 .map(this::createExspectedAdditionalIdentifier)
-                .collect(Collectors.toList());
+                .toList();
 
         List<AdditionalIdentifier> actualIds = cristinObjects.stream()
                                                    .map(CristinObject::toPublication)
@@ -222,7 +222,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
                                                  .map(CristinObject::getEntryCreationDate)
                                                  .map(LocalDate::atStartOfDay)
                                                  .map(time -> time.toInstant(utc))
-                                                 .collect(Collectors.toList());
+                                                 .toList();
 
         List<Instant> actualCreatedDates = cristinObjects.stream().map(CristinObject::toPublication)
                                                .map(Publication::getCreatedDate)
@@ -273,7 +273,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
                                                     .map(CristinObject::getContributors)
                                                     .flatMap(Collection::stream)
                                                     .map(this::formatNameAccordingToNvaPattern)
-                                                    .collect(Collectors.toList());
+                                                    .toList();
 
         List<String> actualContributorNames = cristinObjects.stream()
                                                   .map(CristinObject::toPublication)
@@ -352,7 +352,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
                                              .map(this::explicitFormattingOfCristinAffiliationCode)
                                              .map(this::addCristinOrgHostPrefix)
                                              .map(URI::create)
-                                             .collect(Collectors.toList());
+                                             .toList();
 
         List<URI> actualAffiliations = cristinObjects.stream().map(CristinObject::toPublication)
                                            .map(Publication::getEntityDescription)
@@ -360,6 +360,8 @@ class CristinMapperTest extends AbstractCristinImportTest {
                                            .flatMap(Collection::stream)
                                            .map(Contributor::getAffiliations)
                                            .flatMap(Collection::stream)
+                                           .filter(Organization.class::isInstance)
+                                           .map(Organization.class::cast)
                                            .map(Organization::getId)
                                            .collect(Collectors.toList());
 
@@ -371,7 +373,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
         List<PublicationDate> expectedPublicationDates = cristinObjects.stream()
                                                              .map(CristinObject::getPublicationYear)
                                                              .map(this::yearToPublicationDate)
-                                                             .collect(Collectors.toList());
+                                                             .toList();
         List<PublicationDate> actualPublicationDates = cristinObjects.stream()
                                                            .map(CristinObject::toPublication)
                                                            .map(Publication::getEntityDescription)
@@ -505,7 +507,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     private CristinObject getSingleCristinObject() {
-        return cristinObjects(1).collect(Collectors.toList()).get(0);
+        return cristinObjects(1).toList().get(0);
     }
 
     private CristinObject cristinObjectWithSomeContributorsWithoutSeqNumber(CristinObject cristinObject) {

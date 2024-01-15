@@ -376,7 +376,10 @@ public class UpdatePublicationHandler
                                                            UserInstance userInstance) {
         return publication.getEntityDescription().getContributors()
                 .stream().flatMap(contributor ->
-                        contributor.getAffiliations().stream().map(Organization::getId))
+                        contributor.getAffiliations().stream()
+                            .filter(Organization.class::isInstance)
+                            .map(Organization.class::cast)
+                            .map(Organization::getId))
                 .anyMatch(id ->
                         id.equals(userInstance.getOrganizationUri()));
     }

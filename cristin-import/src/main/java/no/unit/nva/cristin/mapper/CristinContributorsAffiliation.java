@@ -6,7 +6,6 @@ import static no.unit.nva.cristin.lambda.constants.MappingConstants.ORGANIZATION
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
-import java.util.Collections;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -52,7 +51,6 @@ public class CristinContributorsAffiliation {
     public Organization toNvaOrganization() {
         return new Organization.Builder()
                    .withId(buildId())
-                   .withLabels(Collections.emptyMap())
                    .build();
     }
 

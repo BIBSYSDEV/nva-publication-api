@@ -1635,6 +1635,7 @@ Resources:
     DependsOn:
       - CristinImportDataEntryQueue
       - CristinImportPatchQueue
+      - CristinImportNviPatchQueue
     Properties:
       CodeUri: s3-import-commons
       Handler: no.unit.nva.publication.s3imports.FileEntriesEventEmitter::handleRequest
@@ -1650,6 +1651,7 @@ Resources:
           BATCH_EMISSION_INTERVAL_MILLIS: 700
           CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL: !Ref CristinImportDataEntryQueue
           CRISTIN_IMPORT_PATCH_QUEUE_URL: !Ref CristinImportPatchQueue
+          CRISTIN_IMPORT_NVI_PATCH_QUEUE_URL: !Ref CristinImportNviPatchQueue
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -1658,7 +1660,7 @@ Resources:
             Pattern:
               detail:
                 topic: [ "PublicationService.DataImport.Filename" ]
-                subtopic: [ "PublicationService.CristinData.DataEntry", "PublicationService.CristinData.PatchEntry" ]
+                subtopic: [ "PublicationService.CristinData.DataEntry", "PublicationService.CristinData.PatchEntry", "PublicationService.CristinData.NviPatch" ]
 
 
   CreatePublishedPublicationHandler:
@@ -1840,6 +1842,8 @@ Resources:
   CristinImportDataEntryQueue:
     Type: "AWS::SQS::Queue"
   CristinImportPatchQueue:
+    Type: "AWS::SQS::Queue"
+  CristinImportNviPatchQueue:
     Type: "AWS::SQS::Queue"
   CristinImportDLQ:
     Type: "AWS::SQS::Queue"

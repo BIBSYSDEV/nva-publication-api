@@ -540,13 +540,13 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
     private Publication removeAllFieldsThatAreNotCopiedFromTheCreateRequest(Publication samplePublication) {
         return samplePublication.copy()
-                   .withDoi(null)
-                   .withHandle(null)
-                   .withLink(null)
-                   .withPublishedDate(null)
-                   .withPublisher(new Organization.Builder().withLabels(null).withId(customerId).build())
-                   .withResourceOwner(null)
-                   .build();
+            .withDoi(null)
+            .withHandle(null)
+            .withLink(null)
+            .withPublishedDate(null)
+            .withPublisher(new Organization.Builder().withId(customerId).build())
+            .withResourceOwner(null)
+            .build();
     }
 
     private void assertExistenceOfMinimumRequiredFields(PublicationResponse publicationResponse) {

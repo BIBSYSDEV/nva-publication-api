@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
@@ -51,12 +52,16 @@ import no.unit.nva.expansion.model.ExpandedTicketStatus;
 import no.unit.nva.expansion.model.ExpandedUnpublishRequest;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -105,6 +110,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private static final String ASSIGNEE = "assignee";
     private static final String OWNERAFFILIATION = "ownerAffiliation";
     private static final String FINALIZED_BY = "finalizedBy";
+    public static final String APPROVED_FILES = "approvedFiles";
     private ResourceExpansionService expansionService;
     private ResourceService resourceService;
     private MessageService messageService;
@@ -164,7 +170,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(regeneratedTicket, is(equalTo(ticket)));
         assertThat(ticket,
                    doesNotHaveEmptyValuesIgnoringFields(Set.of(WORKFLOW, ASSIGNEE, FINALIZED_BY,
-                                                               FINALIZED_DATE, OWNERAFFILIATION)));
+                                                               FINALIZED_DATE, OWNERAFFILIATION, APPROVED_FILES)));
         var expectedPublicationId = constructExpectedPublicationId(publication);
         assertThat(expandedTicket.getPublication().getPublicationId(), is(equalTo(expectedPublicationId)));
     }
@@ -480,6 +486,47 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(contributorsWithSameId.size(), is(equalTo(2)));
     }
 
+    @Test
+    void shouldExpandApprovedFilesForPublishingRequest()
+        throws ApiGatewayException, JsonProcessingException {
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(PUBLISHED, resourceService);
+        var ticket = createCompletedTicketAndPublishFiles(publication);
+        var expandedTicket = (ExpandedPublishingRequest) expansionService.expandEntry(ticket);
+        var regeneratedTicket = (PublishingRequestCase) toTicketEntry(expandedTicket);
+
+        assertThat(regeneratedTicket, is(equalTo(ticket)));
+
+        var publishedFilesFromPublication = resourceService.getPublication(publication)
+                                                .getAssociatedArtifacts().stream()
+                                                .filter(PublishedFile.class::isInstance)
+                                                .collect(Collectors.toSet());
+        var publishedFilesFromExpandedPublishingRequest = expandedTicket.getApprovedFiles();
+
+        assertThat(publishedFilesFromPublication, 
+                   containsInAnyOrder(publishedFilesFromExpandedPublishingRequest.toArray()));
+    }
+
+    private TicketEntry createCompletedTicketAndPublishFiles(Publication publication) throws ApiGatewayException {
+        var ticket = TicketTestUtils.createCompletedTicket(publication, PublishingRequestCase.class, ticketService);
+        publishFiles(publication);
+        return ticket;
+    }
+
+    private void publishFiles(Publication publication) {
+        var updatedPublication = publication.copy()
+                                     .withAssociatedArtifacts(convertUnpublishedFilesToPublished(publication))
+                                     .build();
+        resourceService.updatePublication(updatedPublication);
+    }
+
+    private static List<AssociatedArtifact> convertUnpublishedFilesToPublished(Publication publication) {
+        return publication.getAssociatedArtifacts().stream()
+                   .filter(UnpublishedFile.class::isInstance)
+                   .map(UnpublishedFile.class::cast)
+                   .map(UnpublishedFile::toPublishedFile)
+                   .collect(Collectors.toList());
+    }
+
     private static List<Contributor> extractContributors(ExpandedResource expandedResource)
         throws JsonProcessingException {
         return objectMapper.readValue(expandedResource.asJsonNode().at("/entityDescription").toString(),
@@ -552,7 +599,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private Contributor createContributor(Role role,
                                           URI id,
                                           String name,
-                                          List<Organization> affiliations,
+                                          List<Corporation> affiliations,
                                           int sequence) {
         return new Contributor.Builder()
                    .withIdentity(new Identity.Builder()
@@ -689,7 +736,14 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         publishingRequest.setStatus(getTicketStatus(expandedPublishingRequest.getStatus()));
         publishingRequest.setFinalizedBy(extractUsername(expandedPublishingRequest.getFinalizedBy()));
         publishingRequest.setAssignee(extractUsername(expandedPublishingRequest.getAssignee()));
+        publishingRequest.setApprovedFiles(extractApprovedFiles(expandedPublishingRequest));
         return publishingRequest;
+    }
+
+    private static Set<UUID> extractApprovedFiles(ExpandedPublishingRequest expandedPublishingRequest) {
+        return expandedPublishingRequest.getApprovedFiles().stream().map(
+            File::getIdentifier).collect(
+            Collectors.toSet());
     }
 
     private UnpublishRequest toTicketEntry(ExpandedUnpublishRequest expandedUnpublishRequest) {
