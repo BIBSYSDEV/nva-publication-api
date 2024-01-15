@@ -1,5 +1,6 @@
 package no.unit.nva.publication.fetch;
 
+import static com.google.common.net.HttpHeaders.CACHE_CONTROL;
 import static com.google.common.net.HttpHeaders.LOCATION;
 import static com.google.common.net.MediaType.ANY_TEXT_TYPE;
 import static com.google.common.net.MediaType.HTML_UTF_8;
@@ -116,7 +117,8 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     private String produceRedirect(URI duplicateOf) {
         statusCode = HTTP_MOVED_PERM;
-        addAdditionalHeaders(() -> Map.of(LOCATION, duplicateOf.toString()));
+        // cache control header here to avoid permanent browser caching of the redirect
+        addAdditionalHeaders(() -> Map.of(LOCATION, duplicateOf.toString(), CACHE_CONTROL, "no-cache"));
         return null;
     }
 

@@ -981,28 +981,21 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(UNPUBLISHED)));
     }
 
-    @Test
-    void shouldSetStatusPublishedWhenPublishingUnpublishedPublication() throws ApiGatewayException {
-        var publication = createPublishedResource();
-        resourceService.unpublishPublication(publication);
+    @ParameterizedTest
+    @EnumSource(value = PublicationStatus.class, mode = Mode.EXCLUDE, names = {"NEW", "DRAFT_FOR_DELETION"})
+    void shouldAllowPublish(PublicationStatus status) throws ApiGatewayException {
+        var publication = randomPublication().copy().withStatus(status).build();
+        resourceService.insertPreexistingPublication(publication);
         resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(PUBLISHED)));
     }
 
-    @Test
-    void shouldSetStatusPublishedWhenPublishingDeletedPublication() throws ApiGatewayException {
-        var publication = createPublishedResource();
-        resourceService.unpublishPublication(publication);
-        resourceService.deletePublication(publication);
-        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
-        assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(PUBLISHED)));
-    }
-
-    @Test
-    void shouldThrowExceptionWhenPublishingWrongStatus() throws ApiGatewayException {
-        var publication = createPersistedPublicationWithoutDoi();
-        resourceService.markPublicationForDeletion(UserInstance.fromPublication(publication),
-                                                   publication.getIdentifier());
+    @ParameterizedTest
+    @EnumSource(value = PublicationStatus.class, mode = Mode.EXCLUDE, names = {"DRAFT", "PUBLISHED_METADATA",
+        "PUBLISHED", "DELETED", "UNPUBLISHED"})
+    void shouldNotAllowPublish(PublicationStatus status) {
+        var publication = randomPublication().copy().withStatus(status).build();
+        resourceService.insertPreexistingPublication(publication);
         assertThrows(UnsupportedPublicationStatusTransition.class,
                      () -> resourceService.publishPublication(UserInstance.fromPublication(publication),
                                                               publication.getIdentifier()));
