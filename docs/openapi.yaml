@@ -93,6 +93,10 @@ paths:
               schema:
                 type: string
                 format: URI
+            Cache-Control:
+              description: Cache-Control header
+              schema:
+                type: string
         '410':
           description: Permanently gone
           content:
