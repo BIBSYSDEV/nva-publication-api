@@ -35,6 +35,8 @@ import java.util.stream.Stream;
 import net.datafaker.providers.base.BaseFaker;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.lambda.constants.HardcodedValues;
+import no.unit.nva.cristin.mapper.CristinLectureOrPosterMetaData;
+import no.unit.nva.cristin.mapper.PresentationEvent;
 import no.unit.nva.cristin.mapper.artisticproduction.ArtisticGenre;
 import no.unit.nva.cristin.mapper.artisticproduction.ArtisticProductionTimeUnit;
 import no.unit.nva.cristin.mapper.artisticproduction.CristinArtisticProduction;
@@ -610,6 +612,24 @@ public final class CristinDataGenerator {
                    .withPublicationYear(randomYear())
                    .withPublicationOwner(randomString())
                    .withContributors(randomContributors())
+                   .withLectureOrPosterMetaData(randomLectureOrPosterMetaData())
+                   .build();
+    }
+
+    private static CristinLectureOrPosterMetaData randomLectureOrPosterMetaData() {
+        return CristinLectureOrPosterMetaData.builder()
+                   .withEvent(createRandomCristinEvent())
+                   .build();
+    }
+
+    private static PresentationEvent createRandomCristinEvent() {
+        return PresentationEvent.builder()
+                   .withTitle(randomString())
+                   .withAgent(randomString())
+                   .withCountryCode(randomString())
+                   .withPlace(randomDoiString())
+                   .withFrom("2023-11-28T00:00:00")
+                   .withTo("2023-11-29T00:00:00")
                    .build();
     }
 
