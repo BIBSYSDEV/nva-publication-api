@@ -23,7 +23,7 @@ public record PublicationDetail(SortableIdentifier identifier,
     }
 
     public String toString() {
-       return this.toJsonString();
+        return this.toJsonString();
     }
 
     private static Builder builder() {
