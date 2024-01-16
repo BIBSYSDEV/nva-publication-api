@@ -4,6 +4,7 @@ import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMA
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.Locale;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -62,7 +63,7 @@ public class CristinLocale {
     private String controlledBy;
 
     @JsonProperty(DATE_CONTROLLED_FIELD)
-    private String dateControlled;
+    private LocalDate dateControlled;
 
     @JsonProperty(CONTROL_STATUS_FIELD)
     private String controlStatus;

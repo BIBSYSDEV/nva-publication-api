@@ -1,11 +1,14 @@
 package no.unit.nva.cristin.mapper.nva;
 
+import java.time.Instant;
 import java.util.List;
 import no.unit.nva.cristin.mapper.CristinLocale;
 
 public record NviReport(String publicationIdentifier,
                         String cristinIdentifier,
-                        List<CristinLocale> nviReport) {
+                        List<CristinLocale> nviReport,
+                        int yearReported,
+                        Instant publicationDate) {
 
     public static Builder builder() {
         return new Builder();
@@ -16,6 +19,8 @@ public record NviReport(String publicationIdentifier,
         private String publicationIdentifier;
         private String cristinIdentifier;
         private List<CristinLocale> nviReport;
+        private int yearReported;
+        private Instant publicationDate;
 
         private Builder() {
         }
@@ -35,8 +40,19 @@ public record NviReport(String publicationIdentifier,
             return this;
         }
 
-        public NviReport build() {
-            return new NviReport(publicationIdentifier, cristinIdentifier, nviReport);
+        public Builder withYearReported(int yearReported) {
+            this.yearReported = yearReported;
+            return this;
         }
+
+        public Builder withPublicationDate(Instant publicationDate) {
+            this.publicationDate = publicationDate;
+            return this;
+        }
+
+        public NviReport build() {
+            return new NviReport(publicationIdentifier, cristinIdentifier, nviReport, yearReported, publicationDate);
+        }
+
     }
 }

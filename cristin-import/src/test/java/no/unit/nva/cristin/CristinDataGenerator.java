@@ -717,7 +717,7 @@ public final class CristinDataGenerator {
                    .withSubDepartmentIdentifier(randomString())
                    .withGroupIdentifier(randomString())
                    .withControlledBy(randomString())
-                   .withDateControlled(randomString())
+                   .withDateControlled(LocalDate.now())
                    .withControlStatus(J)
                    .build();
     }

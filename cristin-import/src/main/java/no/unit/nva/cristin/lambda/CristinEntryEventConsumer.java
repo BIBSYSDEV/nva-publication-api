@@ -219,6 +219,8 @@ public class CristinEntryEventConsumer
                    .withPublicationIdentifier(publicationRepresentations.getNvaPublicationIdentifier())
                    .withCristinIdentifier(publicationRepresentations.getCristinIdentifier())
                    .withNviReport(publicationRepresentations.getCristinObject().getCristinLocales())
+                   .withYearReported(publicationRepresentations.getCristinObject().getYearReported())
+                   .withPublicationDate(publicationRepresentations.getPublication().getCreatedDate())
                    .build();
     }
 
