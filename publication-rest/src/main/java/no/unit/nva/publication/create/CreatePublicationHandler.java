@@ -178,11 +178,15 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         return new CustomerAwareUserContext(userInstance, customerUri);
     }
 
-    private CustomerAwareUserContext customerAwareUserContextFromInternalUser(RequestInfo requestInfo)
+    private static CustomerAwareUserContext customerAwareUserContextFromInternalUser(RequestInfo requestInfo)
         throws UnauthorizedException {
         var resourceOwner = createInternalResourceOwner(requestInfo);
         var customerUri = requestInfo.getCurrentCustomer();
-        return new CustomerAwareUserContext(UserInstance.create(resourceOwner, customerUri), customerUri);
+        return fromUserInstance(UserInstance.create(resourceOwner, customerUri));
+    }
+
+    private static CustomerAwareUserContext fromUserInstance(UserInstance userInstance) {
+        return new CustomerAwareUserContext(userInstance, userInstance.getOrganizationUri());
     }
 
     private record CustomerAwareUserContext(UserInstance userInstance, URI customerUri) {
