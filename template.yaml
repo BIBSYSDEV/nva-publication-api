@@ -106,6 +106,9 @@ Parameters:
   PiaRestUsernamePasswordKey:
     Type: String
     Default: "PiaRestPass"
+  CristinImportNviPatchQueueName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /NVA/Queue/CristinNviQueue
 
 Conditions:
   WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ] ]
@@ -1844,7 +1847,9 @@ Resources:
   CristinImportPatchQueue:
     Type: "AWS::SQS::Queue"
   CristinImportNviPatchQueue:
-    Type: "AWS::SQS::Queue"
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Ref CristinImportNviPatchQueueName
   CristinImportDLQ:
     Type: "AWS::SQS::Queue"
 
