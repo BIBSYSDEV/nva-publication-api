@@ -10,6 +10,7 @@ import java.util.Locale;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import no.unit.nva.model.ResourceOwner;
@@ -26,6 +27,7 @@ import nva.commons.core.paths.UriWrapper;
 )
 @Getter
 @Setter
+@Data
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"brukernavn_opprettet", "dato_opprettet", "brukernavn_siste_endring",
     "dato_siste_endring", "status_bekreftet_arkivsporsmal",

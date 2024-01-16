@@ -211,13 +211,13 @@ public class CristinEntryEventConsumer
         var nviReport = createNviReport(publicationRepresentations);
         var fileUri = constructNviReportUri(publicationRepresentations);
         var s3Driver = new S3Driver(s3Client, fileUri.getUri().getHost());
-        attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(), nviReport.toString())).orElseThrow();
+        attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(), nviReport.toJsonString())).orElseThrow();
     }
 
     private static NviReport createNviReport(PublicationRepresentations publicationRepresentations) {
         return NviReport.builder()
                    .withPublicationIdentifier(publicationRepresentations.getNvaPublicationIdentifier())
-                   .withCristinIdentifier(publicationRepresentations.getCristinIdentifier())
+                   .withCristinIdentifier(publicationRepresentations.getCristinObject().getSourceRecordIdentifier())
                    .withNviReport(publicationRepresentations.getCristinObject().getCristinLocales())
                    .withYearReported(publicationRepresentations.getCristinObject().getYearReported())
                    .withPublicationDate(publicationRepresentations.getPublication().getCreatedDate())

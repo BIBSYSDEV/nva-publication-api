@@ -2,13 +2,14 @@ package no.unit.nva.cristin.mapper.nva;
 
 import java.time.Instant;
 import java.util.List;
+import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.cristin.mapper.CristinLocale;
 
 public record NviReport(String publicationIdentifier,
                         String cristinIdentifier,
                         List<CristinLocale> nviReport,
                         int yearReported,
-                        Instant publicationDate) {
+                        Instant publicationDate) implements JsonSerializable {
 
     public static Builder builder() {
         return new Builder();
