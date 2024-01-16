@@ -106,10 +106,10 @@ Parameters:
   PiaRestUsernamePasswordKey:
     Type: String
     Default: "PiaRestPass"
-  CristinImportNviPatchQueue:
+  CristinImportNviPatchQueueUrl:
     Type: AWS::SSM::Parameter::Value<String>
-    Description: SQS Queue for proceeding nvi data from cristin
-    Default: /NVA/Queues/CristinImportNviQueue
+    Description: SQS Queue Url for proceeding nvi data from cristin
+    Default: /NVA/Queues/CristinImportNviQueueUrl
 
 Conditions:
   WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ] ]
@@ -1654,7 +1654,7 @@ Resources:
           BATCH_EMISSION_INTERVAL_MILLIS: 700
           CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL: !Ref CristinImportDataEntryQueue
           CRISTIN_IMPORT_PATCH_QUEUE_URL: !Ref CristinImportPatchQueue
-          CRISTIN_IMPORT_NVI_PATCH_QUEUE_URL: !Ref CristinImportNviPatchQueue
+          CRISTIN_IMPORT_NVI_PATCH_QUEUE_URL: !Ref CristinImportNviPatchQueueArn
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
