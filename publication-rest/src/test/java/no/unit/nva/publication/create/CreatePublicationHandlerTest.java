@@ -397,7 +397,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"{}", "{\"allowFileUploadForTypes\": {}}"})
+    @ValueSource(strings = {"", "{}", "[]", "{\"allowFileUploadForTypes\": {}}"})
     void shouldReturnBadRequestIfMalformedConfigReceivedFromCustomerApi(String customerResponse) throws IOException {
         var event = prepareRequestWithFileForTypeWhereNotAllowed();
         WireMock.reset();

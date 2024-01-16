@@ -1,5 +1,6 @@
 package no.unit.nva.publication.validation;
 
+import static java.util.Objects.nonNull;
 import java.net.URI;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
@@ -7,6 +8,7 @@ import no.unit.nva.model.associatedartifacts.file.File;
 
 public class DefaultPublicationValidator implements PublicationValidator {
 
+    public static final String FILES_NOT_ALLOWED_MESSAGE = "Files not allowed for instance type %s";
     private final FilesAllowedForTypesSupplier filesAllowedForTypesSupplier;
 
     public DefaultPublicationValidator(final FilesAllowedForTypesSupplier filesAllowedForTypesSupplier) {
@@ -15,7 +17,7 @@ public class DefaultPublicationValidator implements PublicationValidator {
 
     @Override
     public void validate(Publication publication, URI customerUri) throws PublicationValidationException {
-        if (publication.getEntityDescription() != null) {
+        if (nonNull(publication.getEntityDescription())) {
             var hasFiles = hasAtLeastOneFile(publication);
             validate(publication.getEntityDescription(), hasFiles, customerUri);
         }
@@ -24,20 +26,15 @@ public class DefaultPublicationValidator implements PublicationValidator {
     private void validate(EntityDescription entityDescription, boolean hasFiles, URI customerUri)
         throws PublicationValidationException {
         var instanceType = getInstanceType(entityDescription);
-        if (instanceType != null && hasFiles && !filesAllowedForTypesSupplier.get(customerUri).contains(
+        if (nonNull(instanceType) && hasFiles && !filesAllowedForTypesSupplier.get(customerUri).contains(
             getInstanceType(entityDescription))) {
-            throw new PublicationValidationException(
-                String.format("Files not allowed for instance type %s",
-                              entityDescription
-                                  .getReference()
-                                  .getPublicationInstance()
-                                  .getInstanceType()));
+            throw new PublicationValidationException(String.format(FILES_NOT_ALLOWED_MESSAGE, instanceType));
         }
     }
 
     private static String getInstanceType(EntityDescription entityDescription) {
-        if (entityDescription.getReference() != null
-            && entityDescription.getReference().getPublicationInstance() != null) {
+        if (nonNull(entityDescription.getReference())
+            && nonNull(entityDescription.getReference().getPublicationInstance())) {
             return entityDescription
                        .getReference()
                        .getPublicationInstance()
@@ -48,10 +45,8 @@ public class DefaultPublicationValidator implements PublicationValidator {
     }
 
     private boolean hasAtLeastOneFile(Publication publication) {
-        return publication.getAssociatedArtifacts() != null
+        return nonNull(publication.getAssociatedArtifacts())
                &&
-               publication.getAssociatedArtifacts().stream()
-                   .anyMatch(
-                       associatedArtifact -> associatedArtifact instanceof File);
+               publication.getAssociatedArtifacts().stream().anyMatch(File.class::isInstance);
     }
 }

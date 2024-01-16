@@ -1,7 +1,9 @@
 package no.unit.nva.publication.validation.config;
 
+import static java.util.Objects.nonNull;
 import static org.apache.http.HttpHeaders.ACCEPT;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -9,8 +11,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.publication.validation.ConfigNotAvailableException;
 import no.unit.nva.publication.validation.FilesAllowedForTypesSupplier;
@@ -56,17 +59,29 @@ public class CustomerApiFilesAllowedForTypesConfigSupplier implements FilesAllow
     private static Set<String> extractFilesAllowedForTypesFromJsonResponse(HttpResponse<String> response,
                                                                            HttpRequest request)
         throws JsonProcessingException {
-        final var types = new HashSet<String>();
-        var rootNode = JsonUtils.dtoObjectMapper.readTree(response.body());
-        var allowFileUploadForTypesNode = rootNode.get(ALLOW_FILE_UPLOAD_FOR_TYPES_FIELD_NAME);
-        if (allowFileUploadForTypesNode != null && allowFileUploadForTypesNode.isArray()) {
-            allowFileUploadForTypesNode.elements().forEachRemaining(node -> types.add(node.asText()));
-            return types;
+
+        var node = parseJson(response.body()).get(ALLOW_FILE_UPLOAD_FOR_TYPES_FIELD_NAME);
+        if (nodeIsArray(node)) {
+            return extractTypes(node);
         } else {
             throw new ConfigNotAvailableException(String.format("Response from %s did not contain expected "
                                                                 + "field %s of type array!",
                                                                 request.uri().toString(),
                                                                 ALLOW_FILE_UPLOAD_FOR_TYPES_FIELD_NAME));
         }
+    }
+
+    private static boolean nodeIsArray(final JsonNode node) {
+        return nonNull(node) && node.isArray();
+    }
+
+    private static JsonNode parseJson(final String json) throws JsonProcessingException {
+        return JsonUtils.dtoObjectMapper.readTree(json);
+    }
+
+    private static Set<String> extractTypes(final JsonNode node) {
+        return StreamSupport.stream(node.spliterator(), false)
+                   .map(JsonNode::asText)
+                   .collect(Collectors.toSet());
     }
 }
