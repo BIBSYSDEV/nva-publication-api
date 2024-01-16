@@ -15,6 +15,7 @@ import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.model.ContributorVerificationStatus;
+import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.role.Role;
@@ -69,8 +70,8 @@ public final class CristinContributorExtractor {
                    : ContributorVerificationStatus.NOT_VERIFIED;
     }
 
-    private static List<Organization> generateOrganizations(Set<Affiliation> affiliations,
-                                                            CristinOrganization cristinOrganization) {
+    private static List<Corporation> generateOrganizations(Set<Affiliation> affiliations,
+                                                           CristinOrganization cristinOrganization) {
 
         var organizations = createOrganizationsFromCristinPersonAffiliations(affiliations).toList();
         var organisationFromAuthorGroupTp = createOrganizationFromCristinOrganization(cristinOrganization).toList();
@@ -79,27 +80,25 @@ public final class CristinContributorExtractor {
                    .toList();
     }
 
-    private static Stream<Organization> createOrganizationsFromCristinPersonAffiliations(
+    private static Stream<Corporation> createOrganizationsFromCristinPersonAffiliations(
         Set<Affiliation> affiliations) {
         return affiliations.stream()
                    .filter(Affiliation::isActive)
                    .map(CristinContributorExtractor::convertToOrganization);
     }
 
-    private static Organization convertToOrganization(Affiliation affiliation) {
+    private static Corporation convertToOrganization(Affiliation affiliation) {
         return new Organization.Builder().withId(affiliation.getOrganization())
-                   .withLabels(affiliation.getRole().getLabels())
                    .build();
     }
 
-    private static Stream<Organization> createOrganizationFromCristinOrganization(
+    private static Stream<Corporation> createOrganizationFromCristinOrganization(
         CristinOrganization cristinOrganization) {
         return Stream.ofNullable(cristinOrganization).map(CristinContributorExtractor::toOrganization);
     }
 
-    private static Organization toOrganization(CristinOrganization cristinOrganization) {
+    private static Corporation toOrganization(CristinOrganization cristinOrganization) {
         return new Organization.Builder().withId(cristinOrganization.id())
-                   .withLabels(cristinOrganization.labels())
                    .build();
     }
 

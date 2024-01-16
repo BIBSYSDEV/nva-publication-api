@@ -40,6 +40,7 @@ import no.sikt.nva.brage.migration.record.Type;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -97,7 +98,7 @@ public class NvaBrageMigrationDataGenerator {
     }
 
     @NotNull
-    private static List<Organization> createAffiliationList() {
+    private static List<Corporation> createAffiliationList() {
         return List.of(
             new Organization.Builder().withId(URI.create("https://test.nva.aws.unit.no/cristin/organization/12345"))
                 .build());

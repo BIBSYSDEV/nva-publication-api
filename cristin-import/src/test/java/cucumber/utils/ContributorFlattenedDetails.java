@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.Optional;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Organization;
 import nva.commons.core.SingletonCollector;
 
 public class ContributorFlattenedDetails implements JsonSerializable {
@@ -30,7 +31,8 @@ public class ContributorFlattenedDetails implements JsonSerializable {
     public static ContributorFlattenedDetails extractNameSequenceAndAffiliationUri(Contributor contributor) {
         String name = contributor.getIdentity().getName();
         int sequence = contributor.getSequence();
-        URI affiliationUri = contributor.getAffiliations().stream().collect(SingletonCollector.collect()).getId();
+        URI affiliationUri = ((Organization) contributor.getAffiliations().stream()
+                                                 .collect(SingletonCollector.collect())).getId();
         return new ContributorFlattenedDetails(name, sequence, affiliationUri);
     }
 

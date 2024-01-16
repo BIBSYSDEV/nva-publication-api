@@ -31,6 +31,7 @@ import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
@@ -283,17 +284,17 @@ public final class BrageNvaMapper {
                    .build();
     }
 
-    private static List<Organization> generateAffiliations(no.sikt.nva.brage.migration.record.Contributor contributor) {
+    private static List<Corporation> generateAffiliations(no.sikt.nva.brage.migration.record.Contributor contributor) {
         return Optional.ofNullable(contributor.getAffiliations())
                    .map(BrageNvaMapper::getCristinOrganizationList)
                    .orElse(null);
     }
 
-    private static List<Organization> getCristinOrganizationList(List<Affiliation> affiliations) {
+    private static List<Corporation> getCristinOrganizationList(List<Affiliation> affiliations) {
         return affiliations.stream().map(BrageNvaMapper::toCristinOrganization).toList();
     }
 
-    private static Organization toCristinOrganization(Affiliation affiliation) {
+    private static Corporation toCristinOrganization(Affiliation affiliation) {
         return new Organization.Builder().withId(generateCristinOrganization(affiliation)).build();
     }
 

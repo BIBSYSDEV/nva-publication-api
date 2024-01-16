@@ -2,15 +2,15 @@ package no.sikt.nva.scopus.conversion.model;
 
 import java.util.List;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Identity;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.role.RoleType;
 
 public class NvaCustomerContributor extends Contributor {
 
     private final boolean hasNvaCustomer;
 
-    public NvaCustomerContributor(Identity identity, List<Organization> affiliations, Object role, Integer sequence,
+    public NvaCustomerContributor(Identity identity, List<Corporation> affiliations, Object role, Integer sequence,
                                   boolean correspondingAuthor, boolean hasNvaCustomer) {
         super(identity, affiliations, role, sequence, correspondingAuthor);
         this.hasNvaCustomer = hasNvaCustomer;
@@ -23,7 +23,7 @@ public class NvaCustomerContributor extends Contributor {
     public static final class Builder {
 
         private Identity identity;
-        private List<Organization> affiliations;
+        private List<Corporation> affiliations;
         private Integer sequence;
         private RoleType role;
         private boolean correspondingAuthor;
@@ -37,7 +37,7 @@ public class NvaCustomerContributor extends Contributor {
             return this;
         }
 
-        public Builder withAffiliations(List<Organization> affiliations) {
+        public Builder withAffiliations(List<Corporation> affiliations) {
             this.affiliations = affiliations;
             return this;
         }

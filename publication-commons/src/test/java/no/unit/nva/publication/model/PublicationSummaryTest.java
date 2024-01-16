@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Random;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.role.Role;
@@ -122,7 +123,7 @@ class PublicationSummaryTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private List<Organization> getListOfRandomOrganizations() {
+    private List<Corporation> getListOfRandomOrganizations() {
         return List.of(new Organization.Builder().withId(randomUri()).build());
     }
 

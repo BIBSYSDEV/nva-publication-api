@@ -4,6 +4,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.google.common.net.HttpHeaders.ACCEPT;
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static com.google.common.net.HttpHeaders.CACHE_CONTROL;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.HttpHeaders.LOCATION;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
@@ -328,6 +329,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_MOVED_PERM)));
 
         assertThat(response.getHeaders().get(LOCATION), is(equalTo(publication.getDuplicateOf().toString())));
+        assertEquals("no-cache", response.getHeaders().get(CACHE_CONTROL));
     }
 
     @Test

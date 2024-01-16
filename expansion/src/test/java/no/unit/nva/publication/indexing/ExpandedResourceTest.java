@@ -58,6 +58,7 @@ import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.utils.PublicationJsonPointers;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -67,7 +68,6 @@ import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Series;
-import no.unit.nva.model.funding.ConfirmedFunding;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
@@ -346,7 +346,8 @@ class ExpandedResourceTest {
         addPublicationChannelPublisherToMockUriRetriever(mockUriRetriever, seriesUri, seriesName, publisherUri,
                                                          publisherName);
 
-        publication.getEntityDescription().getContributors().get(0).getAffiliations().get(0).setId(null);
+        ((Organization) publication.getEntityDescription().getContributors().get(0).getAffiliations().get(0))
+            .setId(null);
 
         ObjectNode framedResultNode = fromPublication(mockUriRetriever, publication).asJsonNode();
 
@@ -560,6 +561,8 @@ class ExpandedResourceTest {
             .getContributors()
             .stream()
             .flatMap(contributor -> contributor.getAffiliations().stream())
+            .filter(Organization.class::isInstance)
+            .map(Organization.class::cast)
             .map(Organization::getId)
             .forEach(id -> mockGetRawContentResponse(mockUriRetriever, id,
                                                      getCristinResponseForOrganization(id.toString(),
@@ -708,8 +711,11 @@ class ExpandedResourceTest {
                    .flatMap(Set::stream).collect(Collectors.toSet());
     }
 
-    private static Set<URI> getOrgIds(List<Organization> organizations) {
-        return organizations.stream().map(Organization::getId).collect(Collectors.toSet());
+    private static Set<URI> getOrgIds(List<Corporation> organizations) {
+        return organizations.stream()
+                   .filter(Organization.class::isInstance)
+                   .map(Organization.class::cast)
+                   .map(Organization::getId).collect(Collectors.toSet());
     }
 
     private static JsonNode findDeepestNestedSubUnit(JsonNode jsonNode) {
@@ -812,7 +818,10 @@ class ExpandedResourceTest {
     private List<URI> extractAffiliationsUris(Publication publication) {
         return publication.getEntityDescription().getContributors()
                    .stream()
-                   .flatMap(contributor -> contributor.getAffiliations().stream().map(Organization::getId))
+                   .flatMap(contributor -> contributor.getAffiliations().stream()
+                                               .filter(Organization.class::isInstance)
+                                               .map(Organization.class::cast)
+                                               .map(Organization::getId))
                    .collect(Collectors.toList());
     }
 

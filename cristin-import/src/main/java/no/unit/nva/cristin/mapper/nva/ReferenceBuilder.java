@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.mapper.nva;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isArt;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isChapter;
@@ -15,19 +16,27 @@ import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isMediaFeature
 import static no.unit.nva.cristin.mapper.nva.exceptions.ExceptionHandling.castToCorrectRuntimeException;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.stream.Stream;
 import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinBookOrReportPartMetadata;
 import no.unit.nva.cristin.mapper.CristinJournalPublication;
+import no.unit.nva.cristin.mapper.CristinLectureOrPosterMetaData;
 import no.unit.nva.cristin.mapper.CristinMediaContribution;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
 import no.unit.nva.cristin.mapper.MediaPeriodicalBuilder;
 import no.unit.nva.cristin.mapper.PeriodicalBuilder;
+import no.unit.nva.cristin.mapper.PresentationEvent;
 import no.unit.nva.cristin.mapper.PublicationInstanceBuilderImpl;
 import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
+import no.unit.nva.model.Agent;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.UnconfirmedOrganization;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Artistic;
 import no.unit.nva.model.contexttypes.Event;
@@ -37,11 +46,15 @@ import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.media.MediaFormat;
 import no.unit.nva.model.contexttypes.media.MediaSubType;
 import no.unit.nva.model.contexttypes.media.MediaSubTypeEnum;
+import no.unit.nva.model.contexttypes.place.Place;
+import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
+import no.unit.nva.model.time.Period;
+import no.unit.nva.model.time.Time;
 import nva.commons.core.SingletonCollector;
 import nva.commons.doi.DoiConverter;
 import nva.commons.doi.DoiValidator;
@@ -138,7 +151,73 @@ public class ReferenceBuilder extends CristinMappingModule {
     }
 
     private PublicationContext buildEventForPublicationContext() {
-        return new Event.Builder().build();
+        return new Event.Builder()
+                   .withLabel(extractLabel())
+                   .withAgent(extractAgent())
+                   .withPlace(extractPlace())
+                   .withTime(extractTime())
+                   .build();
+    }
+
+    private Time extractTime() {
+        var from = extractCristinEventFromDate();
+        var to = extractCristinEventToDate();
+        return nonNull(from) && nonNull(to) ? new Period(from, to) : null;
+    }
+
+    private Instant extractCristinEventFromDate() {
+        return Optional.ofNullable(cristinObject)
+                   .map(CristinObject::getLectureOrPosterMetaData)
+                   .map(CristinLectureOrPosterMetaData::getEvent)
+                   .map(PresentationEvent::getFrom)
+                   .map(this::toInstant)
+                   .orElse(null);
+    }
+
+    private Instant extractCristinEventToDate() {
+        return Optional.ofNullable(cristinObject)
+                   .map(CristinObject::getLectureOrPosterMetaData)
+                   .map(CristinLectureOrPosterMetaData::getEvent)
+                   .map(PresentationEvent::getTo)
+                   .map(this::toInstant)
+                   .orElse(null);
+    }
+
+    private Instant toInstant(String date) {
+        var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+        return LocalDateTime.parse(date, formatter).toInstant(ZoneOffset.UTC);
+    }
+
+    private Place extractPlace() {
+        return Optional.ofNullable(cristinObject)
+                   .map(CristinObject::getLectureOrPosterMetaData)
+                   .map(CristinLectureOrPosterMetaData::getEvent)
+                   .map(this::toUnconfirmedPlace)
+                   .orElse(null);
+    }
+
+    private Place toUnconfirmedPlace(PresentationEvent event) {
+        return new UnconfirmedPlace(
+            Optional.ofNullable(event).map(PresentationEvent::getPlace).orElse(null),
+            Optional.ofNullable(event).map(PresentationEvent::getCountryCode).orElse(null)
+            );
+    }
+
+    private Agent extractAgent() {
+        return Optional.ofNullable(cristinObject)
+                   .map(CristinObject::getLectureOrPosterMetaData)
+                   .map(CristinLectureOrPosterMetaData::getEvent)
+                   .map(PresentationEvent::getAgent)
+                   .map(UnconfirmedOrganization::new)
+                   .orElse(null);
+    }
+
+    private String extractLabel() {
+        return Optional.ofNullable(cristinObject)
+                   .map(CristinObject::getLectureOrPosterMetaData)
+                   .map(CristinLectureOrPosterMetaData::getEvent)
+                   .map(PresentationEvent::getTitle)
+                   .orElse(null);
     }
 
     private URI extractDoi() {

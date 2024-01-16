@@ -33,6 +33,7 @@ import no.sikt.nva.scopus.utils.CristinGenerator;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.Organization;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -108,7 +109,8 @@ public class ContributorExtractorTest {
                               .stream()
                               .collect(SingletonCollector.collect());
 
-        assertThat(contributor.getAffiliations().get(0).getId(), is(equalTo(CRISTIN_ID)));
+        var id = ((Organization) contributor.getAffiliations().get(0)).getId();
+        assertThat(id, is(equalTo(CRISTIN_ID)));
     }
 
     @Test
@@ -133,7 +135,8 @@ public class ContributorExtractorTest {
                               .stream()
                               .collect(SingletonCollector.collect());
 
-        assertThat(contributor.getAffiliations().get(0).getId(), is(equalTo(organization.id())));
+        var id = ((Organization) contributor.getAffiliations().get(0)).getId();
+        assertThat(id, is(equalTo(organization.id())));
     }
 
     @Test
@@ -147,8 +150,9 @@ public class ContributorExtractorTest {
         var expectedAffiliations = cristinPerson.getAffiliations().stream().filter(Affiliation::isActive).toList();
         var actualOrganizations = contributor.getAffiliations();
 
+        var id = ((Organization) contributor.getAffiliations().get(0)).getId();
         assertThat(actualOrganizations.size(), is(equalTo(expectedAffiliations.size())));
-        assertThat(actualOrganizations.get(0).getId(), is(equalTo(expectedAffiliations.get(0).getOrganization())));
+        assertThat(id, is(equalTo(expectedAffiliations.get(0).getOrganization())));
     }
 
     @Test
