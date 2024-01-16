@@ -48,6 +48,7 @@ import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOf;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
 import no.unit.nva.cristin.mapper.SearchResource2Response;
+import no.unit.nva.cristin.mapper.nva.NviReport;
 import no.unit.nva.cristin.mapper.nva.exceptions.AffiliationWithoutRoleException;
 import no.unit.nva.cristin.mapper.nva.exceptions.ContributorWithoutAffiliationException;
 import no.unit.nva.cristin.mapper.nva.exceptions.DuplicateDoiException;
@@ -189,8 +190,22 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var expectedFileLocation = NVI_FOLDER
                                             .addChild(timestampToString(expectedTimestamp))
                                             .addChild(expectedFileNameStoredInS3);
+        var expectedNviReport = createExpectedNviReport(cristinObject, actualPublication);
 
-        assertDoesNotThrow(() -> s3Driver.getFile(expectedFileLocation));
+        var file = s3Driver.getFile(expectedFileLocation);
+        var nviReport = JsonUtils.dtoObjectMapper.readValue(file, NviReport.class);
+
+        assertThat(nviReport, is(equalTo(expectedNviReport)));
+    }
+
+    private NviReport createExpectedNviReport(CristinObject cristinObject, Publication publication) {
+        return NviReport.builder()
+                   .withNviReport(cristinObject.getCristinLocales())
+                   .withCristinIdentifier(cristinObject.getSourceRecordIdentifier())
+                   .withPublicationIdentifier(publication.getIdentifier().toString())
+                   .withYearReported(cristinObject.getYearReported())
+                   .withPublicationDate(publication.getCreatedDate())
+                   .build();
     }
 
     @Test
