@@ -111,7 +111,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         if (nonNull(publication.getDuplicateOf())) {
             return produceRedirect(publication.getDuplicateOf());
         } else {
-            throw new GoneException(GONE_MESSAGE, PublicationDetail.fromPublication(publication).toString());
+            throw new GoneException(GONE_MESSAGE, PublicationDetail.fromPublication(publication));
         }
     }
 
