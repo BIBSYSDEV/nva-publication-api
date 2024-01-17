@@ -1,6 +1,5 @@
 package no.unit.nva.cristin.lambda;
 
-import static java.util.Objects.nonNull;
 import static no.unit.nva.cristin.CristinImportConfig.eventHandlerObjectMapper;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PUBLICATIONS_OWNER;
 import static no.unit.nva.cristin.mapper.nva.exceptions.ExceptionHandling.castToCorrectRuntimeException;
@@ -23,7 +22,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.cristin.mapper.CristinLocale;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.Identifiable;
 import no.unit.nva.cristin.mapper.nva.NviReport;
@@ -183,45 +181,16 @@ public class CristinEntryEventConsumer
     }
 
     private void persistNviReportIfNeeded(PublicationRepresentations publicationRepresentations) {
-        if (hasBeenNviReported(publicationRepresentations)) {
-            saveNviReport(publicationRepresentations);
+        var nviReport = NviReport.fromPublicationRepresentation(publicationRepresentations);
+        if (nviReport.hasBeenNviReported()) {
+            saveNviReport(publicationRepresentations, nviReport);
         }
     }
 
-    private static boolean hasBeenNviReported(PublicationRepresentations publicationRepresentations) {
-        return hasBeenReported(publicationRepresentations) && isReportable(publicationRepresentations);
-    }
-
-    private static boolean isReportable(PublicationRepresentations publicationRepresentations) {
-        return publicationRepresentations.getCristinObject().getYearReported() >= 2011;
-    }
-
-    private static boolean hasBeenReported(PublicationRepresentations publicationRepresentations) {
-        return nonNull(publicationRepresentations.getCristinObject().getCristinLocales())
-               && publicationRepresentations.getCristinObject().getCristinLocales().stream()
-                   .anyMatch(CristinEntryEventConsumer::hasControlStatusJ);
-    }
-
-    private static boolean hasControlStatusJ(CristinLocale cristinLocale) {
-        return nonNull(cristinLocale.getControlStatus())
-               && "J".equals(cristinLocale.getControlStatus());
-    }
-
-    private void saveNviReport(PublicationRepresentations publicationRepresentations) {
-        var nviReport = createNviReport(publicationRepresentations);
+    private void saveNviReport(PublicationRepresentations publicationRepresentations, NviReport nviReport) {
         var fileUri = constructNviReportUri(publicationRepresentations);
         var s3Driver = new S3Driver(s3Client, fileUri.getUri().getHost());
         attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(), nviReport.toJsonString())).orElseThrow();
-    }
-
-    private static NviReport createNviReport(PublicationRepresentations publicationRepresentations) {
-        return NviReport.builder()
-                   .withPublicationIdentifier(publicationRepresentations.getNvaPublicationIdentifier())
-                   .withCristinIdentifier(publicationRepresentations.getCristinObject().getSourceRecordIdentifier())
-                   .withNviReport(publicationRepresentations.getCristinObject().getCristinLocales())
-                   .withYearReported(publicationRepresentations.getCristinObject().getYearReported())
-                   .withPublicationDate(publicationRepresentations.getPublication().getCreatedDate())
-                   .build();
     }
 
     private PublicationRepresentations generatePublicationRepresentations(
