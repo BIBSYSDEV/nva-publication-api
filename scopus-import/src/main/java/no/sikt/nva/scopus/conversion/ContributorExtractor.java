@@ -255,9 +255,13 @@ public class ContributorExtractor {
         var cristinPerson = fetchCristinPersonByScopusId(author);
         return cristinPerson.isPresent()
                    ? cristinPerson
-                   : nonNull(author.getOrcid())
-                         ? cristinConnection.getCristinPersonByOrcId(author.getOrcid())
-                         : Optional.empty();
+                   : fetchCristinPersonByOrcId(author);
+    }
+
+    private Optional<CristinPerson> fetchCristinPersonByOrcId(AuthorTp author) {
+        return nonNull(author.getOrcid())
+                   ? cristinConnection.getCristinPersonByOrcId(author.getOrcid())
+                   : Optional.empty();
     }
 
     private Optional<CristinPerson> fetchCristinPersonByScopusId(AuthorTp author) {
