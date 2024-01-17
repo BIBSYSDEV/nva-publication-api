@@ -253,7 +253,11 @@ public class ContributorExtractor {
 
     private Optional<CristinPerson> fetchCristinPerson(AuthorTp author) {
         var cristinPerson = fetchCristinPersonByScopusId(author);
-        return cristinPerson.isPresent() ? cristinPerson : cristinConnection.getCristinPersonByOrcId(author.getOrcid());
+        return cristinPerson.isPresent()
+                   ? cristinPerson
+                   : nonNull(author.getOrcid())
+                         ? cristinConnection.getCristinPersonByOrcId(author.getOrcid())
+                         : Optional.empty();
     }
 
     private Optional<CristinPerson> fetchCristinPersonByScopusId(AuthorTp author) {

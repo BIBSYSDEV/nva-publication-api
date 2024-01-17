@@ -79,9 +79,12 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import jakarta.xml.bind.JAXB;
 import jakarta.xml.bind.JAXBElement;
 import java.io.IOException;
 import java.io.Serializable;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.file.Path;
@@ -702,6 +705,198 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var s3Event = createNewScopusPublicationEvent();
         assertThrows(UnsupportedSrcTypeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
+    }
+
+    @Test
+    void something() throws IOException {
+        var file = IoUtils.stringFromResources(Path.of("2-s2.0-85178336140.xml"));
+        var document = JAXB.unmarshal(new StringReader(file), DocTp.class);
+        StringWriter xmlWriter = new StringWriter();
+        JAXB.marshal(document, xmlWriter);
+        var uri = s3Driver.insertFile(randomS3Path(), xmlWriter.toString());
+        mockedPiaAuthorIdSearch("7005704879", piaResponse());
+        mockCristinPerson("0", cristinResponse());
+
+        var publication = scopusHandler.handleRequest(createS3Event(uri), CONTEXT);
+
+    }
+
+    private String cristinResponse() {
+        @org.intellij.lang.annotations.Language("json")
+            var cristinResponse = """
+                    {
+                        "title": "Bad Request",
+                        "status": 400,
+                        "detail": "Invalid path parameter for identifier, needs to be a number or an ORCID",
+                        "requestId": "020e9c34-7d7d-4535-98af-1a13e2a23d7c"
+                    }
+                    """;
+        return cristinResponse;
+    }
+
+    private String piaResponse() {
+        @org.intellij.lang.annotations.Language("json")
+        var piaResponse = """
+[
+    {
+        "publication": {
+            "sourceCode": "SCOPUS",
+            "externalId": "2-s2.0-84928140987"
+        },
+        "externalId": "7005704879",
+        "cristinId": 0,
+        "sequenceNr": 1,
+        "surname": "Christie",
+        "firstname": "Catherine E.",
+        "authorName": "Christie C.E."
+    },
+    {
+        "publication": {
+            "sourceCode": "SCOPUS",
+            "externalId": "2-s2.0-84962901036"
+        },
+        "externalId": "7005704879",
+        "cristinId": 0,
+        "sequenceNr": 1,
+        "surname": "Christie",
+        "firstname": "Catherine",
+        "authorName": "Christie C."
+    },
+    {
+        "publication": {
+            "sourceCode": "SCOPUS",
+            "externalId": "2-s2.0-85178336140"
+        },
+        "externalId": "7005704879",
+        "cristinId": 0,
+        "sequenceNr": 1,
+        "surname": "Christie",
+        "firstname": "Catherine",
+        "authorName": "Christie C."
+    },
+    {
+        "publication": {
+            "sourceCode": "SCOPUS",
+            "externalId": "2-s2.0-84927590262"
+        },
+        "externalId": "7005704879",
+        "cristinId": 0,
+        "sequenceNr": 1,
+        "surname": "Christie",
+        "firstname": "Catherine",
+        "authorName": "Christie C."
+    },
+    {
+        "publication": {
+            "sourceCode": "SCOPUS",
+            "externalId": "2-s2.0-84978664202"
+        },
+        "externalId": "7005704879",
+        "cristinId": 0,
+        "sequenceNr": 1,
+        "surname": "Christie",
+        "firstname": "Catherine E.",
+        "authorName": "Christie C.E."
+    },
+    {
+        "publication": {
+            "sourceCode": "SCOPUS",
+            "externalId": "2-s2.0-85015666347"
+        },
+        "externalId": "7005704879",
+        "cristinId": 0,
+        "sequenceNr": 1,
+        "surname": "Christie",
+        "firstname": "Catherine",
+        "authorName": "Christie C."
+    },
+    {
+        "publication": {
+            "sourceCode": "SCOPUS",
+            "externalId": "2-s2.0-84925428143"
+        },
+        "externalId": "7005704879",
+        "cristinId": 0,
+        "sequenceNr": 2,
+        "surname": "Christie",
+        "firstname": "Catherine",
+        "authorName": "Christie C."
+    },
+    {
+        "publication": {
+            "sourceCode": "SCOPUS",
+            "externalId": "2-s2.0-85041453561"
+        },
+        "externalId": "7005704879",
+        "cristinId": 0,
+        "sequenceNr": 2,
+        "surname": "Christie",
+        "firstname": "Catherine",
+        "authorName": "Christie C."
+    },
+    {
+        "publication": {
+            "sourceCode": "SCOPUS",
+            "externalId": "2-s2.0-85047390136"
+        },
+        "externalId": "7005704879",
+        "cristinId": 0,
+        "sequenceNr": 2,
+        "surname": "Christie",
+        "firstname": "Catherine",
+        "authorName": "Christie C."
+    },
+    {
+        "publication": {
+            "sourceCode": "SCOPUS",
+            "externalId": "2-s2.0-85038849652"
+        },
+        "externalId": "7005704879",
+        "cristinId": 0,
+        "sequenceNr": 2,
+        "surname": "Christie",
+        "firstname": "Catherine",
+        "authorName": "Christie C."
+    },
+    {
+        "publication": {
+            "sourceCode": "SCOPUS",
+            "externalId": "2-s2.0-85129941147"
+        },
+        "externalId": "7005704879",
+        "cristinId": 0,
+        "sequenceNr": 2,
+        "surname": "Christie",
+        "firstname": "Catherine",
+        "authorName": "Christie C."
+    },
+    {
+        "publication": {
+            "sourceCode": "SCOPUS",
+            "externalId": "2-s2.0-84926609076"
+        },
+        "externalId": "7005704879",
+        "cristinId": 0,
+        "sequenceNr": 3,
+        "surname": "Christie",
+        "firstname": "Catherine E.",
+        "authorName": "Christie C.E."
+    },
+    {
+        "publication": {
+            "sourceCode": "SCOPUS",
+            "externalId": "2-s2.0-84957812861"
+        },
+        "externalId": "7005704879",
+        "cristinId": 0,
+        "sequenceNr": 4,
+        "surname": "Christie",
+        "firstname": "Catherine",
+        "authorName": "Christie C."
+    }
+]
+""";
+        return piaResponse;
     }
 
     private String getEid() {
