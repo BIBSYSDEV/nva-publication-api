@@ -45,12 +45,9 @@ import nva.commons.apigateway.exceptions.UnsupportedAcceptHeaderException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
-    public static final Logger logger = LoggerFactory.getLogger(FetchPublicationHandler.class);
     public static final Clock CLOCK = Clock.systemDefaultZone();
     public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
     public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
@@ -124,7 +121,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     private String produceDraftPublicationResponse(RequestInfo requestInfo, Publication publication)
         throws UnsupportedAcceptHeaderException, NotFoundException {
-            return producePublishedPublicationResponse(requestInfo, publication);
+        return producePublishedPublicationResponse(requestInfo, publication);
     }
 
     @Override
