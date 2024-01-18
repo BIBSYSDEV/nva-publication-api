@@ -2,6 +2,7 @@ package no.unit.nva.publication.events.handlers.expandresources;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.List;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -44,9 +45,8 @@ public class ExpandDataEntriesHandler
     public static final String ERROR_EXPANDING_RESOURCE_WARNING = "Error expanding resource:";
     public static final String HANDLER_EVENTS_FOLDER = "PublicationService-DataEntryExpansion";
     public static final String EXPANDED_ENTRY_UPDATED_EVENT_TOPIC = "PublicationService.ExpandedDataEntry.Update";
-    public static final String EXPANDED_ENTRY_DELETE_EVENT_TOPIC = "PublicationService.ExpandedDataEntry.Delete";
     public static final String EMPTY_EVENT_TOPIC = "Event.Empty";
-    public static final String PUBLICATION_SERVICE_DATA_ENTRY_DELETION = "Publicationservice-DataEntryDeletion";
+    public static final List<PublicationStatus> PUBLICATION_STATUS_TO_BE_ENRICHED = List.of(PUBLISHED, PUBLISHED_METADATA, UNPUBLISHED, DELETED);
     private static final Logger logger = LoggerFactory.getLogger(ExpandDataEntriesHandler.class);
     private final S3Driver s3Driver;
     private final ResourceExpansionService resourceExpansionService;
@@ -70,15 +70,12 @@ public class ExpandDataEntriesHandler
     protected EventReference processInputPayload(EventReference input,
                                                  AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
                                                  Context context) {
-
         var blobObject = readBlobFromS3(input);
-        if (shouldBeDeleted(blobObject.getNewData())) {
-            return createDeleteEventReference(blobObject.getNewData());
-        } else if (shouldBeEnriched(blobObject.getNewData())) {
+        if (shouldBeEnriched(blobObject.getNewData())) {
             return createEnrichedEventReference(blobObject.getNewData()).orElseGet(this::emptyEvent);
-        } else {
-            return emptyEvent();
         }
+
+        return emptyEvent();
     }
 
     @JacocoGenerated
@@ -95,27 +92,10 @@ public class ExpandDataEntriesHandler
         return new ResourceService(DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone());
     }
 
-    private EventReference createDeleteEventReference(Entity newData) {
-        var resource = (Resource) newData;
-        var publication = resource.toPublication();
-        var uri = insertDeleteEventBodyToS3(publication.toString());
-        return new EventReference(EXPANDED_ENTRY_DELETE_EVENT_TOPIC, uri);
-    }
-
     private Optional<EventReference> createEnrichedEventReference(Entity newData) {
         return enrich(newData)
                    .map(this::insertEnrichEventBodyToS3)
                    .map(uri -> new EventReference(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC, uri));
-    }
-
-    private boolean shouldBeDeleted(Entity entity) {
-        return getPublicationStatus(entity)
-                   .map(this::isDeletedStatus)
-                   .orElse(false);
-    }
-
-    private boolean isDeletedStatus(PublicationStatus status) {
-        return DELETED.equals(status) || UNPUBLISHED.equals(status);
     }
 
     private Optional<PublicationStatus> getPublicationStatus(Entity entity) {
@@ -141,7 +121,7 @@ public class ExpandDataEntriesHandler
         }
         var publicationStatus = getPublicationStatus(entry);
         if (publicationStatus.isPresent()) {
-            return PUBLISHED.equals(publicationStatus.get()) || PUBLISHED_METADATA.equals(publicationStatus.get());
+            return PUBLICATION_STATUS_TO_BE_ENRICHED.contains(publicationStatus.get());
         } else if (entry instanceof DoiRequest) {
             return isDoiRequestReadyForEvaluation((DoiRequest) entry);
         } else {
@@ -151,11 +131,6 @@ public class ExpandDataEntriesHandler
 
     private boolean isDoiRequestReadyForEvaluation(DoiRequest doiRequest) {
         return PUBLISHED.equals(doiRequest.getResourceStatus());
-    }
-
-    private URI insertDeleteEventBodyToS3(String body) {
-        return attempt(
-            () -> s3Driver.insertEvent(UnixPath.of(PUBLICATION_SERVICE_DATA_ENTRY_DELETION), body)).orElseThrow();
     }
 
     private URI insertEnrichEventBodyToS3(String string) {
