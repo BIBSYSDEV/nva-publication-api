@@ -14,10 +14,12 @@ Feature: Mappings that hold for all types of Cristin Results
       | Source Code Text | Source Identifier Text |
       | SomeCode         | Some identifier        |
       | Some other code  | Some other identifier  |
+      | SCOPUS           | Some third identifier  |
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has an additional identifier with key "SomeCode" and value "Some identifier"
     And the NVA Resource has an additional identifier with key "Cristin" and value 12345
     And the NVA Resource has an additional identifier with key "Some other code" and value "Some other identifier"
+    And the NVA Resource has an additional identifier with key "Scopus" and value "Some third identifier"
 
   Scenario: CristinSource collides with sourceCode
     Given the Cristin Result has id equal to 12345
