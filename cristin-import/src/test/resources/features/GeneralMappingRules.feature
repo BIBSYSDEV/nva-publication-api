@@ -315,7 +315,7 @@ Feature: Mappings that hold for all types of Cristin Results
   and a hardcoded organization id.
     Given a valid Cristin Result
     When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource Publishers id is "https://api.test.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934"
+    Then the NVA Resource Publishers id is "https://api.test.nva.aws.unit.no/customer/0baf8fcb-b18d-4c09-88bb-956b4f659103"
 
   Scenario: Mapping reports error when Cristin affiliation has no role
     Given that the Cristin Result has a Contributor with no role
