@@ -161,19 +161,35 @@ Feature: Mappings that hold for all types of Cristin Results
       | Given Name  | Family Name  | Ordinal Number |
       | FirstGiven  | FirstFamily  | 1              |
       | SecondGiven | SecondFamily | 2              |
-      | ThirdGiven  | ThirdFamily  | 3              |
     And the Contributors are affiliated with the following Cristin Institution respectively:
       | institusjonsnr | avdnr | undavdnr | gruppenr |
       | 194            | 66    | 32       | 15       |
       | 194            | 66    | 32       | 15       |
-      | 0              | 0     | 0        | 0        |
-
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource Contributors have the following names, sequences and affiliation URIs
       | Name                     | Ordinal Number | Affiliation URI                                                    |
       | FirstGiven FirstFamily   | 1              | https://api.test.nva.aws.unit.no/cristin/organization/194.66.32.15 |
       | SecondGiven SecondFamily | 2              | https://api.test.nva.aws.unit.no/cristin/organization/194.66.32.15 |
-      | ThirdGiven ThirdFamily   | 3              | https://api.test.nva.aws.unit.no/cristin/organization/0.0.0.0      |
+
+  Scenario: Contributors with unknown affiliation is mapped to empty list of affiliations
+    Given that the Cristin Result has the Contributors with names and sequence:
+      | Given Name | Family Name | Ordinal Number |
+      | FirstGiven | FirstFamily | 1              |
+    And the Contributors are affiliated with the following Cristin Institution respectively:
+      | institusjonsnr | avdnr | undavdnr | gruppenr |
+      | 0              | 0     | 0        | 0        |
+    And the contributor has a role "REDAKTØR" at the unknown affiliation
+    When the Cristin Result is converted to an NVA Resource
+    Then  the NVA contributor has no affiliation
+    And the NVA Contributor has the role "EDITOR"
+
+  Scenario: Contributors missing affiliations caues errors during mapping
+    Given that the Cristin Result has the Contributors with names and sequence:
+      | Given Name | Family Name | Ordinal Number |
+      | FirstGiven | FirstFamily | 1              |
+    And the contributor is missing affiliation
+    When the Cristin Result is converted to an NVA Resource
+    Then an error is reported.
 
   Scenario: unverified cristin contributors does not get their contributor identifiers mapped to NVA
     Given a cristin result with a single contributor that is not verified

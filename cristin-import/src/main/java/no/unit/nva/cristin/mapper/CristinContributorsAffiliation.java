@@ -3,6 +3,7 @@ package no.unit.nva.cristin.mapper;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.CRISTIN_PATH;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.ORGANIZATION_PATH;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
@@ -56,6 +57,11 @@ public class CristinContributorsAffiliation {
 
     public CristinContributorsAffiliationBuilder copy() {
         return this.toBuilder();
+    }
+
+    @JsonIgnore
+    public boolean isKnownAffiliation() {
+        return institutionIdentifier != 0;
     }
 
     private URI buildId() {
