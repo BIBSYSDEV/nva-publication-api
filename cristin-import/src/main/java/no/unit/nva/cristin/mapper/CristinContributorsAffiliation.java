@@ -61,6 +61,10 @@ public class CristinContributorsAffiliation {
 
     @JsonIgnore
     public boolean isKnownAffiliation() {
+        return isKnownInstitution();
+    }
+
+    private boolean isKnownInstitution() {
         return institutionIdentifier != 0;
     }
 

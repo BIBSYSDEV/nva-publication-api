@@ -634,7 +634,7 @@ public class GeneralMappingRules {
     }
 
     @Then("the NVA contributor has no affiliation")
-    public void theNVAContributorHasNoAffiliation() {
+    public void theNvaContributorHasNoAffiliation() {
         var contributors = scenarioContext.getNvaEntry().getEntityDescription().getContributors();
         assertThat(contributors, hasSize(1));
         var contributor = contributors.get(0);

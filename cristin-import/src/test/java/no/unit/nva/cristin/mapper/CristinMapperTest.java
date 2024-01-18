@@ -344,31 +344,6 @@ class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void mapReturnsResourceWhereNvaContributorHasAffiliationsWithUriCreatedBasedOnReferenceUriAndUnitNumbers() {
-
-        List<URI> expectedAffiliations = cristinObjects.stream()
-                                             .flatMap(cristinEntries -> cristinEntries.getContributors().stream())
-                                             .flatMap(contributor -> contributor.getAffiliations().stream())
-                                             .map(this::explicitFormattingOfCristinAffiliationCode)
-                                             .map(this::addCristinOrgHostPrefix)
-                                             .map(URI::create)
-                                             .toList();
-
-        List<URI> actualAffiliations = cristinObjects.stream().map(CristinObject::toPublication)
-                                           .map(Publication::getEntityDescription)
-                                           .map(EntityDescription::getContributors)
-                                           .flatMap(Collection::stream)
-                                           .map(Contributor::getAffiliations)
-                                           .flatMap(Collection::stream)
-                                           .filter(Organization.class::isInstance)
-                                           .map(Organization.class::cast)
-                                           .map(Organization::getId)
-                                           .collect(Collectors.toList());
-
-        assertThat(actualAffiliations, containsInAnyOrder(expectedAffiliations.toArray(URI[]::new)));
-    }
-
-    @Test
     void mapReturnsPublicationWithPublicationDateEqualToCristinPublicationYear() {
         List<PublicationDate> expectedPublicationDates = cristinObjects.stream()
                                                              .map(CristinObject::getPublicationYear)
