@@ -1,8 +1,19 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
+import static java.util.Objects.isNull;
+import static no.unit.nva.model.PublicationStatus.DELETED;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
+import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
+import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.net.URI;
+import java.time.Clock;
 import java.util.List;
+import java.util.Optional;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -26,19 +37,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import java.net.URI;
-import java.time.Clock;
-import java.util.Optional;
-
-import static java.util.Objects.isNull;
-import static no.unit.nva.model.PublicationStatus.DELETED;
-import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
-import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
-import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
-import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
-import static nva.commons.core.attempt.Try.attempt;
-
 public class ExpandDataEntriesHandler
     extends DestinationsEventBridgeEventHandler<EventReference, EventReference> {
 
@@ -46,7 +44,10 @@ public class ExpandDataEntriesHandler
     public static final String HANDLER_EVENTS_FOLDER = "PublicationService-DataEntryExpansion";
     public static final String EXPANDED_ENTRY_UPDATED_EVENT_TOPIC = "PublicationService.ExpandedDataEntry.Update";
     public static final String EMPTY_EVENT_TOPIC = "Event.Empty";
-    public static final List<PublicationStatus> PUBLICATION_STATUS_TO_BE_ENRICHED = List.of(PUBLISHED, PUBLISHED_METADATA, UNPUBLISHED, DELETED);
+    public static final List<PublicationStatus> PUBLICATION_STATUS_TO_BE_ENRICHED = List.of(PUBLISHED,
+                                                                                            PUBLISHED_METADATA,
+                                                                                            UNPUBLISHED,
+                                                                                            DELETED);
     private static final Logger logger = LoggerFactory.getLogger(ExpandDataEntriesHandler.class);
     private final S3Driver s3Driver;
     private final ResourceExpansionService resourceExpansionService;
