@@ -18,7 +18,8 @@ public class ScenarioContext {
     private Publication nvaEntry;
 
     public ScenarioContext() {
-
+        System.setProperty("DOMAIN_NAME", "api.test.nva.aws.unit.no");
+        System.setProperty("API_HOST", "api.test.nva.aws.unit.no");
     }
 
     public Try<Publication> getMappingAttempt() {
