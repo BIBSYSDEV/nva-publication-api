@@ -1,6 +1,5 @@
 package no.unit.nva.publication;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.net.URI;
 import no.unit.nva.commons.json.JsonSerializable;
@@ -8,7 +7,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSerialize
 public record PublicationDetail(SortableIdentifier identifier,
                                 URI duplicateOf,
@@ -20,10 +18,6 @@ public record PublicationDetail(SortableIdentifier identifier,
                    .withDuplicateOf(publication.getDuplicateOf())
                    .withEntityDescription(publication.getEntityDescription())
                    .build();
-    }
-
-    public String toString() {
-        return this.toJsonString();
     }
 
     private static Builder builder() {
