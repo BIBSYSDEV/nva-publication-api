@@ -2,6 +2,7 @@ package no.unit.nva.publication.create;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
@@ -25,6 +26,9 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -43,8 +47,12 @@ import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.util.Base64;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.api.PublicationResponse;
@@ -60,11 +68,11 @@ import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.events.bodies.CreatePublicationRequest;
+import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.validation.config.CustomerApiFilesAllowedForTypesConfigSupplier;
-import no.unit.nva.publication.validation.DefaultPublicationValidator;
 import no.unit.nva.stubs.FakeContext;
+import no.unit.nva.stubs.FakeSecretsManagerClient;
 import no.unit.nva.stubs.WiremockHttpClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.RandomDataGenerator;
@@ -80,12 +88,29 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentMatcher;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.Problem;
 
 @ExtendWith(MockitoExtension.class)
 @WireMockTest(httpsEnabled = true)
 class CreatePublicationHandlerTest extends ResourcesLocalTest {
+
+    private static final String MY_ACCESS_TOKEN = "MY_ACCESS_TOKEN";
+    private static final String FAKE_TOKEN_RESPONSE = String.format("""
+                                                                        {
+                                                                            "access_token": "%s"
+                                                                        }
+                                                                        """, MY_ACCESS_TOKEN);
+
+    private static final Set<String> INVALID_INSTANCE_TYPES = Set.of(
+        "FeatureArticle",
+        "JournalArticle",
+        "JournalInterview",
+        "BookAbstracts",
+        "BookMonograph",
+        "ChapterArticle"
+    );
 
     public static final String NVA_UNIT_NO = "nva.unit.no";
     public static final String WILDCARD = "*";
@@ -107,6 +132,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private Environment environmentMock;
     private IdentityServiceClient identityServiceClient;
+    private FakeSecretsManagerClient secretsManagerClient;
 
     public static Stream<Exception> httpClientExceptionsProvider() {
         return Stream.of(new ConnectException(), new InterruptedException());
@@ -123,6 +149,8 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         stubCustomerRequestWhereAllTypesAllowFiles(customerId);
 
+        stubTokenRequest();
+
         getExternalClientResponse = new GetExternalClientResponse(EXTERNAL_CLIENT_ID,
                                                                   "someone@123",
                                                                   customerId,
@@ -134,21 +162,36 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         lenient().when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
         when(environmentMock.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
         when(environmentMock.readEnv(API_HOST)).thenReturn(NVA_UNIT_NO);
+        when(environmentMock.readEnv("BACKEND_CLIENT_AUTH_URL")).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
+        when(environmentMock.readEnv("BACKEND_CLIENT_SECRET_NAME")).thenReturn("secret");
 
         resourceService = new ResourceService(client, CLOCK);
         configClient = WiremockHttpClient.create();
 
-        var publicationValidator =
-            new DefaultPublicationValidator(new CustomerApiFilesAllowedForTypesConfigSupplier(configClient));
+        secretsManagerClient = new FakeSecretsManagerClient();
+        var credentials = new BackendClientCredentials("id", "secret");
+        secretsManagerClient.putPlainTextSecret("secret", credentials.toString());
 
         handler = new CreatePublicationHandler(resourceService,
                                                environmentMock,
                                                identityServiceClient,
-                                               publicationValidator);
+                                               configClient,
+                                               secretsManagerClient);
         outputStream = new ByteArrayOutputStream();
-        samplePublication = randomPublication();
+        samplePublication = getRandomPublicationOfValidType();
         testUserName = samplePublication.getResourceOwner().getOwner().getValue();
         topLevelCristinOrgId = randomUri();
+    }
+
+    private static void stubTokenRequest() {
+        stubFor(post(urlEqualTo("/oauth2/token"))
+                    .withHeader("Authorization",
+                                WireMock.equalTo(
+                                    "Basic " + Base64.getUrlEncoder().encodeToString("id:secret".getBytes())))
+                    .withHeader("Content-Type", WireMock.equalTo("application/x-www-form-urlencoded"))
+                    .withFormParam("grant_type", WireMock.equalTo("client_credentials"))
+                    .willReturn(aResponse().withBody(FAKE_TOKEN_RESPONSE).withStatus(200))
+        );
     }
 
     @Test
@@ -253,7 +296,8 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldReturnsResourceWithFilSetWhenRequestContainsFileSet() throws Exception {
-        var associatedArtifactsInPublication = randomPublication().getAssociatedArtifacts();
+        var publication = getRandomPublicationOfValidType();
+        var associatedArtifactsInPublication = publication.getAssociatedArtifacts();
         var request = createEmptyPublicationRequest();
         request.setAssociatedArtifacts(associatedArtifactsInPublication);
         request.setEntityDescription(randomPublishableEntityDescription());
@@ -267,6 +311,17 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var publicationResponse = actual.getBodyObject(PublicationResponse.class);
         assertThat(publicationResponse.getAssociatedArtifacts(), is(equalTo(associatedArtifactsInPublication)));
         assertExistenceOfMinimumRequiredFields(publicationResponse);
+    }
+
+    private static Publication getRandomPublicationOfValidType() {
+        var candidate = (Publication) null;
+        do {
+            candidate = randomPublication();
+        } while (INVALID_INSTANCE_TYPES.contains(candidate.getEntityDescription()
+                                                     .getReference()
+                                                     .getPublicationInstance()
+                                                     .getInstanceType()));
+        return candidate;
     }
 
     @Test
@@ -330,6 +385,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     private void stubCustomerRequestWithResponse(URI customerUri, String response) {
         stubFor(get(urlEqualTo(customerUri.getPath()))
                     .withHeader("Accept", WireMock.equalTo("application/json"))
+                    .withHeader("Authorization", WireMock.equalTo("Bearer " + MY_ACCESS_TOKEN))
                     .willReturn(aResponse().withBody(response).withStatus(200))
         );
     }
@@ -367,15 +423,17 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         WireMock.reset();
         configClient = mock(HttpClient.class);
 
-        when(configClient.send(any(), any())).thenThrow(exceptionToThrow);
+        doThrow(exceptionToThrow)
+            .when(configClient)
+            .send(argThat(pathStartsWith("/customer/")), any());
 
-        var publicationValidator =
-            new DefaultPublicationValidator(new CustomerApiFilesAllowedForTypesConfigSupplier(configClient));
+        mockTokenResponse(configClient);
 
         handler = new CreatePublicationHandler(resourceService,
                                                environmentMock,
                                                identityServiceClient,
-                                               publicationValidator);
+                                               configClient,
+                                               secretsManagerClient);
 
         var event = prepareRequestWithFileForTypeWhereNotAllowed();
         handler.handleRequest(event, outputStream, context);
@@ -386,9 +444,26 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnBadGatewayIfCustomerApiDoesNotRespondWithSuccessOk() throws IOException {
+    void shouldReturnBadGatewayIfCustomerApiDoesNotRespondWithSuccessOk() throws IOException, InterruptedException {
         var event = prepareRequestWithFileForTypeWhereNotAllowed();
         WireMock.reset();
+        configClient = mock(HttpClient.class);
+
+        mockTokenResponse(configClient);
+
+        var configResponse = mock(HttpResponse.class);
+        when(configResponse.statusCode()).thenReturn(404);
+
+        doReturn(configResponse)
+            .when(configClient)
+            .send(argThat(pathStartsWith("/customer/")), any());
+
+        handler = new CreatePublicationHandler(resourceService,
+                                               environmentMock,
+                                               identityServiceClient,
+                                               configClient,
+                                               secretsManagerClient);
+
         handler.handleRequest(event, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_GATEWAY)));
@@ -401,6 +476,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     void shouldReturnBadRequestIfMalformedConfigReceivedFromCustomerApi(String customerResponse) throws IOException {
         var event = prepareRequestWithFileForTypeWhereNotAllowed();
         WireMock.reset();
+        stubTokenRequest();
         stubCustomerRequestWithResponse(customerId, customerResponse);
         handler.handleRequest(event, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
@@ -413,6 +489,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     void shouldReturnBadRequestIfProvidingOneOrMoreFilesWhenNotAllowedInCustomerConfiguration() throws IOException {
         var event = prepareRequestWithFileForTypeWhereNotAllowed();
         WireMock.reset();
+        stubTokenRequest();
         stubCustomerRequestWhereNoTypesAllowFiles(customerId);
         handler.handleRequest(event, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
@@ -451,6 +528,15 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
+    }
+
+    private static void mockTokenResponse(HttpClient httpClient) throws IOException, InterruptedException {
+        var tokenResponse = mock(HttpResponse.class);
+        when(tokenResponse.body()).thenReturn(FAKE_TOKEN_RESPONSE);
+
+        doReturn(tokenResponse)
+            .when(httpClient)
+            .send(argThat(pathStartsWith("/oauth2/")), any());
     }
 
     private static String bodyWithNoReference() {
@@ -540,13 +626,13 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
     private Publication removeAllFieldsThatAreNotCopiedFromTheCreateRequest(Publication samplePublication) {
         return samplePublication.copy()
-            .withDoi(null)
-            .withHandle(null)
-            .withLink(null)
-            .withPublishedDate(null)
-            .withPublisher(new Organization.Builder().withId(customerId).build())
-            .withResourceOwner(null)
-            .build();
+                   .withDoi(null)
+                   .withHandle(null)
+                   .withLink(null)
+                   .withPublishedDate(null)
+                   .withPublisher(new Organization.Builder().withId(customerId).build())
+                   .withResourceOwner(null)
+                   .build();
     }
 
     private void assertExistenceOfMinimumRequiredFields(PublicationResponse publicationResponse) {
@@ -635,5 +721,9 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                                PublicationInstanceBuilder.randomPublicationInstance(DegreeMaster.class))
                            .build())
                    .build();
+    }
+
+    private static ArgumentMatcher<HttpRequest> pathStartsWith(final String path) {
+        return argument -> argument.uri().getPath().startsWith(path);
     }
 }

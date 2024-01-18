@@ -6,6 +6,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.google.common.net.HttpHeaders;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.time.Clock;
 import java.util.List;
 import java.util.Map;
@@ -22,10 +23,10 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.validation.ConfigNotAvailableException;
-import no.unit.nva.publication.validation.config.CustomerApiFilesAllowedForTypesConfigSupplier;
 import no.unit.nva.publication.validation.DefaultPublicationValidator;
 import no.unit.nva.publication.validation.PublicationValidationException;
 import no.unit.nva.publication.validation.PublicationValidator;
+import no.unit.nva.publication.validation.config.CustomerApiFilesAllowedForTypesConfigSupplier;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -35,9 +36,11 @@ import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.secrets.SecretsReader;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicationRequest, PublicationResponse> {
 
@@ -61,7 +64,8 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
                  Clock.systemDefaultZone()),
              new Environment(),
              IdentityServiceClient.prepare(),
-             new DefaultPublicationValidator(new CustomerApiFilesAllowedForTypesConfigSupplier()));
+             HttpClient.newHttpClient(),
+             SecretsReader.defaultSecretsManagerClient());
     }
 
     /**
@@ -73,12 +77,22 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     public CreatePublicationHandler(ResourceService publicationService,
                                     Environment environment,
                                     IdentityServiceClient identityServiceClient,
-                                    PublicationValidator publicationValidator) {
+                                    HttpClient httpClient,
+                                    SecretsManagerClient secretsManagerClient) {
         super(CreatePublicationRequest.class, environment);
         this.publicationService = publicationService;
         this.apiHost = environment.readEnv(API_HOST);
         this.identityServiceClient = identityServiceClient;
-        this.publicationValidator = publicationValidator;
+
+        var backendClientAuthUrl = environment.readEnv("BACKEND_CLIENT_AUTH_URL");
+        var backendClientSecretName = environment.readEnv("BACKEND_CLIENT_SECRET_NAME");
+
+        this.publicationValidator =
+            new DefaultPublicationValidator(
+                new CustomerApiFilesAllowedForTypesConfigSupplier(httpClient,
+                                                                  secretsManagerClient,
+                                                                  backendClientAuthUrl,
+                                                                  backendClientSecretName));
     }
 
     @Override
