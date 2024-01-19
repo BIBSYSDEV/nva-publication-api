@@ -598,7 +598,8 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var ticket = TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
         var expectedFilesForApproval = getUnpublishedFiles(publication);
 
-        assertThat(((PublishingRequestCase) ticket).getFilesForApproval(), containsInAnyOrder(expectedFilesForApproval));
+        assertThat(((PublishingRequestCase) ticket).getFilesForApproval(),
+                   containsInAnyOrder(expectedFilesForApproval));
 
         var completedTicket = ticket.complete(publication, USER_NAME);
         var httpRequest = createCompleteTicketHttpRequest(completedTicket,

@@ -616,7 +616,8 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                                         .map(FileForApproval::fromFile)
                                         .toArray();
 
-        assertThat(publishingRequest.getFilesForApproval(), containsInAnyOrder(Arrays.stream(expectedFilesForApproval).toArray()));
+        assertThat(publishingRequest.getFilesForApproval(),
+                   containsInAnyOrder(Arrays.stream(expectedFilesForApproval).toArray()));
     }
 
     private PublishingRequestCase fetchTicket(Publication publishedPublication,
