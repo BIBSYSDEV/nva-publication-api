@@ -314,24 +314,24 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldProduceUpdateDoiEventWhenUnpublishingIsSuccessful()
-            throws ApiGatewayException, IOException {
+        throws ApiGatewayException, IOException {
 
-            var userCristinId = randomUri();
-            var userName = randomString();
-            var doi = randomUri();
+        var userCristinId = randomUri();
+        var userName = randomString();
+        var doi = randomUri();
 
-            var publication = createPublicationWithContributorAndDoi(userCristinId, userName, doi);
+        var publication = createPublicationWithContributorAndDoi(userCristinId, userName, doi);
 
-            publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
-            var inputStream = createHandlerRequest(publication.getIdentifier(), userName, randomUri(), USER,
-                                                   userCristinId);
-            handler.handleRequest(inputStream, outputStream, context);
+        var inputStream = createHandlerRequest(publication.getIdentifier(), userName, randomUri(), USER,
+                                               userCristinId);
+        handler.handleRequest(inputStream, outputStream, context);
 
-            assertTrue(eventBridgeClient.getRequestEntries()
-                           .stream()
-                           .anyMatch(entry -> entry.source().equals(NVA_PUBLICATION_DELETE_SOURCE)
-                                      && entry.detailType().equals(LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS)));
+        assertTrue(eventBridgeClient.getRequestEntries()
+                       .stream()
+                       .anyMatch(entry -> entry.source().equals(NVA_PUBLICATION_DELETE_SOURCE)
+                                          && entry.detailType().equals(LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS)));
     }
 
     @Test
@@ -577,7 +577,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         var publication = createUnpublishedPublication();
 
         var publisherUri = publication.getPublisher().getId();
-        var request = createHandlerRequest(publication.getIdentifier(), publication.getResourceOwner().getOwner().getValue(),
+        var request = createHandlerRequest(publication.getIdentifier(),
+                                           publication.getResourceOwner().getOwner().getValue(),
                                            publisherUri, USER);
         handler.handleRequest(request, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
@@ -594,7 +595,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private InputStream createHandlerRequest(SortableIdentifier publicationIdentifier, String username,
-                                            URI institutionId, AccessRight accessRight)
+                                             URI institutionId, AccessRight accessRight)
         throws JsonProcessingException {
 
         return createHandlerRequest(publicationIdentifier, username, institutionId, accessRight, null);
@@ -604,11 +605,11 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
                                              URI institutionId, AccessRight accessRight, URI cristinId)
         throws JsonProcessingException {
         var request = new HandlerRequestBuilder<Void>(restApiMapper)
-                   .withUserName(username)
-                   .withCurrentCustomer(institutionId)
-                   .withAccessRights(institutionId, accessRight)
-                   .withPathParameters(
-                       Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString()));
+                          .withUserName(username)
+                          .withCurrentCustomer(institutionId)
+                          .withAccessRights(institutionId, accessRight)
+                          .withPathParameters(
+                              Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString()));
 
         if (nonNull(cristinId)) {
             request.withPersonCristinId(cristinId);
@@ -651,7 +652,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     private void prepareEnvironment() {
         environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
-        when(environment.readEnv(NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY)).thenReturn(NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY);
+        when(environment.readEnv(NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY)).thenReturn(
+            NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY);
     }
 
     private void markForDeletion(Publication publication) throws ApiGatewayException {
@@ -695,7 +697,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication createPublicationWithContributorAndDoi(URI contributorId, String contributorName,
-                                                                      URI doi)
+                                                               URI doi)
         throws ApiGatewayException {
 
         var publication = randomPublication().copy()
@@ -773,7 +775,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     private static LambdaDestinationInvocationDetail<DoiMetadataUpdateEvent> getDoiMetadataUpdateEvent(
         PutEventsRequestEntry a) {
         try {
-            return JsonUtils.dtoObjectMapper.readValue(a.detail(), new TypeReference<>() {});
+            return JsonUtils.dtoObjectMapper.readValue(a.detail(), new TypeReference<>() {
+            });
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
