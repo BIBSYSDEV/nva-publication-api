@@ -11,6 +11,7 @@ dependencies {
     implementation libs.nva.apigateway
     implementation libs.nva.core
     implementation libs.nva.json
+    implementation libs.nva.s3
     implementation libs.nva.identifiers
     implementation libs.nva.clients
     implementation(libs.nva.datamodel.core) {

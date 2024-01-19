@@ -43,6 +43,12 @@ Parameters:
   ExpandedEntriesPersistenceBucketName:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/Events/PersistedEntriesBucketName'
+  ExpandedEntriesPersistenceBucketArn:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/NVA/Events/PersistedEntriesBucketArn'
+  ResourceStorageBucketName:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/NVA/PublicationData'
   AthenaQueriesBucketName:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/Athena/QueriesBucketName'
@@ -468,7 +474,9 @@ Resources:
           - Effect: Allow
             Action:
               - s3:DeleteObject
-            Resource: "*"
+            Resource:
+              - !Sub '${ExpandedEntriesPersistenceBucketArn}/*'
+              - !Sub 'arn:aws:s3:::${ResourceStorageBucketName}/*'
 
   DynamoDbStreamsAccessPolicy:
     Type: AWS::IAM::Policy
@@ -676,7 +684,10 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           DOMAIN_NAME: !Ref ApiDomain
           NVA_EVENT_BUS_NAME: !Ref NewNvaEventBusName
+          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Sub "nva-resource-storage-${AWS::AccountId}"
       Role: !GetAtt LambdaRole.Arn
+      Policies:
+        - !Ref S3DeleteAccessPermission
       Events:
         PutEvent:
           Type: Api
