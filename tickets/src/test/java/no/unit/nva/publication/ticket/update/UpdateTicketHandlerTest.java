@@ -16,6 +16,8 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
@@ -37,8 +39,10 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -584,6 +588,36 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var approvedFile = (File) publication.getAssociatedArtifacts().get(0);
 
         assertThat(completedPublishingRequest.getApprovedFiles(), contains(approvedFile.getIdentifier()));
+    }
+
+    @Test
+    void shouldEmptyFilesForApprovalWhenPublishingRequestIsBeingApproved()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
+            PublicationStatus.DRAFT, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
+        var expectedFilesForApproval = getUnpublishedFiles(publication);
+
+        assertThat(((PublishingRequestCase) ticket).getFilesForApproval(), containsInAnyOrder(expectedFilesForApproval));
+
+        var completedTicket = ticket.complete(publication, USER_NAME);
+        var httpRequest = createCompleteTicketHttpRequest(completedTicket,
+                                                          AccessRight.MANAGE_PUBLISHING_REQUESTS,
+                                                          ticket.getCustomerId());
+        handler.handleRequest(httpRequest, output, CONTEXT);
+        var completedPublishingRequest = (PublishingRequestCase) ticketService.fetchTicket(ticket);
+        var approvedFile = (File) publication.getAssociatedArtifacts().get(0);
+
+        assertThat(completedPublishingRequest.getApprovedFiles(), contains(approvedFile.getIdentifier()));
+        assertThat(completedPublishingRequest.getFilesForApproval(), is(emptyIterable()));
+    }
+
+    private static Object[] getUnpublishedFiles(Publication publication) {
+        return publication.getAssociatedArtifacts().stream()
+                   .filter(UnpublishedFile.class::isInstance)
+                   .map(File.class::cast)
+                   .map(FileForApproval::fromFile)
+                   .toArray();
     }
 
     private static Map<String, String> pathParameters(Publication publication, TicketEntry ticket) {
