@@ -685,7 +685,7 @@ Resources:
           DOMAIN_NAME: !Ref ApiDomain
           NVA_EVENT_BUS_NAME: !Ref NewNvaEventBusName
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
-      Role: !GetAtt LambdaRole.Arn
+      Role: !GetAtt DeleteLambdaRole.Arn
       Policies:
         - PolicyName: S3DeleteResourceFilesPermission
           PolicyDocument:
