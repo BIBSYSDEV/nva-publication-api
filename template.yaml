@@ -531,6 +531,20 @@ Resources:
               - secretsmanager:*
             Resource: "*"
 
+  LambdaExecutionPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: BackendCognitoClientCredentialsSecretPolicy
+      Roles:
+        - !Ref DeleteLambdaRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - secretsmanager:GetSecretValue
+            Resource: "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:BackendCognitoClientCredentials"
+
   NvaPublicationApi:
     Type: AWS::Serverless::Api
     Properties:
