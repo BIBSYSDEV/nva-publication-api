@@ -68,7 +68,7 @@ public class CristinMapper extends CristinMappingModule {
     public static final String CRISTIN_INSTITUTION_CODE = "CRIS";
     public static final String UNIT_INSTITUTION_CODE = "UNIT";
     public static final ResourceOwner SIKT_OWNER = new CristinLocale("SIKT", "20754", "0", "0",
-                                                                     "0").toResourceOwner();
+                                                                     "0", null, null, null).toResourceOwner();
     private static final String DOMAIN_NAME = new Environment().readEnv("DOMAIN_NAME");
     private static final Map<String, String> CUSTOMER_MAP = Map.of("api.sandbox.nva.aws.unit.no",
                                                                    "bb3d0c0c-5065-4623-9b98-5810983c2478",
@@ -169,11 +169,13 @@ public class CristinMapper extends CristinMappingModule {
     private ResourceOwner extractResourceOwner() {
         var cristinLocales = getValidCristinLocales();
         if (shouldUseOwnerCodeCreated(cristinLocales)) {
-            return new CristinLocale(cristinObject.getOwnerCodeCreated(),
-                                     cristinObject.getInstitutionIdentifierCreated(),
-                                     cristinObject.getDepartmentIdentifierCreated(),
-                                     cristinObject.getSubDepartmendIdentifierCreated(),
-                                     cristinObject.getGroupIdentifierCreated()).toResourceOwner();
+            return CristinLocale.builder()
+                       .withOwnerCode(cristinObject.getOwnerCodeCreated())
+                       .withInstitutionIdentifier(cristinObject.getInstitutionIdentifierCreated())
+                       .withDepartmentIdentifier(cristinObject.getDepartmentIdentifierCreated())
+                       .withSubDepartmentIdentifier(cristinObject.getSubDepartmendIdentifierCreated())
+                       .withGroupIdentifier(cristinObject.getGroupIdentifierCreated())
+                       .build().toResourceOwner();
         }
         if (cristinLocalesContainsCristinOwnerCodeCreated(cristinLocales)) {
             return bestMatchingResourceOwner(cristinLocales);
