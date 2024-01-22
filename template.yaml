@@ -476,7 +476,6 @@ Resources:
               - s3:DeleteObject
             Resource:
               - !Sub '${ExpandedEntriesPersistenceBucketArn}/*'
-              - !Sub 'arn:aws:s3:::${ResourceStorageBucketName}/*'
 
   DynamoDbStreamsAccessPolicy:
     Type: AWS::IAM::Policy
@@ -687,7 +686,15 @@ Resources:
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Sub "nva-resource-storage-${AWS::AccountId}"
       Role: !GetAtt LambdaRole.Arn
       Policies:
-        - !Ref S3DeleteAccessPermission
+        - PolicyName: S3DeleteResourceFilesPermission
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:DeleteObject
+                Resource:
+                  - !Sub 'arn:aws:s3:::${ResourceStorageBucketName}/*'
       Events:
         PutEvent:
           Type: Api
