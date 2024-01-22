@@ -398,6 +398,23 @@ Resources:
               Service:
                 - lambda.amazonaws.com
             Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !GetAtt S3DeleteAccessPermission.Arn
+
+  DeletePublicationLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !GetAtt S3DeleteAccessPermission.Arn
 
   DefaultLambdaPermissions:
     Type: AWS::IAM::Policy
@@ -408,6 +425,7 @@ Resources:
         - !Ref DeleteDraftPublicationLambdaRole
         - !Ref UpdateDoiStatusLambdaRole
         - !Ref DeleteLambdaRole
+        - !Ref DeletePublicationLambdaRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -425,12 +443,14 @@ Resources:
       - LambdaRole
       - DeleteDraftPublicationLambdaRole
       - UpdateDoiStatusLambdaRole
+      - DeletePublicationLambdaRole
     Properties:
       PolicyName: !Sub DatabaseAccessLambdaPermissions-${AWS::StackName}
       Roles:
         - !Ref LambdaRole
         - !Ref DeleteDraftPublicationLambdaRole
         - !Ref UpdateDoiStatusLambdaRole
+        - !Ref DeletePublicationLambdaRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -450,6 +470,7 @@ Resources:
       Roles:
         - !Ref LambdaRole
         - !Ref DeleteLambdaRole
+        - !Ref DeletePublicationLambdaRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -463,11 +484,8 @@ Resources:
             Resource: "*"
 
   S3DeleteAccessPermission:
-    Type: AWS::IAM::Policy
+    Type: AWS::IAM::ManagedPolicy
     Properties:
-      PolicyName: !Sub S3DeleteAccessPermission-${AWS::StackName}
-      Roles:
-        - !Ref DeleteLambdaRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -685,9 +703,7 @@ Resources:
           DOMAIN_NAME: !Ref ApiDomain
           NVA_EVENT_BUS_NAME: !Ref NewNvaEventBusName
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Sub "nva-resource-storage-${AWS::AccountId}"
-      Role: !GetAtt LambdaRole.Arn
-      Policies:
-        - !Ref S3DeleteAccessPermission
+      Role: !GetAtt DeletePublicationLambdaRole.Arn
       Events:
         PutEvent:
           Type: Api
