@@ -17,6 +17,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
@@ -36,6 +37,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -53,6 +55,7 @@ import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
@@ -569,6 +572,52 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                                 .toArray();
 
         assertThat(publishingRequest.orElseThrow().getApprovedFiles(), containsInAnyOrder(expectedApprovedFiles));
+    }
+
+    @Test
+    void shouldEmptyFilesForApprovalWhenUserCanPublishFiles() throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
+        var requestBody = constructDto(PublishingRequestCase.class);
+        var owner = UserInstance.fromPublication(publication);
+        ticketResolver = new TicketResolver(resourceService, ticketService,
+                                            getUriRetriever(getHttpClientWithPublisherAllowingPublishing(),
+                                                            secretsManagerClient));
+        handler = new CreateTicketHandler(resourceService, ticketResolver);
+        handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+
+        var publishingRequest = (PublishingRequestCase) ticketService.fetchTicketByResourceIdentifier(
+            publication.getPublisher().getId(), publication.getIdentifier(), PublishingRequestCase.class).orElseThrow();
+
+        assertThat(publishingRequest.getFilesForApproval(), is(emptyIterable()));
+    }
+
+    @Test
+    void shouldCreatePublishingRequestWithFilesForApprovalWhenPublicationHasUnpublishedFiles()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
+        var requestBody = constructDto(PublishingRequestCase.class);
+        var owner = UserInstance.fromPublication(publication);
+        ticketResolver = new TicketResolver(resourceService, ticketService,
+                                            getUriRetriever(getHttpClientWithPublisherRequiringApproval(),
+                                                            secretsManagerClient));
+        handler = new CreateTicketHandler(resourceService, ticketResolver);
+        handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+
+        var publishingRequest = (PublishingRequestCase) ticketService.fetchTicketByResourceIdentifier(
+            publication.getPublisher().getId(), publication.getIdentifier(), PublishingRequestCase.class).orElseThrow();
+
+        var expectedFilesForApproval = publication.getAssociatedArtifacts().stream()
+                                        .filter(UnpublishedFile.class::isInstance)
+                                        .map(File.class::cast)
+                                        .map(FileForApproval::fromFile)
+                                        .toArray();
+
+        assertThat(publishingRequest.getFilesForApproval(),
+                   containsInAnyOrder(Arrays.stream(expectedFilesForApproval).toArray()));
     }
 
     private PublishingRequestCase fetchTicket(Publication publishedPublication,

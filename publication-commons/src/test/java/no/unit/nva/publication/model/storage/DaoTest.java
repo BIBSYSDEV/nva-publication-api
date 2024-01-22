@@ -85,6 +85,7 @@ class DaoTest extends ResourcesLocalTest {
     public static final String RESOURCE_REVISION = "resource.entityDescription.reference.publicationContext.revision";
     public static final String DATA_REVISION = "data.entityDescription.reference.publicationContext.revision";
     public static final String DATA_APPROVED_FILES = "data.approvedFiles";
+    public static final String DATA_FILES_FOR_APPROVAL = "data.filesForApproval";
 
     public static Stream<Class<?>> entityProvider() {
         return TypeProvider.listSubTypes(Entity.class);
@@ -213,7 +214,8 @@ class DaoTest extends ResourcesLocalTest {
         assertThat(originalResource, doesNotHaveEmptyValuesIgnoringFields(Set.of(DATA_OWNER_AFFILIATION,
                                                                                  DATA_ASSIGNEE, DATA_FINALIZED_BY,
                                                                                  DATA_FINALIZED_DATE, DATA_IMPORT_STATUS,
-                RESOURCE_IMPORT_STATUS, RESOURCE_REVISION, DATA_REVISION, DATA_APPROVED_FILES)));
+                RESOURCE_IMPORT_STATUS, RESOURCE_REVISION, DATA_REVISION, DATA_APPROVED_FILES,
+                                                                                 DATA_FILES_FOR_APPROVAL)));
         assertThat(originalResource, is(equalTo(retrievedResource)));
     }
     
@@ -238,7 +240,8 @@ class DaoTest extends ResourcesLocalTest {
                                                                             DATA_FINALIZED_DATE, DATA_IMPORT_STATUS,
                                                                             RESOURCE_IMPORT_STATUS, RESOURCE_REVISION,
                                                                             DATA_REVISION,
-                                                                            DATA_APPROVED_FILES)));
+                                                                            DATA_APPROVED_FILES,
+                                                                            DATA_FILES_FOR_APPROVAL)));
         Map<String, AttributeValue> dynamoMap = originalDao.toDynamoFormat();
         Dao parsedDao = parseAttributeValuesMap(dynamoMap, originalDao.getClass());
         assertThat(parsedDao, is(equalTo(originalDao)));
@@ -259,7 +262,7 @@ class DaoTest extends ResourcesLocalTest {
         assertThat(retrievedDao, doesNotHaveEmptyValuesIgnoringFields(
                 Set.of(DATA_OWNER_AFFILIATION, DATA_ASSIGNEE, DATA_FINALIZED_BY, DATA_FINALIZED_DATE,
                        DATA_IMPORT_STATUS, RESOURCE_IMPORT_STATUS, RESOURCE_REVISION, DATA_REVISION,
-                       DATA_APPROVED_FILES)));
+                       DATA_APPROVED_FILES, DATA_FILES_FOR_APPROVAL)));
         assertThat(retrievedDao, is(equalTo(originalDao)));
     }
     

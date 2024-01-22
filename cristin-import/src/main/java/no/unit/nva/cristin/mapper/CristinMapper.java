@@ -2,7 +2,6 @@ package no.unit.nva.cristin.mapper;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.UNIT_CUSTOMER_ID;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.HRCS_ACTIVITIES_MAP;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.HRCS_CATEGORIES_MAP;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS;
@@ -28,6 +27,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -50,6 +50,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.funding.Funding;
+import nva.commons.core.Environment;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Try;
@@ -68,6 +69,17 @@ public class CristinMapper extends CristinMappingModule {
     public static final String UNIT_INSTITUTION_CODE = "UNIT";
     public static final ResourceOwner SIKT_OWNER = new CristinLocale("SIKT", "20754", "0", "0",
                                                                      "0").toResourceOwner();
+    private static final String DOMAIN_NAME = new Environment().readEnv("DOMAIN_NAME");
+    private static final Map<String, String> CUSTOMER_MAP = Map.of("api.sandbox.nva.aws.unit.no",
+                                                                   "bb3d0c0c-5065-4623-9b98-5810983c2478",
+                                                                   "api.dev.nva.aws.unit.no",
+                                                                   "bb3d0c0c-5065-4623-9b98-5810983c2478",
+                                                                   "api.test.nva.aws.unit.no",
+                                                                   "0baf8fcb-b18d-4c09-88bb-956b4f659103",
+                                                                   "api.e2e.nva.aws.unit.no",
+                                                                   "bb3d0c0c-5065-4623-9b98-5810983c2478",
+                                                                   "api.nva.unit.no",
+                                                                   "22139870-8d31-4df9-bc45-14eb68287c4a");
     private static final String SCOPUS_CASING_ACCEPTED_BY_FRONTEND = "Scopus";
 
     public CristinMapper(CristinObject cristinObject) {
@@ -253,8 +265,12 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     private Organization extractOrganization() {
-        UriWrapper customerId = UriWrapper.fromUri(NVA_API_DOMAIN).addChild(PATH_CUSTOMER, UNIT_CUSTOMER_ID);
+        UriWrapper customerId = UriWrapper.fromUri(NVA_API_DOMAIN).addChild(PATH_CUSTOMER, getSiktCustomerId());
         return new Organization.Builder().withId(customerId.getUri()).build();
+    }
+
+    private String getSiktCustomerId() {
+        return Optional.ofNullable(CUSTOMER_MAP.get(DOMAIN_NAME)).orElseThrow();
     }
 
     private Instant extractDate() {
