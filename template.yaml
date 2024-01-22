@@ -420,13 +420,12 @@ Resources:
             Resource: "*"
 
   DatabaseAccessLambdaPermissions:
-    Type: AWS::IAM::Policy
+    Type: AWS::IAM::ManagedPolicy
     DependsOn:
       - LambdaRole
       - DeleteDraftPublicationLambdaRole
       - UpdateDoiStatusLambdaRole
     Properties:
-      PolicyName: !Sub DatabaseAccessLambdaPermissions-${AWS::StackName}
       Roles:
         - !Ref LambdaRole
         - !Ref DeleteDraftPublicationLambdaRole
@@ -463,9 +462,8 @@ Resources:
             Resource: "*"
 
   S3DeleteAccessPermission:
-    Type: AWS::IAM::Policy
+    Type: AWS::IAM::ManagedPolicy
     Properties:
-      PolicyName: !Sub S3DeleteAccessPermission-${AWS::StackName}
       Roles:
         - !Ref DeleteLambdaRole
       PolicyDocument:
@@ -499,9 +497,8 @@ Resources:
 
 
   EventsLambdaPermissions:
-    Type: AWS::IAM::Policy
+    Type: AWS::IAM::ManagedPolicy
     Properties:
-      PolicyName: !Sub EventsLambdaPermissions-${AWS::StackName}
       Roles:
         - !Ref LambdaRole
         - !Ref DeleteLambdaRole
@@ -517,6 +514,7 @@ Resources:
               - sqs:GetQueueAttributes
               - sqs:ChangeMessageVisibility
             Resource: "*"
+
   InternalAccessToIdentityServicePermissions:
     Type: AWS::IAM::Policy
     Properties:
@@ -531,12 +529,9 @@ Resources:
               - secretsmanager:*
             Resource: "*"
 
-  BackendCognitoClientCredentialsSecretPolicy:
-    Type: AWS::IAM::Policy
+  BackendCognitoClientCredentialsSecretPermissions:
+    Type: AWS::IAM::ManagedPolicy
     Properties:
-      PolicyName: BackendCognitoClientCredentialsSecretPolicy
-      Roles:
-        - !Ref DeleteLambdaRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -687,6 +682,25 @@ Resources:
             Method: put
             RestApiId: !Ref NvaPublicationApi
 
+  NvaDeletePublicationFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - !GetAtt BackendCognitoClientCredentialsSecretPermissions.Arn
+        - !GetAtt EventsLambdaPermissions.Arn
+        - !GetAtt S3DeleteAccessPermission.Arn
+        - !GetAtt DatabaseAccessLambdaPermissions.Arn
+
   NvaDeletePublicationFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -700,7 +714,7 @@ Resources:
           DOMAIN_NAME: !Ref ApiDomain
           NVA_EVENT_BUS_NAME: !Ref NewNvaEventBusName
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
-      Role: !GetAtt DeleteLambdaRole.Arn
+      Role: !GetAtt NvaDeletePublicationFunctionRole.Arn
       Events:
         PutEvent:
           Type: Api
