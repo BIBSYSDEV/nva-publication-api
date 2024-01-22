@@ -51,6 +51,7 @@ public class PublishingRequestCase extends TicketEntry {
     public static final String APPROVED_FILES_FIELD = "approvedFiles";
     public static final String NOT_COMPLETED_PUBLISHING_REQUEST_MESSAGE =
         "Not allowed to set approved files for not Completed PublishingRequest";
+    public static final String FILES_FOR_APPROVAL_FIELD = "filesForApproval";
 
     @JsonProperty(IDENTIFIER_FIELD)
     private SortableIdentifier identifier;
@@ -74,6 +75,8 @@ public class PublishingRequestCase extends TicketEntry {
     private URI ownerAffiliation;
     @JsonProperty(APPROVED_FILES_FIELD)
     private Set<UUID> approvedFiles;
+    @JsonProperty(FILES_FOR_APPROVAL_FIELD)
+    private Set<FileForApproval> filesForApproval;
 
     public PublishingRequestCase() {
         super();
@@ -87,7 +90,16 @@ public class PublishingRequestCase extends TicketEntry {
         openingCaseObject.setStatus(TicketStatus.PENDING);
         openingCaseObject.setViewedBy(ViewedBy.addAll(openingCaseObject.getOwner()));
         openingCaseObject.setResourceIdentifier(publication.getIdentifier());
+        openingCaseObject.setFilesForApproval(extractFilesForApproval(publication));
         return openingCaseObject;
+    }
+
+    private static Set<FileForApproval> extractFilesForApproval(Publication publication) {
+        return publication.getAssociatedArtifacts().stream()
+                   .filter(UnpublishedFile.class::isInstance)
+                   .map(UnpublishedFile.class::cast)
+                   .map(FileForApproval::fromFile)
+                   .collect(Collectors.toSet());
     }
 
     public static PublishingRequestCase createQueryObject(UserInstance userInstance,
@@ -139,6 +151,7 @@ public class PublishingRequestCase extends TicketEntry {
     public PublishingRequestCase complete(Publication publication, Username finalizedBy) {
         var completed = (PublishingRequestCase) super.complete(publication, finalizedBy);
         completed.setApprovedFiles(getFilesToApprove(publication));
+        completed.emptyFilesForApproval();
         return completed;
     }
 
@@ -165,6 +178,7 @@ public class PublishingRequestCase extends TicketEntry {
         copy.setAssignee(this.getAssignee());
         copy.setOwnerAffiliation(this.getOwnerAffiliation());
         copy.setApprovedFiles(this.getApprovedFiles().isEmpty() ? Set.of() : this.getApprovedFiles());
+        copy.setFilesForApproval(this.getFilesForApproval().isEmpty() ? Set.of() : this.getFilesForApproval());
         return copy;
     }
 
@@ -186,6 +200,18 @@ public class PublishingRequestCase extends TicketEntry {
     @Override
     public void setAssignee(Username assignee) {
         this.assignee = assignee;
+    }
+
+    public Set<FileForApproval> getFilesForApproval() {
+        return nonNull(filesForApproval) ? filesForApproval : Set.of();
+    }
+
+    public void setFilesForApproval(Set<FileForApproval> filesForApproval) {
+        this.filesForApproval = filesForApproval;
+    }
+
+    public void emptyFilesForApproval() {
+        this.filesForApproval = Set.of();
     }
 
     @Override

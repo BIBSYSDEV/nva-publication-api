@@ -1,7 +1,7 @@
 package no.unit.nva.cristin.lambda;
 
 import static no.unit.nva.cristin.CristinImportConfig.eventHandlerObjectMapper;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PUBLICATIONS_OWNER;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.SIKT_OWNER;
 import static no.unit.nva.cristin.mapper.nva.exceptions.ExceptionHandling.castToCorrectRuntimeException;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.MAX_SLEEP_TIME;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
@@ -268,7 +268,7 @@ public class CristinEntryEventConsumer
 
     private CristinObject parseCristinObject(FileContentsEvent<JsonNode> eventBody) {
         CristinObject cristinObject = jsonNodeToCristinObject(eventBody);
-        cristinObject.hardcodePublicationOwner(HARDCODED_PUBLICATIONS_OWNER);
+        cristinObject.hardcodePublicationOwner(SIKT_OWNER);
         return cristinObject;
     }
 
