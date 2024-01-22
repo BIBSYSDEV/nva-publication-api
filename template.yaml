@@ -419,7 +419,7 @@ Resources:
               - lambda:InvokeFunction
             Resource: "*"
 
-  DatabaseAccessLambdaManagedPolicy:
+  DatabaseAccessLambdaManagedPolicyManagedPolicy:
     Type: AWS::IAM::ManagedPolicy
     DependsOn:
       - LambdaRole
@@ -699,7 +699,7 @@ Resources:
         - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.Arn
         - !GetAtt EventsLambdaManagedPolicy.Arn
         - !GetAtt S3DeleteAccessManagedPolicy.Arn
-        - !GetAtt DatabaseAccessLambdaManagedPolicy.Arn
+        - !GetAtt DatabaseAccessLambdaManagedPolicyManagedPolicy.Arn
       Events:
         PutEvent:
           Type: Api
@@ -1084,7 +1084,7 @@ Resources:
 
 
   DeletionProcessInitializationHandler:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1113,7 +1113,7 @@ Resources:
 
 
   DeletePublicationEventConsumer:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Description: 'Listens for Delete event emitted from ResourceExpansionHandler. Removes resource from persisted-storage s3 bucket and emits event consumed by search-api.'
     Properties:
@@ -1149,7 +1149,7 @@ Resources:
 
 
   LogicallyDeleteEntriesHandler:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Description: 'Listens for Delete event emitted from LogicallyDeleteImportedPublicationsButton. Removes resource from DynamoDB. Parses a DeleteEntryEvent'
     Properties:
@@ -1174,7 +1174,7 @@ Resources:
 
 
   DoiRequestEventProducer:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1209,7 +1209,7 @@ Resources:
 
 
   ResourceExpansionHandler:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1249,7 +1249,7 @@ Resources:
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
 
   ImportCandidateExpansionHandler:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1286,7 +1286,7 @@ Resources:
             Destination: !GetAtt ImportCandidateExpansionHandlerDLQ.Arn
 
   DeleteImportCandidateEventHandler:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1318,7 +1318,7 @@ Resources:
             Destination: !GetAtt DeleteImportCandidateEventHandlerDLQ.Arn
 
   ExpandedResourcesPersistenceHandler:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1350,7 +1350,7 @@ Resources:
             Type: SQS
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
   AnalyticsIntegrationHandler:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1379,7 +1379,7 @@ Resources:
             Type: SQS
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
   AcceptedPublishingRequestHandler:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1404,7 +1404,7 @@ Resources:
                   topic: [ "PublicationService.PublishingRequest.Update" ]
 
   EventBasedBatchScanHandlerTest:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1438,7 +1438,7 @@ Resources:
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
 
   EventBasedImportCandidateBatchScanHandlerTest:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1472,7 +1472,7 @@ Resources:
             Destination: !GetAtt ImportCandidateBatchScanDLQ.Arn
 
   DataEntryUpdateHandler:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1503,7 +1503,7 @@ Resources:
             Destination: !GetAtt PublicationFanoutHandlerDLQ.Arn
 
   ImportCandidateDataEntryUpdateHandler:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1533,7 +1533,7 @@ Resources:
             Destination: !GetAtt ImportCandidateDataEntryUpdateHandlerDLQ.Arn
 
   DeleteDraftPublicationHandler:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1569,7 +1569,7 @@ Resources:
     Type: AWS::Serverless::Function
     DependsOn:
       - LambdaRole
-      - DatabaseAccessLambdaPermissions
+      - DatabaseAccessLambdaManagedPolicyManagedPolicy
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler::handleRequest
@@ -1598,7 +1598,7 @@ Resources:
     Type: AWS::Serverless::Function
     DependsOn:
       - LambdaRole
-      - DatabaseAccessLambdaPermissions
+      - DatabaseAccessLambdaManagedPolicyManagedPolicy
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler::handleRequest
@@ -1625,7 +1625,7 @@ Resources:
 
 
   UpdateDoiStatusHandlerFunction:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1710,7 +1710,7 @@ Resources:
   #==========================Manually triggered functions=============================================
 
   BatchScanStartHandler:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1727,7 +1727,7 @@ Resources:
           OUTPUT_EVENT_TOPIC: 'PublicationService.DataEntry.ScanAndUpdateRowVersion'
 
   ImportCandidatesBatchScanStartHandler:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
