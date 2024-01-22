@@ -398,8 +398,6 @@ Resources:
               Service:
                 - lambda.amazonaws.com
             Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - !Ref DeleteLambdaRole
 
   DefaultLambdaPermissions:
     Type: AWS::IAM::Policy
@@ -465,9 +463,11 @@ Resources:
             Resource: "*"
 
   S3DeleteAccessPermission:
-    Type: AWS::IAM::ManagedPolicy
+    Type: AWS::IAM::Policy
     Properties:
       PolicyName: !Sub S3DeleteAccessPermission-${AWS::StackName}
+      Roles:
+        - !Ref DeleteLambdaRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -686,7 +686,7 @@ Resources:
           NVA_EVENT_BUS_NAME: !Ref NewNvaEventBusName
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Sub "nva-resource-storage-${AWS::AccountId}"
       Role: !GetAtt LambdaRole.Arn
-      ManagedPolicyArns:
+      Policies:
         - !Ref S3DeleteAccessPermission
       Events:
         PutEvent:
