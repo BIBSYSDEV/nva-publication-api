@@ -476,6 +476,7 @@ Resources:
               - s3:DeleteObject
             Resource:
               - !Sub '${ExpandedEntriesPersistenceBucketArn}/*'
+              - !Sub 'arn:aws:s3:::${ResourceStorageBucketName}/*'
 
   DynamoDbStreamsAccessPolicy:
     Type: AWS::IAM::Policy
@@ -683,7 +684,7 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           DOMAIN_NAME: !Ref ApiDomain
           NVA_EVENT_BUS_NAME: !Ref NewNvaEventBusName
-          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Sub "nva-resource-storage-${AWS::AccountId}"
+          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
       Role: !GetAtt LambdaRole.Arn
       Policies:
         - PolicyName: S3DeleteResourceFilesPermission
@@ -939,7 +940,7 @@ Resources:
           ALLOWED_ORIGIN: '*'
           IMPORT_CANDIDATES_TABLE_NAME: !Ref NvaImportCandidatesTable
           RESOURCE_TABLE_NAME: !Ref NvaResourcesTable
-          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Sub "nva-resource-storage-${AWS::AccountId}"
+          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
           IMPORT_CANDIDATES_STORAGE_BUCKET: !Ref ImportCandidateStorageBucket
           PIA_SECRETS_NAME: !Ref PiaRestCredentialsTokenName
           PIA_USERNAME_KEY: !Ref PiaRestUsernameKey
@@ -968,7 +969,7 @@ Resources:
         Variables:
           BRAGE_MIGRATION_ERROR_BUCKET_NAME: !Sub "${BrageMigrationErrorBucketName}-${AWS::AccountId}"
           TABLE_NAME: !Ref NvaResourcesTable
-          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Sub "nva-resource-storage-${AWS::AccountId}"
+          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
           DOMAIN_NAME: !Ref ApiDomain
       Events:
         BrageMigrationEvent:
@@ -1120,7 +1121,7 @@ Resources:
       Environment:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
-          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Sub "nva-resource-storage-${AWS::AccountId}"
+          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
           PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
       Events:
