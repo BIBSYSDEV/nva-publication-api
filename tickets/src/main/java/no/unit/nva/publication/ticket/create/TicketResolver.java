@@ -99,6 +99,7 @@ public class TicketResolver {
                                                                      Publication publication)
         throws ApiGatewayException {
         publishingRequestCase.setAssignee(new Username(publishingRequestCase.getOwner().toString()));
+        publishingRequestCase.emptyFilesForApproval();
         return publishingRequestCase.persistAutoComplete(ticketService, publication);
     }
 
@@ -114,6 +115,7 @@ public class TicketResolver {
 
     private PublishingRequestCase createAutoApprovedTicket(PublishingRequestCase ticket, Publication publication)
         throws ApiGatewayException {
+        ticket.emptyFilesForApproval();
         return ticket.persistAutoComplete(ticketService, publication);
     }
 
