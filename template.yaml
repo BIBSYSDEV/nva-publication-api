@@ -422,7 +422,6 @@ Resources:
   DatabaseAccessLambdaManagedPolicyManagedPolicy:
     Type: AWS::IAM::ManagedPolicy
     DependsOn:
-      - LambdaRole
       - DeleteDraftPublicationLambdaRole
       - UpdateDoiStatusLambdaRole
     Properties:
@@ -696,10 +695,10 @@ Resources:
           NVA_EVENT_BUS_NAME: !Ref NewNvaEventBusName
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
       Policies:
-        - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.Arn
-        - !GetAtt EventsLambdaManagedPolicy.Arn
-        - !GetAtt S3DeleteAccessManagedPolicy.Arn
-        - !GetAtt DatabaseAccessLambdaManagedPolicyManagedPolicy.Arn
+        - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
+        - !GetAtt EventsLambdaManagedPolicy.PolicyArn
+        - !GetAtt S3DeleteAccessManagedPolicy.PolicyArn
+        - !GetAtt DatabaseAccessLambdaManagedPolicyManagedPolicy.PolicyArn
       Events:
         PutEvent:
           Type: Api
