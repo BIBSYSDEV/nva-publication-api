@@ -80,6 +80,7 @@ public class CristinMapper extends CristinMappingModule {
                                                                    "bb3d0c0c-5065-4623-9b98-5810983c2478",
                                                                    "api.nva.unit.no",
                                                                    "22139870-8d31-4df9-bc45-14eb68287c4a");
+    private static final String SCOPUS_CASING_ACCEPTED_BY_FRONTEND = "Scopus";
 
     public CristinMapper(CristinObject cristinObject) {
         super(cristinObject, ChannelRegistryMapper.getInstance());
@@ -150,6 +151,12 @@ public class CristinMapper extends CristinMappingModule {
         return cristinContributors.stream()
                    .sorted(Comparator.nullsLast(Comparator.naturalOrder()))
                    .collect(Collectors.toList());
+    }
+
+    private static String craftSourceCode(CristinSource cristinSource) {
+        return SCOPUS_CASING_ACCEPTED_BY_FRONTEND.equalsIgnoreCase(cristinSource.getSourceCode())
+                   ? SCOPUS_CASING_ACCEPTED_BY_FRONTEND
+                   : cristinSource.getSourceCode();
     }
 
     private URI extractHandle() {
@@ -447,7 +454,7 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     private AdditionalIdentifier mapCristinSourceToAdditionalIdentifier(CristinSource cristinSource) {
-        return new AdditionalIdentifier(cristinSource.getSourceCode(), cristinSource.getSourceIdentifier());
+        return new AdditionalIdentifier(craftSourceCode(cristinSource), cristinSource.getSourceIdentifier());
     }
 
     private String extractNpiSubjectHeading() {
