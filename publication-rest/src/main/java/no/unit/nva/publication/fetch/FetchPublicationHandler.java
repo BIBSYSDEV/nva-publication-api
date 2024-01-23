@@ -29,7 +29,6 @@ import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.doi.DataCiteMetadataDtoMapper;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.PublicationDetail;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
@@ -108,7 +107,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         if (nonNull(publication.getDuplicateOf())) {
             return produceRedirect(publication.getDuplicateOf());
         } else {
-            throw new GoneException(GONE_MESSAGE, PublicationDetail.fromPublication(publication));
+            throw new GoneException(GONE_MESSAGE, DeletedPublicationResponse.craftDeletedPublicationResponse(publication));
         }
     }
 
