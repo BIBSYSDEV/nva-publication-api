@@ -14,10 +14,12 @@ Feature: Mappings that hold for all types of Cristin Results
       | Source Code Text | Source Identifier Text |
       | SomeCode         | Some identifier        |
       | Some other code  | Some other identifier  |
+      | SCOPUS           | Some third identifier  |
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has an additional identifier with key "SomeCode" and value "Some identifier"
     And the NVA Resource has an additional identifier with key "Cristin" and value 12345
     And the NVA Resource has an additional identifier with key "Some other code" and value "Some other identifier"
+    And the NVA Resource has an additional identifier with key "Scopus" and value "Some third identifier"
 
   Scenario: CristinSource collides with sourceCode
     Given the Cristin Result has id equal to 12345
@@ -315,7 +317,7 @@ Feature: Mappings that hold for all types of Cristin Results
   and a hardcoded organization id.
     Given a valid Cristin Result
     When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource Publishers id is "https://api.test.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934"
+    Then the NVA Resource Publishers id is "https://api.test.nva.aws.unit.no/customer/0baf8fcb-b18d-4c09-88bb-956b4f659103"
 
   Scenario: Mapping reports error when Cristin affiliation has no role
     Given that the Cristin Result has a Contributor with no role
@@ -328,7 +330,7 @@ Feature: Mappings that hold for all types of Cristin Results
     Then an error is reported.
 
   Scenario: Mapping cristin Funding with NFR should create nva Funding with id set.
-    Given that Cristin Result has a grant with properties identifier "3013" and sourceCode "NFR":
+    Given that Cristin Result has a grant with properties finansieringsreferanse "3013" and sourceCode "NFR":
     When the Cristin Result is converted to an NVA Resource
     Then the publication should have a Confirmed Nva funding with identifier equal to "3013" and id equal to "https://api.test.nva.aws.unit.no/verified-funding/nfr/3013"
 
@@ -340,9 +342,9 @@ Feature: Mappings that hold for all types of Cristin Results
       | 3013                | KI                     |             |             | 456                    |
     When the Cristin Result is converted to an NVA Resource
     Then publication should have a nva Fundings:
-      | identifier | activeFrom           | activeTo             | source                                                      | label               |
-      | 619        | 2005-01-01T00:00:00Z | 2006-01-01T00:00:00Z | https://api.test.nva.aws.unit.no/cristin/funding-sources/EU | SCP8-GA-2009-233969 |
-      | 3013       |                      |                      | https://api.test.nva.aws.unit.no/cristin/funding-sources/KI | 456                 |
+      | identifier          | activeFrom           | activeTo             | source                                                      | label |
+      | SCP8-GA-2009-233969 | 2005-01-01T00:00:00Z | 2006-01-01T00:00:00Z | https://api.test.nva.aws.unit.no/cristin/funding-sources/EU | null  |
+      | 456                 |                      |                      | https://api.test.nva.aws.unit.no/cristin/funding-sources/KI | null  |
 
 
   Scenario: When CristinGrants should not be url encoded twice
@@ -352,9 +354,9 @@ Feature: Mappings that hold for all types of Cristin Results
       | 10228               | EC/H2020               | 2005        | 2006        | 642080                 |
     When the Cristin Result is converted to an NVA Resource
     Then publication should have a nva Fundings:
-      | identifier | activeFrom           | activeTo             | source                                                                 | label    |
-      | 17157      | 2005-01-01T00:00:00Z | 2006-01-01T00:00:00Z | https://api.test.nva.aws.unit.no/cristin/funding-sources/MILJ%C3%98DIR | 17011442 |
-      | 10228      | 2005-01-01T00:00:00Z | 2006-01-01T00:00:00Z | https://api.test.nva.aws.unit.no/cristin/funding-sources/EC%2FH2020 | 642080   |
+      | identifier | activeFrom           | activeTo             | source                                                                 | label |
+      | 17011442   | 2005-01-01T00:00:00Z | 2006-01-01T00:00:00Z | https://api.test.nva.aws.unit.no/cristin/funding-sources/MILJ%C3%98DIR | null  |
+      | 642080     | 2005-01-01T00:00:00Z | 2006-01-01T00:00:00Z | https://api.test.nva.aws.unit.no/cristin/funding-sources/EC%2FH2020    | null  |
 
 
   Scenario: When a eierkode_opprettet matches one of the vitenskapeligarbeid_lokal, the institution is used as owner

@@ -112,6 +112,10 @@ Parameters:
   PiaRestUsernamePasswordKey:
     Type: String
     Default: "PiaRestPass"
+  CristinImportNviPatchQueueUrl:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: SQS Queue Url for proceeding nvi data from cristin
+    Default: /NVA/Queues/CristinImportNviQueueUrl
 
 Conditions:
   WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ] ]
@@ -298,8 +302,6 @@ Resources:
   UpdateDoiStatusDLQ:
     Type: "AWS::SQS::Queue"
   DeletePublicationEventProducerDlq:
-    Type: "AWS::SQS::Queue"
-  DeletePublicationEventConsumerDlq:
     Type: "AWS::SQS::Queue"
   PublicationFanoutHandlerDLQ:
     Type: "AWS::SQS::Queue"
@@ -583,6 +585,7 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
+          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -608,7 +611,6 @@ Resources:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
           NVA_FRONTEND_DOMAIN: !Ref NvaApplicationDomain
-          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
       Role: !GetAtt LambdaRole.Arn
       Events:
@@ -670,7 +672,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
-          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
       Role: !GetAtt LambdaRole.Arn
       Events:
@@ -793,7 +794,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
-          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
       Role: !GetAtt LambdaRole.Arn
       Events:
@@ -834,7 +834,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
-          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
       Role: !GetAtt LambdaRole.Arn
       Events:
@@ -1006,7 +1005,6 @@ Resources:
           PIA_REST_API: !Ref PiaRestHost
           SCOPUS_IMPORT_BUCKET: !Sub "${ScopusImportReportBucketName}-${AWS::AccountId}"
           IMPORT_CANDIDATES_STORAGE_BUCKET: !Ref ImportCandidateStorageBucket
-          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
           CROSSREF_FETCH_DOI_URI: 'https://api.crossref.org/v1/works/'
       Events:
@@ -1109,43 +1107,6 @@ Resources:
           OnFailure:
             Type: SQS
             Destination: !GetAtt DeletePublicationEventProducerDlq.Arn
-
-
-  DeletePublicationEventConsumer:
-    DependsOn: EventsLambdaManagedPolicy
-    Type: AWS::Serverless::Function
-    Description: 'Listens for Delete event emitted from ResourceExpansionHandler. Removes resource from persisted-storage s3 bucket and emits event consumed by search-api.'
-    Properties:
-      CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.handlers.delete.DeletePublicationEventConsumer::handleRequest
-      Runtime: java17
-      Role: !GetAtt DeleteLambdaRole.Arn
-      ReservedConcurrentExecutions: 1
-      Environment:
-        Variables:
-          EVENT_BUS_NAME: !GetAtt InternalBus.Name
-          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
-          EVENTS_BUCKET: !Ref NvaEventsBucketsName
-          PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
-      Events:
-        EventBridgeEvent:
-          Type: EventBridgeRule
-          Properties:
-            EventBusName: !GetAtt InternalBus.Name
-            Pattern:
-              detail:
-                responsePayload:
-                  topic:
-                    - PublicationService.ExpandedDataEntry.Delete
-      EventInvokeConfig:
-        DestinationConfig:
-          OnSuccess:
-            Type: EventBridge
-            Destination: !Ref NewNvaEventBusArn # event is consumed by search-api
-          OnFailure:
-            Type: SQS
-            Destination: !GetAtt DeletePublicationEventConsumerDlq.Arn
-
 
   LogicallyDeleteEntriesHandler:
     DependsOn: EventsLambdaManagedPolicy
@@ -1263,7 +1224,6 @@ Resources:
           PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
           TABLE_NAME: !Ref NvaImportCandidatesTable
           API_HOST: !Ref ApiDomain
-          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
       Events:
         EventBridgeEvent:
@@ -1657,7 +1617,6 @@ Resources:
     DependsOn:
       - CristinImportDataEntryQueue
       - CristinImportPatchQueue
-      - CristinImportNviPatchQueue
     Properties:
       CodeUri: s3-import-commons
       Handler: no.unit.nva.publication.s3imports.FileEntriesEventEmitter::handleRequest
@@ -1673,7 +1632,7 @@ Resources:
           BATCH_EMISSION_INTERVAL_MILLIS: 700
           CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL: !Ref CristinImportDataEntryQueue
           CRISTIN_IMPORT_PATCH_QUEUE_URL: !Ref CristinImportPatchQueue
-          CRISTIN_IMPORT_NVI_PATCH_QUEUE_URL: !Ref CristinImportNviPatchQueue
+          CRISTIN_IMPORT_NVI_PATCH_QUEUE_URL: !Ref CristinImportNviPatchQueueUrl
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -1801,7 +1760,6 @@ Resources:
       Runtime: java17
       Environment:
         Variables:
-          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
@@ -1864,8 +1822,6 @@ Resources:
   CristinImportDataEntryQueue:
     Type: "AWS::SQS::Queue"
   CristinImportPatchQueue:
-    Type: "AWS::SQS::Queue"
-  CristinImportNviPatchQueue:
     Type: "AWS::SQS::Queue"
   CristinImportDLQ:
     Type: "AWS::SQS::Queue"

@@ -1,0 +1,42 @@
+[
+  {
+    "eierkode": "UIS",
+    "institusjonsnr": 217,
+    "avdnr": 0,
+    "undavdnr": 0,
+    "gruppenr": 0,
+    "brukernavn_opprettet": null,
+    "dato_opprettet": "2014-02-02T13:43:45",
+    "brukernavn_siste_endring": null,
+    "dato_siste_endring": "2014-03-03T15:44:37",
+    "status_kontrollert": "J",
+    "brukernavn_kontrollert": "2911431",
+    "dato_kontrollert": "2014-03-03T15:44:37",
+    "status_bekreftet_arkivsporsmal": null,
+    "brukernavn_avlvrt_arkivsystem": null,
+    "dato_avlvrt_arkivsystem": null,
+    "status_fulgt_medf_reg": "J",
+    "brukernavn_svart_medforf_reg": "2900596",
+    "dato_svart_medforf_regel": "2014-02-02T13:41:52"
+  },
+  {
+    "eierkode": "UITO",
+    "institusjonsnr": 186,
+    "avdnr": 0,
+    "undavdnr": 0,
+    "gruppenr": 0,
+    "brukernavn_opprettet": null,
+    "dato_opprettet": "2014-02-06T08:35:07",
+    "brukernavn_siste_endring": null,
+    "dato_siste_endring": "2015-01-14T10:10:11",
+    "status_kontrollert": "J",
+    "brukernavn_kontrollert": "khe060",
+    "dato_kontrollert": "2014-02-19T10:40:56",
+    "status_bekreftet_arkivsporsmal": null,
+    "brukernavn_avlvrt_arkivsystem": null,
+    "dato_avlvrt_arkivsystem": null,
+    "status_fulgt_medf_reg": null,
+    "brukernavn_svart_medforf_reg": null,
+    "dato_svart_medforf_regel": null
+  }
+]

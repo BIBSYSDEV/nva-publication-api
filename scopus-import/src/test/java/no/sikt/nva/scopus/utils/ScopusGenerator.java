@@ -219,6 +219,78 @@ public final class ScopusGenerator {
         this.document = randomDocumentWithContributors(numberOfContributors);
     }
 
+    public ScopusGenerator(AuthorTp authorTp) {
+        this.shouldReturnAuthorTyp = true;
+        this.languages = createRandomLanguages();
+        this.doi = randomDoi();
+        this.sourcetypeAtt = SourcetypeAtt.J;
+        this.minimumSequenceNumber = 1;
+        this.abstractsTp = randomAbstracts();
+        this.contentWithSupAndInf = packRandomSerializablesWithSupAndInf();
+        this.affiliations = randomAffiliations();
+        DocTp docTp = new DocTp();
+        docTp.setItem(randomItemTpWithSingleAuthorTp(authorTp));
+        docTp.setMeta(randomMetaTp());
+        this.document = docTp;
+        assertThat(docTp, doesNotHaveEmptyValuesIgnoringFieldsAndClasses(NOT_BEAN_CLASSES, IGNORED_FIELDS));
+    }
+
+    private ItemTp randomItemTpWithSingleAuthorTp(AuthorTp authorTp) {
+        var item = new ItemTp();
+        item.setItem(randomOriginalItemWithSingleAuthorTp(authorTp));
+        return item;
+    }
+
+    private OrigItemTp randomOriginalItemWithSingleAuthorTp(AuthorTp authorTp) {
+        var item = new OrigItemTp();
+        item.setBibrecord(randomBibRecordWithAuthorTp(authorTp));
+        item.setProcessInfo(randomProcessInfo());
+        return item;
+    }
+
+    private BibrecordTp randomBibRecordWithAuthorTp(AuthorTp authorTp) {
+        var bibRecord = new BibrecordTp();
+        bibRecord.setItemInfo(randomItemInfo());
+        bibRecord.setHead(randomHeadTpWithContributorsFromAuthorTp(authorTp));
+        return bibRecord;
+    }
+
+    private HeadTp randomHeadTpWithContributorsFromAuthorTp(AuthorTp authorTp) {
+        var correspondenceTp = new CorrespondenceTp();
+        var authorGroup = new AuthorGroupTp();
+        var organization = new OrganizationTp();
+        organization.getContent().add(randomString());
+
+        var affiliationTp = new AffiliationTp();
+        affiliationTp.setCountry(randomString());
+        affiliationTp.setAfid(randomString());
+        affiliationTp.getOrganization().add(organization);
+
+        var initials = randomString();
+        var indexedName = randomString();
+        var surname = randomString();
+        var givenName = randomString();
+
+        var person = new PersonalnameType();
+        person.setInitials(initials);
+        person.setIndexedName(indexedName);
+        person.setSurname(surname);
+        person.setGivenName(givenName);
+        correspondenceTp.setAffiliation(affiliationTp);
+        correspondenceTp.setPerson(person);
+
+        authorGroup.setAffiliation(affiliationTp);
+        authorGroup.getAuthorOrCollaboration().add(authorTp);
+        var head = new HeadTp();
+        head.getAuthorGroup().add(authorGroup);
+        head.getCorrespondence().add(correspondenceTp);
+        head.setCitationTitle(randomCitationTitle());
+        head.setAbstracts(abstractsTp);
+        head.setCitationInfo(randomCitationInfo());
+        head.setSource(randomSource());
+        return head;
+    }
+
     public static ScopusGenerator createWithSpecifiedAbstract(AbstractsTp abstractsTp) {
         return new ScopusGenerator(abstractsTp);
     }
@@ -257,6 +329,10 @@ public final class ScopusGenerator {
 
     public static ScopusGenerator createWithNumberOfContributorsFromAuthorTp(int numberOfContributors) {
         return new ScopusGenerator(numberOfContributors);
+    }
+
+    public static ScopusGenerator createWithSingleContributorFromAuthorTp(AuthorTp authorTp) {
+        return new ScopusGenerator(authorTp);
     }
 
     public DocTp createWithNumberOfContributorsFromCollaborationTp(int numberOfContributors) {
@@ -532,7 +608,7 @@ public final class ScopusGenerator {
         return randomBoolean() ? ORCID_DOMAIN_URL + randomString() : randomString();
     }
 
-    private static PersonalnameType randomPersonalnameType() {
+    public static PersonalnameType randomPersonalnameType() {
         var personalNameType = new PersonalnameType();
         personalNameType.setIndexedName(randomString());
         personalNameType.setGivenName(randomString());
@@ -816,7 +892,7 @@ public final class ScopusGenerator {
         authorTp.setSurname(surname);
         authorTp.setGivenName(givenName);
         authorTp.setSeq(String.valueOf(contributorSequence + 1));
-        authorTp.setOrcid(randomOrcid());
+        authorTp.setOrcid(randomPotentialOrcidUriString());
         authorGroup.setAffiliation(affiliationTp);
         authorGroup.getAuthorOrCollaboration().add(authorTp);
     }

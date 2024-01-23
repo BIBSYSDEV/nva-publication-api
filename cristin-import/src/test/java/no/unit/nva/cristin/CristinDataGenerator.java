@@ -35,6 +35,7 @@ import java.util.stream.Stream;
 import net.datafaker.providers.base.BaseFaker;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.lambda.constants.HardcodedValues;
+import no.unit.nva.cristin.mapper.CristinLocale;
 import no.unit.nva.cristin.mapper.CristinLectureOrPosterMetaData;
 import no.unit.nva.cristin.mapper.PresentationEvent;
 import no.unit.nva.cristin.mapper.artisticproduction.ArtisticGenre;
@@ -105,6 +106,7 @@ public final class CristinDataGenerator {
         MONOGRAPH, TEXTBOOK, NON_FICTION_BOOK, ENCYCLOPEDIA, POPULAR_BOOK, REFERENCE_MATERIAL};
     private static final Integer VALID_PUBLISHER_NSD_NUMBER = 5269;
     private static final Integer VALID_JOURNAL_NSD_CODE = 339714;
+    public static final String J = "J";
 
     private CristinDataGenerator() {
 
@@ -172,6 +174,13 @@ public final class CristinDataGenerator {
 
     public static CristinObject randomObject() {
         return newCristinObject(largeRandomNumber());
+    }
+
+    public static CristinObject randomObjectWithReportedYear(int year) {
+        var cristinObject = newCristinObject(largeRandomNumber());
+        cristinObject.setYearReported(year);
+        cristinObject.setCristinLocales(randomCristinLocales());
+        return cristinObject;
     }
 
     public static CristinObject randomObject(String secondaryCategory) {
@@ -712,7 +721,24 @@ public final class CristinDataGenerator {
                    .withYearReported(randomYear())
                    .withContributors(contributors)
                    .withBookOrReportMetadata(randomBookOrReportMetadata())
-                   .withPublicationOwner(HardcodedValues.HARDCODED_PUBLICATIONS_OWNER)
+                   .withPublicationOwner(HardcodedValues.SIKT_OWNER)
+                   .build();
+    }
+
+    private static List<CristinLocale> randomCristinLocales() {
+        return IntStream.range(0, 5).boxed().map(i -> randomLocale()).toList();
+    }
+
+    private static CristinLocale randomLocale() {
+        return CristinLocale.builder()
+                   .withInstitutionIdentifier(randomString())
+                   .withDepartmentIdentifier(randomString())
+                   .withOwnerCode(randomString())
+                   .withSubDepartmentIdentifier(randomString())
+                   .withGroupIdentifier(randomString())
+                   .withControlledBy(randomString())
+                   .withDateControlled(LocalDate.now())
+                   .withControlStatus(J)
                    .build();
     }
 

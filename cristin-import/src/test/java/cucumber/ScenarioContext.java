@@ -18,7 +18,6 @@ public class ScenarioContext {
     private Publication nvaEntry;
 
     public ScenarioContext() {
-
     }
 
     public Try<Publication> getMappingAttempt() {

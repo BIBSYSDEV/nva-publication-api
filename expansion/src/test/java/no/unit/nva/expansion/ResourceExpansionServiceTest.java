@@ -70,6 +70,7 @@ import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageStatus;
@@ -111,6 +112,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private static final String OWNERAFFILIATION = "ownerAffiliation";
     private static final String FINALIZED_BY = "finalizedBy";
     public static final String APPROVED_FILES = "approvedFiles";
+    public static final String FILES_FOR_APPROVAL = "filesForApproval";
     private ResourceExpansionService expansionService;
     private ResourceService resourceService;
     private MessageService messageService;
@@ -170,7 +172,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(regeneratedTicket, is(equalTo(ticket)));
         assertThat(ticket,
                    doesNotHaveEmptyValuesIgnoringFields(Set.of(WORKFLOW, ASSIGNEE, FINALIZED_BY,
-                                                               FINALIZED_DATE, OWNERAFFILIATION, APPROVED_FILES)));
+                                                               FINALIZED_DATE, OWNERAFFILIATION, APPROVED_FILES,
+                                                               FILES_FOR_APPROVAL)));
         var expectedPublicationId = constructExpectedPublicationId(publication);
         assertThat(expandedTicket.getPublication().getPublicationId(), is(equalTo(expectedPublicationId)));
     }
@@ -506,6 +509,24 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                    containsInAnyOrder(publishedFilesFromExpandedPublishingRequest.toArray()));
     }
 
+    @Test
+    void shouldExpandFilesForApprovalForPublishingRequest() throws ApiGatewayException, JsonProcessingException {
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(PUBLISHED, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
+        var expandedTicket = (ExpandedPublishingRequest) expansionService.expandEntry(ticket);
+        var regeneratedTicket = (PublishingRequestCase) toTicketEntry(expandedTicket);
+
+        assertThat(regeneratedTicket, is(equalTo(ticket)));
+
+        var expectedFilesForApproval = resourceService.getPublication(publication)
+                                                .getAssociatedArtifacts().stream()
+                                                .filter(UnpublishedFile.class::isInstance)
+                                                .toArray();
+        var filesForApproval = expandedTicket.getFilesForApproval();
+
+        assertThat(filesForApproval, containsInAnyOrder(expectedFilesForApproval));
+    }
+
     private TicketEntry createCompletedTicketAndPublishFiles(Publication publication) throws ApiGatewayException {
         var ticket = TicketTestUtils.createCompletedTicket(publication, PublishingRequestCase.class, ticketService);
         publishFiles(publication);
@@ -737,7 +758,14 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         publishingRequest.setFinalizedBy(extractUsername(expandedPublishingRequest.getFinalizedBy()));
         publishingRequest.setAssignee(extractUsername(expandedPublishingRequest.getAssignee()));
         publishingRequest.setApprovedFiles(extractApprovedFiles(expandedPublishingRequest));
+        publishingRequest.setFilesForApproval(extractFilesForApproval(expandedPublishingRequest));
         return publishingRequest;
+    }
+
+    private Set<FileForApproval> extractFilesForApproval(ExpandedPublishingRequest expandedPublishingRequest) {
+        return expandedPublishingRequest.getFilesForApproval().stream()
+                   .map(FileForApproval::fromFile)
+                   .collect(Collectors.toSet());
     }
 
     private static Set<UUID> extractApprovedFiles(ExpandedPublishingRequest expandedPublishingRequest) {

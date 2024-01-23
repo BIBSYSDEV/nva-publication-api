@@ -53,6 +53,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -61,10 +62,12 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.TestingUtils;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -110,6 +113,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     private static final String FINALIZED_BY = "finalizedBy";
     private static final String DOI = "doi";
     public static final String APPROVED_FILES = "approvedFiles";
+    public static final String FILES_FOR_APPROVAL = "filesForApproval";
     private ResourceService resourceService;
     private TicketService ticketService;
     private UserInstance owner;
@@ -175,7 +179,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         assertThat(persistedTicket, is(equalTo(ticket)));
         assertThat(persistedTicket,
                    doesNotHaveEmptyValuesIgnoringFields(Set.of(ONWER_AFFILIATION, ASSIGNEE, FINALIZED_BY,
-                                                               FINALIZED_DATE, APPROVED_FILES)));
+                                                               FINALIZED_DATE, APPROVED_FILES, FILES_FOR_APPROVAL)));
     }
 
     @Test
@@ -721,6 +725,36 @@ public class TicketServiceTest extends ResourcesLocalTest {
         var secondTicket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
                        .persistNewTicket(ticketService);
         assertThat(secondTicket.getStatus(), is(equalTo(PENDING)));
+    }
+
+    @Test
+    void shouldThrowUnsupportedOperationExceptionWhenSettingFileForNotCompletedPublishingRequest()
+        throws ApiGatewayException {
+        var ticketType = PublishingRequestCase.class;
+        var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
+        var ticket = PublishingRequestCase.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                         .persistNewTicket(ticketService);
+
+        assertThrows(UnsupportedOperationException.class,
+                     () -> ((PublishingRequestCase) ticket).setApprovedFiles(Set.of(UUID.randomUUID())));
+    }
+
+    @Test
+    void shouldSetFilesForApprovalOnPublishingRequestCreationWhenPublicationHasUnpublishedFile()
+        throws ApiGatewayException {
+        var ticketType = PublishingRequestCase.class;
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
+        var ticket = PublishingRequestCase.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                         .persistNewTicket(ticketService);
+
+        var expectedFilesForApproval = publication.getAssociatedArtifacts().stream()
+                                           .filter(UnpublishedFile.class::isInstance)
+                                           .map(UnpublishedFile.class::cast)
+                                           .map(FileForApproval::fromFile)
+                                           .toArray();
+
+        assertThat(((PublishingRequestCase) ticket).getFilesForApproval(),
+                   containsInAnyOrder(expectedFilesForApproval));
     }
 
     private static Username getUsername(Publication publication) {
