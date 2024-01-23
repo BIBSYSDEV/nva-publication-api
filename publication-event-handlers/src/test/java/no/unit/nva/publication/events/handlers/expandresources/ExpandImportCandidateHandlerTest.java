@@ -1,14 +1,25 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
+import static no.unit.nva.expansion.model.ExpandedImportCandidateOrganization.CONTENT_TYPE;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EMPTY_EVENT_TOPIC;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.notNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,10 +27,13 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
+import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
@@ -35,6 +49,7 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
 import no.unit.nva.publication.events.handlers.persistence.PersistedDocument;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -52,6 +67,7 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
     private ExpandImportCandidateHandler handler;
     private S3Driver s3Reader;
     private S3Driver s3Writer;
+    private UriRetriever uriRetriever;
 
     @BeforeEach
     public void init() {
@@ -61,7 +77,8 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
         var indexBucket = new FakeS3Client();
         s3Writer = new S3Driver(eventsBucket, "eventsBucket");
         s3Reader = new S3Driver(indexBucket, "indexBucket");
-        this.handler = new ExpandImportCandidateHandler(s3Writer, s3Reader);
+        uriRetriever = mock(UriRetriever.class);
+        this.handler = new ExpandImportCandidateHandler(s3Writer, s3Reader, uriRetriever);
     }
 
     @Test
@@ -105,6 +122,38 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
         var eventBlobStoredInS3 = s3Reader.readEvent(response.getUri());
         var blobObject = JsonUtils.dtoObjectMapper.readValue(eventBlobStoredInS3, PersistedDocument.class);
         assertThat(blobObject.getBody().identifyExpandedEntry(), is(equalTo(newImage.getIdentifier())));
+    }
+
+    @Test
+    void shouldProduceExpandedImportCandidateWithExpandedOrganization() throws IOException {
+        var oldImage = importCandidateWithMultipleContributors();
+        var newImage = updatedVersionOfImportCandidate(oldImage);
+        var request = emulateEventEmittedByImportCandidateUpdateHandler(oldImage, newImage);
+        newImage.getEntityDescription().getContributors().stream()
+                               .map(Contributor::getAffiliations)
+                               .flatMap(List::stream)
+                               .filter(Organization.class::isInstance)
+                               .map(Organization.class::cast)
+                               .forEach(this::mockOrganizations);
+
+        handler.handleRequest(request, output, CONTEXT);
+        var response = objectMapper.readValue(output.toString(), EventReference.class);
+        var eventBlobStoredInS3 = s3Reader.readEvent(response.getUri());
+
+        assertThatLabelsOfExpandedOrganizationsAreNotEmpty(eventBlobStoredInS3);
+    }
+
+    private static void assertThatLabelsOfExpandedOrganizationsAreNotEmpty(String eventBlobStoredInS3) throws JsonProcessingException {
+        var rootNode = objectMapper.readTree(eventBlobStoredInS3);
+        var organizations = rootNode.path("body").path("organizations");
+        for (JsonNode organization : organizations) {
+            var labels = organization.path("labels");
+            assertFalse(labels.isEmpty());
+        }
+    }
+
+    private void mockOrganizations(Organization org) {
+        when(uriRetriever.getRawContent(org.getId(), CONTENT_TYPE)).thenReturn(Optional.of(new CristinOrganization(org.getId(), null, null, null, null, Map.of("no", "label")).toJsonString()));
     }
 
     private ImportCandidate updatedVersionOfImportCandidateWithPublicationDate(ImportCandidate importCandidate) {
