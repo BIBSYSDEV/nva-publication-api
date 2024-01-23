@@ -419,7 +419,7 @@ Resources:
               - lambda:InvokeFunction
             Resource: "*"
 
-  DatabaseAccessLambdaManagedPolicyManagedPolicy:
+  DatabaseAccessLambdaManagedPolicy:
     Type: AWS::IAM::ManagedPolicy
     DependsOn:
       - DeleteDraftPublicationLambdaRole
@@ -698,7 +698,7 @@ Resources:
         - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
         - !GetAtt EventsLambdaManagedPolicy.PolicyArn
         - !GetAtt S3DeleteAccessManagedPolicy.PolicyArn
-        - !GetAtt DatabaseAccessLambdaManagedPolicyManagedPolicy.PolicyArn
+        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
       Events:
         PutEvent:
           Type: Api
@@ -1568,7 +1568,7 @@ Resources:
     Type: AWS::Serverless::Function
     DependsOn:
       - LambdaRole
-      - DatabaseAccessLambdaManagedPolicyManagedPolicy
+      - DatabaseAccessLambdaManagedPolicy
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler::handleRequest
@@ -1597,7 +1597,7 @@ Resources:
     Type: AWS::Serverless::Function
     DependsOn:
       - LambdaRole
-      - DatabaseAccessLambdaManagedPolicyManagedPolicy
+      - DatabaseAccessLambdaManagedPolicy
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler::handleRequest
