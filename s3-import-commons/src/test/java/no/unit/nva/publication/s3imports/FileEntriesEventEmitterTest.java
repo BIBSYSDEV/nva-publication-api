@@ -387,17 +387,17 @@ class FileEntriesEventEmitterTest {
     }
 
     @Test
-    void shouldSendMessageWithNviPatchSubtopic() throws IOException {
+    void shouldSendMessageWithNviPatchSubtopicAndSqsMessageShouldContainNviEntryS3location() throws IOException {
         var sampleEntry = SampleObject.random().toJsonString();
         var fileUri = s3Driver.insertFile(randomPath(), sampleEntry);
         var inputEvent = createInputEventForFileWithSubtopic(fileUri, SUBTOPIC_SEND_EVENT_TO_NVI_PATCH_EVENT_CONSUMER);
         handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
-        var actualSubtopic = amazonSQS.getMessageBodies().stream()
-                                 .map(EventReference::fromJson)
-                                 .map(EventReference::getSubtopic)
-                                 .collect(SingletonCollector.collect());
 
-        assertThat(actualSubtopic, is(equalTo(inputEvent.getDetail().getSubtopic())));
+        var eventReferences = amazonSQS.getMessageBodies().stream()
+                       .map(EventReference::fromJson).collect(Collectors.toSet());
+
+        assertThat(eventReferences.iterator().next().getUri(), is(equalTo(fileUri)));
+        assertThat(eventReferences.iterator().next().getSubtopic(), is(equalTo(inputEvent.getDetail().getSubtopic())));
     }
 
     private AwsEventBridgeEvent<EventReference> createInputEventForFileWithSubtopic(URI fileUri, String subtopic) {
