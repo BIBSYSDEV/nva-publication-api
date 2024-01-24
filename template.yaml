@@ -432,7 +432,6 @@ Resources:
   S3AccessManagedPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
-      PolicyName: !Sub S3AccessPermsisions-${AWS::StackName}
       Roles:
         - !Ref LambdaRole
       PolicyDocument:
