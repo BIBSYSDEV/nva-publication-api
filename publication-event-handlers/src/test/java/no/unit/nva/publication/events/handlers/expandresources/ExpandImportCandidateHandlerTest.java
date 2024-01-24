@@ -143,7 +143,8 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
         assertThatLabelsOfExpandedOrganizationsAreNotEmpty(eventBlobStoredInS3);
     }
 
-    private static void assertThatLabelsOfExpandedOrganizationsAreNotEmpty(String eventBlobStoredInS3) throws JsonProcessingException {
+    private static void assertThatLabelsOfExpandedOrganizationsAreNotEmpty(String eventBlobStoredInS3)
+        throws JsonProcessingException {
         var rootNode = objectMapper.readTree(eventBlobStoredInS3);
         var organizations = rootNode.path("body").path("organizations");
         for (JsonNode organization : organizations) {
@@ -153,7 +154,9 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
     }
 
     private void mockOrganizations(Organization org) {
-        when(uriRetriever.getRawContent(org.getId(), CONTENT_TYPE)).thenReturn(Optional.of(new CristinOrganization(org.getId(), null, null, null, null, Map.of("no", "label")).toJsonString()));
+        when(uriRetriever.getRawContent(org.getId(), CONTENT_TYPE))
+            .thenReturn(Optional.of(new CristinOrganization(org.getId(), null, null, null, null,
+                                                            Map.of("no", "label")).toJsonString()));
     }
 
     private ImportCandidate updatedVersionOfImportCandidateWithPublicationDate(ImportCandidate importCandidate) {

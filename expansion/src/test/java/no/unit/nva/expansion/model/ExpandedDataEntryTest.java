@@ -138,7 +138,9 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     }
 
     private void mockOrganizations(Organization org) {
-        when(uriRetriever.getRawContent(org.getId(), CONTENT_TYPE)).thenReturn(Optional.of(new CristinOrganization(org.getId(), null, null, null, null, Map.of("no", "label")).toJsonString()));
+        when(uriRetriever.getRawContent(org.getId(), CONTENT_TYPE)).
+            thenReturn(Optional.of(new CristinOrganization(org.getId(), null, null, null, null,
+                                                           Map.of("no", "label")).toJsonString()));
     }
 
     public ImportCandidate randomImportCandidate(PublicationContext publicationContext) {
