@@ -9,6 +9,7 @@ import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.NVI_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.SUCCESS_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.CHAPTER_ACADEMIC;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.JOURNAL_ARTICLE;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.MUSICAL_PERFORMANCE;
 import static no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException.ERROR_PARSING_MAIN_CATEGORY;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
@@ -58,6 +59,7 @@ import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryExc
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.ImportResult;
@@ -549,6 +551,21 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
         var file = s3Driver.getFile(expectedErrorFileLocation);
         assertThat(file, is(not(emptyString())));
+    }
+
+    @Test
+    void shouldCreatePagesWithPagesBeginEqualToPagesEndWhenCristinJournalPagesBeginIsNull()
+        throws IOException {
+        var cristinObject = CristinDataGenerator.randomObject(JOURNAL_ARTICLE.getValue());
+        cristinObject.getJournalPublication().setPagesBegin(null);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var publications = handler.handleRequest(sqsEvent, CONTEXT);
+
+        var pages = ((JournalArticle) publications.get(0).getEntityDescription().getReference()
+                                          .getPublicationInstance()).getPages();
+
+        assertThat(pages.getBegin(), is(equalTo(pages.getEnd())));
     }
 
     private static <T> FileContentsEvent<T> createEventBody(T cristinObject) {
