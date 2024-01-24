@@ -14,6 +14,7 @@ import static no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryE
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyString;
@@ -35,6 +36,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
@@ -48,6 +50,7 @@ import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOf;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
 import no.unit.nva.cristin.mapper.SearchResource2Response;
+import no.unit.nva.cristin.mapper.artisticproduction.CristinArtisticProduction;
 import no.unit.nva.cristin.mapper.nva.NviReport;
 import no.unit.nva.cristin.mapper.nva.exceptions.AffiliationWithoutRoleException;
 import no.unit.nva.cristin.mapper.nva.exceptions.ContributorWithoutAffiliationException;
@@ -58,6 +61,8 @@ import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryExc
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.instancetypes.artistic.music.Concert;
+import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.ImportResult;
@@ -65,6 +70,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.SingletonCollector;
+import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
@@ -549,6 +555,32 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
         var file = s3Driver.getFile(expectedErrorFileLocation);
         assertThat(file, is(not(emptyString())));
+    }
+
+    @Test
+    void shouldCreateConcertWithTimeNullWhenCristinConcertDoesNotHaveTime()
+        throws IOException {
+        var cristinObject = CristinDataGenerator.randomObject(MUSICAL_PERFORMANCE.getValue());
+        cristinObject.setCristinArtisticProduction(readCristinArtisticProductionFromJson());
+        cristinObject.getCristinArtisticProduction().getEvent().setDateFrom(null);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var publications = handler.handleRequest(sqsEvent, CONTEXT);
+
+        var concert = ((MusicPerformance) publications.get(0).getEntityDescription().getReference()
+                                              .getPublicationInstance()).getManifestations().stream()
+                          .filter(Concert.class::isInstance)
+                          .map(Concert.class::cast)
+                          .collect(SingletonCollector.collect());
+
+        assertThat(concert.getTime(), is(nullValue()));
+    }
+
+    private static CristinArtisticProduction readCristinArtisticProductionFromJson() {
+        return attempt(() -> Path.of("type_kunstneriskproduksjon.json"))
+                   .map(IoUtils::stringFromResources)
+                   .map(s -> JsonUtils.dtoObjectMapper.readValue(s, CristinArtisticProduction.class))
+                   .orElseThrow();
     }
 
     private static <T> FileContentsEvent<T> createEventBody(T cristinObject) {
