@@ -247,7 +247,7 @@ public class BookFeatures {
         var expectedHost = URI.create(MappingConstants.NVA_API_DOMAIN).getHost();
         assertThat(seriesId.getHost(), is(equalTo(expectedHost)));
         assertThat(seriesId.getPath(), containsString(MappingConstants.NVA_CHANNEL_REGISTRY_V2));
-        assertThat(seriesId.getPath(), containsString(MappingConstants.NSD_PROXY_PATH_JOURNAL));
+        assertThat(seriesId.getPath(), containsString("series"));
     }
 
     @Then("the Series URI contains the NSD code {string} and the publication year {int}")

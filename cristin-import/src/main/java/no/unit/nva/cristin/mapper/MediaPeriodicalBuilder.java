@@ -28,8 +28,7 @@ public class MediaPeriodicalBuilder extends CristinMappingModule {
     private Periodical createMediaContributionPeriodical() {
         Integer nsdCode = cristinObject.getJournalPublication().getJournal().getNsdCode();
         int publicationYear = extractYearReportedInNvi();
-        var journalUri = new Nsd(nsdCode, publicationYear, channelRegistryMapper)
-                             .createJournalOrSeriesUri();
+        var journalUri = new Nsd(nsdCode, publicationYear, channelRegistryMapper).createJournal();
         return new MediaContributionPeriodical(journalUri);
     }
 

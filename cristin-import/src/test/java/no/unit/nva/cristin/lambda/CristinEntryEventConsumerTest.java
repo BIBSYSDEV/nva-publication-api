@@ -9,10 +9,12 @@ import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.NVI_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.SUCCESS_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.CHAPTER_ACADEMIC;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.FEATURE_ARTICLE;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.MUSICAL_PERFORMANCE;
 import static no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException.ERROR_PARSING_MAIN_CATEGORY;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -83,6 +85,8 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     public static final String IGNORED_VALUE = "someBucket";
     public static final String NOT_IMPORTANT = "someBucketName";
     public static final int SINGLE_HIT = 1;
+    public static final int SERIES_NSD_CODE = 339741;
+    public static final int JOURNAL_NSD_CODE = 339717;
 
     private CristinEntryEventConsumer handler;
     private ResourceService resourceService;
@@ -546,6 +550,45 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var sqsEvent = createSqsEvent(eventBody);
         handler.handleRequest(sqsEvent, CONTEXT);
         var expectedErrorFileLocation = constructExpectedErrorFilePaths(eventBody, "InvalidIsrcException");
+        var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
+        var file = s3Driver.getFile(expectedErrorFileLocation);
+        assertThat(file, is(not(emptyString())));
+    }
+
+    @Test
+    void shouldPersistWrongChannelTypeExceptionWhenCreatingJournalForNonJournal() throws IOException {
+        var cristinObject = CristinDataGenerator.randomObject(FEATURE_ARTICLE.getValue());
+        cristinObject.getJournalPublication().getJournal().setNsdCode(SERIES_NSD_CODE);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        handler.handleRequest(sqsEvent, CONTEXT);
+        var expectedErrorFileLocation = constructExpectedErrorFilePaths(eventBody, "WrongChannelTypeException");
+        var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
+        var file = s3Driver.getFile(expectedErrorFileLocation);
+        assertThat(file, is(not(emptyString())));
+    }
+
+    @Test
+    void shouldPersistWrongChannelTypeExceptionWhenCreatingSeriesForNonSeries() throws IOException {
+        var cristinObject = CristinDataGenerator.randomBook();
+        cristinObject.getBookOrReportMetadata().getBookSeries().setNsdCode(JOURNAL_NSD_CODE);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        handler.handleRequest(sqsEvent, CONTEXT);
+        var expectedErrorFileLocation = constructExpectedErrorFilePaths(eventBody, "WrongChannelTypeException");
+        var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
+        var file = s3Driver.getFile(expectedErrorFileLocation);
+        assertThat(file, is(not(emptyString())));
+    }
+
+    @Test
+    void shouldPersistChannelRegistryExceptionWhenNoPifForNsdSeries() throws IOException {
+        var cristinObject = CristinDataGenerator.randomBook();
+        cristinObject.getBookOrReportMetadata().getBookSeries().setNsdCode(randomInteger());
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        handler.handleRequest(sqsEvent, CONTEXT);
+        var expectedErrorFileLocation = constructExpectedErrorFilePaths(eventBody, "ChannelRegistryException");
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
         var file = s3Driver.getFile(expectedErrorFileLocation);
         assertThat(file, is(not(emptyString())));

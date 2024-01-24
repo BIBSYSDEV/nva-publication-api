@@ -15,12 +15,12 @@ public final class ChannelRegistryMapper {
     private static final char SEPARATOR = ';';
     private static final String PATH_PUBLISHER_CSV = "channelRegistry/publisher_id_mapping.csv";
 
-    private final Map<Integer, String> channelRegisterJournals;
+    private final Map<Integer, ChannelRegistryEntry> channelRegisterJournals;
 
     private final Map<Integer, String> channelRegisterPublishers;
 
     private ChannelRegistryMapper() {
-        this.channelRegisterJournals = getMapFromResource(JOURNAL_SERIES_ID_MAPPING_CSV);
+        this.channelRegisterJournals = getMapWithEntryFromResource(JOURNAL_SERIES_ID_MAPPING_CSV);
         this.channelRegisterPublishers = getMapFromResource(PATH_PUBLISHER_CSV);
     }
 
@@ -28,7 +28,7 @@ public final class ChannelRegistryMapper {
         return ChannelRegistrySingletonHelper.INSTANCE;
     }
 
-    public Optional<String> convertNsdJournalCodeToPid(int nsdCode) {
+    public Optional<ChannelRegistryEntry> convertNsdJournalCodeToPid(int nsdCode) {
         return Optional.ofNullable(channelRegisterJournals.get(nsdCode));
     }
 
@@ -47,6 +47,22 @@ public final class ChannelRegistryMapper {
             return microJournal.stream()
                        .collect(Collectors.toMap(ChannelRegistryRepresentation::getNsdCode,
                                                  ChannelRegistryRepresentation::getPid));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Map<Integer, ChannelRegistryEntry> getMapWithEntryFromResource(String path) {
+        try (var inputStream = IoUtils.inputStreamFromResources(path);
+            var bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
+            var microJournal = new CsvToBeanBuilder<ChannelRegistryRepresentation>(bufferedReader)
+                                   .withSeparator(SEPARATOR)
+                                   .withType(ChannelRegistryRepresentation.class)
+                                   .build();
+
+            return microJournal.stream()
+                       .collect(Collectors.toMap(ChannelRegistryRepresentation::getNsdCode,
+                                                 ChannelRegistryEntry::fromChannelRegistryRepresentation));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
