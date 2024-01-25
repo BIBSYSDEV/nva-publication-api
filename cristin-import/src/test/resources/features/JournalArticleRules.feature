@@ -81,7 +81,7 @@ Feature: Mapping of "Article in business/trade/industry journal", "Academic arti
 
   Scenario: When the the Cristin entry has a reference to an NSD journal then the
   NVA Entry contains a URI that is a reference to that NSD journal.
-    Given the Journal Publication has a reference to an NSD journal or publisher with identifier 339708
+    Given the Journal Publication has a reference to an NSD journal with identifier 339708
     And the Journal Publication has publishing year equal to 2003
     And the year the Cristin Result was published is equal to 2003
     When the Cristin Result is converted to an NVA Resource
@@ -90,6 +90,15 @@ Feature: Mapping of "Article in business/trade/industry journal", "Academic arti
 
   Scenario: When the cristin entry has a NSD code that does not exists in the csv channel-registry file,
        then an exception is thrown
-    Given the Journal Publication has a reference to an NSD journal or publisher with identifier 12345
+    Given the Journal Publication has a reference to an NSD journal with identifier 12345
     When the Cristin Result is converted to an NVA Resource
     Then an error is reported.
+
+
+  Scenario: When the cristin entry is mapped to Journal, but NSD code from channel-registry file is of type series,
+  then an exception is thrown
+    Given the Journal Publication has a reference to an NSD journal with identifier 339741
+    When the Cristin Result is converted to an NVA Resource
+    Then an error is reported.
+
+

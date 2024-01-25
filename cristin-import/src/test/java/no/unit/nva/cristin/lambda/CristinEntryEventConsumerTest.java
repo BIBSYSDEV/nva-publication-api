@@ -582,7 +582,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldPersistChannelRegistryExceptionWhenNoPifForNsdSeries() throws IOException {
+    void shouldPersistChannelRegistryExceptionWhenNoPidfForNsdSeries() throws IOException {
         var cristinObject = CristinDataGenerator.randomBook();
         cristinObject.getBookOrReportMetadata().getBookSeries().setNsdCode(randomInteger());
         var eventBody = createEventBody(cristinObject);
