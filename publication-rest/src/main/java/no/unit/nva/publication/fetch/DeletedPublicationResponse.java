@@ -16,7 +16,12 @@ public final class DeletedPublicationResponse {
     }
 
     public static Object craftDeletedPublicationResponse(Publication publication) {
-        var publicationWithoutAssociatedArtifacts = publication.copy().withAssociatedArtifacts(List.of()).build();
-        return attempt(() -> JsonUtils.dtoObjectMapper.convertValue(publicationWithoutAssociatedArtifacts, new TypeReference<Map<String, Object>>() {})).orElseThrow();
+        var publicationWithoutAssociatedArtifacts = publication.copy()
+                                                        .withAssociatedArtifacts(List.of())
+                                                        .build();
+        return attempt(() -> JsonUtils.dtoObjectMapper
+                                 .convertValue(publicationWithoutAssociatedArtifacts,
+                                               new TypeReference<Map<String, Object>>() {
+                                               })).orElseThrow();
     }
 }
