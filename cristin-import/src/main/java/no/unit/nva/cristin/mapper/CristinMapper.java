@@ -39,6 +39,7 @@ import no.unit.nva.cristin.utils.NvaCustomer;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Publication.Builder;
 import no.unit.nva.model.PublicationDate;
@@ -86,7 +87,7 @@ public class CristinMapper extends CristinMappingModule {
                 .withCreatedDate(extractDate())
                 .withModifiedDate(extractEntryLastModifiedDate())
                 .withPublishedDate(extractDate())
-                .withPublisher(NvaCustomer.fromCristinOrganization(resourceOwner.getOwnerAffiliation()).fetch(uriRetriever).toOrganization())
+                .withPublisher(fetchPublisher(uriRetriever, resourceOwner))
                 .withResourceOwner(resourceOwner)
                 .withStatus(PublicationStatus.PUBLISHED)
                 .withProjects(extractProjects())
@@ -98,6 +99,11 @@ public class CristinMapper extends CristinMappingModule {
         return publication;
     }
 
+    private static Organization fetchPublisher(RawContentRetriever uriRetriever, ResourceOwner resourceOwner) {
+        return NvaCustomer.fromCristinOrganization(resourceOwner.getOwnerAffiliation())
+                   .fetch(uriRetriever)
+                   .toOrganization();
+    }
 
     private static Optional<URI> extractArchiveUri(List<CristinAssociatedUri> associatedUris) {
         return associatedUris
