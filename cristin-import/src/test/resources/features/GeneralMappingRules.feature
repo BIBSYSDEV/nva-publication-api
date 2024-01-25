@@ -89,9 +89,15 @@ Feature: Mappings that hold for all types of Cristin Results
 
   Scenario: The Resources Publication Date is set  the Cristin Result's Publication Year
     Given the Cristin Result has publication year 1996
+    And that the cristin Result has published date equal to null
     When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource has a Publication Date with year equal to 1996, month equal to null and day equal to null
+    Then the NVA Resource has a Publication Date with year equal to "1996", month equal to "null" and day equal to "null"
 
+  Scenario: The Resources Publication Date is set to the Cristin Result's publication Date
+    Approximately 300 000 cristin entries have the publication date set.
+    Given that the Cristin Result has published date equal to the local date "2001-05-31"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a Publication Date with year equal to "2001", month equal to "5" and day equal to "31"
 
   Scenario:The NVA Resource Creation Date is set to be the Cristin entry's creation date
     Given that Cristin Result has created date equal to the local date "2011-12-03"
@@ -129,7 +135,6 @@ Feature: Mappings that hold for all types of Cristin Results
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Creation Date equal to "2001-01-01T00:00:00Z"
     And the NVA Resource has a Published Date equal to "2001-01-01T00:00:00Z"
-
 
   Scenario: The NVA Contributor names are concatenations of Cristin's Cristin First and Family names.
     Given that the Cristin Result has Contributors with names:

@@ -176,13 +176,15 @@ public class GeneralMappingRules {
         assertThat(actualTitle, is(equalTo(expectedTitle)));
     }
 
-    @Then("the NVA Resource has a Publication Date with year equal to {int}, month equal to null and "
-          + "day equal to null")
-    public void theNvaResourceHasPublicationDateWithTheCristinYear(Integer expectedPublicationYear) {
+    @Then("the NVA Resource has a Publication Date with year equal to {string}, month equal to {string} and "
+          + "day equal to {string}")
+    public void theNvaResourceHasPublicationDateWithTheCristinYear(String year,
+                                                                   String month,
+                                                                   String day) {
         PublicationDate actualDate = scenarioContext.getNvaEntry().getEntityDescription().getPublicationDate();
-        assertThat(actualDate.getYear(), is(equalTo(expectedPublicationYear.toString())));
-        assertThat(actualDate.getMonth(), is(nullValue()));
-        assertThat(actualDate.getDay(), is(nullValue()));
+        assertThat(actualDate.getYear(), is(equalTo(year)));
+        assertThat(actualDate.getMonth(), is(equalTo("null".equals(month) ? null : month)));
+        assertThat(actualDate.getDay(), is("null".equals(day) ? null : day));
     }
 
     @Then("the NVA Resource has a Creation Date equal to {string}")
