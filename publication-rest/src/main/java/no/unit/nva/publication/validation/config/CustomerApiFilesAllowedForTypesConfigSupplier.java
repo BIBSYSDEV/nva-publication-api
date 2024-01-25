@@ -14,50 +14,70 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+import no.unit.nva.auth.AuthorizedBackendClient;
+import no.unit.nva.auth.CognitoCredentials;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.validation.ConfigNotAvailableException;
 import no.unit.nva.publication.validation.FilesAllowedForTypesSupplier;
-import nva.commons.core.JacocoGenerated;
+import nva.commons.secrets.SecretsReader;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 public class CustomerApiFilesAllowedForTypesConfigSupplier implements FilesAllowedForTypesSupplier {
 
     public static final String ALLOW_FILE_UPLOAD_FOR_TYPES_FIELD_NAME = "allowFileUploadForTypes";
     private final HttpClient httpClient;
+    private final SecretsReader secretsReader;
+    private final String backendClientAuthUrl;
+    private final String backendClientSecretName;
     private static final String APPLICATION_JSON = "application/json";
 
-    public CustomerApiFilesAllowedForTypesConfigSupplier(HttpClient httpClient) {
+    public CustomerApiFilesAllowedForTypesConfigSupplier(HttpClient httpClient,
+                                                         SecretsManagerClient secretsManagerClient,
+                                                         String backendClientAuthUrl,
+                                                         String backendClientSecretName) {
         this.httpClient = httpClient;
-    }
-
-    @JacocoGenerated
-    public CustomerApiFilesAllowedForTypesConfigSupplier() {
-        this(HttpClient.newBuilder().build());
+        this.secretsReader = new SecretsReader(secretsManagerClient);
+        this.backendClientAuthUrl = backendClientAuthUrl;
+        this.backendClientSecretName = backendClientSecretName;
     }
 
     @Override
     public Set<String> get(URI customerUri) {
+        var client = AuthorizedBackendClient.prepareWithCognitoCredentials(httpClient, fetchCredentials());
         var request = HttpRequest.newBuilder(customerUri)
                           .GET()
-                          .header(ACCEPT, APPLICATION_JSON)
-                          .build();
+                          .header(ACCEPT, APPLICATION_JSON);
         try {
-            var response = httpClient.send(request, BodyHandlers.ofString());
+            var response = client.send(request, BodyHandlers.ofString());
             if (HttpURLConnection.HTTP_OK == response.statusCode()) {
-                return extractFilesAllowedForTypesFromJsonResponse(response, request);
+                return extractFilesAllowedForTypesFromJsonResponse(response, customerUri);
             } else {
                 throw new ConfigNotAvailableException(String.format("Got http response code %d",
                                                                     response.statusCode()));
             }
         } catch (IOException e) {
-            throw new ConfigNotAvailableException(request.uri().toString(), e);
+            throw new ConfigNotAvailableException(customerUri.toString(), e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new ConfigNotAvailableException(request.uri().toString(), e);
+            throw new ConfigNotAvailableException(customerUri.toString(), e);
         }
     }
 
+    private CognitoCredentials fetchCredentials() {
+        var credentials
+            = secretsReader.fetchClassSecret(backendClientSecretName, BackendClientCredentials.class);
+        var uri = getCognitoTokenUrl();
+
+        return new CognitoCredentials(credentials::getId, credentials::getSecret, uri);
+    }
+
+    private URI getCognitoTokenUrl() {
+        return URI.create(backendClientAuthUrl);
+    }
+
     private static Set<String> extractFilesAllowedForTypesFromJsonResponse(HttpResponse<String> response,
-                                                                           HttpRequest request)
+                                                                           URI requestUri)
         throws JsonProcessingException {
 
         var node = parseJson(response.body()).get(ALLOW_FILE_UPLOAD_FOR_TYPES_FIELD_NAME);
@@ -66,7 +86,7 @@ public class CustomerApiFilesAllowedForTypesConfigSupplier implements FilesAllow
         } else {
             throw new ConfigNotAvailableException(String.format("Response from %s did not contain expected "
                                                                 + "field %s of type array!",
-                                                                request.uri().toString(),
+                                                                requestUri.toString(),
                                                                 ALLOW_FILE_UPLOAD_FOR_TYPES_FIELD_NAME));
         }
     }

@@ -525,13 +525,6 @@ public class GeneralMappingRules {
         assertThat(nvaFundings, containsInAnyOrder(fundings.toArray()));
     }
 
-    @Given("that Cristin Result has a grant with properties identifier {string} and sourceCode {string}:")
-    public void thatCristinResultHasAGrantWithPropertiesIdAndSourceCode(String identifier, String sourceCode) {
-        scenarioContext.getCristinEntry()
-            .setCristinGrants(
-                List.of(CristinGrant.builder().withIdentifier(identifier).withSourceCode(sourceCode).build()));
-    }
-
     @Given("that Cristin Result has created date equal to null")
     public void thatCristinResultHasCreatedDateEqualToNull() {
         scenarioContext.getCristinEntry().setEntryCreationDate(null);
@@ -612,6 +605,17 @@ public class GeneralMappingRules {
         var affiliations = contributors.get(0).getAffiliations();
         assertThat(affiliations, hasSize(1));
         affiliations.get(0).setRoles(List.of(cristinRole));
+    }
+
+    @Given("that Cristin Result has a grant with properties finansieringsreferanse {string} and sourceCode {string}:")
+    public void thatCristinResultHasAGrantWithPropertiesFinansieringsreferanseAndSourceCode(String fundingReference,
+                                                                                            String sourceCode) {
+        scenarioContext.getCristinEntry()
+            .setCristinGrants(
+                List.of(CristinGrant.builder()
+                            .withGrantReference(fundingReference)
+                            .withSourceCode(sourceCode)
+                            .build()));
     }
 
     @Given("the Cristin Result has the following varbeid_url present:")

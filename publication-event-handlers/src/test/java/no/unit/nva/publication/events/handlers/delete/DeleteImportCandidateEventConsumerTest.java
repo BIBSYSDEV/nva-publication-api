@@ -72,7 +72,7 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
         var importCandidate = persistedImportCandidate();
         var event = emulateImportCandidateDeleteEvent(getScopusIdentifier(importCandidate));
         when(uriRetriever.getRawContent(any(), any())).thenReturn(
-            toResponse(ExpandedImportCandidate.fromImportCandidate(importCandidate),
+            toResponse(ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever),
                        SINGLE_HIT));
         handler.handleRequest(event, output, CONTEXT);
         assertThrows(NotFoundException.class,
@@ -86,7 +86,7 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
         var importCandidate = persistedImportCandidate();
         var event = emulateImportCandidateDeleteEvent(getScopusIdentifier(importCandidate));
         when(uriRetriever.getRawContent(any(), any())).thenReturn(
-            toResponse(ExpandedImportCandidate.fromImportCandidate(importCandidate),
+            toResponse(ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever),
                        TWO_HITS));
         assertThrows(RuntimeException.class, () -> handler.handleRequest(event, output, CONTEXT));
     }

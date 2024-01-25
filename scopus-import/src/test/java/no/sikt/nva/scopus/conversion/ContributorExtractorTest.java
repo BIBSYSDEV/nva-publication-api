@@ -2,6 +2,7 @@ package no.sikt.nva.scopus.conversion;
 
 import static no.sikt.nva.scopus.conversion.ContributorExtractor.MISSING_CONTRIBUTORS_OF_NVA_CUSTOMERS_MESSAGE;
 import static no.sikt.nva.scopus.conversion.ContributorExtractor.SCOPUS_AUID;
+import static no.sikt.nva.scopus.utils.ScopusGenerator.randomPersonalnameType;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -10,11 +11,13 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.net.URI;
 import java.util.List;
@@ -25,6 +28,7 @@ import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.DocTp;
+import no.scopus.generated.PersonalnameType;
 import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
@@ -187,6 +191,25 @@ public class ContributorExtractorTest {
         mockRandomCristinOrgResponse();
         var nvaContributor = contributorExtractorFromDocument(document).generateContributors().get(0);
         assertThat(nvaContributor.getIdentity().getAdditionalIdentifiers(), hasItem(expectedAdditionalIdentifier));
+    }
+
+    @Test
+    void shouldCreateContributorFromAuthorTypeWhenBadResponseFromCristinAndNoOrcId() {
+        var authorTp = new AuthorTp();
+        authorTp.setAuid(randomString());
+        authorTp.setSeq(String.valueOf(1));
+        var personalnameType = randomPersonalnameType();
+        authorTp.setPreferredName(personalnameType);
+        authorTp.setIndexedName(personalnameType.getIndexedName());
+        authorTp.setGivenName(personalnameType.getGivenName());
+        authorTp.setSurname(personalnameType.getSurname());
+        var document = ScopusGenerator.createWithSingleContributorFromAuthorTp(authorTp).getDocument();
+        mockCristinPersonBadRequestResponse();
+        var contributor = contributorExtractorFromDocument(document).generateContributors()
+                              .stream()
+                              .collect(SingletonCollector.collect());
+
+        assertThat(contributor.getIdentity().getId(), is(nullValue()));
     }
 
 

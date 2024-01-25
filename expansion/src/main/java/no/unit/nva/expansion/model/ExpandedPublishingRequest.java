@@ -15,6 +15,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.model.PublicationSummary;
+import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
@@ -37,6 +38,7 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
     private Instant createdDate;
     private PublishingWorkflow workflow;
     private Set<File> approvedFiles;
+    private Set<File> filesForApproval;
 
     public ExpandedPublishingRequest() {
         super();
@@ -79,6 +81,14 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
 
     public void setStatus(ExpandedTicketStatus status) {
         this.status = status;
+    }
+
+    public Set<File> getFilesForApproval() {
+        return filesForApproval;
+    }
+
+    public void setFilesForApproval(Set<File> filesForApproval) {
+        this.filesForApproval = filesForApproval;
     }
 
     public Set<File> getApprovedFiles() {
@@ -151,7 +161,16 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
         entry.setOwner(owner);
         entry.setAssignee(assignee);
         entry.setApprovedFiles(extractApprovedFiles(publication, dataEntry.getApprovedFiles()));
+        entry.setFilesForApproval(extractFilesForApproval(publication, dataEntry.getFilesForApproval()));
         return entry;
+    }
+
+    private static Set<File> extractFilesForApproval(Publication publication, Set<FileForApproval> filesForApproval) {
+        return publication.getAssociatedArtifacts().stream()
+                   .filter(File.class::isInstance)
+                   .map(File.class::cast)
+                   .filter(file -> filesForApproval.contains(FileForApproval.fromFile(file)))
+                   .collect(Collectors.toSet());
     }
 
     private static Set<File> extractApprovedFiles(Publication publication, Set<UUID> approvedFiles) {

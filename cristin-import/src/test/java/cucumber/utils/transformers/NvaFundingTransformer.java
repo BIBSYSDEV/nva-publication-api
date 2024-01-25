@@ -26,7 +26,7 @@ public class NvaFundingTransformer {
         var activeFrom = nonNull(entry.get(ACTIVE_FROM_FIELD)) ? Instant.parse(entry.get(ACTIVE_FROM_FIELD)) : null;
         var activeTo = nonNull(entry.get(ACTIVE_TO_FIELD)) ? Instant.parse(entry.get(ACTIVE_TO_FIELD)) : null;
         var source = UriWrapper.fromUri(entry.get(SOURCE_FIELD)).getUri();
-        var labels = Map.of("en", entry.get(LABEL_FIELD), "nb", entry.get(LABEL_FIELD), "nn", entry.get(LABEL_FIELD));
+        var labels = createLabels(entry.get(LABEL_FIELD));
 
         return new FundingBuilder().withIdentifier(identifier)
                    .withActiveFrom(activeFrom)
@@ -34,5 +34,11 @@ public class NvaFundingTransformer {
                    .withSource(source)
                    .withLabels(labels)
                    .build();
+    }
+
+    private Map<String, String> createLabels(String entry) {
+        return "null".equalsIgnoreCase(entry)
+                   ? Map.of()
+                   : Map.of("en", entry, "nb", entry, "nn", entry);
     }
 }
