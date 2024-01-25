@@ -7,6 +7,7 @@ import static java.util.Objects.nonNull;
 import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toCollection;
+import static no.sikt.nva.scopus.conversion.files.model.ContentVersion.UNSPECIFIED;
 import static no.sikt.nva.scopus.conversion.files.model.ContentVersion.VOR;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.s3.Headers;
@@ -15,9 +16,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -51,6 +55,7 @@ import org.apache.http.entity.ContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.http.Header;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
@@ -59,7 +64,6 @@ public class ScopusFileConverter {
 
     public static final String IMPORT_CANDIDATES_FILES_BUCKET = new Environment().readEnv(
         "IMPORT_CANDIDATES_STORAGE_BUCKET");
-    public static final String DEFAULT_CONTENT_TYPE = "application/pdf";
     public static final String CONTENT_TYPE_DELIMITER = ";";
     public static final String PDF_FILE_TYPE = "pdf";
     public static final String FILE_NAME_DELIMITER = ".";
@@ -99,9 +103,17 @@ public class ScopusFileConverter {
     }
 
     public List<AssociatedArtifact> fetchAssociatedArtifacts(DocTp docTp) {
-        var associatedArtifactsFromXmlReferences = extractAssociatedArtifactsFromFileReference(docTp);
+        var associatedArtifactsFromXmlReferences = extractAssociatedArtifactsFromFileReference(docTp)
+                                                       .stream()
+                                                       .filter(File.class::isInstance)
+                                                       .filter(this::isValid)
+                                                       .toList();
         return !associatedArtifactsFromXmlReferences.isEmpty() ? associatedArtifactsFromXmlReferences
                    : extractAssociatedArtifactsFromDoi(docTp);
+    }
+
+    private boolean isValid(AssociatedArtifact associatedArtifact) {
+        return nonNull(((File) associatedArtifact).getMimeType());
     }
 
     private static CrossrefResponse toCrossrefResponse(String body) throws JsonProcessingException {
@@ -109,20 +121,30 @@ public class ScopusFileConverter {
     }
 
     private static String getFilename(HttpResponse<InputStream> response) {
-        return extractContentDisposition(response).map(ScopusFileConverter::extractFileNameFromContentDisposition)
-                   .orElseGet(() -> randomUUID() + FILE_NAME_DELIMITER + PDF_FILE_TYPE);
+        return response.headers().firstValue(Headers.CONTENT_DISPOSITION)
+                   .map(ScopusFileConverter::extractFileNameFromContentDisposition)
+                   .or(() -> extractFileNameFromUrl(response))
+                   .or(() -> randomFileNameWithFileTypeFromContentTypeHeader(response.headers()))
+                   .orElseGet(ScopusFileConverter::randomStringPdfFileName);
     }
 
-    private static Optional<String> extractContentDisposition(HttpResponse<InputStream> response) {
-        var contentDisposition = response.headers().map().getOrDefault(Headers.CONTENT_DISPOSITION, List.of());
-        return contentDisposition.isEmpty() ? Optional.empty() : Optional.of(contentDisposition.get(0));
+    private static String randomStringPdfFileName() {
+        return randomUUID() + FILE_NAME_DELIMITER + PDF_FILE_TYPE;
     }
 
-    private static String getContentType(HttpResponse<InputStream> response) {
-        return Optional.of(response.headers().firstValue(Headers.CONTENT_TYPE))
-                   .map(optional -> optional.orElse(null))
-                   .map(value -> value.split(CONTENT_TYPE_DELIMITER)[0])
-                   .orElse(DEFAULT_CONTENT_TYPE);
+    private static Optional<String> randomFileNameWithFileTypeFromContentTypeHeader(HttpHeaders headers) {
+        return headers.firstValue(Header.CONTENT_TYPE)
+                   .map(value -> value.split("/")[1])
+                   .map(fileExtension -> randomUUID() + FILE_NAME_DELIMITER + fileExtension);
+    }
+
+    private static Optional<String> extractFileNameFromUrl(HttpResponse<InputStream> response) {
+        return Optional.ofNullable(response.request())
+            .map(HttpRequest::uri)
+            .map(URI::getPath)
+            .map(Paths::get)
+            .map(Path::getFileName)
+            .map(Path::toString);
     }
 
     private static String extractFileNameFromContentDisposition(String contentType) {
@@ -209,7 +231,17 @@ public class ScopusFileConverter {
     private ScopusFile fetchFileContent(ScopusFile file) {
         var fetchFileResponse = fetchResponseAsInputStream(file.downloadFileUrl());
         var content = fetchFileResponse.body();
-        return file.copy().withContent(content).withName(getFilename(fetchFileResponse)).build();
+        var filename = getFilename(fetchFileResponse);
+
+        return file.copy()
+                   .withContentType(hasSupportedContentType(file)
+                                        ? file.contentType()
+                                        : fetchFileResponse.headers().firstValue(Header.CONTENT_TYPE).orElse(null))
+                   .withContent(content).withName(filename).build();
+    }
+
+    private static boolean hasSupportedContentType(ScopusFile file) {
+        return nonNull(file.contentType()) && !UNSPECIFIED.getValue().equals(file.contentType());
     }
 
     private List<ScopusFile> getScopusFiles(CrossrefResponse response) {
@@ -249,7 +281,7 @@ public class ScopusFileConverter {
                    .withPublisherAuthority(VOR.equals(crossrefLink.getContentVersion()))
                    .withLicense(extractLicenseForLink(crossrefLink, licenses))
                    .withEmbargo(calculateEmbargo(crossrefLink, licenses))
-                   .withContentType(Optional.ofNullable(crossrefLink.getContentType()).orElse(DEFAULT_CONTENT_TYPE))
+                   .withContentType(crossrefLink.getContentType())
                    .build();
     }
 
@@ -315,7 +347,7 @@ public class ScopusFileConverter {
         return Optional.of(File.builder()
                                       .withIdentifier(fileIdentifier)
                                       .withName(filename)
-                                      .withMimeType(getContentType(response))
+                                      .withMimeType(response.headers().firstValue(Headers.CONTENT_TYPE).orElse(null))
                                       .withSize(available)
                                       .withLicense(DEFAULT_LICENSE)
                                       .buildPublishedFile());

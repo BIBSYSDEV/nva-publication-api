@@ -23,7 +23,8 @@ public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, Inpu
                    .withDownloadFileUrl(this.downloadFileUrl)
                    .withIdentifier(this.identifier)
                    .withSize(this.size)
-                   .withContent(this.content);
+                   .withContent(this.content)
+                   .withContentType(this.contentType);
     }
 
     public AssociatedArtifact toPublishedAssociatedArtifact() {
