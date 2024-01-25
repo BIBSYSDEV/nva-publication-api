@@ -21,8 +21,7 @@ public final class DeletedPublicationResponse {
                                                         .build();
         return attempt(() -> JsonUtils.dtoObjectMapper
                                  .convertValue(publicationWithoutAssociatedArtifacts,
-                                               new TypeReference<Map<String, Object>>() {
-                                               }))
+                                               new TypeReference<Map<String, Object>>() {}))
                    .orElseThrow();
     }
 }
