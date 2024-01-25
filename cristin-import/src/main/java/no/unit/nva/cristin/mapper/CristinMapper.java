@@ -147,6 +147,15 @@ public class CristinMapper extends CristinMappingModule {
                    .collect(Collectors.toList());
     }
 
+    private static PublicationDate convertToPublicationDate(LocalDate publishedDate) {
+        return new PublicationDate
+                       .Builder()
+                   .withYear(String.valueOf(publishedDate.getYear()))
+                   .withMonth(String.valueOf(publishedDate.getMonthValue()))
+                   .withDay(String.valueOf(publishedDate.getDayOfMonth()))
+                   .build();
+    }
+
     private static String craftSourceCode(CristinSource cristinSource) {
         return SCOPUS_CASING_ACCEPTED_BY_FRONTEND.equalsIgnoreCase(cristinSource.getSourceCode())
                    ? SCOPUS_CASING_ACCEPTED_BY_FRONTEND
@@ -380,7 +389,15 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     private PublicationDate extractPublicationDate() {
-        return new PublicationDate.Builder().withYear(cristinObject.getPublicationYear().toString()).build();
+        return Optional.ofNullable(cristinObject.getEntryPublishedDate())
+                   .map(CristinMapper::convertToPublicationDate)
+                   .orElseGet(this::extractFromPublicationYear);
+    }
+
+    private PublicationDate extractFromPublicationYear() {
+        return new PublicationDate.Builder()
+                   .withYear(cristinObject.getPublicationYear().toString())
+                   .build();
     }
 
     private CristinTitle extractCristinMainTitle() {

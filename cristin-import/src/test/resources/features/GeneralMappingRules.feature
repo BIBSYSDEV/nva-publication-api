@@ -89,9 +89,15 @@ Feature: Mappings that hold for all types of Cristin Results
 
   Scenario: The Resources Publication Date is set  the Cristin Result's Publication Year
     Given the Cristin Result has publication year 1996
+    And that the cristin Result has published date equal to null
     When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource has a Publication Date with year equal to 1996, month equal to null and day equal to null
+    Then the NVA Resource has a Publication Date with year equal to "1996", month equal to "null" and day equal to "null"
 
+  Scenario: The Resources Publication Date is set to the Cristin Result's publication Date
+    Approximately 300 000 cristin entries have the publication date set.
+    Given that the Cristin Result has published date equal to the local date "2001-05-31"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a Publication Date with year equal to "2001", month equal to "5" and day equal to "31"
 
   Scenario:The NVA Resource Creation Date is set to be the Cristin entry's creation date
     Given that Cristin Result has created date equal to the local date "2011-12-03"
@@ -130,7 +136,6 @@ Feature: Mappings that hold for all types of Cristin Results
     Then the NVA Resource has a Creation Date equal to "2001-01-01T00:00:00Z"
     And the NVA Resource has a Published Date equal to "2001-01-01T00:00:00Z"
 
-
   Scenario: The NVA Contributor names are concatenations of Cristin's Cristin First and Family names.
     Given that the Cristin Result has Contributors with names:
       | Given Name  | Family Name |
@@ -163,19 +168,35 @@ Feature: Mappings that hold for all types of Cristin Results
       | Given Name  | Family Name  | Ordinal Number |
       | FirstGiven  | FirstFamily  | 1              |
       | SecondGiven | SecondFamily | 2              |
-      | ThirdGiven  | ThirdFamily  | 3              |
     And the Contributors are affiliated with the following Cristin Institution respectively:
       | institusjonsnr | avdnr | undavdnr | gruppenr |
       | 194            | 66    | 32       | 15       |
       | 194            | 66    | 32       | 15       |
-      | 0              | 0     | 0        | 0        |
-
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource Contributors have the following names, sequences and affiliation URIs
       | Name                     | Ordinal Number | Affiliation URI                                                    |
       | FirstGiven FirstFamily   | 1              | https://api.test.nva.aws.unit.no/cristin/organization/194.66.32.15 |
       | SecondGiven SecondFamily | 2              | https://api.test.nva.aws.unit.no/cristin/organization/194.66.32.15 |
-      | ThirdGiven ThirdFamily   | 3              | https://api.test.nva.aws.unit.no/cristin/organization/0.0.0.0      |
+
+  Scenario: Contributors with unknown affiliation is mapped to empty list of affiliations
+    Given that the Cristin Result has the Contributors with names and sequence:
+      | Given Name | Family Name | Ordinal Number |
+      | FirstGiven | FirstFamily | 1              |
+    And the Contributors are affiliated with the following Cristin Institution respectively:
+      | institusjonsnr | avdnr | undavdnr | gruppenr |
+      | 0              | 0     | 0        | 0        |
+    And the contributor has a role "REDAKTØR" at the unknown affiliation
+    When the Cristin Result is converted to an NVA Resource
+    Then  the NVA contributor has no affiliation
+    And the NVA Contributor has the role "EDITOR"
+
+  Scenario: Contributors missing affiliations caues errors during mapping
+    Given that the Cristin Result has the Contributors with names and sequence:
+      | Given Name | Family Name | Ordinal Number |
+      | FirstGiven | FirstFamily | 1              |
+    And the contributor is missing affiliation
+    When the Cristin Result is converted to an NVA Resource
+    Then an error is reported.
 
   Scenario: unverified cristin contributors does not get their contributor identifiers mapped to NVA
     Given a cristin result with a single contributor that is not verified

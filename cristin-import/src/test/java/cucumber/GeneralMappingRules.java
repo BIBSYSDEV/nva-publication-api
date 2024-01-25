@@ -69,7 +69,6 @@ public class GeneralMappingRules {
         this.scenarioContext = scenarioContext;
     }
 
-
     @Given("a cristin result with a single contributor that is not verified")
     public void cristinResultWithASingleContributorThatIsNotVerified() {
         var randomUnverifiedContributor = CristinDataGenerator.randomUnverifiedContributor(1);
@@ -93,8 +92,7 @@ public class GeneralMappingRules {
     public void theNvaContributorHasAnIdEqualTo(String expectedId) {
         var contributor = getFirstContributor();
         assertThat(contributor.getIdentity().getId(),
-            is(UriWrapper.fromUri(expectedId).getUri()));
-
+                   is(UriWrapper.fromUri(expectedId).getUri()));
     }
 
     @Given("a valid Cristin Result")
@@ -178,13 +176,15 @@ public class GeneralMappingRules {
         assertThat(actualTitle, is(equalTo(expectedTitle)));
     }
 
-    @Then("the NVA Resource has a Publication Date with year equal to {int}, month equal to null and "
-          + "day equal to null")
-    public void theNvaResourceHasPublicationDateWithTheCristinYear(Integer expectedPublicationYear) {
+    @Then("the NVA Resource has a Publication Date with year equal to {string}, month equal to {string} and "
+          + "day equal to {string}")
+    public void theNvaResourceHasPublicationDateWithTheCristinYear(String year,
+                                                                   String month,
+                                                                   String day) {
         PublicationDate actualDate = scenarioContext.getNvaEntry().getEntityDescription().getPublicationDate();
-        assertThat(actualDate.getYear(), is(equalTo(expectedPublicationYear.toString())));
-        assertThat(actualDate.getMonth(), is(nullValue()));
-        assertThat(actualDate.getDay(), is(nullValue()));
+        assertThat(actualDate.getYear(), is(equalTo(year)));
+        assertThat(actualDate.getMonth(), is(equalTo("null".equals(month) ? null : month)));
+        assertThat(actualDate.getDay(), is("null".equals(day) ? null : day));
     }
 
     @Then("the NVA Resource has a Creation Date equal to {string}")
@@ -596,6 +596,19 @@ public class GeneralMappingRules {
         assertThat(actualNotes, hasSize(0));
     }
 
+    @And("the contributor has a role {string} at the unknown affiliation")
+    public void theContributorHasARoleAtTheUnknownAffiliation(String role) {
+        var cristinRole = CristinContributorRole
+                              .builder()
+                              .withRoleCode(CristinContributorRoleCode.fromString(role))
+                              .build();
+        var contributors = scenarioContext.getCristinEntry().getContributors();
+        assertThat(contributors, hasSize(1));
+        var affiliations = contributors.get(0).getAffiliations();
+        assertThat(affiliations, hasSize(1));
+        affiliations.get(0).setRoles(List.of(cristinRole));
+    }
+
     @Given("that Cristin Result has a grant with properties finansieringsreferanse {string} and sourceCode {string}:")
     public void thatCristinResultHasAGrantWithPropertiesFinansieringsreferanseAndSourceCode(String fundingReference,
                                                                                             String sourceCode) {
@@ -605,22 +618,6 @@ public class GeneralMappingRules {
                             .withGrantReference(fundingReference)
                             .withSourceCode(sourceCode)
                             .build()));
-    }
-
-    private void injectAffiliationsIntoContributors(List<CristinContributorsAffiliation> desiredInjectedAffiliations,
-                                                    List<CristinContributor> contributors) {
-        for (int contributorsIndex = 0; contributorsIndex < contributors.size(); contributorsIndex++) {
-            CristinContributorsAffiliation desiredAffiliation = desiredInjectedAffiliations.get(contributorsIndex);
-            contributors.get(contributorsIndex).setAffiliations(List.of(desiredAffiliation));
-        }
-    }
-
-    private void ensureTheContributorsAreAsManyAsTheInjectedAffiliations(
-        List<CristinContributorsAffiliation> desiredInjectedAffiliations,
-        List<CristinContributor> contributors) {
-        if (contributors.size() != desiredInjectedAffiliations.size()) {
-            throw new MisformattedScenarioException(ERROR_MESSAGE_FOR_MISMATCH_BETWEEN_ROLES_AND_AFFILIATIONS);
-        }
     }
 
     @Given("the Cristin Result has the following varbeid_url present:")
@@ -640,6 +637,37 @@ public class GeneralMappingRules {
     public void theNvaResourceShouldHaveTheHandleSetToNull() {
         var actualHandle = scenarioContext.getNvaEntry().getHandle();
         assertThat(actualHandle, is(nullValue()));
+    }
+
+    @Then("the NVA contributor has no affiliation")
+    public void theNvaContributorHasNoAffiliation() {
+        var contributors = scenarioContext.getNvaEntry().getEntityDescription().getContributors();
+        assertThat(contributors, hasSize(1));
+        var contributor = contributors.get(0);
+        assertThat(contributor.getAffiliations(), hasSize(0));
+    }
+
+    @And("the contributor is missing affiliation")
+    public void theContributorIsMissingAffiliation() {
+        var contributors = scenarioContext.getCristinEntry().getContributors();
+        assertThat(contributors, hasSize(1));
+        contributors.get(0).setAffiliations(List.of());
+    }
+
+    private void injectAffiliationsIntoContributors(List<CristinContributorsAffiliation> desiredInjectedAffiliations,
+                                                    List<CristinContributor> contributors) {
+        for (int contributorsIndex = 0; contributorsIndex < contributors.size(); contributorsIndex++) {
+            CristinContributorsAffiliation desiredAffiliation = desiredInjectedAffiliations.get(contributorsIndex);
+            contributors.get(contributorsIndex).setAffiliations(List.of(desiredAffiliation));
+        }
+    }
+
+    private void ensureTheContributorsAreAsManyAsTheInjectedAffiliations(
+        List<CristinContributorsAffiliation> desiredInjectedAffiliations,
+        List<CristinContributor> contributors) {
+        if (contributors.size() != desiredInjectedAffiliations.size()) {
+            throw new MisformattedScenarioException(ERROR_MESSAGE_FOR_MISMATCH_BETWEEN_ROLES_AND_AFFILIATIONS);
+        }
     }
 
     private Contributor getFirstContributor() {
