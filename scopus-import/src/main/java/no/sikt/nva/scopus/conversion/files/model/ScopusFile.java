@@ -8,7 +8,7 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 
 public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, InputStream content, long size,
-                         String contentType, URI license, boolean publisherAuthority, Instant embargo) {
+                         String mimeType, URI license, boolean publisherAuthority, Instant embargo) {
 
     public static Builder builder() {
         return new Builder();
@@ -24,14 +24,14 @@ public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, Inpu
                    .withIdentifier(this.identifier)
                    .withSize(this.size)
                    .withContent(this.content)
-                   .withContentType(this.contentType);
+                   .withMimeType(this.mimeType);
     }
 
     public AssociatedArtifact toPublishedAssociatedArtifact() {
         return File.builder()
                    .withIdentifier(identifier)
                    .withName(name)
-                   .withMimeType(contentType)
+                   .withMimeType(mimeType)
                    .withSize(size)
                    .withLicense(license)
                    .withPublisherAuthority(publisherAuthority)
@@ -79,7 +79,7 @@ public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, Inpu
             return this;
         }
 
-        public Builder withContentType(String contentType) {
+        public Builder withMimeType(String contentType) {
             this.contentType = contentType;
             return this;
         }

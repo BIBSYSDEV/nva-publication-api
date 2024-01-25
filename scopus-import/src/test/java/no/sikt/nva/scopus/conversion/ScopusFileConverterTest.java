@@ -259,7 +259,8 @@ public class ScopusFileConverterTest {
         when(httpClient.send(any(), eq(BodyHandlers.ofInputStream()))).thenReturn(fetchDownloadUrlResponse);
     }
 
-    private void mockResponsesWithHeader(String responseBody, Map<String, List<String>> header) throws IOException, InterruptedException {
+    private void mockResponsesWithHeader(String responseBody, Map<String, List<String>> header)
+        throws IOException, InterruptedException {
         var doiResponse = (HttpResponse<String>) mock(HttpResponse.class);
         when(doiResponse.body()).thenReturn(IoUtils.stringFromResources(Path.of(responseBody)));
         when(httpClient.send(any(), eq(BodyHandlers.ofString()))).thenReturn(doiResponse);

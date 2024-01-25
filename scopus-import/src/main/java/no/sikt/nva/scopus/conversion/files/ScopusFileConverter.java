@@ -52,6 +52,8 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.http.entity.ContentType;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -124,18 +126,27 @@ public class ScopusFileConverter {
         return response.headers().firstValue(Headers.CONTENT_DISPOSITION)
                    .map(ScopusFileConverter::extractFileNameFromContentDisposition)
                    .or(() -> extractFileNameFromUrl(response))
-                   .or(() -> randomFileNameWithFileTypeFromContentTypeHeader(response.headers()))
+                   .or(() -> randomFileNameWithMimeTypeFromContentTypeHeader(response.headers()))
                    .orElseGet(ScopusFileConverter::randomStringPdfFileName);
     }
 
     private static String randomStringPdfFileName() {
-        return randomUUID() + FILE_NAME_DELIMITER + PDF_FILE_TYPE;
+        return fileNameWithExtension(PDF_FILE_TYPE);
     }
 
-    private static Optional<String> randomFileNameWithFileTypeFromContentTypeHeader(HttpHeaders headers) {
+    private static Optional<String> randomFileNameWithMimeTypeFromContentTypeHeader(HttpHeaders headers) {
         return headers.firstValue(Header.CONTENT_TYPE)
-                   .map(value -> value.split("/")[1])
-                   .map(fileExtension -> randomUUID() + FILE_NAME_DELIMITER + fileExtension);
+                   .map(ScopusFileConverter::extractFileExtensionFromContentType)
+                   .map(ScopusFileConverter::fileNameWithExtension);
+    }
+
+    @NotNull
+    private static String fileNameWithExtension(String fileExtension) {
+        return randomUUID() + FILE_NAME_DELIMITER + fileExtension;
+    }
+
+    private static String extractFileExtensionFromContentType(String value) {
+        return value.split("/")[1];
     }
 
     private static Optional<String> extractFileNameFromUrl(HttpResponse<InputStream> response) {
@@ -234,14 +245,19 @@ public class ScopusFileConverter {
         var filename = getFilename(fetchFileResponse);
 
         return file.copy()
-                   .withContentType(hasSupportedContentType(file)
-                                        ? file.contentType()
-                                        : fetchFileResponse.headers().firstValue(Header.CONTENT_TYPE).orElse(null))
+                   .withMimeType(extractMimeType(file, fetchFileResponse))
                    .withContent(content).withName(filename).build();
     }
 
-    private static boolean hasSupportedContentType(ScopusFile file) {
-        return nonNull(file.contentType()) && !UNSPECIFIED.getValue().equals(file.contentType());
+    @Nullable
+    private static String extractMimeType(ScopusFile file, HttpResponse<InputStream> fetchFileResponse) {
+        return hasSupportedMimeType(file)
+                   ? file.mimeType()
+                   : fetchFileResponse.headers().firstValue(Header.CONTENT_TYPE).orElse(null);
+    }
+
+    private static boolean hasSupportedMimeType(ScopusFile file) {
+        return nonNull(file.mimeType()) && !UNSPECIFIED.getValue().equals(file.mimeType());
     }
 
     private List<ScopusFile> getScopusFiles(CrossrefResponse response) {
@@ -250,7 +266,7 @@ public class ScopusFileConverter {
         return response.getMessage()
                    .getLinks()
                    .stream()
-                   .filter(this::hasSupportedContentType)
+                   .filter(this::hasSupportedMimeType)
                    .filter(this::shouldBeIgnored)
                    .filter(crossrefLink -> isNotResource(crossrefLink, resource))
                    .map(crossrefLink -> toScopusFile(crossrefLink, licenses))
@@ -281,7 +297,7 @@ public class ScopusFileConverter {
                    .withPublisherAuthority(VOR.equals(crossrefLink.getContentVersion()))
                    .withLicense(extractLicenseForLink(crossrefLink, licenses))
                    .withEmbargo(calculateEmbargo(crossrefLink, licenses))
-                   .withContentType(crossrefLink.getContentType())
+                   .withMimeType(crossrefLink.getContentType())
                    .build();
     }
 
@@ -301,7 +317,7 @@ public class ScopusFileConverter {
         return null;
     }
 
-    private boolean hasSupportedContentType(CrossrefLink link) {
+    private boolean hasSupportedMimeType(CrossrefLink link) {
         var contentType = link.getContentType();
         return nonNull(contentType) && !HTML_CONTENT_TYPE.equals(contentType) && !XML_CONTENT_TYPE.equals(contentType);
     }
