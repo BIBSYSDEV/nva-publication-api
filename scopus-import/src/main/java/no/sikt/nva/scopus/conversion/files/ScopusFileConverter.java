@@ -140,7 +140,6 @@ public class ScopusFileConverter {
                    .map(ScopusFileConverter::fileNameWithExtension);
     }
 
-    @NotNull
     private static String fileNameWithExtension(String fileExtension) {
         return randomUUID() + FILE_NAME_DELIMITER + fileExtension;
     }
@@ -249,7 +248,6 @@ public class ScopusFileConverter {
                    .withContent(content).withName(filename).build();
     }
 
-    @Nullable
     private static String extractMimeType(ScopusFile file, HttpResponse<InputStream> fetchFileResponse) {
         return hasSupportedMimeType(file)
                    ? file.mimeType()
