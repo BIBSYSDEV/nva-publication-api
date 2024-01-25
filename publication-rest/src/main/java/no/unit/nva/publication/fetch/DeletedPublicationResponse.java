@@ -22,6 +22,7 @@ public final class DeletedPublicationResponse {
         return attempt(() -> JsonUtils.dtoObjectMapper
                                  .convertValue(publicationWithoutAssociatedArtifacts,
                                                new TypeReference<Map<String, Object>>() {
-                                               })).orElseThrow();
+                                               }))
+                   .orElseThrow();
     }
 }
