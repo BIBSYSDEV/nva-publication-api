@@ -388,19 +388,6 @@ Resources:
                 - lambda.amazonaws.com
             Action: sts:AssumeRole
 
-  DeleteLambdaRole:
-    Type: AWS::IAM::Role
-    Properties:
-      Path: /
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action: sts:AssumeRole
-
   DefaultLambdaPermissions:
     Type: AWS::IAM::Policy
     Properties:
@@ -409,7 +396,6 @@ Resources:
         - !Ref LambdaRole
         - !Ref DeleteDraftPublicationLambdaRole
         - !Ref UpdateDoiStatusLambdaRole
-        - !Ref DeleteLambdaRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -443,13 +429,11 @@ Resources:
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-import-candidates-${AWS::StackName}
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-import-candidates-${AWS::StackName}/index/*
 
-  S3AccessPermsisions:
-    Type: AWS::IAM::Policy
+  S3AccessManagedPolicy:
+    Type: AWS::IAM::ManagedPolicy
     Properties:
-      PolicyName: !Sub S3AccessPermsisions-${AWS::StackName}
       Roles:
         - !Ref LambdaRole
-        - !Ref DeleteLambdaRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -465,8 +449,6 @@ Resources:
   S3DeleteAccessManagedPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
-      Roles:
-        - !Ref DeleteLambdaRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -502,7 +484,6 @@ Resources:
     Properties:
       Roles:
         - !Ref LambdaRole
-        - !Ref DeleteLambdaRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -516,23 +497,11 @@ Resources:
               - sqs:ChangeMessageVisibility
             Resource: "*"
 
-  InternalAccessToIdentityServicePermissions:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: !Sub InternalAccessToIdentityServicePermissions-${AWS::StackName}
-      Roles:
-        - !Ref LambdaRole
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Action:
-              - secretsmanager:*
-            Resource: "*"
-
   BackendCognitoClientCredentialsSecretManagedPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
+      Roles:
+        - !Ref LambdaRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -700,6 +669,7 @@ Resources:
         - !GetAtt EventsLambdaManagedPolicy.PolicyArn
         - !GetAtt S3DeleteAccessManagedPolicy.PolicyArn
         - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt S3AccessManagedPolicy.PolicyArn
       Events:
         PutEvent:
           Type: Api
@@ -1181,8 +1151,6 @@ Resources:
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
-          IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
-          IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
           TABLE_NAME: !Ref NvaResourcesTable
       Events:
         EventBridgeEvent:
@@ -1288,8 +1256,6 @@ Resources:
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
-          IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
-          IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
           PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
       Events:
         EventBridgeEvent:
@@ -1320,8 +1286,6 @@ Resources:
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
-          IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
-          IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
           PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
       Events:
         EventBridgeEvent:
@@ -1349,8 +1313,6 @@ Resources:
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
-          IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
-          IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
           TABLE_NAME: !Ref NvaResourcesTable
       Events:
         EventBridgeEvent:
