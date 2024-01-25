@@ -5,6 +5,7 @@ import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalCorri
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalLeader;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalLetter;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalReview;
+import java.util.Optional;
 import java.util.Set;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
@@ -107,7 +108,10 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
     }
 
     private String extractPagesBegin() {
-        return getCristinObject().getJournalPublication().getPagesBegin();
+        return Optional.ofNullable(getCristinObject())
+                   .map(CristinObject::getJournalPublication)
+                   .map(CristinJournalPublication::getPagesBegin)
+                   .orElse(null);
     }
 
     private String extractPagesEnd() {

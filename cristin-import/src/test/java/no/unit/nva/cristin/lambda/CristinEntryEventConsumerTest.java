@@ -5,14 +5,17 @@ import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERRORS_FOLDER
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERROR_SAVING_CRISTIN_RESULT;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.EVENT_SUBTOPIC;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.JSON;
+import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.NVI_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.SUCCESS_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.CHAPTER_ACADEMIC;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.JOURNAL_ARTICLE;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.MUSICAL_PERFORMANCE;
 import static no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException.ERROR_PARSING_MAIN_CATEGORY;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyString;
@@ -34,6 +37,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
@@ -47,6 +51,8 @@ import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOf;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
 import no.unit.nva.cristin.mapper.SearchResource2Response;
+import no.unit.nva.cristin.mapper.artisticproduction.CristinArtisticProduction;
+import no.unit.nva.cristin.mapper.nva.NviReport;
 import no.unit.nva.cristin.mapper.nva.exceptions.AffiliationWithoutRoleException;
 import no.unit.nva.cristin.mapper.nva.exceptions.ContributorWithoutAffiliationException;
 import no.unit.nva.cristin.mapper.nva.exceptions.DuplicateDoiException;
@@ -56,6 +62,9 @@ import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryExc
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.instancetypes.artistic.music.Concert;
+import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.ImportResult;
@@ -63,6 +72,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.SingletonCollector;
+import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
@@ -173,6 +183,37 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                                             .addChild(expectedFileNameStoredInS3);
 
         assertDoesNotThrow(() -> s3Driver.getFile(expectedErrorFileLocation));
+    }
+
+    @Test
+    void shouldPersistNviDataWhenCristinObjectContainsNviData() throws IOException {
+        var cristinObject = CristinDataGenerator.randomObjectWithReportedYear(2011);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var publications = handler.handleRequest(sqsEvent, CONTEXT);
+        var actualPublication = publications.get(0);
+        var expectedFileNameStoredInS3 = actualPublication.getIdentifier().toString();
+
+        var expectedTimestamp = eventBody.getTimestamp();
+        var expectedFileLocation = NVI_FOLDER
+                                            .addChild(timestampToString(expectedTimestamp))
+                                            .addChild(expectedFileNameStoredInS3);
+        var expectedNviReport = createExpectedNviReport(cristinObject, actualPublication);
+
+        var file = s3Driver.getFile(expectedFileLocation);
+        var nviReport = JsonUtils.dtoObjectMapper.readValue(file, NviReport.class);
+
+        assertThat(nviReport, is(equalTo(expectedNviReport)));
+    }
+
+    private NviReport createExpectedNviReport(CristinObject cristinObject, Publication publication) {
+        return NviReport.builder()
+                   .withNviReport(cristinObject.getCristinLocales())
+                   .withCristinIdentifier(cristinObject.getSourceRecordIdentifier())
+                   .withPublicationIdentifier(publication.getIdentifier().toString())
+                   .withYearReported(cristinObject.getYearReported())
+                   .withPublicationDate(publication.getCreatedDate())
+                   .build();
     }
 
     @Test
@@ -516,6 +557,47 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
         var file = s3Driver.getFile(expectedErrorFileLocation);
         assertThat(file, is(not(emptyString())));
+    }
+
+    @Test
+    void shouldCreateConcertWithTimeNullWhenCristinConcertDoesNotHaveTime()
+        throws IOException {
+        var cristinObject = CristinDataGenerator.randomObject(MUSICAL_PERFORMANCE.getValue());
+        cristinObject.setCristinArtisticProduction(readCristinArtisticProductionFromJson());
+        cristinObject.getCristinArtisticProduction().getEvent().setDateFrom(null);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var publications = handler.handleRequest(sqsEvent, CONTEXT);
+
+        var concert = ((MusicPerformance) publications.get(0).getEntityDescription().getReference()
+                                              .getPublicationInstance()).getManifestations().stream()
+                          .filter(Concert.class::isInstance)
+                          .map(Concert.class::cast)
+                          .collect(SingletonCollector.collect());
+
+        assertThat(concert.getTime(), is(nullValue()));
+    }
+
+    private static CristinArtisticProduction readCristinArtisticProductionFromJson() {
+        return attempt(() -> Path.of("type_kunstneriskproduksjon.json"))
+                   .map(IoUtils::stringFromResources)
+                   .map(s -> JsonUtils.dtoObjectMapper.readValue(s, CristinArtisticProduction.class))
+                   .orElseThrow();
+    }
+
+    @Test
+    void shouldCreatePagesWithPagesBeginEqualToPagesEndWhenCristinJournalPagesBeginIsNull()
+        throws IOException {
+        var cristinObject = CristinDataGenerator.randomObject(JOURNAL_ARTICLE.getValue());
+        cristinObject.getJournalPublication().setPagesBegin(null);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var publications = handler.handleRequest(sqsEvent, CONTEXT);
+
+        var pages = ((JournalArticle) publications.get(0).getEntityDescription().getReference()
+                                          .getPublicationInstance()).getPages();
+
+        assertThat(pages.getBegin(), is(equalTo(pages.getEnd())));
     }
 
     private static <T> FileContentsEvent<T> createEventBody(T cristinObject) {

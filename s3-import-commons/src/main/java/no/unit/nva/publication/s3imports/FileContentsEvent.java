@@ -100,6 +100,10 @@ public class FileContentsEvent<T> implements JsonSerializable {
         var uri = s3Driver.insertEvent(UnixPath.of(CRISTIN_ENTRIES_EVENT_FOLDER, timestamp.toString()), json);
         return new EventReference(getTopic(), getSubtopic(), uri, timestamp);
     }
+
+    public EventReference toCristinNviEventReference() {
+        return new EventReference(getTopic(), getSubtopic(), this.fileUri, timestamp);
+    }
     
     private static <T> JavaType constructJavaType(Class<T> contentsClass) {
         return s3ImportsMapper.getTypeFactory().constructParametricType(FileContentsEvent.class, contentsClass);

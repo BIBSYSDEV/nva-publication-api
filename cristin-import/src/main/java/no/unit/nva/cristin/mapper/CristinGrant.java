@@ -72,9 +72,10 @@ public class CristinGrant {
 
     @JsonIgnore
     public Funding toNvaFunding() {
-        return new FundingBuilder().withIdentifier(identifier)
+        return new FundingBuilder()
+                   .withIdentifier(grantReference)
                    .withId(generateId())
-                   .withLabels(generateLabels())
+                   .withLabels(Map.of())
                    .withActiveFrom(convertDateToInstant(yearFrom))
                    .withActiveTo(convertDateToInstant(yearTo))
                    .withSource(generateSourceUri())
@@ -99,20 +100,12 @@ public class CristinGrant {
         return LocalDate.of(year, Month.JANUARY, FIRST_DAY_OF_MONTH).atStartOfDay().toInstant(zoneOffset());
     }
 
-    private Map<String, String> generateLabels() {
-        return Optional.ofNullable(grantReference)
-                   .map(reference -> Map.of(ENGLISH_ISO_639_1, reference,
-                                            NORWEGIAN_BOKMAAL_ISO_639_1, reference,
-                                            NORWEGIAN_NYNORSK_ISO_639_1, reference))
-                   .orElse(null);
-    }
-
     private URI generateId() {
         return shouldHaveId()
                    ? UriWrapper.fromUri(NVA_API_DOMAIN)
                          .addChild(VERIFIED_FUNDING_PATH)
                          .addChild(sourceCode.toLowerCase(Locale.ROOT))
-                         .addChild(identifier)
+                         .addChild(grantReference)
                          .getUri()
                    : null;
     }

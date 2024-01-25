@@ -15,6 +15,7 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
@@ -27,6 +28,7 @@ import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import nva.commons.core.Environment;
@@ -98,8 +100,9 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     @JsonProperty(ONLINE_ISSN_FIELD)
     private String onlineIssn;
 
-    public static ExpandedImportCandidate fromImportCandidate(ImportCandidate importCandidate) {
-        var organizations = extractOrganizations(importCandidate);
+    public static ExpandedImportCandidate fromImportCandidate(ImportCandidate importCandidate,
+                                                              UriRetriever uriRetriever) {
+        var organizations = extractOrganizations(importCandidate, uriRetriever);
         return new ExpandedImportCandidate.Builder().withIdentifier(generateIdentifier(importCandidate.getIdentifier()))
                    .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
                    .withPublicationInstance(extractPublicationInstance(importCandidate))
@@ -414,13 +417,22 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .orElse(String.valueOf(new DateTime().getYear()));
     }
 
-    private static Set<Corporation> extractOrganizations(ImportCandidate importCandidate) {
+    private static Set<Corporation> extractOrganizations(ImportCandidate importCandidate, UriRetriever uriRetriever) {
         return importCandidate.getEntityDescription()
                    .getContributors()
                    .stream()
                    .map(Contributor::getAffiliations)
                    .flatMap(List::stream)
+                   .map(organization -> expandOrganization(organization, uriRetriever))
                    .collect(Collectors.toSet());
+    }
+
+    private static Corporation expandOrganization(Corporation corporation, UriRetriever uriRetriever) {
+        if (corporation instanceof Organization organization) {
+            return ExpandedImportCandidateOrganization.fromOrganization(organization).expand(uriRetriever);
+        } else {
+            return corporation;
+        }
     }
 
     public static final class Builder {
