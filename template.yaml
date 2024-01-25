@@ -1806,7 +1806,7 @@ Resources:
           DOMAIN_NAME: !Ref ApiDomain
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
-          EXTERNAL_USER_POOL_URI: !Ref ExternalCognitoAuthorizerUrl
+          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
       Events:
         SqsEvent:
           Type: SQS
