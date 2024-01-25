@@ -6,8 +6,6 @@ import static no.unit.nva.cristin.lambda.constants.MappingConstants.HRCS_ACTIVIT
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.HRCS_CATEGORIES_MAP;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORE_CONTRIBUTOR_FIELDS_ADDITIONALLY;
-import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
-import static no.unit.nva.cristin.lambda.constants.MappingConstants.PATH_CUSTOMER;
 import static no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities.HRCS_ACTIVITY_URI;
 import static no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities.HRCS_CATEGORY_URI;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
@@ -27,7 +25,6 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -38,10 +35,10 @@ import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
 import no.unit.nva.cristin.mapper.exhibition.CristinExhibition;
 import no.unit.nva.cristin.mapper.nva.CristinMappingModule;
 import no.unit.nva.cristin.mapper.nva.ReferenceBuilder;
+import no.unit.nva.cristin.utils.NvaCustomer;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Publication.Builder;
 import no.unit.nva.model.PublicationDate;
@@ -50,12 +47,11 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.funding.Funding;
-import nva.commons.core.Environment;
+import no.unit.nva.publication.external.services.RawContentRetriever;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.language.LanguageMapper;
-import nva.commons.core.paths.UriWrapper;
 
 @SuppressWarnings({"PMD.GodClass",
     "PMD.CouplingBetweenObjects",
@@ -69,17 +65,7 @@ public class CristinMapper extends CristinMappingModule {
     public static final String UNIT_INSTITUTION_CODE = "UNIT";
     public static final ResourceOwner SIKT_OWNER = new CristinLocale("SIKT", "20754", "0", "0",
                                                                      "0", null, null, null).toResourceOwner();
-    private static final String DOMAIN_NAME = new Environment().readEnv("DOMAIN_NAME");
-    private static final Map<String, String> CUSTOMER_MAP = Map.of("api.sandbox.nva.aws.unit.no",
-                                                                   "bb3d0c0c-5065-4623-9b98-5810983c2478",
-                                                                   "api.dev.nva.aws.unit.no",
-                                                                   "bb3d0c0c-5065-4623-9b98-5810983c2478",
-                                                                   "api.test.nva.aws.unit.no",
-                                                                   "0baf8fcb-b18d-4c09-88bb-956b4f659103",
-                                                                   "api.e2e.nva.aws.unit.no",
-                                                                   "bb3d0c0c-5065-4623-9b98-5810983c2478",
-                                                                   "api.nva.unit.no",
-                                                                   "22139870-8d31-4df9-bc45-14eb68287c4a");
+
     private static final String SCOPUS_CASING_ACCEPTED_BY_FRONTEND = "Scopus";
 
     public CristinMapper(CristinObject cristinObject) {
@@ -90,7 +76,8 @@ public class CristinMapper extends CristinMappingModule {
         return ZoneOffset.UTC.getRules().getOffset(Instant.now());
     }
 
-    public Publication generatePublication() {
+    public Publication generatePublication(RawContentRetriever uriRetriever) {
+        var resourceOwner = extractResourceOwner();
         Publication publication =
             new Builder()
                 .withHandle(extractHandle())
@@ -99,8 +86,8 @@ public class CristinMapper extends CristinMappingModule {
                 .withCreatedDate(extractDate())
                 .withModifiedDate(extractEntryLastModifiedDate())
                 .withPublishedDate(extractDate())
-                .withPublisher(extractOrganization())
-                .withResourceOwner(extractResourceOwner())
+                .withPublisher(NvaCustomer.fromCristinOrganization(resourceOwner.getOwnerAffiliation()).fetch(uriRetriever).toOrganization())
+                .withResourceOwner(resourceOwner)
                 .withStatus(PublicationStatus.PUBLISHED)
                 .withProjects(extractProjects())
                 .withSubjects(generateNvaHrcsCategoriesAndActivities())
@@ -110,6 +97,7 @@ public class CristinMapper extends CristinMappingModule {
         assertPublicationDoesNotHaveEmptyFields(publication);
         return publication;
     }
+
 
     private static Optional<URI> extractArchiveUri(List<CristinAssociatedUri> associatedUris) {
         return associatedUris
@@ -264,15 +252,6 @@ public class CristinMapper extends CristinMappingModule {
                    .filter(CristinPresentationalWork::isProject)
                    .map(CristinPresentationalWork::toNvaResearchProject)
                    .collect(Collectors.toList());
-    }
-
-    private Organization extractOrganization() {
-        UriWrapper customerId = UriWrapper.fromUri(NVA_API_DOMAIN).addChild(PATH_CUSTOMER, getSiktCustomerId());
-        return new Organization.Builder().withId(customerId.getUri()).build();
-    }
-
-    private String getSiktCustomerId() {
-        return Optional.ofNullable(CUSTOMER_MAP.get(DOMAIN_NAME)).orElseThrow();
     }
 
     private Instant extractDate() {

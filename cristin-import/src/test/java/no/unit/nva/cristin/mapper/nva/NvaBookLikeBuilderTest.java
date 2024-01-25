@@ -2,10 +2,12 @@ package no.unit.nva.cristin.mapper.nva;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.mockito.Mockito.mock;
 import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.publication.external.services.UriRetriever;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 
@@ -21,7 +23,7 @@ public class NvaBookLikeBuilderTest {
         String issueNumber) {
         CristinObject randomBook = CristinDataGenerator.randomBook();
         randomBook.getBookOrReportMetadata().setIssue(issueNumber);
-        PublicationContext context = randomBook.toPublication()
+        PublicationContext context = randomBook.toPublication(mock(UriRetriever.class))
                                          .getEntityDescription()
                                          .getReference()
                                          .getPublicationContext();
@@ -36,7 +38,7 @@ public class NvaBookLikeBuilderTest {
         String volumeNumber) {
         CristinObject randomBook = CristinDataGenerator.randomBook();
         randomBook.getBookOrReportMetadata().setVolume(volumeNumber);
-        PublicationContext context = randomBook.toPublication()
+        PublicationContext context = randomBook.toPublication(mock(UriRetriever.class))
                                          .getEntityDescription()
                                          .getReference()
                                          .getPublicationContext();

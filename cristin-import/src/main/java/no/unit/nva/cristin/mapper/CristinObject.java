@@ -18,6 +18,7 @@ import no.unit.nva.cristin.mapper.artisticproduction.CristinArtisticProduction;
 import no.unit.nva.cristin.mapper.artisticproduction.CristinProduct;
 import no.unit.nva.cristin.mapper.exhibition.CristinExhibition;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.external.services.RawContentRetriever;
 
 @Builder(
     builderClassName = "CristinObjectBuilder",
@@ -143,8 +144,8 @@ public class CristinObject implements JsonSerializable {
         return this.toBuilder();
     }
 
-    public Publication toPublication() {
-        return new CristinMapper(this).generatePublication();
+    public Publication toPublication(RawContentRetriever uriRetriever) {
+        return new CristinMapper(this).generatePublication(uriRetriever);
     }
 
     public void hardcodePublicationOwner(String publicationsOwner) {
