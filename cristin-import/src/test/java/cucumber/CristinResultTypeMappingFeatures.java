@@ -21,7 +21,7 @@ public class CristinResultTypeMappingFeatures {
     }
 
     @Given("a random book")
-    public void a_random_book() {
+    public void aRandomBook() {
         this.scenarioContext.newCristinEntry(CristinDataGenerator::randomBook);
     }
 

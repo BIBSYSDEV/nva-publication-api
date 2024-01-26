@@ -12,6 +12,7 @@ public record ChannelRegistryEntry(String id, ChannelType type) {
     public static ChannelRegistryEntry fromChannelRegistryRepresentation(ChannelRegistryRepresentation representation) {
         return new ChannelRegistryEntry(representation.getPid(), ChannelType.fromValue(representation.getType()));
     }
+
     public String getEntryPath() {
         return switch (type) {
             case SERIES -> SERIES_URI_PATH;
