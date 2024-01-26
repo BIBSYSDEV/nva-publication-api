@@ -1,5 +1,6 @@
 package cucumber;
 
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
@@ -247,7 +248,7 @@ public class BookFeatures {
         var expectedHost = URI.create(MappingConstants.NVA_API_DOMAIN).getHost();
         assertThat(seriesId.getHost(), is(equalTo(expectedHost)));
         assertThat(seriesId.getPath(), containsString(MappingConstants.NVA_CHANNEL_REGISTRY_V2));
-        assertThat(seriesId.getPath(), containsString(MappingConstants.NSD_PROXY_PATH_JOURNAL));
+        assertThat(seriesId.getPath(), containsString("series"));
     }
 
     @Then("the Series URI contains the NSD code {string} and the publication year {int}")
@@ -287,11 +288,22 @@ public class BookFeatures {
         scenarioContext.getCristinEntry().getBookOrReportMetadata().setStatusRevision(revision);
     }
 
+    @And("the book has series which has NSD code which does not exist in channel registry lookup file")
+    public void the_book_has_nsd_code() {
+        scenarioContext.getCristinEntry().getBookOrReportMetadata().getBookSeries().setNsdCode(randomInteger());
+    }
+
+    @Given("the Book Publication has a reference to an NSD journal with identifier {int}")
+    public void theJournalPublicationHasAReferenceToAnNsdJournalOrPublisherWithIdentifier(int nsdCode) {
+        scenarioContext.getCristinEntry().getBookOrReportMetadata().getBookSeries().setNsdCode(nsdCode);
+    }
+
     @And("the NVA Resource has a publication context Book with a revision equal to {string}")
     public void theNvaResourceHasAPublicationContextBookWithARevisionEqualTo(String revision) {
         var book = (Book) scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationContext();
         assertThat(book.getRevision().getValue(), is(equalTo(revision)));
     }
+
 
     private Book extractNvaBook() {
         var context = this.scenarioContext.getNvaEntry()

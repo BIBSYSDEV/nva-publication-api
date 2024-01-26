@@ -15,4 +15,7 @@ public class ChannelRegistryRepresentation {
 
     @CsvBindByName(column = "NyID")
     private String pid;
+
+    @CsvBindByName(column = "Type")
+    private String type;
 }

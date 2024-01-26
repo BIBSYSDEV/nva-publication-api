@@ -105,8 +105,8 @@ public final class CristinDataGenerator {
     private static final CristinSecondaryCategory[] BOOK_SECONDARY_CATEGORIES = new CristinSecondaryCategory[]{
         MONOGRAPH, TEXTBOOK, NON_FICTION_BOOK, ENCYCLOPEDIA, POPULAR_BOOK, REFERENCE_MATERIAL};
     private static final Integer VALID_PUBLISHER_NSD_NUMBER = 5269;
-    private static final Integer VALID_JOURNAL_NSD_CODE = 339714;
     public static final String J = "J";
+    public static final int VALID_SERIES_NSD_CODE = 339741;
 
     private CristinDataGenerator() {
 
@@ -562,7 +562,7 @@ public final class CristinDataGenerator {
     private static CristinJournalPublicationJournal randomBookSeries() {
         return CristinJournalPublicationJournal.builder()
                    .withJournalTitle(randomString())
-                   .withNsdCode(VALID_JOURNAL_NSD_CODE)
+                   .withNsdCode(VALID_SERIES_NSD_CODE)
                    .withIssn(randomIssn())
                    .withIssnOnline(randomIssn())
 

@@ -46,7 +46,7 @@ public class NvaBookSeriesBuilder extends CristinMappingModule {
         int nsdCode = b.getNsdCode();
         int publicationYear = cristinObject.getPublicationYear();
         URI seriesUri = new Nsd(nsdCode, publicationYear, channelRegistryMapper)
-                            .createJournalOrSeriesUri();
+                            .createSeries();
         return new Series(seriesUri);
     }
 }
