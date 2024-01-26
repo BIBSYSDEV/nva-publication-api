@@ -127,6 +127,7 @@ Globals:
       AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,Location'"
       AllowOrigin: "'*'"
   Function:
+    Runtime: java21
     Timeout: 20
     MemorySize: 1800 # 1 vCPU
     Environment:
@@ -549,7 +550,6 @@ Resources:
     Properties:
       CodeUri: publication-rest
       Handler: no.unit.nva.publication.create.CreatePublicationHandler::handleRequest
-      Runtime: java17
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -569,7 +569,6 @@ Resources:
     Properties:
       CodeUri: publication-rest
       Handler: no.unit.nva.publication.fetch.FetchPublicationHandler::handleRequest
-      Runtime: java17
       AutoPublishAlias: live
       DeploymentPreference:
         Type: AllAtOnce
@@ -595,7 +594,6 @@ Resources:
     Properties:
       CodeUri: publication-rest
       Handler: no.unit.nva.publication.fetch.FetchPublicationContextHandler::handleRequest
-      Runtime: java17
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -636,7 +634,6 @@ Resources:
     Properties:
       CodeUri: publication-rest
       Handler: no.unit.nva.publication.update.UpdatePublicationHandler::handleRequest
-      Runtime: java17
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -656,7 +653,6 @@ Resources:
     Properties:
       CodeUri: publication-rest
       Handler: no.unit.nva.publication.delete.DeletePublicationHandler::handleRequest
-      Runtime: java17
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -683,7 +679,6 @@ Resources:
     Properties:
       CodeUri: publication-rest
       Handler: no.unit.nva.publication.fetch.PublicationsByOwnerHandler::handleRequest
-      Runtime: java17
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -702,7 +697,6 @@ Resources:
     Properties:
       CodeUri: messages
       Handler: no.unit.nva.publication.messages.create.NewCreateMessageHandler::handleRequest
-      Runtime: java17
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -721,7 +715,6 @@ Resources:
     Properties:
       CodeUri: messages
       Handler: no.unit.nva.publication.messages.delete.DeleteMessageHandler::handleRequest
-      Runtime: java17
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -740,7 +733,6 @@ Resources:
     Properties:
       CodeUri: tickets
       Handler: no.unit.nva.publication.ticket.read.ListTicketsHandler::handleRequest
-      Runtime: java17
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -759,7 +751,6 @@ Resources:
     Properties:
       CodeUri: tickets
       Handler: no.unit.nva.publication.ticket.update.UpdateTicketHandler::handleRequest
-      Runtime: java17
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -798,7 +789,6 @@ Resources:
     Properties:
       CodeUri: tickets
       Handler: no.unit.nva.publication.ticket.create.CreateTicketHandler::handleRequest
-      Runtime: java17
       Timeout: 10
       Environment:
         Variables:
@@ -819,7 +809,6 @@ Resources:
     Properties:
       CodeUri: tickets
       Handler: no.unit.nva.publication.ticket.read.GetTicketHandler::handleRequest
-      Runtime: java17
       Timeout: 10
       Environment:
         Variables:
@@ -839,7 +828,6 @@ Resources:
     Properties:
       CodeUri: tickets
       Handler: no.unit.nva.publication.ticket.read.ListTicketsForPublicationHandler::handleRequest
-      Runtime: java17
       Timeout: 10
       Environment:
         Variables:
@@ -859,7 +847,6 @@ Resources:
     Properties:
       CodeUri: publication-rest
       Handler: no.unit.nva.publication.fetch.FetchImportCandidateHandler::handleRequest
-      Runtime: java17
       AutoPublishAlias: live
       DeploymentPreference:
         Type: AllAtOnce
@@ -881,7 +868,6 @@ Resources:
     Properties:
       CodeUri: publication-rest
       Handler: no.unit.nva.publication.update.UpdateImportStatusHandler::handleRequest
-      Runtime: java17
       AutoPublishAlias: live
       DeploymentPreference:
         Type: AllAtOnce
@@ -903,7 +889,6 @@ Resources:
     Properties:
       CodeUri: publication-rest
       Handler: no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler::handleRequest
-      Runtime: java17
       AutoPublishAlias: live
       DeploymentPreference:
         Type: AllAtOnce
@@ -934,7 +919,6 @@ Resources:
     Properties:
       CodeUri: brage-import
       Handler: no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer::handleRequest
-      Runtime: java17
       ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
       Environment:
@@ -961,7 +945,6 @@ Resources:
     Properties:
       CodeUri: scopus-import
       Handler: no.sikt.nva.scopus.ScopusHandler::handleRequest
-      Runtime: java17
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 50
       Timeout: 900
@@ -994,7 +977,6 @@ Resources:
     Properties:
       CodeUri: s3-import-commons
       Handler: no.unit.nva.publication.s3imports.DeleteImportCandidatesEventEmitter::handleRequest
-      Runtime: java17
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 50
       Timeout: 900
@@ -1021,7 +1003,6 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.delete.DeleteImportCandidateEventConsumer::handleRequest
-      Runtime: java17
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 50
       Timeout: 900
@@ -1056,7 +1037,6 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.delete.DeletionProcessInitializationHandler::handleRequest
-      Runtime: java17
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 1
       Events:
@@ -1085,7 +1065,6 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.delete.DeletePublicationHandler::handleRequest
-      Runtime: java17
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 1
       Environment:
@@ -1109,7 +1088,6 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer::handleRequest
-      Runtime: java17
       ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
       Environment:
@@ -1144,7 +1122,6 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler::handleRequest
-      Runtime: java17
       Timeout: 200
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 64
@@ -1182,7 +1159,6 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.expandresources.ExpandImportCandidateHandler::handleRequest
-      Runtime: java17
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 64
       Timeout: 900
@@ -1218,7 +1194,6 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.delete.DeleteImportCandidateEventHandler::handleRequest
-      Runtime: java17
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 1
       Environment:
@@ -1250,7 +1225,6 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.persistence.ExpandedDataEntriesPersistenceHandler::handleRequest
-      Runtime: java17
       ReservedConcurrentExecutions: 64
       Role: !GetAtt LambdaRole.Arn
       Environment:
@@ -1280,7 +1254,6 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.persistence.AnalyticsIntegrationHandler::handleRequest
-      Runtime: java17
       ReservedConcurrentExecutions: 5
       Role: !GetAtt LambdaRole.Arn
       Environment:
@@ -1307,7 +1280,6 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.tickets.AcceptedPublishingRequestEventHandler::handleRequest
-      Runtime: java17
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 64
       Environment:
@@ -1330,7 +1302,6 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.batch.EventBasedBatchScanHandler::handleRequest
-      Runtime: java17
       Role: !GetAtt LambdaRole.Arn
       Timeout: 900
       ReservedConcurrentExecutions: 1
@@ -1364,7 +1335,6 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.batch.EventBasedBatchScanHandler::handleRequest
-      Runtime: java17
       Role: !GetAtt LambdaRole.Arn
       Timeout: 900
       ReservedConcurrentExecutions: 1
@@ -1398,7 +1368,6 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.fanout.DataEntryUpdateHandler::handleRequest
-      Runtime: java17
       ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
       Environment:
@@ -1429,7 +1398,6 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.fanout.ImportCandidateDataEntryUpdateHandler::handleRequest
-      Runtime: java17
       ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
       Environment:
@@ -1459,7 +1427,6 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.delete.DeleteDraftPublicationHandler::handleRequest
-      Runtime: java17
       Role: !GetAtt DeleteDraftPublicationLambdaRole.Arn
       Environment:
         Variables:
@@ -1495,7 +1462,6 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler::handleRequest
       Timeout: 360
-      Runtime: java17
       Tracing: Active
       ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
@@ -1524,7 +1490,6 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler::handleRequest
       Timeout: 360
-      Runtime: java17
       Tracing: Active
       ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
@@ -1551,7 +1516,6 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.tickets.UpdateDoiStatusHandler::handleRequest
-      Runtime: java17
       Role: !GetAtt UpdateDoiStatusLambdaRole.Arn
       Environment:
         Variables:
@@ -1582,7 +1546,6 @@ Resources:
     Properties:
       CodeUri: s3-import-commons
       Handler: no.unit.nva.publication.s3imports.FileEntriesEventEmitter::handleRequest
-      Runtime: java17
       Timeout: 600 # 10 min timeout
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 6
@@ -1611,7 +1574,6 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.create.CreatePublishedPublicationHandler::handleRequest
-      Runtime: java17
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -1635,7 +1597,6 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.batch.BatchScanStartHandler::handleRequest
-      Runtime: java17
       Timeout: 60
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 1
@@ -1652,7 +1613,6 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.batch.BatchScanStartHandler::handleRequest
-      Runtime: java17
       Timeout: 60
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 1
@@ -1669,7 +1629,6 @@ Resources:
       Description: 'Starts Cristin Import. Accepts Json object with "uri" field'
       CodeUri: s3-import-commons
       Handler: no.unit.nva.publication.s3imports.FilenameEventEmitter::handleRequest
-      Runtime: java17
       Timeout: 900 # 15 min timeout
       ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
@@ -1689,7 +1648,6 @@ Resources:
       Description: 'Starts Batch logically delete publication. Accepts Json object with "uri" field pointing to a s3 path containing objects keys corresponding to publication ids that should be deleted.'
       CodeUri: s3-import-commons
       Handler: no.unit.nva.publication.s3imports.DeleteEntriesEventEmitter::handleRequest
-      Runtime: java17
       Timeout: 900 # 15 min timeout
       ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
@@ -1705,7 +1663,6 @@ Resources:
       Description: 'Accepts Json object with "uri" field pointing to a s3 bucket containing results.csv file.'
       CodeUri: s3-import-commons
       Handler: no.unit.nva.publication.s3imports.DoiToReferenceDoiUpdateEventEmitter::handleRequest
-      Runtime: java17
       Timeout: 900 # 15 min timeout
       ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
@@ -1719,7 +1676,6 @@ Resources:
     Properties:
       CodeUri: datacite-commons
       Handler: no.unit.nva.doi.handlers.ReserveDoiHandler::handleRequest
-      Runtime: java17
       Environment:
         Variables:
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
@@ -1794,7 +1750,6 @@ Resources:
     Properties:
       CodeUri: cristin-import
       Handler: no.unit.nva.cristin.lambda.CristinEntryEventConsumer::handleRequest
-      Runtime: java17
       Timeout: 30
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 1
@@ -1820,7 +1775,6 @@ Resources:
     Properties:
       CodeUri: cristin-import
       Handler: no.unit.nva.cristin.lambda.CristinPatchEventConsumer::handleRequest
-      Runtime: java17
       Timeout: 30
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 1
