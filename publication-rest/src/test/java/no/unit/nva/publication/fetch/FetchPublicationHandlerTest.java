@@ -46,6 +46,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
+import java.util.List;
 import java.util.Map;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.commons.json.JsonUtils;
@@ -56,7 +57,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.PublicationDetail;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -86,13 +86,7 @@ import org.zalando.problem.Problem;
 @ExtendWith(MockitoExtension.class)
 @WireMockTest(httpsEnabled = true)
 class FetchPublicationHandlerTest extends ResourcesLocalTest {
-    private static final String TEXT_ANY = "text/*";
-    private static final String TEXT_HTML = "text/html";
-    private static final String APPLICATION_XHTML = "application/xhtml+xml";
-    private static final String FIREFOX_DEFAULT_ACCEPT_HEADER = "text/html,application/xhtml+xml,application/xml;q=0"
-                                                                + ".9,image/avif,image/webp,*/*;q=0.8";
-    private static final String WEBKIT_DEFAULT_ACCEPT_HEADER = "application/xml,application/xhtml+xml,text/html;q=0"
-                                                               + ".9,text/plain;q=0.8,image/png,*/*;q=0.5";
+
     public static final String IDENTIFIER_VALUE = "0ea0dd31-c202-4bff-8521-afd42b1ad8db";
     public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_TYPE = restApiMapper.getTypeFactory()
                                                                            .constructParametricType(
@@ -100,10 +94,17 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
                                                                                PublicationResponse.class);
     public static final String DATACITE_XML_RESOURCE_ELEMENT = "<resource xmlns=\"http://datacite"
                                                                + ".org/schema/kernel-4\">";
-    private static final String IDENTIFIER_NULL_ERROR = "Identifier is not a valid UUID: null";
     public static final String PUBLISHER_NAME = "publisher name";
-    private ResourceService publicationService;
+    private static final String TEXT_ANY = "text/*";
+    private static final String TEXT_HTML = "text/html";
+    private static final String APPLICATION_XHTML = "application/xhtml+xml";
+    private static final String FIREFOX_DEFAULT_ACCEPT_HEADER = "text/html,application/xhtml+xml,application/xml;q=0"
+                                                                + ".9,image/avif,image/webp,*/*;q=0.8";
+    private static final String WEBKIT_DEFAULT_ACCEPT_HEADER = "application/xml,application/xhtml+xml,text/html;q=0"
+                                                               + ".9,text/plain;q=0.8,image/png,*/*;q=0.5";
+    private static final String IDENTIFIER_NULL_ERROR = "Identifier is not a valid UUID: null";
     private final Context context = new FakeContext();
+    private ResourceService publicationService;
     private UriRetriever uriRetriever;
     private ByteArrayOutputStream output;
     private FetchPublicationHandler fetchPublicationHandler;
@@ -154,21 +155,6 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         assertEquals(MediaTypes.APPLICATION_DATACITE_XML.toString(), gatewayResponse.getHeaders().get(CONTENT_TYPE));
         assertTrue(gatewayResponse.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN));
         assertTrue(gatewayResponse.getBody().contains(DATACITE_XML_RESOURCE_ELEMENT));
-    }
-
-    private Publication createPublicationWithPublisher(WireMockRuntimeInfo wireMockRuntimeInfo)
-        throws ApiGatewayException {
-        var publication = PublicationGenerator.randomPublication();
-        publication.setPublisher(createExpectedPublisher(wireMockRuntimeInfo));
-        var userInstance = UserInstance.fromPublication(publication);
-        var publicationIdentifier =
-            Resource.fromPublication(publication).persistNew(publicationService, userInstance).getIdentifier();
-        return publicationService.getPublicationByIdentifier(publicationIdentifier);
-    }
-
-    private static Organization createExpectedPublisher(WireMockRuntimeInfo wireMockRuntimeInfo) {
-        return new Organization.Builder().withId(
-            URI.create(wireMockRuntimeInfo.getHttpsBaseUrl() + "/customer/" + randomUUID())).build();
     }
 
     // TODO: Extend beyond JournalArticle
@@ -283,14 +269,11 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output,
                                               context);
         var gatewayResponse = parseFailureResponse();
-        var expectedTombstone = new PublicationDetail(publication.getIdentifier(),
-                                                      publication.getDuplicateOf(),
-                                                      publication.getEntityDescription());
-
+        var expectedTombstone = publication.copy().withAssociatedArtifacts(List.of()).build();
         var problem = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(), Problem.class);
-        var resource = JsonUtils.dtoObjectMapper.convertValue(problem.getParameters().get(RESOURCE),
-                                                              PublicationDetail.class);
-        assertThat(resource, is(equalTo(expectedTombstone)));
+        var actualPublication = JsonUtils.dtoObjectMapper.convertValue(problem.getParameters().get(RESOURCE),
+                                                                       Publication.class);
+        assertThat(actualPublication, is(equalTo(expectedTombstone)));
     }
 
     @Test
@@ -300,22 +283,13 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output,
                                               context);
         var gatewayResponse = parseFailureResponse();
-        var expectedTombstone = new PublicationDetail(publication.getIdentifier(),
-                                                      publication.getDuplicateOf(),
-                                                      publication.getEntityDescription());
+        var expectedTombstone = publication.copy().withAssociatedArtifacts(List.of()).build();
 
         var problem = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(), Problem.class);
         var resource = JsonUtils.dtoObjectMapper.convertValue(problem.getParameters().get(RESOURCE),
-                                                              PublicationDetail.class);
+                                                              Publication.class);
 
         assertThat(resource, is(equalTo(expectedTombstone)));
-    }
-
-    private Publication createDeletedPublicationWithDuplicate(URI duplicateOf) throws ApiGatewayException {
-        var publication = createPublication();
-        publicationService.updatePublication(publication.copy().withDuplicateOf(duplicateOf).build());
-        publicationService.updatePublishedStatusToDeleted(publication.getIdentifier());
-        return publicationService.getPublication(publication);
     }
 
     @Test
@@ -368,6 +342,28 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertTrue(gatewayResponse.getHeaders().containsKey(CONTENT_TYPE));
         assertTrue(gatewayResponse.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN));
+    }
+
+    private static Organization createExpectedPublisher(WireMockRuntimeInfo wireMockRuntimeInfo) {
+        return new Organization.Builder().withId(
+            URI.create(wireMockRuntimeInfo.getHttpsBaseUrl() + "/customer/" + randomUUID())).build();
+    }
+
+    private Publication createPublicationWithPublisher(WireMockRuntimeInfo wireMockRuntimeInfo)
+        throws ApiGatewayException {
+        var publication = PublicationGenerator.randomPublication();
+        publication.setPublisher(createExpectedPublisher(wireMockRuntimeInfo));
+        var userInstance = UserInstance.fromPublication(publication);
+        var publicationIdentifier =
+            Resource.fromPublication(publication).persistNew(publicationService, userInstance).getIdentifier();
+        return publicationService.getPublicationByIdentifier(publicationIdentifier);
+    }
+
+    private Publication createDeletedPublicationWithDuplicate(URI duplicateOf) throws ApiGatewayException {
+        var publication = createPublication();
+        publicationService.updatePublication(publication.copy().withDuplicateOf(duplicateOf).build());
+        publicationService.updatePublishedStatusToDeleted(publication.getIdentifier());
+        return publicationService.getPublication(publication);
     }
 
     private InputStream generateCuratorRequest(Publication publication) throws JsonProcessingException {

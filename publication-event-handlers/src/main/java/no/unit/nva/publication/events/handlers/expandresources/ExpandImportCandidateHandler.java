@@ -6,6 +6,7 @@ import static no.unit.nva.s3.S3Driver.GZIP_ENDING;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
+import java.net.http.HttpClient;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -13,6 +14,7 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.model.ExpandedImportCandidate;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
 import no.unit.nva.publication.events.handlers.persistence.PersistedDocument;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -35,16 +37,19 @@ public class ExpandImportCandidateHandler extends DestinationsEventBridgeEventHa
     private final Logger logger = LoggerFactory.getLogger(ExpandImportCandidateHandler.class);
     private final S3Driver s3Reader;
     private final S3Driver s3Writer;
+    private final UriRetriever uriRetriever;
 
     @JacocoGenerated
     public ExpandImportCandidateHandler() {
-        this(new S3Driver(EVENTS_BUCKET), new S3Driver(PERSISTED_ENTRIES_BUCKET));
+        this(new S3Driver(EVENTS_BUCKET), new S3Driver(PERSISTED_ENTRIES_BUCKET),
+             new UriRetriever(HttpClient.newBuilder().build()));
     }
 
-    public ExpandImportCandidateHandler(S3Driver s3Reader, S3Driver s3Writer) {
+    public ExpandImportCandidateHandler(S3Driver s3Reader, S3Driver s3Writer, UriRetriever uriRetriever) {
         super(EventReference.class);
         this.s3Reader = s3Reader;
         this.s3Writer = s3Writer;
+        this.uriRetriever = uriRetriever;
     }
 
     @Override
@@ -52,7 +57,7 @@ public class ExpandImportCandidateHandler extends DestinationsEventBridgeEventHa
                                                  AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
                                                  Context context) {
         var blob = readBlobFromS3(input);
-        return attempt(() -> ExpandedImportCandidate.fromImportCandidate(blob.getNewData()))
+        return attempt(() -> ExpandedImportCandidate.fromImportCandidate(blob.getNewData(), uriRetriever))
                    .map(expandedImportCandidate -> shouldBeExpanded(expandedImportCandidate)
                                                        ? createOutPutEventAndPersistDocument(expandedImportCandidate)
                                                        : emptyEvent(expandedImportCandidate))

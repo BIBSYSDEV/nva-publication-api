@@ -522,7 +522,7 @@ public final class CristinDataGenerator {
     private static CristinContributorsAffiliation creatCristinContributorsAffiliation(
         CristinContributorRoleCode roleCode) {
         return CristinContributorsAffiliation.builder()
-                   .withInstitutionIdentifier(threeDigitPositiveNumber())
+                   .withInstitutionIdentifier(threeDigitPositiveNumberKnownInstitution())
                    .withDepartmentIdentifier(threeDigitPositiveNumber())
                    .withGroupNumber(threeDigitPositiveNumber())
                    .withSubdepartmentIdentifier(threeDigitPositiveNumber())
@@ -549,6 +549,10 @@ public final class CristinDataGenerator {
 
     private static CristinContributorRoleCode randomCristinContributorRoleCode() {
         return randomArrayElement(CristinContributorRoleCode.values(), USE_WHOLE_ARRAY);
+    }
+
+    private static Integer threeDigitPositiveNumberKnownInstitution() {
+        return RANDOM.nextInt(1, 1000);
     }
 
     private static int threeDigitPositiveNumber() {

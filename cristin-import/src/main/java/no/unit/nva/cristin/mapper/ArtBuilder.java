@@ -14,7 +14,7 @@ import static java.util.Objects.nonNull;
 
 public class ArtBuilder extends AbstractPublicationInstanceBuilder {
 
-    private static final Set<CristinSecondaryCategory> MUSICAL_WORK =
+    public static final Set<CristinSecondaryCategory> MUSICAL_WORK =
         Set.of(CristinSecondaryCategory.MUSICAL_PERFORMANCE,
             CristinSecondaryCategory.MUSICAL_PIECE);
 

@@ -8,6 +8,7 @@ import java.net.URI;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -17,6 +18,7 @@ import no.unit.nva.publication.permission.strategy.EditorPermissionStrategy;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.s3.S3Driver;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -24,6 +26,7 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -32,6 +35,7 @@ import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
+import software.amazon.awssdk.services.s3.S3Client;
 
 public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
 
@@ -43,12 +47,14 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     public static final String PUBLICATION = "publication";
     public static final String DUPLICATE_QUERY_PARAM = "duplicate";
     public static final String NVA_EVENT_BUS_NAME_KEY = "NVA_EVENT_BUS_NAME";
+    public static final String NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY = "NVA_PERSISTED_STORAGE_BUCKET_NAME";
     private final String nvaEventBusName;
     private final ResourceService resourceService;
     private final TicketService ticketService;
     private final IdentityServiceClient identityServiceClient;
     private final EventBridgeClient eventBridgeClient;
     private final Logger logger = LoggerFactory.getLogger(DeletePublicationHandler.class);
+    private final S3Driver s3Driver;
 
     /**
      * Default constructor for DeletePublicationHandler.
@@ -56,26 +62,29 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     @JacocoGenerated
     public DeletePublicationHandler() {
         this(ResourceService.defaultService(), TicketService.defaultService(), new Environment(),
-             IdentityServiceClient.prepare(), defaultEventBridgeClient());
+             IdentityServiceClient.prepare(), defaultEventBridgeClient(), S3Driver.defaultS3Client().build());
     }
 
     /**
      * Constructor for DeletePublicationHandler.
      *
-     * @param resourceService resourceService
-     * @param environment     environment
+     * @param resourceService   resourceService
+     * @param environment       environment
      * @param eventBridgeClient eventBridgeClient
+     * @param s3Client          S3Client
      */
-    public DeletePublicationHandler(ResourceService resourceService,TicketService ticketService,
+    public DeletePublicationHandler(ResourceService resourceService, TicketService ticketService,
                                     Environment environment,
                                     IdentityServiceClient identityServiceClient,
-                                    EventBridgeClient eventBridgeClient) {
+                                    EventBridgeClient eventBridgeClient,
+                                    S3Client s3Client) {
         super(Void.class, environment);
         this.resourceService = resourceService;
         this.ticketService = ticketService;
         this.identityServiceClient = identityServiceClient;
         this.eventBridgeClient = eventBridgeClient;
         this.nvaEventBusName = new Environment().readEnv(NVA_EVENT_BUS_NAME_KEY);
+        this.s3Driver = new S3Driver(s3Client, environment.readEnv(NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY));
     }
 
     @Override
@@ -127,7 +136,18 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     private void handleHardDeletion(RequestInfo requestInfo, Publication publication)
         throws UnauthorizedException, BadRequestException {
         validateHardDeletionRequest(requestInfo, publication);
+        deleteFiles(publication);
         resourceService.deletePublication(publication);
+    }
+
+    private void deleteFiles(Publication publication) {
+        publication.getAssociatedArtifacts()
+            .stream()
+            .filter(File.class::isInstance)
+            .map(File.class::cast)
+            .forEach(
+                file -> s3Driver.deleteFile(UnixPath.of(file.getIdentifier().toString()))
+            );
     }
 
     private void handleDraftDeletion(UserInstance userInstance, SortableIdentifier publicationIdentifier)

@@ -43,6 +43,12 @@ Parameters:
   ExpandedEntriesPersistenceBucketName:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/Events/PersistedEntriesBucketName'
+  ExpandedEntriesPersistenceBucketArn:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/NVA/Events/PersistedEntriesBucketArn'
+  ResourceStorageBucketName:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/NVA/PublicationData'
   AthenaQueriesBucketName:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/Athena/QueriesBucketName'
@@ -382,19 +388,6 @@ Resources:
                 - lambda.amazonaws.com
             Action: sts:AssumeRole
 
-  DeleteLambdaRole:
-    Type: AWS::IAM::Role
-    Properties:
-      Path: /
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action: sts:AssumeRole
-
   DefaultLambdaPermissions:
     Type: AWS::IAM::Policy
     Properties:
@@ -403,7 +396,6 @@ Resources:
         - !Ref LambdaRole
         - !Ref DeleteDraftPublicationLambdaRole
         - !Ref UpdateDoiStatusLambdaRole
-        - !Ref DeleteLambdaRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -415,14 +407,12 @@ Resources:
               - lambda:InvokeFunction
             Resource: "*"
 
-  DatabaseAccessLambdaPermissions:
-    Type: AWS::IAM::Policy
+  DatabaseAccessLambdaManagedPolicy:
+    Type: AWS::IAM::ManagedPolicy
     DependsOn:
-      - LambdaRole
       - DeleteDraftPublicationLambdaRole
       - UpdateDoiStatusLambdaRole
     Properties:
-      PolicyName: !Sub DatabaseAccessLambdaPermissions-${AWS::StackName}
       Roles:
         - !Ref LambdaRole
         - !Ref DeleteDraftPublicationLambdaRole
@@ -439,13 +429,11 @@ Resources:
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-import-candidates-${AWS::StackName}
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-import-candidates-${AWS::StackName}/index/*
 
-  S3AccessPermsisions:
-    Type: AWS::IAM::Policy
+  S3AccessManagedPolicy:
+    Type: AWS::IAM::ManagedPolicy
     Properties:
-      PolicyName: !Sub S3AccessPermsisions-${AWS::StackName}
       Roles:
         - !Ref LambdaRole
-        - !Ref DeleteLambdaRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -458,19 +446,18 @@ Resources:
               - s3:PutObjectAcl
             Resource: "*"
 
-  S3DeleteAccessPermission:
-    Type: AWS::IAM::Policy
+  S3DeleteAccessManagedPolicy:
+    Type: AWS::IAM::ManagedPolicy
     Properties:
-      PolicyName: !Sub S3DeleteAccessPermission-${AWS::StackName}
-      Roles:
-        - !Ref DeleteLambdaRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Action:
               - s3:DeleteObject
-            Resource: "*"
+            Resource:
+              - !Sub '${ExpandedEntriesPersistenceBucketArn}/*'
+              - !Sub 'arn:aws:s3:::${ResourceStorageBucketName}/*'
 
   DynamoDbStreamsAccessPolicy:
     Type: AWS::IAM::Policy
@@ -492,13 +479,11 @@ Resources:
               - !GetAtt NvaImportCandidatesTable.StreamArn
 
 
-  EventsLambdaPermissions:
-    Type: AWS::IAM::Policy
+  EventsLambdaManagedPolicy:
+    Type: AWS::IAM::ManagedPolicy
     Properties:
-      PolicyName: !Sub EventsLambdaPermissions-${AWS::StackName}
       Roles:
         - !Ref LambdaRole
-        - !Ref DeleteLambdaRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -511,10 +496,10 @@ Resources:
               - sqs:GetQueueAttributes
               - sqs:ChangeMessageVisibility
             Resource: "*"
-  InternalAccessToIdentityServicePermissions:
-    Type: AWS::IAM::Policy
+
+  BackendCognitoClientCredentialsSecretManagedPolicy:
+    Type: AWS::IAM::ManagedPolicy
     Properties:
-      PolicyName: !Sub InternalAccessToIdentityServicePermissions-${AWS::StackName}
       Roles:
         - !Ref LambdaRole
       PolicyDocument:
@@ -522,8 +507,9 @@ Resources:
         Statement:
           - Effect: Allow
             Action:
-              - secretsmanager:*
-            Resource: "*"
+              - secretsmanager:GetSecretValue
+            Resource:
+              - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:BackendCognitoClientCredentials-*"
 
   NvaPublicationApi:
     Type: AWS::Serverless::Api
@@ -677,7 +663,13 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           DOMAIN_NAME: !Ref ApiDomain
           NVA_EVENT_BUS_NAME: !Ref NewNvaEventBusName
-      Role: !GetAtt LambdaRole.Arn
+          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
+      Policies:
+        - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
+        - !GetAtt EventsLambdaManagedPolicy.PolicyArn
+        - !GetAtt S3DeleteAccessManagedPolicy.PolicyArn
+        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt S3AccessManagedPolicy.PolicyArn
       Events:
         PutEvent:
           Type: Api
@@ -920,7 +912,7 @@ Resources:
           ALLOWED_ORIGIN: '*'
           IMPORT_CANDIDATES_TABLE_NAME: !Ref NvaImportCandidatesTable
           RESOURCE_TABLE_NAME: !Ref NvaResourcesTable
-          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Sub "nva-resource-storage-${AWS::AccountId}"
+          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
           IMPORT_CANDIDATES_STORAGE_BUCKET: !Ref ImportCandidateStorageBucket
           PIA_SECRETS_NAME: !Ref PiaRestCredentialsTokenName
           PIA_USERNAME_KEY: !Ref PiaRestUsernameKey
@@ -949,7 +941,7 @@ Resources:
         Variables:
           BRAGE_MIGRATION_ERROR_BUCKET_NAME: !Sub "${BrageMigrationErrorBucketName}-${AWS::AccountId}"
           TABLE_NAME: !Ref NvaResourcesTable
-          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Sub "nva-resource-storage-${AWS::AccountId}"
+          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
           DOMAIN_NAME: !Ref ApiDomain
       Events:
         BrageMigrationEvent:
@@ -1059,7 +1051,7 @@ Resources:
 
 
   DeletionProcessInitializationHandler:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1087,7 +1079,7 @@ Resources:
             Destination: !GetAtt DeletePublicationEventProducerDlq.Arn
 
   LogicallyDeleteEntriesHandler:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Description: 'Listens for Delete event emitted from LogicallyDeleteImportedPublicationsButton. Removes resource from DynamoDB. Parses a DeleteEntryEvent'
     Properties:
@@ -1112,7 +1104,7 @@ Resources:
 
 
   DoiRequestEventProducer:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1147,7 +1139,7 @@ Resources:
 
 
   ResourceExpansionHandler:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1159,8 +1151,6 @@ Resources:
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
-          IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
-          IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
           TABLE_NAME: !Ref NvaResourcesTable
       Events:
         EventBridgeEvent:
@@ -1187,7 +1177,7 @@ Resources:
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
 
   ImportCandidateExpansionHandler:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1223,7 +1213,7 @@ Resources:
             Destination: !GetAtt ImportCandidateExpansionHandlerDLQ.Arn
 
   DeleteImportCandidateEventHandler:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1255,7 +1245,7 @@ Resources:
             Destination: !GetAtt DeleteImportCandidateEventHandlerDLQ.Arn
 
   ExpandedResourcesPersistenceHandler:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1266,8 +1256,6 @@ Resources:
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
-          IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
-          IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
           PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
       Events:
         EventBridgeEvent:
@@ -1287,7 +1275,7 @@ Resources:
             Type: SQS
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
   AnalyticsIntegrationHandler:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1298,8 +1286,6 @@ Resources:
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
-          IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
-          IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
           PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
       Events:
         EventBridgeEvent:
@@ -1316,7 +1302,7 @@ Resources:
             Type: SQS
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
   AcceptedPublishingRequestHandler:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1327,8 +1313,6 @@ Resources:
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
-          IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
-          IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
           TABLE_NAME: !Ref NvaResourcesTable
       Events:
         EventBridgeEvent:
@@ -1341,7 +1325,7 @@ Resources:
                   topic: [ "PublicationService.PublishingRequest.Update" ]
 
   EventBasedBatchScanHandlerTest:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1375,7 +1359,7 @@ Resources:
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
 
   EventBasedImportCandidateBatchScanHandlerTest:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1409,7 +1393,7 @@ Resources:
             Destination: !GetAtt ImportCandidateBatchScanDLQ.Arn
 
   DataEntryUpdateHandler:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1440,7 +1424,7 @@ Resources:
             Destination: !GetAtt PublicationFanoutHandlerDLQ.Arn
 
   ImportCandidateDataEntryUpdateHandler:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1470,7 +1454,7 @@ Resources:
             Destination: !GetAtt ImportCandidateDataEntryUpdateHandlerDLQ.Arn
 
   DeleteDraftPublicationHandler:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1506,7 +1490,7 @@ Resources:
     Type: AWS::Serverless::Function
     DependsOn:
       - LambdaRole
-      - DatabaseAccessLambdaPermissions
+      - DatabaseAccessLambdaManagedPolicy
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler::handleRequest
@@ -1535,7 +1519,7 @@ Resources:
     Type: AWS::Serverless::Function
     DependsOn:
       - LambdaRole
-      - DatabaseAccessLambdaPermissions
+      - DatabaseAccessLambdaManagedPolicy
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler::handleRequest
@@ -1562,7 +1546,7 @@ Resources:
 
 
   UpdateDoiStatusHandlerFunction:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1646,7 +1630,7 @@ Resources:
   #==========================Manually triggered functions=============================================
 
   BatchScanStartHandler:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -1663,7 +1647,7 @@ Resources:
           OUTPUT_EVENT_TOPIC: 'PublicationService.DataEntry.ScanAndUpdateRowVersion'
 
   ImportCandidatesBatchScanStartHandler:
-    DependsOn: EventsLambdaPermissions
+    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
