@@ -29,6 +29,8 @@ import no.unit.nva.cristin.mapper.nva.exceptions.CristinIdAlreadyExistException;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
+import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.s3imports.ApplicationConstants;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
@@ -69,30 +71,36 @@ public class CristinEntryEventConsumer
     private static final Clock CLOCK = Clock.systemDefaultZone();
     private static final String PUBLICATIONS_THAT_ARE_PART_OF_OTHER_PUBLICATIONS_BUCKET_PATH =
         "PUBLICATIONS_THAT_ARE_PART_OF_OTHER_PUBLICATIONS";
+    public static final String BACKEND_CLIENT_SECRET_NAME = new Environment().readEnv("BACKEND_CLIENT_SECRET_NAME");
+    public static final String BACKEND_CLIENT_AUTH_URL = new Environment().readEnv("BACKEND_CLIENT_AUTH_URL");
 
-
+    private final RawContentRetriever uriRetriever;
     private final ResourceService resourceService;
     private final S3Client s3Client;
     private final DoiDuplicateChecker doiDuplicateChecker;
 
     @JacocoGenerated
     public CristinEntryEventConsumer() {
-        this(defaultDynamoDbClient(), defaultS3Client(), defaultDoiDuplicateChecker());
+        this(defaultDynamoDbClient(), defaultS3Client(), defaultDoiDuplicateChecker(),
+             new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME));
     }
 
     @JacocoGenerated
     protected CristinEntryEventConsumer(AmazonDynamoDB dynamoDbClient,
                                         S3Client s3Client,
-                                        DoiDuplicateChecker doiDuplicateChecker) {
-        this(new ResourceService(dynamoDbClient, CLOCK), s3Client, doiDuplicateChecker);
+                                        DoiDuplicateChecker doiDuplicateChecker,
+                                        RawContentRetriever uriRetriever) {
+        this(new ResourceService(dynamoDbClient, CLOCK), s3Client, doiDuplicateChecker, uriRetriever);
     }
 
     protected CristinEntryEventConsumer(ResourceService resourceService,
                                         S3Client s3Client,
-                                        DoiDuplicateChecker doiDuplicateChecker) {
+                                        DoiDuplicateChecker doiDuplicateChecker,
+                                        RawContentRetriever uriRetriever) {
         this.resourceService = resourceService;
         this.s3Client = s3Client;
         this.doiDuplicateChecker = doiDuplicateChecker;
+        this.uriRetriever = uriRetriever;
     }
 
     @Override
@@ -196,7 +204,7 @@ public class CristinEntryEventConsumer
     private PublicationRepresentations generatePublicationRepresentations(
         CristinObject cristinObject,
         FileContentsEvent<JsonNode> eventBody) {
-        var publication = cristinObject.toPublication();
+        var publication = cristinObject.toPublication(uriRetriever);
         return new PublicationRepresentations(cristinObject, publication, eventBody);
     }
 

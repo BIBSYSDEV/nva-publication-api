@@ -2,6 +2,7 @@ package cucumber;
 
 import static java.util.Objects.isNull;
 import static nva.commons.core.attempt.Try.attempt;
+import static org.mockito.Mockito.mock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -9,6 +10,7 @@ import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.external.services.UriRetriever;
 import nva.commons.core.attempt.Try;
 
 public class ScenarioContext {
@@ -37,7 +39,7 @@ public class ScenarioContext {
     }
 
     public void convertToNvaEntry() {
-        mappingAttempt = attempt(() -> cristinEntry.toPublication());
+        mappingAttempt = attempt(() -> cristinEntry.toPublication(mock(UriRetriever.class)));
     }
 
     public Publication getNvaEntry() {

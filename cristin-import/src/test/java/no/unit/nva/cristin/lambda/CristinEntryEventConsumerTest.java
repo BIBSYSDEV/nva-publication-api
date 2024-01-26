@@ -37,6 +37,9 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
@@ -59,6 +62,8 @@ import no.unit.nva.cristin.mapper.nva.exceptions.DuplicateDoiException;
 import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIssnRuntimeException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryException;
+import no.unit.nva.cristin.utils.CristinOrganization;
+import no.unit.nva.cristin.utils.NvaCustomerResponse;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -91,6 +96,9 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     public static final String IGNORED_VALUE = "someBucket";
     public static final String NOT_IMPORTANT = "someBucketName";
     public static final int SINGLE_HIT = 1;
+    public static final URI TOP_LEVEL_ORG_URI = randomUri();
+    public static final URI EXPECTED_CUSTOMER_ID = randomUri();
+    public static final String EXPECTED_SIKT_CUSTOMER = "0baf8fcb-b18d-4c09-88bb-956b4f659103";
 
     private CristinEntryEventConsumer handler;
     private ResourceService resourceService;
@@ -106,8 +114,27 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, "ignored");
         uriRetriever = mock(UriRetriever.class);
+        mockNvaCustomer();
         doiDuplicateChecker = new DoiDuplicateChecker(uriRetriever, "api.test.nva.aws.unit.no");
-        handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker);
+        handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker, uriRetriever);
+    }
+
+    private void mockNvaCustomer() {
+        var cristinOrgUri = URI.create("https://api.test.nva.aws.unit.no/cristin/organization/20754.0.0.0?depth=top");
+        when(uriRetriever.getRawContent(cristinOrgUri, "application/json"))
+            .thenReturn(Optional.of(cristinOrganizationResponse()));
+        var nvaCustomerUri = URI.create("https://api.test.nva.aws.unit.no/customer/cristinId/"
+                                        + URLEncoder.encode(TOP_LEVEL_ORG_URI.toString(), StandardCharsets.UTF_8));
+        when(uriRetriever.getRawContent(nvaCustomerUri, "application/json"))
+            .thenReturn(Optional.of(nvaCustomerResponse()));
+    }
+
+    private String cristinOrganizationResponse() {
+        return new CristinOrganization(randomUri(), List.of(new CristinOrganization(TOP_LEVEL_ORG_URI, List.of()))).toJsonString();
+    }
+
+    private String nvaCustomerResponse() {
+        return new NvaCustomerResponse(EXPECTED_CUSTOMER_ID).toJsonString();
     }
 
     @Test
@@ -123,7 +150,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     void shouldSaveErrorReportInS3OutsideTheInputFolderAndWithFilenameTheObjectId()
         throws IOException {
         resourceService = resourceServiceThrowingExceptionWhenSavingResource();
-        handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker);
+        handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker, uriRetriever);
         var cristinObject = CristinDataGenerator.randomObject();
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
@@ -141,7 +168,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
         final TestAppender appender = LogUtils.getTestingAppenderForRootLogger();
         resourceService = resourceServiceThrowingExceptionWhenSavingResource();
-        handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker);
+        handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker, uriRetriever);
 
         var cristinObject = CristinDataGenerator.randomObject();
         var eventBody = createEventBody(cristinObject);
@@ -161,7 +188,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var actualPublications = handler.handleRequest(sqsEvent, CONTEXT);
         var actualPublication = actualPublications.get(0);
 
-        var expectedPublication = cristinObject.toPublication();
+        var expectedPublication = cristinObject.toPublication(uriRetriever);
         injectValuesThatAreCreatedWhenSavingInDynamo(actualPublication, expectedPublication);
 
         assertThat(actualPublication, is(equalTo(expectedPublication)));
@@ -225,7 +252,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         handler.handleRequest(sqsEvent, CONTEXT);
 
         var actualPublication = fetchPublicationDirectlyFromDatabase(cristinObject.getId().toString());
-        var expectedPublication = cristinObject.toPublication();
+        var expectedPublication = cristinObject.toPublication(uriRetriever);
         injectValuesThatAreCreatedWhenSavingInDynamo(actualPublication, expectedPublication);
 
         var diff = JAVERS.compare(expectedPublication, actualPublication);
@@ -235,7 +262,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     @Test
     void shouldStoreErrorReportWhenFailingToStorePublicationToDynamo() throws IOException {
         resourceService = resourceServiceThrowingExceptionWhenSavingResource();
-        handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker);
+        handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker, uriRetriever);
 
         var cristinObject = CristinDataGenerator.randomObject();
         var eventBody = createEventBody(cristinObject);
@@ -251,7 +278,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     @Test
     void shouldStoreErrorReportContainingS3eventUri() throws IOException {
         resourceService = resourceServiceThrowingExceptionWhenSavingResource();
-        handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker);
+        handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker, uriRetriever);
         var cristinObject = CristinDataGenerator.randomObject();
         var eventBody = createEventBody(cristinObject);
         var eventReference = createEventReference(eventBody);
@@ -283,7 +310,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
 
-        handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker);
+        handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker, uriRetriever);
         handler.handleRequest(sqsEvent, CONTEXT);
         var expectedExceptionName = RuntimeException.class.getSimpleName();
         var expectedFilePath = constructExpectedErrorFilePaths(eventBody,
@@ -523,7 +550,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var searchResource2ResponseSingleHit = new SearchResource2Response(SINGLE_HIT);
         var singleHitOptional = Optional.of(searchResource2ResponseSingleHit.toString());
         when(uriRetriever.getRawContent(any(), any())).thenReturn(singleHitOptional);
-
+        mockNvaCustomer();
         var cristinObject = CristinDataGenerator.randomObject(CristinSecondaryCategory.JOURNAL_ARTICLE.toString());
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
@@ -538,7 +565,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var searchResource2ResponseSingleHit = new SearchResource2Response(0);
         var nullHitsOptional = Optional.of(searchResource2ResponseSingleHit.toString());
         when(uriRetriever.getRawContent(any(), any())).thenReturn(nullHitsOptional);
-
+        mockNvaCustomer();
         var cristinObject = CristinDataGenerator.randomObject(CristinSecondaryCategory.JOURNAL_ARTICLE.toString());
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
@@ -598,6 +625,30 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                                           .getPublicationInstance()).getPages();
 
         assertThat(pages.getBegin(), is(equalTo(pages.getEnd())));
+    }
+
+    @Test
+    void shouldCreatePublisherFromFetchedNvaCustomerWhenCristinInstitutionIsNvaCustomer() throws IOException {
+        var cristinObject = CristinDataGenerator.randomObject(JOURNAL_ARTICLE.getValue());
+        cristinObject.getJournalPublication().setPagesBegin(null);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var publications = handler.handleRequest(sqsEvent, CONTEXT);
+
+        assertThat(publications.get(0).getPublisher().getId(), is(equalTo(EXPECTED_CUSTOMER_ID)));
+    }
+
+    @Test
+    void shouldCreatePublicationWithSiktAsPublisherWhenCouldNotFetchNvaCustomerForCristinOrganization()
+        throws IOException {
+        var cristinObject = CristinDataGenerator.randomObject(JOURNAL_ARTICLE.getValue());
+        cristinObject.getJournalPublication().setPagesBegin(null);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker, mock(UriRetriever.class));
+        var publications = handler.handleRequest(sqsEvent, CONTEXT);
+
+        assertThat(publications.get(0).getPublisher().getId().toString(), containsString(EXPECTED_SIKT_CUSTOMER));
     }
 
     private static <T> FileContentsEvent<T> createEventBody(T cristinObject) {
