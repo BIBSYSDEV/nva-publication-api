@@ -1,13 +1,16 @@
 package no.unit.nva.cristin.mapper;
 
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.Locale;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import no.unit.nva.model.ResourceOwner;
@@ -24,9 +27,10 @@ import nva.commons.core.paths.UriWrapper;
 )
 @Getter
 @Setter
+@Data
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"brukernavn_opprettet", "dato_opprettet", "brukernavn_siste_endring", "dato_siste_endring",
-    "status_kontrollert", "brukernavn_kontrollert", "dato_kontrollert", "status_bekreftet_arkivsporsmal",
+@JsonIgnoreProperties({"brukernavn_opprettet", "dato_opprettet", "brukernavn_siste_endring",
+    "dato_siste_endring", "status_bekreftet_arkivsporsmal",
     "brukernavn_avlvrt_arkivsystem", "dato_avlvrt_arkivsystem", "status_fulgt_medf_reg",
     "brukernavn_svart_medforf_reg", "dato_svart_medforf_regel"})
 public class CristinLocale {
@@ -40,6 +44,9 @@ public class CristinLocale {
     public static final String CRISTIN = "cristin";
     public static final String ORGANIZATION = "organization";
     private static final String RESOURCE_OWNER_FORMAT = "%s@%s";
+    public static final String CONTROLLED_BY_FIELD = "brukernavn_kontrollert";
+    public static final String DATE_CONTROLLED_FIELD = "dato_kontrollert";
+    public static final String CONTROL_STATUS_FIELD = "status_kontrollert";
     @JsonProperty(OWNER_CODE_FIELD)
     private String ownerCode;
 
@@ -55,7 +62,18 @@ public class CristinLocale {
     @JsonProperty(GROUP_IDENTIFIER_FIELD)
     private String groupIdentifier;
 
+    @JsonProperty(CONTROLLED_BY_FIELD)
+    private String controlledBy;
+
+    @JsonProperty(DATE_CONTROLLED_FIELD)
+    private LocalDate dateControlled;
+
+    @JsonProperty(CONTROL_STATUS_FIELD)
+    private String controlStatus;
+
+
     @JacocoGenerated
+    @JsonCreator
     public CristinLocale() {
 
     }

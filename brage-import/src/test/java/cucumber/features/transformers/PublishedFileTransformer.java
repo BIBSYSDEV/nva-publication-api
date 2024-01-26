@@ -36,6 +36,7 @@ public class PublishedFileTransformer {
             Boolean.parseBoolean(entry.get("publisherAuthority")),
             parseDate(entry.get("embargoDate")),
             parseRightsRetentionStrategy(entry),
+            entry.getOrDefault("legalNote", null),
             parseDate(entry.get("publishedDate"))
         );
     }
@@ -45,7 +46,7 @@ public class PublishedFileTransformer {
         if (rightsRetentionStrategy.isPresent()) {
             logger.warn("Rights retention strategy for Brage is not supported on record: " + entry.get("identifier"));
         }
-        return NullRightsRetentionStrategy.defaultRightsRetentionStrategy();
+        return NullRightsRetentionStrategy.create();
     }
 
     private static Instant parseDate(String candidate) {

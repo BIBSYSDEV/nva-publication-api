@@ -9,6 +9,7 @@ import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiM
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.RequestUtil.IDENTIFIER_IS_NOT_A_VALID_UUID;
 import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
+import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_AUTH_URL;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_SECRET_NAME;
@@ -19,10 +20,10 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static nva.commons.apigateway.AccessRight.APPROVE_DOI_REQUEST;
-import static nva.commons.apigateway.AccessRight.EDIT_ALL_NON_DEGREE_RESOURCES;
-import static nva.commons.apigateway.AccessRight.EDIT_OWN_INSTITUTION_RESOURCES;
-import static nva.commons.apigateway.AccessRight.PUBLISH_DEGREE;
+import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
+import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_ALL;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -32,6 +33,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -62,6 +64,7 @@ import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
@@ -70,6 +73,8 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.License;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
@@ -81,6 +86,7 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.model.BackendClientCredentials;
+import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -102,6 +108,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
+import nva.commons.core.SingletonCollector;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
@@ -212,7 +219,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
-        assertThat(ticket.map(PublishingRequestCase::getStatus).orElseThrow(), is(equalTo(TicketStatus.PENDING)));
+        assertThat(ticket.map(PublishingRequestCase::getStatus).orElseThrow(), is(equalTo(PENDING)));
     }
 
     @Test
@@ -422,7 +429,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        Problem problem = response.getBodyObject(Problem.class);
 
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_FORBIDDEN)));
     }
@@ -564,7 +570,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var cristinId = randomUri();
         var contributor = createContributorForPublicationUpdate(cristinId);
         injectContributor(savedPublication, contributor);
-        var customerId = contributor.getAffiliations().get(0).getId();
+        var customerId = ((Organization) contributor.getAffiliations().get(0)).getId();
 
         Publication publicationUpdate = updateTitle(savedPublication);
 
@@ -697,6 +703,59 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HTTP_OK)));
     }
 
+    @Test
+    void shouldUpdateFilesForApprovalWhenPublicationUpdateHasFileChanges() throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
+            PublicationStatus.PUBLISHED, publicationService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
+        var expectedFilesForApprovalBeforePublicationUpdate = getUnpublishedFiles(publication);
+
+        assertThat(((PublishingRequestCase) ticket).getFilesForApproval(),
+                   containsInAnyOrder(expectedFilesForApprovalBeforePublicationUpdate.toArray()));
+
+        var newUnpublishedFile = File.builder().withIdentifier(UUID.randomUUID()).buildUnpublishedFile();
+        updatePublicationWithFile(publication, newUnpublishedFile);
+
+        var input = ownerUpdatesOwnPublication(publication.getIdentifier(), publication);
+        updatePublicationHandler.handleRequest(input, output, context);
+
+        var filesForApproval = fetchFilesForApprovalFromPendingPublishingRequest(publication);
+
+        var expectedFilesForApproval = mergeExistingFilesForApprovalWithNewFile(
+            expectedFilesForApprovalBeforePublicationUpdate, newUnpublishedFile);
+
+        assertThat(filesForApproval, containsInAnyOrder(expectedFilesForApproval.toArray()));
+    }
+
+    private Set<FileForApproval> fetchFilesForApprovalFromPendingPublishingRequest(Publication publication) {
+        return ticketService.fetchTicketsForUser(UserInstance.fromPublication(publication))
+                   .filter(PublishingRequestCase.class::isInstance)
+                   .filter(ticketEntry -> PENDING.equals(ticketEntry.getStatus()))
+                   .map(PublishingRequestCase.class::cast)
+                   .map(PublishingRequestCase::getFilesForApproval)
+                   .collect(SingletonCollector.collect());
+    }
+
+    private List<FileForApproval> mergeExistingFilesForApprovalWithNewFile(List<FileForApproval> list, File file) {
+        list = new ArrayList<>(list);
+        list.add(FileForApproval.fromFile(file));
+        return list;
+    }
+
+    private void updatePublicationWithFile(Publication publication, File newUnpublishedFile) {
+        AssociatedArtifactList associatedArtifacts = publication.getAssociatedArtifacts();
+        associatedArtifacts.add(newUnpublishedFile);
+        publication.setAssociatedArtifacts(associatedArtifacts);
+        publicationService.updatePublication(publication);
+    }
+
+    private static List<FileForApproval> getUnpublishedFiles(Publication publication) {
+        return publication.getAssociatedArtifacts().stream()
+                   .filter(UnpublishedFile.class::isInstance)
+                   .map(File.class::cast)
+                   .map(FileForApproval::fromFile).toList();
+    }
+
     private void publish(Publication persistedPublication) throws ApiGatewayException {
         publicationService.publishPublication(UserInstance.fromPublication(publication),
                                               persistedPublication.getIdentifier());
@@ -754,14 +813,14 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .build();
     }
 
-    private List<Organization> getListOfRandomOrganizations() {
+    private List<Corporation> getListOfRandomOrganizations() {
         return List.of(new Organization.Builder().withId(RandomPersonServiceResponse.randomUri()).build());
     }
 
     private boolean containsOneCompletedAndOnePendingPublishingRequest(List<TicketEntry> tickets) {
-        var statuses = tickets.stream().map(TicketEntry::getStatus).collect(Collectors.toList());
+        var statuses = tickets.stream().map(TicketEntry::getStatus).toList();
         return statuses.stream().anyMatch(TicketStatus.COMPLETED::equals)
-                && statuses.stream().anyMatch(TicketStatus.PENDING::equals);
+                && statuses.stream().anyMatch(PENDING::equals);
     }
 
     private TicketEntry createPendingPublishingRequest(Publication publishedPublication) throws ApiGatewayException {
@@ -798,7 +857,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withPathParameters(pathParameters)
                 .withCurrentCustomer(customerId)
                 .withBody(publicationUpdate)
-                .withAccessRights(customerId, PUBLISH_DEGREE.name(), PUBLISH_DEGREE.name())
+                .withAccessRights(customerId, MANAGE_DEGREE)
                 .build();
     }
 
@@ -810,7 +869,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withPathParameters(pathParameters)
                 .withCurrentCustomer(customerId)
                 .withBody(publicationUpdate)
-                .withAccessRights(customerId, EDIT_ALL_NON_DEGREE_RESOURCES.toString())
+                .withAccessRights(customerId, MANAGE_RESOURCES_ALL)
                 .withUserName(SOME_CURATOR)
                 .build();
     }
@@ -823,7 +882,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withPathParameters(pathParameters)
                 .withCurrentCustomer(customerId)
                 .withBody(publicationUpdate)
-                .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.toString())
+                .withAccessRights(customerId, MANAGE_RESOURCES_STANDARD)
                 .withUserName(SOME_CURATOR)
                 .build();
     }
@@ -839,7 +898,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withCurrentCustomer(customerId)
                 .withPersonCristinId(cristinId)
                 .withBody(publicationUpdate)
-                .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.name())
+                .withAccessRights(customerId, MANAGE_RESOURCES_STANDARD)
                 .build();
     }
 
@@ -864,7 +923,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withPathParameters(pathParameters)
                 .withCurrentCustomer(customerId)
                 .withBody(publicationUpdate)
-                .withAccessRights(customerId, EDIT_OWN_INSTITUTION_RESOURCES.name(), PUBLISH_DEGREE.name())
+                .withAccessRights(customerId, MANAGE_RESOURCES_STANDARD, MANAGE_DEGREE)
                 .build();
     }
 
@@ -913,7 +972,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return new UnpublishedFile(UUID.randomUUID(), randomString(), randomString(),
                 Long.valueOf(randomInteger().toString()),
                 new License.Builder().withIdentifier(randomString()).withLink(randomUri()).build(),
-                false, false, null, null);
+                false, false, null, null, randomString());
     }
 
     private TestAppender createAppenderForLogMonitoring() {
@@ -990,7 +1049,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withPathParameters(pathParameters)
                 .withCurrentCustomer(customerId)
                 .withBody(publicationUpdate)
-                .withAccessRights(customerId, APPROVE_DOI_REQUEST.name())
+                .withAccessRights(customerId, MANAGE_DOI)
                 .build();
     }
 }

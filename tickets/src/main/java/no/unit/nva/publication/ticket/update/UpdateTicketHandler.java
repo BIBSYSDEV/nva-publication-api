@@ -3,17 +3,24 @@ package no.unit.nva.publication.ticket.update;
 import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static no.unit.nva.publication.model.business.TicketStatus.CLOSED;
 import static no.unit.nva.publication.ticket.TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME;
+import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
+import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.util.List;
 import no.unit.nva.doi.DataCiteDoiClient;
 import no.unit.nva.doi.DoiClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
@@ -22,7 +29,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketHandler;
 import no.unit.nva.publication.ticket.UpdateTicketRequest;
-import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
@@ -49,8 +55,6 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
                                                                                                  + "DOI requirements";
     public static final String UNKNOWN_VIEWED_STATUS_MESSAGE = "Unknown ViewedStatus";
     private static final Logger logger = LoggerFactory.getLogger(UpdateTicketHandler.class);
-    private static final String ACCESS_RIGHT_APPROVE_PUBLISH_REQUEST = AccessRight.APPROVE_PUBLISH_REQUEST.toString();
-    private static final String ACCESS_RIGHT_APPROVE_DOI_REQUEST = AccessRight.APPROVE_DOI_REQUEST.toString();
     private final TicketService ticketService;
     private final ResourceService resourceService;
     private final DoiClient doiClient;
@@ -122,11 +126,11 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     }
 
     private static boolean userIsAuthorizedToApprovePublishingRequest(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(ACCESS_RIGHT_APPROVE_PUBLISH_REQUEST);
+        return requestInfo.userIsAuthorized(MANAGE_PUBLISHING_REQUESTS);
     }
 
     private static boolean userIsAuthorizedToApproveDoiRequest(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(ACCESS_RIGHT_APPROVE_DOI_REQUEST);
+        return requestInfo.userIsAuthorized(MANAGE_DOI);
     }
 
     private static boolean isUserFromSameCustomerAsTicket(RequestInfo requestInfo, TicketEntry ticket)
@@ -188,7 +192,36 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         if (ticket instanceof DoiRequest) {
             doiTicketSideEffects(ticketRequest, requestInfo);
         }
+        if (ticket instanceof PublishingRequestCase publishingRequestCase) {
+            publishingRequestSideEffects(publishingRequestCase, ticketRequest);
+        }
         ticketService.updateTicketStatus(ticket, ticketRequest.getStatus(), getUsername(requestInfo));
+    }
+
+    private void publishingRequestSideEffects(PublishingRequestCase ticket,
+                                              UpdateTicketRequest ticketRequest)
+        throws NotFoundException {
+        if (CLOSED.equals(ticketRequest.getStatus())) {
+            updateUnpublishedFilesToUnpublishable(ticket.getResourceIdentifier());
+        }
+    }
+
+    private void updateUnpublishedFilesToUnpublishable(SortableIdentifier publicationIdentifier)
+        throws NotFoundException {
+        var publication = resourceService.getPublicationByIdentifier(publicationIdentifier);
+        var updatedPublication = publication.copy()
+                                     .withAssociatedArtifacts(updateUnpublishedFiles(publication))
+                                     .build();
+        resourceService.updatePublication(updatedPublication);
+    }
+
+    private List<AssociatedArtifact> updateUnpublishedFiles(Publication publication) {
+        var associatedArtifacts = publication.getAssociatedArtifacts();
+        return associatedArtifacts.stream()
+                   .map(file -> file instanceof UnpublishedFile unpublishedFile
+                                    ? unpublishedFile.toUnpublishableFile()
+                                    : file)
+                   .toList();
     }
 
     private TicketEntry fetchTicketForElevatedUser(SortableIdentifier ticketIdentifier, UserInstance userInstance)
@@ -221,7 +254,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     }
 
     private boolean userHasAccessRightToOperateOnTicket(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString());
+        return requestInfo.userIsAuthorized(MANAGE_DOI);
     }
 
     private boolean userIsTicketOwner(TicketEntry ticket, String userName) {
@@ -287,7 +320,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         if (TicketStatus.COMPLETED.equals(status)) {
             findableDoiTicketSideEffects(requestInfo);
         }
-        if (TicketStatus.CLOSED.equals(status) && hasDoi(getPublication(requestInfo))) {
+        if (CLOSED.equals(status) && hasDoi(getPublication(requestInfo))) {
             deleteDoiTicketSideEffects(getPublication(requestInfo));
         }
     }

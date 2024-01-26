@@ -2,7 +2,9 @@ package no.unit.nva.publication.permission.strategy;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationInstanceBuilder.listPublicationInstanceTypes;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
+import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -14,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
@@ -28,6 +31,7 @@ import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import no.unit.nva.model.testing.PublicationGenerator;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
 import org.junit.jupiter.api.Assertions;
@@ -237,7 +241,7 @@ class PublicationPermissionStrategyTest {
         var institutionId = randomUri();
 
         var requestInfo = createRequestInfo(resourceOwner, institutionId);
-        var publication = createPublication(resourceOwner, institutionId);
+        var publication = createNonDegreePublication(resourceOwner, institutionId);
 
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .fromRequestInfo(requestInfo)
@@ -259,12 +263,12 @@ class PublicationPermissionStrategyTest {
     }
 
     private static Function<AccessRight, String> getCognitoGroup(URI institutionId) {
-        return accessRight -> accessRight.name() + AT + institutionId.toString();
+        return accessRight -> accessRight.toPersistedString() + AT + institutionId.toString();
     }
 
     private List<AccessRight> getCuratorWithPublishDegreeAccessRight() {
         var curatorAccessRight = getCuratorAccessRights();
-        curatorAccessRight.add(AccessRight.PUBLISH_DEGREE);
+        curatorAccessRight.add(AccessRight.MANAGE_DEGREE);
         return curatorAccessRight;
     }
 
@@ -274,6 +278,22 @@ class PublicationPermissionStrategyTest {
                    .withPublisher(new Organization.Builder().withId(customer).build())
                    .withStatus(PublicationStatus.PUBLISHED)
                    .build();
+    }
+
+    private Publication createNonDegreePublication(String resourceOwner, URI customer) {
+        var publicationInstanceTypes = listPublicationInstanceTypes();
+        var nonDegreePublicationInstances = publicationInstanceTypes.stream().filter(this::isNonDegreeClass).collect(
+            Collectors.toList());
+        return PublicationGenerator.randomPublication(randomElement(nonDegreePublicationInstances)).copy()
+            .withResourceOwner(new ResourceOwner(new Username(resourceOwner), customer))
+            .withPublisher(new Organization.Builder().withId(customer).build())
+            .withStatus(PublicationStatus.PUBLISHED)
+            .build();
+    }
+
+    private boolean isNonDegreeClass(Class<?> publicationInstance) {
+        var listOfDegreeClasses = Set.of("DegreeMaster", "DegreeBachelor", "DegreePhd");
+        return !listOfDegreeClasses.contains(publicationInstance.getSimpleName());
     }
 
     private Publication createDegreePhd(String resourceOwner, URI customer) {
@@ -289,7 +309,11 @@ class PublicationPermissionStrategyTest {
 
     private Publication createPublicationWithContributor(String contributorName, URI contributorId,
                                                          Role contributorRole) {
-        var publication = randomPublication();
+        var publicationInstanceTypes = listPublicationInstanceTypes();
+        var nonDegreePublicationInstances = publicationInstanceTypes.stream()
+                                                .filter(this::isNonDegreeClass)
+                                                .collect(Collectors.toList());
+        var publication = PublicationGenerator.randomPublication(randomElement(nonDegreePublicationInstances));
         var identity = new Identity.Builder()
                            .withName(contributorName)
                            .withId(contributorId)
@@ -307,14 +331,14 @@ class PublicationPermissionStrategyTest {
 
     private List<AccessRight> getEditorAccessRights() {
         var accessRights = new ArrayList<AccessRight>();
-        accessRights.add(AccessRight.PUBLISH_DEGREE);
-        accessRights.add(AccessRight.EDIT_ALL_NON_DEGREE_RESOURCES);
+        accessRights.add(AccessRight.MANAGE_DEGREE);
+        accessRights.add(AccessRight.MANAGE_RESOURCES_ALL);
         return accessRights;
     }
 
     private List<AccessRight> getCuratorAccessRights() {
         var accessRights = new ArrayList<AccessRight>();
-        accessRights.add(AccessRight.EDIT_OWN_INSTITUTION_RESOURCES);
+        accessRights.add(AccessRight.MANAGE_RESOURCES_STANDARD);
         return accessRights;
     }
 

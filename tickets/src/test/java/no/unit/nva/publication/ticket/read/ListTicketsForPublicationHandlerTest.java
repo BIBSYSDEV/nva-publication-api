@@ -4,6 +4,7 @@ import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -55,6 +56,22 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         var request = ownerRequestsTicketsForPublication(publication);
         handler.handleRequest(request, output, CONTEXT);
         assertThatResponseContainsExpectedTickets(ticket);
+    }
+
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldNotReturnRemovedTicket(Class<? extends TicketEntry> ticketType,
+                                                                           PublicationStatus status)
+        throws IOException, ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        ticket.remove(UserInstance.fromTicket(ticket)).persistUpdate(ticketService);
+        var request = ownerRequestsTicketsForPublication(publication);
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, TicketCollection.class);
+        var body = response.getBodyObject(TicketCollection.class);
+
+        assertThat(body.getTickets(), is(emptyIterable()));
     }
 
     @ParameterizedTest
@@ -152,7 +169,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .withPathParameters(constructPathParameters(publication))
                    .withCurrentCustomer(customerId)
                    .withUserName(randomString())
-                   .withAccessRights(customerId, AccessRight.APPROVE_DOI_REQUEST.toString())
+                   .withAccessRights(customerId, AccessRight.MANAGE_DOI)
                    .build();
     }
 
@@ -162,7 +179,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .withPathParameters(constructPathParameters(publication))
                    .withCurrentCustomer(publication.getPublisher().getId())
                    .withUserName(randomString())
-                   .withAccessRights(publication.getPublisher().getId(), AccessRight.APPROVE_DOI_REQUEST.toString())
+                   .withAccessRights(publication.getPublisher().getId(), AccessRight.MANAGE_DOI)
                    .build();
     }
 

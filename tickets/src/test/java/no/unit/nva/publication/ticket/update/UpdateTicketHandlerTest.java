@@ -15,7 +15,11 @@ import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
@@ -33,8 +37,12 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
+import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -257,7 +265,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var ticket = createPersistedDoiTicket(publication);
         var completedTicket = ticket.complete(publication, USER_NAME);
         var customer = randomUri();
-        var request = createCompleteTicketHttpRequest(completedTicket, AccessRight.APPROVE_DOI_REQUEST, customer);
+        var request = createCompleteTicketHttpRequest(completedTicket, AccessRight.MANAGE_DOI, customer);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
@@ -544,6 +552,75 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
 
+    @Test
+    void shouldUpdateUnpublishedFilesToUnpublishableWhenRejectingPublishingRequest()
+        throws ApiGatewayException, IOException {
+
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
+            PublicationStatus.DRAFT, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
+        var closedTicket = ticket.close(new Username(randomString()));
+        var httpRequest = createCompleteTicketHttpRequest(closedTicket,
+                                                          AccessRight.MANAGE_PUBLISHING_REQUESTS,
+                                                          ticket.getCustomerId());
+        handler.handleRequest(httpRequest, output, CONTEXT);
+
+        var updatedPublication = resourceService.getPublication(publication);
+
+        var file = updatedPublication.getAssociatedArtifacts().get(0);
+        assertThat(file, is(instanceOf(AdministrativeAgreement.class)));
+        assertThat(((AdministrativeAgreement) file).isAdministrativeAgreement(), is(false));
+    }
+
+    @Test
+    void shouldSetUnpublishedFilesAsApprovedFilesForPublishingRequestWhenUpdatingStatusToComplete()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
+            PublicationStatus.DRAFT, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
+        var closedTicket = ticket.complete(publication, USER_NAME);
+        var httpRequest = createCompleteTicketHttpRequest(closedTicket,
+                                                          AccessRight.MANAGE_PUBLISHING_REQUESTS,
+                                                          ticket.getCustomerId());
+        handler.handleRequest(httpRequest, output, CONTEXT);
+
+        var completedPublishingRequest = (PublishingRequestCase) ticketService.fetchTicket(ticket);
+        var approvedFile = (File) publication.getAssociatedArtifacts().get(0);
+
+        assertThat(completedPublishingRequest.getApprovedFiles(), contains(approvedFile.getIdentifier()));
+    }
+
+    @Test
+    void shouldEmptyFilesForApprovalWhenPublishingRequestIsBeingApproved()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
+            PublicationStatus.DRAFT, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
+        var expectedFilesForApproval = getUnpublishedFiles(publication);
+
+        assertThat(((PublishingRequestCase) ticket).getFilesForApproval(),
+                   containsInAnyOrder(expectedFilesForApproval));
+
+        var completedTicket = ticket.complete(publication, USER_NAME);
+        var httpRequest = createCompleteTicketHttpRequest(completedTicket,
+                                                          AccessRight.MANAGE_PUBLISHING_REQUESTS,
+                                                          ticket.getCustomerId());
+        handler.handleRequest(httpRequest, output, CONTEXT);
+        var completedPublishingRequest = (PublishingRequestCase) ticketService.fetchTicket(ticket);
+        var approvedFile = (File) publication.getAssociatedArtifacts().get(0);
+
+        assertThat(completedPublishingRequest.getApprovedFiles(), contains(approvedFile.getIdentifier()));
+        assertThat(completedPublishingRequest.getFilesForApproval(), is(emptyIterable()));
+    }
+
+    private static Object[] getUnpublishedFiles(Publication publication) {
+        return publication.getAssociatedArtifacts().stream()
+                   .filter(UnpublishedFile.class::isInstance)
+                   .map(File.class::cast)
+                   .map(FileForApproval::fromFile)
+                   .toArray();
+    }
+
     private static Map<String, String> pathParameters(Publication publication, TicketEntry ticket) {
         return Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME, publication.getIdentifier().toString(),
                       TICKET_IDENTIFIER_PATH_PARAMETER, ticket.getIdentifier().toString());
@@ -569,7 +646,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         throws JsonProcessingException {
         return new HandlerRequestBuilder<UpdateTicketRequest>(JsonUtils.dtoObjectMapper).withCurrentCustomer(customerId)
                    .withUserName(curator.toString())
-                   .withAccessRights(customerId, AccessRight.APPROVE_DOI_REQUEST.toString())
+                   .withAccessRights(customerId, AccessRight.MANAGE_DOI)
                    .withBody(new UpdateTicketRequest(ticket.getStatus(), null, viewStatus))
                    .withPathParameters(createPathParameters(ticket, publication.getIdentifier()))
                    .build();
@@ -579,7 +656,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                                                    URI customerId) throws JsonProcessingException {
         return new HandlerRequestBuilder<UpdateTicketRequest>(JsonUtils.dtoObjectMapper).withCurrentCustomer(customerId)
                    .withUserName(ticket.getAssignee().toString())
-                   .withAccessRights(customerId, AccessRight.APPROVE_DOI_REQUEST.toString())
+                   .withAccessRights(customerId, AccessRight.MANAGE_DOI)
                    .withBody(new UpdateTicketRequest(ticket.getStatus(), ticket.getAssignee(), viewStatus))
                    .withPathParameters(createPathParameters(ticket, publication.getIdentifier()))
                    .build();
@@ -612,14 +689,14 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                    .withBody(new UpdateTicketRequest(ticket.getStatus(), ticket.getAssignee(), null))
                    .withUserName(user.getUsername())
                    .withCurrentCustomer(user.getOrganizationUri())
-                   .withAccessRights(user.getOrganizationUri(), AccessRight.APPROVE_DOI_REQUEST.toString())
+                   .withAccessRights(user.getOrganizationUri(), AccessRight.MANAGE_DOI)
                    .build();
     }
 
     private InputStream createAssigneeTicketHttpRequest(TicketEntry ticket, URI customer)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper).withBody(TicketDto.fromTicket(ticket))
-                   .withAccessRights(customer, AccessRight.USER.toString())
+                   .withAccessRights(customer, AccessRight.USER)
                    .withCurrentCustomer(customer)
                    .withUserName(USER_NAME.getValue())
                    .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
@@ -630,13 +707,13 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     }
 
     private InputStream authorizedUserCompletesTicket(TicketEntry ticket) throws JsonProcessingException {
-        return createCompleteTicketHttpRequest(ticket, AccessRight.APPROVE_DOI_REQUEST, ticket.getCustomerId());
+        return createCompleteTicketHttpRequest(ticket, AccessRight.MANAGE_DOI, ticket.getCustomerId());
     }
 
     private InputStream createCompleteTicketHttpRequest(TicketEntry ticket, AccessRight accessRight, URI customer)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper).withBody(TicketDto.fromTicket(ticket))
-                   .withAccessRights(customer, accessRight.toString())
+                   .withAccessRights(customer, accessRight)
                    .withCurrentCustomer(customer)
                    .withUserName(USER_NAME.getValue())
                    .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
@@ -650,7 +727,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         throws JsonProcessingException {
         URI customer = randomUri();
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper).withBody(DoiRequestDto.empty())
-                   .withAccessRights(customer, AccessRight.APPROVE_DOI_REQUEST.toString())
+                   .withAccessRights(customer, AccessRight.MANAGE_DOI)
                    .withCurrentCustomer(customer)
                    .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
                                               publicationIdentifier, TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME,
@@ -666,7 +743,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                    .withUserName(randomString())
                    .withBody(new UpdateTicketRequest(ticket.getStatus(), null, ViewStatus.UNREAD))
                    .withPathParameters(createPathParameters(ticket, wrongPublicationIdentifier))
-                   .withAccessRights(ticket.getCustomerId(), AccessRight.APPROVE_DOI_REQUEST.toString())
+                   .withAccessRights(ticket.getCustomerId(), AccessRight.MANAGE_DOI)
                    .build();
     }
 

@@ -10,7 +10,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomLocalDate;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import com.amazonaws.services.dynamodbv2.xspec.S;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,6 +40,7 @@ import no.sikt.nva.brage.migration.record.Type;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -98,7 +98,7 @@ public class NvaBrageMigrationDataGenerator {
     }
 
     @NotNull
-    private static List<Organization> createAffiliationList() {
+    private static List<Corporation> createAffiliationList() {
         return List.of(
             new Organization.Builder().withId(URI.create("https://test.nva.aws.unit.no/cristin/organization/12345"))
                 .build());
@@ -250,6 +250,7 @@ public class NvaBrageMigrationDataGenerator {
         private String articleNumber;
         private String subjectCode;
         private Set<String> hasPart;
+        private List<String> ismnList;
 
         public static URI randomHandle() {
             return UriWrapper.fromUri("http://hdl.handle.net/11250/" + randomInteger()).getUri();
@@ -594,6 +595,11 @@ public class NvaBrageMigrationDataGenerator {
             return this;
         }
 
+        public Builder withIsmn(List<String> ismnList) {
+            this.ismnList = ismnList;
+            return this;
+        }
+
         public Builder withDescription(List<String> descriptions) {
             this.descriptions = descriptions;
             return this;
@@ -754,6 +760,7 @@ public class NvaBrageMigrationDataGenerator {
             publication.getPublicationContext().setSeries(new Series(seriesId));
             publication.setPartOfSeries(seriesNumberRecord);
             publication.setIsbnList(List.of(isbn));
+            publication.setIsmnList(ismnList);
             publication.setIssnList(issnList);
             publication.setJournal(journal);
             return publication;

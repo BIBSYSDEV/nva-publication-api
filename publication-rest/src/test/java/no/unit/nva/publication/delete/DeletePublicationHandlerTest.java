@@ -13,9 +13,9 @@ import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.r
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static nva.commons.apigateway.AccessRight.EDIT_ALL_NON_DEGREE_RESOURCES;
-import static nva.commons.apigateway.AccessRight.EDIT_OWN_INSTITUTION_RESOURCES;
-import static nva.commons.apigateway.AccessRight.PUBLISH_DEGREE;
+import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_ALL;
+import static nva.commons.apigateway.AccessRight.USER;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.apache.http.HttpStatus.SC_ACCEPTED;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -29,9 +29,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,6 +45,7 @@ import java.util.Map;
 import java.util.Set;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
@@ -52,6 +56,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
@@ -59,6 +64,7 @@ import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -80,14 +86,20 @@ import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
+import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 
 class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
     public static final String WILDCARD = "*";
     public static final String SOME_USER = "some_other_user";
     private static final String EXTERNAL_CLIENT_ID = "external-client-id";
+    public static final String NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY = "NVA_PERSISTED_STORAGE_BUCKET_NAME";
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
     private static final String EVENT_BUS_NAME = "test-event-bus-name";
+    private static final String API_HOST = "API_HOST";
+    private static final String PUBLICATION = "publication";
     private final Context context = new FakeContext();
     private DeletePublicationHandler handler;
     private ResourceService publicationService;
@@ -97,6 +109,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     private GetExternalClientResponse getExternalClientResponse;
     private TicketService ticketService;
     private FakeEventBridgeClient eventBridgeClient;
+    private S3Client s3Client;
 
     @BeforeEach
     public void setUp() throws NotFoundException {
@@ -106,8 +119,9 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         publicationService = new ResourceService(client, Clock.systemDefaultZone());
         ticketService = new TicketService(client);
         eventBridgeClient = new FakeEventBridgeClient(EVENT_BUS_NAME);
+        s3Client = mock(S3Client.class);
         handler = new DeletePublicationHandler(publicationService, ticketService, environment, identityServiceClient,
-                                               eventBridgeClient);
+                                               eventBridgeClient, s3Client);
         outputStream = new ByteArrayOutputStream();
     }
 
@@ -254,7 +268,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         var publication = createAndPersistPublicationWithoutDoi(true);
 
         var inputStream = createHandlerRequest(publication.getIdentifier(), randomString(), randomUri(),
-                                               AccessRight.USER);
+                                               USER);
         handler.handleRequest(inputStream, outputStream, context);
 
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
@@ -272,7 +286,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         var inputStream = createHandlerRequest(publication.getIdentifier(), randomString(), randomUri(),
-                                               AccessRight.USER, randomUri());
+                                               USER, randomUri());
         handler.handleRequest(inputStream, outputStream, context);
 
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
@@ -290,7 +304,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
-        var inputStream = createHandlerRequest(publication.getIdentifier(), userName, randomUri(), AccessRight.USER,
+        var inputStream = createHandlerRequest(publication.getIdentifier(), userName, randomUri(), USER,
                                                userCristinId);
         handler.handleRequest(inputStream, outputStream, context);
 
@@ -300,24 +314,54 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldProduceUpdateDoiEventWhenUnpublishingIsSuccessful()
-            throws ApiGatewayException, IOException {
+        throws ApiGatewayException, IOException {
 
-            var userCristinId = randomUri();
-            var userName = randomString();
-            var doi = randomUri();
+        var userCristinId = randomUri();
+        var userName = randomString();
+        var doi = randomUri();
 
-            var publication = createPublicationWithContributorAndDoi(userCristinId, userName, doi);
+        var publication = createPublicationWithContributorAndDoi(userCristinId, userName, doi);
 
-            publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
-            var inputStream = createHandlerRequest(publication.getIdentifier(), userName, randomUri(), AccessRight.USER,
-                                                   userCristinId);
-            handler.handleRequest(inputStream, outputStream, context);
+        var inputStream = createHandlerRequest(publication.getIdentifier(), userName, randomUri(), USER,
+                                               userCristinId);
+        handler.handleRequest(inputStream, outputStream, context);
 
-            assertTrue(eventBridgeClient.getRequestEntries()
-                           .stream()
-                           .anyMatch(entry -> entry.source().equals(NVA_PUBLICATION_DELETE_SOURCE)
-                                      && entry.detailType().equals(LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS)));
+        assertTrue(eventBridgeClient.getRequestEntries()
+                       .stream()
+                       .anyMatch(entry -> entry.source().equals(NVA_PUBLICATION_DELETE_SOURCE)
+                                          && entry.detailType().equals(LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS)));
+    }
+
+    @Test
+    void shouldProduceUpdateDoiEventWithDuplicateWhenUnpublishing()
+        throws ApiGatewayException, IOException {
+
+        var userCristinId = randomUri();
+        var userName = randomString();
+        var doi = randomUri();
+        var duplicate = SortableIdentifier.next();
+
+        var publication = createPublicationWithOwnerAndDoi(userCristinId, userName, doi);
+
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+
+        var inputStream = createRequestWithDuplicateOfValue(publication.getIdentifier(), userName, randomUri(),
+                                                            USER, duplicate);
+
+        handler.handleRequest(inputStream, outputStream, context);
+
+        assertThat(eventBridgeClient.getRequestEntries()
+                       .stream()
+                       .filter(a -> a.source().equals(NVA_PUBLICATION_DELETE_SOURCE))
+                       .map(DeletePublicationHandlerTest::getDoiMetadataUpdateEvent)
+                       .map(LambdaDestinationInvocationDetail::responsePayload)
+                       .filter(a -> nonNull(a.getDuplicateOf()))
+                       .findFirst()
+                       .orElseThrow()
+                       .getDuplicateOf(),
+                   is(equalTo(toPublicationUri(duplicate.toString()))));
     }
 
     @Test
@@ -330,7 +374,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         var publication = createAndPersistPublicationWithoutDoiAndWithResourceOwner(userName, institutionId);
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
-        var inputStream = createHandlerRequest(publication.getIdentifier(), userName, institutionId, AccessRight.USER);
+        var inputStream = createHandlerRequest(publication.getIdentifier(), userName, institutionId, USER);
         handler.handleRequest(inputStream, outputStream, context);
 
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
@@ -343,7 +387,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         var publisherUri = unpublishedPublication.getPublisher().getId();
 
         var inputStream = createHandlerRequest(unpublishedPublication.getIdentifier(), randomString(), publisherUri,
-                                               AccessRight.EDIT_ALL_NON_DEGREE_RESOURCES);
+                                               AccessRight.MANAGE_RESOURCES_ALL);
         handler.handleRequest(inputStream, outputStream, context);
 
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
@@ -354,7 +398,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnNotFoundWhenPublicationDoesNotExist() throws IOException {
         var inputStream = createHandlerRequest(SortableIdentifier.next(), randomString(), randomUri(),
-                                               AccessRight.USER);
+                                               USER);
         handler.handleRequest(inputStream, outputStream, context);
 
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
@@ -369,7 +413,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         var publisherUri = publication.getPublisher().getId();
         var inputStream = createHandlerRequest(persistedPublication.getIdentifier(), randomString(), publisherUri,
-                                               AccessRight.EDIT_OWN_INSTITUTION_RESOURCES);
+                                               AccessRight.MANAGE_RESOURCES_ALL);
         handler.handleRequest(inputStream, outputStream, context);
 
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
@@ -385,7 +429,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         var publisherUri = publication.getPublisher().getId();
         var inputStream = createHandlerRequest(publication.getIdentifier(), randomString(), publisherUri,
-                                               AccessRight.EDIT_OWN_INSTITUTION_RESOURCES);
+                                               AccessRight.MANAGE_RESOURCES_STANDARD);
         handler.handleRequest(inputStream, outputStream, context);
 
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
@@ -402,7 +446,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         var publisherUri = publication.getPublisher().getId();
         var inputStream = createHandlerRequest(publication.getIdentifier(), randomString(), publisherUri,
-                                               PUBLISH_DEGREE);
+                                               MANAGE_DEGREE);
         handler.handleRequest(inputStream, outputStream, context);
 
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
@@ -416,7 +460,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         var publisherUri = publication.getPublisher().getId();
         var inputStream = createHandlerRequest(publication.getIdentifier(), randomString(), publisherUri,
-                                               AccessRight.USER);
+                                               USER);
         handler.handleRequest(inputStream, outputStream, context);
 
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
@@ -432,7 +476,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         var request = createRequestWithDuplicateOfValue(publication.getIdentifier(),
                                                         randomString(),
                                                         publication.getPublisher().getId(),
-                                                        PUBLISH_DEGREE,
+                                                        MANAGE_DEGREE,
                                                         duplicate);
         handler.handleRequest(request, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
@@ -449,7 +493,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         var institutionId = randomUri();
         var curatorUsername = randomString();
-        var curatorAccessRight = AccessRight.EDIT_OWN_INSTITUTION_RESOURCES;
+        var curatorAccessRight = AccessRight.MANAGE_RESOURCES_STANDARD;
         var resourceOwnerUsername = randomString();
 
         var publication = createAndPersistPublicationWithoutDoiAndWithResourceOwner(resourceOwnerUsername,
@@ -470,7 +514,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         var curatorUsername = randomString();
         var curatorInstitutionId = randomUri();
-        var curatorAccessRight = AccessRight.EDIT_OWN_INSTITUTION_RESOURCES;
+        var curatorAccessRight = AccessRight.MANAGE_RESOURCES_STANDARD;
 
         var resourceOwnerUsername = randomString();
         var resourceOwnerInstitutionId = randomUri();
@@ -493,7 +537,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         var publication = createAndPersistDegreeWithoutDoi();
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         var publisherUri = publication.getPublisher().getId();
-        var request = createHandlerRequest(publication.getIdentifier(), randomString(), publisherUri, PUBLISH_DEGREE);
+        var request = createHandlerRequest(publication.getIdentifier(), randomString(), publisherUri, MANAGE_DEGREE);
         handler.handleRequest(request, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
         var persistedTicket = ticketService.fetchTicketByResourceIdentifier(publication.getPublisher().getId(),
@@ -511,7 +555,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         var publisherUri = publication.getPublisher().getId();
         var request = createHandlerRequest(publication.getIdentifier(), randomString(),
-                                           publisherUri, EDIT_ALL_NON_DEGREE_RESOURCES);
+                                           publisherUri, MANAGE_RESOURCES_ALL);
         handler.handleRequest(request, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
 
@@ -520,6 +564,27 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(SC_ACCEPTED)));
         assertThat(deletePublication.getStatus(), is(equalTo(PublicationStatus.DELETED)));
         assertThat(deletePublication.getAssociatedArtifacts(), is(emptyIterable()));
+        publication.getAssociatedArtifacts().stream().filter(File.class::isInstance).map(File.class::cast).forEach(
+            file -> verify(s3Client).deleteObject(DeleteObjectRequest.builder()
+                                                      .bucket(NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY)
+                                                      .key(file.getIdentifier().toString())
+                                                      .build()));
+    }
+
+    @Test
+    void ownerUserShouldNotBeAbleToHardDeleteFiles()
+        throws ApiGatewayException, IOException {
+        var publication = createUnpublishedPublication();
+
+        var publisherUri = publication.getPublisher().getId();
+        var request = createHandlerRequest(publication.getIdentifier(),
+                                           publication.getResourceOwner().getOwner().getValue(),
+                                           publisherUri, USER);
+        handler.handleRequest(request, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
+
+        assertThat(response.getStatusCode(), is(equalTo(SC_UNAUTHORIZED)));
+        verify(s3Client, never()).deleteObject(any(DeleteObjectRequest.class));
     }
 
     private Publication createUnpublishedPublication() throws ApiGatewayException {
@@ -530,7 +595,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private InputStream createHandlerRequest(SortableIdentifier publicationIdentifier, String username,
-                                            URI institutionId, AccessRight accessRight)
+                                             URI institutionId, AccessRight accessRight)
         throws JsonProcessingException {
 
         return createHandlerRequest(publicationIdentifier, username, institutionId, accessRight, null);
@@ -540,11 +605,11 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
                                              URI institutionId, AccessRight accessRight, URI cristinId)
         throws JsonProcessingException {
         var request = new HandlerRequestBuilder<Void>(restApiMapper)
-                   .withUserName(username)
-                   .withCurrentCustomer(institutionId)
-                   .withAccessRights(institutionId, accessRight.name())
-                   .withPathParameters(
-                       Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString()));
+                          .withUserName(username)
+                          .withCurrentCustomer(institutionId)
+                          .withAccessRights(institutionId, accessRight)
+                          .withPathParameters(
+                              Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString()));
 
         if (nonNull(cristinId)) {
             request.withPersonCristinId(cristinId);
@@ -561,7 +626,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
                           .withUserName(username)
                           .withQueryParameters(Map.of("duplicate", duplicateOf.toString()))
                           .withCurrentCustomer(institutionId)
-                          .withAccessRights(institutionId, accessRight.name())
+                          .withAccessRights(institutionId, accessRight)
                           .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString()));
 
         return request.build();
@@ -587,6 +652,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     private void prepareEnvironment() {
         environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
+        when(environment.readEnv(NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY)).thenReturn(
+            NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY);
     }
 
     private void markForDeletion(Publication publication) throws ApiGatewayException {
@@ -630,7 +697,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication createPublicationWithContributorAndDoi(URI contributorId, String contributorName,
-                                                                      URI doi)
+                                                               URI doi)
         throws ApiGatewayException {
 
         var publication = randomPublication().copy()
@@ -643,6 +710,25 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         var publicationWithContributor = publication.copy().withEntityDescription(entityDesc).build();
 
         return Resource.fromPublication(publicationWithContributor)
+                   .persistNew(publicationService, UserInstance.fromPublication(publication));
+    }
+
+    private Publication createPublicationWithOwnerAndDoi(URI contributorId, String owner,
+                                                         URI doi)
+        throws ApiGatewayException {
+        var identity = new Identity.Builder().withName(owner).withId(contributorId).build();
+        var contributor = new Contributor.Builder().withIdentity(identity).withRole(new RoleType(Role.CREATOR)).build();
+        var entityDescription = randomEntityDescription(JournalArticle.class).copy()
+                                    .withContributors(List.of(contributor))
+                                    .build();
+
+        var publication = randomPublication().copy()
+                              .withEntityDescription(entityDescription)
+                              .withDuplicateOf(null)
+                              .withResourceOwner(new ResourceOwner(new Username(owner), randomUri()))
+                              .withDoi(doi).build();
+
+        return Resource.fromPublication(publication)
                    .persistNew(publicationService, UserInstance.fromPublication(publication));
     }
 
@@ -677,5 +763,22 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         return Resource.fromPublication(publication)
                    .persistNew(publicationService, UserInstance.fromPublication(publication));
+    }
+
+    private static URI toPublicationUri(String identifier) {
+        return UriWrapper.fromHost(new Environment().readEnv(API_HOST))
+                   .addChild(PUBLICATION)
+                   .addChild(identifier)
+                   .getUri();
+    }
+
+    private static LambdaDestinationInvocationDetail<DoiMetadataUpdateEvent> getDoiMetadataUpdateEvent(
+        PutEventsRequestEntry a) {
+        try {
+            return JsonUtils.dtoObjectMapper.readValue(a.detail(), new TypeReference<>() {
+            });
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -40,6 +40,10 @@ entityDescription.tags
 entityDescription.npiSubjectHeading
 entityDescription.reference.doi
 entityDescription.alternativeAbstracts
+entityDescription.reference.publicationInstance.manifestations.ensemble
+entityDescription.reference.publicationInstance.manifestations.movements
+entityDescription.reference.publicationInstance.manifestations.extent
+entityDescription.reference.publicationInstance.manifestations.publisher
 
 publicationNotes
 subjects

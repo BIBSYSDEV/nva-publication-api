@@ -5,6 +5,7 @@ import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENT
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketConfig;
@@ -13,6 +14,7 @@ import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.GoneException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.JacocoGenerated;
@@ -37,7 +39,7 @@ public class GetTicketHandler extends ApiGatewayHandler<Void, TicketDto> {
         var ticketIdentifier = extractTicketIdentifierFromPath(requestInfo);
         var publicationIdentifier = extractPublicationIdentifierFromPath(requestInfo);
         var ticket = fetchTicket(ticketIdentifier, requestInfo);
-        validatePathParameters(publicationIdentifier, ticket);
+        validateRequest(publicationIdentifier, ticket);
         var messages = ticket.fetchMessages(ticketService);
         return TicketDto.fromTicket(ticket, messages);
     }
@@ -48,7 +50,7 @@ public class GetTicketHandler extends ApiGatewayHandler<Void, TicketDto> {
     }
     
     private static boolean isElevatedUser(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString());
+        return requestInfo.userIsAuthorized(AccessRight.MANAGE_DOI);
     }
     
     private static void validateThatUserWorksForInstitution(RequestInfo requestInfo, TicketEntry ticket)
@@ -58,10 +60,13 @@ public class GetTicketHandler extends ApiGatewayHandler<Void, TicketDto> {
         }
     }
     
-    private static void validatePathParameters(SortableIdentifier publicationIdentifier, TicketEntry ticket)
-        throws NotFoundException {
+    private static void validateRequest(SortableIdentifier publicationIdentifier, TicketEntry ticket)
+        throws NotFoundException, GoneException {
         if (!ticket.getResourceIdentifier().equals(publicationIdentifier)) {
             throw new NotFoundException(TICKET_NOT_FOUND);
+        }
+        if (TicketStatus.REMOVED.equals(ticket.getStatus())) {
+            throw new GoneException("Ticket has beem removed!");
         }
     }
     

@@ -6,6 +6,7 @@ import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.FILE_EXT
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.FILENAME_EMISSION_EVENT_TOPIC;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER;
+import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUBTOPIC_SEND_EVENT_TO_NVI_PATCH_EVENT_CONSUMER;
 import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -383,6 +384,30 @@ class FileEntriesEventEmitterTest {
                                  .collect(SingletonCollector.collect());
 
         assertThat(actualSubtopic, is(equalTo(inputEvent.getDetail().getSubtopic())));
+    }
+
+    @Test
+    void shouldSendMessageWithNviPatchSubtopicAndSqsMessageShouldContainNviEntryS3location() throws IOException {
+        var sampleEntry = SampleObject.random().toJsonString();
+        var fileUri = s3Driver.insertFile(randomPath(), sampleEntry);
+        var inputEvent = createInputEventForFileWithSubtopic(fileUri, SUBTOPIC_SEND_EVENT_TO_NVI_PATCH_EVENT_CONSUMER);
+        handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
+
+        var eventReferences = amazonSQS.getMessageBodies().stream()
+                       .map(EventReference::fromJson).collect(Collectors.toSet());
+
+        assertThat(eventReferences.iterator().next().getUri(), is(equalTo(fileUri)));
+        assertThat(eventReferences.iterator().next().getSubtopic(), is(equalTo(inputEvent.getDetail().getSubtopic())));
+    }
+
+    private AwsEventBridgeEvent<EventReference> createInputEventForFileWithSubtopic(URI fileUri, String subtopic) {
+        var eventReference = new EventReference(FILENAME_EMISSION_EVENT_TOPIC,
+                                                subtopic,
+                                                fileUri,
+                                                Instant.now());
+        var request = new AwsEventBridgeEvent<EventReference>();
+        request.setDetail(eventReference);
+        return request;
     }
 
     @Test

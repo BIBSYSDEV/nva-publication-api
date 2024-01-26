@@ -23,6 +23,7 @@ import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isScie
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isScientificMonograph;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isStudentPaper;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isTextbook;
+import static nva.commons.core.attempt.Try.attempt;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -44,7 +45,10 @@ import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPictureSubtype;
 import no.unit.nva.model.instancetypes.artistic.literaryarts.LiteraryArts;
 import no.unit.nva.model.instancetypes.artistic.literaryarts.LiteraryArtsSubtypeOther;
+import no.unit.nva.model.instancetypes.artistic.music.Ismn;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
+import no.unit.nva.model.instancetypes.artistic.music.MusicPerformanceManifestation;
+import no.unit.nva.model.instancetypes.artistic.music.MusicScore;
 import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArts;
 import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArtsSubtype;
 import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArts;
@@ -122,7 +126,7 @@ public final class PublicationInstanceMapper {
             return buildPublicationInstanceWhenPlanOrBluePrint();
         }
         if (isMusic(brageRecord)) {
-            return buildPublicationInstanceWhenMusic();
+            return buildPublicationInstanceWhenMusic(brageRecord);
         }
         if (isBachelorThesis(brageRecord)) {
             return buildPublicationInstanceWhenBachelorThesis(brageRecord);
@@ -312,8 +316,30 @@ public final class PublicationInstanceMapper {
         return new NonFictionChapter(extractPages(brageRecord));
     }
 
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenMusic() {
-        return new MusicPerformance(Collections.emptyList());
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenMusic(Record brageRecord) {
+        return new MusicPerformance(extractManifestation(brageRecord));
+    }
+
+    private static List<MusicPerformanceManifestation> extractManifestation(Record brageRecord) {
+        return brageRecord
+                   .getPublication()
+                   .getIsmnList()
+                   .stream()
+                   .map(PublicationInstanceMapper::createIsmn)
+                   .map(PublicationInstanceMapper::createMusicScore)
+                   .collect(Collectors.toList());
+    }
+
+    private static MusicScore createMusicScore(Ismn ismn) {
+        return new MusicScore(null,
+                              null,
+                              null,
+                              null,
+                              ismn);
+    }
+
+    private static Ismn createIsmn(String ismn) {
+        return attempt(() -> new Ismn(ismn)).orElseThrow(e -> new InvalidIsmnRuntimeException(e.getException()));
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenDesignProduct() {

@@ -53,7 +53,7 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
     }
     
     private static boolean userIsAuthorizedToViewOtherUsersTickets(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString());
+        return requestInfo.userIsAuthorized(AccessRight.MANAGE_DOI);
     }
     
     private List<TicketDto> fetchTickets(RequestInfo requestInfo,
@@ -62,10 +62,9 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
         var ticketEntries = userIsAuthorizedToViewOtherUsersTickets(requestInfo)
                    ? fetchTicketsForElevatedUser(userInstance, publicationIdentifier)
                    : fetchTicketsForPublicationOwner(publicationIdentifier, userInstance);
-
         return ticketEntries.map(this::createDto).collect(Collectors.toList());
     }
-    
+
     private Stream<TicketEntry> fetchTicketsForPublicationOwner(SortableIdentifier publicationIdentifier,
                                                               UserInstance userInstance)
         throws ApiGatewayException {

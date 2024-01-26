@@ -1,6 +1,7 @@
 package no.unit.nva.expansion.model;
 
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
+import static no.unit.nva.expansion.model.ExpandedImportCandidateOrganization.CONTENT_TYPE;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.ID_JSON_PTR;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
@@ -11,6 +12,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -46,7 +48,6 @@ import no.unit.nva.model.contexttypes.MediaContributionPeriodical;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Report;
-import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
@@ -124,10 +125,22 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     @MethodSource("importCandidateContextTypeProvider")
     void shouldExpandImportCandidateSuccessfully(PublicationContext publicationContext) {
         var importCandidate = randomImportCandidate(publicationContext);
-        var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate);
+        importCandidate.getEntityDescription().getContributors().stream()
+            .map(Contributor::getAffiliations)
+            .flatMap(List::stream)
+            .filter(Organization.class::isInstance)
+            .map(Organization.class::cast)
+            .forEach(this::mockOrganizations);
+        var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
 
         assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
         this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
+    }
+
+    private void mockOrganizations(Organization org) {
+        when(uriRetriever.getRawContent(org.getId(), CONTENT_TYPE)).
+            thenReturn(Optional.of(new CristinOrganization(org.getId(), null, null, null, null,
+                                                           Map.of("no", "label")).toJsonString()));
     }
 
     public ImportCandidate randomImportCandidate(PublicationContext publicationContext) {
@@ -157,6 +170,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     void shouldReturnExpandedResourceWithoutLossOfInformation(Class<?> instanceType)
         throws JsonProcessingException, BadRequestException, JSONException {
         var publication = createPublicationWithoutDoi(instanceType);
+        publication.setFundings(List.of());
         var expandedResource = fromPublication(uriRetriever, publication);
 
         var expandedResourceAsJson = expandedResource.toJsonString();
@@ -304,7 +318,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             if (expandedDataEntryClass.equals(ExpandedResource.class)) {
                 return createExpandedResource(publication, uriRetriever);
             } else if (expandedDataEntryClass.equals(ExpandedImportCandidate.class)) {
-                return createExpandedImportCandidate(publication);
+                return createExpandedImportCandidate(publication, uriRetriever);
             } else if (expandedDataEntryClass.equals(ExpandedDoiRequest.class)) {
                 resourceService.publishPublication(UserInstance.fromPublication(publication),
                                                    publication.getIdentifier());
@@ -343,7 +357,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         }
 
         private static ExpandedDataEntryWithAssociatedPublication createExpandedImportCandidate(
-            Publication publication) {
+            Publication publication, UriRetriever uriRetriever) {
             var importCandidate = new Builder().withPublication(publication).build();
             var authorizedBackendClient = mock(AuthorizedBackendUriRetriever.class);
             when(authorizedBackendClient.getRawContent(any(), any())).thenReturn(Optional.of(
@@ -355,7 +369,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                                                                         randomString(),
                                                                         Map.of())),
                                         randomString(), Map.of()).toJsonString()));
-            var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate);
+            var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
             return new ExpandedDataEntryWithAssociatedPublication(expandedImportCandidate);
         }
 

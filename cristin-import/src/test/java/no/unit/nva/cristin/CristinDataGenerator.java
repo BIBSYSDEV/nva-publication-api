@@ -35,6 +35,9 @@ import java.util.stream.Stream;
 import net.datafaker.providers.base.BaseFaker;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.lambda.constants.HardcodedValues;
+import no.unit.nva.cristin.mapper.CristinLocale;
+import no.unit.nva.cristin.mapper.CristinLectureOrPosterMetaData;
+import no.unit.nva.cristin.mapper.PresentationEvent;
 import no.unit.nva.cristin.mapper.artisticproduction.ArtisticGenre;
 import no.unit.nva.cristin.mapper.artisticproduction.ArtisticProductionTimeUnit;
 import no.unit.nva.cristin.mapper.artisticproduction.CristinArtisticProduction;
@@ -102,7 +105,8 @@ public final class CristinDataGenerator {
     private static final CristinSecondaryCategory[] BOOK_SECONDARY_CATEGORIES = new CristinSecondaryCategory[]{
         MONOGRAPH, TEXTBOOK, NON_FICTION_BOOK, ENCYCLOPEDIA, POPULAR_BOOK, REFERENCE_MATERIAL};
     private static final Integer VALID_PUBLISHER_NSD_NUMBER = 5269;
-    private static final Integer VALID_JOURNAL_NSD_CODE = 339714;
+    public static final String J = "J";
+    public static final int VALID_SERIES_NSD_CODE = 339741;
 
     private CristinDataGenerator() {
 
@@ -170,6 +174,13 @@ public final class CristinDataGenerator {
 
     public static CristinObject randomObject() {
         return newCristinObject(largeRandomNumber());
+    }
+
+    public static CristinObject randomObjectWithReportedYear(int year) {
+        var cristinObject = newCristinObject(largeRandomNumber());
+        cristinObject.setYearReported(year);
+        cristinObject.setCristinLocales(randomCristinLocales());
+        return cristinObject;
     }
 
     public static CristinObject randomObject(String secondaryCategory) {
@@ -511,7 +522,7 @@ public final class CristinDataGenerator {
     private static CristinContributorsAffiliation creatCristinContributorsAffiliation(
         CristinContributorRoleCode roleCode) {
         return CristinContributorsAffiliation.builder()
-                   .withInstitutionIdentifier(threeDigitPositiveNumber())
+                   .withInstitutionIdentifier(threeDigitPositiveNumberKnownInstitution())
                    .withDepartmentIdentifier(threeDigitPositiveNumber())
                    .withGroupNumber(threeDigitPositiveNumber())
                    .withSubdepartmentIdentifier(threeDigitPositiveNumber())
@@ -540,6 +551,10 @@ public final class CristinDataGenerator {
         return randomArrayElement(CristinContributorRoleCode.values(), USE_WHOLE_ARRAY);
     }
 
+    private static Integer threeDigitPositiveNumberKnownInstitution() {
+        return RANDOM.nextInt(1, 1000);
+    }
+
     private static int threeDigitPositiveNumber() {
         return RANDOM.nextInt(1000);
     }
@@ -547,7 +562,7 @@ public final class CristinDataGenerator {
     private static CristinJournalPublicationJournal randomBookSeries() {
         return CristinJournalPublicationJournal.builder()
                    .withJournalTitle(randomString())
-                   .withNsdCode(VALID_JOURNAL_NSD_CODE)
+                   .withNsdCode(VALID_SERIES_NSD_CODE)
                    .withIssn(randomIssn())
                    .withIssnOnline(randomIssn())
 
@@ -610,6 +625,24 @@ public final class CristinDataGenerator {
                    .withPublicationYear(randomYear())
                    .withPublicationOwner(randomString())
                    .withContributors(randomContributors())
+                   .withLectureOrPosterMetaData(randomLectureOrPosterMetaData())
+                   .build();
+    }
+
+    private static CristinLectureOrPosterMetaData randomLectureOrPosterMetaData() {
+        return CristinLectureOrPosterMetaData.builder()
+                   .withEvent(createRandomCristinEvent())
+                   .build();
+    }
+
+    private static PresentationEvent createRandomCristinEvent() {
+        return PresentationEvent.builder()
+                   .withTitle(randomString())
+                   .withAgent(randomString())
+                   .withCountryCode(randomString())
+                   .withPlace(randomDoiString())
+                   .withFrom("2023-11-28T00:00:00")
+                   .withTo("2023-11-29T00:00:00")
                    .build();
     }
 
@@ -692,7 +725,24 @@ public final class CristinDataGenerator {
                    .withYearReported(randomYear())
                    .withContributors(contributors)
                    .withBookOrReportMetadata(randomBookOrReportMetadata())
-                   .withPublicationOwner(HardcodedValues.HARDCODED_PUBLICATIONS_OWNER)
+                   .withPublicationOwner(HardcodedValues.SIKT_OWNER)
+                   .build();
+    }
+
+    private static List<CristinLocale> randomCristinLocales() {
+        return IntStream.range(0, 5).boxed().map(i -> randomLocale()).toList();
+    }
+
+    private static CristinLocale randomLocale() {
+        return CristinLocale.builder()
+                   .withInstitutionIdentifier(randomString())
+                   .withDepartmentIdentifier(randomString())
+                   .withOwnerCode(randomString())
+                   .withSubDepartmentIdentifier(randomString())
+                   .withGroupIdentifier(randomString())
+                   .withControlledBy(randomString())
+                   .withDateControlled(LocalDate.now())
+                   .withControlStatus(J)
                    .build();
     }
 

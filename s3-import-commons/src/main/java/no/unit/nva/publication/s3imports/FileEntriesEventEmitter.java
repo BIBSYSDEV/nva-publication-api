@@ -5,6 +5,7 @@ import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultS3Cl
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUBTOPIC_SEND_EVENT_TO_CRISTIN_ENTRIES_PATCH_EVENT_CONSUMER;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER;
+import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUBTOPIC_SEND_EVENT_TO_NVI_PATCH_EVENT_CONSUMER;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUPPORTED_SUBTOPICS;
 import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static nva.commons.core.attempt.Try.attempt;
@@ -78,7 +79,9 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
         this.subtopicToQueueUrl = Map.of(SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER,
                                          new Environment().readEnv("CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL"),
                                          SUBTOPIC_SEND_EVENT_TO_CRISTIN_ENTRIES_PATCH_EVENT_CONSUMER,
-                                         new Environment().readEnv("CRISTIN_IMPORT_PATCH_QUEUE_URL"));
+                                         new Environment().readEnv("CRISTIN_IMPORT_PATCH_QUEUE_URL"),
+                                         SUBTOPIC_SEND_EVENT_TO_NVI_PATCH_EVENT_CONSUMER,
+                                         new Environment().readEnv("CRISTIN_IMPORT_NVI_PATCH_QUEUE_URL"));
         this.s3Client = s3Client;
         this.amazonSQS = amazonSQS;
     }
@@ -198,9 +201,14 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
     private List<EventReference> createEventReferences(
         Stream<FileContentsEvent<JsonNode>> eventBodies, EventReference input) {
         var s3Driver = new S3Driver(s3Client, input.extractBucketName());
-        return eventBodies
-                   .map(attempt(fileContents -> fileContents.toEventReference(s3Driver)))
-                   .map(Try::orElseThrow).collect(Collectors.toList());
+        if (input.getSubtopic().equals(SUBTOPIC_SEND_EVENT_TO_NVI_PATCH_EVENT_CONSUMER)) {
+            return eventBodies.map(attempt(FileContentsEvent::toCristinNviEventReference))
+                .map(Try::orElseThrow).collect(Collectors.toList());
+        } else {
+            return eventBodies
+                       .map(attempt(fileContents -> fileContents.toEventReference(s3Driver)))
+                       .map(Try::orElseThrow).collect(Collectors.toList());
+        }
     }
 
     private String fetchFileFromS3(EventReference input, S3Driver s3Driver) {

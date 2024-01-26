@@ -533,6 +533,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                  false,
                                  null,
                                  null,
+                                 null,
                                  null);
     }
 
@@ -581,7 +582,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                    .withUserName(randomString())
                    .withBody(importCandidate)
                    .withCurrentCustomer(user.getOrganizationUri())
-                   .withAccessRights(user.getOrganizationUri(), AccessRight.PROCESS_IMPORT_CANDIDATE.name())
+                   .withAccessRights(user.getOrganizationUri(), AccessRight.MANAGE_IMPORT)
                    .build();
     }
 

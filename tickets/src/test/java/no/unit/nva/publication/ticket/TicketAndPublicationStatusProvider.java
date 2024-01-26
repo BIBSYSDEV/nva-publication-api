@@ -7,7 +7,6 @@ import java.util.stream.Stream;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.testing.http.FakeHttpResponse;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;

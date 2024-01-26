@@ -1,5 +1,6 @@
 package no.unit.nva.publication.fetch;
 
+import static com.google.common.net.HttpHeaders.CACHE_CONTROL;
 import static com.google.common.net.HttpHeaders.LOCATION;
 import static com.google.common.net.MediaType.ANY_TEXT_TYPE;
 import static com.google.common.net.MediaType.HTML_UTF_8;
@@ -9,6 +10,7 @@ import static java.net.HttpURLConnection.HTTP_MOVED_PERM;
 import static java.net.HttpURLConnection.HTTP_SEE_OTHER;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
+import static no.unit.nva.publication.fetch.DeletedPublicationResponse.craftDeletedPublicationResponse;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_DATACITE_XML;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.apigateway.MediaTypes.SCHEMA_ORG;
@@ -28,7 +30,6 @@ import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.doi.DataCiteMetadataDtoMapper;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.PublicationDetail;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
@@ -44,12 +45,9 @@ import nva.commons.apigateway.exceptions.UnsupportedAcceptHeaderException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
-    public static final Logger logger = LoggerFactory.getLogger(FetchPublicationHandler.class);
     public static final Clock CLOCK = Clock.systemDefaultZone();
     public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
     public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
@@ -110,19 +108,21 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         if (nonNull(publication.getDuplicateOf())) {
             return produceRedirect(publication.getDuplicateOf());
         } else {
-            throw new GoneException(GONE_MESSAGE, PublicationDetail.fromPublication(publication).toString());
+            throw new GoneException(GONE_MESSAGE,
+                                    craftDeletedPublicationResponse(publication));
         }
     }
 
     private String produceRedirect(URI duplicateOf) {
         statusCode = HTTP_MOVED_PERM;
-        addAdditionalHeaders(() -> Map.of(LOCATION, duplicateOf.toString()));
+        // cache control header here to avoid permanent browser caching of the redirect
+        addAdditionalHeaders(() -> Map.of(LOCATION, duplicateOf.toString(), CACHE_CONTROL, "no-cache"));
         return null;
     }
 
     private String produceDraftPublicationResponse(RequestInfo requestInfo, Publication publication)
         throws UnsupportedAcceptHeaderException, NotFoundException {
-            return producePublishedPublicationResponse(requestInfo, publication);
+        return producePublishedPublicationResponse(requestInfo, publication);
     }
 
     @Override

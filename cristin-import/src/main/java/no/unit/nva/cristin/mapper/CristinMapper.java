@@ -2,7 +2,6 @@ package no.unit.nva.cristin.mapper;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.UNIT_CUSTOMER_ID;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.HRCS_ACTIVITIES_MAP;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.HRCS_CATEGORIES_MAP;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS;
@@ -28,6 +27,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -50,6 +50,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.funding.Funding;
+import nva.commons.core.Environment;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Try;
@@ -67,7 +68,19 @@ public class CristinMapper extends CristinMappingModule {
     public static final String CRISTIN_INSTITUTION_CODE = "CRIS";
     public static final String UNIT_INSTITUTION_CODE = "UNIT";
     public static final ResourceOwner SIKT_OWNER = new CristinLocale("SIKT", "20754", "0", "0",
-                                                                     "0").toResourceOwner();
+                                                                     "0", null, null, null).toResourceOwner();
+    private static final String SCOPUS_CASING_ACCEPTED_BY_FRONTEND = "Scopus";
+    private static final String DOMAIN_NAME = new Environment().readEnv("DOMAIN_NAME");
+    private static final Map<String, String> CUSTOMER_MAP = Map.of("api.sandbox.nva.aws.unit.no",
+                                                                   "bb3d0c0c-5065-4623-9b98-5810983c2478",
+                                                                   "api.dev.nva.aws.unit.no",
+                                                                   "bb3d0c0c-5065-4623-9b98-5810983c2478",
+                                                                   "api.test.nva.aws.unit.no",
+                                                                   "0baf8fcb-b18d-4c09-88bb-956b4f659103",
+                                                                   "api.e2e.nva.aws.unit.no",
+                                                                   "bb3d0c0c-5065-4623-9b98-5810983c2478",
+                                                                   "api.nva.unit.no",
+                                                                   "22139870-8d31-4df9-bc45-14eb68287c4a");
 
     public CristinMapper(CristinObject cristinObject) {
         super(cristinObject, ChannelRegistryMapper.getInstance());
@@ -140,6 +153,21 @@ public class CristinMapper extends CristinMappingModule {
                    .collect(Collectors.toList());
     }
 
+    private static PublicationDate convertToPublicationDate(LocalDate publishedDate) {
+        return new PublicationDate
+                       .Builder()
+                   .withYear(String.valueOf(publishedDate.getYear()))
+                   .withMonth(String.valueOf(publishedDate.getMonthValue()))
+                   .withDay(String.valueOf(publishedDate.getDayOfMonth()))
+                   .build();
+    }
+
+    private static String craftSourceCode(CristinSource cristinSource) {
+        return SCOPUS_CASING_ACCEPTED_BY_FRONTEND.equalsIgnoreCase(cristinSource.getSourceCode())
+                   ? SCOPUS_CASING_ACCEPTED_BY_FRONTEND
+                   : cristinSource.getSourceCode();
+    }
+
     private URI extractHandle() {
         return Optional.ofNullable(cristinObject.getCristinAssociatedUris())
                    .flatMap(CristinMapper::extractArchiveUri)
@@ -157,11 +185,13 @@ public class CristinMapper extends CristinMappingModule {
     private ResourceOwner extractResourceOwner() {
         var cristinLocales = getValidCristinLocales();
         if (shouldUseOwnerCodeCreated(cristinLocales)) {
-            return new CristinLocale(cristinObject.getOwnerCodeCreated(),
-                                     cristinObject.getInstitutionIdentifierCreated(),
-                                     cristinObject.getDepartmentIdentifierCreated(),
-                                     cristinObject.getSubDepartmendIdentifierCreated(),
-                                     cristinObject.getGroupIdentifierCreated()).toResourceOwner();
+            return CristinLocale.builder()
+                       .withOwnerCode(cristinObject.getOwnerCodeCreated())
+                       .withInstitutionIdentifier(cristinObject.getInstitutionIdentifierCreated())
+                       .withDepartmentIdentifier(cristinObject.getDepartmentIdentifierCreated())
+                       .withSubDepartmentIdentifier(cristinObject.getSubDepartmendIdentifierCreated())
+                       .withGroupIdentifier(cristinObject.getGroupIdentifierCreated())
+                       .build().toResourceOwner();
         }
         if (cristinLocalesContainsCristinOwnerCodeCreated(cristinLocales)) {
             return bestMatchingResourceOwner(cristinLocales);
@@ -246,8 +276,12 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     private Organization extractOrganization() {
-        UriWrapper customerId = UriWrapper.fromUri(NVA_API_DOMAIN).addChild(PATH_CUSTOMER, UNIT_CUSTOMER_ID);
+        UriWrapper customerId = UriWrapper.fromUri(NVA_API_DOMAIN).addChild(PATH_CUSTOMER, getSiktCustomerId());
         return new Organization.Builder().withId(customerId.getUri()).build();
+    }
+
+    private String getSiktCustomerId() {
+        return Optional.ofNullable(CUSTOMER_MAP.get(DOMAIN_NAME)).orElseThrow();
     }
 
     private Instant extractDate() {
@@ -370,7 +404,15 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     private PublicationDate extractPublicationDate() {
-        return new PublicationDate.Builder().withYear(cristinObject.getPublicationYear().toString()).build();
+        return Optional.ofNullable(cristinObject.getEntryPublishedDate())
+                   .map(CristinMapper::convertToPublicationDate)
+                   .orElseGet(this::extractFromPublicationYear);
+    }
+
+    private PublicationDate extractFromPublicationYear() {
+        return new PublicationDate.Builder()
+                   .withYear(cristinObject.getPublicationYear().toString())
+                   .build();
     }
 
     private CristinTitle extractCristinMainTitle() {
@@ -429,7 +471,7 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     private AdditionalIdentifier mapCristinSourceToAdditionalIdentifier(CristinSource cristinSource) {
-        return new AdditionalIdentifier(cristinSource.getSourceCode(), cristinSource.getSourceIdentifier());
+        return new AdditionalIdentifier(craftSourceCode(cristinSource), cristinSource.getSourceIdentifier());
     }
 
     private String extractNpiSubjectHeading() {

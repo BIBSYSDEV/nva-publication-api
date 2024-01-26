@@ -31,6 +31,7 @@ import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
@@ -50,6 +51,7 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
 
@@ -111,7 +113,7 @@ public final class BrageNvaMapper {
     }
 
     private static List<String> filterOutEmptyValues(List<String> descriptions) {
-        return descriptions.stream().filter(string -> !string.isBlank()).toList();
+        return descriptions.stream().filter(StringUtils::isNotBlank).toList();
     }
 
     private static List<AssociatedArtifact> extractAssociatedArtifacts(Record brageRecord) {
@@ -282,17 +284,17 @@ public final class BrageNvaMapper {
                    .build();
     }
 
-    private static List<Organization> generateAffiliations(no.sikt.nva.brage.migration.record.Contributor contributor) {
+    private static List<Corporation> generateAffiliations(no.sikt.nva.brage.migration.record.Contributor contributor) {
         return Optional.ofNullable(contributor.getAffiliations())
                    .map(BrageNvaMapper::getCristinOrganizationList)
                    .orElse(null);
     }
 
-    private static List<Organization> getCristinOrganizationList(List<Affiliation> affiliations) {
+    private static List<Corporation> getCristinOrganizationList(List<Affiliation> affiliations) {
         return affiliations.stream().map(BrageNvaMapper::toCristinOrganization).toList();
     }
 
-    private static Organization toCristinOrganization(Affiliation affiliation) {
+    private static Corporation toCristinOrganization(Affiliation affiliation) {
         return new Organization.Builder().withId(generateCristinOrganization(affiliation)).build();
     }
 

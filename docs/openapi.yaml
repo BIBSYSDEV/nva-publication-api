@@ -62,7 +62,11 @@ paths:
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchPublicationFunction.Arn}:live/invocations
-        responses: { }
+        responses:
+          301:
+            statusCode: "301"
+            responseParameters:
+              method.response.header.Location: "integration.response.body.redirect.url"
         httpMethod: POST
         type: AWS_PROXY
       responses:
@@ -81,6 +85,18 @@ paths:
             application/vnd.schemaorg.ld+json:
               schema:
                 $ref: '#/components/schemas/PublicationSchemaOrg'
+        '301':
+          description: MOVED PERMANENTLY
+          headers:
+            Location:
+              description: URI to the new location
+              schema:
+                type: string
+                format: URI
+            Cache-Control:
+              description: Cache-Control header
+              schema:
+                type: string
         '410':
           description: Permanently gone
           content:
@@ -342,6 +358,43 @@ paths:
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UpdateTicketHandler.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+    delete:
+      description: Delete existing ticket
+      responses:
+        200:
+          description: Ok
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        404:
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        502:
+          description: Bad gateway
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      security:
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DeleteTicketHandler.Arn}/invocations
         responses: { }
         httpMethod: POST
         type: AWS_PROXY

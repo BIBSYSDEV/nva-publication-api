@@ -14,6 +14,7 @@ import static no.unit.nva.publication.TestingUtils.randomUserInstance;
 import static no.unit.nva.publication.model.business.TicketStatus.CLOSED;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
+import static no.unit.nva.publication.model.business.TicketStatus.REMOVED;
 import static no.unit.nva.publication.model.business.UserInstance.fromTicket;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
@@ -52,6 +53,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -60,10 +62,12 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.TestingUtils;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -108,6 +112,8 @@ public class TicketServiceTest extends ResourcesLocalTest {
     private static final String ONWER_AFFILIATION = "ownerAffiliation";
     private static final String FINALIZED_BY = "finalizedBy";
     private static final String DOI = "doi";
+    public static final String APPROVED_FILES = "approvedFiles";
+    public static final String FILES_FOR_APPROVAL = "filesForApproval";
     private ResourceService resourceService;
     private TicketService ticketService;
     private UserInstance owner;
@@ -173,7 +179,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         assertThat(persistedTicket, is(equalTo(ticket)));
         assertThat(persistedTicket,
                    doesNotHaveEmptyValuesIgnoringFields(Set.of(ONWER_AFFILIATION, ASSIGNEE, FINALIZED_BY,
-                                                               FINALIZED_DATE)));
+                                                               FINALIZED_DATE, APPROVED_FILES, FILES_FOR_APPROVAL)));
     }
 
     @Test
@@ -187,20 +193,6 @@ public class TicketServiceTest extends ResourcesLocalTest {
         assertThat(persistedTicket,
                    doesNotHaveEmptyValuesIgnoringFields(Set.of(ONWER_AFFILIATION, ASSIGNEE, FINALIZED_BY,
                                                                FINALIZED_DATE)));
-    }
-
-    // This action fails with a TransactionFailedException which contains no information about why the transaction
-    // failed, which may fail because of multiple reasons including what we are testing for here.
-    @Test
-    void shouldThrowExceptionOnMoreThanOneDoiRequestsForTheSamePublication() throws ApiGatewayException {
-        var publication = persistPublication(owner, DRAFT);
-
-        var firstTicket = createUnpersistedTicket(publication, DoiRequest.class);
-        attempt(() -> firstTicket.persistNewTicket(ticketService)).orElseThrow();
-
-        var secondTicket = createUnpersistedTicket(publication, DoiRequest.class);
-        Executable action = () -> secondTicket.persistNewTicket(ticketService);
-        assertThrows(TransactionFailedException.class, action);
     }
 
     @Test
@@ -705,9 +697,64 @@ public class TicketServiceTest extends ResourcesLocalTest {
         var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
         var ticket = TicketTestUtils.createNonPersistedTicket(publication, ticketType);
 
-        var persistedCompletedTicket = ((PublishingRequestCase) ticket).persistAutoComplete(ticketService);
+        var persistedCompletedTicket = ((PublishingRequestCase) ticket).persistAutoComplete(ticketService, publication);
 
         assertThat(persistedCompletedTicket.getStatus(), is(equalTo(COMPLETED)));
+    }
+
+    @ParameterizedTest(name = "ticket type:{0}")
+    @MethodSource("ticketTypeProvider")
+    void shouldBeAbleToRemoveTicket(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
+        var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
+        var ticket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                         .persistNewTicket(ticketService);
+        ticket.remove(UserInstance.fromTicket(ticket)).persistUpdate(ticketService);
+
+        var persistedTicket = ticket.fetch(ticketService);
+        assertThat(persistedTicket.getStatus(), is(equalTo(REMOVED)));
+    }
+
+    @Test
+    void shouldBeAbleToRemoveDoiRequestAndCreateNewDoiRequest() throws ApiGatewayException {
+        var ticketType = DoiRequest.class;
+        var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
+        var ticket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                         .persistNewTicket(ticketService);
+        ticket.remove(UserInstance.fromTicket(ticket)).persistUpdate(ticketService);
+
+        var secondTicket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                       .persistNewTicket(ticketService);
+        assertThat(secondTicket.getStatus(), is(equalTo(PENDING)));
+    }
+
+    @Test
+    void shouldThrowUnsupportedOperationExceptionWhenSettingFileForNotCompletedPublishingRequest()
+        throws ApiGatewayException {
+        var ticketType = PublishingRequestCase.class;
+        var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
+        var ticket = PublishingRequestCase.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                         .persistNewTicket(ticketService);
+
+        assertThrows(UnsupportedOperationException.class,
+                     () -> ((PublishingRequestCase) ticket).setApprovedFiles(Set.of(UUID.randomUUID())));
+    }
+
+    @Test
+    void shouldSetFilesForApprovalOnPublishingRequestCreationWhenPublicationHasUnpublishedFile()
+        throws ApiGatewayException {
+        var ticketType = PublishingRequestCase.class;
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
+        var ticket = PublishingRequestCase.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                         .persistNewTicket(ticketService);
+
+        var expectedFilesForApproval = publication.getAssociatedArtifacts().stream()
+                                           .filter(UnpublishedFile.class::isInstance)
+                                           .map(UnpublishedFile.class::cast)
+                                           .map(FileForApproval::fromFile)
+                                           .toArray();
+
+        assertThat(((PublishingRequestCase) ticket).getFilesForApproval(),
+                   containsInAnyOrder(expectedFilesForApproval));
     }
 
     private static Username getUsername(Publication publication) {

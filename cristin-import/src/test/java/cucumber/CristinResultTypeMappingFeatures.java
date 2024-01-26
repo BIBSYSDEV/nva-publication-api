@@ -20,6 +20,11 @@ public class CristinResultTypeMappingFeatures {
         this.scenarioContext.newCristinEntry(() -> CristinDataGenerator.randomObject(secondaryCategory));
     }
 
+    @Given("a random book")
+    public void aRandomBook() {
+        this.scenarioContext.newCristinEntry(CristinDataGenerator::randomBook);
+    }
+
     @Then("the NVA Resource has a Publication Instance of type {string}")
     public void theNvaResourceIsAnInstanceOf(String type) {
         String publicationType = this.scenarioContext.getNvaEntry()

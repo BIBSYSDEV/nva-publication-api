@@ -2,7 +2,6 @@ package no.unit.nva.publication.events.handlers.persistence;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
-import static no.unit.nva.publication.events.handlers.persistence.ExpandedDataEntriesPersistenceHandler.EMPTY_EVENT;
 import static no.unit.nva.publication.events.handlers.persistence.ExpandedDataEntriesPersistenceHandler.EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.IMPORT_CANDIDATES_INDEX;
 import static no.unit.nva.publication.events.handlers.persistence.PersistedDocumentConsumptionAttributes.RESOURCES_INDEX;
@@ -88,6 +87,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private TicketService ticketService;
     private ResourceExpansionService resourceExpansionService;
+    private UriRetriever uriRetriever;
 
     @BeforeEach
     public void setup() {
@@ -97,13 +97,13 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         ticketService = new TicketService(client);
 
         var mockPersonRetriever = mock(UriRetriever.class);
-        var mockOrganizationRetriever = mock(UriRetriever.class);
+        uriRetriever = mock(UriRetriever.class);
         when(mockPersonRetriever.getRawContent(any(), any())).thenReturn(Optional.empty());
-        when(mockOrganizationRetriever.getRawContent(any(), any())).thenReturn(
+        when(uriRetriever.getRawContent(any(), any())).thenReturn(
             Optional.of("{}"));
 
         resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService,
-                                                                    mockPersonRetriever, mockOrganizationRetriever);
+                                                                    mockPersonRetriever, uriRetriever);
     }
 
     @BeforeEach
@@ -228,7 +228,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     }
 
     private ExpandedDataEntry randomExpandedImportCandidate() {
-        return ExpandedImportCandidate.fromImportCandidate(randomImportCandidate());
+        return ExpandedImportCandidate.fromImportCandidate(randomImportCandidate(), uriRetriever);
     }
 
     private PersistedEntryWithExpectedType generateExpandedPublishingRequestEntryWithAutocompletion()

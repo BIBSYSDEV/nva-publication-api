@@ -3,10 +3,10 @@ package no.unit.nva.cristin.mapper;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.CRISTIN_PATH;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.ORGANIZATION_PATH;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
-import java.util.Collections;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -52,12 +52,20 @@ public class CristinContributorsAffiliation {
     public Organization toNvaOrganization() {
         return new Organization.Builder()
                    .withId(buildId())
-                   .withLabels(Collections.emptyMap())
                    .build();
     }
 
     public CristinContributorsAffiliationBuilder copy() {
         return this.toBuilder();
+    }
+
+    @JsonIgnore
+    public boolean isKnownAffiliation() {
+        return isKnownInstitution();
+    }
+
+    private boolean isKnownInstitution() {
+        return institutionIdentifier != 0;
     }
 
     private URI buildId() {

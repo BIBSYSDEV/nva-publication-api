@@ -94,7 +94,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     }
 
     private static boolean notAuthorizedToProcessImportCandidates(RequestInfo requestInfo) {
-        return !requestInfo.userIsAuthorized(AccessRight.PROCESS_IMPORT_CANDIDATE.name());
+        return !requestInfo.userIsAuthorized(AccessRight.MANAGE_IMPORT);
     }
 
     private static boolean hasDifferentCristinId(Contributor rawContributor, Contributor contributor) {

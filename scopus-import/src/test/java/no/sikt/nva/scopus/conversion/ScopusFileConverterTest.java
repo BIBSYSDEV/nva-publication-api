@@ -4,7 +4,9 @@ import static java.io.InputStream.nullInputStream;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.emptyIterable;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -18,6 +20,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
+import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.Path;
@@ -36,6 +39,7 @@ import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.http.Header;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
@@ -43,6 +47,10 @@ import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 public class ScopusFileConverterTest {
 
     public static final String DOI_PATH = "some/doi";
+    public static final String HEADER_CONTENT_TYPE = "application/pdf";
+    public static final String TEST_FILE_NAME = "test_file_name.xml";
+    public static final URI DOWNLOAD_URL_FROM_CROSSREF_RESPONSE = URI.create(
+        "https://www.cambridge.org/core/services/aop-cambridge-core/content/view/" + TEST_FILE_NAME);
     private HttpClient httpClient;
     private S3Client s3Client;
     private ScopusGenerator scopusData;
@@ -149,6 +157,46 @@ public class ScopusFileConverterTest {
         assertThat(files, is(emptyIterable()));
     }
 
+    @Test
+    void shouldExtractFileMimeTypeFromDownloadFileUrlResponseHeaderWhenCrossRefResponseMissesContentType()
+        throws IOException, InterruptedException {
+        mockResponsesWithoutHeaders("crossrefResponseMissingFields.json");
+        mockDownloadUrlResponse();
+        var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).get(0);
+
+        assertThat(file.getMimeType(), is(equalTo(HEADER_CONTENT_TYPE)));
+    }
+
+    @Test
+    void shouldCreateRandomFileNameWithFileTypeFromContentTypeHeaderWhenUrlAndContentDispositionMissingFileName()
+        throws IOException, InterruptedException {
+        var contentTypeHeader = Map.of(Header.CONTENT_TYPE, List.of("application/html"));
+        mockResponsesWithHeader("crossrefResponseMissingFields.json", contentTypeHeader);
+        var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).get(0);
+
+        assertThat(file.getName(), containsString("html"));
+    }
+
+    @Test
+    void shouldExtractFileNameFromDownloadUrlWhenContentDispositionHeaderMissesFileName()
+        throws IOException, InterruptedException {
+        var responseBody = "crossrefResponseMissingFields.json";
+        mockResponsesWithoutHeaders(responseBody);
+        var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).get(0);
+
+        assertThat(file.getName(), is(equalTo(TEST_FILE_NAME)));
+    }
+
+    @Test
+    void shouldCreateRandomPdfFileNameWhenCouldNotExtractFileNameOrFileTypeFromHeadersAndDownloadUrl()
+        throws IOException, InterruptedException {
+        var responseBody = "crossrefResponseMissingFields.json";
+        mockResponsesWithHeader(responseBody, Map.of());
+        var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).get(0);
+
+        assertThat(file.getName(), is(notNullValue()));
+    }
+
     private void mockDownloadUrlResponse() throws IOException, InterruptedException {
         var fetchDownloadUrlResponse = (HttpResponse<InputStream>) mock(HttpResponse.class);
         var body = mock(ByteArrayInputStream.class);
@@ -206,8 +254,22 @@ public class ScopusFileConverterTest {
         when(fetchDownloadUrlResponse.body()).thenReturn(new ByteArrayInputStream(randomString().getBytes()));
         when(fetchDownloadUrlResponse.headers()).thenReturn(emptyHeaders());
         when(fetchDownloadUrlResponse.statusCode()).thenReturn(200);
+        var request = HttpRequest.newBuilder().uri(DOWNLOAD_URL_FROM_CROSSREF_RESPONSE).build();
+        when(fetchDownloadUrlResponse.request()).thenReturn(request);
         when(httpClient.send(any(), eq(BodyHandlers.ofInputStream()))).thenReturn(fetchDownloadUrlResponse);
+    }
 
+    private void mockResponsesWithHeader(String responseBody, Map<String, List<String>> header)
+        throws IOException, InterruptedException {
+        var doiResponse = (HttpResponse<String>) mock(HttpResponse.class);
+        when(doiResponse.body()).thenReturn(IoUtils.stringFromResources(Path.of(responseBody)));
+        when(httpClient.send(any(), eq(BodyHandlers.ofString()))).thenReturn(doiResponse);
+
+        var fetchDownloadUrlResponse = (HttpResponse<InputStream>) mock(HttpResponse.class);
+        when(fetchDownloadUrlResponse.body()).thenReturn(new ByteArrayInputStream(randomString().getBytes()));
+        when(fetchDownloadUrlResponse.headers()).thenReturn(HttpHeaders.of(header, (s, s2) -> true));
+        when(fetchDownloadUrlResponse.statusCode()).thenReturn(200);
+        when(httpClient.send(any(), eq(BodyHandlers.ofInputStream()))).thenReturn(fetchDownloadUrlResponse);
     }
 
     private void mockS3HeadResponseWithZeroContentLength() {
@@ -216,7 +278,7 @@ public class ScopusFileConverterTest {
     }
 
     private HttpHeaders createDownloadUrlHeaders() {
-        return HttpHeaders.of(Map.of("Content-Type", List.of("application/pdf;charset=UTF-8"), "Content-Disposition",
+        return HttpHeaders.of(Map.of("Content-Type", List.of(HEADER_CONTENT_TYPE), "Content-Disposition",
                                      List.of("attachment; filename=\"someFile\"")), (s, s2) -> true);
     }
 
