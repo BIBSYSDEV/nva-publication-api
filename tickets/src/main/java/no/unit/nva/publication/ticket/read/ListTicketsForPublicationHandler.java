@@ -72,11 +72,10 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
 
     private List<TicketDto> fetchTickets(RequestInfo requestInfo, SortableIdentifier publicationIdentifier,
                                          UserInstance userInstance) throws ApiGatewayException {
-        var ticketEntries =
-            userIsAuthorizedToViewOtherUsersTickets(requestInfo) ? fetchTicketsForElevatedUser(userInstance,
-                                                                                               publicationIdentifier).filter(
-                ticket -> isAuthorizedToViewTicket(ticket, requestInfo))
-                : fetchTicketsForPublicationOwner(publicationIdentifier, userInstance);
+        var ticketEntries = userIsAuthorizedToViewOtherUsersTickets(requestInfo)
+                                ? fetchTicketsForElevatedUser(userInstance, publicationIdentifier)
+                                      .filter(ticket -> isAuthorizedToViewTicket(ticket, requestInfo))
+                                : fetchTicketsForPublicationOwner(publicationIdentifier, userInstance);
 
         return ticketEntries.map(this::createDto).collect(Collectors.toList());
     }
@@ -84,18 +83,16 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
     private Stream<TicketEntry> fetchTicketsForPublicationOwner(SortableIdentifier publicationIdentifier,
                                                                 UserInstance userInstance) throws ApiGatewayException {
 
-        return attempt(
-            () -> resourceService.fetchAllTicketsForPublication(userInstance, publicationIdentifier)).orElseThrow(
-            fail -> handleFetchingError(fail.getException()));
+        return attempt(() -> resourceService.fetchAllTicketsForPublication(userInstance, publicationIdentifier))
+                   .orElseThrow(fail -> handleFetchingError(fail.getException()));
     }
 
     private Stream<TicketEntry> fetchTicketsForElevatedUser(UserInstance userInstance,
                                                             SortableIdentifier publicationIdentifier)
         throws ApiGatewayException {
 
-        return attempt(
-            () -> resourceService.fetchAllTicketsForElevatedUser(userInstance, publicationIdentifier)).orElseThrow(
-            fail -> handleFetchingError(fail.getException()));
+        return attempt(() -> resourceService.fetchAllTicketsForElevatedUser(userInstance, publicationIdentifier))
+                   .orElseThrow(fail -> handleFetchingError(fail.getException()));
     }
 
     private TicketDto createDto(TicketEntry ticket) {
@@ -104,14 +101,11 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
     }
 
     private ApiGatewayException handleFetchingError(Exception exception) {
-        if (exception instanceof NotFoundException) {
-            return new ForbiddenException();
-        } else if (exception instanceof ApiGatewayException) {
-            return (ApiGatewayException) exception;
-        } else if (exception instanceof RuntimeException) {
-            throw (RuntimeException) exception;
-        } else {
-            throw new RuntimeException(exception);
-        }
+        return switch (exception) {
+            case NotFoundException notFoundException -> new ForbiddenException();
+            case ApiGatewayException apiGatewayException -> apiGatewayException;
+            case RuntimeException runtimeException -> throw runtimeException;
+            case null, default -> throw new RuntimeException(exception);
+        };
     }
 }
