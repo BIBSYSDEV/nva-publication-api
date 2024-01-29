@@ -128,7 +128,8 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
 
     @ParameterizedTest
     @MethodSource("accessRightAndTicketTypeProvider")
-    void shouldListTicketsOfTypeCuratorHasAccessRightToOperateOn(Class<? extends TicketEntry> ticketType, AccessRight accessRight)
+    void shouldListTicketsOfTypeCuratorHasAccessRightToOperateOn(
+        Class<? extends TicketEntry> ticketType, AccessRight accessRight)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
 
@@ -202,7 +203,8 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .build();
     }
 
-    private InputStream curatorWithAccessRightRequestTicketsForPublication(Publication publication, AccessRight accessRight)
+    private InputStream curatorWithAccessRightRequestTicketsForPublication(Publication publication,
+                                                                           AccessRight accessRight)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
                    .withPathParameters(constructPathParameters(publication))

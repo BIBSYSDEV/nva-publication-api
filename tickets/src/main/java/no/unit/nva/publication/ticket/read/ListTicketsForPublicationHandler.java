@@ -55,23 +55,6 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
         return HttpURLConnection.HTTP_OK;
     }
 
-    private static boolean userIsAuthorizedToViewOtherUsersTickets(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(AccessRight.MANAGE_DOI)
-               || requestInfo.userIsAuthorized(AccessRight.MANAGE_PUBLISHING_REQUESTS)
-               || requestInfo.userIsAuthorized(AccessRight.SUPPORT);
-    }
-
-    private List<TicketDto> fetchTickets(RequestInfo requestInfo,
-                                         SortableIdentifier publicationIdentifier,
-                                         UserInstance userInstance) throws ApiGatewayException {
-        var ticketEntries = userIsAuthorizedToViewOtherUsersTickets(requestInfo)
-                   ? fetchTicketsForElevatedUser(userInstance, publicationIdentifier)
-                         .filter(ticket -> isAuthorizedToViewTicket(ticket, requestInfo))
-                   : fetchTicketsForPublicationOwner(publicationIdentifier, userInstance);
-
-        return ticketEntries.map(this::createDto).collect(Collectors.toList());
-    }
-
     boolean isAuthorizedToViewTicket(TicketEntry ticket, RequestInfo requestInfo) {
         return switch (ticket) {
             case DoiRequest doiRequest -> requestInfo.userIsAuthorized(AccessRight.MANAGE_DOI);
@@ -80,22 +63,39 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
             case GeneralSupportRequest generalSupportRequest -> requestInfo.userIsAuthorized(AccessRight.SUPPORT);
             case null, default -> false;
         };
-   }
+    }
+
+    private static boolean userIsAuthorizedToViewOtherUsersTickets(RequestInfo requestInfo) {
+        return requestInfo.userIsAuthorized(AccessRight.MANAGE_DOI) || requestInfo.userIsAuthorized(
+            AccessRight.MANAGE_PUBLISHING_REQUESTS) || requestInfo.userIsAuthorized(AccessRight.SUPPORT);
+    }
+
+    private List<TicketDto> fetchTickets(RequestInfo requestInfo, SortableIdentifier publicationIdentifier,
+                                         UserInstance userInstance) throws ApiGatewayException {
+        var ticketEntries =
+            userIsAuthorizedToViewOtherUsersTickets(requestInfo) ? fetchTicketsForElevatedUser(userInstance,
+                                                                                               publicationIdentifier).filter(
+                ticket -> isAuthorizedToViewTicket(ticket, requestInfo))
+                : fetchTicketsForPublicationOwner(publicationIdentifier, userInstance);
+
+        return ticketEntries.map(this::createDto).collect(Collectors.toList());
+    }
 
     private Stream<TicketEntry> fetchTicketsForPublicationOwner(SortableIdentifier publicationIdentifier,
-                                                              UserInstance userInstance)
-        throws ApiGatewayException {
+                                                                UserInstance userInstance) throws ApiGatewayException {
 
-        return attempt(() -> resourceService.fetchAllTicketsForPublication(userInstance, publicationIdentifier))
-                          .orElseThrow(fail -> handleFetchingError(fail.getException()));
+        return attempt(
+            () -> resourceService.fetchAllTicketsForPublication(userInstance, publicationIdentifier)).orElseThrow(
+            fail -> handleFetchingError(fail.getException()));
     }
 
     private Stream<TicketEntry> fetchTicketsForElevatedUser(UserInstance userInstance,
-                                                          SortableIdentifier publicationIdentifier)
+                                                            SortableIdentifier publicationIdentifier)
         throws ApiGatewayException {
 
-        return attempt(() -> resourceService.fetchAllTicketsForElevatedUser(userInstance, publicationIdentifier))
-                .orElseThrow(fail -> handleFetchingError(fail.getException()));
+        return attempt(
+            () -> resourceService.fetchAllTicketsForElevatedUser(userInstance, publicationIdentifier)).orElseThrow(
+            fail -> handleFetchingError(fail.getException()));
     }
 
     private TicketDto createDto(TicketEntry ticket) {
