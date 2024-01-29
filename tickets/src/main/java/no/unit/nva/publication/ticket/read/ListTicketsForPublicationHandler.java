@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -21,62 +24,76 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 
 public class ListTicketsForPublicationHandler extends TicketHandler<Void, TicketCollection> {
-    
+
     private final ResourceService resourceService;
 
     private final TicketService ticketService;
-    
+
     @JacocoGenerated
     public ListTicketsForPublicationHandler() {
         this(ResourceService.defaultService(), TicketService.defaultService());
     }
-    
+
     public ListTicketsForPublicationHandler(ResourceService resourceService, TicketService ticketService) {
         super(Void.class);
         this.resourceService = resourceService;
         this.ticketService = ticketService;
     }
-    
+
     @Override
     protected TicketCollection processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
         var publicationIdentifier = extractPublicationIdentifierFromPath(requestInfo);
         var userInstance = UserInstance.fromRequestInfo(requestInfo);
-        
+
         var ticketDtos = fetchTickets(requestInfo, publicationIdentifier, userInstance);
         return TicketCollection.fromTickets(ticketDtos);
     }
-    
+
     @Override
     protected Integer getSuccessStatusCode(Void input, TicketCollection output) {
         return HttpURLConnection.HTTP_OK;
     }
-    
+
     private static boolean userIsAuthorizedToViewOtherUsersTickets(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(AccessRight.MANAGE_DOI);
+        return requestInfo.userIsAuthorized(AccessRight.MANAGE_DOI)
+               || requestInfo.userIsAuthorized(AccessRight.MANAGE_PUBLISHING_REQUESTS)
+               || requestInfo.userIsAuthorized(AccessRight.SUPPORT);
     }
-    
+
     private List<TicketDto> fetchTickets(RequestInfo requestInfo,
                                          SortableIdentifier publicationIdentifier,
                                          UserInstance userInstance) throws ApiGatewayException {
         var ticketEntries = userIsAuthorizedToViewOtherUsersTickets(requestInfo)
                    ? fetchTicketsForElevatedUser(userInstance, publicationIdentifier)
+                         .filter(ticket -> isAuthorizedToViewTicket(ticket, requestInfo))
                    : fetchTicketsForPublicationOwner(publicationIdentifier, userInstance);
+
         return ticketEntries.map(this::createDto).collect(Collectors.toList());
     }
+
+    boolean isAuthorizedToViewTicket(TicketEntry ticket, RequestInfo requestInfo) {
+        return switch (ticket) {
+            case DoiRequest doiRequest -> requestInfo.userIsAuthorized(AccessRight.MANAGE_DOI);
+            case PublishingRequestCase publishingRequestCase ->
+                requestInfo.userIsAuthorized(AccessRight.MANAGE_PUBLISHING_REQUESTS);
+            case GeneralSupportRequest generalSupportRequest -> requestInfo.userIsAuthorized(AccessRight.SUPPORT);
+            case null, default -> false;
+        };
+   }
 
     private Stream<TicketEntry> fetchTicketsForPublicationOwner(SortableIdentifier publicationIdentifier,
                                                               UserInstance userInstance)
         throws ApiGatewayException {
-        
+
         return attempt(() -> resourceService.fetchAllTicketsForPublication(userInstance, publicationIdentifier))
                           .orElseThrow(fail -> handleFetchingError(fail.getException()));
     }
-    
+
     private Stream<TicketEntry> fetchTicketsForElevatedUser(UserInstance userInstance,
                                                           SortableIdentifier publicationIdentifier)
         throws ApiGatewayException {
-        
+
         return attempt(() -> resourceService.fetchAllTicketsForElevatedUser(userInstance, publicationIdentifier))
                 .orElseThrow(fail -> handleFetchingError(fail.getException()));
     }
@@ -85,7 +102,7 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
         var messages = ticket.fetchMessages(ticketService);
         return TicketDto.fromTicket(ticket, messages);
     }
-    
+
     private ApiGatewayException handleFetchingError(Exception exception) {
         if (exception instanceof NotFoundException) {
             return new ForbiddenException();
