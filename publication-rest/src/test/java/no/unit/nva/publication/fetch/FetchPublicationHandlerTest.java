@@ -4,7 +4,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.google.common.net.HttpHeaders.ACCEPT;
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static com.google.common.net.HttpHeaders.CACHE_CONTROL;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.HttpHeaders.LOCATION;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
@@ -13,7 +12,6 @@ import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiM
 import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ENV_NAME_NVA_FRONTEND_DOMAIN;
-import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static nva.commons.apigateway.ApiGatewayHandler.RESOURCE;
 import static nva.commons.core.attempt.Try.attempt;
@@ -290,27 +288,6 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
                                                               Publication.class);
 
         assertThat(resource, is(equalTo(expectedTombstone)));
-    }
-
-    @Test
-    void handlerRedirectToDuplicatePublicationWhenDeletedPublicationHasDuplicate()
-        throws ApiGatewayException, IOException {
-        var duplicateOfIdentifier =
-            UriWrapper.fromUri(randomUri()).addChild(SortableIdentifier.next().toString()).getUri();
-        var publication = createDeletedPublicationWithDuplicate(duplicateOfIdentifier);
-        fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output,
-                                              context);
-        var valueType = restApiMapper.getTypeFactory()
-                            .constructParametricType(
-                                GatewayResponse.class,
-                                Void.class);
-
-        GatewayResponse<Void> response = restApiMapper.readValue(output.toString(), valueType);
-
-        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_MOVED_PERM)));
-
-        assertThat(response.getHeaders().get(LOCATION), is(equalTo(publication.getDuplicateOf().toString())));
-        assertEquals("no-cache", response.getHeaders().get(CACHE_CONTROL));
     }
 
     @Test

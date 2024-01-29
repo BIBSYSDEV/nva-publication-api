@@ -1,14 +1,11 @@
 package no.unit.nva.publication.fetch;
 
-import static com.google.common.net.HttpHeaders.CACHE_CONTROL;
 import static com.google.common.net.HttpHeaders.LOCATION;
 import static com.google.common.net.MediaType.ANY_TEXT_TYPE;
 import static com.google.common.net.MediaType.HTML_UTF_8;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.google.common.net.MediaType.XHTML_UTF_8;
-import static java.net.HttpURLConnection.HTTP_MOVED_PERM;
 import static java.net.HttpURLConnection.HTTP_SEE_OTHER;
-import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.fetch.DeletedPublicationResponse.craftDeletedPublicationResponse;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_DATACITE_XML;
@@ -51,9 +48,9 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     public static final Clock CLOCK = Clock.systemDefaultZone();
     public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
     public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
+    public static final String GONE_MESSAGE = "Publication has been removed";
     protected static final String ENV_NAME_NVA_FRONTEND_DOMAIN = "NVA_FRONTEND_DOMAIN";
     private static final String REGISTRATION_PATH = "registration";
-    public static final String GONE_MESSAGE = "Publication has been removed";
     private final ResourceService resourceService;
     private final RawContentRetriever uriRetriever;
     private int statusCode = HttpURLConnection.HTTP_OK;
@@ -104,27 +101,6 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         };
     }
 
-    private String produceRemovedPublicationResponse(Publication publication) throws GoneException {
-        if (nonNull(publication.getDuplicateOf())) {
-            return produceRedirect(publication.getDuplicateOf());
-        } else {
-            throw new GoneException(GONE_MESSAGE,
-                                    craftDeletedPublicationResponse(publication));
-        }
-    }
-
-    private String produceRedirect(URI duplicateOf) {
-        statusCode = HTTP_MOVED_PERM;
-        // cache control header here to avoid permanent browser caching of the redirect
-        addAdditionalHeaders(() -> Map.of(LOCATION, duplicateOf.toString(), CACHE_CONTROL, "no-cache"));
-        return null;
-    }
-
-    private String produceDraftPublicationResponse(RequestInfo requestInfo, Publication publication)
-        throws UnsupportedAcceptHeaderException, NotFoundException {
-        return producePublishedPublicationResponse(requestInfo, publication);
-    }
-
     @Override
     protected Integer getSuccessStatusCode(Void input, String output) {
         return statusCode;
@@ -133,6 +109,16 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     @JacocoGenerated
     private static ResourceService defaultResourceService(AmazonDynamoDB client) {
         return new ResourceService(client, CLOCK);
+    }
+
+    private String produceRemovedPublicationResponse(Publication publication) throws GoneException {
+        throw new GoneException(GONE_MESSAGE,
+                                craftDeletedPublicationResponse(publication));
+    }
+
+    private String produceDraftPublicationResponse(RequestInfo requestInfo, Publication publication)
+        throws UnsupportedAcceptHeaderException, NotFoundException {
+        return producePublishedPublicationResponse(requestInfo, publication);
     }
 
     @JacocoGenerated
