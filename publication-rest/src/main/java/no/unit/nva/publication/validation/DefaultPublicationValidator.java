@@ -1,33 +1,35 @@
 package no.unit.nva.publication.validation;
 
 import static java.util.Objects.nonNull;
-import java.net.URI;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.publication.commons.customer.Customer;
 
 public class DefaultPublicationValidator implements PublicationValidator {
 
     public static final String FILES_NOT_ALLOWED_MESSAGE = "Files not allowed for instance type %s";
-    private final FilesAllowedForTypesSupplier filesAllowedForTypesSupplier;
 
-    public DefaultPublicationValidator(final FilesAllowedForTypesSupplier filesAllowedForTypesSupplier) {
-        this.filesAllowedForTypesSupplier = filesAllowedForTypesSupplier;
+    public DefaultPublicationValidator() {
     }
 
     @Override
-    public void validate(Publication publication, URI customerUri) throws PublicationValidationException {
+    public void validate(Publication publication, Customer customer)
+        throws PublicationValidationException {
         if (nonNull(publication.getEntityDescription())) {
             var hasFiles = hasAtLeastOneFile(publication);
-            validate(publication.getEntityDescription(), hasFiles, customerUri);
+            validate(publication.getEntityDescription(), hasFiles, customer);
         }
     }
 
-    private void validate(EntityDescription entityDescription, boolean hasFiles, URI customerUri)
+    private void validate(EntityDescription entityDescription, boolean hasFiles, Customer customer)
         throws PublicationValidationException {
         var instanceType = getInstanceType(entityDescription);
-        if (nonNull(instanceType) && hasFiles && !filesAllowedForTypesSupplier.get(customerUri).contains(
-            getInstanceType(entityDescription))) {
+        if (nonNull(instanceType)
+            &&
+            hasFiles
+            &&
+            !customer.getAllowFileUploadForTypes().contains(getInstanceType(entityDescription))) {
             throw new PublicationValidationException(String.format(FILES_NOT_ALLOWED_MESSAGE, instanceType));
         }
     }

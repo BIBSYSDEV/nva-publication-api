@@ -60,5 +60,7 @@
     "Map",
     "LiteraryArts",
     "ExhibitionProduction"
-  ]
+  ],
+  "publicationWorkflow": "RegistratorPublishesMetadataAndFiles",
+  "type": "Customer"
 }

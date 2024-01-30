@@ -12,21 +12,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.auth.CognitoCredentials;
 import no.unit.nva.clients.IdentityServiceClient;
-import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.publication.commons.customer.Customer;
+import no.unit.nva.publication.commons.customer.CustomerApiClient;
+import no.unit.nva.publication.commons.customer.CustomerNotAvailableException;
+import no.unit.nva.publication.commons.customer.JavaHttpClientCustomerApiClient;
 import no.unit.nva.publication.events.bodies.CreatePublicationRequest;
+import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.validation.ConfigNotAvailableException;
 import no.unit.nva.publication.validation.DefaultPublicationValidator;
 import no.unit.nva.publication.validation.PublicationValidationException;
 import no.unit.nva.publication.validation.PublicationValidator;
-import no.unit.nva.publication.validation.config.CustomerApiFilesAllowedForTypesConfigSupplier;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -53,6 +56,8 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     private final PublicationValidator publicationValidator;
     private final String apiHost;
     private final IdentityServiceClient identityServiceClient;
+    private final SecretsReader secretsReader;
+    private final HttpClient httpClient;
 
     /**
      * Default constructor for CreatePublicationHandler.
@@ -64,8 +69,8 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
                  Clock.systemDefaultZone()),
              new Environment(),
              IdentityServiceClient.prepare(),
-             HttpClient.newHttpClient(),
-             SecretsReader.defaultSecretsManagerClient());
+             SecretsReader.defaultSecretsManagerClient(),
+             HttpClient.newHttpClient());
     }
 
     /**
@@ -77,28 +82,20 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     public CreatePublicationHandler(ResourceService publicationService,
                                     Environment environment,
                                     IdentityServiceClient identityServiceClient,
-                                    HttpClient httpClient,
-                                    SecretsManagerClient secretsManagerClient) {
+                                    SecretsManagerClient secretsManagerClient,
+                                    HttpClient httpClient) {
         super(CreatePublicationRequest.class, environment);
         this.publicationService = publicationService;
         this.apiHost = environment.readEnv(API_HOST);
         this.identityServiceClient = identityServiceClient;
-
-        var backendClientAuthUrl = environment.readEnv("BACKEND_CLIENT_AUTH_URL");
-        var backendClientSecretName = environment.readEnv("BACKEND_CLIENT_SECRET_NAME");
-
-        this.publicationValidator =
-            new DefaultPublicationValidator(
-                new CustomerApiFilesAllowedForTypesConfigSupplier(httpClient,
-                                                                  secretsManagerClient,
-                                                                  backendClientAuthUrl,
-                                                                  backendClientSecretName));
+        this.secretsReader = new SecretsReader(secretsManagerClient);
+        this.httpClient = httpClient;
+        this.publicationValidator = new DefaultPublicationValidator();
     }
 
     @Override
     protected PublicationResponse processInput(CreatePublicationRequest input, RequestInfo requestInfo,
                                                Context context) throws ApiGatewayException {
-        logger.info(attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(requestInfo)).orElseThrow());
         if (isThesisAndHasNoRightsToPublishThesAndIsNotExternalClient(input, requestInfo)) {
             throw new ForbiddenException();
         }
@@ -108,8 +105,18 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
 
         var customerAwareUserContext = getCustomerAwareUserContextFromLoginInformation(requestInfo);
 
-        validatePublication(newPublication, customerAwareUserContext.customerUri());
+        var backendClientCredentials = secretsReader.fetchClassSecret(
+            environment.readEnv("BACKEND_CLIENT_SECRET_NAME"),
+            BackendClientCredentials.class);
+        var cognitoServerUri = URI.create("https://" + environment.readEnv("BACKEND_CLIENT_AUTH_URL"));
+        var cognitoCredentials = new CognitoCredentials(backendClientCredentials::getId,
+                                                        backendClientCredentials::getSecret,
+                                                        cognitoServerUri);
+        var customerApiClient = new JavaHttpClientCustomerApiClient(httpClient, cognitoCredentials);
 
+        var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, customerAwareUserContext.customerUri());
+
+        validatePublication(newPublication, customer);
         var createdPublication = Resource.fromPublication(newPublication)
                                      .persistNew(publicationService, customerAwareUserContext.userInstance());
         setLocationHeader(createdPublication.getIdentifier());
@@ -117,15 +124,21 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         return PublicationResponse.fromPublication(createdPublication);
     }
 
-    private void validatePublication(Publication newPublication, URI customerUri)
-        throws BadRequestException, BadGatewayException {
+    private static Customer fetchCustomerOrFailWithBadGateway(CustomerApiClient customerApiClient,
+                                                              URI customerUri) throws BadGatewayException {
         try {
-            publicationValidator.validate(newPublication, customerUri);
+            return customerApiClient.fetch(customerUri);
+        } catch (CustomerNotAvailableException e) {
+            logger.error("Problems fetching customer", e);
+            throw new BadGatewayException("Customer API not responding or not responding as expected!");
+        }
+    }
+
+    private void validatePublication(Publication newPublication, Customer customer) throws BadRequestException {
+        try {
+            publicationValidator.validate(newPublication, customer);
         } catch (PublicationValidationException e) {
             throw new BadRequestException(e.getMessage());
-        } catch (ConfigNotAvailableException e) {
-            logger.error("Failed to obtain config to perform validation", e);
-            throw new BadGatewayException("Gateway not responding or not responding as expected!");
         }
     }
 

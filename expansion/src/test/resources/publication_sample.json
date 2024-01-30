@@ -111,7 +111,7 @@
         "type": "UnconfirmedJournal"
       },
       "publicationInstance": {
-        "type": "JournalArticle",
+        "type": "AcademicArticle",
         "contentType": "AcademicArticle",
         "issue": "2",
         "originalResearch": false,
