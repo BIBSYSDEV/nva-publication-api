@@ -759,13 +759,14 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldRejectUpdateIfSettingInstanceTypeNotAllowingFilesOnPublicationContainingFile()
         throws BadRequestException, IOException {
-        var savedPublication = createSamplePublication();
-        var publicationUpdate = updateTitle(savedPublication);
 
         WireMock.reset();
 
         stubSuccessfulTokenResponse();
         stubSuccessfulCustomerResponseAllowingFilesForNoTypes(customerId);
+
+        var savedPublication = createSamplePublication();
+        var publicationUpdate = updateTitle(savedPublication);
 
         var event = userUpdatesPublicationAndHasRightToUpdate(publicationUpdate);
         updatePublicationHandler.handleRequest(event, output, context);

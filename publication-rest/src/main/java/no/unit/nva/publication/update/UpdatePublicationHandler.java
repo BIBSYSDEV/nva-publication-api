@@ -200,10 +200,6 @@ public class UpdatePublicationHandler
         return HttpStatus.SC_OK;
     }
 
-//    private BadGatewayException createBadGatewayException() {
-//        return new BadGatewayException(UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE);
-//    }
-//
     private boolean containsNewPublishableFiles(Publication publicationUpdate) {
         var unpublishedFiles = getUnpublishedFiles(publicationUpdate);
         return !unpublishedFiles.isEmpty() && containsPublishableFile(unpublishedFiles);
@@ -384,14 +380,12 @@ public class UpdatePublicationHandler
                    .orElseThrow(fail -> new UnauthorizedException());
     }
 
-    private void createPublishingRequestOnFileUpdate(Publication publicationUpdate, Customer customer)
-        throws ApiGatewayException {
+    private void createPublishingRequestOnFileUpdate(Publication publicationUpdate, Customer customer) {
         if (containsNewPublishableFiles(publicationUpdate)) {
             attempt(() -> TicketEntry.requestNewTicket(publicationUpdate, PublishingRequestCase.class))
                 .map(publishingRequest -> injectPublishingWorkflow((PublishingRequestCase) publishingRequest,
                                                                    customer))
                 .map(publishingRequest -> publishingRequest.persistNewTicket(ticketService));
-                //.orElseThrow(fail -> createBadGatewayException());
         }
     }
 

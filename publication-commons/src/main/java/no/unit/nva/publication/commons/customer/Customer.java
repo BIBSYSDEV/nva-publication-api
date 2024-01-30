@@ -22,7 +22,7 @@ public class Customer {
     }
 
     public Set<String> getAllowFileUploadForTypes() {
-        return allowFileUploadForTypes == null ? emptySet(): allowFileUploadForTypes;
+        return allowFileUploadForTypes == null ? emptySet() : allowFileUploadForTypes;
     }
 
     public String getPublicationWorkflow() {
