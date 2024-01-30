@@ -121,6 +121,21 @@ public final class TicketTestUtils {
         return persistedPublication;
     }
 
+    public static Publication createPersistedPublicationWithUnpublishedFiles(URI publisher,
+                                                                             PublicationStatus status,
+                                                                             ResourceService resourceService)
+        throws ApiGatewayException {
+        var publication = randomPublicationWithUnpublishedFiles(publisher, status);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
+                                                                                    UserInstance.fromPublication(
+                                                                                        publication));
+        if (isPublished(publication)) {
+            publishPublication(resourceService, persistedPublication);
+            return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+        }
+        return persistedPublication;
+    }
+
     public static Publication createPersistedPublicationWithAssociatedLink(PublicationStatus status,
                                                                            ResourceService resourceService)
         throws ApiGatewayException {
@@ -214,6 +229,17 @@ public final class TicketTestUtils {
 
     private static Publication randomPublicationWithUnpublishedFiles(PublicationStatus status) {
         var publication = randomPublication().copy()
+                              .withStatus(status)
+                              .build();
+        unpublishFiles(publication);
+        return publication;
+    }
+
+    private static Publication randomPublicationWithUnpublishedFiles(URI publisherId, PublicationStatus status) {
+        var publication = randomPublication().copy()
+                              .withPublisher(new Organization.Builder()
+                                                 .withId(publisherId)
+                                                 .build())
                               .withStatus(status)
                               .build();
         unpublishFiles(publication);

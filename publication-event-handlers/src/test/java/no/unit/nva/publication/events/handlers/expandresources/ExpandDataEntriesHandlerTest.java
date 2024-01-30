@@ -6,7 +6,6 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.events.bodies.DataEntryUpdateEvent.RESOURCE_UPDATE_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EMPTY_EVENT_TOPIC;
-import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EXPANDED_ENTRY_DELETE_EVENT_TOPIC;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
@@ -100,7 +99,10 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = PublicationStatus.class, mode = INCLUDE, names = {"PUBLISHED", "PUBLISHED_METADATA"})
+    @EnumSource(
+        value = PublicationStatus.class,
+        mode = INCLUDE,
+        names = {"PUBLISHED", "PUBLISHED_METADATA", "UNPUBLISHED", "DELETED"})
     void shouldProduceAnExpandedDataEntryWhenInputHasNewImage(PublicationStatus status) throws IOException {
         var oldImage = createPublicationWithStatus(status);
         var newImage = createUpdatedVersionOfPublication(oldImage);
@@ -113,10 +115,10 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = PublicationStatus.class, mode = EXCLUDE, names = {"PUBLISHED",
-        "PUBLISHED_METADATA",
-        "DELETED",
-        "UNPUBLISHED"})
+    @EnumSource(
+        value = PublicationStatus.class,
+        mode = EXCLUDE,
+        names = {"PUBLISHED", "PUBLISHED_METADATA", "UNPUBLISHED", "DELETED"})
     void shouldNotProduceEntryWhenNotPublishedOrDeletedEntry(PublicationStatus status) throws IOException {
         var oldImage = createPublicationWithStatus(status);
         var newImage = createUpdatedVersionOfPublication(oldImage);
@@ -168,36 +170,6 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         expandResourceHandler.handleRequest(event, output, CONTEXT);
         var eventReference = parseHandlerResponse();
         assertThat(eventReference, is(equalTo(emptyEvent(eventReference.getTimestamp()))));
-    }
-
-    @Test
-    void shouldEmitDeleteEventForPublicationStatusDeleted() throws IOException {
-        var oldImage = randomPublication().copy()
-                           .withIdentifier(SortableIdentifier.next())
-                           .withDoi(null)
-                           .withStatus(PublicationStatus.PUBLISHED).build();
-        var newImage = oldImage.copy()
-                           .withStatus(PublicationStatus.DELETED)
-                           .build();
-        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
-        expandResourceHandler.handleRequest(request, output, CONTEXT);
-        var eventReference = parseHandlerResponse();
-        assertThat(eventReference.getTopic(), is(equalTo(EXPANDED_ENTRY_DELETE_EVENT_TOPIC)));
-    }
-
-    @Test
-    void shouldEmitDeleteEventForPublicationStatusUnpublished() throws IOException {
-        var oldImage = randomPublication().copy()
-                           .withIdentifier(SortableIdentifier.next())
-                           .withDoi(null)
-                           .withStatus(PublicationStatus.PUBLISHED).build();
-        var newImage = oldImage.copy()
-                           .withStatus(PublicationStatus.UNPUBLISHED)
-                           .build();
-        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
-        expandResourceHandler.handleRequest(request, output, CONTEXT);
-        var eventReference = parseHandlerResponse();
-        assertThat(eventReference.getTopic(), is(equalTo(EXPANDED_ENTRY_DELETE_EVENT_TOPIC)));
     }
 
     @Test

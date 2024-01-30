@@ -87,6 +87,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private TicketService ticketService;
     private ResourceExpansionService resourceExpansionService;
+    private UriRetriever uriRetriever;
 
     @BeforeEach
     public void setup() {
@@ -96,13 +97,13 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         ticketService = new TicketService(client);
 
         var mockPersonRetriever = mock(UriRetriever.class);
-        var mockOrganizationRetriever = mock(UriRetriever.class);
+        uriRetriever = mock(UriRetriever.class);
         when(mockPersonRetriever.getRawContent(any(), any())).thenReturn(Optional.empty());
-        when(mockOrganizationRetriever.getRawContent(any(), any())).thenReturn(
+        when(uriRetriever.getRawContent(any(), any())).thenReturn(
             Optional.of("{}"));
 
         resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService,
-                                                                    mockPersonRetriever, mockOrganizationRetriever);
+                                                                    mockPersonRetriever, uriRetriever);
     }
 
     @BeforeEach
@@ -227,7 +228,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     }
 
     private ExpandedDataEntry randomExpandedImportCandidate() {
-        return ExpandedImportCandidate.fromImportCandidate(randomImportCandidate());
+        return ExpandedImportCandidate.fromImportCandidate(randomImportCandidate(), uriRetriever);
     }
 
     private PersistedEntryWithExpectedType generateExpandedPublishingRequestEntryWithAutocompletion()

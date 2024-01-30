@@ -132,11 +132,12 @@ public class CristinContributor implements Comparable<CristinContributor> {
     }
 
     private List<Corporation> extractAffiliations() {
-        if (isNull(affiliations)) {
+        if (isNull(affiliations) || affiliations.isEmpty()) {
             throw new ContributorWithoutAffiliationException();
         }
         return affiliations
                    .stream()
+                   .filter(CristinContributorsAffiliation::isKnownAffiliation)
                    .map(CristinContributorsAffiliation::toNvaOrganization)
                    .collect(Collectors.toList());
     }

@@ -12,7 +12,7 @@ public record PiaClientConfig(String piaHost,
                               HttpClient client,
                               SecretsReader secretsReader) {
 
-    public static final String PIA_HOST = "PIA_HOST";
+    public static final String PIA_HOST = "PIA_REST_API";
 
     public static final String PIA_USERNAME_KEY = "PIA_USERNAME_KEY";
     public static final String PIA_PASSWORD_KEY = "PIA_PASSWORD_KEY";

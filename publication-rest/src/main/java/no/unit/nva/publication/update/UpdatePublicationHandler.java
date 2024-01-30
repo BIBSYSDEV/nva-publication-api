@@ -13,9 +13,12 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.time.Clock;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.auth.CognitoCredentials;
 import no.unit.nva.clients.IdentityServiceClient;
@@ -42,6 +45,7 @@ import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.commons.customer.CustomerNotAvailableException;
 import no.unit.nva.publication.commons.customer.JavaHttpClientCustomerApiClient;
 import no.unit.nva.publication.model.BackendClientCredentials;
+import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -76,6 +80,9 @@ public class UpdatePublicationHandler
     private static final Logger logger = LoggerFactory.getLogger(UpdatePublicationHandler.class);
 
     public static final String IDENTIFIER_MISMATCH_ERROR_MESSAGE = "Identifiers in path and in body, do not match";
+    private static final String ENV_KEY_BACKEND_CLIENT_SECRET_NAME = "BACKEND_CLIENT_SECRET_NAME";
+    private static final String ENV_KEY_BACKEND_CLIENT_AUTH_URL = "BACKEND_CLIENT_AUTH_URL";
+    private static final String HTTPS_PROTOCOL = "https://";
     private final TicketService ticketService;
     private final ResourceService resourceService;
     private final IdentityServiceClient identityServiceClient;
@@ -132,32 +139,64 @@ public class UpdatePublicationHandler
 
         var identifierInPath = RequestUtil.getIdentifier(requestInfo);
         validateRequest(identifierInPath, input);
+        Publication existingPublication = fetchExistingPublication(requestInfo, identifierInPath);
+        Publication publicationUpdate = input.generatePublicationUpdate(existingPublication);
 
-        var existingPublication = fetchExistingPublication(requestInfo, identifierInPath);
-        var publicationUpdate = input.generatePublicationUpdate(existingPublication);
-
-        var backendClientSecretName = environment.readEnv("BACKEND_CLIENT_SECRET_NAME");
-        var backendClientCredentials = secretsReader.fetchClassSecret(backendClientSecretName,
-                                                                      BackendClientCredentials.class);
-        var cognitoServerUri = URI.create("https://" + environment.readEnv("BACKEND_CLIENT_AUTH_URL"));
-        var cognitoCredentials = new CognitoCredentials(backendClientCredentials::getId,
-                                                        backendClientCredentials::getSecret,
-                                                        cognitoServerUri);
-        var customerApiClient = new JavaHttpClientCustomerApiClient(httpClient, cognitoCredentials);
+        var customerApiClient = getCustomerApiClient();
 
         var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, publicationUpdate.getPublisher().getId());
 
         validatePublication(publicationUpdate, customer);
 
-        if (isAlreadyPublished(existingPublication) && thereIsNoRelatedPendingPublishingRequest(publicationUpdate)) {
+        upsertPublishingRequestIfNeeded(existingPublication, publicationUpdate, customer);
+        Publication updatedPublication = resourceService.updatePublication(publicationUpdate);
+        return PublicationResponseElevatedUser.fromPublication(updatedPublication);
+    }
+
+    private JavaHttpClientCustomerApiClient getCustomerApiClient() {
+        var backendClientSecretName = environment.readEnv(ENV_KEY_BACKEND_CLIENT_SECRET_NAME);
+        var backendClientCredentials = secretsReader.fetchClassSecret(backendClientSecretName,
+                                                                      BackendClientCredentials.class);
+        var cognitoServerUri = URI.create(HTTPS_PROTOCOL + environment.readEnv(ENV_KEY_BACKEND_CLIENT_AUTH_URL));
+        var cognitoCredentials = new CognitoCredentials(backendClientCredentials::getId,
+                                                        backendClientCredentials::getSecret,
+                                                        cognitoServerUri);
+        return new JavaHttpClientCustomerApiClient(httpClient, cognitoCredentials);
+    }
+
+    private void upsertPublishingRequestIfNeeded(Publication existingPublication,
+                                                 Publication publicationUpdate,
+                                                 Customer customer) {
+        if (isAlreadyPublished(existingPublication) && !thereIsRelatedPendingPublishingRequest(publicationUpdate)) {
             createPublishingRequestOnFileUpdate(publicationUpdate, customer);
         }
         if (isAlreadyPublished(existingPublication) && thereAreNoFiles(publicationUpdate)) {
             autoCompletePendingPublishingRequestsIfNeeded(publicationUpdate);
         }
+        if (isAlreadyPublished(existingPublication) && updateHasFileChanges(existingPublication, publicationUpdate)) {
+            updateFilesForApproval(publicationUpdate);
+        }
+    }
 
-        Publication updatedPublication = resourceService.updatePublication(publicationUpdate);
-        return PublicationResponseElevatedUser.fromPublication(updatedPublication);
+    private void updateFilesForApproval(Publication publicationUpdate) {
+        var filesForApproval = getUnpublishedFiles(publicationUpdate).stream()
+                                   .map(FileForApproval::fromFile)
+                                   .collect(Collectors.toSet());
+        fetchPendingPublishingRequest(publicationUpdate)
+            .forEach(publishingRequestCase -> updateFilesForApproval(publishingRequestCase, filesForApproval));
+    }
+
+    private void updateFilesForApproval(PublishingRequestCase publishingRequestCase,
+                                        Set<FileForApproval> filesForApproval) {
+        publishingRequestCase.setFilesForApproval(filesForApproval);
+        publishingRequestCase.persistUpdate(ticketService);
+    }
+
+    private boolean updateHasFileChanges(Publication existingPublication, Publication publicationUpdate) {
+        var existingFiles = getUnpublishedFiles(existingPublication);
+        var updatedFiles = getUnpublishedFiles(publicationUpdate);
+        return new HashSet<>(existingFiles).containsAll(updatedFiles)
+               && new HashSet<>(updatedFiles).containsAll(existingFiles);
     }
 
     private static Customer fetchCustomerOrFailWithBadGateway(CustomerApiClient customerApiClient,
@@ -179,11 +218,16 @@ public class UpdatePublicationHandler
     }
 
     private void autoCompletePendingPublishingRequestsIfNeeded(Publication publication) {
-        ticketService.fetchTicketsForUser(UserInstance.fromPublication(publication))
-            .filter(PublishingRequestCase.class::isInstance)
-            .filter(UpdatePublicationHandler::isPending)
+        fetchPendingPublishingRequest(publication)
             .map(PublishingRequestCase.class::cast)
             .forEach(ticket -> ticket.complete(publication, getOwner(publication)).persistUpdate(ticketService));
+    }
+
+    private Stream<PublishingRequestCase> fetchPendingPublishingRequest(Publication publication) {
+        return ticketService.fetchTicketsForUser(UserInstance.fromPublication(publication))
+                   .filter(PublishingRequestCase.class::isInstance)
+                   .filter(UpdatePublicationHandler::isPending)
+                   .map(PublishingRequestCase.class::cast);
     }
 
     private static Username getOwner(Publication publication) {
@@ -205,7 +249,7 @@ public class UpdatePublicationHandler
         return !unpublishedFiles.isEmpty() && containsPublishableFile(unpublishedFiles);
     }
 
-    private boolean containsPublishableFile(List<AssociatedArtifact> unpublishedFiles) {
+    private boolean containsPublishableFile(List<File> unpublishedFiles) {
         return unpublishedFiles.stream().anyMatch(this::isPublishable);
     }
 
@@ -246,17 +290,11 @@ public class UpdatePublicationHandler
                || publicationInstance instanceof DegreePhd;
     }
 
-    private boolean isUnpublishedFile(AssociatedArtifact artifact) {
-        return artifact instanceof UnpublishedFile;
-    }
-
-    private boolean thereIsNoRelatedPendingPublishingRequest(Publication publication) {
+    private boolean thereIsRelatedPendingPublishingRequest(Publication publication) {
         return ticketService.fetchTicketsForUser(UserInstance.fromPublication(publication))
                    .filter(PublishingRequestCase.class::isInstance)
                    .filter(ticketEntry -> hasMatchingIdentifier(publication, ticketEntry))
-                   .filter(UpdatePublicationHandler::isPending)
-                   .findAny()
-                   .isEmpty();
+                   .anyMatch(UpdatePublicationHandler::isPending);
     }
 
     private boolean userCanEditOtherPeoplesPublicationsInTheirOwnInstitution(RequestInfo requestInfo,
@@ -296,9 +334,10 @@ public class UpdatePublicationHandler
         return !requestInfo.userIsAuthorized(MANAGE_DEGREE) && !requestInfo.clientIsThirdParty();
     }
 
-    private List<AssociatedArtifact> getUnpublishedFiles(Publication publicationUpdate) {
-        return publicationUpdate.getAssociatedArtifacts().stream()
-                   .filter(this::isUnpublishedFile)
+    private List<File> getUnpublishedFiles(Publication publication) {
+        return publication.getAssociatedArtifacts().stream()
+                   .filter(UnpublishedFile.class::isInstance)
+                   .map(UnpublishedFile.class::cast)
                    .collect(Collectors.toList());
     }
 

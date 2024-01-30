@@ -4,6 +4,7 @@ package no.unit.nva.cristin.mapper.artisticproduction;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -63,7 +64,10 @@ public class ArtisticEvent {
     }
 
     public Instant getNvaTime() {
-        return new Instant(Time.convertToInstant(dateFrom));
+        return Optional.ofNullable(dateFrom)
+                   .map(Time::convertToInstant)
+                   .map(Instant::new)
+                   .orElse(null);
     }
 
 

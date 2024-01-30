@@ -462,7 +462,6 @@ paths:
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
-
   /{publicationIdentifier}/ticket/{ticketIdentifier}/message/{messageIdentifier}:
     parameters:
       - in: path

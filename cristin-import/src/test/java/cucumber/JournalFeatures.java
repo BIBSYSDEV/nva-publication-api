@@ -168,7 +168,7 @@ public class JournalFeatures {
             .setDoi(doi);
     }
 
-    @Given("the Journal Publication has a reference to an NSD journal or publisher with identifier {int}")
+    @Given("the Journal Publication has a reference to an NSD journal with identifier {int}")
     public void theJournalPublicationHasAReferenceToAnNsdJournalOrPublisherWithIdentifier(int nsdCode) {
         scenarioContext.getCristinEntry().getJournalPublication().getJournal().setNsdCode(nsdCode);
     }
