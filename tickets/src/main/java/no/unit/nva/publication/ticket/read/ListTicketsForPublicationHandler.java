@@ -1,5 +1,8 @@
 package no.unit.nva.publication.ticket.read;
 
+import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
+import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
+import static nva.commons.apigateway.AccessRight.SUPPORT;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
@@ -7,16 +10,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.GeneralSupportRequest;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketDto;
 import no.unit.nva.publication.ticket.TicketHandler;
-import nva.commons.apigateway.AccessRight;
+import no.unit.nva.publication.ticket.utils.RequestUtils;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
@@ -45,8 +45,8 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
         throws ApiGatewayException {
         var publicationIdentifier = extractPublicationIdentifierFromPath(requestInfo);
         var userInstance = UserInstance.fromRequestInfo(requestInfo);
-
-        var ticketDtos = fetchTickets(requestInfo, publicationIdentifier, userInstance);
+        var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
+        var ticketDtos = fetchTickets(requestUtils, publicationIdentifier, userInstance);
         return TicketCollection.fromTickets(ticketDtos);
     }
 
@@ -55,26 +55,11 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
         return HttpURLConnection.HTTP_OK;
     }
 
-    boolean isAuthorizedToViewTicket(TicketEntry ticket, RequestInfo requestInfo) {
-        return switch (ticket) {
-            case DoiRequest doiRequest -> requestInfo.userIsAuthorized(AccessRight.MANAGE_DOI);
-            case PublishingRequestCase publishingRequestCase ->
-                requestInfo.userIsAuthorized(AccessRight.MANAGE_PUBLISHING_REQUESTS);
-            case GeneralSupportRequest generalSupportRequest -> requestInfo.userIsAuthorized(AccessRight.SUPPORT);
-            case null, default -> false;
-        };
-    }
-
-    private static boolean userIsAuthorizedToViewOtherUsersTickets(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(AccessRight.MANAGE_DOI) || requestInfo.userIsAuthorized(
-            AccessRight.MANAGE_PUBLISHING_REQUESTS) || requestInfo.userIsAuthorized(AccessRight.SUPPORT);
-    }
-
-    private List<TicketDto> fetchTickets(RequestInfo requestInfo, SortableIdentifier publicationIdentifier,
+    private List<TicketDto> fetchTickets(RequestUtils requestUtils, SortableIdentifier publicationIdentifier,
                                          UserInstance userInstance) throws ApiGatewayException {
-        var ticketEntries = userIsAuthorizedToViewOtherUsersTickets(requestInfo)
+        var ticketEntries = requestUtils.hasOneOfAccessRights(MANAGE_DOI, MANAGE_PUBLISHING_REQUESTS, SUPPORT)
                                 ? fetchTicketsForElevatedUser(userInstance, publicationIdentifier)
-                                      .filter(ticket -> isAuthorizedToViewTicket(ticket, requestInfo))
+                                      .filter(requestUtils::isAuthorizedToView)
                                 : fetchTicketsForPublicationOwner(publicationIdentifier, userInstance);
 
         return ticketEntries.map(this::createDto).collect(Collectors.toList());
