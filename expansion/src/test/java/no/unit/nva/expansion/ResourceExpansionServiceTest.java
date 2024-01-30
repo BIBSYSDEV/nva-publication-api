@@ -474,8 +474,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void
-    shouldReturnExpandedResourceWithCorrectNumberOfContributorsForPublicationWithSamePersonInDifferentRoles()
+    void shouldReturnExpandedResourceWithCorrectNumberOfContributorsForPublicationWithSamePersonInDifferentRoles()
         throws JsonProcessingException, NotFoundException {
         var id = randomUri();
         var publication = getPublicationWithSamePersonInDifferentContributorRoles(id);
