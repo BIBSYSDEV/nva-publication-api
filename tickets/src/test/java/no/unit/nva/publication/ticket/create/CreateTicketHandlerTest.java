@@ -1,6 +1,5 @@
 package no.unit.nva.publication.ticket.create;
 
-import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
@@ -228,18 +227,6 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         handler.handleRequest(input, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
-    }
-
-    @Test
-    void shouldNotAllowPublishingRequestTicketCreationWhenPublicationIsNotPublishable()
-        throws IOException, BadRequestException {
-        var publication = createUnpublishablePublication();
-        var owner = UserInstance.fromPublication(publication);
-        var requestBody = constructDto(PublishingRequestCase.class);
-        var input = createHttpTicketCreationRequest(requestBody, publication, owner);
-        handler.handleRequest(input, output, CONTEXT);
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_CONFLICT)));
     }
 
     @ParameterizedTest

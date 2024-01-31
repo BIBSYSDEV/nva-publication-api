@@ -140,7 +140,6 @@ public class PublishingRequestCase extends TicketEntry {
         if (PublicationStatus.DRAFT_FOR_DELETION == publication.getStatus()) {
             throw new ConflictException(MARKED_FOR_DELETION_ERROR);
         }
-        assertThatPublicationHasMinimumMandatoryFields(publication);
     }
 
     @Override
