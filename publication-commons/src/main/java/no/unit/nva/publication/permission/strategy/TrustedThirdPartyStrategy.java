@@ -2,11 +2,16 @@ package no.unit.nva.publication.permission.strategy;
 
 import static nva.commons.core.attempt.Try.attempt;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.RequestInfo;
 
-public class ResourceOwnerPermissionStrategy extends PermissionStrategy {
+public class TrustedThirdPartyStrategy extends PermissionStrategy {
+
+    private final UserInstance userInstance;
+
+    public TrustedThirdPartyStrategy(UserInstance userInstance) {
+        this.userInstance = userInstance;
+    }
 
     @Override
     public boolean hasPermissionToUpdate(RequestInfo requestInfo, Publication publication) {
@@ -23,12 +28,10 @@ public class ResourceOwnerPermissionStrategy extends PermissionStrategy {
         return canModify(requestInfo, publication);
     }
 
-    private static boolean canModify(RequestInfo requestInfo, Publication publication) {
-        if (isDegree(publication) && !publication.getStatus().equals(PublicationStatus.DRAFT)) {
-            return false;
-        }
-        return attempt(requestInfo::getUserName)
-                   .map(username -> UserInstance.fromPublication(publication).getUsername().equals(username))
+    private boolean canModify(RequestInfo requestInfo, Publication publication) {
+        return requestInfo.clientIsThirdParty() &&
+               attempt(
+                   () -> userInstance.getOrganizationUri().equals(publication.getPublisher().getId()))
                    .orElse(fail -> false);
     }
 }

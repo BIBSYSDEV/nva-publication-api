@@ -13,13 +13,27 @@ import nva.commons.apigateway.RequestInfo;
 public class ContributorPermissionStrategy extends PermissionStrategy {
 
     @Override
-    public boolean hasPermission(RequestInfo requestInfo, Publication publication) {
+    public boolean hasPermissionToUpdate(RequestInfo requestInfo, Publication publication) {
+        return canModify(requestInfo, publication);
+    }
+
+    @Override
+    public boolean hasPermissionToDelete(RequestInfo requestInfo, Publication publication) {
+        return false;
+    }
+
+    @Override
+    public boolean hasPermissionToUnpublish(RequestInfo requestInfo, Publication publication) {
+        return canModify(requestInfo, publication);
+    }
+
+    private boolean canModify(RequestInfo requestInfo, Publication publication) {
         if (isDegree(publication)) {
             return false;
         }
         return attempt(requestInfo::getPersonCristinId)
-                           .map(cristinId -> publicationContainsContributor(cristinId, publication))
-                           .orElse(fail -> false);
+                   .map(cristinId -> publicationContainsContributor(cristinId, publication))
+                   .orElse(fail -> false);
     }
 
     private boolean publicationContainsContributor(URI contributor, Publication publication) {

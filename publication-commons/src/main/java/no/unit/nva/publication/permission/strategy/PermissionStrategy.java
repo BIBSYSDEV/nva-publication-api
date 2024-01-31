@@ -14,11 +14,15 @@ import nva.commons.apigateway.RequestInfo;
 
 public abstract class PermissionStrategy {
 
-    public static boolean hasAccessRight(RequestInfo requestInfo, AccessRight accessRight) {
+    public abstract boolean hasPermissionToDelete(RequestInfo requestInfo, Publication publication);
+
+    public abstract boolean hasPermissionToUnpublish(RequestInfo requestInfo, Publication publication);
+
+    public abstract boolean hasPermissionToUpdate(RequestInfo requestInfo, Publication publication);
+
+    protected static boolean hasAccessRight(RequestInfo requestInfo, AccessRight accessRight) {
         return requestInfo.userIsAuthorized(accessRight);
     }
-
-    public abstract boolean hasPermission(RequestInfo requestInfo, Publication publication);
 
     protected static boolean isDegree(Publication publication) {
         return Optional.ofNullable(publication.getEntityDescription())

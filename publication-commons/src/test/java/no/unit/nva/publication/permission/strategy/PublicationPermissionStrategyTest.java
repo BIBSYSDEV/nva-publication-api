@@ -7,6 +7,9 @@ import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
@@ -17,6 +20,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import no.unit.nva.clients.GetExternalClientResponse;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
@@ -34,7 +39,9 @@ import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class PublicationPermissionStrategyTest {
@@ -45,6 +52,14 @@ class PublicationPermissionStrategyTest {
     public static final String INJECT_NVA_USERNAME_CLAIM = "custom:nvaUsername";
     public static final String INJECT_COGNITO_GROUPS_CLAIM = "cognito:groups";
     public static final String INJECT_CRISTIN_ID_CLAIM = "custom:cristinId";
+    private IdentityServiceClient identityServiceClient;
+
+    @BeforeEach
+    void setUp() throws NotFoundException {
+        this.identityServiceClient = mock(IdentityServiceClient.class);
+        when(this.identityServiceClient.getExternalClient(any())).thenReturn(
+            new GetExternalClientResponse(randomString(), randomString(), randomUri(), randomUri()));
+    }
 
     @Test
     void shouldDenyPermissionToDeletePublicationWhenUserHasNoAccessRights() throws JsonProcessingException {
@@ -52,7 +67,7 @@ class PublicationPermissionStrategyTest {
         var publication = createPublication(randomString(), randomUri());
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .fromRequestInfo(requestInfo)
+                                   .fromRequestInfo(requestInfo, identityServiceClient)
                                    .hasPermissionToUnpublish(publication));
     }
 
@@ -62,7 +77,7 @@ class PublicationPermissionStrategyTest {
         var publication = createPublication(randomString(), randomUri());
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .fromRequestInfo(requestInfo)
+                                   .fromRequestInfo(requestInfo, identityServiceClient)
                                    .hasPermissionToUnpublish(publication));
     }
 
@@ -78,7 +93,7 @@ class PublicationPermissionStrategyTest {
         var publication = createPublication(resourceOwner, editorInstitution);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .fromRequestInfo(requestInfo)
+                                  .fromRequestInfo(requestInfo, identityServiceClient)
                                   .hasPermissionToUnpublish(publication));
     }
 
@@ -95,7 +110,7 @@ class PublicationPermissionStrategyTest {
         var publication = createPublication(resourceOwner, resourceOwnerInstitution);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .fromRequestInfo(requestInfo)
+                                  .fromRequestInfo(requestInfo, identityServiceClient)
                                   .hasPermissionToUnpublish(publication));
     }
 
@@ -109,7 +124,7 @@ class PublicationPermissionStrategyTest {
         var publication = createDegreePhd(resourceOwner, editorInstitution);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .fromRequestInfo(requestInfo)
+                                  .fromRequestInfo(requestInfo, identityServiceClient)
                                   .hasPermissionToUnpublish(publication));
     }
 
@@ -124,8 +139,26 @@ class PublicationPermissionStrategyTest {
         var publication = createDegreePhd(resourceOwner, resourceInstitution);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .fromRequestInfo(requestInfo)
+                                  .fromRequestInfo(requestInfo, identityServiceClient)
                                   .hasPermissionToUnpublish(publication));
+    }
+
+    @Test
+    void shouldDenyEditorPermissionToDeleteDegreeWhenMissingManageDegree() throws JsonProcessingException {
+        var editorName = randomString();
+        var editorInstitution = randomUri();
+        var resourceOwner = randomString();
+        var resourceInstitution = randomUri();
+
+        var accessRights = new ArrayList<AccessRight>();
+        accessRights.add(AccessRight.MANAGE_RESOURCES_ALL);
+
+        var requestInfo = createRequestInfo(editorName, editorInstitution, accessRights);
+        var publication = createDegreePhd(resourceOwner, resourceInstitution);
+
+        Assertions.assertFalse(PublicationPermissionStrategy
+                                  .fromRequestInfo(requestInfo, identityServiceClient)
+                                  .hasPermissionToDelete(publication));
     }
 
     @Test
@@ -137,7 +170,7 @@ class PublicationPermissionStrategyTest {
         var publication = createDegreePhd(username, institution);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .fromRequestInfo(requestInfo)
+                                   .fromRequestInfo(requestInfo, identityServiceClient)
                                    .hasPermissionToUnpublish(publication));
     }
 
@@ -152,7 +185,7 @@ class PublicationPermissionStrategyTest {
         var publication = createDegreePhd(username, institution);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .fromRequestInfo(requestInfo)
+                                  .fromRequestInfo(requestInfo, identityServiceClient)
                                   .hasPermissionToUnpublish(publication));
     }
 
@@ -170,7 +203,7 @@ class PublicationPermissionStrategyTest {
         var publication = createDegreePhd(resourceOwner, institution);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .fromRequestInfo(requestInfo)
+                                  .fromRequestInfo(requestInfo, identityServiceClient)
                                   .hasPermissionToUnpublish(publication));
     }
 
@@ -186,7 +219,7 @@ class PublicationPermissionStrategyTest {
         var publication = createDegreePhd(resourceOwner, randomUri());
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .fromRequestInfo(requestInfo)
+                                   .fromRequestInfo(requestInfo, identityServiceClient)
                                    .hasPermissionToUnpublish(publication));
     }
 
@@ -203,7 +236,7 @@ class PublicationPermissionStrategyTest {
         var publication = createDegreePhd(resourceOwner, resourceOwnerInstitution);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .fromRequestInfo(requestInfo)
+                                   .fromRequestInfo(requestInfo, identityServiceClient)
                                    .hasPermissionToUnpublish(publication));
     }
 
@@ -217,7 +250,7 @@ class PublicationPermissionStrategyTest {
         var publication = createPublicationWithContributor(contributorName, contributorCristinId, Role.CREATOR);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .fromRequestInfo(requestInfo)
+                                  .fromRequestInfo(requestInfo, identityServiceClient)
                                   .hasPermissionToUnpublish(publication));
     }
 
@@ -231,7 +264,7 @@ class PublicationPermissionStrategyTest {
         var publication = createPublicationWithContributor(contributorName, contributorCristinId, null);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .fromRequestInfo(requestInfo)
+                                   .fromRequestInfo(requestInfo, identityServiceClient)
                                    .hasPermissionToUnpublish(publication));
     }
 
@@ -244,7 +277,7 @@ class PublicationPermissionStrategyTest {
         var publication = createNonDegreePublication(resourceOwner, institutionId);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .fromRequestInfo(requestInfo)
+                                  .fromRequestInfo(requestInfo, identityServiceClient)
                                   .hasPermissionToUnpublish(publication));
     }
 
@@ -257,9 +290,8 @@ class PublicationPermissionStrategyTest {
         var requestInfo = createRequestInfo(editorName, editorInstitution, getEditorAccessRights());
         var publication = createPublication(resourceOwner, editorInstitution);
 
-        Assertions.assertTrue(EditorPermissionStrategy
-                                  .fromRequestInfo(requestInfo)
-                                  .hasPermission(publication));
+        Assertions.assertTrue(PublicationPermissionStrategy.fromRequestInfo(requestInfo, identityServiceClient)
+                                  .hasPermissionToUnpublish(publication));
     }
 
     private static Function<AccessRight, String> getCognitoGroup(URI institutionId) {
@@ -285,10 +317,10 @@ class PublicationPermissionStrategyTest {
         var nonDegreePublicationInstances = publicationInstanceTypes.stream().filter(this::isNonDegreeClass).collect(
             Collectors.toList());
         return PublicationGenerator.randomPublication(randomElement(nonDegreePublicationInstances)).copy()
-            .withResourceOwner(new ResourceOwner(new Username(resourceOwner), customer))
-            .withPublisher(new Organization.Builder().withId(customer).build())
-            .withStatus(PublicationStatus.PUBLISHED)
-            .build();
+                   .withResourceOwner(new ResourceOwner(new Username(resourceOwner), customer))
+                   .withPublisher(new Organization.Builder().withId(customer).build())
+                   .withStatus(PublicationStatus.PUBLISHED)
+                   .build();
     }
 
     private boolean isNonDegreeClass(Class<?> publicationInstance) {
