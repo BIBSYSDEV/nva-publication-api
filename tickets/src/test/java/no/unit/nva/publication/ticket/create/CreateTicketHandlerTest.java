@@ -434,16 +434,15 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     }
 
     @Test
-    void shouldPublishPublicationAndFilesWhenCustomerAllowsPublishingMetadataOnlyButRequesterIsCurator()
+    void shouldPublishPublicationAndFilesWhenCustomerAllowsPublishingMetadataOnlyButRequesterHasManagePubReqAccessRight()
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
         var requestBody = constructDto(PublishingRequestCase.class);
-        var owner = UserInstance.fromPublication(publication);
         ticketResolver = new TicketResolver(resourceService, ticketService,
                                             getUriRetriever(getHttpClientWithCustomerAllowingPublishingMetadataOnly(),
                                                             secretsManagerClient));
         handler = new CreateTicketHandler(resourceService, ticketResolver);
-        handler.handleRequest(createHttpTicketCreationRequestByCurator(requestBody, publication, owner), output, CONTEXT);
+        handler.handleRequest(createHttpTicketCreationRequestWithAccessRight(requestBody, publication, AccessRight.MANAGE_PUBLISHING_REQUESTS), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
         var publishedPublication = resourceService.getPublication(publication);
@@ -457,12 +456,11 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
         var requestBody = constructDto(PublishingRequestCase.class);
-        var owner = UserInstance.fromPublication(publication);
         ticketResolver = new TicketResolver(resourceService, ticketService,
                                             getUriRetriever(getHttpClientWithCustomerAllowingPublishingMetadataOnly(),
                                                             secretsManagerClient));
         handler = new CreateTicketHandler(resourceService, ticketResolver);
-        handler.handleRequest(createHttpTicketCreationRequestByCurator(requestBody, publication, owner), output, CONTEXT);
+        handler.handleRequest(createHttpTicketCreationRequestWithAccessRight(requestBody, publication, AccessRight.MANAGE_PUBLISHING_REQUESTS), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
         var completedPublishingRequest = fetchTicket(publication, PublishingRequestCase.class);
@@ -832,9 +830,9 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var user = randomString();
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
                    .withBody(ticketDto)
-                   .withAuthorizerClaim(PERSON_AFFILIATION_CLAIM, user)
+                   .withAuthorizerClaim(PERSON_AFFILIATION_CLAIM, publication.getResourceOwner().getOwner().getValue())
                    .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
-                   .withUserName(user)
+                   .withUserName(publication.getResourceOwner().getOwner().getValue())
                    .withCurrentCustomer(publication.getPublisher().getId())
                    .withAccessRights(publication.getPublisher().getId(), accessRight)
                    .build();
