@@ -727,6 +727,28 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(filesForApproval, containsInAnyOrder(expectedFilesForApproval.toArray()));
     }
 
+    @Test
+    void shouldUpdatePublicationWithNewFileWhenPublishedPublicationContainsUnpublishableFile()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithAdministrativeAgreement(publicationService);
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService)
+                         .complete(publication, new Username(randomString())).persistUpdate(ticketService);
+
+        var newUnpublishedFile = File.builder().withIdentifier(UUID.randomUUID())
+                                     .withLicense(randomUri()).buildUnpublishedFile();
+        var files = publication.getAssociatedArtifacts();
+        files.add(newUnpublishedFile);
+
+        publication.copy().withAssociatedArtifacts(files);
+
+        var input = ownerUpdatesOwnPublication(publication.getIdentifier(), publication);
+        updatePublicationHandler.handleRequest(input, output, context);
+
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        var s = "";
+    }
+
     private Set<FileForApproval> fetchFilesForApprovalFromPendingPublishingRequest(Publication publication) {
         return ticketService.fetchTicketsForUser(UserInstance.fromPublication(publication))
                    .filter(PublishingRequestCase.class::isInstance)

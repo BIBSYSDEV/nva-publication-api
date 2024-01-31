@@ -63,10 +63,14 @@ import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("PMD.GodClass")
 public class UpdatePublicationHandler
     extends ApiGatewayHandler<UpdatePublicationRequest, PublicationResponseElevatedUser> {
+
+    private static final Logger logger = LoggerFactory.getLogger(UpdatePublicationHandler.class);
 
     public static final String IDENTIFIER_MISMATCH_ERROR_MESSAGE = "Identifiers in path and in body, do not match";
     public static final String CONTENT_TYPE = "application/json";
@@ -131,12 +135,15 @@ public class UpdatePublicationHandler
     private void upsertPublishingRequestIfNeeded(Publication existingPublication, Publication publicationUpdate)
         throws ApiGatewayException {
         if (isAlreadyPublished(existingPublication) && !thereIsRelatedPendingPublishingRequest(publicationUpdate)) {
+            logger.info("Logging 1");
             createPublishingRequestOnFileUpdate(publicationUpdate);
         }
         if (isAlreadyPublished(existingPublication) && thereAreNoFiles(publicationUpdate)) {
+            logger.info("Logging 2");
             autoCompletePendingPublishingRequestsIfNeeded(publicationUpdate);
         }
         if (isAlreadyPublished(existingPublication) && updateHasFileChanges(existingPublication, publicationUpdate)) {
+            logger.info("Logging 3");
             updateFilesForApproval(publicationUpdate);
         }
     }
@@ -286,10 +293,17 @@ public class UpdatePublicationHandler
 
     private CustomerPublishingWorkflowResponse getCustomerPublishingWorkflowResponse(URI customerId)
             throws BadGatewayException {
+        logger.info("Customer to fetch: {}", customerId.toString());
         var response = uriRetriever.getRawContent(customerId, CONTENT_TYPE)
+                           .map(this::logValue)
                 .orElseThrow(this::createBadGatewayException);
         return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response,
                 CustomerPublishingWorkflowResponse.class)).orElseThrow();
+    }
+
+    private String logValue(String value) {
+        logger.info("Logging response: {}", value);
+        return value;
     }
 
     private List<File> getUnpublishedFiles(Publication publication) {
