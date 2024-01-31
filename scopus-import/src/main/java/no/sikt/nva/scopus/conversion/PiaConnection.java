@@ -130,7 +130,7 @@ public class PiaConnection {
         return affiliations.stream()
                    .filter(this::allValuesArePresent)
                    .max(Comparator.comparingInt(aff -> Integer.parseInt(aff.getCount())))
-                   .orElse(affiliations.get(0));
+                   .orElse(affiliations.getFirst());
     }
 
     private boolean allValuesArePresent(Affiliation affiliation) {
@@ -171,13 +171,13 @@ public class PiaConnection {
                    .build();
     }
 
-    private String getPiaJsonAsString(String scopusId) {
-        var uri = constructAuthorUri(scopusId);
+    private String getPiaJsonAsString(String scopusAUId) {
+        var uri = constructAuthorUri(scopusAUId);
         return attempt(() -> getResponse(uri))
                    .map(this::getBodyFromResponse)
                    .orElseThrow(fail ->
                                     logExceptionAndThrowRuntimeError(fail.getException(),
-                                                                     COULD_NOT_GET_ERROR_MESSAGE + scopusId));
+                                                                     COULD_NOT_GET_ERROR_MESSAGE + scopusAUId));
     }
 
     private URI constructAuthorUri(String scopusAuthorId) {
@@ -216,8 +216,8 @@ public class PiaConnection {
         return httpClient.send(createRequest(uri), BodyHandlers.ofString());
     }
 
-    private List<Author> getPiaAuthorResponse(String scopusID) {
-        var piaResponse = getPiaJsonAsString(scopusID);
+    private List<Author> getPiaAuthorResponse(String scopusAID) {
+        var piaResponse = getPiaJsonAsString(scopusAID);
         var type = new TypeReference<ArrayList<Author>>(){};
         return attempt(() -> DTO_OBJECT_MAPPER.readValue(piaResponse, type)).orElseThrow();
     }
