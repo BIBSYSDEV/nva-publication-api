@@ -62,6 +62,7 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.attempt.Failure;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -197,10 +198,6 @@ public class UpdatePublicationHandler
         return HttpStatus.SC_OK;
     }
 
-    private BadGatewayException createBadGatewayException() {
-        return new BadGatewayException(UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE);
-    }
-
     private boolean containsNewPublishableFiles(Publication publicationUpdate) {
         var unpublishedFiles = getUnpublishedFiles(publicationUpdate);
         return !unpublishedFiles.isEmpty() && containsPublishableFile(unpublishedFiles);
@@ -294,16 +291,16 @@ public class UpdatePublicationHandler
     private CustomerPublishingWorkflowResponse getCustomerPublishingWorkflowResponse(URI customerId)
             throws BadGatewayException {
         logger.info("Customer to fetch: {}", customerId.toString());
-        var response = uriRetriever.getRawContent(customerId, CONTENT_TYPE)
-                           .map(this::logValue)
-                .orElseThrow(this::createBadGatewayException);
+        var response = attempt(() -> uriRetriever.getRawContent(customerId, CONTENT_TYPE))
+                           .map(Optional::orElseThrow)
+                           .orElseThrow(this::throwException);
         return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response,
-                CustomerPublishingWorkflowResponse.class)).orElseThrow();
+                CustomerPublishingWorkflowResponse.class)).orElseThrow(this::throwException);
     }
 
-    private String logValue(String value) {
-        logger.info("Logging response: {}", value);
-        return value;
+    private BadGatewayException throwException(Failure<?> failure) {
+        logger.error("Exception: {} {}", failure.getException().getMessage(), failure.getException());
+        return new BadGatewayException(UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE);
     }
 
     private List<File> getUnpublishedFiles(Publication publication) {
@@ -402,7 +399,7 @@ public class UpdatePublicationHandler
                     .map(publishingRequest -> injectPublishingWorkflow((PublishingRequestCase) publishingRequest,
                             getCustomerId(publicationUpdate)))
                     .map(publishingRequest -> publishingRequest.persistNewTicket(ticketService))
-                    .orElseThrow(fail -> createBadGatewayException());
+                    .orElseThrow(this::throwException);
         }
     }
 
