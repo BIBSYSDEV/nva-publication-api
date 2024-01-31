@@ -216,8 +216,8 @@ public class PiaConnection {
         return httpClient.send(createRequest(uri), BodyHandlers.ofString());
     }
 
-    private List<Author> getPiaAuthorResponse(String scopusAID) {
-        var piaResponse = getPiaJsonAsString(scopusAID);
+    private List<Author> getPiaAuthorResponse(String scopusAuid) {
+        var piaResponse = getPiaJsonAsString(scopusAuid);
         var type = new TypeReference<ArrayList<Author>>(){};
         return attempt(() -> DTO_OBJECT_MAPPER.readValue(piaResponse, type)).orElseThrow();
     }
