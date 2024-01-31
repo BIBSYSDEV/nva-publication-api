@@ -65,7 +65,8 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
         return ticketEntries.map(this::createDto).collect(Collectors.toList());
     }
 
-    private boolean isNotPublicationOwnerAndHasAccessRightsToListTickets(RequestUtils requestUtils, SortableIdentifier publicationIdentifier)
+    private boolean isNotPublicationOwnerAndHasAccessRightsToListTickets(RequestUtils requestUtils,
+                                                                         SortableIdentifier publicationIdentifier)
         throws NotFoundException {
         return !isPublicationOwner(requestUtils, publicationIdentifier)
                && requestUtils.hasOneOfAccessRights(MANAGE_DOI, MANAGE_PUBLISHING_REQUESTS, SUPPORT);
