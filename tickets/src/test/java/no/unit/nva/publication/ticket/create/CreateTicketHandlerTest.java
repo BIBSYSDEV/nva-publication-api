@@ -434,7 +434,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     }
 
     @Test
-    void shouldPublishPublicationAndFilesWhenCustomerAllowsPublishingMetadataOnlyButRequesterHasManagePubReqAccessRight()
+    void shouldPublishPublicationAndFilesWhenCustomerAllowsPublishingMetadataOnlyButRequesterHasManagePubReqRight()
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
         var requestBody = constructDto(PublishingRequestCase.class);
@@ -442,7 +442,9 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                                             getUriRetriever(getHttpClientWithCustomerAllowingPublishingMetadataOnly(),
                                                             secretsManagerClient));
         handler = new CreateTicketHandler(resourceService, ticketResolver);
-        handler.handleRequest(createHttpTicketCreationRequestWithAccessRight(requestBody, publication, AccessRight.MANAGE_PUBLISHING_REQUESTS), output, CONTEXT);
+        handler.handleRequest(
+            createHttpTicketCreationRequestWithAccessRight(
+                requestBody, publication, AccessRight.MANAGE_PUBLISHING_REQUESTS), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
         var publishedPublication = resourceService.getPublication(publication);
@@ -627,7 +629,9 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                                             getUriRetriever(getHttpClientWithCustomerAllowingPublishingMetadataOnly(),
                                                             secretsManagerClient));
         handler = new CreateTicketHandler(resourceService, ticketResolver);
-        handler.handleRequest(createHttpTicketCreationRequestWithAccessRight(requestBody, publication, AccessRight.MANAGE_DOI), output, CONTEXT);
+        handler.handleRequest(
+            createHttpTicketCreationRequestWithAccessRight(
+                requestBody, publication, AccessRight.MANAGE_DOI), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
         var updatedPublication = resourceService.getPublication(publication);
