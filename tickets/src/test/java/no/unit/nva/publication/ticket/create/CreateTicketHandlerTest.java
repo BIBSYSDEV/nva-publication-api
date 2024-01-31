@@ -462,7 +462,9 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                                             getUriRetriever(getHttpClientWithCustomerAllowingPublishingMetadataOnly(),
                                                             secretsManagerClient));
         handler = new CreateTicketHandler(resourceService, ticketResolver);
-        handler.handleRequest(createHttpTicketCreationRequestWithAccessRight(requestBody, publication, AccessRight.MANAGE_PUBLISHING_REQUESTS), output, CONTEXT);
+        handler.handleRequest(
+            createHttpTicketCreationRequestWithAccessRight(
+                requestBody, publication, AccessRight.MANAGE_PUBLISHING_REQUESTS), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
         var completedPublishingRequest = fetchTicket(publication, PublishingRequestCase.class);
