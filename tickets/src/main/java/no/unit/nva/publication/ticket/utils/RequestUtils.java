@@ -11,11 +11,12 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 
-public record RequestUtils(List<AccessRight> accessRights) {
+public record RequestUtils(List<AccessRight> accessRights, String username) {
 
-    public static RequestUtils fromRequestInfo(RequestInfo requestInfo) {
-        return new RequestUtils(requestInfo.getAccessRights());
+    public static RequestUtils fromRequestInfo(RequestInfo requestInfo) throws UnauthorizedException {
+        return new RequestUtils(requestInfo.getAccessRights(), requestInfo.getUserName());
     }
 
     public boolean hasOneOfAccessRights(AccessRight... rights) {

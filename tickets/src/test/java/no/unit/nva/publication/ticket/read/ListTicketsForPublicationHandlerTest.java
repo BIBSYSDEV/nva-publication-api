@@ -147,6 +147,26 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         assertThat(body.getTickets().getFirst().ticketType(), is(equalTo(ticketType)));
     }
 
+    @ParameterizedTest
+    @MethodSource("accessRightAndTicketTypeProvider")
+    void shouldListAllTicketsWhenCuratorIsPublicationOwnerAndHasAccessRight(
+        Class<? extends TicketEntry> ticketType, AccessRight accessRight)
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+
+        TicketTestUtils.createPersistedTicket(publication, DoiRequest.class, ticketService);
+        TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
+        TicketTestUtils.createPersistedTicket(publication, GeneralSupportRequest.class, ticketService);
+
+        var request = curatorWithAccessRightRequestTicketsForPublicationAsPublicationOwner(publication, accessRight);
+        handler.handleRequest(request, output, CONTEXT);
+
+        var response = GatewayResponse.fromOutputStream(output, TicketCollection.class);
+        var body = response.getBodyObject(TicketCollection.class);
+
+        assertThat(body.getTickets(), hasSize(3));
+    }
+
     private TicketEntry createPersistedTicketWithMessage(Class<? extends TicketEntry> ticketType,
                                                          Publication publication) throws ApiGatewayException {
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
@@ -210,6 +230,17 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .withPathParameters(constructPathParameters(publication))
                    .withCurrentCustomer(publication.getPublisher().getId())
                    .withUserName(randomString())
+                   .withAccessRights(publication.getPublisher().getId(), accessRight)
+                   .build();
+    }
+
+    private InputStream curatorWithAccessRightRequestTicketsForPublicationAsPublicationOwner(Publication publication,
+                                                                           AccessRight accessRight)
+        throws JsonProcessingException {
+        return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
+                   .withPathParameters(constructPathParameters(publication))
+                   .withCurrentCustomer(publication.getPublisher().getId())
+                   .withUserName(publication.getResourceOwner().getOwner().getValue())
                    .withAccessRights(publication.getPublisher().getId(), accessRight)
                    .build();
     }

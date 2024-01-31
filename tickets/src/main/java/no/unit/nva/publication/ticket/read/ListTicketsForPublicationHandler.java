@@ -57,12 +57,25 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
 
     private List<TicketDto> fetchTickets(RequestUtils requestUtils, SortableIdentifier publicationIdentifier,
                                          UserInstance userInstance) throws ApiGatewayException {
-        var ticketEntries = requestUtils.hasOneOfAccessRights(MANAGE_DOI, MANAGE_PUBLISHING_REQUESTS, SUPPORT)
+        var ticketEntries = isNotPublicationOwnerAndHasAccessRightsToListTickets(requestUtils, publicationIdentifier)
                                 ? fetchTicketsForElevatedUser(userInstance, publicationIdentifier)
                                       .filter(requestUtils::isAuthorizedToView)
                                 : fetchTicketsForPublicationOwner(publicationIdentifier, userInstance);
 
         return ticketEntries.map(this::createDto).collect(Collectors.toList());
+    }
+
+    private boolean isNotPublicationOwnerAndHasAccessRightsToListTickets(RequestUtils requestUtils,
+                                                                         SortableIdentifier publicationIdentifier)
+        throws NotFoundException {
+        return !isPublicationOwner(requestUtils, publicationIdentifier)
+               && requestUtils.hasOneOfAccessRights(MANAGE_DOI, MANAGE_PUBLISHING_REQUESTS, SUPPORT);
+    }
+
+    private boolean isPublicationOwner(RequestUtils requestUtils, SortableIdentifier publicationIdentifier)
+        throws NotFoundException {
+        var publication = resourceService.getPublicationByIdentifier(publicationIdentifier);
+        return requestUtils.username().equals(publication.getResourceOwner().getOwner().getValue());
     }
 
     private Stream<TicketEntry> fetchTicketsForPublicationOwner(SortableIdentifier publicationIdentifier,
