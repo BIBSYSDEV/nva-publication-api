@@ -657,7 +657,10 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                                                    URI customerId) throws JsonProcessingException {
         return new HandlerRequestBuilder<UpdateTicketRequest>(JsonUtils.dtoObjectMapper).withCurrentCustomer(customerId)
                    .withUserName(ticket.getAssignee().toString())
-                   .withAccessRights(customerId, AccessRight.MANAGE_DOI, AccessRight.MANAGE_PUBLISHING_REQUESTS, AccessRight.SUPPORT)
+                   .withAccessRights(customerId,
+                                     AccessRight.MANAGE_DOI,
+                                     AccessRight.MANAGE_PUBLISHING_REQUESTS,
+                                     AccessRight.SUPPORT)
                    .withBody(new UpdateTicketRequest(ticket.getStatus(), ticket.getAssignee(), viewStatus))
                    .withPathParameters(createPathParameters(ticket, publication.getIdentifier()))
                    .build();
