@@ -251,8 +251,9 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedDoiTicket(publication);
         var completedTicket = ticket.complete(publication, USER_NAME);
-        var request = createCompleteTicketHttpRequest(completedTicket, AccessRight.USER,
-                                                      completedTicket.getCustomerId());
+        var request = createCompleteTicketHttpRequest(completedTicket,
+                                                      completedTicket.getCustomerId(),
+                                                      AccessRight.USER);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
@@ -265,7 +266,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var ticket = createPersistedDoiTicket(publication);
         var completedTicket = ticket.complete(publication, USER_NAME);
         var customer = randomUri();
-        var request = createCompleteTicketHttpRequest(completedTicket, AccessRight.MANAGE_DOI, customer);
+        var request = createCompleteTicketHttpRequest(completedTicket, customer, AccessRight.MANAGE_DOI);
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
@@ -561,8 +562,8 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var ticket = TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
         var closedTicket = ticket.close(new Username(randomString()));
         var httpRequest = createCompleteTicketHttpRequest(closedTicket,
-                                                          AccessRight.MANAGE_PUBLISHING_REQUESTS,
-                                                          ticket.getCustomerId());
+                                                          ticket.getCustomerId(),
+                                                          AccessRight.MANAGE_PUBLISHING_REQUESTS);
         handler.handleRequest(httpRequest, output, CONTEXT);
 
         var updatedPublication = resourceService.getPublication(publication);
@@ -580,8 +581,8 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var ticket = TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
         var closedTicket = ticket.complete(publication, USER_NAME);
         var httpRequest = createCompleteTicketHttpRequest(closedTicket,
-                                                          AccessRight.MANAGE_PUBLISHING_REQUESTS,
-                                                          ticket.getCustomerId());
+                                                          ticket.getCustomerId(),
+                                                          AccessRight.MANAGE_PUBLISHING_REQUESTS);
         handler.handleRequest(httpRequest, output, CONTEXT);
 
         var completedPublishingRequest = (PublishingRequestCase) ticketService.fetchTicket(ticket);
@@ -603,8 +604,8 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
 
         var completedTicket = ticket.complete(publication, USER_NAME);
         var httpRequest = createCompleteTicketHttpRequest(completedTicket,
-                                                          AccessRight.MANAGE_PUBLISHING_REQUESTS,
-                                                          ticket.getCustomerId());
+                                                          ticket.getCustomerId(),
+                                                          AccessRight.MANAGE_PUBLISHING_REQUESTS);
         handler.handleRequest(httpRequest, output, CONTEXT);
         var completedPublishingRequest = (PublishingRequestCase) ticketService.fetchTicket(ticket);
         var approvedFile = (File) publication.getAssociatedArtifacts().get(0);
@@ -656,7 +657,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                                                    URI customerId) throws JsonProcessingException {
         return new HandlerRequestBuilder<UpdateTicketRequest>(JsonUtils.dtoObjectMapper).withCurrentCustomer(customerId)
                    .withUserName(ticket.getAssignee().toString())
-                   .withAccessRights(customerId, AccessRight.MANAGE_DOI)
+                   .withAccessRights(customerId, AccessRight.MANAGE_DOI, AccessRight.MANAGE_PUBLISHING_REQUESTS, AccessRight.SUPPORT)
                    .withBody(new UpdateTicketRequest(ticket.getStatus(), ticket.getAssignee(), viewStatus))
                    .withPathParameters(createPathParameters(ticket, publication.getIdentifier()))
                    .build();
@@ -707,13 +708,14 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     }
 
     private InputStream authorizedUserCompletesTicket(TicketEntry ticket) throws JsonProcessingException {
-        return createCompleteTicketHttpRequest(ticket, AccessRight.MANAGE_DOI, ticket.getCustomerId());
+        return createCompleteTicketHttpRequest(ticket, ticket.getCustomerId(), AccessRight.MANAGE_DOI,
+                                               AccessRight.MANAGE_PUBLISHING_REQUESTS, AccessRight.SUPPORT);
     }
 
-    private InputStream createCompleteTicketHttpRequest(TicketEntry ticket, AccessRight accessRight, URI customer)
+    private InputStream createCompleteTicketHttpRequest(TicketEntry ticket, URI customer, AccessRight... accessRights)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper).withBody(TicketDto.fromTicket(ticket))
-                   .withAccessRights(customer, accessRight)
+                   .withAccessRights(customer, accessRights)
                    .withCurrentCustomer(customer)
                    .withUserName(USER_NAME.getValue())
                    .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
