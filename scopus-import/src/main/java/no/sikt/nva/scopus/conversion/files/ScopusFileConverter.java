@@ -52,6 +52,9 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.http.entity.ContentType;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -236,14 +239,17 @@ public class ScopusFileConverter {
         }
     }
 
-    private ScopusFile fetchFileContent(ScopusFile file) {
+    private ScopusFile fetchFileContent(ScopusFile file) throws IOException {
+        var inputStream =  TikaInputStream.get(file.downloadFileUrl());
+        var mimeTypeDetector = TikaConfig.getDefaultConfig().getDetector();
+        var mediaType = mimeTypeDetector.detect(inputStream, new Metadata());
         var fetchFileResponse = fetchResponseAsInputStream(file.downloadFileUrl());
-        var content = fetchFileResponse.body();
         var filename = getFilename(fetchFileResponse);
 
         return file.copy()
-                   .withMimeType(extractMimeType(file, fetchFileResponse))
-                   .withContent(content).withName(filename).build();
+                   .withMimeType(mediaType.getType())
+                   .withContent(inputStream.getInputStreamFactory().getInputStream())
+                   .withName(filename).build();
     }
 
     private static String extractMimeType(ScopusFile file, HttpResponse<InputStream> fetchFileResponse) {
@@ -399,6 +405,7 @@ public class ScopusFileConverter {
                                .bucket(IMPORT_CANDIDATES_FILES_BUCKET)
                                .contentDisposition(
                                    String.format(CONTENT_DISPOSITION_FILE_NAME_PATTERN, scopusFile.name()))
+                               .contentType(scopusFile.mimeType())
                                .key(scopusFile.identifier().toString())
                                .build(), RequestBody.fromBytes(content));
         return scopusFile.copy().withSize(content.length).build();
