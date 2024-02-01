@@ -296,7 +296,7 @@ public class UpdatePublicationHandler
 
     private BadGatewayException throwException(Failure<?> failure) {
         logger.error(failure.getException().getMessage());
-        return new BadGatewayException(UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE);
+        return new BadGatewayException("Something went wrong! Contact publication administrator.");
     }
 
     private List<File> getUnpublishedFiles(Publication publication) {
