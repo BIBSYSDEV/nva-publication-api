@@ -246,7 +246,7 @@ public class ScopusFileConverter {
         var filename = getFilename(fetchFileResponse);
 
         return file.copy()
-                   .withMimeType(mediaType.getType())
+                   .withMimeType(mediaType.toString())
                    .withContent(inputStream)
                    .withName(filename).build();
     }

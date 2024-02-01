@@ -37,10 +37,6 @@ import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import nva.commons.core.ioutils.IoUtils;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.http.Header;
@@ -199,15 +195,6 @@ public class ScopusFileConverterTest {
         var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).get(0);
 
         assertThat(file.getName(), is(notNullValue()));
-    }
-
-    @Test
-    void some() throws IOException, TikaException {
-        var tis =  TikaInputStream.get(URI.create("https://www.cambridge.org/core/services/aop-cambridge-core/content/view/S0305000922000484"));
-        var config = new TikaConfig();
-        var tikaDetector = config.getDetector();
-        var mediaType = tikaDetector.detect(tis, new Metadata());
-        var s = "";
     }
 
     private void mockDownloadUrlResponse() throws IOException, InterruptedException {
