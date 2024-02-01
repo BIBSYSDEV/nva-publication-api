@@ -1,6 +1,5 @@
 package no.sikt.nva.scopus.conversion;
 
-import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -13,7 +12,6 @@ import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.publication.model.business.importcandidate.NvaCustomer;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
-import org.jetbrains.annotations.Nullable;
 
 public class NvaCustomerConnection {
 
@@ -34,8 +32,15 @@ public class NvaCustomerConnection {
     }
 
     public NvaCustomer fetchCustomer(CristinOrganization cristinOrganization) {
-        return new NvaCustomer(isPresentAndHasTopLevelOrg(cristinOrganization) && isCustomer(cristinOrganization),
-                               getCristinTopLevelOrg(cristinOrganization));
+        return Optional.ofNullable(cristinOrganization)
+                   .filter(NvaCustomerConnection::hasTopLevelOrg)
+                   .filter(this::isCustomer)
+                   .map(org -> new NvaCustomer(true, getCristinTopLevelOrg(cristinOrganization)))
+                   .orElse(defaultNvaCustomer());
+    }
+
+    private static NvaCustomer defaultNvaCustomer() {
+        return new NvaCustomer(false, null);
     }
 
     private static URI getCristinTopLevelOrg(CristinOrganization cristinOrganization) {
@@ -55,8 +60,8 @@ public class NvaCustomerConnection {
                    .orElseThrow();
     }
 
-    private static boolean isPresentAndHasTopLevelOrg(CristinOrganization cristinOrganization) {
-        return nonNull(cristinOrganization) && nonNull(cristinOrganization.getTopLevelOrg());
+    private static boolean hasTopLevelOrg(CristinOrganization cristinOrganization) {
+        return Optional.ofNullable(cristinOrganization).map(CristinOrganization::getTopLevelOrg).isPresent();
     }
 
     private static boolean isHttpOk(Integer code) {
