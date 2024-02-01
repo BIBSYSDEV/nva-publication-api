@@ -136,15 +136,12 @@ public class UpdatePublicationHandler
     private void upsertPublishingRequestIfNeeded(Publication existingPublication, Publication publicationUpdate)
         throws ApiGatewayException {
         if (isAlreadyPublished(existingPublication) && !thereIsRelatedPendingPublishingRequest(publicationUpdate)) {
-            logger.info("Logging 1");
             createPublishingRequestOnFileUpdate(publicationUpdate);
         }
         if (isAlreadyPublished(existingPublication) && thereAreNoFiles(publicationUpdate)) {
-            logger.info("Logging 2");
             autoCompletePendingPublishingRequestsIfNeeded(publicationUpdate);
         }
         if (isAlreadyPublished(existingPublication) && updateHasFileChanges(existingPublication, publicationUpdate)) {
-            logger.info("Logging 3");
             updateFilesForApproval(publicationUpdate);
         }
     }
@@ -290,7 +287,6 @@ public class UpdatePublicationHandler
 
     private CustomerPublishingWorkflowResponse getCustomerPublishingWorkflowResponse(URI customerId)
             throws BadGatewayException {
-        logger.info("Customer to fetch: {}", customerId.toString());
         var response = attempt(() -> uriRetriever.getRawContent(customerId, CONTENT_TYPE))
                            .map(Optional::orElseThrow)
                            .orElseThrow(this::throwException);
@@ -299,7 +295,7 @@ public class UpdatePublicationHandler
     }
 
     private BadGatewayException throwException(Failure<?> failure) {
-        logger.error("Exception: {} {}", failure.getException().getMessage(), failure.getException());
+        logger.error(failure.getException().getMessage());
         return new BadGatewayException(UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE);
     }
 

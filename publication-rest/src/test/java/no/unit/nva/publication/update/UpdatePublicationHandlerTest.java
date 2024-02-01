@@ -9,6 +9,7 @@ import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiM
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.RequestUtil.IDENTIFIER_IS_NOT_A_VALID_UUID;
 import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
+import static no.unit.nva.publication.model.business.PublishingRequestCase.assertThatPublicationHasMinimumMandatoryFields;
 import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_AUTH_URL;
@@ -62,6 +63,7 @@ import java.util.stream.Stream;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
@@ -84,6 +86,7 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
+import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.FileForApproval;
@@ -728,10 +731,11 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldUpdatePublicationWithNewFileWhenPublishedPublicationContainsUnpublishableFile()
+    void shouldUpdatePublicationWithoutReferencedContext()
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithAdministrativeAgreement(publicationService);
-        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        publication.getEntityDescription().getReference().setDoi(null);
+        publicationService.updatePublication(publication);
         TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService)
                          .complete(publication, new Username(randomString())).persistUpdate(ticketService);
 
@@ -745,8 +749,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var input = ownerUpdatesOwnPublication(publication.getIdentifier(), publication);
         updatePublicationHandler.handleRequest(input, output, context);
 
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        var s = "";
+        assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(200)));
     }
 
     private Set<FileForApproval> fetchFilesForApprovalFromPendingPublishingRequest(Publication publication) {
