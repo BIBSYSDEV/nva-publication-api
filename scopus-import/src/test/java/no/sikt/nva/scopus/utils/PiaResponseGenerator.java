@@ -30,7 +30,7 @@ public class PiaResponseGenerator {
         return attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(affiliations)).orElseThrow();
     }
 
-    public List<Author> generateAuthors(String scopusId, int cristinId) {
+    public static List<Author> generateAuthors(String scopusAuthorId, int cristinId) {
         int maxNumberOfAuthors = 20;
         var firstname = randomString();
         var surname = randomString();
@@ -38,7 +38,7 @@ public class PiaResponseGenerator {
         return IntStream.range(0, randomInteger(maxNumberOfAuthors) + 1)
                    .boxed()
                    .map(index ->
-                            generateAuthor(scopusId,
+                            generateAuthor(scopusAuthorId,
                                            firstname,
                                            surname,
                                            authorName,
@@ -74,11 +74,6 @@ public class PiaResponseGenerator {
                    .build();
     }
 
-    @NotNull
-    private static String createUnitId(String cristinId) {
-        return cristinId + "." + randomInteger() + "." + randomInteger();
-    }
-
     public Affiliation generateAffiliationWithoutCount(String cristinId) {
         return new Builder()
                    .withInstitution(cristinId)
@@ -103,7 +98,12 @@ public class PiaResponseGenerator {
                    .build();
     }
 
-    private Author generateAuthor(String externalId,
+    @NotNull
+    private static String createUnitId(String cristinId) {
+        return cristinId + "." + randomInteger() + "." + randomInteger();
+    }
+
+    private static Author generateAuthor(String externalId,
                                   String firstname,
                                   String surname,
                                   String authorName,
@@ -120,11 +120,11 @@ public class PiaResponseGenerator {
         return author;
     }
 
-    private String generateRandomOrcid() {
+    private static String generateRandomOrcid() {
         return randomBoolean() ? randomString() : null;
     }
 
-    private Publication generateRandomPublication() {
+    private static Publication generateRandomPublication() {
         var publication = new Publication();
         publication.setSourceCode(SOURCE_CODE);
         publication.setExternalId(randomString());
