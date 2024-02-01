@@ -75,8 +75,7 @@ public class UpdatePublicationHandler
 
     public static final String IDENTIFIER_MISMATCH_ERROR_MESSAGE = "Identifiers in path and in body, do not match";
     public static final String CONTENT_TYPE = "application/json";
-    public static final String UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE = "Unable to fetch customer publishing workflow"
-            + " from upstream";
+    public static final String BAD_GATEWAY_MESSAGE = "Something went wrong! Contact publication administrator.";
     private final RawContentRetriever uriRetriever;
     private final TicketService ticketService;
     private final ResourceService resourceService;
@@ -296,7 +295,7 @@ public class UpdatePublicationHandler
 
     private BadGatewayException throwException(Failure<?> failure) {
         logger.error(failure.getException().getMessage());
-        return new BadGatewayException("Something went wrong! Contact publication administrator.");
+        return new BadGatewayException(BAD_GATEWAY_MESSAGE);
     }
 
     private List<File> getUnpublishedFiles(Publication publication) {
