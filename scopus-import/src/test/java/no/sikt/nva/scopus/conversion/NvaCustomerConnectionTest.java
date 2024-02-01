@@ -30,26 +30,26 @@ public class NvaCustomerConnectionTest {
     void shouldReturnTrueWhenFetchingCustomerByCristinIdReturnsOk() {
         mockResponseWithStatusCode(200);
 
-        assertTrue(nvaCustomerConnection.isNvaCustomer(cristinOrgWithId(randomUri())));
+        assertTrue(nvaCustomerConnection.fetchCustomer(cristinOrgWithId(randomUri())).isCustomer());
     }
 
     @Test
     void shouldReturnFalseWhenFetchingCustomerByCristinIdReturnsNotOk() {
         mockResponseWithStatusCode(502);
 
-        assertFalse(nvaCustomerConnection.isNvaCustomer(cristinOrgWithId(randomUri())));
+        assertFalse(nvaCustomerConnection.fetchCustomer(cristinOrgWithId(randomUri())).isCustomer());
     }
 
     @Test
     void shouldThrowExceptionWhenSomethingGoesWrongFetchingCustomer() {
-        assertThrows(NullPointerException.class, () -> nvaCustomerConnection.isNvaCustomer(cristinOrgWithId(null)));
+        assertThrows(NullPointerException.class, () -> nvaCustomerConnection.fetchCustomer(cristinOrgWithId(null)));
     }
 
     @Test
     void shouldThrowExceptionWhenFetchedResponseIsEmpty() {
         when(uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class, () -> nvaCustomerConnection.isNvaCustomer(cristinOrgWithId(randomUri())));
+        assertThrows(RuntimeException.class, () -> nvaCustomerConnection.fetchCustomer(cristinOrgWithId(randomUri())));
     }
 
     private static CristinOrganization cristinOrgWithId(URI id) {

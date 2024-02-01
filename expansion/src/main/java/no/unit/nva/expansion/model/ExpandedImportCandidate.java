@@ -15,7 +15,6 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
@@ -31,6 +30,8 @@ import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
+import no.unit.nva.publication.model.business.importcandidate.NvaCustomer;
+import no.unit.nva.publication.model.business.importcandidate.NvaCustomerContributor;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -117,7 +118,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .withJournal(extractJournal(importCandidate))
                    .withPublisher(extractPublisher(importCandidate))
                    .withCreatedDate(importCandidate.getCreatedDate())
-                   .withCooperation(extractCorporation(organizations))
+                   .withCooperation(extractCorporation(importCandidate))
                    .withAssociatedArtifacts(importCandidate.getAssociatedArtifacts())
                    .withPrintIssn(extractPrintIssn(importCandidate))
                    .withOnlineIssn(extractOnlineIssn(importCandidate))
@@ -308,7 +309,10 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .orElse(null);
     }
 
-    private static CollaborationType extractCorporation(Set<Corporation> organizations) {
+    private static CollaborationType extractCorporation(ImportCandidate importCandidate) {
+        var organizations = importCandidate.getEntityDescription().getContributors().stream()
+                                .map(Contributor::getAffiliations)
+                                .toList();
         return organizations.size() > 1 ? CollaborationType.COLLABORATIVE : CollaborationType.NON_COLLABORATIVE;
     }
 
@@ -418,21 +422,16 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     private static Set<Corporation> extractOrganizations(ImportCandidate importCandidate, UriRetriever uriRetriever) {
-        return importCandidate.getEntityDescription()
-                   .getContributors()
-                   .stream()
-                   .map(Contributor::getAffiliations)
-                   .flatMap(List::stream)
-                   .map(organization -> expandOrganization(organization, uriRetriever))
+        return importCandidate.getNvaContributors().stream()
+                   .filter(NvaCustomerContributor::belongsToNvaCustomer)
+                   .map(NvaCustomerContributor::getNvaCustomer)
+                   .map(NvaCustomer::cristinId)
+                   .map(cristinId -> expandOrganization(cristinId, uriRetriever))
                    .collect(Collectors.toSet());
     }
 
-    private static Corporation expandOrganization(Corporation corporation, UriRetriever uriRetriever) {
-        if (corporation instanceof Organization organization) {
-            return ExpandedImportCandidateOrganization.fromOrganization(organization).expand(uriRetriever);
-        } else {
-            return corporation;
-        }
+    private static Corporation expandOrganization(URI cristinId, UriRetriever uriRetriever) {
+        return ExpandedImportCandidateOrganization.fromCristinId(cristinId).expand(uriRetriever);
     }
 
     public static final class Builder {

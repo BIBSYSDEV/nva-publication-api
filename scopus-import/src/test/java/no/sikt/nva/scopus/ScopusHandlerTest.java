@@ -189,6 +189,7 @@ import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
+import no.unit.nva.publication.model.business.importcandidate.NvaCustomer;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
@@ -1180,7 +1181,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
     private static NvaCustomerConnection mockCustomerConnection() {
         var customerConnection = mock(NvaCustomerConnection.class);
-        when(customerConnection.isNvaCustomer(any())).thenReturn(true);
+        when(customerConnection.fetchCustomer(any())).thenReturn(new NvaCustomer(true, randomUri()));
         return customerConnection;
     }
 

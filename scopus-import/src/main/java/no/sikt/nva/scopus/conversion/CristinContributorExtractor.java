@@ -19,6 +19,7 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import no.unit.nva.publication.model.business.importcandidate.NvaCustomer;
 import no.unit.nva.publication.model.business.importcandidate.NvaCustomerContributor;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
@@ -35,7 +36,7 @@ public final class CristinContributorExtractor {
 
     public static NvaCustomerContributor generateContributorFromCristinPerson(
         CristinPerson cristinPerson, AuthorTp authorTp, PersonalnameType correspondencePerson,
-        CristinOrganization cristinOrganization, boolean isNvaCustomer) {
+        CristinOrganization cristinOrganization, NvaCustomer nvaCustomer) {
 
         return new NvaCustomerContributor.Builder()
                    .withIdentity(generateContributorIdentityFromCristinPerson(cristinPerson, authorTp))
@@ -43,7 +44,7 @@ public final class CristinContributorExtractor {
                    .withRole(new RoleType(Role.CREATOR))
                    .withSequence(getSequenceNumber(authorTp))
                    .withCorrespondingAuthor(isCorrespondingAuthor(authorTp, correspondencePerson))
-                   .withBelongsToNvaCustomer(isNvaCustomer)
+                   .withNvaCustomer(nvaCustomer)
                    .build();
     }
 

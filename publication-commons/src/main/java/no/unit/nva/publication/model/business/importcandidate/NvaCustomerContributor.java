@@ -5,21 +5,28 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.role.RoleType;
+import nva.commons.core.JacocoGenerated;
 
+@JacocoGenerated
 public class NvaCustomerContributor extends Contributor {
 
-    private final boolean hasNvaCustomer;
+    private final NvaCustomer nvaCustomer;
 
     public NvaCustomerContributor(Identity identity, List<Corporation> affiliations, Object role, Integer sequence,
-                                  boolean correspondingAuthor, boolean hasNvaCustomer) {
+                                  boolean correspondingAuthor, NvaCustomer hasNvaCustomer) {
         super(identity, affiliations, role, sequence, correspondingAuthor);
-        this.hasNvaCustomer = hasNvaCustomer;
+        this.nvaCustomer = hasNvaCustomer;
+    }
+
+    public NvaCustomer getNvaCustomer() {
+        return nvaCustomer;
     }
 
     public boolean belongsToNvaCustomer() {
-        return hasNvaCustomer;
+        return nvaCustomer.isCustomer();
     }
 
+    @JacocoGenerated
     public static final class Builder {
 
         private Identity identity;
@@ -27,7 +34,7 @@ public class NvaCustomerContributor extends Contributor {
         private Integer sequence;
         private RoleType role;
         private boolean correspondingAuthor;
-        private boolean belongsToNvaCustomer;
+        private NvaCustomer nvaCustomer;
 
         public Builder() {
         }
@@ -57,14 +64,14 @@ public class NvaCustomerContributor extends Contributor {
             return this;
         }
 
-        public Builder withBelongsToNvaCustomer(boolean belongsToNvaCustomer) {
-            this.belongsToNvaCustomer = belongsToNvaCustomer;
+        public Builder withNvaCustomer(NvaCustomer nvaCustomer) {
+            this.nvaCustomer = nvaCustomer;
             return this;
         }
 
         public NvaCustomerContributor build() {
             return new NvaCustomerContributor(identity, affiliations, role,
-                                              sequence, correspondingAuthor, belongsToNvaCustomer);
+                                              sequence, correspondingAuthor, nvaCustomer);
         }
     }
 }

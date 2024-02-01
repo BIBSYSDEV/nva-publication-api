@@ -17,7 +17,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.net.URI;
 import java.util.List;
@@ -28,7 +27,6 @@ import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.DocTp;
-import no.scopus.generated.PersonalnameType;
 import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
@@ -38,6 +36,7 @@ import no.sikt.nva.scopus.utils.ScopusGenerator;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Organization;
+import no.unit.nva.publication.model.business.importcandidate.NvaCustomer;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,7 +54,7 @@ public class ContributorExtractorTest {
         piaConnection = mock(PiaConnection.class);
         cristinConnection = mock(CristinConnection.class);
         nvaCustomerConnection = mock(NvaCustomerConnection.class);
-        when(nvaCustomerConnection.isNvaCustomer(any())).thenReturn(true);
+        when(nvaCustomerConnection.fetchCustomer(any())).thenReturn(new NvaCustomer(true, randomUri()));
     }
 
     @Test
@@ -165,7 +164,7 @@ public class ContributorExtractorTest {
         var orcId = getOrcidFromScopusDocument(document);
         mockCristinPersonByOrcIdResponse(orcId);
         mockRandomCristinOrgResponse();
-        when(nvaCustomerConnection.isNvaCustomer(any())).thenReturn(false);
+        when(nvaCustomerConnection.fetchCustomer(any())).thenReturn(new NvaCustomer(false, randomUri()));
 
         assertThrows(MissingNvaContributorException.class,
                      () -> contributorExtractorFromDocument(document).generateContributors(),

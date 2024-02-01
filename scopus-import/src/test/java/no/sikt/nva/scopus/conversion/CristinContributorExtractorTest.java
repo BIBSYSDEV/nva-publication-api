@@ -2,6 +2,7 @@ package no.sikt.nva.scopus.conversion;
 
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -10,6 +11,7 @@ import no.scopus.generated.AuthorTp;
 import no.scopus.generated.PersonalnameType;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
+import no.unit.nva.publication.model.business.importcandidate.NvaCustomer;
 import nva.commons.core.StringUtils;
 import org.junit.jupiter.api.Test;
 
@@ -24,16 +26,20 @@ public class CristinContributorExtractorTest {
     void shouldCreateIdentityWithFullName() {
         var person = new CristinPerson(null, null, Set.of(FIRST_NAME, LAST_NAME), null, null, null);
         var contributor = CristinContributorExtractor.generateContributorFromCristinPerson(person, authorTp(), null,
-                                                                                           null, true);
+                                                                                           null, nvaCustomer());
         var expectedName = "First Last";
         assertThat(contributor.getIdentity().getName(), is(equalTo(expectedName)));
+    }
+
+    private NvaCustomer nvaCustomer() {
+        return new NvaCustomer(true, randomUri());
     }
 
     @Test
     void shouldCreateEmptyNameWhenTypedValueIsNull() {
         var person = new CristinPerson(null, null, null, null, null, null);
         var contributor = CristinContributorExtractor.generateContributorFromCristinPerson(person, authorTp(), null,
-                                                                                           null, true);
+                                                                                           null, nvaCustomer());
         assertThat(contributor.getIdentity().getName(), is(equalTo(StringUtils.EMPTY_STRING)));
     }
 
@@ -41,7 +47,7 @@ public class CristinContributorExtractorTest {
     void shouldCreateNameWithFirstNameOnlyWhenLastNameValueIsEmpty() {
         var person = new CristinPerson(null, null, Set.of(FIRST_NAME), null, null, null);
         var contributor = CristinContributorExtractor.generateContributorFromCristinPerson(person, authorTp(), null,
-                                                                                           null, true);
+                                                                                           null, nvaCustomer());
         assertThat(contributor.getIdentity().getName(), is(equalTo(FIRST_NAME.getValue())));
     }
 
@@ -50,7 +56,7 @@ public class CristinContributorExtractorTest {
         var person = new CristinPerson(null, null, Set.of(FIRST_NAME, LAST_NAME), null, null, null);
         var contributor = CristinContributorExtractor.generateContributorFromCristinPerson(person, authorTp(),
                                                                                            correspondencePerson(),
-                                                                                           null, true);
+                                                                                           null, nvaCustomer());
         assertThat(contributor.isCorrespondingAuthor(), is(true));
     }
 
@@ -59,7 +65,7 @@ public class CristinContributorExtractorTest {
         var person = new CristinPerson(null, null, Set.of(FIRST_NAME, LAST_NAME), null, null, null);
         var contributor = CristinContributorExtractor.generateContributorFromCristinPerson(person, authorTp(),
                                                                                            correspondencePerson(),
-                                                                                           null, true);
+                                                                                           null, nvaCustomer());
         assertThat(contributor.isCorrespondingAuthor(), is(true));
     }
 

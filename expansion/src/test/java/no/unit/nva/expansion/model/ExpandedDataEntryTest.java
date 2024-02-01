@@ -12,13 +12,13 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
@@ -66,6 +66,8 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate.Builder;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
+import no.unit.nva.publication.model.business.importcandidate.NvaCustomer;
+import no.unit.nva.publication.model.business.importcandidate.NvaCustomerContributor;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -125,11 +127,9 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     @MethodSource("importCandidateContextTypeProvider")
     void shouldExpandImportCandidateSuccessfully(PublicationContext publicationContext) {
         var importCandidate = randomImportCandidate(publicationContext);
-        importCandidate.getEntityDescription().getContributors().stream()
-            .map(Contributor::getAffiliations)
-            .flatMap(List::stream)
-            .filter(Organization.class::isInstance)
-            .map(Organization.class::cast)
+        importCandidate.getNvaContributors().stream()
+            .map(NvaCustomerContributor::getNvaCustomer)
+            .map(NvaCustomer::cristinId)
             .forEach(this::mockOrganizations);
         var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
 
@@ -137,9 +137,9 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
     }
 
-    private void mockOrganizations(Organization org) {
-        when(uriRetriever.getRawContent(org.getId(), CONTENT_TYPE)).
-            thenReturn(Optional.of(new CristinOrganization(org.getId(), null, null, null, null,
+    private void mockOrganizations(URI cristinId) {
+        when(uriRetriever.getRawContent(cristinId, CONTENT_TYPE)).
+            thenReturn(Optional.of(new CristinOrganization(cristinId, null, null, null, null,
                                                            Map.of("no", "label")).toJsonString()));
     }
 
@@ -162,6 +162,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                    .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of())
+                   .withNvaContributors(List.of(randomNvaContributor()))
                    .build();
     }
 
@@ -250,6 +251,11 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                    .withMainTitle(randomString())
                    .withReference(createReference(publicationContext))
                    .build();
+    }
+
+    private NvaCustomerContributor randomNvaContributor() {
+        return new NvaCustomerContributor(new Identity.Builder().build(), List.of(), null,
+                                          1, false, new NvaCustomer(true, randomUri()));
     }
 
     private Contributor randomContributor() {

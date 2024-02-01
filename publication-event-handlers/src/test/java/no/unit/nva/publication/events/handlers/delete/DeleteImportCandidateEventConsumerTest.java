@@ -12,6 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import com.amazonaws.services.dynamodbv2.document.Index;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -37,6 +38,8 @@ import no.unit.nva.publication.events.bodies.ImportCandidateDeleteEvent;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
+import no.unit.nva.publication.model.business.importcandidate.NvaCustomer;
+import no.unit.nva.publication.model.business.importcandidate.NvaCustomerContributor;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
@@ -151,7 +154,13 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
                    .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(SCOPUS_IDENTIFIER, randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of())
+                   .withNvaContributors(List.of(randomNvaContributor()))
                    .build();
+    }
+
+    private NvaCustomerContributor randomNvaContributor() {
+        return new NvaCustomerContributor(new Identity.Builder().build(), List.of(), null,
+                                          1, false, new NvaCustomer(true, randomUri()));
     }
 
     private EntityDescription randomEntityDescription() {

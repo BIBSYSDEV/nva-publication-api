@@ -9,7 +9,6 @@ import java.util.Optional;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.model.Corporation;
-import no.unit.nva.model.Organization;
 import no.unit.nva.publication.external.services.UriRetriever;
 
 @JsonTypeName(ExpandedImportCandidateOrganization.TYPE)
@@ -26,8 +25,8 @@ public class ExpandedImportCandidateOrganization extends Corporation {
         this.labels = labels;
     }
 
-    public static ExpandedImportCandidateOrganization fromOrganization(Organization organization) {
-        return new ExpandedImportCandidateOrganization(organization.getId(), Map.of());
+    public static ExpandedImportCandidateOrganization fromCristinId(URI cristinId) {
+        return new ExpandedImportCandidateOrganization(cristinId, Map.of());
     }
 
     public static ExpandedImportCandidateOrganization fromCristinOrganization(CristinOrganization cristinOrganization) {

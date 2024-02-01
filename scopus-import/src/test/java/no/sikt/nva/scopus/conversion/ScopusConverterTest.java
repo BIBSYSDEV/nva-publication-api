@@ -1,5 +1,6 @@
 package no.sikt.nva.scopus.conversion;
 
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -9,6 +10,7 @@ import static org.mockito.Mockito.when;
 import no.sikt.nva.scopus.ScopusConverter;
 import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
+import no.unit.nva.publication.model.business.importcandidate.NvaCustomer;
 import org.junit.jupiter.api.Test;
 
 public class ScopusConverterTest {
@@ -22,7 +24,7 @@ public class ScopusConverterTest {
                                             mock(CristinConnection.class), mock(PublicationChannelConnection.class),
                                             customerConnection,
                                             mock(ScopusFileConverter.class));
-        when(customerConnection.isNvaCustomer(any())).thenReturn(true);
+        when(customerConnection.fetchCustomer(any())).thenReturn(new NvaCustomer(true, randomUri()));
         var candidate = converter.generateImportCandidate();
 
         assertThat(candidate.getEntityDescription().getMainTitle(), is(nullValue()));
@@ -37,9 +39,7 @@ public class ScopusConverterTest {
                                             mock(CristinConnection.class), mock(PublicationChannelConnection.class),
                                             customerConnection,
                                             mock(ScopusFileConverter.class));
-        when(customerConnection.isNvaCustomer(any())).thenReturn(true);
-        var candidate = converter.generateImportCandidate();
-
+        when(customerConnection.fetchCustomer(any())).thenReturn(new NvaCustomer(true, randomUri()));        var candidate = converter.generateImportCandidate();
         assertThat(candidate.getEntityDescription().getMainTitle(), is(nullValue()));
     }
 

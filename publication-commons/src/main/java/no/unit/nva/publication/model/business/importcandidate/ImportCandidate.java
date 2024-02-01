@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business.importcandidate;
 
+import static java.util.Objects.isNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
@@ -37,7 +38,7 @@ public class ImportCandidate extends Publication implements JsonSerializable {
     }
 
     public List<NvaCustomerContributor> getNvaContributors() {
-        return nvaContributors;
+        return isNull(nvaContributors) || nvaContributors.isEmpty() ? List.of() : nvaContributors;
     }
 
     public void setNvaContributors(List<NvaCustomerContributor> nvaContributors) {

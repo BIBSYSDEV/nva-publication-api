@@ -9,6 +9,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
+import no.unit.nva.publication.model.business.importcandidate.NvaCustomer;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 
@@ -30,8 +31,9 @@ public class NvaCustomerConnection {
         this.uriRetriever = uriRetriever;
     }
 
-    public boolean isNvaCustomer(CristinOrganization cristinOrganization) {
-        return isPresentAndHasTopLevelOrg(cristinOrganization) && isCustomer(cristinOrganization);
+    public NvaCustomer fetchCustomer(CristinOrganization cristinOrganization) {
+        return new NvaCustomer(isPresentAndHasTopLevelOrg(cristinOrganization) && isCustomer(cristinOrganization),
+                               cristinOrganization.getTopLevelOrg().id());
     }
 
     private Boolean isCustomer(CristinOrganization cristinOrganization) {
