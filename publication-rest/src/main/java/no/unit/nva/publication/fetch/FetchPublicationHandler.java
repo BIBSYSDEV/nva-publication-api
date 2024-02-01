@@ -51,9 +51,10 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     public static final Clock CLOCK = Clock.systemDefaultZone();
     public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
     public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
+    public static final String GONE_MESSAGE = "Publication has been removed";
     protected static final String ENV_NAME_NVA_FRONTEND_DOMAIN = "NVA_FRONTEND_DOMAIN";
     private static final String REGISTRATION_PATH = "registration";
-    public static final String GONE_MESSAGE = "Publication has been removed";
+    public static final String DO_NOT_REDIRECT_QUERY_PARAM = "doNotRedirect";
     private final ResourceService resourceService;
     private final RawContentRetriever uriRetriever;
     private int statusCode = HttpURLConnection.HTTP_OK;
@@ -99,18 +100,39 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         return switch (publication.getStatus()) {
             case DRAFT -> produceDraftPublicationResponse(requestInfo, publication);
             case PUBLISHED -> producePublishedPublicationResponse(requestInfo, publication);
-            case UNPUBLISHED, DELETED -> produceRemovedPublicationResponse(publication);
+            case UNPUBLISHED, DELETED -> produceRemovedPublicationResponse(publication, requestInfo);
             default -> throwNotFoundException();
         };
     }
 
-    private String produceRemovedPublicationResponse(Publication publication) throws GoneException {
-        if (nonNull(publication.getDuplicateOf())) {
+    @Override
+    protected Integer getSuccessStatusCode(Void input, String output) {
+        return statusCode;
+    }
+
+    @JacocoGenerated
+    private static ResourceService defaultResourceService(AmazonDynamoDB client) {
+        return new ResourceService(client, CLOCK);
+    }
+
+    private String produceRemovedPublicationResponse(Publication publication, RequestInfo requestInfo)
+        throws GoneException {
+        if (nonNull(publication.getDuplicateOf()) && shouldRedirect(requestInfo)) {
             return produceRedirect(publication.getDuplicateOf());
         } else {
             throw new GoneException(GONE_MESSAGE,
                                     craftDeletedPublicationResponse(publication));
         }
+    }
+
+    private boolean shouldRedirect(RequestInfo requestInfo) {
+        return attempt(() -> requestInfo.getQueryParameter(DO_NOT_REDIRECT_QUERY_PARAM))
+                   .map(FetchPublicationHandler::shouldRedirect)
+                   .orElse(fail -> true);
+    }
+
+    private static boolean shouldRedirect(String value) {
+        return !Boolean.parseBoolean(value);
     }
 
     private String produceRedirect(URI duplicateOf) {
@@ -123,16 +145,6 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     private String produceDraftPublicationResponse(RequestInfo requestInfo, Publication publication)
         throws UnsupportedAcceptHeaderException, NotFoundException {
         return producePublishedPublicationResponse(requestInfo, publication);
-    }
-
-    @Override
-    protected Integer getSuccessStatusCode(Void input, String output) {
-        return statusCode;
-    }
-
-    @JacocoGenerated
-    private static ResourceService defaultResourceService(AmazonDynamoDB client) {
-        return new ResourceService(client, CLOCK);
     }
 
     @JacocoGenerated
