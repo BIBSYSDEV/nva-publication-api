@@ -137,10 +137,28 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
     }
 
+    @ParameterizedTest()
+    @MethodSource("importCandidateContextTypeProvider")
+    void shouldExpandImportCandidateSuccessfullyWhenBadResponseFromCristin(PublicationContext publicationContext) {
+        var importCandidate = randomImportCandidate(publicationContext);
+        importCandidate.getNvaContributors().stream()
+            .map(NvaCustomerContributor::getNvaCustomer)
+            .map(NvaCustomer::cristinId)
+            .forEach(this::mockOrganizationBadResponse);
+        var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
+
+        assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
+        this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
+    }
+
     private void mockOrganizations(URI cristinId) {
         when(uriRetriever.getRawContent(cristinId, CONTENT_TYPE)).
             thenReturn(Optional.of(new CristinOrganization(cristinId, null, null, null, null,
                                                            Map.of("no", "label")).toJsonString()));
+    }
+
+    private void mockOrganizationBadResponse(URI cristinId) {
+        when(uriRetriever.getRawContent(cristinId, CONTENT_TYPE)).thenReturn(Optional.of(randomString()));
     }
 
     public ImportCandidate randomImportCandidate(PublicationContext publicationContext) {

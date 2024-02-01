@@ -10,6 +10,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.publication.external.services.UriRetriever;
+import nva.commons.core.JacocoGenerated;
 
 @JsonTypeName(ExpandedImportCandidateOrganization.TYPE)
 public class ExpandedImportCandidateOrganization extends Corporation {
@@ -45,10 +46,12 @@ public class ExpandedImportCandidateOrganization extends Corporation {
         return JsonUtils.dtoObjectMapper.readValue(string, CristinOrganization.class);
     }
 
+    @JacocoGenerated
     public URI getId() {
         return id;
     }
 
+    @JacocoGenerated
     public Map<String, String> getLabels() {
         return labels;
     }

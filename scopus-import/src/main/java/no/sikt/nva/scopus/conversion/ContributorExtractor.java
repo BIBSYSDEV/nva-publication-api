@@ -77,7 +77,7 @@ public class ContributorExtractor {
             var affiliationsIds = getAllAffiliationIds(contributors);
             throw new MissingNvaContributorException(MISSING_CONTRIBUTORS_OF_NVA_CUSTOMERS_MESSAGE + affiliationsIds);
         } else {
-            return contributors;
+            return this.contributors;
         }
     }
 
