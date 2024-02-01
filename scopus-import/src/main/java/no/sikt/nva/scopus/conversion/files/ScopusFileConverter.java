@@ -7,7 +7,6 @@ import static java.util.Objects.nonNull;
 import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toCollection;
-import static no.sikt.nva.scopus.conversion.files.model.ContentVersion.UNSPECIFIED;
 import static no.sikt.nva.scopus.conversion.files.model.ContentVersion.VOR;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.s3.Headers;
@@ -248,15 +247,15 @@ public class ScopusFileConverter {
 
         return file.copy()
                    .withMimeType(mediaType.getType())
-                   .withContent(inputStream.getInputStreamFactory().getInputStream())
+                   .withContent(inputStream)
                    .withName(filename).build();
     }
 
-    private static String extractMimeType(ScopusFile file, HttpResponse<InputStream> fetchFileResponse) {
-        return hasSupportedMimeType(file)
-                   ? file.mimeType()
-                   : fetchFileResponse.headers().firstValue(Header.CONTENT_TYPE).orElse(null);
-    }
+//    private static String extractMimeType(ScopusFile file, HttpResponse<InputStream> fetchFileResponse) {
+//        return hasSupportedMimeType(file)
+//                   ? file.mimeType()
+//                   : fetchFileResponse.headers().firstValue(Header.CONTENT_TYPE).orElse(null);
+//    }
 
     private List<ScopusFile> getScopusFiles(CrossrefResponse response) {
         var licenses = extractLicenses(response);
@@ -320,9 +319,9 @@ public class ScopusFileConverter {
         return nonNull(contentType) && !HTML_CONTENT_TYPE.equals(contentType) && !XML_CONTENT_TYPE.equals(contentType);
     }
 
-    private static boolean hasSupportedMimeType(ScopusFile file) {
-        return nonNull(file.mimeType()) && !UNSPECIFIED.getValue().equals(file.mimeType());
-    }
+//    private static boolean hasSupportedMimeType(ScopusFile file) {
+//        return nonNull(file.mimeType()) && !UNSPECIFIED.getValue().equals(file.mimeType());
+//    }
 
     private List<License> extractLicenses(CrossrefResponse doiResponse) {
         return Optional.ofNullable(doiResponse.getMessage().getLicense()).orElse(List.of());
