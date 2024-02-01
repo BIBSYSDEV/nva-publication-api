@@ -62,16 +62,20 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.attempt.Failure;
 import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("PMD.GodClass")
 public class UpdatePublicationHandler
     extends ApiGatewayHandler<UpdatePublicationRequest, PublicationResponseElevatedUser> {
 
+    private static final Logger logger = LoggerFactory.getLogger(UpdatePublicationHandler.class);
+
     public static final String IDENTIFIER_MISMATCH_ERROR_MESSAGE = "Identifiers in path and in body, do not match";
     public static final String CONTENT_TYPE = "application/json";
-    public static final String UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE = "Unable to fetch customer publishing workflow"
-            + " from upstream";
+    public static final String BAD_GATEWAY_MESSAGE = "Something went wrong! Contact publication administrator.";
     private final RawContentRetriever uriRetriever;
     private final TicketService ticketService;
     private final ResourceService resourceService;
@@ -190,10 +194,6 @@ public class UpdatePublicationHandler
         return HttpStatus.SC_OK;
     }
 
-    private BadGatewayException createBadGatewayException() {
-        return new BadGatewayException(UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE);
-    }
-
     private boolean containsNewPublishableFiles(Publication publicationUpdate) {
         var unpublishedFiles = getUnpublishedFiles(publicationUpdate);
         return !unpublishedFiles.isEmpty() && containsPublishableFile(unpublishedFiles);
@@ -286,10 +286,16 @@ public class UpdatePublicationHandler
 
     private CustomerPublishingWorkflowResponse getCustomerPublishingWorkflowResponse(URI customerId)
             throws BadGatewayException {
-        var response = uriRetriever.getRawContent(customerId, CONTENT_TYPE)
-                .orElseThrow(this::createBadGatewayException);
+        var response = attempt(() -> uriRetriever.getRawContent(customerId, CONTENT_TYPE))
+                           .map(Optional::orElseThrow)
+                           .orElseThrow(this::throwException);
         return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response,
-                CustomerPublishingWorkflowResponse.class)).orElseThrow();
+                CustomerPublishingWorkflowResponse.class)).orElseThrow(this::throwException);
+    }
+
+    private BadGatewayException throwException(Failure<?> failure) {
+        logger.error(failure.getException().getMessage());
+        return new BadGatewayException(BAD_GATEWAY_MESSAGE);
     }
 
     private List<File> getUnpublishedFiles(Publication publication) {
@@ -388,7 +394,7 @@ public class UpdatePublicationHandler
                     .map(publishingRequest -> injectPublishingWorkflow((PublishingRequestCase) publishingRequest,
                             getCustomerId(publicationUpdate)))
                     .map(publishingRequest -> publishingRequest.persistNewTicket(ticketService))
-                    .orElseThrow(fail -> createBadGatewayException());
+                    .orElseThrow(this::throwException);
         }
     }
 

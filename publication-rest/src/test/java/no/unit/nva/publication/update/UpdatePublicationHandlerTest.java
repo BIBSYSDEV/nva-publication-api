@@ -13,7 +13,7 @@ import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_AUTH_URL;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_SECRET_NAME;
-import static no.unit.nva.publication.update.UpdatePublicationHandler.UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE;
+import static no.unit.nva.publication.update.UpdatePublicationHandler.BAD_GATEWAY_MESSAGE;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
@@ -558,7 +558,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HttpURLConnection.HTTP_BAD_GATEWAY)));
         assertThat(problem.getDetail(), Is.is(
-                IsEqual.equalTo(UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE)));
+                IsEqual.equalTo(BAD_GATEWAY_MESSAGE)));
     }
 
     @Test
@@ -725,6 +725,28 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             expectedFilesForApprovalBeforePublicationUpdate, newUnpublishedFile);
 
         assertThat(filesForApproval, containsInAnyOrder(expectedFilesForApproval.toArray()));
+    }
+
+    @Test
+    void shouldUpdatePublicationWithoutReferencedContext()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithAdministrativeAgreement(publicationService);
+        publication.getEntityDescription().getReference().setDoi(null);
+        publicationService.updatePublication(publication);
+        TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService)
+                         .complete(publication, new Username(randomString())).persistUpdate(ticketService);
+
+        var newUnpublishedFile = File.builder().withIdentifier(UUID.randomUUID())
+                                     .withLicense(randomUri()).buildUnpublishedFile();
+        var files = publication.getAssociatedArtifacts();
+        files.add(newUnpublishedFile);
+
+        publication.copy().withAssociatedArtifacts(files);
+
+        var input = ownerUpdatesOwnPublication(publication.getIdentifier(), publication);
+        updatePublicationHandler.handleRequest(input, output, context);
+
+        assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(200)));
     }
 
     private Set<FileForApproval> fetchFilesForApprovalFromPendingPublishingRequest(Publication publication) {
