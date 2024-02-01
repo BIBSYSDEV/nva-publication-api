@@ -1,4 +1,4 @@
-package no.sikt.nva.scopus.conversion.model;
+package no.unit.nva.publication.model.business.importcandidate;
 
 import java.util.List;
 import no.unit.nva.model.Contributor;

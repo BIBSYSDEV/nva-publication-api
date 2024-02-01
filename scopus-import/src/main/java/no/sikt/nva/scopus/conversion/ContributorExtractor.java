@@ -23,7 +23,6 @@ import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.OrganizationTp;
 import no.scopus.generated.PersonalnameType;
-import no.sikt.nva.scopus.conversion.model.NvaCustomerContributor;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.exception.MissingNvaContributorException;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
@@ -35,6 +34,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.UnconfirmedOrganization;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import no.unit.nva.publication.model.business.importcandidate.NvaCustomerContributor;
 import nva.commons.core.StringUtils;
 
 @SuppressWarnings("PMD.GodClass")
@@ -67,7 +67,7 @@ public class ContributorExtractor {
         this.nvaCustomerConnection = nvaCustomerConnection;
     }
 
-    public List<Contributor> generateContributors() {
+    public List<NvaCustomerContributor> generateContributors() {
         var contributors = authorGroupTps.stream()
                                .map(this::generateContributorsFromAuthorGroup)
                                .flatMap(List::stream)
@@ -76,7 +76,7 @@ public class ContributorExtractor {
             var affiliationsIds = getAllAffiliationIds(contributors);
             throw new MissingNvaContributorException(MISSING_CONTRIBUTORS_OF_NVA_CUSTOMERS_MESSAGE + affiliationsIds);
         } else {
-            return getContributors();
+            return contributors;
         }
     }
 

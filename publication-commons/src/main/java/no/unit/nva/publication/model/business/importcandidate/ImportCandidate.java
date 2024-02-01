@@ -30,14 +30,22 @@ public class ImportCandidate extends Publication implements JsonSerializable {
     public static final String IMPORT_STATUS = "importStatus";
     @JsonProperty(IMPORT_STATUS)
     private ImportStatus importStatus;
+    private List<NvaCustomerContributor> nvaContributors;
 
     public ImportCandidate() {
         super();
     }
 
+    public List<NvaCustomerContributor> getNvaContributors() {
+        return nvaContributors;
+    }
+
+    public void setNvaContributors(List<NvaCustomerContributor> nvaContributors) {
+        this.nvaContributors = nvaContributors;
+    }
+
     public Builder copyImportCandidate() {
-        return new ImportCandidate.Builder()
-                   .withImportStatus(getImportStatus())
+        return new ImportCandidate.Builder().withImportStatus(getImportStatus())
                    .withIdentifier(getIdentifier())
                    .withStatus(getStatus())
                    .withResourceOwner(getResourceOwner())
@@ -58,7 +66,8 @@ public class ImportCandidate extends Publication implements JsonSerializable {
                    .withFundings(getFundings())
                    .withPublicationNotes(getPublicationNotes())
                    .withImportStatus(getImportStatus())
-                   .withRightsHolder(getRightsHolder());
+                   .withRightsHolder(getRightsHolder())
+                   .withNvaContributors(getNvaContributors());
     }
 
     @Override
@@ -102,9 +111,7 @@ public class ImportCandidate extends Publication implements JsonSerializable {
     }
 
     public Publication toPublication() {
-        return this.copy()
-                   .withStatus(PublicationStatus.PUBLISHED)
-                   .build();
+        return this.copy().withStatus(PublicationStatus.PUBLISHED).build();
     }
 
     public static final class Builder {
@@ -241,6 +248,11 @@ public class ImportCandidate extends Publication implements JsonSerializable {
 
         public Builder withDuplicateOf(URI duplicateOf) {
             this.importCandidate.setDuplicateOf(duplicateOf);
+            return this;
+        }
+
+        public Builder withNvaContributors(List<NvaCustomerContributor> nvaContributors) {
+            this.importCandidate.setNvaContributors(nvaContributors);
             return this;
         }
 

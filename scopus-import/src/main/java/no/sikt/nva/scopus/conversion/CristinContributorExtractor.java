@@ -9,7 +9,6 @@ import java.util.Set;
 import java.util.stream.Stream;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.PersonalnameType;
-import no.sikt.nva.scopus.conversion.model.NvaCustomerContributor;
 import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
@@ -20,6 +19,7 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import no.unit.nva.publication.model.business.importcandidate.NvaCustomerContributor;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 

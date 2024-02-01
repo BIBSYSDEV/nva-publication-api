@@ -43,6 +43,7 @@ import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
 import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
@@ -52,6 +53,7 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
+import no.unit.nva.publication.model.business.importcandidate.NvaCustomerContributor;
 import nva.commons.core.Environment;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
@@ -122,16 +124,18 @@ public class ScopusConverter {
     }
 
     public ImportCandidate generateImportCandidate() {
+        var nvaContributors = generateNvaContributors();
         return new ImportCandidate.Builder()
                    .withPublisher(createOrganization())
                    .withResourceOwner(constructResourceOwner())
                    .withAdditionalIdentifiers(generateAdditionalIdentifiers())
-                   .withEntityDescription(generateEntityDescription())
+                   .withEntityDescription(generateEntityDescription(nvaContributors))
                    .withCreatedDate(Instant.now())
                    .withModifiedDate(Instant.now())
                    .withStatus(PublicationStatus.PUBLISHED)
                    .withImportStatus(ImportStatusFactory.createNotImported())
                    .withAssociatedArtifacts(scopusFileConverter.fetchAssociatedArtifacts(docTp))
+                   .withNvaContributors(nvaContributors)
                    .build();
     }
 
@@ -169,18 +173,24 @@ public class ScopusConverter {
         return docTp.getItem().getItem().getBibrecord().getHead();
     }
 
-    private EntityDescription generateEntityDescription() {
+    private EntityDescription generateEntityDescription(List<NvaCustomerContributor> nvaCustomerContributors) {
         EntityDescription entityDescription = new EntityDescription();
         entityDescription.setReference(generateReference());
         entityDescription.setMainTitle(extractMainTitle());
         entityDescription.setAbstract(extractMainAbstract());
-        entityDescription.setContributors(
-            new ContributorExtractor(extractCorrespondence(), extractAuthorGroup(), piaConnection,
-                                     cristinConnection, nvaCustomerConnection).generateContributors());
+        entityDescription.setContributors(nvaCustomerContributors.stream().map(Contributor.class::cast).toList());
         entityDescription.setTags(generateTags());
         entityDescription.setPublicationDate(extractPublicationDate());
         entityDescription.setLanguage(new LanguageExtractor(extractCitationLanguages()).extractLanguage());
         return entityDescription;
+    }
+
+    private List<NvaCustomerContributor> generateNvaContributors() {
+        return new ContributorExtractor(extractCorrespondence(),
+                                        extractAuthorGroup(),
+                                        piaConnection,
+                                        cristinConnection,
+                                        nvaCustomerConnection).generateContributors();
     }
 
     private List<CitationLanguageTp> extractCitationLanguages() {
