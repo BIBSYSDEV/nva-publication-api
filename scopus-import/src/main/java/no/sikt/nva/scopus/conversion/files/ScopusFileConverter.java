@@ -7,11 +7,11 @@ import static java.util.Objects.nonNull;
 import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toCollection;
-import static no.sikt.nva.scopus.conversion.files.model.ContentVersion.UNSPECIFIED;
 import static no.sikt.nva.scopus.conversion.files.model.ContentVersion.VOR;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.s3.Headers;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -52,6 +52,8 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.http.entity.ContentType;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.metadata.Metadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -236,20 +238,20 @@ public class ScopusFileConverter {
         }
     }
 
-    private ScopusFile fetchFileContent(ScopusFile file) {
+    private ScopusFile fetchFileContent(ScopusFile file) throws IOException {
         var fetchFileResponse = fetchResponseAsInputStream(file.downloadFileUrl());
-        var content = fetchFileResponse.body();
         var filename = getFilename(fetchFileResponse);
-
+        var size = fetchFileResponse.body().readAllBytes().length;
         return file.copy()
-                   .withMimeType(extractMimeType(file, fetchFileResponse))
-                   .withContent(content).withName(filename).build();
+                   .withMimeType(getMimeType(fetchFileResponse.body()))
+                   .withContent(fetchFileResponse.body())
+                   .withSize(size)
+                   .withName(filename).build();
     }
 
-    private static String extractMimeType(ScopusFile file, HttpResponse<InputStream> fetchFileResponse) {
-        return hasSupportedMimeType(file)
-                   ? file.mimeType()
-                   : fetchFileResponse.headers().firstValue(Header.CONTENT_TYPE).orElse(null);
+    private String getMimeType(InputStream inputStream) throws IOException {
+        return TikaConfig.getDefaultConfig().getDetector()
+                   .detect(new BufferedInputStream(inputStream), new Metadata()).toString();
     }
 
     private List<ScopusFile> getScopusFiles(CrossrefResponse response) {
@@ -314,10 +316,6 @@ public class ScopusFileConverter {
         return nonNull(contentType) && !HTML_CONTENT_TYPE.equals(contentType) && !XML_CONTENT_TYPE.equals(contentType);
     }
 
-    private static boolean hasSupportedMimeType(ScopusFile file) {
-        return nonNull(file.mimeType()) && !UNSPECIFIED.getValue().equals(file.mimeType());
-    }
-
     private List<License> extractLicenses(CrossrefResponse doiResponse) {
         return Optional.ofNullable(doiResponse.getMessage().getLicense()).orElse(List.of());
     }
@@ -359,7 +357,7 @@ public class ScopusFileConverter {
         return Optional.of(File.builder()
                                       .withIdentifier(fileIdentifier)
                                       .withName(filename)
-                                      .withMimeType(response.headers().firstValue(Headers.CONTENT_TYPE).orElse(null))
+                                      .withMimeType(getMimeType(response.body()))
                                       .withSize(available)
                                       .withLicense(DEFAULT_LICENSE)
                                       .buildPublishedFile());
@@ -384,10 +382,11 @@ public class ScopusFileConverter {
         }
     }
 
-    private void saveFile(String fileName, UUID fileIdentifier, HttpResponse<InputStream> response) {
+    private void saveFile(String fileName, UUID fileIdentifier, HttpResponse<InputStream> response) throws IOException {
         var fileToSave = attempt(() -> response.body().readAllBytes()).orElseThrow();
         s3Client.putObject(PutObjectRequest.builder()
                                .bucket(IMPORT_CANDIDATES_FILES_BUCKET)
+                               .contentType(getMimeType(response.body()))
                                .contentDisposition(String.format(CONTENT_DISPOSITION_FILE_NAME_PATTERN, fileName))
                                .key(fileIdentifier.toString())
                                .build(), RequestBody.fromBytes(fileToSave));
@@ -399,9 +398,10 @@ public class ScopusFileConverter {
                                .bucket(IMPORT_CANDIDATES_FILES_BUCKET)
                                .contentDisposition(
                                    String.format(CONTENT_DISPOSITION_FILE_NAME_PATTERN, scopusFile.name()))
+                               .contentType(scopusFile.mimeType())
                                .key(scopusFile.identifier().toString())
                                .build(), RequestBody.fromBytes(content));
-        return scopusFile.copy().withSize(content.length).build();
+        return scopusFile;
     }
 
     private HttpResponse<InputStream> fetchResponseAsInputStream(URI uri) {
