@@ -368,7 +368,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var s3Event = createNewScopusPublicationEvent();
         var importCandidate = scopusHandler.handleRequest(s3Event, CONTEXT);
 
-        assertThat(((File) importCandidate.getAssociatedArtifacts().get(0)).getName(), is(equalTo(expectedFilename)));
+        assertThat(((File) importCandidate.getAssociatedArtifacts().getFirst()).getName(), is(equalTo(expectedFilename)));
     }
 
     @Test
@@ -1271,7 +1271,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var filename = randomString() + ".pdf";
         var testUrl = "/" + UriWrapper.fromUri(downloadUrl.getLastPathElement()).getLastPathElement();
         stubFor(WireMock.get(urlPathEqualTo(testUrl))
-                    .willReturn(aResponse().withBody("abcde")
+                    .willReturn(aResponse().withBody("abcdesafogrpeopoernhopnerpohn")
                                     .withHeader("Content-Type", "application/pdf;charset=UTF-8")
                                     .withHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"")
                                     .withStatus(HttpURLConnection.HTTP_OK)));
