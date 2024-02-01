@@ -7,11 +7,13 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.publication.model.business.importcandidate.NvaCustomer;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
+import org.jetbrains.annotations.Nullable;
 
 public class NvaCustomerConnection {
 
@@ -33,7 +35,14 @@ public class NvaCustomerConnection {
 
     public NvaCustomer fetchCustomer(CristinOrganization cristinOrganization) {
         return new NvaCustomer(isPresentAndHasTopLevelOrg(cristinOrganization) && isCustomer(cristinOrganization),
-                               cristinOrganization.getTopLevelOrg().id());
+                               getCristinTopLevelOrg(cristinOrganization));
+    }
+
+    private static URI getCristinTopLevelOrg(CristinOrganization cristinOrganization) {
+        return Optional.ofNullable(cristinOrganization)
+                   .map(CristinOrganization::getTopLevelOrg)
+                   .map(CristinOrganization::id)
+                   .orElse(null);
     }
 
     private Boolean isCustomer(CristinOrganization cristinOrganization) {
