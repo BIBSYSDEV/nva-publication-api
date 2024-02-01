@@ -157,16 +157,6 @@ public class ScopusFileConverterTest {
         assertThat(files, is(emptyIterable()));
     }
 
-//    @Test
-//    void shouldExtractFileMimeTypeFromDownloadFileUrlResponseHeaderWhenCrossRefResponseMissesContentType()
-//        throws IOException, InterruptedException {
-//        mockResponsesWithoutHeaders("crossrefResponseMissingFields.json");
-//        mockDownloadUrlResponse();
-//        var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).get(0);
-//
-//        assertThat(file.getMimeType(), is(equalTo(HEADER_CONTENT_TYPE)));
-//    }
-
     @Test
     void shouldCreateRandomFileNameWithFileTypeFromContentTypeHeaderWhenUrlAndContentDispositionMissingFileName()
         throws IOException, InterruptedException {
