@@ -789,7 +789,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldUpdatePublicationWithoutReferencedContext()
         throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithAdministrativeAgreement(publicationService);
+        var publication = TicketTestUtils.createPersistedPublicationWithAdministrativeAgreement(customerId,
+                                                                                                publicationService);
         publication.getEntityDescription().getReference().setDoi(null);
         publicationService.updatePublication(publication);
         TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService)

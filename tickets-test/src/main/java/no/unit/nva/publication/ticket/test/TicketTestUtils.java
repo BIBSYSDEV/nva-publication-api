@@ -107,6 +107,25 @@ public final class TicketTestUtils {
         return persistedPublication;
     }
 
+    public static Publication createPersistedPublicationWithAdministrativeAgreement(URI publisherId,
+                                                                                    ResourceService resourceService)
+        throws ApiGatewayException {
+        var publication = randomPublication().copy()
+                              .withAssociatedArtifacts(List.of(administrativeAgreement()))
+                              .withPublisher(new Organization.Builder()
+                                                 .withId(publisherId)
+                                                 .build())
+                              .build();
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
+                                                                                    UserInstance.fromPublication(
+                                                                                        publication));
+        if (isPublished(publication)) {
+            publishPublication(resourceService, persistedPublication);
+            return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+        }
+        return persistedPublication;
+    }
+
     public static Publication createPersistedPublicationWithUnpublishedFiles(PublicationStatus status,
                                                                              ResourceService resourceService)
         throws ApiGatewayException {
