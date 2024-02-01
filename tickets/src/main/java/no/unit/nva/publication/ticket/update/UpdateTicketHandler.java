@@ -5,6 +5,7 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
 import static no.unit.nva.publication.model.business.TicketStatus.CLOSED;
+import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.publication.ticket.TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME;
 import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.core.attempt.Try.attempt;
@@ -171,37 +172,76 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     private void updateStatus(UpdateTicketRequest ticketRequest, RequestUtils requestUtils, TicketEntry ticket)
         throws ApiGatewayException {
         throwExceptionIfUnauthorized(requestUtils, ticket);
-        if (ticket instanceof DoiRequest) {
-            doiTicketSideEffects(ticketRequest, requestUtils);
+        switch (ticket) {
+            case DoiRequest doiRequest -> updateDoiRequestStatus(ticketRequest, requestUtils, doiRequest);
+            case PublishingRequestCase pubReq -> updatePulishingRequestStatus(ticketRequest, requestUtils, pubReq);
+            default -> updateTicketStatus(ticketRequest, requestUtils, ticket);
         }
-        if (ticket instanceof PublishingRequestCase publishingRequestCase) {
-            publishingRequestSideEffects(publishingRequestCase, ticketRequest);
-        }
-        ticketService.updateTicketStatus(ticket, ticketRequest.getStatus(), new Username(requestUtils.username()));
     }
 
-    private void publishingRequestSideEffects(PublishingRequestCase ticket,
+    private void updateTicketStatus(UpdateTicketRequest ticketRequest,
+                                    RequestUtils requestUtils,
+                                    TicketEntry ticket)
+        throws ApiGatewayException {
+        ticketService.updateTicketStatus(ticket, ticketRequest.getStatus(),
+                                         new Username(requestUtils.username()));
+    }
+
+    private void updatePulishingRequestStatus(UpdateTicketRequest ticketRequest, RequestUtils requestUtils,
+                                              PublishingRequestCase publishingRequestCase) throws ApiGatewayException {
+        updateTicketStatus(ticketRequest, requestUtils, publishingRequestCase);
+        updatePulishingRequestStatus(publishingRequestCase, ticketRequest);
+    }
+
+    private void updateDoiRequestStatus(UpdateTicketRequest ticketRequest, RequestUtils requestUtils, DoiRequest doiRequest)
+        throws ApiGatewayException {
+        doiTicketSideEffects(ticketRequest, requestUtils);
+        updateTicketStatus(ticketRequest, requestUtils, doiRequest);
+    }
+
+    private void updatePulishingRequestStatus(PublishingRequestCase ticket,
                                               UpdateTicketRequest ticketRequest)
         throws NotFoundException {
         if (CLOSED.equals(ticketRequest.getStatus())) {
             updateUnpublishedFilesToUnpublishable(ticket.getResourceIdentifier());
         }
+        if (COMPLETED.equals(ticketRequest.getStatus())) {
+            updateUnpublishedFilesToPublishable(ticket.getResourceIdentifier());
+        }
+    }
+
+    private void updateUnpublishedFilesToPublishable(SortableIdentifier publicationIdentifier)
+        throws NotFoundException {
+        var publication = resourceService.getPublicationByIdentifier(publicationIdentifier);
+        var updatedPublication = publication.copy()
+                                     .withAssociatedArtifacts(updateUnpublishedFilesToPublishable(publication))
+                                     .build();
+        resourceService.updatePublication(updatedPublication);
     }
 
     private void updateUnpublishedFilesToUnpublishable(SortableIdentifier publicationIdentifier)
         throws NotFoundException {
         var publication = resourceService.getPublicationByIdentifier(publicationIdentifier);
         var updatedPublication = publication.copy()
-                                     .withAssociatedArtifacts(updateUnpublishedFiles(publication))
+                                     .withAssociatedArtifacts(updateUnpublishedFilesToUnpublishable(publication))
                                      .build();
         resourceService.updatePublication(updatedPublication);
     }
 
-    private List<AssociatedArtifact> updateUnpublishedFiles(Publication publication) {
+    private List<AssociatedArtifact> updateUnpublishedFilesToUnpublishable(Publication publication) {
         var associatedArtifacts = publication.getAssociatedArtifacts();
         return associatedArtifacts.stream()
                    .map(file -> file instanceof UnpublishedFile unpublishedFile
                                     ? unpublishedFile.toUnpublishableFile()
+                                    : file)
+                   .toList();
+    }
+
+    private List<AssociatedArtifact> updateUnpublishedFilesToPublishable(Publication publication) {
+        var associatedArtifacts = publication.getAssociatedArtifacts();
+        return associatedArtifacts.stream()
+                   .map(file -> file instanceof UnpublishedFile unpublishedFile
+                                    ? unpublishedFile.toPublishedFile()
                                     : file)
                    .toList();
     }

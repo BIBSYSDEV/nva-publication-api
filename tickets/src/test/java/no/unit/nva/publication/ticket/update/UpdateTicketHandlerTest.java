@@ -18,6 +18,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.emptyIterable;
+import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
@@ -39,6 +40,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -586,9 +588,10 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         handler.handleRequest(httpRequest, output, CONTEXT);
 
         var completedPublishingRequest = (PublishingRequestCase) ticketService.fetchTicket(ticket);
-        var approvedFile = (File) publication.getAssociatedArtifacts().get(0);
-
-        assertThat(completedPublishingRequest.getApprovedFiles(), contains(approvedFile.getIdentifier()));
+        var updatedPublication = resourceService.getPublication(publication);
+        var approvedFile = (File) updatedPublication.getAssociatedArtifacts().getFirst();
+        assertThat(updatedPublication.getAssociatedArtifacts(), everyItem(is(instanceOf(PublishedFile.class))));
+        assertThat(completedPublishingRequest.getApprovedFiles(), hasItem(approvedFile.getIdentifier()));
     }
 
     @Test
