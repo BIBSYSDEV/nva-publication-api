@@ -24,7 +24,6 @@ import static no.sikt.nva.scopus.conversion.files.ScopusFileConverter.CROSSREF_U
 import static no.sikt.nva.scopus.conversion.files.model.ContentVersion.VOR;
 import static no.sikt.nva.scopus.utils.ScopusGenerator.createWithOneAuthorGroupAndAffiliation;
 import static no.sikt.nva.scopus.utils.ScopusGenerator.randomYear;
-import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.language.LanguageConstants.BOKMAAL;
 import static no.unit.nva.language.LanguageConstants.ENGLISH;
 import static no.unit.nva.language.LanguageConstants.MISCELLANEOUS;
@@ -74,7 +73,6 @@ import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotificatio
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.UserIdentityEntity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
@@ -90,6 +88,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -232,7 +231,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     public static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;
     public static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     public static final long SOME_FILE_SIZE = 100L;
-    public static final String START_OF_QUERY = "/?";
     public static final String EXPECTED_CONTENT_STRING_TXT = "expectedContentString.txt";
     public static final String INF_CLASS_NAME = "inf";
     public static final String SUP_CLASS_NAME = "sup";
@@ -255,8 +253,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
     private ScopusHandler scopusHandler;
-    private URI serverUriJournal;
-    private URI serverUriPublisher;
     private PiaConnection piaConnection;
     private CristinConnection cristinConnection;
     private PublicationChannelConnection publicationChannelConnection;
@@ -273,10 +269,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     public static Stream<Arguments> providedLanguagesAndExpectedOutput() {
         return Stream.concat(LanguageConstants.ALL_LANGUAGES.stream().map(ScopusHandlerTest::createArguments),
                              addLanguageEdgeCases());
-    }
-
-    public static URI randomPublicationChannelUri() {
-        return URI.create("https://example.nva.aws.unit.no/publication-channels/" + randomString());
     }
 
     @BeforeEach
@@ -308,12 +300,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
                                           nvaCustomerConnection, resourceService, scopusUpdater, scopusFileConverter);
         scopusData = new ScopusGenerator();
-    }
-
-    private static NvaCustomerConnection mockCustomerConnection() {
-        var customerConnection = mock(NvaCustomerConnection.class);
-        when(customerConnection.isNvaCustomer(any())).thenReturn(true);
-        return customerConnection;
     }
 
     @AfterEach
@@ -368,7 +354,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var s3Event = createNewScopusPublicationEvent();
         var importCandidate = scopusHandler.handleRequest(s3Event, CONTEXT);
 
-        assertThat(((File) importCandidate.getAssociatedArtifacts().get(0)).getName(), is(equalTo(expectedFilename)));
+        assertThat(((File) importCandidate.getAssociatedArtifacts().getFirst()).getName(),
+                   is(equalTo(expectedFilename)));
     }
 
     @Test
@@ -497,7 +484,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                                         .getHead()
                                         .getSource()
                                         .getPublisher()
-                                        .get(0)
+                                        .getFirst()
                                         .getPublishername();
         //            var actualPublisherName = ((UnconfirmedPublisher) actualPublisher).getName();
         //            assertThat(actualPublisherName, is(expectedPublisherName));
@@ -702,14 +689,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var s3Event = createNewScopusPublicationEvent();
         assertThrows(UnsupportedSrcTypeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
-    }
-
-    private String getEid() {
-        return scopusData.getDocument().getMeta().getEid();
-    }
-
-    private String getSrctype() {
-        return scopusData.getDocument().getMeta().getSrctype();
     }
 
     @Test
@@ -990,7 +969,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     void shouldExtractCorrespondingAuthor() throws IOException {
         createEmptyPiaMock();
         var authors = keepOnlyTheAuthors();
-        var correspondingAuthorTp = authors.get(0);
+        var correspondingAuthorTp = authors.getFirst();
         scopusData.setCorrespondence(correspondingAuthorTp);
         var s3Event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -1012,23 +991,38 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReplaceContributorIdentityWithCristinData() throws IOException {
-
-        var authorTypes = keepOnlyTheAuthors();
-        var piaCristinIdAndAuthors = new HashMap<Integer, AuthorTp>();
-        authorTypes.forEach(authorTp -> piaCristinIdAndAuthors.put(randomInteger(), authorTp));
-        var authors = new ArrayList<List<Author>>();
-        var cristinPersons = new ArrayList<CristinPerson>();
-        piaCristinIdAndAuthors.forEach(
-            (cristinId, authorTp) -> generatePiaResponseAndCristinPersons(new PiaResponseGenerator(), authors,
-                                                                          cristinPersons, cristinId, authorTp));
+    void shouldReplaceContributorIdentityWithCristinDataVerifiedByAuthorId() throws IOException {
+        var authorTypesMappableToCristin = keepOnlyAuthorsWithAuthorId();
+        var piaCristinIdAndAuthors = new HashMap<CristinPerson, AuthorTp>();
+        authorTypesMappableToCristin.forEach(authorTp -> piaCristinIdAndAuthors.put(randomCristinPerson(), authorTp));
+        generatePiaResponseAndCristinPersons(piaCristinIdAndAuthors);
         var s3Event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
-        var actualContributors = publication.getEntityDescription().getContributors();
-        var authorList = actualContributors.stream().filter(contributor -> isAuthor(contributor, authorTypes)).toList();
-        authorList.forEach(
-            contributor -> assertThatContributorHasCorrectCristinPersonData(contributor, piaCristinIdAndAuthors,
-                                                                            cristinPersons));
+        var actualContributorsWithScopusAuid =
+            publication.getEntityDescription()
+                .getContributors().stream()
+                .filter(this::hasScopusAuid)
+                .sorted(Comparator.comparingInt(Contributor::getSequence))
+                .toList();
+        assertThat(actualContributorsWithScopusAuid, hasSize(authorTypesMappableToCristin.size()));
+        actualContributorsWithScopusAuid.forEach(
+            contributor -> assertThatContributorHasCorrectCristinPersonData(contributor, piaCristinIdAndAuthors));
+    }
+
+    @Test
+    void shouldCreateSequenceNumbersInOrder() throws IOException {
+        var s3Event = createNewScopusPublicationEvent();
+        var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualContributorsSorted = publication
+                                           .getEntityDescription()
+                                           .getContributors()
+                                           .stream()
+                                           .sorted(Comparator.comparingInt(Contributor::getSequence))
+                                           .toList();
+        for (var contributorIndex = 0; contributorIndex < actualContributorsSorted.size(); contributorIndex++) {
+            assertThat(actualContributorsSorted.get(contributorIndex).getSequence(),
+                       is(Matchers.equalTo(contributorIndex + 1)));
+        }
     }
 
     @Test
@@ -1106,11 +1100,10 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var authorTypes = keepOnlyTheAuthors();
         var piaCristinIdAndAuthors = new HashMap<Integer, AuthorTp>();
         authorTypes.forEach(authorTp -> piaCristinIdAndAuthors.put(randomInteger(), authorTp));
-        var piaAuthorResponseGenerator = new PiaResponseGenerator();
         var authors = new ArrayList<List<Author>>();
         mockCristinPersonBadRequest();
         piaCristinIdAndAuthors.forEach(
-            (cristinId, authorTp) -> generatePiaAuthorResponse(piaAuthorResponseGenerator, authors, cristinId,
+            (cristinId, authorTp) -> generatePiaAuthorResponse(authors, cristinId,
                                                                authorTp));
         var s3Event = createNewScopusPublicationEvent();
         assertDoesNotThrow(() -> scopusHandler.handleRequest(s3Event, CONTEXT));
@@ -1119,10 +1112,9 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldIgnoreCristinNumberThatIsNull() throws IOException {
         var authorTypes = keepOnlyTheAuthors();
-        var piaAuthorResponseGenerator = new PiaResponseGenerator();
         var authors = new ArrayList<List<Author>>();
         authorTypes.forEach(
-            (authorTp) -> authors.add(piaAuthorResponseGenerator.generateAuthors(authorTp.getAuid(), 0)));
+            (authorTp) -> authors.add(PiaResponseGenerator.generateAuthors(authorTp.getAuid(), 0)));
         authors.forEach(this::createPiaAuthorMock);
         var s3Event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -1184,6 +1176,12 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         if (nonNull(contributorId)) {
             assertThat(cristinIds, hasItem(toCristinIdentifier(contributorId)));
         }
+    }
+
+    private static NvaCustomerConnection mockCustomerConnection() {
+        var customerConnection = mock(NvaCustomerConnection.class);
+        when(customerConnection.isNvaCustomer(any())).thenReturn(true);
+        return customerConnection;
     }
 
     private static String toCrossrefResponse(UriWrapper downloadUrl) {
@@ -1263,6 +1261,22 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         return expectedCristinPerson.getAffiliations().stream().filter(Affiliation::isActive).toList();
     }
 
+    private boolean hasScopusAuid(Contributor contributor) {
+        return contributor.getIdentity()
+                   .getAdditionalIdentifiers()
+                   .stream()
+                   .anyMatch(additionalIdentifier ->
+                                 "scopus-auid".equals(additionalIdentifier.getSourceName()));
+    }
+
+    private String getEid() {
+        return scopusData.getDocument().getMeta().getEid();
+    }
+
+    private String getSrctype() {
+        return scopusData.getDocument().getMeta().getSrctype();
+    }
+
     private String mockFetchCrossrefDoiResponse(ScopusGenerator scopusData, WireMockRuntimeInfo wireMockRuntimeInfo) {
         var downloadUrl = UriWrapper.fromUri(wireMockRuntimeInfo.getHttpBaseUrl()).addChild(randomString());
         stubFor(WireMock.get(urlPathEqualTo("/" + scopusData.getDocument().getMeta().getDoi()))
@@ -1291,10 +1305,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
             .getUpwOaLocations()
             .getUpwOaLocation()
             .forEach(ScopusHandlerTest::mockBadRequestFileResponse);
-    }
-
-    private void assertThatFileHasBeenPersisted(File file) {
-        assertDoesNotThrow(() -> s3Driver.getFile(UnixPath.of(file.getIdentifier().toString())));
     }
 
     private OpenAccessType randomOpenAccess(WireMockRuntimeInfo wireMockRuntimeInfo) {
@@ -1440,13 +1450,11 @@ class ScopusHandlerTest extends ResourcesLocalTest {
             .collect(Collectors.toList());
     }
 
-    private AuthorTp generatePersonResponse(HashMap<Integer, AuthorTp> piaCristinIdAndAuthors, AuthorTp authorTp)
-        throws JsonProcessingException {
-        var piaResponseGenerator = new PiaResponseGenerator();
+    private AuthorTp generatePersonResponse(HashMap<Integer, AuthorTp> piaCristinIdAndAuthors, AuthorTp authorTp) {
         var cristinId = randomInteger();
         piaCristinIdAndAuthors.put(cristinId, authorTp);
         mockedPiaAuthorIdSearch(authorTp.getAuid(), PiaResponseGenerator.convertAuthorsToJson(
-            piaResponseGenerator.generateAuthors(authorTp.getAuid(), cristinId)));
+            PiaResponseGenerator.generateAuthors(authorTp.getAuid(), cristinId)));
         generateCristinPersonsResponse(new ArrayList<>(), cristinId);
         return authorTp;
     }
@@ -1456,13 +1464,13 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     private AuthorGroupTp getAuthorGroup() {
-        return scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getAuthorGroup().get(0);
+        return scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getAuthorGroup().getFirst();
     }
 
     private String extractSuccessReport(S3Event s3Event, ImportCandidate importCandidate) {
         UriWrapper handleReport = UriWrapper.fromUri(SUCCESS_BUCKET_PATH)
                                       .addChild(
-                                          s3Event.getRecords().get(0).getEventTime().toString(YYYY_MM_DD_HH_FORMAT))
+                                          s3Event.getRecords().getFirst().getEventTime().toString(YYYY_MM_DD_HH_FORMAT))
                                       .addChild(importCandidate.getIdentifier().toString());
         S3Driver s3Driver = new S3Driver(s3Client, new Environment().readEnv(SCOPUS_IMPORT_BUCKET));
         return s3Driver.getFile(handleReport.toS3bucketPath());
@@ -1479,29 +1487,47 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         return environment;
     }
 
-    private void generatePiaResponseAndCristinPersons(PiaResponseGenerator piaResponseGenerator,
-                                                      ArrayList<List<Author>> authors,
-                                                      ArrayList<CristinPerson> cristinCristinPeople, Integer cristinId,
-                                                      AuthorTp authorTp) {
-        try {
-            generatePiaAuthorResponse(piaResponseGenerator, authors, cristinId, authorTp);
-            generateCristinPersonsResponse(cristinCristinPeople, cristinId);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+    private void generatePiaResponseAndCristinPersons(HashMap<CristinPerson, AuthorTp> piaCristinIdAndAuthors) {
+        generatePiaAuthorResponse(piaCristinIdAndAuthors);
+        generateCristinPersonsResponse(piaCristinIdAndAuthors.keySet());
     }
 
-    private void generateCristinPersonsResponse(ArrayList<CristinPerson> cristinCristinPeople, Integer cristinId)
-        throws JsonProcessingException {
+    private void generateCristinPersonsResponse(Collection<CristinPerson> cristinPersons) {
+        cristinPersons.forEach(person -> mockCristinPerson(UriWrapper.fromUri(person.getId()).getLastPathElement(),
+                                                           CristinGenerator.convertPersonToJson(person)));
+    }
+
+    private void generateCristinPersonsResponse(ArrayList<CristinPerson> cristinCristinPeople, Integer cristinId) {
         var cristinPerson = CristinGenerator.generateCristinPerson(
             UriWrapper.fromUri("/cristin/person/" + cristinId.toString()).getUri(), randomString(), randomString());
         cristinCristinPeople.add(cristinPerson);
         mockCristinPerson(cristinId.toString(), CristinGenerator.convertPersonToJson(cristinPerson));
     }
 
-    private void generatePiaAuthorResponse(PiaResponseGenerator piaResponseGenerator, ArrayList<List<Author>> authors,
+    private CristinPerson randomCristinPerson() {
+        return CristinGenerator.generateCristinPerson(
+            UriWrapper.fromUri("/cristin/person/" + randomInteger().toString()).getUri(),
+            randomString(),
+            randomString());
+    }
+
+    private void generatePiaAuthorResponse(HashMap<CristinPerson, AuthorTp> piaCristinIdAndAuthors) {
+
+        piaCristinIdAndAuthors
+            .entrySet()
+            .stream()
+            .map(entry -> PiaResponseGenerator.generateAuthors(entry.getValue().getAuid(),
+                                                               getCristinIdentifier(entry.getKey())))
+            .forEach(this::createPiaAuthorMock);
+    }
+
+    private int getCristinIdentifier(CristinPerson person) {
+        return Integer.parseInt(UriWrapper.fromUri(person.getId()).getLastPathElement());
+    }
+
+    private void generatePiaAuthorResponse(ArrayList<List<Author>> authors,
                                            Integer cristinId, AuthorTp authorTp) {
-        var authorList = piaResponseGenerator.generateAuthors(authorTp.getAuid(), cristinId);
+        var authorList = PiaResponseGenerator.generateAuthors(authorTp.getAuid(), cristinId);
         authors.add(authorList);
         createPiaAuthorMock(authorList);
     }
@@ -1543,25 +1569,27 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         return actualPublicationContributors.stream().filter(Contributor::isCorrespondingAuthor).findAny().orElse(null);
     }
 
-    private boolean isAuthor(Contributor contributor, List<AuthorTp> authorTypes) {
+    private boolean isAuthor(Contributor contributor, Collection<AuthorTp> authorTypes) {
         return authorTypes.stream().anyMatch(authorTp -> isEqualContributor(contributor, authorTp));
     }
 
     private boolean isEqualContributor(Contributor contributor, AuthorTp authorTp) {
-        return contributor.getSequence() == Integer.parseInt(authorTp.getSeq());
+        var authorId = contributor.getIdentity().getAdditionalIdentifiers()
+                           .stream()
+                           .filter(additionalIdentifier ->
+                                       "scopus-auid".equalsIgnoreCase(additionalIdentifier.getSourceName()))
+                           .map(AdditionalIdentifier::getValue)
+                           .collect(SingletonCollector.collectOrElse(""));
+        return authorTp.getAuid().equals(authorId);
     }
 
     private void assertThatContributorHasCorrectCristinPersonData(Contributor contributor,
-                                                                  HashMap<Integer, AuthorTp> cristinIdAndAuthor,
-                                                                  List<CristinPerson> cristinCristinPeople) {
+                                                                  HashMap<CristinPerson, AuthorTp> piaCristinIdAndAuthors) {
         var actualCristinId = contributor.getIdentity().getId();
         assertThat(actualCristinId, hasProperty("path", containsString("/cristin/person")));
-        var expectedCristinPerson = getPersonByCristinNumber(cristinCristinPeople, actualCristinId).orElseThrow();
-        var actualCristinNumber = actualCristinId.getPath().split("/")[3];
+        var expectedCristinPerson = getPersonByCristinNumber(piaCristinIdAndAuthors.keySet(),
+                                                             actualCristinId).orElseThrow();
         var expectedName = calculateExpectedNameFromCristinPerson(expectedCristinPerson);
-        var expectedAuthor = cristinIdAndAuthor.get(Integer.parseInt(actualCristinNumber));
-
-        assertThat(contributor.getSequence(), is(equalTo(Integer.parseInt(expectedAuthor.getSeq()))));
 
         assertThat(contributor.getIdentity().getName(), is(equalTo(expectedName)));
 
@@ -1610,7 +1638,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     @NotNull
-    private Optional<CristinPerson> getPersonByCristinNumber(List<CristinPerson> cristinCristinPeople, URI cristinId) {
+    private Optional<CristinPerson> getPersonByCristinNumber(Collection<CristinPerson> cristinCristinPeople,
+                                                             URI cristinId) {
         return cristinCristinPeople.stream().filter(person -> cristinId.equals(person.getId())).findFirst();
     }
 
@@ -1630,7 +1659,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     private void createPiaAuthorMock(List<Author> author) {
-        var scopusId = author.get(0).getExternalId();
+        var scopusId = author.getFirst().getExternalId();
         var response = PiaResponseGenerator.convertAuthorsToJson(author);
         mockedPiaAuthorIdSearch(scopusId, response);
     }
@@ -1667,10 +1696,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         stubFor(WireMock.get(urlPathEqualTo("/sentralimport/orgs/matches"))
                     .withQueryParam("affiliation_id", WireMock.equalTo("SCOPUS:" + affiliationId))
                     .willReturn(aResponse().withBody(response).withStatus(HttpURLConnection.HTTP_OK)));
-    }
-
-    private List<AffiliationTp> languageAffiliations(List<List<Serializable>> organizationNames) {
-        return organizationNames.stream().map(this::createAffiliation).collect(Collectors.toList());
     }
 
     private AffiliationTp createAffiliation(List<Serializable> organizationName) {
@@ -1717,7 +1742,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private void checkCollaborationName(CollaborationTp collaboration, List<Contributor> contributors) {
         var optionalContributor = findContributorBySequence(collaboration.getSeq(), contributors);
         if (Integer.parseInt(collaboration.getSeq()) < contributors.size()) {
-            var contributor = optionalContributor.get(0);
+            var contributor = optionalContributor.getFirst();
 
             assertEquals(1, optionalContributor.size());
             assertEquals(collaboration.getIndexedName(), contributor.getIdentity().getName());
@@ -1727,12 +1752,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private List<Contributor> findContributorBySequence(String sequence, List<Contributor> contributors) {
         return contributors.stream()
                    .filter(contributor -> sequence.equals(String.valueOf(contributor.getSequence())))
-                   .collect(Collectors.toList());
-    }
-
-    private List<Contributor> findContributorsBySequence(String sequence, List<Contributor> contributors) {
-        return contributors.stream()
-                   .filter(contributor -> sequence.equals(Integer.toString(contributor.getSequence())))
                    .collect(Collectors.toList());
     }
 
@@ -1764,38 +1783,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                    .collect(SingletonCollector.collect());
     }
 
-    private URI createExpectedQueryUriForJournalWithEIssn(String electronicIssn, String year) {
-        return UriWrapper.fromUri(serverUriJournal)
-                   .addQueryParameter("query", electronicIssn)
-                   .addQueryParameter("year", year)
-                   .getUri();
-    }
-
     private String expectedTitle(TitletextTp titleObject) {
         return ScopusConverter.extractContentAndPreserveXmlSupAndInfTags(titleObject.getContent());
-    }
-
-    private URI createExpectedQueryUriForPublisherWithName(String name) {
-        return UriWrapper.fromUri(serverUriPublisher).addQueryParameter("query", name).getUri();
-    }
-
-    private URI mockedPublicationChannelsReturnsUri(URI queryUri) {
-        var uri = randomPublicationChannelUri();
-        ArrayNode publicationChannelsResponseBody = createPublicationChannelsResponseWithUri(uri);
-        stubFor(WireMock.get(START_OF_QUERY + queryUri.getQuery())
-                    .willReturn(aResponse().withBody(publicationChannelsResponseBody.toPrettyString())
-                                    .withStatus(HttpURLConnection.HTTP_OK)));
-        return uri;
-    }
-
-    private ArrayNode createPublicationChannelsResponseWithUri(URI uri) {
-        var publicationChannelsResponseBodyElement = dtoObjectMapper.createObjectNode();
-        publicationChannelsResponseBodyElement.put("id", uri.toString());
-
-        var publicationChannelsResponseBody = dtoObjectMapper.createArrayNode();
-        publicationChannelsResponseBody.add(publicationChannelsResponseBodyElement);
-
-        return publicationChannelsResponseBody;
     }
 
     private Optional<Contributor> findContributorByOrcid(String orcid, List<Contributor> contributors) {
@@ -1818,6 +1807,13 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                    .filter(this::isAuthorTp)
                    .map(author -> (AuthorTp) author)
                    .collect(Collectors.toList());
+    }
+
+    private Set<AuthorTp> keepOnlyAuthorsWithAuthorId() {
+        return keepOnlyTheAuthors().stream()
+                   .filter(authorTp -> StringUtils.isNotBlank(authorTp.getAuid()))
+
+                   .collect(Collectors.toSet());
     }
 
     private List<CollaborationTp> keepOnlyTheCollaborations() {
@@ -1877,14 +1873,14 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         UriWrapper errorFileUri = UriWrapper.fromUri(ERROR_BUCKET_PATH
                                                      + PATH_SEPERATOR
                                                      + s3Event.getRecords()
-                                                           .get(0)
+                                                           .getFirst()
                                                            .getEventTime()
                                                            .toString(YYYY_MM_DD_HH_FORMAT)
                                                      + PATH_SEPERATOR
                                                      + exception.getClass().getSimpleName()
                                                      + PATH_SEPERATOR
                                                      + UriWrapper.fromUri(
-            s3Event.getRecords().get(0).getS3().getObject().getKey()).getLastPathElement());
+            s3Event.getRecords().getFirst().getS3().getObject().getKey()).getLastPathElement());
         S3Driver s3Driver = new S3Driver(s3Client, new Environment().readEnv(SCOPUS_IMPORT_BUCKET));
         String content = s3Driver.getFile(errorFileUri.toS3bucketPath());
         return JsonUtils.dtoObjectMapper.readTree(content);
@@ -1906,7 +1902,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         }
     }
 
-    public class FakeS3cClientWithHeadSupport extends FakeS3Client {
+    public static class FakeS3cClientWithHeadSupport extends FakeS3Client {
 
         public static final long SOME_CONTENT_LENGTH = 2932645L;
         public static final String APPLICATION_PDF_MIMETYPE = "application/pdf";

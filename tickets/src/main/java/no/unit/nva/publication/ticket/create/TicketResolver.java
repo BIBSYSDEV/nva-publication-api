@@ -22,6 +22,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.model.identityservice.CustomerPublishingWorkflowResponse;
+import no.unit.nva.publication.ticket.utils.RequestUtils;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.core.JacocoGenerated;
@@ -49,10 +50,10 @@ public class TicketResolver {
     public TicketEntry resolveAndPersistTicket(TicketEntry ticket,
                                                Publication publication,
                                                URI customerId,
-                                               boolean isCurator) throws ApiGatewayException {
+                                               RequestUtils requestUtils) throws ApiGatewayException {
         if (isPublishingRequestCase(ticket)) {
             var publishingRequestCase = updatePublishingRequestWorkflow((PublishingRequestCase) ticket, customerId);
-            return createPublishingRequest(publishingRequestCase, publication, isCurator);
+            return createPublishingRequest(publishingRequestCase, publication, requestUtils);
         }
         return persistTicket(ticket);
     }
@@ -68,9 +69,9 @@ public class TicketResolver {
 
     private PublishingRequestCase createPublishingRequest(PublishingRequestCase publishingRequestCase,
                                                           Publication publication,
-                                                          boolean isCurator)
+                                                          RequestUtils requestUtils)
         throws ApiGatewayException {
-        return isCurator
+        return requestUtils.isAuthorizedToManage(publishingRequestCase)
                    ? createPublishingRequestForCurator(publishingRequestCase, publication)
                    : createPublishingRequestForNonCurator(publishingRequestCase, publication);
     }

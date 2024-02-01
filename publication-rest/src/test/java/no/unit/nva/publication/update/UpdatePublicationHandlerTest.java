@@ -787,6 +787,28 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldUpdatePublicationWithoutReferencedContext()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithAdministrativeAgreement(publicationService);
+        publication.getEntityDescription().getReference().setDoi(null);
+        publicationService.updatePublication(publication);
+        TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService)
+            .complete(publication, new Username(randomString())).persistUpdate(ticketService);
+
+        var newUnpublishedFile = File.builder().withIdentifier(UUID.randomUUID())
+                                     .withLicense(randomUri()).buildUnpublishedFile();
+        var files = publication.getAssociatedArtifacts();
+        files.add(newUnpublishedFile);
+
+        publication.copy().withAssociatedArtifacts(files);
+
+        var input = ownerUpdatesOwnPublication(publication.getIdentifier(), publication);
+        updatePublicationHandler.handleRequest(input, output, context);
+
+        assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(200)));
+    }
+
+    @Test
     void shouldRejectUpdateIfSettingInstanceTypeNotAllowingFilesOnPublicationContainingFile()
         throws BadRequestException, IOException {
 
