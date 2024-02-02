@@ -132,7 +132,6 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             .map(Organization.class::cast)
             .forEach(this::mockOrganizations);
         var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
-
         assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
         this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
     }

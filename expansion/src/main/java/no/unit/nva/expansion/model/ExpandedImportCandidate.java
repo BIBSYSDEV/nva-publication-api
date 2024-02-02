@@ -439,12 +439,13 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                                                                                  RawContentRetriever uriRetriever) {
 
         return getOrganizationIdList(importCandidate)
-                                       .map(id -> fetchCristinOrg(id, uriRetriever))
-                                       .filter(Optional::isPresent)
-                                       .map(Optional::get)
-                                       .filter(org -> isNvaCustomer(org, uriRetriever))
-                                       .map(ExpandedImportCandidateOrganization::fromCristinOrganization)
-                                       .collect(Collectors.toSet());
+                   .map(id -> fetchCristinOrg(id, uriRetriever))
+                   .filter(Optional::isPresent)
+                   .map(Optional::get)
+                   .distinct()
+                   .filter(org -> isNvaCustomer(org, uriRetriever))
+                   .map(ExpandedImportCandidateOrganization::fromCristinOrganization)
+                   .collect(Collectors.toSet());
 
     }
 
@@ -457,6 +458,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .filter(Organization.class::isInstance)
                    .map(Organization.class::cast)
                    .map(Organization::getId)
+                   .distinct()
                    .filter(Objects::nonNull);
     }
 

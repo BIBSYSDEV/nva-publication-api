@@ -1,20 +1,14 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
-import static no.unit.nva.expansion.model.ExpandedImportCandidateOrganization.CONTENT_TYPE;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EMPTY_EVENT_TOPIC;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -154,7 +148,7 @@ public class ExpandImportCandidateHandlerTest extends ResourcesLocalTest {
     }
 
     private void mockOrganizations(Organization org) {
-        when(uriRetriever.getRawContent(org.getId(), CONTENT_TYPE))
+        when(uriRetriever.getRawContent(org.getId(), "application/json"))
             .thenReturn(Optional.of(new CristinOrganization(org.getId(), null, null, null, null,
                                                             Map.of("no", "label")).toJsonString()));
     }
