@@ -1253,8 +1253,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private static Optional<String> toResponse(ImportCandidate importCandidate) {
         return Optional.of(String.valueOf(new ImportCandidateSearchApiResponse(
             List.of(ExpandedImportCandidate
-                        .fromImportCandidate(importCandidate,
-                                             new no.unit.nva.publication.external.services.UriRetriever())), 1)));
+                        .fromImportCandidate(importCandidate, mock(
+                            no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever.class))), 1)));
     }
 
     private static List<Affiliation> getActiveAffiliations(CristinPerson expectedCristinPerson) {

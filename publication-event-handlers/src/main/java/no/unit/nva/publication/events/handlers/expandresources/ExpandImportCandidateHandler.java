@@ -14,6 +14,8 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.model.ExpandedImportCandidate;
 import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
 import no.unit.nva.publication.events.handlers.persistence.PersistedDocument;
+import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
+import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
@@ -29,6 +31,8 @@ public class ExpandImportCandidateHandler extends DestinationsEventBridgeEventHa
     public static final String IMPORT_CANDIDATE_PERSISTENCE = "ImportCandidates.ExpandedDataEntry.Persisted";
     public static final Environment ENVIRONMENT = new Environment();
     public static final String EVENTS_BUCKET = ENVIRONMENT.readEnv("EVENTS_BUCKET");
+    public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
+    public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
     public static final String PERSISTED_ENTRIES_BUCKET = ENVIRONMENT.readEnv("PERSISTED_ENTRIES_BUCKET");
     public static final int PUBLICATION_YEAR_2018 = 2018;
     public static final String EMPTY_EVENT_MESSAGE = "Candidate should not be expanded because of publication year: {}";
@@ -37,15 +41,15 @@ public class ExpandImportCandidateHandler extends DestinationsEventBridgeEventHa
     private final Logger logger = LoggerFactory.getLogger(ExpandImportCandidateHandler.class);
     private final S3Driver s3Reader;
     private final S3Driver s3Writer;
-    private final UriRetriever uriRetriever;
+    private final RawContentRetriever uriRetriever;
 
     @JacocoGenerated
     public ExpandImportCandidateHandler() {
         this(new S3Driver(EVENTS_BUCKET), new S3Driver(PERSISTED_ENTRIES_BUCKET),
-             new UriRetriever(HttpClient.newBuilder().build()));
+             new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME));
     }
 
-    public ExpandImportCandidateHandler(S3Driver s3Reader, S3Driver s3Writer, UriRetriever uriRetriever) {
+    public ExpandImportCandidateHandler(S3Driver s3Reader, S3Driver s3Writer, RawContentRetriever uriRetriever) {
         super(EventReference.class);
         this.s3Reader = s3Reader;
         this.s3Writer = s3Writer;

@@ -291,7 +291,6 @@ public class ScopusFileConverter {
                    .withPublisherAuthority(VOR.equals(crossrefLink.getContentVersion()))
                    .withLicense(extractLicenseForLink(crossrefLink, licenses))
                    .withEmbargo(calculateEmbargo(crossrefLink, licenses))
-                   .withMimeType(crossrefLink.getContentType())
                    .build();
     }
 
