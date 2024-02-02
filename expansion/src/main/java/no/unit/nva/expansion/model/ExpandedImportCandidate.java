@@ -36,11 +36,14 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount", "PMD.TooManyFields"})
 @JsonTypeName(ExpandedImportCandidate.TYPE)
 public class ExpandedImportCandidate implements ExpandedDataEntry {
 
+    private static final Logger logger = LoggerFactory.getLogger(ExpandedImportCandidate.class);
     public static final String TYPE = "ImportCandidateSummary";
     public static final String API_HOST = new Environment().readEnv("API_HOST");
     public static final String PUBLICATION = "publication";
@@ -422,6 +425,10 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     private static Set<Corporation> extractOrganizations(ImportCandidate importCandidate, UriRetriever uriRetriever) {
+        logger.info("Extracting organizations for: {}", importCandidate.getNvaContributors().stream()
+                                                            .map(NvaCustomerContributor::getNvaCustomer)
+                                                            .map(NvaCustomer::toJsonString)
+                                                            .toList());
         return importCandidate.getNvaContributors().stream()
                    .filter(NvaCustomerContributor::belongsToNvaCustomer)
                    .map(NvaCustomerContributor::getNvaCustomer)
