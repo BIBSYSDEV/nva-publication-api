@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
@@ -42,12 +43,15 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount", "PMD.TooManyFields"})
 @JsonTypeName(ExpandedImportCandidate.TYPE)
 public class ExpandedImportCandidate implements ExpandedDataEntry {
 
     public static final String TYPE = "ImportCandidateSummary";
+    private static final Logger logger = LoggerFactory.getLogger(ExpandedImportCandidate.class);
     public static final String API_HOST = new Environment().readEnv("API_HOST");
     public static final String PUBLICATION = "publication";
     public static final String ID_FIELD = "id";
@@ -117,6 +121,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     public static ExpandedImportCandidate fromImportCandidate(ImportCandidate importCandidate,
                                                               RawContentRetriever uriRetriever) {
         var organizations = extractOrganizations(importCandidate, uriRetriever);
+        logger.info("Organizations to show: {}", organizations.toString());
         return new ExpandedImportCandidate.Builder().withIdentifier(generateIdentifier(importCandidate.getIdentifier()))
                    .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
                    .withPublicationInstance(extractPublicationInstance(importCandidate))
@@ -433,6 +438,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
 
     private static Set<Corporation> extractOrganizations(ImportCandidate importCandidate,
                                                        RawContentRetriever uriRetriever) {
+
         return getOrganizationIdList(importCandidate)
                                        .map(id -> fetchCristinOrg(id, uriRetriever))
                                        .filter(Optional::isPresent)
@@ -456,12 +462,19 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     private static boolean isNvaCustomer(CristinOrganization cristinOrganization, RawContentRetriever uriRetriever) {
-        return Optional.ofNullable(cristinOrganization.id())
-                   .map(ExpandedImportCandidate::toFetchCustomerByCristinIdUri)
-                   .map(uri -> fetchCustomer(uriRetriever, uri))
-                   .filter(Optional::isPresent)
-                   .map(Optional::get)
-                   .map(ExpandedImportCandidate::okResponse).orElse(false);
+        var isCustomer = Optional.ofNullable(cristinOrganization.id())
+                             .map(ExpandedImportCandidate::toFetchCustomerByCristinIdUri)
+                             .map(uri -> fetchCustomer(uriRetriever, uri))
+                             .filter(Optional::isPresent)
+                             .map(Optional::get)
+                             .map(ExpandedImportCandidate::isHttpOk)
+                             .orElse(false);
+        logger.info("Cristin organization {} is nva customer: {}", isCustomer, cristinOrganization.id());
+        return isCustomer;
+    }
+
+    private static boolean isHttpOk(HttpResponse<String> stringHttpResponse) {
+        return stringHttpResponse.statusCode() == 200;
     }
 
     private static Optional<CristinOrganization> fetchCristinOrg(URI id, RawContentRetriever uriRetriever) {
@@ -475,12 +488,8 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .map(List::getFirst);
     }
 
-    private static Optional<String> fetchCustomer(RawContentRetriever uriRetriever, URI uri) {
-        return uriRetriever.getRawContent(uri, CONTENT_TYPE);
-    }
-
-    private static boolean okResponse(String response) {
-        return response.contains("200");
+    private static Optional<HttpResponse<String>> fetchCustomer(RawContentRetriever uriRetriever, URI uri) {
+        return uriRetriever.fetchResponse(uri, CONTENT_TYPE);
     }
 
     private static URI toFetchCustomerByCristinIdUri(URI topLevelOrganization) {

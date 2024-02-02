@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.net.http.HttpResponse;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
@@ -152,10 +153,14 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
     }
 
+    @SuppressWarnings("unchecked")
     private void mockOrganizations(Organization org) {
         when(uriRetriever.getRawContent(any(), anyString())).
             thenReturn(Optional.of(new CristinOrganization(org.getId(), null, null, List.of(randomCristinOrg()),
-                                                           null, Map.of()).toJsonString() + " 200"));
+                                                           null, Map.of()).toJsonString()));
+        var response = (HttpResponse<String>) mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(200);
+        when(uriRetriever.fetchResponse(any(), anyString())).thenReturn(Optional.of(response));
 
     }
 
