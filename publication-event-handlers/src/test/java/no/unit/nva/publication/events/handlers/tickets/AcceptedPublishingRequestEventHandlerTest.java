@@ -6,6 +6,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
@@ -114,6 +115,20 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
         assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
         assertThat(getAssociatedFiles(updatedPublication), everyItem(instanceOf(PublishedFile.class)));
+    }
+
+    @Test
+    void shouldNotPublishAdministrativeAgreementWhenPublishingRequestIsApproved() throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithAdministrativeAgreement(resourceService);
+        var pendingPublishingRequest = pendingPublishingRequest(publication);
+        pendingPublishingRequest.setWorkflow(PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
+        var approvedPublishingRequest = pendingPublishingRequest.complete(publication, USERNAME);
+        var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
+        handler.handleRequest(event, outputStream, CONTEXT);
+        var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
+
+        assertThat(updatedPublication.getAssociatedArtifacts().getFirst(), is(instanceOf(AdministrativeAgreement.class)));
+        assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
     }
 
     @Test
