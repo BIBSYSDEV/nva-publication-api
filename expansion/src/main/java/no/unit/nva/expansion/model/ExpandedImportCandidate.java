@@ -476,7 +476,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     private static Optional<String> fetchCustomer(RawContentRetriever uriRetriever, URI uri) {
-        return uriRetriever.getRawContent(toFetchCustomerByCristinIdUri(uri), CONTENT_TYPE);
+        return uriRetriever.getRawContent(uri, CONTENT_TYPE);
     }
 
     private static boolean okResponse(String response) {
