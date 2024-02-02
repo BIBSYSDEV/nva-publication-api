@@ -78,11 +78,9 @@ public class UpdatePublicationHandler
     extends ApiGatewayHandler<UpdatePublicationRequest, PublicationResponseElevatedUser> {
 
     private static final Logger logger = LoggerFactory.getLogger(UpdatePublicationHandler.class);
-
     public static final String IDENTIFIER_MISMATCH_ERROR_MESSAGE = "Identifiers in path and in body, do not match";
     private static final String ENV_KEY_BACKEND_CLIENT_SECRET_NAME = "BACKEND_CLIENT_SECRET_NAME";
     private static final String ENV_KEY_BACKEND_CLIENT_AUTH_URL = "BACKEND_CLIENT_AUTH_URL";
-    private static final String HTTPS_PROTOCOL = "https://";
     private final TicketService ticketService;
     private final ResourceService resourceService;
     private final IdentityServiceClient identityServiceClient;
@@ -157,7 +155,7 @@ public class UpdatePublicationHandler
         var backendClientSecretName = environment.readEnv(ENV_KEY_BACKEND_CLIENT_SECRET_NAME);
         var backendClientCredentials = secretsReader.fetchClassSecret(backendClientSecretName,
                                                                       BackendClientCredentials.class);
-        var cognitoServerUri = URI.create(HTTPS_PROTOCOL + environment.readEnv(ENV_KEY_BACKEND_CLIENT_AUTH_URL));
+        var cognitoServerUri = URI.create(environment.readEnv(ENV_KEY_BACKEND_CLIENT_AUTH_URL));
         var cognitoCredentials = new CognitoCredentials(backendClientCredentials::getId,
                                                         backendClientCredentials::getSecret,
                                                         cognitoServerUri);

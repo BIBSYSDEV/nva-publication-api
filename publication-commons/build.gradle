@@ -43,7 +43,7 @@ test {
     environment "AWS_REGION", "eu-west-1"
     environment "COGNITO_HOST", "http://example.org"
     environment "RESULT_SET_SIZE_FOR_DYNAMODB_QUERIES", "5"
-    environment "BACKEND_CLIENT_AUTH_URL", "localhost"
+    environment "BACKEND_CLIENT_AUTH_URL", "https://auth.example.com"
     environment "EXTERNAL_USER_POOL_URI", "https://external-user-pool.example.com"
 }
 
