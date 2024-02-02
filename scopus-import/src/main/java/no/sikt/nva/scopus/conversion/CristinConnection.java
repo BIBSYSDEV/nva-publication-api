@@ -27,7 +27,6 @@ public class CristinConnection {
 
     public static final String CRISTIN_PERSON_RESPONSE_ERROR = "Could not fetch cristin person: ";
     public static final String CRISTIN_ORGANIZATION_RESPONSE_ERROR = "Could not fetch cristin organization: ";
-    public static final String QUERY_PARAM_DEPTH_NONE = "?depth=none";
     public static final String COULD_NOT_FETCH_ORGANIZATION = "Could not fetch organization: {}";
     public static final String ORGANIZATION_SUCCESSFULLY_FETCHED = "Organization successfully fetched: {}";
     public static final String ACCEPT = "Accept";
@@ -56,7 +55,8 @@ public class CristinConnection {
     }
 
     public Optional<CristinPerson> getCristinPersonByCristinId(URI cristinPersonId) {
-        return attempt(() -> createRequest(cristinPersonId)).map(this::getCristinResponse)
+        return attempt(() -> createRequest(cristinPersonId))
+                   .map(this::getCristinResponse)
                    .map(this::getBodyFromPersonResponse)
                    .map(this::getCristinPersonResponse)
                    .toOptional();

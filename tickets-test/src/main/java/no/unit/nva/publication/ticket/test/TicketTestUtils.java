@@ -7,6 +7,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.PublicationInstanceBuilder.listPublicationInstanceTypes;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -15,6 +16,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
@@ -58,22 +60,41 @@ public final class TicketTestUtils {
 
     public static Stream<Arguments> ticketTypeAndAccessRightProvider() {
         return Stream.of(Arguments.of(DoiRequest.class, AccessRight.MANAGE_DOI),
-                Arguments.of(PublishingRequestCase.class, AccessRight.MANAGE_PUBLISHING_REQUESTS));
+                         Arguments.of(PublishingRequestCase.class, AccessRight.MANAGE_PUBLISHING_REQUESTS));
     }
 
     public static Stream<Arguments> invalidAccessRightForTicketTypeProvider() {
         return Stream.of(Arguments.of(DoiRequest.class, AccessRight.MANAGE_PUBLISHING_REQUESTS),
-                Arguments.of(PublishingRequestCase.class, AccessRight.MANAGE_DOI));
+                         Arguments.of(PublishingRequestCase.class, AccessRight.MANAGE_DOI));
     }
 
     public static Publication createNonPersistedPublication(PublicationStatus status) {
         return randomPublicationWithStatus(status);
     }
-    public static Publication createPersistedNonDegreePublication(PublicationStatus status, ResourceService resourceService)
+
+    public static Publication createPersistedNonDegreePublication(URI publisherId, PublicationStatus status, ResourceService resourceService)
         throws ApiGatewayException {
-        var publication = randomNonDegreePublication(status);
+        var publication = randomNonDegreePublication(status)
+                              .copy()
+                              .withPublisher(new Organization.Builder()
+                                                 .withId(publisherId)
+                                                 .build())
+                              .build();
         return persistPublication(resourceService, publication);
     }
+
+    public static Publication createPersistedPublication(URI publisherId, PublicationStatus status,
+                                                         ResourceService resourceService)
+        throws ApiGatewayException {
+        var publication = randomPublicationWithStatus(status);
+        if (publisherId != null) {
+            publication = publication.copy()
+                              .withPublisher(new Organization.Builder().withId(publisherId).build())
+                              .build();
+        }
+        return persistPublication(resourceService, publication);
+    }
+
     public static Publication createPersistedPublication(PublicationStatus status, ResourceService resourceService)
         throws ApiGatewayException {
         var publication = randomPublicationWithStatus(status);
@@ -99,7 +120,23 @@ public final class TicketTestUtils {
 
     public static Publication createPersistedPublicationWithAdministrativeAgreement(ResourceService resourceService)
         throws ApiGatewayException {
-        var publication = randomPublication().copy().withAssociatedArtifacts(List.of(administrativeAgreement())).build();
+        var publication = randomPublication().copy()
+                              .withAssociatedArtifacts(List.of(administrativeAgreement()))
+                              .build();
+
+        return persistPublication(resourceService, publication);
+    }
+
+    public static Publication createPersistedPublicationWithAdministrativeAgreement(URI publisherId,
+                                                                                    ResourceService resourceService)
+        throws ApiGatewayException {
+        var publication = randomPublication().copy()
+                              .withAssociatedArtifacts(List.of(administrativeAgreement()))
+                              .withPublisher(new Organization.Builder()
+                                                 .withId(publisherId)
+                                                 .build())
+                              .build();
+
         return persistPublication(resourceService, publication);
     }
 
@@ -110,10 +147,11 @@ public final class TicketTestUtils {
         return persistPublication(resourceService, publication);
     }
 
-    public static Publication createPersistedPublicationWithPublishedFiles(PublicationStatus status,
+    public static Publication createPersistedPublicationWithUnpublishedFiles(URI publisher,
+                                                                             PublicationStatus status,
                                                                              ResourceService resourceService)
         throws ApiGatewayException {
-        var publication = randomPublicationWithPublishedFiles(status);
+        var publication = randomPublicationWithUnpublishedFiles(publisher, status);
         return persistPublication(resourceService, publication);
     }
 
@@ -165,10 +203,10 @@ public final class TicketTestUtils {
     }
 
     public static TicketEntry createCompletedTicket(Publication publication, Class<? extends TicketEntry> ticketType,
-                                                 TicketService ticketService)
+                                                    TicketService ticketService)
         throws ApiGatewayException {
         var completedTicket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
-                   .persistNewTicket(ticketService).complete(publication, new Username("Username"));
+                                  .persistNewTicket(ticketService).complete(publication, new Username("Username"));
         completedTicket.persistUpdate(ticketService);
         return completedTicket;
     }
@@ -209,19 +247,22 @@ public final class TicketTestUtils {
         return publication;
     }
 
-    private static Publication randomPublicationWithPublishedFiles(PublicationStatus status) {
+    private static Publication randomPublicationWithUnpublishedFiles(URI publisherId, PublicationStatus status) {
         var publication = randomPublication().copy()
+                              .withPublisher(new Organization.Builder()
+                                                 .withId(publisherId)
+                                                 .build())
                               .withStatus(status)
                               .build();
-        publishFiles(publication);
+        unpublishFiles(publication);
         return publication;
     }
 
     private static Publication randomPublicationWithAssociatedLink(PublicationStatus status) {
         return randomPublication().copy()
-                              .withStatus(status)
-                              .withAssociatedArtifacts(List.of(new AssociatedLink(randomUri(), null, null)))
-                              .build();
+                   .withStatus(status)
+                   .withAssociatedArtifacts(List.of(new AssociatedLink(randomUri(), null, null)))
+                   .build();
     }
 
     private static Publication randomNonDegreePublication(PublicationStatus status) {
@@ -246,16 +287,6 @@ public final class TicketTestUtils {
                        .filter(artifact -> artifact instanceof File)
                        .map(File.class::cast)
                        .map(File::toUnpublishedFile)
-                       .collect(Collectors.toCollection(() -> new ArrayList<AssociatedArtifact>()));
-        publication.setAssociatedArtifacts(new AssociatedArtifactList(list));
-    }
-
-    private static void publishFiles(Publication publication) {
-        var list = publication.getAssociatedArtifacts()
-                       .stream()
-                       .filter(artifact -> artifact instanceof File)
-                       .map(File.class::cast)
-                       .map(File::toPublishedFile)
                        .collect(Collectors.toCollection(() -> new ArrayList<AssociatedArtifact>()));
         publication.setAssociatedArtifacts(new AssociatedArtifactList(list));
     }

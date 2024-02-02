@@ -4,6 +4,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.util.HashMap;
@@ -80,8 +81,8 @@ public class CristinGenerator {
         return JsonUtils.dtoObjectMapper.writeValueAsString(organization);
     }
 
-    public static String convertPersonToJson(CristinPerson cristinPerson) throws JsonProcessingException {
-        return JsonUtils.dtoObjectMapper.writeValueAsString(cristinPerson);
+    public static String convertPersonToJson(CristinPerson cristinPerson) {
+        return attempt(()-> JsonUtils.dtoObjectMapper.writeValueAsString(cristinPerson)).orElseThrow() ;
     }
 
     private static Set<Affiliation> generateAffiliations() {

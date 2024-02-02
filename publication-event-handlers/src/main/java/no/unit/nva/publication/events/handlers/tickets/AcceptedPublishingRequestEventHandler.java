@@ -15,6 +15,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
@@ -125,7 +126,7 @@ public class AcceptedPublishingRequestEventHandler
     }
 
     private AssociatedArtifact updateFileToPublished(AssociatedArtifact artifact) {
-        if (artifact instanceof File) {
+        if (artifact instanceof UnpublishedFile) {
             var file = (File) artifact;
             return file.toPublishedFile();
         } else {

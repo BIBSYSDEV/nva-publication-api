@@ -3,10 +3,10 @@ package no.unit.nva.publication.ticket.update;
 import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
 import static no.unit.nva.publication.model.business.TicketStatus.CLOSED;
 import static no.unit.nva.publication.ticket.TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME;
 import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
-import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
@@ -29,13 +29,13 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketHandler;
 import no.unit.nva.publication.ticket.UpdateTicketRequest;
+import no.unit.nva.publication.ticket.utils.RequestUtils;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
@@ -84,8 +84,9 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         throws ApiGatewayException {
         var ticketIdentifier = extractTicketIdentifierFromPath(requestInfo);
         var ticket = fetchTicketForElevatedUser(ticketIdentifier, UserInstance.fromRequestInfo(requestInfo));
+        var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
         if (hasEffectiveChanges(ticket, input)) {
-            updateTicket(input, requestInfo, ticket);
+            updateTicket(input, requestUtils, ticket);
         }
         return null;
     }
@@ -95,9 +96,9 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         return HTTP_ACCEPTED;
     }
 
-    private static void throwExceptionIfUnauthorized(RequestInfo requestInfo, TicketEntry ticket)
-        throws UnauthorizedException, ForbiddenException {
-        if (userIsNotAuthorized(requestInfo, ticket)) {
+    private static void throwExceptionIfUnauthorized(RequestUtils requestUtils, TicketEntry ticket)
+        throws ForbiddenException {
+        if (userIsNotAuthorized(requestUtils, ticket)) {
             throw new ForbiddenException();
         }
     }
@@ -115,31 +116,12 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         return !ticketRequest.getAssignee().equals(ticket.getAssignee());
     }
 
-    private static boolean userIsNotAuthorized(RequestInfo requestInfo, TicketEntry ticket)
-        throws UnauthorizedException {
-        return !(isAuthorizedToCompleteTickets(requestInfo) && isUserFromSameCustomerAsTicket(requestInfo, ticket));
+    private static boolean userIsNotAuthorized(RequestUtils requestUtils, TicketEntry ticket) {
+        return !(requestUtils.isAuthorizedToManage(ticket) && isUserFromSameCustomerAsTicket(requestUtils, ticket));
     }
 
-    private static boolean isAuthorizedToCompleteTickets(RequestInfo requestInfo) {
-        return userIsAuthorizedToApproveDoiRequest(requestInfo) || userIsAuthorizedToApprovePublishingRequest(
-            requestInfo);
-    }
-
-    private static boolean userIsAuthorizedToApprovePublishingRequest(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(MANAGE_PUBLISHING_REQUESTS);
-    }
-
-    private static boolean userIsAuthorizedToApproveDoiRequest(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(MANAGE_DOI);
-    }
-
-    private static boolean isUserFromSameCustomerAsTicket(RequestInfo requestInfo, TicketEntry ticket)
-        throws UnauthorizedException {
-        return requestInfo.getCurrentCustomer().equals(ticket.getCustomerId());
-    }
-
-    private static Username getUsername(RequestInfo requestInfo) throws UnauthorizedException {
-        return new Username(requestInfo.getUserName());
+    private static boolean isUserFromSameCustomerAsTicket(RequestUtils requestUtils, TicketEntry ticket) {
+        return requestUtils.customer().equals(ticket.getCustomerId());
     }
 
     private static boolean assigneeDoesNotExist(TicketEntry ticket) {
@@ -163,20 +145,20 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         return nonNull(assignee) && assignee.toString().equals(userName);
     }
 
-    private void updateTicket(UpdateTicketRequest ticketRequest, RequestInfo requestInfo, TicketEntry ticket)
+    private void updateTicket(UpdateTicketRequest ticketRequest, RequestUtils requestUtils, TicketEntry ticket)
         throws ApiGatewayException {
         if (incomingUpdateIsStatus(ticket, ticketRequest)) {
-            updateStatus(ticketRequest, requestInfo, ticket);
+            updateStatus(ticketRequest, requestUtils, ticket);
         }
         if (incomingUpdateIsAssignee(ticket, ticketRequest)) {
-            updateAssignee(ticketRequest, requestInfo, ticket);
+            updateAssignee(ticketRequest, requestUtils, ticket);
         }
         if (incomingUpdateIsViewedStatus(ticketRequest)) {
-            updateTicketViewedBy(ticketRequest, ticket, requestInfo);
+            updateTicketViewedBy(ticketRequest, ticket, requestUtils);
         }
     }
 
-    private void updateAssignee(UpdateTicketRequest ticketRequest, RequestInfo requestInfo, TicketEntry ticket)
+    private void updateAssignee(UpdateTicketRequest ticketRequest, RequestUtils requestInfo, TicketEntry ticket)
         throws ApiGatewayException {
         throwExceptionIfUnauthorized(requestInfo, ticket);
         if (assigneeIsEmptyString(ticketRequest)) {
@@ -186,16 +168,16 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         }
     }
 
-    private void updateStatus(UpdateTicketRequest ticketRequest, RequestInfo requestInfo, TicketEntry ticket)
+    private void updateStatus(UpdateTicketRequest ticketRequest, RequestUtils requestUtils, TicketEntry ticket)
         throws ApiGatewayException {
-        throwExceptionIfUnauthorized(requestInfo, ticket);
+        throwExceptionIfUnauthorized(requestUtils, ticket);
         if (ticket instanceof DoiRequest) {
-            doiTicketSideEffects(ticketRequest, requestInfo);
+            doiTicketSideEffects(ticketRequest, requestUtils);
         }
         if (ticket instanceof PublishingRequestCase publishingRequestCase) {
             publishingRequestSideEffects(publishingRequestCase, ticketRequest);
         }
-        ticketService.updateTicketStatus(ticket, ticketRequest.getStatus(), getUsername(requestInfo));
+        ticketService.updateTicketStatus(ticket, ticketRequest.getStatus(), new Username(requestUtils.username()));
     }
 
     private void publishingRequestSideEffects(PublishingRequestCase ticket,
@@ -230,16 +212,16 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
                    .orElseThrow(fail -> new ForbiddenException());
     }
 
-    private void updateTicketViewedBy(UpdateTicketRequest ticketRequest, TicketEntry ticket, RequestInfo requestInfo)
+    private void updateTicketViewedBy(UpdateTicketRequest ticketRequest, TicketEntry ticket, RequestUtils requestUtils)
         throws ApiGatewayException {
-        assertThatPublicationIdentifierInPathReferencesCorrectPublication(ticket, requestInfo);
-        if (userIsTicketAssignee(ticket, requestInfo.getUserName())) {
-            throwExceptionIfUnauthorized(requestInfo, ticket);
+        assertThatPublicationIdentifierInPathReferencesCorrectPublication(ticket, requestUtils);
+        if (userIsTicketAssignee(ticket, requestUtils.username())) {
+            throwExceptionIfUnauthorized(requestUtils, ticket);
             markTicketForAssignee(ticketRequest, ticket);
-        } else if (userIsTicketOwner(ticket, requestInfo.getUserName())) {
+        } else if (userIsTicketOwner(ticket, requestUtils.username())) {
             markTicketForOwner(ticketRequest, ticket);
-        } else if (userHasAccessRightToOperateOnTicket(requestInfo)) {
-            markTicketForCurator(ticketRequest, ticket, requestInfo.getUserName());
+        } else if (requestUtils.hasAccessRight(MANAGE_DOI)) {
+            markTicketForCurator(ticketRequest, ticket, requestUtils.username());
         }
     }
 
@@ -251,10 +233,6 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         } else {
             throw new UnsupportedOperationException(UNKNOWN_VIEWED_STATUS_MESSAGE);
         }
-    }
-
-    private boolean userHasAccessRightToOperateOnTicket(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(MANAGE_DOI);
     }
 
     private boolean userIsTicketOwner(TicketEntry ticket, String userName) {
@@ -284,9 +262,10 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     }
 
     private void assertThatPublicationIdentifierInPathReferencesCorrectPublication(TicketEntry ticket,
-                                                                                   RequestInfo requestInfo)
+                                                                                   RequestUtils requestUtils)
         throws ForbiddenException {
-        var suppliedPublicationIdentifier = extractPublicationIdentifierFromPath(requestInfo);
+        var suppliedPublicationIdentifier =
+            requestUtils.pathParameterAsIdentifier(PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME);
         if (!suppliedPublicationIdentifier.equals(ticket.getResourceIdentifier())) {
             throw new ForbiddenException();
         }
@@ -314,20 +293,20 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         return nonNull(ticketRequest.getViewStatus());
     }
 
-    private void doiTicketSideEffects(UpdateTicketRequest input, final RequestInfo requestInfo)
+    private void doiTicketSideEffects(UpdateTicketRequest input, final RequestUtils requestUtils)
         throws NotFoundException, BadMethodException, BadGatewayException {
         var status = input.getStatus();
+        var publication = getPublication(requestUtils);
         if (TicketStatus.COMPLETED.equals(status)) {
-            findableDoiTicketSideEffects(requestInfo);
+            findableDoiTicketSideEffects(publication);
         }
-        if (CLOSED.equals(status) && hasDoi(getPublication(requestInfo))) {
-            deleteDoiTicketSideEffects(getPublication(requestInfo));
+        if (CLOSED.equals(status) && hasDoi(publication)) {
+            deleteDoiTicketSideEffects(publication);
         }
     }
 
-    private void findableDoiTicketSideEffects(RequestInfo requestInfo)
-        throws NotFoundException, BadMethodException, BadGatewayException {
-        var publication = getPublication(requestInfo);
+    private void findableDoiTicketSideEffects(Publication publication)
+        throws BadMethodException, BadGatewayException {
         publicationSatisfiesDoiRequirements(publication);
         createFindableDoiAndPersistDoiOnPublication(publication);
     }
@@ -359,8 +338,8 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         }
     }
 
-    private Publication getPublication(RequestInfo requestInfo) throws NotFoundException {
-        var publicationIdentifier = extractPublicationIdentifierFromPath(requestInfo);
+    private Publication getPublication(RequestUtils requestUtils) throws NotFoundException {
+        var publicationIdentifier = requestUtils.pathParameterAsIdentifier(PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME);
         return resourceService.getPublicationByIdentifier(publicationIdentifier);
     }
 

@@ -6,7 +6,9 @@ import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.role.RoleType;
@@ -15,8 +17,9 @@ import nva.commons.apigateway.AccessRight;
 
 public class ContributorPermissionStrategy extends PermissionStrategy {
 
-    public ContributorPermissionStrategy(Publication publication, UserInstance userInstance, List<AccessRight> accessRights,
-                                     URI personCristinId) {
+    public ContributorPermissionStrategy(Publication publication, UserInstance userInstance,
+                                         List<AccessRight> accessRights,
+                                         URI personCristinId) {
         super(publication, userInstance, accessRights, personCristinId);
     }
 
@@ -44,9 +47,9 @@ public class ContributorPermissionStrategy extends PermissionStrategy {
     }
 
     private boolean userIsVerifiedContributor() {
-        return nonNull(personCristinId) && publication.getEntityDescription()
-                                               .getContributors()
-                                               .stream()
+        return nonNull(personCristinId) && Optional.ofNullable(publication.getEntityDescription())
+                                               .map(EntityDescription::getContributors)
+                                               .stream().flatMap(List::stream)
                                                .filter(ContributorPermissionStrategy::isCreator)
                                                .map(Contributor::getIdentity)
                                                .map(Identity::getId)

@@ -3,12 +3,11 @@ package no.unit.nva.publication.update;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.defaultEventBridgeClient;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
-import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_AUTH_URL;
-import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_SECRET_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.time.Clock;
 import java.util.HashSet;
 import java.util.List;
@@ -17,8 +16,8 @@ import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.api.PublicationResponseElevatedUser;
+import no.unit.nva.auth.CognitoCredentials;
 import no.unit.nva.clients.IdentityServiceClient;
-import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -29,10 +28,14 @@ import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.delete.LambdaDestinationInvocationDetail;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
-import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
-import no.unit.nva.publication.external.services.RawContentRetriever;
+import no.unit.nva.publication.commons.customer.Customer;
+import no.unit.nva.publication.commons.customer.CustomerApiClient;
+import no.unit.nva.publication.commons.customer.CustomerNotAvailableException;
+import no.unit.nva.publication.commons.customer.JavaHttpClientCustomerApiClient;
+import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UnpublishRequest;
@@ -40,8 +43,10 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
-import no.unit.nva.publication.ticket.model.identityservice.CustomerPublishingWorkflowResponse;
 import no.unit.nva.s3.S3Driver;
+import no.unit.nva.publication.validation.DefaultPublicationValidator;
+import no.unit.nva.publication.validation.PublicationValidationException;
+import no.unit.nva.publication.validation.PublicationValidator;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -53,6 +58,7 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
+import nva.commons.secrets.SecretsReader;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,16 +66,18 @@ import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 @SuppressWarnings("PMD.GodClass")
 public class UpdatePublicationHandler
     extends ApiGatewayHandler<UpdatePublicationRequestI, PublicationResponseElevatedUser> {
 
+    private static final Logger logger = LoggerFactory.getLogger(UpdatePublicationHandler.class);
+
     public static final String IDENTIFIER_MISMATCH_ERROR_MESSAGE = "Identifiers in path and in body, do not match";
-    public static final String CONTENT_TYPE = "application/json";
-    public static final String UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE = "Unable to fetch customer publishing workflow"
-                                                                        + " from upstream";
-    private final RawContentRetriever uriRetriever;
+    private static final String ENV_KEY_BACKEND_CLIENT_SECRET_NAME = "BACKEND_CLIENT_SECRET_NAME";
+    private static final String ENV_KEY_BACKEND_CLIENT_AUTH_URL = "BACKEND_CLIENT_AUTH_URL";
+    private static final String HTTPS_PROTOCOL = "https://";
     private final TicketService ticketService;
     private final ResourceService resourceService;
     private final IdentityServiceClient identityServiceClient;
@@ -80,10 +88,12 @@ public class UpdatePublicationHandler
         "Lambda Function Invocation Result - Success";
     public static final String NVA_PUBLICATION_DELETE_SOURCE = "nva.publication.delete";
     public static final String NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY = "NVA_PERSISTED_STORAGE_BUCKET_NAME";
-    private final Logger logger = LoggerFactory.getLogger(UpdatePublicationHandler.class);
     private final EventBridgeClient eventBridgeClient;
     private final String nvaEventBusName;
     private final S3Driver s3Driver;
+    private final SecretsReader secretsReader;
+    private final HttpClient httpClient;
+    private final PublicationValidator publicationValidator;
 
     /**
      * Default constructor for MainHandler.
@@ -96,9 +106,10 @@ public class UpdatePublicationHandler
              TicketService.defaultService(),
              new Environment(),
              IdentityServiceClient.prepare(),
-             new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME),
              defaultEventBridgeClient(),
-             S3Driver.defaultS3Client().build());
+             S3Driver.defaultS3Client().build(),
+             SecretsReader.defaultSecretsManagerClient(),
+             HttpClient.newHttpClient());
     }
 
     /**
@@ -108,7 +119,6 @@ public class UpdatePublicationHandler
      * @param ticketService
      * @param environment           environment
      * @param identityServiceClient
-     * @param uriRetriever
      * @param eventBridgeClient
      * @param s3Client
      */
@@ -116,17 +126,20 @@ public class UpdatePublicationHandler
                                     TicketService ticketService,
                                     Environment environment,
                                     IdentityServiceClient identityServiceClient,
-                                    RawContentRetriever uriRetriever,
                                     EventBridgeClient eventBridgeClient,
-                                    S3Client s3Client) {
+                                    S3Client s3Client,
+                                    SecretsManagerClient secretsManagerClient,
+                                    HttpClient httpClient) {
         super(UpdatePublicationRequestI.class, environment);
         this.resourceService = resourceService;
         this.ticketService = ticketService;
         this.identityServiceClient = identityServiceClient;
-        this.uriRetriever = uriRetriever;
         this.eventBridgeClient = eventBridgeClient;
         this.nvaEventBusName = environment.readEnv(NVA_EVENT_BUS_NAME_KEY);
         this.s3Driver = new S3Driver(s3Client, environment.readEnv(NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY));
+        this.secretsReader = new SecretsReader(secretsManagerClient);
+        this.publicationValidator = new DefaultPublicationValidator();
+        this.httpClient = httpClient;
     }
 
     private static boolean isPending(TicketEntry publishingRequest) {
@@ -258,15 +271,32 @@ public class UpdatePublicationHandler
         throwUnauthorizedUnless(permissionStrategy::hasPermissionToUpdate);
 
         Publication publicationUpdate = input.generatePublicationUpdate(existingPublication);
-        upsertPublishingRequestIfNeeded(existingPublication, publicationUpdate);
+
+        var customerApiClient = getCustomerApiClient();
+        var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, publicationUpdate.getPublisher().getId());
+        validatePublication(publicationUpdate, customer);
+
+        upsertPublishingRequestIfNeeded(existingPublication, publicationUpdate, customer);
 
         return resourceService.updatePublication(publicationUpdate);
     }
 
-    private void upsertPublishingRequestIfNeeded(Publication existingPublication, Publication publicationUpdate)
-        throws ApiGatewayException {
+    private JavaHttpClientCustomerApiClient getCustomerApiClient() {
+        var backendClientSecretName = environment.readEnv(ENV_KEY_BACKEND_CLIENT_SECRET_NAME);
+        var backendClientCredentials = secretsReader.fetchClassSecret(backendClientSecretName,
+                                                                      BackendClientCredentials.class);
+        var cognitoServerUri = URI.create(HTTPS_PROTOCOL + environment.readEnv(ENV_KEY_BACKEND_CLIENT_AUTH_URL));
+        var cognitoCredentials = new CognitoCredentials(backendClientCredentials::getId,
+                                                        backendClientCredentials::getSecret,
+                                                        cognitoServerUri);
+        return new JavaHttpClientCustomerApiClient(httpClient, cognitoCredentials);
+    }
+
+    private void upsertPublishingRequestIfNeeded(Publication existingPublication,
+                                                 Publication publicationUpdate,
+                                                 Customer customer) {
         if (isAlreadyPublished(existingPublication) && !thereIsRelatedPendingPublishingRequest(publicationUpdate)) {
-            createPublishingRequestOnFileUpdate(publicationUpdate);
+            createPublishingRequestOnFileUpdate(publicationUpdate, customer);
         }
         if (isAlreadyPublished(existingPublication) && thereAreNoFiles(publicationUpdate)) {
             autoCompletePendingPublishingRequestsIfNeeded(publicationUpdate);
@@ -295,6 +325,24 @@ public class UpdatePublicationHandler
         var updatedFiles = getUnpublishedFiles(publicationUpdate);
         return new HashSet<>(existingFiles).containsAll(updatedFiles)
                && new HashSet<>(updatedFiles).containsAll(existingFiles);
+    }
+
+    private static Customer fetchCustomerOrFailWithBadGateway(CustomerApiClient customerApiClient,
+                                                              URI customerUri) throws BadGatewayException {
+        try {
+            return customerApiClient.fetch(customerUri);
+        } catch (CustomerNotAvailableException e) {
+            logger.error("Problems fetching customer", e);
+            throw new BadGatewayException("Customer API not responding or not responding as expected!");
+        }
+    }
+
+    private void validatePublication(Publication publicationUpdate, Customer customer) throws BadRequestException {
+        try {
+            publicationValidator.validate(publicationUpdate, customer);
+        } catch (PublicationValidationException e) {
+            throw new BadRequestException(e.getMessage());
+        }
     }
 
     private void autoCompletePendingPublishingRequestsIfNeeded(Publication publication) {
@@ -337,10 +385,6 @@ public class UpdatePublicationHandler
         }
     }
 
-    private BadGatewayException createBadGatewayException() {
-        return new BadGatewayException(UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE);
-    }
-
     private boolean containsNewPublishableFiles(Publication publicationUpdate) {
         var unpublishedFiles = getUnpublishedFiles(publicationUpdate);
         return !unpublishedFiles.isEmpty() && containsPublishableFile(unpublishedFiles);
@@ -376,14 +420,6 @@ public class UpdatePublicationHandler
                    .anyMatch(UpdatePublicationHandler::isPending);
     }
 
-    private CustomerPublishingWorkflowResponse getCustomerPublishingWorkflowResponse(URI customerId)
-        throws BadGatewayException {
-        var response = uriRetriever.getRawContent(customerId, CONTENT_TYPE)
-                           .orElseThrow(this::createBadGatewayException);
-        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response,
-                                                                 CustomerPublishingWorkflowResponse.class)).orElseThrow();
-    }
-
     private List<File> getUnpublishedFiles(Publication publication) {
         return publication.getAssociatedArtifacts().stream()
                    .filter(UnpublishedFile.class::isInstance)
@@ -396,24 +432,17 @@ public class UpdatePublicationHandler
                    .orElseThrow(failure -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
     }
 
-    private PublishingRequestCase injectPublishingWorkflow(PublishingRequestCase ticket, URI customerId)
-        throws BadGatewayException {
-        var customerTransactionResult = getCustomerPublishingWorkflowResponse(customerId);
-        ticket.setWorkflow(customerTransactionResult.convertToPublishingWorkflow());
+    private PublishingRequestCase injectPublishingWorkflow(PublishingRequestCase ticket, Customer customer) {
+        ticket.setWorkflow(PublishingWorkflow.lookUp(customer.getPublicationWorkflow()));
         return ticket;
     }
 
-    private URI getCustomerId(Publication publicationUpdate) {
-        return publicationUpdate.getPublisher().getId();
-    }
-
-    private void createPublishingRequestOnFileUpdate(Publication publicationUpdate) throws ApiGatewayException {
+    private void createPublishingRequestOnFileUpdate(Publication publicationUpdate, Customer customer) {
         if (containsNewPublishableFiles(publicationUpdate)) {
             attempt(() -> TicketEntry.requestNewTicket(publicationUpdate, PublishingRequestCase.class))
                 .map(publishingRequest -> injectPublishingWorkflow((PublishingRequestCase) publishingRequest,
-                                                                   getCustomerId(publicationUpdate)))
-                .map(publishingRequest -> publishingRequest.persistNewTicket(ticketService))
-                .orElseThrow(fail -> createBadGatewayException());
+                                                                   customer))
+                .map(publishingRequest -> publishingRequest.persistNewTicket(ticketService));
         }
     }
 

@@ -8,6 +8,10 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationInstanceBuilder.listPublicationInstanceTypes;
+import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypes;
+import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseNotFound;
+import static no.unit.nva.publication.CustomerApiStubs.stubSuccessfulCustomerResponseAllowingFilesForNoTypes;
+import static no.unit.nva.publication.CustomerApiStubs.stubSuccessfulTokenResponse;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.RequestUtil.IDENTIFIER_IS_NOT_A_VALID_UUID;
@@ -16,9 +20,6 @@ import static no.unit.nva.publication.delete.DeletePublicationHandler.LAMBDA_DES
 import static no.unit.nva.publication.delete.DeletePublicationHandler.NVA_PUBLICATION_DELETE_SOURCE;
 import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
-import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_AUTH_URL;
-import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_SECRET_NAME;
-import static no.unit.nva.publication.update.UpdatePublicationHandler.UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
@@ -41,6 +42,7 @@ import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.emptyIterable;
@@ -49,6 +51,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -57,12 +60,14 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.nio.file.Path;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
@@ -104,11 +109,9 @@ import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
-import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.delete.LambdaDestinationInvocationDetail;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
-import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -120,14 +123,13 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
-import no.unit.nva.publication.testing.http.FakeHttpResponse;
 import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
+import no.unit.nva.stubs.WiremockHttpClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.AccessRight;
@@ -137,7 +139,6 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.SingletonCollector;
-import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
@@ -155,13 +156,12 @@ import org.zalando.problem.Problem;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
+@WireMockTest(httpsEnabled = true)
 class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_PROBLEM_TYPE =
         restApiMapper.getTypeFactory().constructParametricType(GatewayResponse.class, Problem.class);
-    public static final String ACCESS_TOKEN_RESPONSE_BODY = "{ \"access_token\" : \"Bearer token\"}";
 
     public static final String SOME_MESSAGE = "SomeMessage";
     public static final String SOME_CURATOR = "some@curator";
@@ -183,18 +183,24 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private FakeSecretsManagerClient secretsManagerClient;
     private FakeEventBridgeClient eventBridgeClient;
     private S3Client s3Client;
+    private URI customerId;
 
     /**
      * Set up environment.
      */
     @BeforeEach
-    public void setUp() throws NotFoundException {
+    public void setUp(WireMockRuntimeInfo wireMockRuntimeInfo) throws NotFoundException {
         super.init();
 
         environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
         when(environment.readEnv(NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY)).thenReturn(
             NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY);
+        lenient().when(environment.readEnv("BACKEND_CLIENT_SECRET_NAME")).thenReturn("secret");
+
+        var baseUrl = URI.create(wireMockRuntimeInfo.getHttpsBaseUrl());
+        lenient().when(environment.readEnv("BACKEND_CLIENT_AUTH_URL"))
+            .thenReturn(baseUrl.getHost() + ":" + baseUrl.getPort());
 
         publicationService = new ResourceService(client, Clock.systemDefaultZone());
         this.ticketService = new TicketService(client);
@@ -208,12 +214,39 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var credentials = new BackendClientCredentials("id", "secret");
         secretsManagerClient.putPlainTextSecret("secret", credentials.toString());
         output = new ByteArrayOutputStream();
-        var uriRetriever = getUriRetriever(getHttpClientWithPublisherAllowingPublishing(), secretsManagerClient);
         s3Client = mock(S3Client.class);
+        var httpClient = WiremockHttpClient.create();
         updatePublicationHandler =
             new UpdatePublicationHandler(publicationService, ticketService, environment, identityServiceClient,
-                                         uriRetriever, eventBridgeClient, s3Client);
+                                         eventBridgeClient, s3Client, secretsManagerClient, httpClient);
         publication = createNonDegreePublication();
+
+        customerId = UriWrapper.fromUri(wireMockRuntimeInfo.getHttpsBaseUrl())
+                         .addChild("customer", UUID.randomUUID().toString())
+                         .getUri();
+
+        publication = randomPublicationWithPublisher(customerId);
+
+        stubSuccessfulTokenResponse();
+        stubCustomerResponseAcceptingFilesForAllTypes(customerId);
+    }
+
+    private static Publication randomPublicationWithPublisher(URI customerId) {
+        return randomPublication()
+                   .copy()
+                   .withPublisher(new Organization.Builder()
+                                      .withId(customerId)
+                                      .build())
+                   .build();
+    }
+
+    private static Publication randomPublicationWithPublisher(URI customerId, Class<?> publicationInstanceClass) {
+        return randomPublication(publicationInstanceClass)
+                   .copy()
+                   .withPublisher(new Organization.Builder()
+                                      .withId(customerId)
+                                      .build())
+                   .build();
     }
 
     static Stream<Arguments> allDegreeInstances() {
@@ -227,7 +260,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void handlerUpdatesPublicationWhenInputIsValidAndUserIsResourceOwner()
         throws IOException, ApiGatewayException {
-        publication = PublicationGenerator.publicationWithoutIdentifier();
+        publication = publicationWithoutIdentifier(customerId);
         Publication savedPublication = createSamplePublication();
 
         Publication publicationUpdate = updateTitle(savedPublication);
@@ -236,11 +269,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         updatePublicationHandler.handleRequest(inputStream, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
+
         final PublicationResponse body = gatewayResponse.getBodyObject(PublicationResponse.class);
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
-
         assertThat(body.getEntityDescription().getMainTitle(),
                    is(equalTo(publicationUpdate.getEntityDescription().getMainTitle())));
     }
@@ -248,7 +282,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void handlerCreatesPendingPublishingRequestTicketForPublishedPublicationWhenUpdatingFiles()
         throws ApiGatewayException, IOException {
-        var publishedPublication = TicketTestUtils.createPersistedNonDegreePublication(PublicationStatus.PUBLISHED,
+        var publishedPublication = TicketTestUtils.createPersistedNonDegreePublication(customerId,
+                                                                              PublicationStatus.PUBLISHED,
                                                                               publicationService);
 
         var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
@@ -269,7 +304,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void handlerCreatesPendingPublishingRequestTicketForPublishedPublicationWhenCompletedPublishingRequestExists()
         throws ApiGatewayException, IOException {
-        var publishedPublication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED,
+        var publishedPublication = TicketTestUtils.createPersistedPublication(customerId,
+                                                                              PublicationStatus.PUBLISHED,
                                                                               publicationService);
         var completedTicket = persistCompletedPublishingRequest(publishedPublication);
         var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
@@ -289,7 +325,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void handlerDoesNotCreateNewPublishingRequestWhenThereExistsPendingPublishingRequest()
         throws IOException, ApiGatewayException {
-        var publishedPublication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED,
+        var publishedPublication = TicketTestUtils.createPersistedPublication(customerId,
+                                                                              PublicationStatus.PUBLISHED,
                                                                               publicationService);
         var pendingTicket = createPendingPublishingRequest(publishedPublication);
         var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
@@ -306,7 +343,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void handlerDoesNotCreateNewPublishingRequestWhenThereExistsPendingAndCompletedPublishingRequest()
         throws ApiGatewayException, IOException {
-        var publishedPublication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED,
+        var publishedPublication = TicketTestUtils.createPersistedPublication(customerId,
+                                                                              PublicationStatus.PUBLISHED,
                                                                               publicationService);
         persistCompletedPublishingRequest(publishedPublication);
         var pendingPublishingRequest = createPendingPublishingRequest(publishedPublication);
@@ -363,12 +401,15 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
         throws IOException, ApiGatewayException {
         publicationService = serviceFailsOnModifyRequestWithRuntimeError();
-        updatePublicationHandler = new UpdatePublicationHandler(publicationService, ticketService, environment,
+
+        updatePublicationHandler = new UpdatePublicationHandler(publicationService,
+                                                                ticketService,
+                                                                environment,
                                                                 identityServiceClient,
-                                                                getUriRetriever(
-                                                                    getHttpClientWithPublisherAllowingPublishing(),
-                                                                    secretsManagerClient), eventBridgeClient,
-                                                                S3Driver.defaultS3Client().build());
+                                                                eventBridgeClient,
+                                                                S3Driver.defaultS3Client().build(),
+                                                                secretsManagerClient,
+                                                                WiremockHttpClient.create());
 
         Publication savedPublication = createSamplePublication();
         InputStream event = ownerUpdatesOwnPublication(savedPublication.getIdentifier(), savedPublication);
@@ -382,23 +423,24 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     @DisplayName("handler logs error details on unexpected exception")
     void handlerLogsErrorDetailsOnUnexpectedException()
-        throws IOException, BadRequestException {
+        throws IOException, ApiGatewayException {
         final TestAppender appender = createAppenderForLogMonitoring();
         publicationService = serviceFailsOnModifyRequestWithRuntimeError();
-        updatePublicationHandler = new UpdatePublicationHandler(publicationService, ticketService, environment,
-                                                                identityServiceClient, getUriRetriever(
-            getHttpClientWithPublisherAllowingPublishing(),
-            secretsManagerClient), eventBridgeClient, S3Driver.defaultS3Client().build());
+        updatePublicationHandler = new UpdatePublicationHandler(publicationService,
+                                                                ticketService,
+                                                                environment,
+                                                                identityServiceClient,
+                                                                eventBridgeClient,
+                                                                S3Driver.defaultS3Client().build(),
+                                                                secretsManagerClient,
+                                                                WiremockHttpClient.create());
 
         var savedPublication = createSamplePublication();
 
-        InputStream event = ownerUpdatesOwnPublication(
-            savedPublication.getIdentifier(),
-            savedPublication,
-            randomUri());
+        var event = ownerUpdatesOwnPublication(savedPublication.getIdentifier(), savedPublication, randomUri());
         updatePublicationHandler.handleRequest(event, output, context);
-        GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
-        assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
+        var gatewayResponse = toGatewayResponseProblem();
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(SC_INTERNAL_SERVER_ERROR)));
         assertThat(appender.getMessages(), containsString(SOME_MESSAGE));
     }
 
@@ -431,11 +473,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private Publication buildPublication(Function<Stream<Publication.Builder>, Stream<Publication.Builder>> p) {
         return p.apply(Stream.of(randomPublication().copy())).map(Builder::build).findFirst().orElseThrow();
-    }
-
-    private Publication buildPublication(Supplier<Publication> s,
-                                         Function<Stream<Publication.Builder>, Stream<Publication.Builder>> p) {
-        return p.apply(Stream.of(s.get().copy())).map(Builder::build).findFirst().orElseThrow();
     }
 
     private static Builder setOwnerFromPublication(Publication.Builder builder, Publication publication) {
@@ -620,23 +657,25 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnBadGatewayWhenHttpClientUnableToRetrievePublishingWorkflow()
         throws IOException, ApiGatewayException {
-        var publishedPublication = TicketTestUtils.createPersistedNonDegreePublication(PublicationStatus.PUBLISHED,
+        var publishedPublication = TicketTestUtils.createPersistedPublication(customerId,
+                                                                              PublicationStatus.PUBLISHED,
                                                                               publicationService);
 
         var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
 
+        WireMock.reset();
+
+        stubSuccessfulTokenResponse();
+        stubCustomerResponseNotFound(customerId);
+
         var inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
-        this.updatePublicationHandler = new UpdatePublicationHandler(
-            publicationService, ticketService, environment, identityServiceClient,
-            getUriRetriever(getHttpClientWithUnresolvableClient(), secretsManagerClient), eventBridgeClient,
-            S3Driver.defaultS3Client().build());
         updatePublicationHandler.handleRequest(inputStream, output, context);
+
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         var problem = response.getBodyObject(Problem.class);
 
-        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HttpURLConnection.HTTP_BAD_GATEWAY)));
-        assertThat(problem.getDetail(), Is.is(
-            IsEqual.equalTo(UNABLE_TO_FETCH_CUSTOMER_ERROR_MESSAGE)));
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_GATEWAY)));
+        assertThat(problem.getDetail(), is(equalTo("Customer API not responding or not responding as expected!")));
     }
 
     @Test
@@ -655,13 +694,15 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         InputStream event = curatorUpdatesPublicationAndHasRightToUpdate(publicationUpdate, customerId);
         updatePublicationHandler.handleRequest(event, output, context);
 
-        Publication updatedPublication =
-            publicationService.getPublicationByIdentifier(savedPublication.getIdentifier());
+        var response = GatewayResponse.fromOutputStream(output, Publication.class);
+        assertThat(response.getStatusCode(), is(equalTo(SC_OK)));
+
+        var updatedPublication = publicationService.getPublicationByIdentifier(savedPublication.getIdentifier());
 
         publicationUpdate.setModifiedDate(updatedPublication.getModifiedDate());
 
-        String expectedTitle = publicationUpdate.getEntityDescription().getMainTitle();
-        String actualTitle = updatedPublication.getEntityDescription().getMainTitle();
+        var expectedTitle = publicationUpdate.getEntityDescription().getMainTitle();
+        var actualTitle = updatedPublication.getEntityDescription().getMainTitle();
         assertThat(actualTitle, is(equalTo(expectedTitle)));
         assertThat(updatedPublication, is(equalTo(publicationUpdate)));
     }
@@ -669,17 +710,22 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldUpdateNonDegreePublicationWhenUserHasAccessRightEditAllNonDegreePublications()
         throws ApiGatewayException, IOException {
-        Publication savedPublication = createSamplePublication();
-        Publication publicationUpdate = updateTitle(savedPublication);
-        InputStream event = userWithEditAllNonDegreePublicationsUpdatesPublication(publicationUpdate);
+        var savedPublication = createSamplePublication();
+        var publicationUpdate = updateTitle(savedPublication);
+        var event = userWithEditAllNonDegreePublicationsUpdatesPublication(customerId, publicationUpdate);
+
         updatePublicationHandler.handleRequest(event, output, context);
-        Publication updatedPublication =
-            publicationService.getPublicationByIdentifier(savedPublication.getIdentifier());
+
+        var response = GatewayResponse.fromOutputStream(output, Publication.class);
+        assertThat(response.getStatusCode(), is(equalTo(SC_OK)));
+
+        var updatedPublication = publicationService.getPublicationByIdentifier(savedPublication.getIdentifier());
 
         publicationUpdate.setModifiedDate(updatedPublication.getModifiedDate());
 
-        String expectedTitle = publicationUpdate.getEntityDescription().getMainTitle();
-        String actualTitle = updatedPublication.getEntityDescription().getMainTitle();
+        var expectedTitle = publicationUpdate.getEntityDescription().getMainTitle();
+        var actualTitle = updatedPublication.getEntityDescription().getMainTitle();
+
         assertThat(actualTitle, is(equalTo(expectedTitle)));
         assertThat(updatedPublication, is(equalTo(publicationUpdate)));
     }
@@ -688,7 +734,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @MethodSource("allDegreeInstances")
     void shouldUpdateDegreePublicationWhenUserHasAccessRightToEditDegree(Class<?> degree)
         throws BadRequestException, IOException, NotFoundException {
-        Publication degreePublication = savePublication(PublicationGenerator.randomPublication(degree));
+        Publication degreePublication = savePublication(randomPublicationWithPublisher(customerId, degree));
         Publication publicationUpdate = updateTitle(degreePublication);
         InputStream event = userWithAccessRightToEditDegree(publicationUpdate);
         updatePublicationHandler.handleRequest(event, output, context);
@@ -707,7 +753,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @MethodSource("allDegreeInstances")
     void shouldUpdateDegreePublicationWhenUserIsResourceOwner(Class<?> degree)
         throws BadRequestException, IOException, NotFoundException {
-        Publication degreePublication = savePublication(PublicationGenerator.randomPublication(degree));
+        Publication degreePublication = savePublication(randomPublicationWithPublisher(customerId, degree));
         Publication publicationUpdate = updateTitle(degreePublication);
         InputStream event = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
         updatePublicationHandler.handleRequest(event, output, context);
@@ -727,9 +773,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @MethodSource("allDegreeInstances")
     void shouldReturnForbiddenWhenUserDoesNotHasAccessRightToEditDegree(Class<?> degree)
         throws BadRequestException, IOException {
-        Publication degreePublication = savePublication(PublicationGenerator.randomPublication(degree));
+        Publication degreePublication = savePublication(randomPublicationWithPublisher(customerId, degree));
         Publication publicationUpdate = updateTitle(degreePublication);
-        InputStream event = userWithEditAllNonDegreePublicationsUpdatesPublication(publicationUpdate);
+        InputStream event = userWithEditAllNonDegreePublicationsUpdatesPublication(customerId, publicationUpdate);
         updatePublicationHandler.handleRequest(event, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
@@ -767,9 +813,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldUpdateExistingPendingPublishingRequestWhenPublicationUpdateRemovesFiles()
         throws IOException, ApiGatewayException {
-        var persistedPublication = Resource
-                                       .fromPublication(publication)
-                                       .persistNew(publicationService, UserInstance.fromPublication(publication));
+        var persistedPublication = persistPublication(createNonDegreePublication().copy()).build();
         publish(persistedPublication);
         var existingTicket = TicketEntry.requestNewTicket(persistedPublication, PublishingRequestCase.class)
                                  .persistNewTicket(ticketService);
@@ -785,7 +829,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldUpdateFilesForApprovalWhenPublicationUpdateHasFileChanges() throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
-            PublicationStatus.PUBLISHED, publicationService);
+            customerId, PublicationStatus.PUBLISHED, publicationService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
         var expectedFilesForApprovalBeforePublicationUpdate = getUnpublishedFiles(publication);
 
@@ -804,6 +848,51 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             expectedFilesForApprovalBeforePublicationUpdate, newUnpublishedFile);
 
         assertThat(filesForApproval, containsInAnyOrder(expectedFilesForApproval.toArray()));
+    }
+
+    @Test
+    void shouldUpdatePublicationWithoutReferencedContext()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithAdministrativeAgreement(customerId,
+                                                                                                publicationService);
+        publication.getEntityDescription().getReference().setDoi(null);
+        publicationService.updatePublication(publication);
+        TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService)
+            .complete(publication, new Username(randomString())).persistUpdate(ticketService);
+
+        var newUnpublishedFile = File.builder().withIdentifier(UUID.randomUUID())
+                                     .withLicense(randomUri()).buildUnpublishedFile();
+        var files = publication.getAssociatedArtifacts();
+        files.add(newUnpublishedFile);
+
+        publication.copy().withAssociatedArtifacts(files);
+
+        var input = ownerUpdatesOwnPublication(publication.getIdentifier(), publication);
+        updatePublicationHandler.handleRequest(input, output, context);
+
+        assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(200)));
+    }
+
+    @Test
+    void shouldRejectUpdateIfSettingInstanceTypeNotAllowingFilesOnPublicationContainingFile()
+        throws BadRequestException, IOException {
+
+        WireMock.reset();
+
+        stubSuccessfulTokenResponse();
+        stubSuccessfulCustomerResponseAllowingFilesForNoTypes(customerId);
+
+        var savedPublication = createSamplePublication();
+        var publicationUpdate = updateTitle(savedPublication);
+
+        var event = userUpdatesPublicationAndHasRightToUpdate(publicationUpdate);
+        updatePublicationHandler.handleRequest(event, output, context);
+
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
+
+        var problem = gatewayResponse.getBodyObject(Problem.class);
+        assertThat(problem.getDetail(), is(startsWith("Files not allowed for instance type ")));
     }
 
     @Test
@@ -1369,25 +1458,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                               persistedPublication.getIdentifier());
     }
 
-    private static FakeHttpClient<String> getHttpClientWithPublisherAllowingPublishing() {
-        return new FakeHttpClient<>(FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY, HTTP_OK),
-                                    mockIdentityServiceResponseAllowingAutoApprovalOfPublishingRequests());
-    }
-
-    private static FakeHttpResponse<String> mockIdentityServiceResponseAllowingAutoApprovalOfPublishingRequests() {
-        return FakeHttpResponse.create(IoUtils.stringFromResources(Path.of("customer_allowing_publishing.json")),
-                                       HTTP_OK);
-    }
-
-    private static FakeHttpClient<String> getHttpClientWithUnresolvableClient() {
-        return new FakeHttpClient<>(FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY,
-                                                            HTTP_OK), unresolvableCustomer());
-    }
-
-    private static FakeHttpResponse<String> unresolvableCustomer() {
-        return FakeHttpResponse.create(randomString(), HTTP_NOT_FOUND);
-    }
-
     private Publication savePublication(Publication degreePublication) throws BadRequestException {
         UserInstance userInstance = UserInstance.fromPublication(degreePublication);
         return Resource.fromPublication(degreePublication).persistNew(publicationService, userInstance);
@@ -1428,7 +1498,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private boolean containsOneCompletedAndOnePendingPublishingRequest(List<TicketEntry> tickets) {
         var statuses = tickets.stream().map(TicketEntry::getStatus).toList();
         return statuses.stream().anyMatch(TicketStatus.COMPLETED::equals)
-               && statuses.stream().anyMatch(PENDING::equals);
+               && statuses.stream().anyMatch(TicketStatus.PENDING::equals);
     }
 
     private TicketEntry createPendingPublishingRequest(Publication publishedPublication) throws ApiGatewayException {
@@ -1469,10 +1539,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private InputStream userWithEditAllNonDegreePublicationsUpdatesPublication(Publication publicationUpdate)
+    private InputStream userWithEditAllNonDegreePublicationsUpdatesPublication(URI customerId,
+                                                                               Publication publicationUpdate)
         throws JsonProcessingException {
         var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationUpdate.getIdentifier().toString());
-        URI customerId = randomUri();
         return new HandlerRequestBuilder<Publication>(restApiMapper)
                    .withPathParameters(pathParameters)
                    .withCurrentCustomer(customerId)
@@ -1625,7 +1695,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var nonDegreePublicationInstances = publicationInstanceTypes.stream()
                                                 .filter(this::isNonDegreeClass)
                                                 .collect(Collectors.toList());
-        var publication = PublicationGenerator.randomPublication(randomElement(nonDegreePublicationInstances));
+        var publication = randomPublication(randomElement(nonDegreePublicationInstances));
         publication.setIdentifier(SortableIdentifier.next());
         return publication;
     }
@@ -1642,13 +1712,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private String getProblemDetail(GatewayResponse<Problem> gatewayResponse) throws JsonProcessingException {
         return gatewayResponse.getBodyObject(Problem.class).getDetail();
-    }
-
-    private AuthorizedBackendUriRetriever getUriRetriever(FakeHttpClient<String> httpClient,
-                                                          SecretsManagerClient secretsManagerClient) {
-        return new AuthorizedBackendUriRetriever(httpClient,
-                                                 secretsManagerClient,
-                                                 BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME);
     }
 
     private EntityDescription thesisPublishableEntityDescription() {
