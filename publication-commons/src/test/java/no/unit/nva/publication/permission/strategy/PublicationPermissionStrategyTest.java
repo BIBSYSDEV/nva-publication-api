@@ -37,9 +37,11 @@ import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.RequestUtil;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -62,186 +64,244 @@ class PublicationPermissionStrategyTest {
     }
 
     @Test
-    void shouldDenyPermissionToDeletePublicationWhenUserHasNoAccessRights() throws JsonProcessingException {
-        var requestInfo = createRequestInfo(randomString(), randomUri());
+    void shouldDenyPermissionToDeletePublicationWhenUserHasNoAccessRights()
+        throws JsonProcessingException, UnauthorizedException {
+        var cristinId = randomUri();
+        var requestInfo = createRequestInfo(randomString(), randomUri(), new ArrayList<>(), cristinId);
         var publication = createPublication(randomString(), randomUri());
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .fromRequestInfo(requestInfo, identityServiceClient)
-                                   .hasPermissionToUnpublish(publication));
+                                   .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
+                                                        requestInfo, identityServiceClient),
+                                                    requestInfo.getAccessRights(),
+                                                    requestInfo.getPersonCristinId())
+                                   .hasPermissionToUnpublish());
     }
 
     @Test
-    void shouldDenyPermissionToDeletePublicationWhenUserMissingBasicInfo() throws JsonProcessingException {
-        var requestInfo = createRequestInfo(null, URI.create(""));
+    void shouldDenyPermissionToDeletePublicationWhenUserMissingBasicInfo()
+        throws JsonProcessingException {
+        var cristinId = randomUri();
+        var requestInfo = createRequestInfo(null, URI.create(""), cristinId);
         var publication = createPublication(randomString(), randomUri());
 
-        Assertions.assertFalse(PublicationPermissionStrategy
-                                   .fromRequestInfo(requestInfo, identityServiceClient)
-                                   .hasPermissionToUnpublish(publication));
+        Assertions.assertThrows(UnauthorizedException.class, () -> PublicationPermissionStrategy
+                                   .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
+                                                        requestInfo, identityServiceClient),
+                                                    requestInfo.getAccessRights(),
+                                                    requestInfo.getPersonCristinId())
+                                   .hasPermissionToUnpublish());
     }
 
     @Test
     void shouldGiveEditorPermissionToDeletePublicationWhenPublicationIsFromTheirInstitution()
-        throws JsonProcessingException {
+        throws JsonProcessingException, UnauthorizedException {
 
         var editorName = randomString();
         var editorInstitution = randomUri();
         var resourceOwner = randomString();
+        var cristinId = randomUri();
 
-        var requestInfo = createRequestInfo(editorName, editorInstitution, getEditorAccessRights());
+        var requestInfo = createRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId);
         var publication = createPublication(resourceOwner, editorInstitution);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .fromRequestInfo(requestInfo, identityServiceClient)
-                                  .hasPermissionToUnpublish(publication));
+                                  .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
+                                                       requestInfo, identityServiceClient),
+                                                   requestInfo.getAccessRights(),
+                                                   requestInfo.getPersonCristinId())
+                                  .hasPermissionToUnpublish());
     }
 
     @Test
     void shouldGiveEditorPermissionToDeletePublicationWhenPublicationIsFromAnotherInstitution()
-        throws JsonProcessingException {
+        throws JsonProcessingException, UnauthorizedException {
 
         var editorName = randomString();
         var editorInstitution = randomUri();
         var resourceOwner = randomString();
         var resourceOwnerInstitution = randomUri();
+        var cristinId = randomUri();
 
-        var requestInfo = createRequestInfo(editorName, editorInstitution, getEditorAccessRights());
+        var requestInfo = createRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId);
         var publication = createPublication(resourceOwner, resourceOwnerInstitution);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .fromRequestInfo(requestInfo, identityServiceClient)
-                                  .hasPermissionToUnpublish(publication));
+                                  .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
+                                                       requestInfo, identityServiceClient),
+                                                   requestInfo.getAccessRights(),
+                                                   requestInfo.getPersonCristinId())
+                                  .hasPermissionToUnpublish());
     }
 
     @Test
-    void shouldGiveEditorPermissionToDeleteDegreeWhenDegreeIsFromTheirInstitution() throws JsonProcessingException {
+    void shouldGiveEditorPermissionToDeleteDegreeWhenDegreeIsFromTheirInstitution()
+        throws JsonProcessingException, UnauthorizedException {
         var editorName = randomString();
         var editorInstitution = randomUri();
         var resourceOwner = randomString();
+        var cristinId = randomUri();
 
-        var requestInfo = createRequestInfo(editorName, editorInstitution, getEditorAccessRights());
+        var requestInfo = createRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId);
         var publication = createDegreePhd(resourceOwner, editorInstitution);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .fromRequestInfo(requestInfo, identityServiceClient)
-                                  .hasPermissionToUnpublish(publication));
+                                  .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
+                                                       requestInfo, identityServiceClient),
+                                                   requestInfo.getAccessRights(),
+                                                   requestInfo.getPersonCristinId())
+                                  .hasPermissionToUnpublish());
     }
 
     @Test
-    void shouldGiveEditorPermissionToDeleteDegreeWhenDegreeIsFromAnotherInstitution() throws JsonProcessingException {
+    void shouldGiveEditorPermissionToDeleteDegreeWhenDegreeIsFromAnotherInstitution()
+        throws JsonProcessingException, UnauthorizedException {
         var editorName = randomString();
         var editorInstitution = randomUri();
         var resourceOwner = randomString();
         var resourceInstitution = randomUri();
+        var cristinId = randomUri();
 
-        var requestInfo = createRequestInfo(editorName, editorInstitution, getEditorAccessRights());
+        var requestInfo = createRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId);
         var publication = createDegreePhd(resourceOwner, resourceInstitution);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .fromRequestInfo(requestInfo, identityServiceClient)
-                                  .hasPermissionToUnpublish(publication));
+                                  .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
+                                                       requestInfo, identityServiceClient),
+                                                   requestInfo.getAccessRights(),
+                                                   requestInfo.getPersonCristinId())
+                                  .hasPermissionToUnpublish());
     }
 
     @Test
-    void shouldDenyEditorPermissionToDeleteDegreeWhenMissingManageDegree() throws JsonProcessingException {
+    void shouldDenyEditorPermissionToDeleteDegreeWhenMissingManageDegree()
+        throws JsonProcessingException, UnauthorizedException {
         var editorName = randomString();
         var editorInstitution = randomUri();
         var resourceOwner = randomString();
         var resourceInstitution = randomUri();
+        var cristinId = randomUri();
 
         var accessRights = new ArrayList<AccessRight>();
         accessRights.add(AccessRight.MANAGE_RESOURCES_ALL);
 
-        var requestInfo = createRequestInfo(editorName, editorInstitution, accessRights);
+        var requestInfo = createRequestInfo(editorName, editorInstitution, accessRights, cristinId);
         var publication = createDegreePhd(resourceOwner, resourceInstitution);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                  .fromRequestInfo(requestInfo, identityServiceClient)
-                                  .hasPermissionToDelete(publication));
+                                   .fromRequestInfo(publication,
+                                                    RequestUtil.createAnyUserInstanceFromRequest(requestInfo,
+                                                                                                 identityServiceClient),
+                                                    accessRights,
+                                                    requestInfo.getPersonCristinId())
+                                   .hasPermissionToDelete());
     }
 
     @Test
     void shouldDenyPermissionToDeleteDegreeWhenUserIsDoesNotHaveAccessRightPublishDegree()
-        throws JsonProcessingException {
+        throws JsonProcessingException, UnauthorizedException {
         var username = randomString();
         var institution = randomUri();
-        var requestInfo = createRequestInfo(username, institution, getCuratorAccessRights());
+        var cristinId = randomUri();
+        var requestInfo = createRequestInfo(username, institution, getCuratorAccessRights(), cristinId);
         var publication = createDegreePhd(username, institution);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .fromRequestInfo(requestInfo, identityServiceClient)
-                                   .hasPermissionToUnpublish(publication));
+                                   .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
+                                                        requestInfo, identityServiceClient),
+                                                    requestInfo.getAccessRights(),
+                                                    requestInfo.getPersonCristinId())
+                                   .hasPermissionToUnpublish());
     }
 
     @Test
     void shouldAllowPermissionToDeleteDegreeWhenUserIsCuratorWithPermissionToPublishDegree()
-        throws JsonProcessingException {
+        throws JsonProcessingException, UnauthorizedException {
         var username = randomString();
         var institution = randomUri();
+        var cristinId = randomUri();
         var requestInfo = createRequestInfo(username,
                                             institution,
-                                            getCuratorWithPublishDegreeAccessRight());
+                                            getCuratorWithPublishDegreeAccessRight(),
+                                            cristinId);
         var publication = createDegreePhd(username, institution);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .fromRequestInfo(requestInfo, identityServiceClient)
-                                  .hasPermissionToUnpublish(publication));
+                                  .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
+                                                       requestInfo, identityServiceClient),
+                                                   requestInfo.getAccessRights(),
+                                                   requestInfo.getPersonCristinId())
+                                  .hasPermissionToUnpublish());
     }
 
     @Test
     void shouldGiveCuratorPermissionToDeleteDegreePublicationWhenUserHasPublishDegreeAccessRight()
-        throws JsonProcessingException {
+        throws JsonProcessingException, UnauthorizedException {
 
         var curatorName = randomString();
         var resourceOwner = randomString();
         var institution = randomUri();
+        var cristinId = randomUri();
 
         var requestInfo = createRequestInfo(curatorName,
                                             institution,
-                                            getCuratorWithPublishDegreeAccessRight());
+                                            getCuratorWithPublishDegreeAccessRight(),
+                                            cristinId);
         var publication = createDegreePhd(resourceOwner, institution);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .fromRequestInfo(requestInfo, identityServiceClient)
-                                  .hasPermissionToUnpublish(publication));
+                                  .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
+                                                       requestInfo, identityServiceClient),
+                                                   requestInfo.getAccessRights(),
+                                                   requestInfo.getPersonCristinId())
+                                  .hasPermissionToUnpublish());
     }
 
     @Test
     void shouldDenyAccessRightForCuratorToDeleteDegreePublicationForDifferentInstitution()
-        throws JsonProcessingException {
+        throws JsonProcessingException, UnauthorizedException {
         var curatorName = randomString();
         var resourceOwner = randomString();
         var institution = randomUri();
+        var cristinId = randomUri();
         var requestInfo = createRequestInfo(curatorName,
                                             institution,
-                                            getCuratorWithPublishDegreeAccessRight());
+                                            getCuratorWithPublishDegreeAccessRight(),
+                                            cristinId);
         var publication = createDegreePhd(resourceOwner, randomUri());
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .fromRequestInfo(requestInfo, identityServiceClient)
-                                   .hasPermissionToUnpublish(publication));
+                                   .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
+                                                        requestInfo, identityServiceClient),
+                                                    requestInfo.getAccessRights(),
+                                                    requestInfo.getPersonCristinId())
+                                   .hasPermissionToUnpublish());
     }
 
     @Test
     void shouldDenyCuratorPermissionToDeletePublicationWhenPublicationIsFromAnotherInstitution()
-        throws JsonProcessingException {
+        throws JsonProcessingException, UnauthorizedException {
 
         var curatorName = randomString();
         var curatorInstitution = randomUri();
         var resourceOwner = randomString();
         var resourceOwnerInstitution = randomUri();
+        var cristinId = randomUri();
 
-        var requestInfo = createRequestInfo(curatorName, curatorInstitution, getCuratorAccessRights());
+        var requestInfo = createRequestInfo(curatorName, curatorInstitution, getCuratorAccessRights(), cristinId);
         var publication = createDegreePhd(resourceOwner, resourceOwnerInstitution);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .fromRequestInfo(requestInfo, identityServiceClient)
-                                   .hasPermissionToUnpublish(publication));
+                                   .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
+                                                        requestInfo, identityServiceClient),
+                                                    requestInfo.getAccessRights(),
+                                                    requestInfo.getPersonCristinId())
+                                   .hasPermissionToUnpublish());
     }
 
     @Test
-    void shouldGivePermissionToDeletePublicationWhenUserIsContributor() throws JsonProcessingException {
+    void shouldGivePermissionToDeletePublicationWhenUserIsContributor()
+        throws JsonProcessingException, UnauthorizedException {
         var contributorName = randomString();
         var contributorCristinId = randomUri();
         var contributorInstitutionId = randomUri();
@@ -250,48 +310,65 @@ class PublicationPermissionStrategyTest {
         var publication = createPublicationWithContributor(contributorName, contributorCristinId, Role.CREATOR);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .fromRequestInfo(requestInfo, identityServiceClient)
-                                  .hasPermissionToUnpublish(publication));
+                                  .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
+                                                       requestInfo, identityServiceClient),
+                                                   requestInfo.getAccessRights(),
+                                                   requestInfo.getPersonCristinId())
+                                  .hasPermissionToUnpublish());
     }
 
     @Test
-    void shouldDenyPermissionToDeletePublicationWhenUserIsContributorButNotCreator() throws JsonProcessingException {
+    void shouldDenyPermissionToDeletePublicationWhenUserIsContributorButNotCreator()
+        throws JsonProcessingException, UnauthorizedException {
         var contributorName = randomString();
         var contributorCristinId = randomUri();
         var contributorInstitutionId = randomUri();
 
-        var requestInfo = createRequestInfo(contributorName, contributorInstitutionId);
+        var requestInfo = createRequestInfo(contributorName, contributorInstitutionId, contributorCristinId);
         var publication = createPublicationWithContributor(contributorName, contributorCristinId, null);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .fromRequestInfo(requestInfo, identityServiceClient)
-                                   .hasPermissionToUnpublish(publication));
+                                   .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
+                                                        requestInfo, identityServiceClient),
+                                                    requestInfo.getAccessRights(),
+                                                    requestInfo.getPersonCristinId())
+                                   .hasPermissionToUnpublish());
     }
 
     @Test
-    void shouldGivePermissionToDeletePublicationWhenUserIsResourceOwner() throws JsonProcessingException {
+    void shouldGivePermissionToDeletePublicationWhenUserIsResourceOwner()
+        throws JsonProcessingException, UnauthorizedException {
         var resourceOwner = randomString();
         var institutionId = randomUri();
+        var cristinId = randomUri();
 
-        var requestInfo = createRequestInfo(resourceOwner, institutionId);
+        var requestInfo = createRequestInfo(resourceOwner, institutionId, cristinId);
         var publication = createNonDegreePublication(resourceOwner, institutionId);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .fromRequestInfo(requestInfo, identityServiceClient)
-                                  .hasPermissionToUnpublish(publication));
+                                  .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
+                                                       requestInfo, identityServiceClient),
+                                                   requestInfo.getAccessRights(),
+                                                   requestInfo.getPersonCristinId())
+                                  .hasPermissionToUnpublish());
     }
 
     @Test
-    void shouldGivePermissionToOperateOnPublicationWhenEditor() throws JsonProcessingException {
+    void shouldGivePermissionToOperateOnPublicationWhenEditor() throws JsonProcessingException, UnauthorizedException {
         var editorName = randomString();
         var editorInstitution = randomUri();
         var resourceOwner = randomString();
+        var cristinId = randomUri();
 
-        var requestInfo = createRequestInfo(editorName, editorInstitution, getEditorAccessRights());
+        var requestInfo = createRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId);
         var publication = createPublication(resourceOwner, editorInstitution);
 
-        Assertions.assertTrue(PublicationPermissionStrategy.fromRequestInfo(requestInfo, identityServiceClient)
-                                  .hasPermissionToUnpublish(publication));
+        Assertions.assertTrue(
+            PublicationPermissionStrategy.fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
+                                                              requestInfo, identityServiceClient),
+                                                          requestInfo.getAccessRights(),
+                                                          requestInfo.getPersonCristinId())
+                .hasPermissionToUnpublish());
     }
 
     private static Function<AccessRight, String> getCognitoGroup(URI institutionId) {

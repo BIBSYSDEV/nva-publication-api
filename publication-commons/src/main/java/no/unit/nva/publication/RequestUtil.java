@@ -75,4 +75,16 @@ public final class RequestUtil {
         URI customerId = requestInfo.getCurrentCustomer();
         return UserInstance.create(owner, customerId);
     }
+
+    public static UserInstance createAnyUserInstanceFromRequest(RequestInfo requestInfo,
+                                                              IdentityServiceClient identityServiceClient)
+        throws UnauthorizedException {
+        try {
+            return requestInfo.clientIsThirdParty()
+                       ? createExternalUserInstance(requestInfo, identityServiceClient)
+                       : createInternalUserInstance(requestInfo);
+        } catch (ApiGatewayException e) {
+            throw new UnauthorizedException(e.getMessage());
+        }
+    }
 }

@@ -2,56 +2,54 @@ package no.unit.nva.publication.permission.strategy;
 
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
-import static nva.commons.core.attempt.Try.attempt;
+import java.net.URI;
+import java.util.List;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.UserInstance;
-import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.AccessRight;
 
 public class CuratorPermissionStrategy extends PermissionStrategy {
 
-    private final UserInstance userInstance;
-
-    public CuratorPermissionStrategy(UserInstance userInstance) {
-        this.userInstance = userInstance;
+    public CuratorPermissionStrategy(Publication publication, UserInstance userInstance, List<AccessRight> accessRights,
+                                    URI personCristinId) {
+        super(publication, userInstance, accessRights, personCristinId);
     }
 
     @Override
-    public boolean hasPermissionToDelete(RequestInfo requestInfo, Publication publication) {
-        return canManage(requestInfo, publication);
+    public boolean hasPermissionToDelete() {
+        return canManage();
     }
 
     @Override
-    public boolean hasPermissionToUnpublish(RequestInfo requestInfo, Publication publication) {
-        return canManage(requestInfo, publication);
+    public boolean hasPermissionToUnpublish() {
+        return canManage();
     }
 
     @Override
-    public boolean hasPermissionToUpdate(RequestInfo requestInfo, Publication publication) {
-        return canManage(requestInfo, publication);
+    public boolean hasPermissionToUpdate() {
+        return canManage();
     }
 
-    private boolean canManage(RequestInfo requestInfo, Publication publication) {
-        if (userIsFromSameInstitutionAsPublication(requestInfo, publication) ||
-            userAndContributorInTheSameInstitution(publication, userInstance)) {
-            if (isDegree(publication)) {
-                return hasAccessRight(requestInfo, MANAGE_DEGREE) &&
-                       hasAccessRight(requestInfo, MANAGE_RESOURCES_STANDARD);
+    private boolean canManage() {
+        if (userIsFromSameInstitutionAsPublication() ||
+            userAndContributorInTheSameInstitution()) {
+            if (isDegree()) {
+                return hasAccessRight(MANAGE_DEGREE) &&
+                       hasAccessRight(MANAGE_RESOURCES_STANDARD);
             }
 
-            return hasAccessRight(requestInfo, MANAGE_RESOURCES_STANDARD);
+            return hasAccessRight(MANAGE_RESOURCES_STANDARD);
         }
 
         return false;
     }
 
-    private static Boolean userIsFromSameInstitutionAsPublication(RequestInfo requestInfo, Publication publication) {
-        return attempt(requestInfo::getCurrentCustomer)
-                   .map(customer -> customer.equals(publication.getPublisher().getId()))
-                   .orElse(fail -> false);
+    private boolean userIsFromSameInstitutionAsPublication() {
+        return userInstance.getOrganizationUri().equals(publication.getPublisher().getId());
     }
 
-    private static boolean userAndContributorInTheSameInstitution(Publication publication, UserInstance userInstance) {
+    private boolean userAndContributorInTheSameInstitution() {
         return publication.getEntityDescription().getContributors()
                    .stream()
                    .filter(contributor -> contributor.getIdentity() != null)

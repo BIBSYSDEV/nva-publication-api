@@ -12,9 +12,8 @@ import java.net.URI;
 import java.time.Clock;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.api.PublicationResponseElevatedUser;
@@ -143,7 +142,11 @@ public class UpdatePublicationHandler
 
         Publication existingPublication = fetchPublication(identifierInPath);
 
-        var permissionStrategy = PublicationPermissionStrategy.fromRequestInfo(requestInfo, identityServiceClient);
+        var permissionStrategy = PublicationPermissionStrategy.fromRequestInfo(existingPublication,
+                                                                               RequestUtil.createAnyUserInstanceFromRequest(
+                                                                                   requestInfo, identityServiceClient),
+                                                                               requestInfo.getAccessRights(),
+                                                                               attempt(requestInfo::getPersonCristinId).toOptional().orElse(null));
 
         Publication updatedPublication = switch (input) {
             case UpdatePublicationMetadataRequest publicationMetadata ->
@@ -160,17 +163,16 @@ public class UpdatePublicationHandler
         return PublicationResponseElevatedUser.fromPublication(updatedPublication);
     }
 
-    private static void throwUnauthorizedUnless(Predicate<Publication> a, Publication existingPublication)
-        throws UnauthorizedException {
-        Optional.of(existingPublication)
-            .filter(a)
-            .orElseThrow(UnauthorizedException::new);
+    private static void throwUnauthorizedUnless(BooleanSupplier a) throws UnauthorizedException {
+        if (!a.getAsBoolean()) {
+            throw new UnauthorizedException();
+        }
     }
 
     private Publication deletePublication(Publication existingPublication,
                                           PublicationPermissionStrategy permissionStrategy)
         throws UnauthorizedException, BadRequestException, NotFoundException {
-        throwUnauthorizedUnless(permissionStrategy::hasPermissionToUnpublish, existingPublication);
+        throwUnauthorizedUnless(permissionStrategy::hasPermissionToUnpublish);
 
         deleteFiles(existingPublication);
         resourceService.deletePublication(existingPublication);
@@ -192,7 +194,7 @@ public class UpdatePublicationHandler
                                              Publication existingPublication,
                                              PublicationPermissionStrategy permissionStrategy)
         throws ApiGatewayException {
-        throwUnauthorizedUnless(permissionStrategy::hasPermissionToUnpublish, existingPublication);
+        throwUnauthorizedUnless(permissionStrategy::hasPermissionToUnpublish);
 
         var duplicate = unpublishPublicationRequest.getDuplicateOf().map(SortableIdentifier::toString).orElse(null);
         var updatedPublication = toPublicationWithDuplicate(duplicate, existingPublication);
@@ -253,7 +255,7 @@ public class UpdatePublicationHandler
                                        PublicationPermissionStrategy permissionStrategy)
         throws ApiGatewayException {
         validateRequest(identifierInPath, input);
-        throwUnauthorizedUnless(permissionStrategy::hasPermissionToUpdate, existingPublication);
+        throwUnauthorizedUnless(permissionStrategy::hasPermissionToUpdate);
 
         Publication publicationUpdate = input.generatePublicationUpdate(existingPublication);
         upsertPublishingRequestIfNeeded(existingPublication, publicationUpdate);

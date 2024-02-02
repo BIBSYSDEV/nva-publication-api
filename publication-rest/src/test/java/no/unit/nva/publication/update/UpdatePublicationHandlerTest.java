@@ -71,6 +71,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.api.PublicationResponse;
@@ -145,6 +146,7 @@ import org.hamcrest.core.Is;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -246,7 +248,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void handlerCreatesPendingPublishingRequestTicketForPublishedPublicationWhenUpdatingFiles()
         throws ApiGatewayException, IOException {
-        var publishedPublication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED,
+        var publishedPublication = TicketTestUtils.createPersistedNonDegreePublication(PublicationStatus.PUBLISHED,
                                                                               publicationService);
 
         var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
@@ -380,16 +382,20 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     @DisplayName("handler logs error details on unexpected exception")
     void handlerLogsErrorDetailsOnUnexpectedException()
-        throws IOException, ApiGatewayException {
+        throws IOException, BadRequestException {
         final TestAppender appender = createAppenderForLogMonitoring();
         publicationService = serviceFailsOnModifyRequestWithRuntimeError();
         updatePublicationHandler = new UpdatePublicationHandler(publicationService, ticketService, environment,
                                                                 identityServiceClient, getUriRetriever(
             getHttpClientWithPublisherAllowingPublishing(),
             secretsManagerClient), eventBridgeClient, S3Driver.defaultS3Client().build());
-        Publication savedPublication = createSamplePublication();
 
-        InputStream event = ownerUpdatesOwnPublication(savedPublication.getIdentifier(), savedPublication);
+        var savedPublication = createSamplePublication();
+
+        InputStream event = ownerUpdatesOwnPublication(
+            savedPublication.getIdentifier(),
+            savedPublication,
+            randomUri());
         updatePublicationHandler.handleRequest(event, output, context);
         GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
@@ -400,8 +406,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     void handlerReturnsBadRequestWhenIdentifierInPathDiffersFromIdentifierInBody()
         throws IOException {
         var randpomPersistedPublication = buildPublication(p -> p
-                                                          .map(a -> setOwnerFromPublication(a, publication))
-                                                          .map(this::persistPublication));
+                                                                    .map(a -> setOwnerFromPublication(a, publication))
+                                                                    .map(this::persistPublication));
 
         InputStream event = ownerUpdatesOwnPublication(randpomPersistedPublication.getIdentifier(), publication);
 
@@ -425,6 +431,11 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private Publication buildPublication(Function<Stream<Publication.Builder>, Stream<Publication.Builder>> p) {
         return p.apply(Stream.of(randomPublication().copy())).map(Builder::build).findFirst().orElseThrow();
+    }
+
+    private Publication buildPublication(Supplier<Publication> s,
+                                         Function<Stream<Publication.Builder>, Stream<Publication.Builder>> p) {
+        return p.apply(Stream.of(s.get().copy())).map(Builder::build).findFirst().orElseThrow();
     }
 
     private static Builder setOwnerFromPublication(Publication.Builder builder, Publication publication) {
@@ -609,7 +620,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnBadGatewayWhenHttpClientUnableToRetrievePublishingWorkflow()
         throws IOException, ApiGatewayException {
-        var publishedPublication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED,
+        var publishedPublication = TicketTestUtils.createPersistedNonDegreePublication(PublicationStatus.PUBLISHED,
                                                                               publicationService);
 
         var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
@@ -825,6 +836,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var inputStream = createUnpublishHandlerRequest(publication.getIdentifier(), randomString(),
                                                         RandomPersonServiceResponse.randomUri(),
+                                                        randomUri(),
                                                         USER);
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
@@ -1076,7 +1088,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var curatorUsername = randomString();
         var curatorInstitutionId = RandomPersonServiceResponse.randomUri();
-        var curatorAccessRight = AccessRight.MANAGE_RESOURCES_STANDARD;
 
         var resourceOwnerUsername = randomString();
         var resourceOwnerInstitutionId = RandomPersonServiceResponse.randomUri();
@@ -1087,7 +1098,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var inputStream = createUnpublishHandlerRequest(publication.getIdentifier(), curatorUsername,
                                                         curatorInstitutionId,
-                                                        curatorAccessRight);
+                                                        AccessRight.MANAGE_RESOURCES_STANDARD);
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -1520,22 +1531,34 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .withPathParameters(pathParameters)
                    .withCurrentCustomer(customerId)
                    .withBody(publicationUpdate)
+                   .withPersonCristinId(randomUri())
                    .withAccessRights(customerId, MANAGE_RESOURCES_STANDARD, MANAGE_DEGREE)
                    .build();
     }
 
     private InputStream ownerUpdatesOwnPublication(SortableIdentifier publicationIdentifier,
-                                                   Publication publicationUpdate)
+                                                   Publication publicationUpdate) throws JsonProcessingException {
+        return ownerUpdatesOwnPublication(publicationIdentifier, publicationUpdate, null);
+    }
+
+    private InputStream ownerUpdatesOwnPublication(SortableIdentifier publicationIdentifier,
+                                                   Publication publicationUpdate,
+                                                   URI cristinId)
         throws JsonProcessingException {
         Map<String, String> pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString());
 
         var customerId = publicationUpdate.getPublisher().getId();
-        return new HandlerRequestBuilder<Publication>(restApiMapper)
-                   .withUserName(publicationUpdate.getResourceOwner().getOwner().getValue())
-                   .withCurrentCustomer(customerId)
-                   .withBody(publicationUpdate)
-                   .withPathParameters(pathParameters)
-                   .build();
+        var request = new HandlerRequestBuilder<Publication>(restApiMapper)
+                          .withUserName(publicationUpdate.getResourceOwner().getOwner().getValue())
+                          .withCurrentCustomer(customerId)
+                          .withBody(publicationUpdate)
+                          .withPathParameters(pathParameters);
+
+        if (nonNull(cristinId)) {
+            request.withPersonCristinId(cristinId);
+        }
+
+        return request.build();
     }
 
     private InputStream externalClientUpdatesPublication(SortableIdentifier publicationIdentifier,

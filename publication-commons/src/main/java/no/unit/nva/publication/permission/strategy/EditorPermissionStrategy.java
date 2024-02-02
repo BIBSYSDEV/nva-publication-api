@@ -2,32 +2,41 @@ package no.unit.nva.publication.permission.strategy;
 
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_ALL;
+import java.net.URI;
+import java.util.List;
 import no.unit.nva.model.Publication;
-import nva.commons.apigateway.RequestInfo;
+import no.unit.nva.publication.model.business.UserInstance;
+import nva.commons.apigateway.AccessRight;
 
 public class EditorPermissionStrategy extends PermissionStrategy {
 
+    public EditorPermissionStrategy(Publication publication, UserInstance userInstance, List<AccessRight> accessRights,
+                              URI personCristinId) {
+        super(publication, userInstance, accessRights, personCristinId);
+    }
+
+
     @Override
-    public boolean hasPermissionToDelete(RequestInfo requestInfo, Publication publication) {
-        return canManage(requestInfo, publication);
+    public boolean hasPermissionToDelete() {
+        return canManage();
     }
 
     @Override
-    public boolean hasPermissionToUnpublish(RequestInfo requestInfo, Publication publication) {
-        return canManage(requestInfo, publication);
+    public boolean hasPermissionToUnpublish() {
+        return canManage();
     }
 
     @Override
-    public boolean hasPermissionToUpdate(RequestInfo requestInfo, Publication publication) {
-        return canManage(requestInfo, publication);
+    public boolean hasPermissionToUpdate() {
+        return canManage();
     }
 
-    private static boolean canManage(RequestInfo requestInfo, Publication publication) {
-        if (isDegree(publication)) {
-            return hasAccessRight(requestInfo, MANAGE_DEGREE)
-                   && hasAccessRight(requestInfo, MANAGE_RESOURCES_ALL);
+    private boolean canManage() {
+        if (isDegree()) {
+            return hasAccessRight(MANAGE_DEGREE)
+                   && hasAccessRight(MANAGE_RESOURCES_ALL);
         }
 
-        return hasAccessRight(requestInfo, MANAGE_RESOURCES_ALL);
+        return hasAccessRight(MANAGE_RESOURCES_ALL);
     }
 }
