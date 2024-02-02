@@ -462,6 +462,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     private static boolean isNvaCustomer(CristinOrganization cristinOrganization, RawContentRetriever uriRetriever) {
+        logger.info("Fetching customer for cristin organization {}", cristinOrganization.id());
         var isCustomer = Optional.ofNullable(cristinOrganization.id())
                              .map(ExpandedImportCandidate::toFetchCustomerByCristinIdUri)
                              .map(uri -> fetchCustomer(uriRetriever, uri))
@@ -484,8 +485,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .filter(Optional::isPresent)
                    .map(Optional::get)
                    .map(ExpandedImportCandidate::toCristinOrganization)
-                   .map(CristinOrganization::partOf)
-                   .map(List::getFirst);
+                   .map(CristinOrganization::getTopLevelOrg);
     }
 
     private static Optional<HttpResponse<String>> fetchCustomer(RawContentRetriever uriRetriever, URI uri) {
@@ -504,6 +504,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     private static Optional<String> fetch(URI uri, RawContentRetriever uriRetriever) {
+        logger.info("Fetching cristin organization: {}", uri);
         return uriRetriever.getRawContent(uri, CONTENT_TYPE);
     }
 
