@@ -325,8 +325,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var duplicateOfIdentifier =
             UriWrapper.fromUri(randomUri()).addChild(SortableIdentifier.next().toString()).getUri();
         var publication = createDeletedPublicationWithDuplicate(duplicateOfIdentifier);
-        Map<String, String> headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
-        Map<String, String> queryParams = Map.of(DO_NOT_REDIRECT_QUERY_PARAM, "true");
+        var headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
+        var queryParams = Map.of(DO_NOT_REDIRECT_QUERY_PARAM, "true");
         var handlerRequest = generateHandlerRequest(publication.getIdentifier().toString(),
                                                     headers,
                                                     queryParams);
