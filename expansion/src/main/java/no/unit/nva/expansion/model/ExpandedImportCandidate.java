@@ -21,7 +21,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ContributorVerificationStatus;
-import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
@@ -103,7 +102,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     @JsonProperty(CONTRIBUTORS_FIELD)
     private List<Contributor> contributors;
     @JsonProperty(ORGANIZATIONS_FIELD)
-    private Set<Corporation> organizations;
+    private Set<ExpandedImportCandidateOrganization> organizations;
     @JsonProperty(COLLABORATION_TYPE_FIELD)
     private CollaborationType collaborationType;
     @JsonProperty(IMPORT_STATUS_FIELD)
@@ -273,11 +272,11 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     @JacocoGenerated
-    public Set<Corporation> getOrganizations() {
+    public Set<ExpandedImportCandidateOrganization> getOrganizations() {
         return organizations;
     }
 
-    public void setOrganizations(Set<Corporation> organizations) {
+    public void setOrganizations(Set<ExpandedImportCandidateOrganization> organizations) {
         this.organizations = organizations;
     }
 
@@ -327,7 +326,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .orElse(null);
     }
 
-    private static CollaborationType extractCorporation(Set<Corporation> organizations) {
+    private static CollaborationType extractCorporation(Set<ExpandedImportCandidateOrganization> organizations) {
         return organizations.size() > 1 ? CollaborationType.COLLABORATIVE : CollaborationType.NON_COLLABORATIVE;
     }
 
@@ -436,8 +435,8 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .orElse(String.valueOf(new DateTime().getYear()));
     }
 
-    private static Set<Corporation> extractOrganizations(ImportCandidate importCandidate,
-                                                       RawContentRetriever uriRetriever) {
+    private static Set<ExpandedImportCandidateOrganization> extractOrganizations(ImportCandidate importCandidate,
+                                                                                 RawContentRetriever uriRetriever) {
 
         return getOrganizationIdList(importCandidate)
                                        .map(id -> fetchCristinOrg(id, uriRetriever))
@@ -581,7 +580,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
             return this;
         }
 
-        public Builder withOrganizations(Set<Corporation> organizations) {
+        public Builder withOrganizations(Set<ExpandedImportCandidateOrganization> organizations) {
             expandedImportCandidate.setOrganizations(organizations);
             return this;
         }
