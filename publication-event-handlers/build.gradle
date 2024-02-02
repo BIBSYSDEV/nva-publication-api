@@ -63,7 +63,7 @@ test {
     environment "TABLE_NAME", "ResourcesTable"
     environment "AWS_REGION", "eu-west-1"
     environment "ID_NAMESPACE", "https://www.example.org/publication"
-    environment "BACKEND_CLIENT_AUTH_URL", "localhost"
+    environment "BACKEND_CLIENT_AUTH_URL", "https://auth.example.com"
     environment "BACKEND_CLIENT_SECRET_NAME", "secret"
     environment "DOMAIN_NAME", "api.test.nva.aws.unit.no"
     environment "OUTPUT_EVENT_TOPIC", "someEvent"

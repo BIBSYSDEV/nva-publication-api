@@ -162,7 +162,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var baseUrl = URI.create(wireMockRuntimeInfo.getHttpsBaseUrl());
         lenient().when(environment.readEnv("BACKEND_CLIENT_AUTH_URL"))
-            .thenReturn(baseUrl.getHost() + ":" + baseUrl.getPort());
+            .thenReturn(baseUrl.toString());
 
         publicationService = new ResourceService(client, Clock.systemDefaultZone());
         this.ticketService = new TicketService(client);

@@ -108,7 +108,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         var backendClientCredentials = secretsReader.fetchClassSecret(
             environment.readEnv("BACKEND_CLIENT_SECRET_NAME"),
             BackendClientCredentials.class);
-        var cognitoServerUri = URI.create("https://" + environment.readEnv("BACKEND_CLIENT_AUTH_URL"));
+        var cognitoServerUri = URI.create(environment.readEnv("BACKEND_CLIENT_AUTH_URL"));
         var cognitoCredentials = new CognitoCredentials(backendClientCredentials::getId,
                                                         backendClientCredentials::getSecret,
                                                         cognitoServerUri);

@@ -98,15 +98,14 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     public static final String ASSOCIATED_ARTIFACTS_FIELD = "associatedArtifacts";
     private static final String CUSTOMER_API_NOT_RESPONDING_OR_NOT_RESPONDING_AS_EXPECTED
         = "Customer API not responding or not responding as expected!";
+    private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
+    private static final String EXTERNAL_CLIENT_ID = "external-client-id";
+    private final Context context = new FakeContext();
     private String testUserName;
     private CreatePublicationHandler handler;
     private ByteArrayOutputStream outputStream;
-    private final Context context = new FakeContext();
     private Publication samplePublication;
     private URI topLevelCristinOrgId;
-
-    private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
-    private static final String EXTERNAL_CLIENT_ID = "external-client-id";
     private GetExternalClientResponse getExternalClientResponse;
     private ResourceService resourceService;
     private Environment environmentMock;
@@ -134,7 +133,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         var baseUrl = URI.create(wireMockRuntimeInfo.getHttpsBaseUrl());
         lenient().when(environmentMock.readEnv("BACKEND_CLIENT_AUTH_URL"))
-            .thenReturn(baseUrl.getHost() + ":" + baseUrl.getPort());
+            .thenReturn(baseUrl.toString());
 
         resourceService = new ResourceService(client, CLOCK);
 
@@ -488,6 +487,18 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
             """;
     }
 
+    private static void
+    updateCreatePublicationRequestWithInvalidAssociatedArtifact(ObjectNode publicationRequestJsonObject)
+        throws JsonProcessingException {
+        var associatedArtifacts = (ArrayNode) publicationRequestJsonObject.get(ASSOCIATED_ARTIFACTS_FIELD);
+        associatedArtifacts.add(createNullAssociatedArtifact());
+    }
+
+    private static JsonNode createNullAssociatedArtifact() throws JsonProcessingException {
+        var nullObject = dtoObjectMapper.writeValueAsString(new NullAssociatedArtifact());
+        return dtoObjectMapper.readTree(nullObject);
+    }
+
     private InputStream prepareRequestWithFileForTypeWhereNotAllowed() throws JsonProcessingException {
         var publicationRequestJsonObject = createCreatePublicationRequestAsJsonObject();
         return createPublicationRequestFromString(dtoObjectMapper.writeValueAsString(publicationRequestJsonObject));
@@ -499,22 +510,10 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         return createPublicationRequestFromString(dtoObjectMapper.writeValueAsString(publicationRequestJsonObject));
     }
 
-    private static void
-    updateCreatePublicationRequestWithInvalidAssociatedArtifact(ObjectNode publicationRequestJsonObject)
-        throws JsonProcessingException {
-        var associatedArtifacts = (ArrayNode) publicationRequestJsonObject.get(ASSOCIATED_ARTIFACTS_FIELD);
-        associatedArtifacts.add(createNullAssociatedArtifact());
-    }
-
     private ObjectNode createCreatePublicationRequestAsJsonObject() throws JsonProcessingException {
         var publicationRequest =
             dtoObjectMapper.writeValueAsString(CreatePublicationRequest.fromPublication(samplePublication));
         return (ObjectNode) dtoObjectMapper.readTree(publicationRequest);
-    }
-
-    private static JsonNode createNullAssociatedArtifact() throws JsonProcessingException {
-        var nullObject = dtoObjectMapper.writeValueAsString(new NullAssociatedArtifact());
-        return dtoObjectMapper.readTree(nullObject);
     }
 
     private CreatePublicationRequest createEmptyPublicationRequest() {
