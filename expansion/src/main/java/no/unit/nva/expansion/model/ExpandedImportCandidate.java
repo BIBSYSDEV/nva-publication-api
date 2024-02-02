@@ -80,6 +80,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     public static final String TOP = "top";
     public static final String CUSTOMER = "customer";
     public static final String CRISTIN_ID = "cristinId";
+    public static final String IS_CUSTOMER_MESSAGE = "Cristin organization {} is nva customer: {}";
     @JsonProperty(ID_FIELD)
     private URI identifier;
     @JsonProperty(ADDITIONAL_IDENTIFIERS_FIELD)
@@ -121,7 +122,6 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     public static ExpandedImportCandidate fromImportCandidate(ImportCandidate importCandidate,
                                                               RawContentRetriever uriRetriever) {
         var organizations = extractOrganizations(importCandidate, uriRetriever);
-        logger.info("Organizations to show: {}", organizations.toString());
         return new ExpandedImportCandidate.Builder().withIdentifier(generateIdentifier(importCandidate.getIdentifier()))
                    .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
                    .withPublicationInstance(extractPublicationInstance(importCandidate))
@@ -462,7 +462,6 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     private static boolean isNvaCustomer(CristinOrganization cristinOrganization, RawContentRetriever uriRetriever) {
-        logger.info("Fetching customer for cristin organization {}", cristinOrganization.id());
         var isCustomer = Optional.ofNullable(cristinOrganization.id())
                              .map(ExpandedImportCandidate::toFetchCustomerByCristinIdUri)
                              .map(uri -> fetchCustomer(uriRetriever, uri))
@@ -470,7 +469,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                              .map(Optional::get)
                              .map(ExpandedImportCandidate::isHttpOk)
                              .orElse(false);
-        logger.info("Cristin organization {} is nva customer: {}", isCustomer, cristinOrganization.id());
+        logger.info(IS_CUSTOMER_MESSAGE, cristinOrganization.id(), isCustomer);
         return isCustomer;
     }
 
@@ -504,7 +503,6 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     private static Optional<String> fetch(URI uri, RawContentRetriever uriRetriever) {
-        logger.info("Fetching cristin organization: {}", uri);
         return uriRetriever.getRawContent(uri, CONTENT_TYPE);
     }
 

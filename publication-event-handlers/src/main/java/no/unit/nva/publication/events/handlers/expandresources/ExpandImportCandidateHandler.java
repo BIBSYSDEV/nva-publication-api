@@ -6,7 +6,6 @@ import static no.unit.nva.s3.S3Driver.GZIP_ENDING;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
-import java.net.http.HttpClient;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -16,11 +15,9 @@ import no.unit.nva.publication.events.bodies.ImportCandidateDataEntryUpdate;
 import no.unit.nva.publication.events.handlers.persistence.PersistedDocument;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.paths.UnixPath;
 import org.slf4j.Logger;
@@ -35,7 +32,7 @@ public class ExpandImportCandidateHandler extends DestinationsEventBridgeEventHa
     public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
     public static final String PERSISTED_ENTRIES_BUCKET = ENVIRONMENT.readEnv("PERSISTED_ENTRIES_BUCKET");
     public static final int PUBLICATION_YEAR_2018 = 2018;
-    public static final String EMPTY_EVENT_MESSAGE = "Candidate should not be expanded because of publication year: {}";
+    public static final String EMPTY_EVENT_MESSAGE = "Candidate {} should not be expanded because of publication year: {}";
     public static final String EXPANSION_ERROR_MESSAGE = "Something went wrong expanding import candidate: {}";
     public static final String EXPANSION_MESSAGE = "Import candidate with identifier has been expanded: {}";
     private final Logger logger = LoggerFactory.getLogger(ExpandImportCandidateHandler.class);
@@ -73,9 +70,8 @@ public class ExpandImportCandidateHandler extends DestinationsEventBridgeEventHa
     }
 
     private EventReference emptyEvent(ExpandedImportCandidate expandedImportCandidate) {
-        logger.info(EMPTY_EVENT_MESSAGE, expandedImportCandidate.getPublicationYear()
-                                         + StringUtils.WHITESPACES
-                                         + expandedImportCandidate.getIdentifier());
+        logger.info(EMPTY_EVENT_MESSAGE, expandedImportCandidate.getIdentifier(),
+                    expandedImportCandidate.getPublicationYear());
         return new EventReference(EMPTY_EVENT_TOPIC, null);
     }
 
