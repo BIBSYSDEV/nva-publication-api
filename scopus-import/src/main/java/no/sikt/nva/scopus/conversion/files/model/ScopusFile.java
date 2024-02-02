@@ -1,7 +1,5 @@
 package no.sikt.nva.scopus.conversion.files.model;
 
-import static java.util.Objects.nonNull;
-import java.io.InputStream;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
