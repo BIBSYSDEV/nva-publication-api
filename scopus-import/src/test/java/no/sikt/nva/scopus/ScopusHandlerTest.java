@@ -82,6 +82,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
@@ -126,6 +127,7 @@ import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.sikt.nva.scopus.conversion.PublicationChannelConnection;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
 import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;
+import no.sikt.nva.scopus.conversion.files.TikaUtils;
 import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse;
 import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.CrossrefLink;
 import no.sikt.nva.scopus.conversion.files.model.CrossrefResponse.License;
@@ -204,6 +206,7 @@ import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import nva.commons.secrets.SecretsReader;
+import org.apache.tika.io.TikaInputStream;
 import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
@@ -272,7 +275,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     @BeforeEach
-    public void init(WireMockRuntimeInfo wireMockRuntimeInfo) {
+    public void init(WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException, URISyntaxException {
         super.init();
         appender = LogUtils.getTestingAppenderForRootLogger();
         appender.start();
@@ -296,10 +299,21 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusUpdater = new ScopusUpdater(resourceService, uriRetriever);
         var environment = mock(Environment.class);
         when(environment.readEnv(CROSSREF_URI_ENV_VAR_NAME)).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
-        scopusFileConverter = new ScopusFileConverter(httpClient, s3Client, environment);
+        scopusFileConverter = new ScopusFileConverter(httpClient, s3Client, environment, mockedTikaUtils());
         scopusHandler = new ScopusHandler(s3Client, piaConnection, cristinConnection, publicationChannelConnection,
                                           nvaCustomerConnection, resourceService, scopusUpdater, scopusFileConverter);
         scopusData = new ScopusGenerator();
+    }
+
+    private TikaUtils mockedTikaUtils() throws IOException, URISyntaxException {
+        var tikaUtils = mock(TikaUtils.class);
+        var tikaInputStream = mock(TikaInputStream.class);
+        when(tikaInputStream.getLength()).thenReturn(Long.parseLong(String.valueOf(randomInteger())));
+        when(tikaInputStream.getPath()).thenReturn(
+            Path.of(getClass().getClassLoader().getResource("2-s2.0-0000469852.xml").toURI()));
+        when(tikaUtils.fetch(any())).thenReturn(tikaInputStream);
+        when(tikaUtils.getMimeType(any())).thenReturn("application/pdf");
+        return tikaUtils;
     }
 
     @AfterEach

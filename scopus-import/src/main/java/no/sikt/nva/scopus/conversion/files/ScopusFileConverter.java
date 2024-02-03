@@ -11,7 +11,6 @@ import static no.sikt.nva.scopus.conversion.files.model.ContentVersion.VOR;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.s3.Headers;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -52,8 +51,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.http.entity.ContentType;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.metadata.Metadata;
+import org.apache.tika.io.TikaInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -87,21 +85,25 @@ public class ScopusFileConverter {
     private static final String CONTENT_DISPOSITION_FILE_NAME_PATTERN = "filename=\"%s\"";
     private static final URI DEFAULT_LICENSE = URI.create("https://creativecommons.org/licenses/by/4.0/");
     public static final String FETCH_FILE_ERROR_MESSAGE = "Could not fetch file: ";
+    public static final String COULD_NOT_SAVE_FILE = "Could not save file to s3 {}";
     public final String crossRefUri;
     private final HttpClient httpClient;
     private final S3Client s3Client;
+    private final TikaUtils tikaUtils;
 
     @JacocoGenerated
-    public ScopusFileConverter(HttpClient httpClient, S3Client s3Client) {
+    public ScopusFileConverter(HttpClient httpClient, S3Client s3Client, TikaUtils tikaUtils) {
         this.httpClient = httpClient;
         this.s3Client = s3Client;
         this.crossRefUri = new Environment().readEnvOpt(CROSSREF_URI_ENV_VAR_NAME).orElse(CROSSREF_DEFAULT_URI);
+        this.tikaUtils = tikaUtils;
     }
 
-    public ScopusFileConverter(HttpClient httpClient, S3Client s3Client, Environment environment) {
+    public ScopusFileConverter(HttpClient httpClient, S3Client s3Client, Environment environment, TikaUtils tikaUtils) {
         this.httpClient = httpClient;
         this.s3Client = s3Client;
         this.crossRefUri = environment.readEnv("CROSSREF_FETCH_DOI_URI");
+        this.tikaUtils = tikaUtils;
     }
 
     public List<AssociatedArtifact> fetchAssociatedArtifacts(DocTp docTp) {
@@ -110,8 +112,9 @@ public class ScopusFileConverter {
                                                        .filter(File.class::isInstance)
                                                        .filter(this::isValid)
                                                        .toList();
-        return !associatedArtifactsFromXmlReferences.isEmpty() ? associatedArtifactsFromXmlReferences
-                   : extractAssociatedArtifactsFromDoi(docTp);
+        return associatedArtifactsFromXmlReferences.isEmpty()
+                   ? extractAssociatedArtifactsFromDoi(docTp)
+                   : associatedArtifactsFromXmlReferences;
     }
 
     private boolean isValid(AssociatedArtifact associatedArtifact) {
@@ -149,12 +152,13 @@ public class ScopusFileConverter {
     }
 
     private static Optional<String> extractFileNameFromUrl(HttpResponse<InputStream> response) {
-        return Optional.ofNullable(response.request())
-            .map(HttpRequest::uri)
-            .map(URI::getPath)
-            .map(Paths::get)
-            .map(Path::getFileName)
-            .map(Path::toString);
+        Optional<String> s = Optional.ofNullable(response.request())
+                                 .map(HttpRequest::uri)
+                                 .map(URI::getPath)
+                                 .map(Paths::get)
+                                 .map(Path::getFileName)
+                                 .map(Path::toString);
+        return s;
     }
 
     private static String extractFileNameFromContentDisposition(String contentType) {
@@ -206,10 +210,12 @@ public class ScopusFileConverter {
         return attempt(() -> new URI(string.replace(WHITESPACE, ENCODED_WHITESPACE))).orElseThrow();
     }
 
+    @JacocoGenerated
     private static boolean fileWithContent(ScopusFile file) {
         return file.size() != ZERO_LENGTH_CONTENT;
     }
 
+    @JacocoGenerated
     private static boolean fileWithContent(AssociatedArtifact associatedArtifact) {
         return ((File) associatedArtifact).getSize() != ZERO_LENGTH_CONTENT;
     }
@@ -229,6 +235,7 @@ public class ScopusFileConverter {
                        .collect(collectRemovingDuplicates())
                        .stream()
                        .map(this::saveFile)
+                       .filter(ScopusFile::hasValidMimeType)
                        .filter(ScopusFileConverter::fileWithContent)
                        .map(ScopusFile::toPublishedAssociatedArtifact)
                        .toList();
@@ -239,19 +246,14 @@ public class ScopusFileConverter {
     }
 
     private ScopusFile fetchFileContent(ScopusFile file) throws IOException {
-        var fetchFileResponse = fetchResponseAsInputStream(file.downloadFileUrl());
-        var filename = getFilename(fetchFileResponse);
-        var size = fetchFileResponse.body().readAllBytes().length;
+        var response = fetchResponseAsInputStream(file.downloadFileUrl());
+        var inputStream = tikaUtils.fetch(response.request().uri());
+        var filename = getFilename(response);
+        var size = inputStream.getLength();
         return file.copy()
-                   .withMimeType(getMimeType(fetchFileResponse.body()))
-                   .withContent(fetchFileResponse.body())
+                   .withContent(inputStream)
                    .withSize(size)
                    .withName(filename).build();
-    }
-
-    private String getMimeType(InputStream inputStream) throws IOException {
-        return TikaConfig.getDefaultConfig().getDetector()
-                   .detect(new BufferedInputStream(inputStream), new Metadata()).toString();
     }
 
     private List<ScopusFile> getScopusFiles(CrossrefResponse response) {
@@ -291,7 +293,6 @@ public class ScopusFileConverter {
                    .withPublisherAuthority(VOR.equals(crossrefLink.getContentVersion()))
                    .withLicense(extractLicenseForLink(crossrefLink, licenses))
                    .withEmbargo(calculateEmbargo(crossrefLink, licenses))
-                   .withMimeType(crossrefLink.getContentType())
                    .build();
     }
 
@@ -352,13 +353,13 @@ public class ScopusFileConverter {
         throws IOException {
         var fileIdentifier = randomUUID();
         var filename = getFilename(response);
-        saveFile(filename, fileIdentifier, response);
-        long available = response.body().available();
+        var inputStreamToSave = tikaUtils.fetch(response.request().uri());
+        saveFile(filename, fileIdentifier, inputStreamToSave);
         return Optional.of(File.builder()
                                       .withIdentifier(fileIdentifier)
                                       .withName(filename)
-                                      .withMimeType(getMimeType(response.body()))
-                                      .withSize(available)
+                                      .withMimeType(tikaUtils.getMimeType(inputStreamToSave))
+                                      .withSize(inputStreamToSave.getLength())
                                       .withLicense(DEFAULT_LICENSE)
                                       .buildPublishedFile());
     }
@@ -382,26 +383,33 @@ public class ScopusFileConverter {
         }
     }
 
-    private void saveFile(String fileName, UUID fileIdentifier, HttpResponse<InputStream> response) throws IOException {
-        var fileToSave = attempt(() -> response.body().readAllBytes()).orElseThrow();
+    private void saveFile(String fileName, UUID fileIdentifier, TikaInputStream inputStream) throws IOException {
+        var path = inputStream.getPath();
+        var mimeType = tikaUtils.getMimeType(inputStream);
         s3Client.putObject(PutObjectRequest.builder()
                                .bucket(IMPORT_CANDIDATES_FILES_BUCKET)
-                               .contentType(getMimeType(response.body()))
+                               .contentType(mimeType)
                                .contentDisposition(String.format(CONTENT_DISPOSITION_FILE_NAME_PATTERN, fileName))
                                .key(fileIdentifier.toString())
-                               .build(), RequestBody.fromBytes(fileToSave));
+                               .build(), RequestBody.fromFile(path));
     }
 
     private ScopusFile saveFile(ScopusFile scopusFile) {
-        var content = attempt(() -> scopusFile.content().readAllBytes()).orElseThrow();
-        s3Client.putObject(PutObjectRequest.builder()
-                               .bucket(IMPORT_CANDIDATES_FILES_BUCKET)
-                               .contentDisposition(
-                                   String.format(CONTENT_DISPOSITION_FILE_NAME_PATTERN, scopusFile.name()))
-                               .contentType(scopusFile.mimeType())
-                               .key(scopusFile.identifier().toString())
-                               .build(), RequestBody.fromBytes(content));
-        return scopusFile;
+        try {
+            var path = scopusFile.content().getPath();
+            var mimeType = tikaUtils.getMimeType(scopusFile.content());
+            s3Client.putObject(PutObjectRequest.builder()
+                                   .bucket(IMPORT_CANDIDATES_FILES_BUCKET)
+                                   .contentDisposition(
+                                       String.format(CONTENT_DISPOSITION_FILE_NAME_PATTERN, scopusFile.name()))
+                                   .contentType(mimeType)
+                                   .key(scopusFile.identifier().toString())
+                                   .build(), RequestBody.fromFile(path));
+            return scopusFile.copy().withMimeType(mimeType).build();
+        } catch (Exception e) {
+            logger.error(COULD_NOT_SAVE_FILE, e.getMessage());
+            return scopusFile;
+        }
     }
 
     private HttpResponse<InputStream> fetchResponseAsInputStream(URI uri) {
