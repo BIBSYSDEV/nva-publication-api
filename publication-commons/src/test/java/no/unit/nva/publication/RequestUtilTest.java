@@ -1,5 +1,6 @@
 package no.unit.nva.publication;
 
+import static java.util.UUID.randomUUID;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -34,7 +35,7 @@ class RequestUtilTest {
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
     
     @Test
-    void canGetIdentifierFromRequest() throws ApiGatewayException {
+    void canGetPublicationIdentifierFromRequest() throws ApiGatewayException {
         SortableIdentifier uuid = SortableIdentifier.next();
         RequestInfo requestInfo = new RequestInfo();
         requestInfo.setPathParameters(Map.of(RequestUtil.PUBLICATION_IDENTIFIER, uuid.toString()));
@@ -43,11 +44,35 @@ class RequestUtilTest {
         
         assertEquals(uuid, identifier);
     }
+
+    @Test
+    void canGetImportCandidateIdentifierFromRequest() throws ApiGatewayException {
+        var uuid = SortableIdentifier.next();
+        var requestInfo = new RequestInfo();
+        requestInfo.setPathParameters(Map.of(RequestUtil.IMPORT_CANDIDATE_IDENTIFIER, uuid.toString()));
+
+        var identifier = RequestUtil.getImportCandidateIdentifier(requestInfo);
+
+        assertEquals(uuid, identifier);
+    }
+
+    @Test
+    void canGetFileIdentifierFromRequest() throws ApiGatewayException {
+        var uuid = randomUUID();
+        var requestInfo = new RequestInfo();
+        requestInfo.setPathParameters(Map.of(RequestUtil.FILE_IDENTIFIER, uuid.toString()));
+
+        var identifier = RequestUtil.getFileIdentifier(requestInfo);
+
+        assertEquals(uuid, identifier);
+    }
     
     @Test
     void getIdentifierOnInvalidRequestThrowsException() {
         RequestInfo requestInfo = new RequestInfo();
         assertThrows(BadRequestException.class, () -> RequestUtil.getIdentifier(requestInfo));
+        assertThrows(BadRequestException.class, () -> RequestUtil.getImportCandidateIdentifier(requestInfo));
+        assertThrows(BadRequestException.class, () -> RequestUtil.getFileIdentifier(requestInfo));
     }
     
     @Test

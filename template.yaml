@@ -771,7 +771,6 @@ Resources:
     Properties:
       CodeUri: tickets
       Handler: no.unit.nva.publication.ticket.delete.DeleteTicketHandler::handleRequest
-      Runtime: java17
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -861,6 +860,28 @@ Resources:
           Type: Api
           Properties:
             Path: /import-candidate/{importCandidateIdentifier}
+            Method: get
+            RestApiId: !Ref NvaPublicationApi
+
+  ImportCandidatePresignedUrlHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-rest
+      Handler: no.unit.nva.publication.download.ImportCandidatePresignedUrlHandler::handleRequest
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: AllAtOnce
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaImportCandidatesTable
+          IMPORT_CANDIDATES_STORAGE_BUCKET: !Ref ImportCandidateStorageBucket
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /import-candidate/{importCandidateIdentifier}/{fileIdentifier}
             Method: get
             RestApiId: !Ref NvaPublicationApi
 
