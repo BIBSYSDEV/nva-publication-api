@@ -2,7 +2,6 @@ package no.unit.nva.publication.download;
 
 import static java.util.UUID.randomUUID;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
-import static no.unit.nva.publication.download.ImportCandidatePresignedUrlHandler.BUCKET;
 import static no.unit.nva.publication.download.ImportCandidatePresignedUrlHandler.IMPORT_CANDIDATE_MISSES_FILE_EXCEPTION_MESSAGE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -103,21 +102,21 @@ class ImportCandidatePresignedUrlHandlerTest extends ResourcesLocalTest {
         var request = createRequestForCandidateWithFile(importCandidate.getIdentifier(), file.getIdentifier());
         var expectedPresignedUri = mockS3Presigner(file);
         handler.handleRequest(request, output, CONTEXT);
-        var response = GatewayResponse.fromOutputStream(output, PresignedUri.class);
+        var response = GatewayResponse.fromOutputStream(output, PresignedUrl.class);
 
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_OK)));
-        assertThat(response.getBodyObject(PresignedUri.class), is(equalTo(expectedPresignedUri)));
+        assertThat(response.getBodyObject(PresignedUrl.class), is(equalTo(expectedPresignedUri)));
 
     }
 
-    private PresignedUri mockS3Presigner(File file) throws MalformedURLException, URISyntaxException {
+    private PresignedUrl mockS3Presigner(File file) throws MalformedURLException, URISyntaxException {
         var request = mock(PresignedGetObjectRequest.class);
         var presignedUrl = randomUri().toURL();
         when(request.url()).thenReturn(presignedUrl);
         var expires = Instant.now();
         when(request.expiration()).thenReturn(expires);
         when(s3Presigner.presignGetObject((GetObjectPresignRequest) any())).thenReturn(request);
-        return PresignedUri.builder()
+        return PresignedUrl.builder()
                    .withFileIdentifier(file.getIdentifier())
                    .withUri(presignedUrl.toURI())
                    .withExpiration(expires)

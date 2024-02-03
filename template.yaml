@@ -881,7 +881,7 @@ Resources:
         GetEvent:
           Type: Api
           Properties:
-            Path: /import-candidate/{importCandidateIdentifier}/{fileIdentifier}
+            Path: /import-candidate/{importCandidateIdentifier}/file/{fileIdentifier}
             Method: get
             RestApiId: !Ref NvaPublicationApi
 
