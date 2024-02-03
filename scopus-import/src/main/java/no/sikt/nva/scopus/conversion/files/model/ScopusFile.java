@@ -1,15 +1,18 @@
 package no.sikt.nva.scopus.conversion.files.model;
 
-import java.io.InputStream;
 import java.net.URI;
 import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
+import org.apache.tika.io.TikaInputStream;
 
-public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, InputStream content, long size,
+public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, TikaInputStream content, long size,
                          String mimeType, URI license, boolean publisherAuthority, Instant embargo) {
 
+    private static final List<String> UNSUPPORTED_MIME_TYPES = List.of("text/html", "application/octet-stream");
     public static Builder builder() {
         return new Builder();
     }
@@ -39,12 +42,18 @@ public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, Inpu
                    .buildPublishedFile();
     }
 
+    public boolean hasValidMimeType() {
+        return Optional.ofNullable(mimeType)
+                   .map(mimeType -> !UNSUPPORTED_MIME_TYPES.contains(mimeType))
+                   .orElse(false);
+    }
+
     public static final class Builder {
 
         private UUID identifier;
         private String name;
         private URI downloadFileUrl;
-        private InputStream content;
+        private TikaInputStream content;
         private long size;
         private String contentType;
         private URI license;
@@ -69,7 +78,7 @@ public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, Inpu
             return this;
         }
 
-        public Builder withContent(InputStream content) {
+        public Builder withContent(TikaInputStream content) {
             this.content = content;
             return this;
         }
