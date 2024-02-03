@@ -112,9 +112,9 @@ public class ScopusFileConverter {
                                                        .filter(File.class::isInstance)
                                                        .filter(this::isValid)
                                                        .toList();
-        return !associatedArtifactsFromXmlReferences.isEmpty()
-                   ? associatedArtifactsFromXmlReferences
-                   : extractAssociatedArtifactsFromDoi(docTp);
+        return associatedArtifactsFromXmlReferences.isEmpty()
+                   ? extractAssociatedArtifactsFromDoi(docTp)
+                   : associatedArtifactsFromXmlReferences;
     }
 
     private boolean isValid(AssociatedArtifact associatedArtifact) {
