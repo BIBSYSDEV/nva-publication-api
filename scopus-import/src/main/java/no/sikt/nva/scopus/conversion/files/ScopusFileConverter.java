@@ -354,11 +354,11 @@ public class ScopusFileConverter {
         var fileIdentifier = randomUUID();
         var filename = getFilename(response);
         var inputStreamToSave = tikaUtils.fetch(response.request().uri());
-        saveFile(filename, fileIdentifier, inputStreamToSave);
+        var mimeType = saveFile(filename, fileIdentifier, inputStreamToSave);
         return Optional.of(File.builder()
                                       .withIdentifier(fileIdentifier)
                                       .withName(filename)
-                                      .withMimeType(tikaUtils.getMimeType(inputStreamToSave))
+                                      .withMimeType(mimeType)
                                       .withSize(inputStreamToSave.getLength())
                                       .withLicense(DEFAULT_LICENSE)
                                       .buildPublishedFile());
@@ -383,7 +383,7 @@ public class ScopusFileConverter {
         }
     }
 
-    private void saveFile(String fileName, UUID fileIdentifier, TikaInputStream inputStream) throws IOException {
+    private String saveFile(String fileName, UUID fileIdentifier, TikaInputStream inputStream) throws IOException {
         var path = inputStream.getPath();
         var mimeType = tikaUtils.getMimeType(inputStream);
         s3Client.putObject(PutObjectRequest.builder()
@@ -392,6 +392,7 @@ public class ScopusFileConverter {
                                .contentDisposition(String.format(CONTENT_DISPOSITION_FILE_NAME_PATTERN, fileName))
                                .key(fileIdentifier.toString())
                                .build(), RequestBody.fromFile(path));
+        return mimeType;
     }
 
     private ScopusFile saveFile(ScopusFile scopusFile) {
