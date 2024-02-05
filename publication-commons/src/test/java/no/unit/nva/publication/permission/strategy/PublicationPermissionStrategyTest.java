@@ -73,7 +73,7 @@ class PublicationPermissionStrategyTest {
         Assertions.assertFalse(PublicationPermissionStrategy
                                    .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
                                                         requestInfo, identityServiceClient))
-                                   .hasPermissionToUnpublish());
+                                   .hasPermission(PublicationPermission.UNPUBLISH));
     }
 
     @Test
@@ -86,8 +86,7 @@ class PublicationPermissionStrategyTest {
         Assertions.assertThrows(UnauthorizedException.class, () -> PublicationPermissionStrategy
                                    .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
                                                         requestInfo, identityServiceClient))
-                                   .hasPermissionToUnpublish());
-    }
+                                   .hasPermission(PublicationPermission.UNPUBLISH));    }
 
     @Test
     void shouldGiveEditorPermissionToDeletePublicationWhenPublicationIsFromTheirInstitution()
@@ -104,7 +103,7 @@ class PublicationPermissionStrategyTest {
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
                                                        requestInfo, identityServiceClient))
-                                  .hasPermissionToUnpublish());
+                                  .hasPermission(PublicationPermission.UNPUBLISH));
     }
 
     @Test
@@ -123,7 +122,7 @@ class PublicationPermissionStrategyTest {
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
                                                        requestInfo, identityServiceClient))
-                                  .hasPermissionToUnpublish());
+                                  .hasPermission(PublicationPermission.UNPUBLISH));
     }
 
     @Test
@@ -140,7 +139,7 @@ class PublicationPermissionStrategyTest {
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
                                                        requestInfo, identityServiceClient))
-                                  .hasPermissionToUnpublish());
+                                  .hasPermission(PublicationPermission.UNPUBLISH));
     }
 
     @Test
@@ -158,7 +157,7 @@ class PublicationPermissionStrategyTest {
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
                                                        requestInfo, identityServiceClient))
-                                  .hasPermissionToUnpublish());
+                                  .hasPermission(PublicationPermission.UNPUBLISH));
     }
 
     @Test
@@ -180,7 +179,7 @@ class PublicationPermissionStrategyTest {
                                    .fromRequestInfo(publication,
                                                     RequestUtil.createAnyUserInstanceFromRequest(requestInfo,
                                                                                                  identityServiceClient))
-                                   .hasPermissionToDelete());
+                                   .hasPermission(PublicationPermission.DELETE));
     }
 
     @Test
@@ -195,7 +194,7 @@ class PublicationPermissionStrategyTest {
         Assertions.assertFalse(PublicationPermissionStrategy
                                    .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
                                                         requestInfo, identityServiceClient))
-                                   .hasPermissionToUnpublish());
+                                   .hasPermission(PublicationPermission.UNPUBLISH));
     }
 
     @Test
@@ -213,7 +212,7 @@ class PublicationPermissionStrategyTest {
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
                                                        requestInfo, identityServiceClient))
-                                  .hasPermissionToUnpublish());
+                                  .hasPermission(PublicationPermission.UNPUBLISH));
     }
 
     @Test
@@ -234,7 +233,7 @@ class PublicationPermissionStrategyTest {
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
                                                        requestInfo, identityServiceClient))
-                                  .hasPermissionToUnpublish());
+                                  .hasPermission(PublicationPermission.UNPUBLISH));
     }
 
     @Test
@@ -253,7 +252,7 @@ class PublicationPermissionStrategyTest {
         Assertions.assertFalse(PublicationPermissionStrategy
                                    .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
                                                         requestInfo, identityServiceClient))
-                                   .hasPermissionToUnpublish());
+                                   .hasPermission(PublicationPermission.UNPUBLISH));
     }
 
     @Test
@@ -272,7 +271,7 @@ class PublicationPermissionStrategyTest {
         Assertions.assertFalse(PublicationPermissionStrategy
                                    .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
                                                         requestInfo, identityServiceClient))
-                                   .hasPermissionToUnpublish());
+                                   .hasPermission(PublicationPermission.UNPUBLISH));
     }
 
     @Test
@@ -288,7 +287,7 @@ class PublicationPermissionStrategyTest {
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
                                                        requestInfo, identityServiceClient))
-                                  .hasPermissionToUnpublish());
+                                  .hasPermission(PublicationPermission.UNPUBLISH));
     }
 
     @Test
@@ -304,7 +303,7 @@ class PublicationPermissionStrategyTest {
         Assertions.assertFalse(PublicationPermissionStrategy
                                    .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
                                                         requestInfo, identityServiceClient))
-                                   .hasPermissionToUnpublish());
+                                   .hasPermission(PublicationPermission.UNPUBLISH));
     }
 
     @Test
@@ -320,7 +319,7 @@ class PublicationPermissionStrategyTest {
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
                                                        requestInfo, identityServiceClient))
-                                  .hasPermissionToUnpublish());
+                                  .hasPermission(PublicationPermission.UNPUBLISH));
     }
 
     @Test
@@ -336,7 +335,7 @@ class PublicationPermissionStrategyTest {
         Assertions.assertTrue(
             PublicationPermissionStrategy.fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
                                                               requestInfo, identityServiceClient))
-                .hasPermissionToUnpublish());
+                .hasPermission(PublicationPermission.UNPUBLISH));
     }
 
     private static Function<AccessRight, String> getCognitoGroup(URI institutionId) {

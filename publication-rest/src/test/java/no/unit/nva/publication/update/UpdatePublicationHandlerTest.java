@@ -76,7 +76,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.api.PublicationResponse;
@@ -680,8 +679,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldUpdatePublicationWhenUserIsCuratorAndIsInSameInstitutionAsThePublicationContributor()
-        throws BadRequestException, IOException, NotFoundException {
-        Publication savedPublication = createSamplePublication();
+        throws IOException, NotFoundException {
+        Publication savedPublication = persistPublication(createNonDegreePublication().copy()).build();
 
         injectRandomContributorsWithoutCristinIdAndIdentity(savedPublication);
         var cristinId = randomUri();
@@ -1068,10 +1067,11 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnBadRequestWhenDeletingUnsupportedPublicationStatus() throws BadRequestException, IOException {
-        var publication = randomPublication().copy().withStatus(PublicationStatus.NEW).build();
-        var persistedPublication = Resource.fromPublication(publication)
-                                       .persistNew(publicationService, UserInstance.fromPublication(publication));
+    void shouldReturnBadRequestWhenDeletingUnsupportedPublicationStatus() throws IOException {
+        Publication persistedPublication = persistPublication(createNonDegreePublication()
+                                                                  .copy()
+                                                                  .withStatus(PublicationStatus.NEW))
+                                               .build();
 
         var publisherUri = publication.getPublisher().getId();
         var inputStream = createUnpublishHandlerRequest(persistedPublication.getIdentifier(), randomString(),

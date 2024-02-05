@@ -1,12 +1,9 @@
 package no.unit.nva.publication.permission.strategy;
 
 import static nva.commons.core.attempt.Try.attempt;
-import java.net.URI;
-import java.util.List;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.model.business.UserInstance;
-import nva.commons.apigateway.AccessRight;
 
 public class ResourceOwnerPermissionStrategy extends PermissionStrategy {
 
@@ -15,18 +12,11 @@ public class ResourceOwnerPermissionStrategy extends PermissionStrategy {
     }
 
     @Override
-    public boolean hasPermissionToUpdate() {
-        return canModify();
-    }
-
-    @Override
-    public boolean hasPermissionToDelete() {
-        return false;
-    }
-
-    @Override
-    public boolean hasPermissionToUnpublish() {
-        return canModify();
+    protected boolean hasPermission(PublicationPermission permission) {
+        return switch (permission) {
+            case UPDATE, UNPUBLISH -> canModify();
+            default -> false;
+        };
     }
 
     private boolean canModify() {

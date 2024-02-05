@@ -24,19 +24,9 @@ public final class PublicationPermissionStrategy {
         return new PublicationPermissionStrategy(publication, userInstance);
     }
 
-    public boolean hasPermissionToDelete() {
+    public boolean hasPermission(PublicationPermission permission) {
         return permissionStrategies.stream()
-                   .anyMatch(PermissionStrategy::hasPermissionToDelete);
-    }
-
-    public boolean hasPermissionToUpdate() {
-        return permissionStrategies.stream()
-                   .anyMatch(PermissionStrategy::hasPermissionToUpdate);
-    }
-
-    public boolean hasPermissionToUnpublish() {
-        return permissionStrategies.stream()
-                   .anyMatch(PermissionStrategy::hasPermissionToUnpublish);
+                   .anyMatch(p -> p.hasPermission(permission));
     }
 }
 

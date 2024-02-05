@@ -1,7 +1,5 @@
 package no.unit.nva.publication.permission.strategy;
 
-import java.net.URI;
-import java.util.List;
 import java.util.Optional;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
@@ -24,11 +22,7 @@ public abstract class PermissionStrategy {
         this.userInstance = userInstance;
     }
 
-    public abstract boolean hasPermissionToDelete();
-
-    public abstract boolean hasPermissionToUnpublish();
-
-    public abstract boolean hasPermissionToUpdate();
+    protected abstract boolean hasPermission(PublicationPermission permission);
 
     protected boolean hasAccessRight(AccessRight accessRight) {
         return userInstance.getAccessRights().contains(accessRight);

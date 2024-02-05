@@ -12,7 +12,7 @@ import java.time.Clock;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.BooleanSupplier;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.api.PublicationResponseElevatedUser;
@@ -26,12 +26,12 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.publication.delete.LambdaDestinationInvocationDetail;
-import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.commons.customer.CustomerNotAvailableException;
 import no.unit.nva.publication.commons.customer.JavaHttpClientCustomerApiClient;
+import no.unit.nva.publication.delete.LambdaDestinationInvocationDetail;
+import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -40,13 +40,14 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.permission.strategy.PublicationPermission;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
-import no.unit.nva.s3.S3Driver;
 import no.unit.nva.publication.validation.DefaultPublicationValidator;
 import no.unit.nva.publication.validation.PublicationValidationException;
 import no.unit.nva.publication.validation.PublicationValidator;
+import no.unit.nva.s3.S3Driver;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -173,8 +174,8 @@ public class UpdatePublicationHandler
         return PublicationResponseElevatedUser.fromPublication(updatedPublication);
     }
 
-    private static void throwUnauthorizedUnless(BooleanSupplier a) throws UnauthorizedException {
-        if (!a.getAsBoolean()) {
+    private static void throwUnauthorizedUnless(Function<PublicationPermission, Boolean> a, PublicationPermission requestedPermission) throws UnauthorizedException {
+        if (!a.apply(requestedPermission)) {
             throw new UnauthorizedException();
         }
     }
@@ -182,7 +183,7 @@ public class UpdatePublicationHandler
     private Publication deletePublication(Publication existingPublication,
                                           PublicationPermissionStrategy permissionStrategy)
         throws UnauthorizedException, BadRequestException, NotFoundException {
-        throwUnauthorizedUnless(permissionStrategy::hasPermissionToUnpublish);
+        throwUnauthorizedUnless(permissionStrategy::hasPermission, PublicationPermission.DELETE);
 
         deleteFiles(existingPublication);
         resourceService.deletePublication(existingPublication);
@@ -204,7 +205,7 @@ public class UpdatePublicationHandler
                                              Publication existingPublication,
                                              PublicationPermissionStrategy permissionStrategy)
         throws ApiGatewayException {
-        throwUnauthorizedUnless(permissionStrategy::hasPermissionToUnpublish);
+        throwUnauthorizedUnless(permissionStrategy::hasPermission, PublicationPermission.UNPUBLISH);
 
         var duplicate = unpublishPublicationRequest.getDuplicateOf().map(SortableIdentifier::toString).orElse(null);
         var updatedPublication = toPublicationWithDuplicate(duplicate, existingPublication);
@@ -265,7 +266,7 @@ public class UpdatePublicationHandler
                                        PublicationPermissionStrategy permissionStrategy)
         throws ApiGatewayException {
         validateRequest(identifierInPath, input);
-        throwUnauthorizedUnless(permissionStrategy::hasPermissionToUpdate);
+        throwUnauthorizedUnless(permissionStrategy::hasPermission, PublicationPermission.UPDATE);
 
         Publication publicationUpdate = input.generatePublicationUpdate(existingPublication);
 
