@@ -17,10 +17,8 @@ import nva.commons.apigateway.AccessRight;
 
 public class ContributorPermissionStrategy extends PermissionStrategy {
 
-    public ContributorPermissionStrategy(Publication publication, UserInstance userInstance,
-                                         List<AccessRight> accessRights,
-                                         URI personCristinId) {
-        super(publication, userInstance, accessRights, personCristinId);
+    public ContributorPermissionStrategy(Publication publication, UserInstance userInstance) {
+        super(publication, userInstance);
     }
 
     @Override
@@ -47,14 +45,15 @@ public class ContributorPermissionStrategy extends PermissionStrategy {
     }
 
     private boolean userIsVerifiedContributor() {
-        return nonNull(personCristinId) && Optional.ofNullable(publication.getEntityDescription())
-                                               .map(EntityDescription::getContributors)
-                                               .stream().flatMap(List::stream)
-                                               .filter(ContributorPermissionStrategy::isCreator)
-                                               .map(Contributor::getIdentity)
-                                               .map(Identity::getId)
-                                               .filter(Objects::nonNull)
-                                               .anyMatch(personCristinId::equals);
+        return nonNull(this.userInstance.getPersonCristinId()) &&
+               Optional.ofNullable(publication.getEntityDescription())
+                   .map(EntityDescription::getContributors)
+                   .stream().flatMap(List::stream)
+                   .filter(ContributorPermissionStrategy::isCreator)
+                   .map(Contributor::getIdentity)
+                   .map(Identity::getId)
+                   .filter(Objects::nonNull)
+                   .anyMatch(a -> a.equals(this.userInstance.getPersonCristinId()));
     }
 
     private static boolean isCreator(Contributor contributor) {

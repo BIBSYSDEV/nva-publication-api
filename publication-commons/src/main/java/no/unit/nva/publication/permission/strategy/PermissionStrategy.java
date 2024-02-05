@@ -18,15 +18,10 @@ public abstract class PermissionStrategy {
 
     protected final Publication publication;
     protected final UserInstance userInstance;
-    protected final List<AccessRight> accessRights;
-    protected final URI personCristinId;
 
-    protected PermissionStrategy(Publication publication, UserInstance userInstance, List<AccessRight> accessRights,
-                              URI personCristinId) {
+    protected PermissionStrategy(Publication publication, UserInstance userInstance) {
         this.publication = publication;
         this.userInstance = userInstance;
-        this.accessRights = accessRights;
-        this.personCristinId = personCristinId;
     }
 
     public abstract boolean hasPermissionToDelete();
@@ -36,7 +31,7 @@ public abstract class PermissionStrategy {
     public abstract boolean hasPermissionToUpdate();
 
     protected boolean hasAccessRight(AccessRight accessRight) {
-        return accessRights.contains(accessRight);
+        return userInstance.getAccessRights().contains(accessRight);
     }
 
     protected boolean isDegree() {

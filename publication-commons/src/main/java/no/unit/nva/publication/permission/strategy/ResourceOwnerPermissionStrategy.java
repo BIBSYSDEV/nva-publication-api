@@ -10,9 +10,8 @@ import nva.commons.apigateway.AccessRight;
 
 public class ResourceOwnerPermissionStrategy extends PermissionStrategy {
 
-    public ResourceOwnerPermissionStrategy(Publication publication, UserInstance userInstance, List<AccessRight> accessRights,
-                                         URI personCristinId) {
-        super(publication, userInstance, accessRights, personCristinId);
+    public ResourceOwnerPermissionStrategy(Publication publication, UserInstance userInstance) {
+        super(publication, userInstance);
     }
 
     @Override

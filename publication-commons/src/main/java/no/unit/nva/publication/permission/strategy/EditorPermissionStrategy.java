@@ -10,9 +10,8 @@ import nva.commons.apigateway.AccessRight;
 
 public class EditorPermissionStrategy extends PermissionStrategy {
 
-    public EditorPermissionStrategy(Publication publication, UserInstance userInstance, List<AccessRight> accessRights,
-                              URI personCristinId) {
-        super(publication, userInstance, accessRights, personCristinId);
+    public EditorPermissionStrategy(Publication publication, UserInstance userInstance) {
+        super(publication, userInstance);
     }
 
 

@@ -1,32 +1,27 @@
 package no.unit.nva.publication.permission.strategy;
 
-import java.net.URI;
-import java.util.List;
 import java.util.Set;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.UserInstance;
-import nva.commons.apigateway.AccessRight;
 
 public final class PublicationPermissionStrategy {
     private final Set<PermissionStrategy> permissionStrategies;
 
     private PublicationPermissionStrategy(
         Publication publication,
-        UserInstance userInstance,
-        List<AccessRight> accessRights,
-        URI personCristinId//todo: move to UserInstance?
+        UserInstance userInstance
     ) {
         this.permissionStrategies = Set.of(
-            new EditorPermissionStrategy(publication, userInstance, accessRights, personCristinId),
-            new CuratorPermissionStrategy(publication, userInstance, accessRights, personCristinId),
-            new ContributorPermissionStrategy(publication, userInstance, accessRights, personCristinId),
-            new ResourceOwnerPermissionStrategy(publication, userInstance, accessRights, personCristinId),
-            new TrustedThirdPartyStrategy(publication, userInstance, accessRights, personCristinId)
+            new EditorPermissionStrategy(publication, userInstance),
+            new CuratorPermissionStrategy(publication, userInstance),
+            new ContributorPermissionStrategy(publication, userInstance),
+            new ResourceOwnerPermissionStrategy(publication, userInstance),
+            new TrustedThirdPartyStrategy(publication, userInstance)
         );
     }
 
-    public static PublicationPermissionStrategy fromRequestInfo(Publication publication, UserInstance userInstance, List<AccessRight> accessRights, URI personCristinId) {
-        return new PublicationPermissionStrategy(publication, userInstance, accessRights, personCristinId);
+    public static PublicationPermissionStrategy fromRequestInfo(Publication publication, UserInstance userInstance) {
+        return new PublicationPermissionStrategy(publication, userInstance);
     }
 
     public boolean hasPermissionToDelete() {

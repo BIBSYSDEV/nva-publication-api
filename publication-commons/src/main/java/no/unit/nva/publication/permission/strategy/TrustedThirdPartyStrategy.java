@@ -9,9 +9,8 @@ import nva.commons.apigateway.AccessRight;
 
 public class TrustedThirdPartyStrategy extends PermissionStrategy {
 
-    public TrustedThirdPartyStrategy(Publication publication, UserInstance userInstance, List<AccessRight> accessRights,
-                                           URI personCristinId) {
-        super(publication, userInstance, accessRights, personCristinId);
+    public TrustedThirdPartyStrategy(Publication publication, UserInstance userInstance) {
+        super(publication, userInstance);
     }
 
     @Override

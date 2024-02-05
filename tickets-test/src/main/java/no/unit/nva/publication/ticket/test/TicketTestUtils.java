@@ -9,6 +9,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.PublicationInstanceBuilder.listPublicationInstanceTypes;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
+import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
@@ -72,7 +74,8 @@ public final class TicketTestUtils {
         return randomPublicationWithStatus(status);
     }
 
-    public static Publication createPersistedNonDegreePublication(URI publisherId, PublicationStatus status, ResourceService resourceService)
+    public static Publication createPersistedNonDegreePublication(URI publisherId, PublicationStatus status,
+                                                                  ResourceService resourceService)
         throws ApiGatewayException {
         var publication = randomNonDegreePublication(status)
                               .copy()
@@ -104,8 +107,8 @@ public final class TicketTestUtils {
     private static Publication persistPublication(ResourceService resourceService, Publication publication)
         throws ApiGatewayException {
         var persistedPublication = Resource
-            .fromPublication(publication)
-            .persistNew(resourceService, UserInstance.fromPublication(publication));
+                                       .fromPublication(publication)
+                                       .persistNew(resourceService, UserInstance.fromPublication(publication));
         if (isPublished(publication)) {
             publishPublication(resourceService, persistedPublication);
             return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
@@ -130,9 +133,10 @@ public final class TicketTestUtils {
     public static Publication createPersistedPublicationWithAdministrativeAgreement(URI publisherId,
                                                                                     ResourceService resourceService)
         throws ApiGatewayException {
-        var publication = randomPublication().copy()
+        var publication = randomNonDegreePublication(
+            randomElement(Arrays.stream(PublicationStatus.values()).toList())).copy()
                               .withAssociatedArtifacts(List.of(administrativeAgreement()))
-                              .withPublisher(new Organization.Builder()
+                              .withPublisher(new Builder()
                                                  .withId(publisherId)
                                                  .build())
                               .build();
@@ -156,7 +160,7 @@ public final class TicketTestUtils {
     }
 
     public static Publication createPersistedPublicationWithAssociatedLink(PublicationStatus status,
-                                                                             ResourceService resourceService)
+                                                                           ResourceService resourceService)
         throws ApiGatewayException {
         var publication = randomPublicationWithAssociatedLink(status);
         return persistPublication(resourceService, publication);
