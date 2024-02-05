@@ -17,9 +17,13 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
 import no.unit.nva.auth.CognitoCredentials;
+import nva.commons.core.Environment;
 import org.junit.jupiter.api.Test;
 
 public class JavaHttpClientCustomerApiClientTest {
+
+    public static final URI BACKEND_CLIENT_AUTH_URL = URI.create(
+        new Environment().readEnv("BACKEND_CLIENT_AUTH_URL"));
 
     @Test
     void shouldReturnCustomerIfEverythingIsOk() throws IOException, InterruptedException {
@@ -36,7 +40,7 @@ public class JavaHttpClientCustomerApiClientTest {
 
         var cognitoCredentials = new CognitoCredentials(() -> "clientId",
                                                         () -> "clientSecret",
-                                                        URI.create("https://localhost"));
+                                                        BACKEND_CLIENT_AUTH_URL);
         var customerApiClient = new JavaHttpClientCustomerApiClient(httpClient, cognitoCredentials);
 
         var customer = customerApiClient.fetch(customerUri);
@@ -60,7 +64,7 @@ public class JavaHttpClientCustomerApiClientTest {
 
         var cognitoCredentials = new CognitoCredentials(() -> "clientId",
                                                         () -> "clientSecret",
-                                                        URI.create("https://localhost"));
+                                                        BACKEND_CLIENT_AUTH_URL);
         var customerApiClient = new JavaHttpClientCustomerApiClient(httpClient, cognitoCredentials);
 
         assertThrows(CustomerNotAvailableException.class, () -> customerApiClient.fetch(customerUri));
@@ -81,7 +85,7 @@ public class JavaHttpClientCustomerApiClientTest {
 
         var cognitoCredentials = new CognitoCredentials(() -> "clientId",
                                                         () -> "clientSecret",
-                                                        URI.create("https://localhost"));
+                                                        BACKEND_CLIENT_AUTH_URL);
         var customerApiClient = new JavaHttpClientCustomerApiClient(httpClient, cognitoCredentials);
 
         assertThrows(CustomerNotAvailableException.class, () -> customerApiClient.fetch(customerUri));
@@ -102,7 +106,7 @@ public class JavaHttpClientCustomerApiClientTest {
 
         var cognitoCredentials = new CognitoCredentials(() -> "clientId",
                                                         () -> "clientSecret",
-                                                        URI.create("https://localhost"));
+                                                        BACKEND_CLIENT_AUTH_URL);
         var customerApiClient = new JavaHttpClientCustomerApiClient(httpClient, cognitoCredentials);
 
         assertThrows(CustomerNotAvailableException.class, () -> customerApiClient.fetch(customerUri));

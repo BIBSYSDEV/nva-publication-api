@@ -2,6 +2,8 @@ package no.unit.nva.publication;
 
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
+import java.util.Optional;
+import java.util.UUID;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ResourceOwner;
@@ -17,7 +19,9 @@ import org.slf4j.LoggerFactory;
 public final class RequestUtil {
     
     public static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
+    public static final String IMPORT_CANDIDATE_IDENTIFIER = "importCandidateIdentifier";
     public static final String TICKET_IDENTIFIER = "ticketIdentifier";
+    public static final String FILE_IDENTIFIER = "fileIdentifier";
     public static final String IDENTIFIER_IS_NOT_A_VALID_UUID = "Identifier is not a valid UUID: ";
     private static final Logger logger = LoggerFactory.getLogger(RequestUtil.class);
     
@@ -41,6 +45,20 @@ public final class RequestUtil {
         } catch (Exception e) {
             throw new BadRequestException(IDENTIFIER_IS_NOT_A_VALID_UUID + identifier, e);
         }
+    }
+
+    public static SortableIdentifier getImportCandidateIdentifier(RequestInfo requestInfo) throws ApiGatewayException {
+            return Optional.ofNullable(requestInfo.getPathParameters())
+                       .map(params -> params.get(IMPORT_CANDIDATE_IDENTIFIER))
+                       .map(SortableIdentifier::new)
+                       .orElseThrow(() -> new BadRequestException("Could not get import candidate identifier!"));
+    }
+
+    public static UUID getFileIdentifier(RequestInfo requestInfo) throws ApiGatewayException {
+        return Optional.ofNullable(requestInfo.getPathParameters())
+                   .map(params -> params.get(FILE_IDENTIFIER))
+                   .map(UUID::fromString)
+                   .orElseThrow(() -> new BadRequestException("Could not get file identifier!"));
     }
     
     /**
