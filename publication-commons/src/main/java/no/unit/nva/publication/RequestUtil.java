@@ -73,7 +73,8 @@ public final class RequestUtil {
     public static UserInstance createInternalUserInstance(RequestInfo requestInfo) throws ApiGatewayException {
         String owner = RequestUtil.getOwner(requestInfo);
         URI customerId = requestInfo.getCurrentCustomer();
-        return UserInstance.create(owner, customerId);
+        URI personCristinId = attempt(requestInfo::getPersonCristinId).toOptional().orElse(null);
+        return UserInstance.create(owner, customerId, personCristinId);
     }
 
     public static UserInstance createAnyUserInstanceFromRequest(RequestInfo requestInfo,

@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business;
 
+import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
@@ -13,31 +14,38 @@ import nva.commons.core.JacocoGenerated;
  * Class used internally in the Resource service to represent a user.
  */
 public class UserInstance implements JsonSerializable {
-    
+
     public static final URI UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI = null;
     private final URI organizationUri;
     private final User user;
     private final URI topLevelOrgCristinId;
+    private final URI personCristinId;
     @SuppressWarnings("PMD.AvoidFieldNameMatchingMethodName")
 
     private boolean isExternalClient;
-    
-    protected UserInstance(String userIdentifier, URI organizationUri, URI topLevelOrgCristinId) {
+
+    protected UserInstance(String userIdentifier, URI organizationUri, URI topLevelOrgCristinId, URI personCristinId) {
         this.user = new User(userIdentifier);
         this.organizationUri = organizationUri;
         this.topLevelOrgCristinId = topLevelOrgCristinId;
+        this.personCristinId = personCristinId;
     }
-    
+
     public static UserInstance create(User user, URI organizationUri) {
-        return new UserInstance(user.toString(), organizationUri, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI);
+        return new UserInstance(user.toString(), organizationUri, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, null);
     }
-    
+
     public static UserInstance create(String userIdentifier, URI organizationUri) {
-        return new UserInstance(userIdentifier, organizationUri, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI);
+        return new UserInstance(userIdentifier, organizationUri, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, null);
     }
-    
+
+    public static UserInstance create(String userIdentifier, URI organizationUri, URI personCristinId) {
+        return new UserInstance(userIdentifier, organizationUri, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, personCristinId);
+    }
+
     public static UserInstance create(ResourceOwner resourceOwner, URI organizationUri) {
-        return new UserInstance(resourceOwner.getOwner().getValue(), organizationUri, resourceOwner.getOwnerAffiliation());
+        return new UserInstance(resourceOwner.getOwner().getValue(), organizationUri,
+                                resourceOwner.getOwnerAffiliation(), null);
     }
 
     public static UserInstance createExternalUser(ResourceOwner resourceOwner, URI topLevelOrgCristinId) {
@@ -53,21 +61,22 @@ public class UserInstance implements JsonSerializable {
     public static UserInstance fromRequestInfo(RequestInfo requestInfo) throws UnauthorizedException {
         var userName = requestInfo.getUserName();
         var customerId = requestInfo.getCurrentCustomer();
-        return UserInstance.create(userName, customerId);
+        return UserInstance.create(userName, customerId,
+                                   attempt(requestInfo::getPersonCristinId).toOptional().orElse(null));
     }
-    
+
     public static UserInstance fromDoiRequest(DoiRequest doiRequest) {
         return UserInstance.create(doiRequest.getOwner(), doiRequest.getCustomerId());
     }
-    
+
     public static UserInstance fromPublication(Publication publication) {
         return UserInstance.create(publication.getResourceOwner(), publication.getPublisher().getId());
     }
-    
+
     public static UserInstance fromMessage(Message message) {
         return UserInstance.create(message.getOwner(), message.getCustomerId());
     }
-    
+
     public static UserInstance fromTicket(TicketEntry ticket) {
         return UserInstance.create(ticket.getOwner(), ticket.getCustomerId());
     }
@@ -76,30 +85,34 @@ public class UserInstance implements JsonSerializable {
         return this.user.equals(message.getOwner())
                && this.organizationUri.equals(message.getCustomerId());
     }
-    
+
     public URI getOrganizationUri() {
         return organizationUri;
     }
-    
+
     public String getUsername() {
         return user.toString();
     }
-    
+
     public User getUser() {
         return user;
     }
-    
+
     @JacocoGenerated
     public URI getTopLevelOrgCristinId() {
         return topLevelOrgCristinId;
     }
-    
+
+    public URI getPersonCristinId() {
+        return personCristinId;
+    }
+
     @Override
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getOrganizationUri(), getUsername(), getTopLevelOrgCristinId());
     }
-    
+
     @Override
     @JacocoGenerated
     public boolean equals(Object o) {
@@ -112,6 +125,6 @@ public class UserInstance implements JsonSerializable {
         UserInstance that = (UserInstance) o;
         return Objects.equals(getOrganizationUri(), that.getOrganizationUri()) && Objects.equals(
             getUsername(), that.getUsername()) && Objects.equals(getTopLevelOrgCristinId(),
-            that.getTopLevelOrgCristinId());
+                                                                 that.getTopLevelOrgCristinId());
     }
 }

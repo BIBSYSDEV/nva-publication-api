@@ -86,7 +86,7 @@ public final class TicketTestUtils {
     public static Publication createPersistedPublication(URI publisherId, PublicationStatus status,
                                                          ResourceService resourceService)
         throws ApiGatewayException {
-        var publication = randomPublicationWithStatus(status);
+        var publication = randomNonDegreePublication(status);
         if (publisherId != null) {
             publication = publication.copy()
                               .withPublisher(new Organization.Builder().withId(publisherId).build())

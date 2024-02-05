@@ -710,7 +710,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldUpdateNonDegreePublicationWhenUserHasAccessRightEditAllNonDegreePublications()
         throws ApiGatewayException, IOException {
-        var savedPublication = createSamplePublication();
+        var savedPublication =  persistPublication(createNonDegreePublication().copy()).build();
         var publicationUpdate = updateTitle(savedPublication);
         var event = userWithEditAllNonDegreePublicationsUpdatesPublication(customerId, publicationUpdate);
 

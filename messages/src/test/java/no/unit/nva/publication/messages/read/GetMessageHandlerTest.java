@@ -66,7 +66,7 @@ class GetMessageHandlerTest {
     }
     
     private UserInstance randomUserInstance() {
-        return UserInstance.create(randomString(), randomUri());
+        return UserInstance.create(randomString(), randomUri(), randomUri());
     }
     
     private InputStream createHttpRequest(UserInstance sender, Message message)
