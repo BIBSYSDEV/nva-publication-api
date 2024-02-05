@@ -2,10 +2,12 @@ package no.unit.nva.publication.model.business;
 
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
+import java.util.List;
 import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.JacocoGenerated;
@@ -20,32 +22,34 @@ public class UserInstance implements JsonSerializable {
     private final User user;
     private final URI topLevelOrgCristinId;
     private final URI personCristinId;
+    private final List<AccessRight> accessRights;
     @SuppressWarnings("PMD.AvoidFieldNameMatchingMethodName")
 
     private boolean isExternalClient;
 
-    protected UserInstance(String userIdentifier, URI organizationUri, URI topLevelOrgCristinId, URI personCristinId) {
+    protected UserInstance(String userIdentifier, URI organizationUri, URI topLevelOrgCristinId, URI personCristinId, List<AccessRight> accessRights) {
         this.user = new User(userIdentifier);
         this.organizationUri = organizationUri;
         this.topLevelOrgCristinId = topLevelOrgCristinId;
         this.personCristinId = personCristinId;
+        this.accessRights = accessRights == null ? List.of() : accessRights;
     }
 
     public static UserInstance create(User user, URI organizationUri) {
-        return new UserInstance(user.toString(), organizationUri, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, null);
+        return new UserInstance(user.toString(), organizationUri, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, null, null);
     }
 
     public static UserInstance create(String userIdentifier, URI organizationUri) {
-        return new UserInstance(userIdentifier, organizationUri, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, null);
+        return new UserInstance(userIdentifier, organizationUri, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, null, null);
     }
 
-    public static UserInstance create(String userIdentifier, URI organizationUri, URI personCristinId) {
-        return new UserInstance(userIdentifier, organizationUri, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, personCristinId);
+    public static UserInstance create(String userIdentifier, URI organizationUri, URI personCristinId, List<AccessRight> accessRights) {
+        return new UserInstance(userIdentifier, organizationUri, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, personCristinId, accessRights);
     }
 
     public static UserInstance create(ResourceOwner resourceOwner, URI organizationUri) {
         return new UserInstance(resourceOwner.getOwner().getValue(), organizationUri,
-                                resourceOwner.getOwnerAffiliation(), null);
+                                resourceOwner.getOwnerAffiliation(), null, null);
     }
 
     public static UserInstance createExternalUser(ResourceOwner resourceOwner, URI topLevelOrgCristinId) {
@@ -61,8 +65,9 @@ public class UserInstance implements JsonSerializable {
     public static UserInstance fromRequestInfo(RequestInfo requestInfo) throws UnauthorizedException {
         var userName = requestInfo.getUserName();
         var customerId = requestInfo.getCurrentCustomer();
-        return UserInstance.create(userName, customerId,
-                                   attempt(requestInfo::getPersonCristinId).toOptional().orElse(null));
+        var personCristinId = attempt(requestInfo::getPersonCristinId).toOptional().orElse(null);
+        var accessRights = requestInfo.getAccessRights();
+        return UserInstance.create(userName, customerId, personCristinId, accessRights);
     }
 
     public static UserInstance fromDoiRequest(DoiRequest doiRequest) {
@@ -105,6 +110,10 @@ public class UserInstance implements JsonSerializable {
 
     public URI getPersonCristinId() {
         return personCristinId;
+    }
+
+    public List<AccessRight> getAccessRights() {
+        return accessRights;
     }
 
     @Override

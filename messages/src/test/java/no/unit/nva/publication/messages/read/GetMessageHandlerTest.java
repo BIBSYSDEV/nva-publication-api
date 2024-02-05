@@ -14,6 +14,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -21,6 +22,7 @@ import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,7 +68,7 @@ class GetMessageHandlerTest {
     }
     
     private UserInstance randomUserInstance() {
-        return UserInstance.create(randomString(), randomUri(), randomUri());
+        return UserInstance.create(randomString(), randomUri(), randomUri(), List.of(AccessRight.USER));
     }
     
     private InputStream createHttpRequest(UserInstance sender, Message message)
