@@ -10,6 +10,7 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.expansion.model.ExpandedImportCandidate;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.events.bodies.ImportCandidateDeleteEvent;
+import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -40,14 +41,14 @@ public class DeleteImportCandidateEventConsumer
     private static final int ZERO_HITS = 0;
     private static final int ONE_HIT = 1;
     private final ResourceService resourceService;
-    private final UriRetriever uriRetriever;
+    private final RawContentRetriever uriRetriever;
 
     @JacocoGenerated
     public DeleteImportCandidateEventConsumer() {
         this(ResourceService.defaultService(TABLE_NAME), new UriRetriever());
     }
 
-    protected DeleteImportCandidateEventConsumer(ResourceService resourceService, UriRetriever uriRetriever) {
+    protected DeleteImportCandidateEventConsumer(ResourceService resourceService, RawContentRetriever uriRetriever) {
         super(ImportCandidateDeleteEvent.class);
         this.resourceService = resourceService;
         this.uriRetriever = uriRetriever;

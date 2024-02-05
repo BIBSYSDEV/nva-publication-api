@@ -1,19 +1,26 @@
 package no.unit.nva.expansion.model;
 
+import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.Getter;
+import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ContributorVerificationStatus;
-import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
@@ -28,19 +35,22 @@ import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
-import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount", "PMD.TooManyFields"})
 @JsonTypeName(ExpandedImportCandidate.TYPE)
 public class ExpandedImportCandidate implements ExpandedDataEntry {
 
     public static final String TYPE = "ImportCandidateSummary";
+    private static final Logger logger = LoggerFactory.getLogger(ExpandedImportCandidate.class);
     public static final String API_HOST = new Environment().readEnv("API_HOST");
     public static final String PUBLICATION = "publication";
     public static final String ID_FIELD = "id";
@@ -62,6 +72,14 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     public static final String COLLABORATION_TYPE_FIELD = "collaborationType";
     public static final String PRINT_ISSN_FIELD = "printIssn";
     public static final String ONLINE_ISSN_FIELD = "onlineIssn";
+    private static final String CONTENT_TYPE = "application/json";
+    public static final String CRISTIN = "cristin";
+    public static final String ORGANIZATION = "organization";
+    public static final String DEPTH = "depth";
+    public static final String TOP = "top";
+    public static final String CUSTOMER = "customer";
+    public static final String CRISTIN_ID = "cristinId";
+    public static final String IS_CUSTOMER_MESSAGE = "Cristin organization {} is nva customer: {}";
     @JsonProperty(ID_FIELD)
     private URI identifier;
     @JsonProperty(ADDITIONAL_IDENTIFIERS_FIELD)
@@ -84,7 +102,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     @JsonProperty(CONTRIBUTORS_FIELD)
     private List<Contributor> contributors;
     @JsonProperty(ORGANIZATIONS_FIELD)
-    private Set<Corporation> organizations;
+    private Set<ExpandedImportCandidateOrganization> organizations;
     @JsonProperty(COLLABORATION_TYPE_FIELD)
     private CollaborationType collaborationType;
     @JsonProperty(IMPORT_STATUS_FIELD)
@@ -101,7 +119,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     private String onlineIssn;
 
     public static ExpandedImportCandidate fromImportCandidate(ImportCandidate importCandidate,
-                                                              UriRetriever uriRetriever) {
+                                                              RawContentRetriever uriRetriever) {
         var organizations = extractOrganizations(importCandidate, uriRetriever);
         return new ExpandedImportCandidate.Builder().withIdentifier(generateIdentifier(importCandidate.getIdentifier()))
                    .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
@@ -254,11 +272,11 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     @JacocoGenerated
-    public Set<Corporation> getOrganizations() {
+    public Set<ExpandedImportCandidateOrganization> getOrganizations() {
         return organizations;
     }
 
-    public void setOrganizations(Set<Corporation> organizations) {
+    public void setOrganizations(Set<ExpandedImportCandidateOrganization> organizations) {
         this.organizations = organizations;
     }
 
@@ -308,7 +326,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .orElse(null);
     }
 
-    private static CollaborationType extractCorporation(Set<Corporation> organizations) {
+    private static CollaborationType extractCorporation(Set<ExpandedImportCandidateOrganization> organizations) {
         return organizations.size() > 1 ? CollaborationType.COLLABORATIVE : CollaborationType.NON_COLLABORATIVE;
     }
 
@@ -417,22 +435,88 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .orElse(String.valueOf(new DateTime().getYear()));
     }
 
-    private static Set<Corporation> extractOrganizations(ImportCandidate importCandidate, UriRetriever uriRetriever) {
+    private static Set<ExpandedImportCandidateOrganization> extractOrganizations(ImportCandidate importCandidate,
+                                                                                 RawContentRetriever uriRetriever) {
+
+        return getOrganizationIdList(importCandidate)
+                   .map(id -> fetchCristinOrg(id, uriRetriever))
+                   .filter(Optional::isPresent)
+                   .map(Optional::get)
+                   .distinct()
+                   .filter(org -> isNvaCustomer(org, uriRetriever))
+                   .map(ExpandedImportCandidateOrganization::fromCristinOrganization)
+                   .collect(Collectors.toSet());
+
+    }
+
+    private static Stream<URI> getOrganizationIdList(ImportCandidate importCandidate) {
         return importCandidate.getEntityDescription()
                    .getContributors()
                    .stream()
                    .map(Contributor::getAffiliations)
                    .flatMap(List::stream)
-                   .map(organization -> expandOrganization(organization, uriRetriever))
-                   .collect(Collectors.toSet());
+                   .filter(Organization.class::isInstance)
+                   .map(Organization.class::cast)
+                   .map(Organization::getId)
+                   .distinct()
+                   .filter(Objects::nonNull);
     }
 
-    private static Corporation expandOrganization(Corporation corporation, UriRetriever uriRetriever) {
-        if (corporation instanceof Organization organization) {
-            return ExpandedImportCandidateOrganization.fromOrganization(organization).expand(uriRetriever);
-        } else {
-            return corporation;
-        }
+    private static boolean isNvaCustomer(CristinOrganization cristinOrganization, RawContentRetriever uriRetriever) {
+        var isCustomer = Optional.ofNullable(cristinOrganization.id())
+                             .map(ExpandedImportCandidate::toFetchCustomerByCristinIdUri)
+                             .map(uri -> fetchCustomer(uriRetriever, uri))
+                             .filter(Optional::isPresent)
+                             .map(Optional::get)
+                             .map(ExpandedImportCandidate::isHttpOk)
+                             .orElse(false);
+        logger.info(IS_CUSTOMER_MESSAGE, cristinOrganization.id(), isCustomer);
+        return isCustomer;
+    }
+
+    private static boolean isHttpOk(HttpResponse<String> stringHttpResponse) {
+        return stringHttpResponse.statusCode() == 200;
+    }
+
+    private static Optional<CristinOrganization> fetchCristinOrg(URI id, RawContentRetriever uriRetriever) {
+        return Optional.ofNullable(getCristinIdentifier(id))
+                   .map(ExpandedImportCandidate::toCristinOrgUri)
+                   .map(uri -> fetch(uri, uriRetriever))
+                   .filter(Optional::isPresent)
+                   .map(Optional::get)
+                   .map(ExpandedImportCandidate::toCristinOrganization)
+                   .map(CristinOrganization::getTopLevelOrg);
+    }
+
+    private static Optional<HttpResponse<String>> fetchCustomer(RawContentRetriever uriRetriever, URI uri) {
+        return uriRetriever.fetchResponse(uri, CONTENT_TYPE);
+    }
+
+    private static URI toFetchCustomerByCristinIdUri(URI topLevelOrganization) {
+        var getCustomerEndpoint = UriWrapper.fromHost(API_HOST).addChild(CUSTOMER).addChild(CRISTIN_ID).getUri();
+        return URI.create(
+            getCustomerEndpoint + "/" + URLEncoder.encode(topLevelOrganization.toString(), StandardCharsets.UTF_8));
+    }
+
+    private static CristinOrganization toCristinOrganization(String response) {
+        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response, CristinOrganization.class))
+                   .orElseThrow();
+    }
+
+    private static Optional<String> fetch(URI uri, RawContentRetriever uriRetriever) {
+        return uriRetriever.getRawContent(uri, CONTENT_TYPE);
+    }
+
+    private static String getCristinIdentifier(URI id) {
+        return UriWrapper.fromUri(id).getLastPathElement();
+    }
+
+    private static URI toCristinOrgUri(String cristinId) {
+        return UriWrapper.fromHost(API_HOST)
+                   .addChild(CRISTIN)
+                   .addChild(ORGANIZATION)
+                   .addQueryParameter(DEPTH, TOP)
+                   .addChild(cristinId).getUri();
     }
 
     public static final class Builder {
@@ -498,7 +582,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
             return this;
         }
 
-        public Builder withOrganizations(Set<Corporation> organizations) {
+        public Builder withOrganizations(Set<ExpandedImportCandidateOrganization> organizations) {
             expandedImportCandidate.setOrganizations(organizations);
             return this;
         }

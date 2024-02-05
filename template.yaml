@@ -1170,6 +1170,7 @@ Resources:
           TABLE_NAME: !Ref NvaImportCandidatesTable
           API_HOST: !Ref ApiDomain
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
+          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
