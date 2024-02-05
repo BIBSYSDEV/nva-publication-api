@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
     @JsonSubTypes.Type(UnpublishPublicationRequest.class),
     @JsonSubTypes.Type(DeletePublicationRequest.class)
 })
-@SuppressWarnings("pmd:AbstractClassWithoutAbstractMethod")
+@SuppressWarnings("PMD.AbstractClassWithoutAbstractMethod")
 public abstract class UpdatePublicationRequestI {
 
 }
