@@ -1,6 +1,6 @@
 package no.unit.nva.publication.permission.strategy;
 
-public enum PublicationPermission {
+public enum PublicationAction {
     UPDATE,
     DELETE,
     UNPUBLISH,

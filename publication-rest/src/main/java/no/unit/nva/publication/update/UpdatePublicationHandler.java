@@ -40,7 +40,7 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permission.strategy.PublicationPermission;
+import no.unit.nva.publication.permission.strategy.PublicationAction;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -172,7 +172,7 @@ public class UpdatePublicationHandler
         return PublicationResponseElevatedUser.fromPublication(updatedPublication);
     }
 
-    private static void throwUnauthorizedUnless(Function<PublicationPermission, Boolean> a, PublicationPermission requestedPermission) throws UnauthorizedException {
+    private static void throwUnauthorizedUnless(Function<PublicationAction, Boolean> a, PublicationAction requestedPermission) throws UnauthorizedException {
         if (!a.apply(requestedPermission)) {
             throw new UnauthorizedException();
         }
@@ -181,7 +181,7 @@ public class UpdatePublicationHandler
     private Publication deletePublication(Publication existingPublication,
                                           PublicationPermissionStrategy permissionStrategy)
         throws UnauthorizedException, BadRequestException, NotFoundException {
-        throwUnauthorizedUnless(permissionStrategy::hasPermission, PublicationPermission.DELETE);
+        throwUnauthorizedUnless(permissionStrategy::hasPermission, PublicationAction.DELETE);
 
         deleteFiles(existingPublication);
         resourceService.deletePublication(existingPublication);
@@ -203,7 +203,7 @@ public class UpdatePublicationHandler
                                              Publication existingPublication,
                                              PublicationPermissionStrategy permissionStrategy)
         throws ApiGatewayException {
-        throwUnauthorizedUnless(permissionStrategy::hasPermission, PublicationPermission.UNPUBLISH);
+        throwUnauthorizedUnless(permissionStrategy::hasPermission, PublicationAction.UNPUBLISH);
 
         var duplicate = unpublishPublicationRequest.getDuplicateOf().map(SortableIdentifier::toString).orElse(null);
         var updatedPublication = toPublicationWithDuplicate(duplicate, existingPublication);
@@ -264,7 +264,7 @@ public class UpdatePublicationHandler
                                        PublicationPermissionStrategy permissionStrategy)
         throws ApiGatewayException {
         validateRequest(identifierInPath, input);
-        throwUnauthorizedUnless(permissionStrategy::hasPermission, PublicationPermission.UPDATE);
+        throwUnauthorizedUnless(permissionStrategy::hasPermission, PublicationAction.UPDATE);
 
         Publication publicationUpdate = input.generatePublicationUpdate(existingPublication);
 

@@ -11,7 +11,7 @@ public class TrustedThirdPartyStrategy extends PermissionStrategy {
     }
 
     @Override
-    protected boolean hasPermission(PublicationPermission permission) {
+    protected boolean hasPermission(PublicationAction permission) {
         return switch (permission) {
             case UPDATE, UNPUBLISH -> canModify();
             default -> false;

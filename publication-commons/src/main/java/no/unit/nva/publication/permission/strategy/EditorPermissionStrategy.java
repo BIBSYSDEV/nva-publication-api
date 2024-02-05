@@ -12,7 +12,7 @@ public class EditorPermissionStrategy extends PermissionStrategy {
     }
 
     @Override
-    protected boolean hasPermission(PublicationPermission permission) {
+    protected boolean hasPermission(PublicationAction permission) {
         return switch (permission) {
             case UPDATE, DELETE, UNPUBLISH -> canManage();
             default -> false;

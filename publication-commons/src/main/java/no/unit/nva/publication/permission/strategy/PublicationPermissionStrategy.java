@@ -24,7 +24,7 @@ public final class PublicationPermissionStrategy {
         return new PublicationPermissionStrategy(publication, userInstance);
     }
 
-    public boolean hasPermission(PublicationPermission permission) {
+    public boolean hasPermission(PublicationAction permission) {
         return permissionStrategies.stream()
                    .anyMatch(p -> p.hasPermission(permission));
     }
