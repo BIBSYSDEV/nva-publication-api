@@ -1,7 +1,9 @@
 package no.unit.nva.doi;
 
+import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
 import static java.net.HttpURLConnection.HTTP_BAD_METHOD;
+import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
@@ -9,14 +11,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import java.io.IOException;
 import java.net.URI;
+import java.net.http.HttpClient;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.model.DoiResponse;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -83,11 +89,26 @@ public class DataCiteDoiClientTest {
     }
 
     @Test
-    void shouldReturnStatusCodeAcceptedOnSuccessfulDeleteDoi() {
+    void shouldReturnStatusCodeAcceptedOnSuccessfulDeleteDoi() throws IOException, InterruptedException {
         var publication = PublicationGenerator.randomPublication();
-        var doiClient = mock(DataCiteDoiClient.class);
+        var httpClient = mock(HttpClient.class);
+        when(httpClient.send(any(), any())).thenReturn(FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY, HTTP_OK))
+            .thenReturn(FakeHttpResponse.create(null, HTTP_ACCEPTED));
+
+        var doiClient = spy(new DataCiteDoiClient(httpClient, secretsManagerClient,"url"));
         doiClient.deleteDraftDoi(publication);
         verify(doiClient, times(1)).deleteDraftDoi(publication);
+    }
+
+    @Test
+    void shouldThrowWhenFailingValidateResponseOnDeleteDoi() throws IOException, InterruptedException {
+        var publication = PublicationGenerator.randomPublication();
+        var httpClient = mock(HttpClient.class);
+        when(httpClient.send(any(), any())).thenReturn(FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY, HTTP_OK))
+            .thenReturn(FakeHttpResponse.create(null, HTTP_CONFLICT));
+        var doiClient = spy(new DataCiteDoiClient(httpClient, secretsManagerClient,"url"));
+
+        assertThrows(RuntimeException.class, () -> doiClient.deleteDraftDoi(publication));
     }
 
     private static String createResponse(String expectedDoiPrefix) throws JsonProcessingException {

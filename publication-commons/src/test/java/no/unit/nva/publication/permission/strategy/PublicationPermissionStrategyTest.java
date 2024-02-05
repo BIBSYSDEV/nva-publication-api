@@ -3,7 +3,9 @@ package no.unit.nva.publication.permission.strategy;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationInstanceBuilder.listPublicationInstanceTypes;
-import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
+import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
+import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
+import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -12,6 +14,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,6 +25,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
@@ -55,12 +59,17 @@ class PublicationPermissionStrategyTest {
     public static final String INJECT_COGNITO_GROUPS_CLAIM = "cognito:groups";
     public static final String INJECT_CRISTIN_ID_CLAIM = "custom:cristinId";
     private IdentityServiceClient identityServiceClient;
+    public static final ObjectMapper dtoObjectMapper = JsonUtils.dtoObjectMapper;
+    private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
+    private static final String EXTERNAL_CLIENT_ID = "external-client-id";
+
+    private static final URI EXTERNAL_CLIENT_CUSTOMER_URI = URI.create("https://example.com/external-client-org");
 
     @BeforeEach
     void setUp() throws NotFoundException {
         this.identityServiceClient = mock(IdentityServiceClient.class);
         when(this.identityServiceClient.getExternalClient(any())).thenReturn(
-            new GetExternalClientResponse(randomString(), randomString(), randomUri(), randomUri()));
+            new GetExternalClientResponse(randomString(), randomString(), EXTERNAL_CLIENT_CUSTOMER_URI, randomUri()));
     }
 
     @Test
@@ -338,6 +347,40 @@ class PublicationPermissionStrategyTest {
                 .hasPermission(PublicationPermission.UNPUBLISH));
     }
 
+    @Test
+    void shouldGivePermissionToEditPublicationWhenTrustedClient() throws JsonProcessingException, UnauthorizedException {
+        var publication = createPublication(randomString(), EXTERNAL_CLIENT_CUSTOMER_URI);
+        var requestInfo = createThirdPartyRequestInfo(getEditorAccessRights());
+
+        Assertions.assertTrue(
+            PublicationPermissionStrategy.fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
+                    requestInfo, identityServiceClient))
+                .hasPermission(PublicationPermission.UPDATE));
+    }
+
+    @Test
+    void shouldDenyTrustedClientEditPublicationWithoutMatchingCustomer() throws JsonProcessingException, UnauthorizedException {
+        var publication = createPublication(randomString(), randomUri());
+        var requestInfo = createThirdPartyRequestInfo(getEditorAccessRights());
+
+        Assertions.assertFalse(
+            PublicationPermissionStrategy.fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
+                    requestInfo, identityServiceClient))
+                .hasPermission(PublicationPermission.UPDATE));
+    }
+
+    @Test
+    void shouldDenyTrustedClientEditPublicationWithMissingPublisher() throws JsonProcessingException, UnauthorizedException {
+        var publication = createPublication(randomString(), randomUri());
+        publication.setPublisher(null);
+        var requestInfo = createThirdPartyRequestInfo(getEditorAccessRights());
+
+        Assertions.assertFalse(
+            PublicationPermissionStrategy.fromRequestInfo(publication, RequestUtil.createAnyUserInstanceFromRequest(
+                    requestInfo, identityServiceClient))
+                .hasPermission(PublicationPermission.UPDATE));
+    }
+
     private static Function<AccessRight, String> getCognitoGroup(URI institutionId) {
         return accessRight -> accessRight.toPersistedString() + AT + institutionId.toString();
     }
@@ -418,18 +461,9 @@ class PublicationPermissionStrategyTest {
         return accessRights;
     }
 
-    private RequestInfo createRequestInfo(String username, URI institutionId) throws JsonProcessingException {
-        return createRequestInfo(username, institutionId, new ArrayList<>());
-    }
-
     private RequestInfo createRequestInfo(String username, URI institutionId, URI cristinId)
         throws JsonProcessingException {
         return createRequestInfo(username, institutionId, new ArrayList<>(), cristinId);
-    }
-
-    private RequestInfo createRequestInfo(String username, URI institutionId, List<AccessRight> accessRights)
-        throws JsonProcessingException {
-        return createRequestInfo(username, institutionId, accessRights, null);
     }
 
     private RequestInfo createRequestInfo(String username, URI institutionId, List<AccessRight> accessRights,
@@ -452,6 +486,23 @@ class PublicationPermissionStrategyTest {
         if (nonNull(cristinId)) {
             claims.put(INJECT_CRISTIN_ID_CLAIM, cristinId.toString());
         }
+
+        var requestInfo = new RequestInfo();
+        requestInfo.setRequestContext(getRequestContextForClaim(claims));
+
+        return requestInfo;
+    }
+
+    private RequestInfo createThirdPartyRequestInfo(List<AccessRight> accessRights)
+        throws JsonProcessingException {
+
+        var cognitoGroups = accessRights.stream().map(getCognitoGroup(
+            PublicationPermissionStrategyTest.EXTERNAL_CLIENT_CUSTOMER_URI)).toList();
+
+        var claims = new HashMap<String, String>();
+        claims.put(INJECT_COGNITO_GROUPS_CLAIM, String.join(",", cognitoGroups));
+        claims.put(ISS_CLAIM, EXTERNAL_ISSUER);
+        claims.put(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID);
 
         var requestInfo = new RequestInfo();
         requestInfo.setRequestContext(getRequestContextForClaim(claims));
