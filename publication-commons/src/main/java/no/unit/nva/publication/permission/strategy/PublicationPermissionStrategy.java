@@ -20,7 +20,7 @@ public final class PublicationPermissionStrategy {
         );
     }
 
-    public static PublicationPermissionStrategy fromRequestInfo(Publication publication, UserInstance userInstance) {
+    public static PublicationPermissionStrategy create(Publication publication, UserInstance userInstance) {
         return new PublicationPermissionStrategy(publication, userInstance);
     }
 
