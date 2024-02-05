@@ -1,7 +1,6 @@
 package no.unit.nva.publication;
 
 import static nva.commons.core.attempt.Try.attempt;
-import java.net.URI;
 import java.util.Optional;
 import java.util.UUID;
 import no.unit.nva.clients.IdentityServiceClient;
