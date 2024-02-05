@@ -40,6 +40,14 @@ public class ImportCandidatePresignedUrlHandler extends ApiGatewayHandler<Void, 
         this.importCandidateService = importCandidateService;
     }
 
+    @JacocoGenerated
+    public static S3Presigner defaultS3Presigner() {
+        return S3Presigner.builder()
+                   .region(new Environment().readEnvOpt("AWS_REGION").map(Region::of).orElse(Region.EU_WEST_1))
+                   .credentialsProvider(DefaultCredentialsProvider.create())
+                   .build();
+    }
+
     @Override
     protected PresignedUrl processInput(Void unused, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
@@ -56,32 +64,22 @@ public class ImportCandidatePresignedUrlHandler extends ApiGatewayHandler<Void, 
         return HttpURLConnection.HTTP_OK;
     }
 
-    private void validateExistence(SortableIdentifier importCandidateIdentifier, UUID fileIdentifier)
-        throws NotFoundException {
-        var importCandidate = importCandidateService.getImportCandidateByIdentifier(importCandidateIdentifier);
-        if (fileExists(importCandidate, fileIdentifier)) {
-            return;
-        }
-        throw new NotFoundException(
-            String.format(IMPORT_CANDIDATE_MISSES_FILE_EXCEPTION_MESSAGE,
-                          importCandidate.getIdentifier().toString(),
-                          fileIdentifier.toString()));
-    }
-
-    private static boolean fileExists(ImportCandidate importCandidate, UUID fileIdentifier) {
+    private static boolean fileDoesNotExists(ImportCandidate importCandidate, UUID fileIdentifier) {
         return importCandidate.getAssociatedArtifacts()
                    .stream()
                    .filter(File.class::isInstance)
                    .map(File.class::cast)
                    .map(File::getIdentifier)
-                   .anyMatch(identifier -> identifier.equals(fileIdentifier));
+                   .noneMatch(identifier -> identifier.equals(fileIdentifier));
     }
 
-    @JacocoGenerated
-    public static S3Presigner defaultS3Presigner() {
-        return S3Presigner.builder()
-                   .region(new Environment().readEnvOpt("AWS_REGION").map(Region::of).orElse(Region.EU_WEST_1))
-                   .credentialsProvider(DefaultCredentialsProvider.create())
-                   .build();
+    private void validateExistence(SortableIdentifier importCandidateIdentifier, UUID fileIdentifier)
+        throws NotFoundException {
+        var importCandidate = importCandidateService.getImportCandidateByIdentifier(importCandidateIdentifier);
+        if (fileDoesNotExists(importCandidate, fileIdentifier)) {
+            throw new NotFoundException(String.format(IMPORT_CANDIDATE_MISSES_FILE_EXCEPTION_MESSAGE,
+                                                      importCandidate.getIdentifier().toString(),
+                                                      fileIdentifier.toString()));
+        }
     }
 }
