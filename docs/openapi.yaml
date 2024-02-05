@@ -731,6 +731,49 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Problem'
+  /import-candidate/{importCandidateIdentifier}/file/{fileIdentifier}:
+    get:
+      summary: Fetch pre-signed url for import candidate file
+      parameters:
+        - in: path
+          name: importCandidateIdentifier
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: UUID identifier of the import candidate.
+        - in: path
+          name: fileIdentifier
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: UUID identifier of the file to fetch.
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ImportCandidatePresignedUrlHandler.Arn}:live/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PresignedUrl'
+        '404':
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        '502':
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
 
 components:
   schemas:
@@ -1111,6 +1154,16 @@ components:
     PublicationContext:
       type: object
       description: Publication context
+    PresignedUrl:
+      description: PresignedUrl response
+      type: object
+      properties:
+        fileIdentifier:
+          type: string
+        uri:
+          type: string
+        expires:
+          type: string
   securitySchemes:
     CognitoUserPool:
       type: apiKey
