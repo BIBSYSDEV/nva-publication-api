@@ -36,5 +36,5 @@ test {
     environment "AWS_REGION", "eu-west-1"
     environment "API_HOST", "api.localhost.nva.aws.unit.no"
     environment "BACKEND_CLIENT_SECRET_NAME", "someSecret"
-    environment "BACKEND_CLIENT_AUTH_URL", "someAuthUrl"
+    environment "BACKEND_CLIENT_AUTH_URL", "https://auth.example.com"
 }

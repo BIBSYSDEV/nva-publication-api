@@ -1,7 +1,6 @@
 package no.unit.nva.expansion.model;
 
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
-import static no.unit.nva.expansion.model.ExpandedImportCandidateOrganization.CONTENT_TYPE;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.ID_JSON_PTR;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
@@ -12,13 +11,14 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.net.http.HttpResponse;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
@@ -132,15 +132,47 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             .map(Organization.class::cast)
             .forEach(this::mockOrganizations);
         var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
+        assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
+        this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
+    }
+
+    @ParameterizedTest()
+    @MethodSource("importCandidateContextTypeProvider")
+    void shouldExpandImportCandidateSuccessfullyWhenBadResponseFromCustomerApi(PublicationContext publicationContext) {
+        var importCandidate = randomImportCandidate(publicationContext);
+        importCandidate.getEntityDescription().getContributors().stream()
+            .map(Contributor::getAffiliations)
+            .flatMap(List::stream)
+            .filter(Organization.class::isInstance)
+            .map(Organization.class::cast)
+            .forEach(this::mockOrganizationCristinResponseOnly);
+        var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
 
         assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
         this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
     }
 
+    @SuppressWarnings("unchecked")
     private void mockOrganizations(Organization org) {
-        when(uriRetriever.getRawContent(org.getId(), CONTENT_TYPE)).
-            thenReturn(Optional.of(new CristinOrganization(org.getId(), null, null, null, null,
-                                                           Map.of("no", "label")).toJsonString()));
+        when(uriRetriever.getRawContent(any(), anyString())).
+            thenReturn(Optional.of(new CristinOrganization(org.getId(), null, null, List.of(randomCristinOrg()),
+                                                           null, Map.of()).toJsonString()));
+        var response = (HttpResponse<String>) mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(200);
+        when(uriRetriever.fetchResponse(any(), anyString())).thenReturn(Optional.of(response));
+
+    }
+
+    private void mockOrganizationCristinResponseOnly(Organization org) {
+        when(uriRetriever.getRawContent(any(), anyString())).
+            thenReturn(Optional.of(new CristinOrganization(org.getId(), null, null, List.of(randomCristinOrg()),
+                                                           null, Map.of()).toJsonString()));
+
+    }
+
+    private CristinOrganization randomCristinOrg() {
+        var partOf = List.of(new CristinOrganization(randomUri(), null, null, List.of(), null, Map.of()));
+        return new CristinOrganization(randomUri(), randomUri(), randomString(), partOf, randomString(), Map.of());
     }
 
     public ImportCandidate randomImportCandidate(PublicationContext publicationContext) {

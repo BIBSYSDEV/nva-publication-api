@@ -1,11 +1,11 @@
 package no.unit.nva.publication.create;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.publication.CustomerApiStubs.stubCustomSuccessfulCustomerResponse;
+import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypes;
+import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseNotFound;
+import static no.unit.nva.publication.CustomerApiStubs.stubSuccessfulCustomerResponseAllowingFilesForNoTypes;
+import static no.unit.nva.publication.CustomerApiStubs.stubSuccessfulTokenResponse;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.publication.create.CreatePublicationHandler.API_HOST;
@@ -26,8 +26,6 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -47,12 +45,8 @@ import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.time.Clock;
-import java.util.Base64;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.api.PublicationResponse;
@@ -80,6 +74,8 @@ import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
+import nva.commons.core.paths.UriWrapper;
+import org.hamcrest.core.IsEqual;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.junit.jupiter.api.BeforeEach;
@@ -88,7 +84,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.ArgumentMatcher;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.Problem;
 
@@ -96,43 +91,27 @@ import org.zalando.problem.Problem;
 @WireMockTest(httpsEnabled = true)
 class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
-    private static final String MY_ACCESS_TOKEN = "MY_ACCESS_TOKEN";
-    private static final String FAKE_TOKEN_RESPONSE = String.format("""
-                                                                        {
-                                                                            "access_token": "%s"
-                                                                        }
-                                                                        """, MY_ACCESS_TOKEN);
-
-    private static final Set<String> INVALID_INSTANCE_TYPES = Set.of(
-        "FeatureArticle",
-        "JournalArticle",
-        "JournalInterview",
-        "BookAbstracts",
-        "BookMonograph",
-        "ChapterArticle"
-    );
-
     public static final String NVA_UNIT_NO = "nva.unit.no";
     public static final String WILDCARD = "*";
     public static final Javers JAVERS = JaversBuilder.javers().build();
     public static final Clock CLOCK = Clock.systemDefaultZone();
     public static final String ASSOCIATED_ARTIFACTS_FIELD = "associatedArtifacts";
-    private String testUserName;
-    private URI customerId;
-    private CreatePublicationHandler handler;
-    private ByteArrayOutputStream outputStream;
-    private final Context context = new FakeContext();
-    private Publication samplePublication;
-    private URI topLevelCristinOrgId;
-
+    private static final String CUSTOMER_API_NOT_RESPONDING_OR_NOT_RESPONDING_AS_EXPECTED
+        = "Customer API not responding or not responding as expected!";
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
     private static final String EXTERNAL_CLIENT_ID = "external-client-id";
+    private final Context context = new FakeContext();
+    private String testUserName;
+    private CreatePublicationHandler handler;
+    private ByteArrayOutputStream outputStream;
+    private Publication samplePublication;
+    private URI topLevelCristinOrgId;
     private GetExternalClientResponse getExternalClientResponse;
-    private HttpClient configClient;
     private ResourceService resourceService;
     private Environment environmentMock;
     private IdentityServiceClient identityServiceClient;
     private FakeSecretsManagerClient secretsManagerClient;
+    private URI customerId;
 
     public static Stream<Exception> httpClientExceptionsProvider() {
         return Stream.of(new ConnectException(), new InterruptedException());
@@ -145,53 +124,47 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     public void setUp(WireMockRuntimeInfo wireMockRuntimeInfo) throws NotFoundException {
         super.init();
 
-        customerId = URI.create(wireMockRuntimeInfo.getHttpsBaseUrl() + "/customer/" + UUID.randomUUID());
-
-        stubCustomerRequestWhereAllTypesAllowFiles(customerId);
-
-        stubTokenRequest();
-
-        getExternalClientResponse = new GetExternalClientResponse(EXTERNAL_CLIENT_ID,
-                                                                  "someone@123",
-                                                                  customerId,
-                                                                  randomUri());
-
         environmentMock = mock(Environment.class);
         identityServiceClient = mock(IdentityServiceClient.class);
 
-        lenient().when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
         when(environmentMock.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
         when(environmentMock.readEnv(API_HOST)).thenReturn(NVA_UNIT_NO);
-        when(environmentMock.readEnv("BACKEND_CLIENT_AUTH_URL")).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
-        when(environmentMock.readEnv("BACKEND_CLIENT_SECRET_NAME")).thenReturn("secret");
+        lenient().when(environmentMock.readEnv("BACKEND_CLIENT_SECRET_NAME")).thenReturn("secret");
+
+        var baseUrl = URI.create(wireMockRuntimeInfo.getHttpsBaseUrl());
+        lenient().when(environmentMock.readEnv("BACKEND_CLIENT_AUTH_URL"))
+            .thenReturn(baseUrl.toString());
 
         resourceService = new ResourceService(client, CLOCK);
-        configClient = WiremockHttpClient.create();
 
         secretsManagerClient = new FakeSecretsManagerClient();
         var credentials = new BackendClientCredentials("id", "secret");
         secretsManagerClient.putPlainTextSecret("secret", credentials.toString());
 
+        var httpClient = WiremockHttpClient.create();
+
         handler = new CreatePublicationHandler(resourceService,
                                                environmentMock,
                                                identityServiceClient,
-                                               configClient,
-                                               secretsManagerClient);
+                                               secretsManagerClient,
+                                               httpClient);
         outputStream = new ByteArrayOutputStream();
-        samplePublication = getRandomPublicationOfValidType();
+        samplePublication = randomPublication();
         testUserName = samplePublication.getResourceOwner().getOwner().getValue();
         topLevelCristinOrgId = randomUri();
-    }
+        customerId = UriWrapper.fromUri(wireMockRuntimeInfo.getHttpsBaseUrl())
+                         .addChild("customer", UUID.randomUUID().toString())
+                         .getUri();
 
-    private static void stubTokenRequest() {
-        stubFor(post(urlEqualTo("/oauth2/token"))
-                    .withHeader("Authorization",
-                                WireMock.equalTo(
-                                    "Basic " + Base64.getUrlEncoder().encodeToString("id:secret".getBytes())))
-                    .withHeader("Content-Type", WireMock.equalTo("application/x-www-form-urlencoded"))
-                    .withFormParam("grant_type", WireMock.equalTo("client_credentials"))
-                    .willReturn(aResponse().withBody(FAKE_TOKEN_RESPONSE).withStatus(200))
-        );
+        getExternalClientResponse = new GetExternalClientResponse(EXTERNAL_CLIENT_ID,
+                                                                  "someone@123",
+                                                                  customerId,
+                                                                  randomUri());
+        lenient().when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
+
+        stubSuccessfulTokenResponse();
+
+        stubCustomerResponseAcceptingFilesForAllTypes(customerId);
     }
 
     @Test
@@ -272,7 +245,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var actual = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
         var body = actual.getBodyObject(Problem.class);
-        assertThat(body.getDetail(), is(equalTo(NOT_PUBLISHABLE)));
+        assertThat(body.getDetail(), is(IsEqual.equalTo(NOT_PUBLISHABLE)));
     }
 
     @Test
@@ -289,14 +262,14 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var expectedOwnerAffiliation = getExternalClientResponse.getCristinUrgUri();
         var expectedPublisherId = getExternalClientResponse.getCustomerUri();
 
-        assertThat(publicationResponse.getResourceOwner().getOwner().getValue(), is(equalTo(expectedOwner)));
+        assertThat(publicationResponse.getResourceOwner().getOwner().getValue(), is(IsEqual.equalTo(expectedOwner)));
         assertThat(publicationResponse.getResourceOwner().getOwnerAffiliation(), is(equalTo(expectedOwnerAffiliation)));
         assertThat(publicationResponse.getPublisher().getId(), is(equalTo(expectedPublisherId)));
     }
 
     @Test
     void shouldReturnsResourceWithFilSetWhenRequestContainsFileSet() throws Exception {
-        var publication = getRandomPublicationOfValidType();
+        var publication = randomPublication();
         var associatedArtifactsInPublication = publication.getAssociatedArtifacts();
         var request = createEmptyPublicationRequest();
         request.setAssociatedArtifacts(associatedArtifactsInPublication);
@@ -311,17 +284,6 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var publicationResponse = actual.getBodyObject(PublicationResponse.class);
         assertThat(publicationResponse.getAssociatedArtifacts(), is(equalTo(associatedArtifactsInPublication)));
         assertExistenceOfMinimumRequiredFields(publicationResponse);
-    }
-
-    private static Publication getRandomPublicationOfValidType() {
-        var candidate = (Publication) null;
-        do {
-            candidate = randomPublication();
-        } while (INVALID_INSTANCE_TYPES.contains(candidate.getEntityDescription()
-                                                     .getReference()
-                                                     .getPublicationInstance()
-                                                     .getInstanceType()));
-        return candidate;
     }
 
     @Test
@@ -374,30 +336,6 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
     }
 
-    private void stubCustomerRequestWhereAllTypesAllowFiles(URI customerUri) {
-        stubCustomerRequestWithResponse(customerUri, allInstanceTypes());
-    }
-
-    private void stubCustomerRequestWhereNoTypesAllowFiles(URI customerUri) {
-        stubCustomerRequestWithResponse(customerUri, noInstanceTypes());
-    }
-
-    private void stubCustomerRequestWithResponse(URI customerUri, String response) {
-        stubFor(get(urlEqualTo(customerUri.getPath()))
-                    .withHeader("Accept", WireMock.equalTo("application/json"))
-                    .withHeader("Authorization", WireMock.equalTo("Bearer " + MY_ACCESS_TOKEN))
-                    .willReturn(aResponse().withBody(response).withStatus(200))
-        );
-    }
-
-    private String allInstanceTypes() {
-        return IoUtils.stringFromResources(Path.of("customerResponseFileUploadAllowedForAllTypes.json"));
-    }
-
-    private String noInstanceTypes() {
-        return IoUtils.stringFromResources(Path.of("customerResponseFileUploadAllowedForNoTypes.json"));
-    }
-
     @Test
     void shouldReturnUnauthorizedWhenRequestIsFromExternalClientAndClientIdIsMissing() throws IOException {
         var event = requestFromExternalClientWithoutClientId(createEmptyPublicationRequest());
@@ -420,80 +358,76 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     @MethodSource("httpClientExceptionsProvider")
     void shouldReturnBadGatewayIfCustomerApiHttpClientThrowsException(Exception exceptionToThrow)
         throws IOException, InterruptedException {
-        WireMock.reset();
-        configClient = mock(HttpClient.class);
 
-        doThrow(exceptionToThrow)
-            .when(configClient)
-            .send(argThat(pathStartsWith("/customer/")), any());
+        var httpClient = mock(HttpClient.class);
 
-        mockTokenResponse(configClient);
+        doThrow(exceptionToThrow).when(httpClient).send(any(), any());
 
         handler = new CreatePublicationHandler(resourceService,
                                                environmentMock,
                                                identityServiceClient,
-                                               configClient,
-                                               secretsManagerClient);
+                                               secretsManagerClient,
+                                               httpClient);
 
         var event = prepareRequestWithFileForTypeWhereNotAllowed();
+
         handler.handleRequest(event, outputStream, context);
+
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_GATEWAY)));
+
         var body = response.getBodyObject(Problem.class);
-        assertThat(body.getDetail(), containsString("Gateway not responding or not responding as expected!"));
+        assertThat(body.getDetail(), containsString(CUSTOMER_API_NOT_RESPONDING_OR_NOT_RESPONDING_AS_EXPECTED));
     }
 
     @Test
     void shouldReturnBadGatewayIfCustomerApiDoesNotRespondWithSuccessOk() throws IOException, InterruptedException {
         var event = prepareRequestWithFileForTypeWhereNotAllowed();
+
         WireMock.reset();
-        configClient = mock(HttpClient.class);
 
-        mockTokenResponse(configClient);
-
-        var configResponse = mock(HttpResponse.class);
-        when(configResponse.statusCode()).thenReturn(404);
-
-        doReturn(configResponse)
-            .when(configClient)
-            .send(argThat(pathStartsWith("/customer/")), any());
-
-        handler = new CreatePublicationHandler(resourceService,
-                                               environmentMock,
-                                               identityServiceClient,
-                                               configClient,
-                                               secretsManagerClient);
+        stubSuccessfulTokenResponse();
+        stubCustomerResponseNotFound(customerId);
 
         handler.handleRequest(event, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_GATEWAY)));
         var body = response.getBodyObject(Problem.class);
-        assertThat(body.getDetail(), containsString("Gateway not responding or not responding as expected!"));
+        assertThat(body.getDetail(), containsString(CUSTOMER_API_NOT_RESPONDING_OR_NOT_RESPONDING_AS_EXPECTED));
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"", "{}", "[]", "{\"allowFileUploadForTypes\": {}}"})
-    void shouldReturnBadRequestIfMalformedConfigReceivedFromCustomerApi(String customerResponse) throws IOException {
+    @ValueSource(strings = {"", "[]", "{\"allowFileUploadForTypes\": {}}"})
+    void shouldReturnBadRequestIfMalformedConfigReceivedFromCustomerApi(String customerResponse)
+        throws IOException {
         var event = prepareRequestWithFileForTypeWhereNotAllowed();
         WireMock.reset();
-        stubTokenRequest();
-        stubCustomerRequestWithResponse(customerId, customerResponse);
+
+        stubSuccessfulTokenResponse();
+        stubCustomSuccessfulCustomerResponse(customerId, customerResponse);
+
         handler.handleRequest(event, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_GATEWAY)));
+
         var body = response.getBodyObject(Problem.class);
-        assertThat(body.getDetail(), containsString("Gateway not responding or not responding as expected!"));
+        assertThat(body.getDetail(), containsString(CUSTOMER_API_NOT_RESPONDING_OR_NOT_RESPONDING_AS_EXPECTED));
     }
 
     @Test
-    void shouldReturnBadRequestIfProvidingOneOrMoreFilesWhenNotAllowedInCustomerConfiguration() throws IOException {
+    void shouldReturnBadRequestIfProvidingOneOrMoreFilesWhenNotAllowedInCustomerConfiguration()
+        throws IOException {
         var event = prepareRequestWithFileForTypeWhereNotAllowed();
         WireMock.reset();
-        stubTokenRequest();
-        stubCustomerRequestWhereNoTypesAllowFiles(customerId);
+
+        stubSuccessfulTokenResponse();
+        stubSuccessfulCustomerResponseAllowingFilesForNoTypes(customerId);
+
         handler.handleRequest(event, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
+
         var body = response.getBodyObject(Problem.class);
         assertThat(body.getDetail(), containsString("Files not allowed for instance type"));
     }
@@ -530,15 +464,6 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
     }
 
-    private static void mockTokenResponse(HttpClient httpClient) throws IOException, InterruptedException {
-        var tokenResponse = mock(HttpResponse.class);
-        when(tokenResponse.body()).thenReturn(FAKE_TOKEN_RESPONSE);
-
-        doReturn(tokenResponse)
-            .when(httpClient)
-            .send(argThat(pathStartsWith("/oauth2/")), any());
-    }
-
     private static String bodyWithNoReference() {
         return """
             {
@@ -562,6 +487,18 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
             """;
     }
 
+    private static void
+    updateCreatePublicationRequestWithInvalidAssociatedArtifact(ObjectNode publicationRequestJsonObject)
+        throws JsonProcessingException {
+        var associatedArtifacts = (ArrayNode) publicationRequestJsonObject.get(ASSOCIATED_ARTIFACTS_FIELD);
+        associatedArtifacts.add(createNullAssociatedArtifact());
+    }
+
+    private static JsonNode createNullAssociatedArtifact() throws JsonProcessingException {
+        var nullObject = dtoObjectMapper.writeValueAsString(new NullAssociatedArtifact());
+        return dtoObjectMapper.readTree(nullObject);
+    }
+
     private InputStream prepareRequestWithFileForTypeWhereNotAllowed() throws JsonProcessingException {
         var publicationRequestJsonObject = createCreatePublicationRequestAsJsonObject();
         return createPublicationRequestFromString(dtoObjectMapper.writeValueAsString(publicationRequestJsonObject));
@@ -573,22 +510,10 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         return createPublicationRequestFromString(dtoObjectMapper.writeValueAsString(publicationRequestJsonObject));
     }
 
-    private static void
-    updateCreatePublicationRequestWithInvalidAssociatedArtifact(ObjectNode publicationRequestJsonObject)
-        throws JsonProcessingException {
-        var associatedArtifacts = (ArrayNode) publicationRequestJsonObject.get(ASSOCIATED_ARTIFACTS_FIELD);
-        associatedArtifacts.add(createNullAssociatedArtifact());
-    }
-
     private ObjectNode createCreatePublicationRequestAsJsonObject() throws JsonProcessingException {
         var publicationRequest =
             dtoObjectMapper.writeValueAsString(CreatePublicationRequest.fromPublication(samplePublication));
         return (ObjectNode) dtoObjectMapper.readTree(publicationRequest);
-    }
-
-    private static JsonNode createNullAssociatedArtifact() throws JsonProcessingException {
-        var nullObject = dtoObjectMapper.writeValueAsString(new NullAssociatedArtifact());
-        return dtoObjectMapper.readTree(nullObject);
     }
 
     private CreatePublicationRequest createEmptyPublicationRequest() {
@@ -639,7 +564,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(publicationResponse.getIdentifier(), is(not(nullValue())));
         assertThat(publicationResponse.getIdentifier(), is(instanceOf(SortableIdentifier.class)));
         assertThat(publicationResponse.getCreatedDate(), is(not(nullValue())));
-        assertThat(publicationResponse.getResourceOwner().getOwner().getValue(), is(equalTo(testUserName)));
+        assertThat(publicationResponse.getResourceOwner().getOwner().getValue(), is(IsEqual.equalTo(testUserName)));
         assertThat(publicationResponse.getResourceOwner().getOwnerAffiliation(), is(equalTo(topLevelCristinOrgId)));
         assertThat(publicationResponse.getPublisher().getId(), is(equalTo(customerId)));
     }
@@ -721,9 +646,5 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                                PublicationInstanceBuilder.randomPublicationInstance(DegreeMaster.class))
                            .build())
                    .build();
-    }
-
-    private static ArgumentMatcher<HttpRequest> pathStartsWith(final String path) {
-        return argument -> argument.uri().getPath().startsWith(path);
     }
 }

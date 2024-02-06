@@ -34,6 +34,7 @@ import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.events.bodies.ImportCandidateDeleteEvent;
+import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
@@ -55,7 +56,7 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private ByteArrayOutputStream output;
     private DeleteImportCandidateEventConsumer handler;
-    private UriRetriever uriRetriever;
+    private RawContentRetriever uriRetriever;
 
     @BeforeEach
     public void init() {
