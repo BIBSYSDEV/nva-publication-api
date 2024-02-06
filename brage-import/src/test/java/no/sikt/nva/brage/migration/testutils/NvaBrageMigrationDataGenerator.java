@@ -278,6 +278,11 @@ public class NvaBrageMigrationDataGenerator {
             return this;
         }
 
+        public Builder withSubjectCode(String value) {
+            this.subjectCode = value;
+            return this;
+        }
+
         public String getSeriesTitle() {
             return seriesTitle;
         }

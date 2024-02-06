@@ -6,6 +6,8 @@ import java.util.Set;
 import no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.exceptions.InvalidIsbnException;
+import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.testing.PublicationGenerator;
 import nva.commons.core.attempt.Try;
 
@@ -54,7 +56,7 @@ public class ScenarioContext {
         mergeAttempt = attempt(this::combinePublications);
     }
 
-    private Publication combinePublications() {
+    private Publication combinePublications() throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var merger = new CristinImportPublicationMerger(nvaPublication, bragePublication);
         return merger.mergePublications();
     }
