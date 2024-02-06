@@ -12,6 +12,7 @@ import static java.util.UUID.randomUUID;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
+import static no.unit.nva.publication.fetch.FetchPublicationHandler.DO_NOT_REDIRECT_QUERY_PARAM;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ENV_NAME_NVA_FRONTEND_DOMAIN;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
@@ -95,6 +96,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     public static final String DATACITE_XML_RESOURCE_ELEMENT = "<resource xmlns=\"http://datacite"
                                                                + ".org/schema/kernel-4\">";
     public static final String PUBLISHER_NAME = "publisher name";
+    private static final Map<String, String> NO_QUERY_PARAMS = Map.of();
     private static final String TEXT_ANY = "text/*";
     private static final String TEXT_HTML = "text/html";
     private static final String APPLICATION_XHTML = "application/xhtml+xml";
@@ -148,7 +150,9 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         var headers = Map.of(HttpHeaders.ACCEPT, MediaTypes.APPLICATION_DATACITE_XML.toString());
         createCustomerMock(publication.getPublisher());
-        fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier, headers), output, context);
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier, headers, NO_QUERY_PARAMS),
+                                              output,
+                                              context);
         var gatewayResponse = parseHandlerResponse();
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertTrue(gatewayResponse.getHeaders().containsKey(CONTENT_TYPE));
@@ -165,7 +169,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         var identifier = publication.getIdentifier().toString();
         var headers = Map.of(ACCEPT, MediaTypes.SCHEMA_ORG.toString());
-        fetchPublicationHandler.handleRequest(generateHandlerRequest(identifier, headers), output, context);
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(identifier, headers, NO_QUERY_PARAMS), output,
+                                              context);
         var gatewayResponse = parseHandlerResponse();
         var contentType = gatewayResponse.getHeaders().get(CONTENT_TYPE);
         assertThat(contentType, is(equalTo(MediaTypes.SCHEMA_ORG.toString())));
@@ -186,7 +191,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         var identifier = publication.getIdentifier().toString();
         var headers = Map.of(ACCEPT, acceptHeaderValue);
-        fetchPublicationHandler.handleRequest(generateHandlerRequest(identifier, headers), output, context);
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(identifier, headers, NO_QUERY_PARAMS), output,
+                                              context);
 
         var valueType = restApiMapper.getTypeFactory()
                             .constructParametricType(
@@ -314,6 +320,28 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void handlerReturnsGoneExceptionWhenQueryParameterDoNotRedirectIsSuppliedAndThePublicationIsADuplicate()
+        throws ApiGatewayException, IOException {
+        var duplicateOfIdentifier =
+            UriWrapper.fromUri(randomUri()).addChild(SortableIdentifier.next().toString()).getUri();
+        var publication = createDeletedPublicationWithDuplicate(duplicateOfIdentifier);
+        var headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
+        var queryParams = Map.of(DO_NOT_REDIRECT_QUERY_PARAM, "true");
+        var handlerRequest = generateHandlerRequest(publication.getIdentifier().toString(),
+                                                    headers,
+                                                    queryParams);
+        fetchPublicationHandler.handleRequest(handlerRequest,
+                                              output,
+                                              context);
+        var expectedTombstone = publication.copy().withAssociatedArtifacts(List.of()).build();
+        var gatewayResponse = parseFailureResponse();
+        var problem = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(), Problem.class);
+        var actualPublication = JsonUtils.dtoObjectMapper.convertValue(problem.getParameters().get(RESOURCE),
+                                                                       Publication.class);
+        assertThat(actualPublication, is(equalTo(expectedTombstone)));
+    }
+
+    @Test
     void handlerReturnsNotFoundWhenRequestingPublicationWithPublicationStatusNotSupportedByHandler()
         throws ApiGatewayException, IOException {
         var publication = createDraftForDeletion();
@@ -397,18 +425,21 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         return restApiMapper.readValue(output.toString(), PARAMETERIZED_GATEWAY_RESPONSE_TYPE);
     }
 
-    private InputStream generateHandlerRequest(String publicationIdentifier, Map<String, String> headers)
+    private InputStream generateHandlerRequest(String publicationIdentifier,
+                                               Map<String, String> headers,
+                                               Map<String, String> queryParams)
         throws JsonProcessingException {
         Map<String, String> pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier);
         return new HandlerRequestBuilder<InputStream>(restApiMapper)
                    .withHeaders(headers)
                    .withPathParameters(pathParameters)
+                   .withQueryParameters(queryParams)
                    .build();
     }
 
     private InputStream generateHandlerRequest(String publicationIdentifier) throws JsonProcessingException {
         Map<String, String> headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
-        return generateHandlerRequest(publicationIdentifier, headers);
+        return generateHandlerRequest(publicationIdentifier, headers, NO_QUERY_PARAMS);
     }
 
     private InputStream generateHandlerRequestWithMissingPathParameter() throws JsonProcessingException {
