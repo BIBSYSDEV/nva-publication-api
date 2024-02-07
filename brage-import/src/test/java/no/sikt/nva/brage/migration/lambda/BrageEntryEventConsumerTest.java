@@ -93,9 +93,12 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.UnconfirmedCourse;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.contexttypes.Degree;
+import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.artistic.music.InvalidIsmnException;
 import no.unit.nva.model.instancetypes.artistic.music.Ismn;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
@@ -113,6 +116,7 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -745,7 +749,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var cristinIdentifier = randomString();
         var existingPublication = randomPublication().copy()
                                       .withAdditionalIdentifiers(
-                                          Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)))
+                                          Set.of(cristinAdditionalIdentifier(cristinIdentifier)))
                                       .build();
         Resource.fromPublication(existingPublication)
             .persistNew(resourceService, UserInstance.fromPublication(existingPublication));
@@ -756,6 +760,46 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
         assertThat(actualPublication.getEntityDescription().getReference().getPublicationContext(),
                    is(not(nullValue())));
+    }
+
+    @Test
+    void shouldMergePublicationContextAndUseCourseFromBragePublicationWhenPublicationContextIsDegree()
+        throws IOException, BadRequestException, InvalidUnconfirmedSeriesException {
+        var cristinIdentifier = randomString();
+        var publication = randomPublication();
+        var existingPublication = publication.copy()
+                                      .withAdditionalIdentifiers(Set.of(cristinAdditionalIdentifier(cristinIdentifier)))
+                                      .withEntityDescription(entityDescriptionWithPublicationContextDegree(publication))
+                                      .build();
+        Resource.fromPublication(existingPublication)
+            .persistNew(resourceService, UserInstance.fromPublication(existingPublication));
+        var subjectCode = randomString();
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_MASTER)
+                                 .withCristinIdentifier(cristinIdentifier)
+                                 .withSubjectCode(subjectCode)
+                                 .build();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+
+        var actualPublicationContext = ((Degree) actualPublication.getEntityDescription()
+                                      .getReference()
+                                      .getPublicationContext());
+
+        assertThat(((UnconfirmedCourse) actualPublicationContext.getCourse()).code(), is(equalTo(subjectCode)));
+    }
+
+    private static no.unit.nva.model.EntityDescription entityDescriptionWithPublicationContextDegree(Publication publication)
+        throws InvalidUnconfirmedSeriesException {
+        var reference = publication.getEntityDescription().getReference();
+        var degree = new Degree(null, null, null, null, List.of(), null);
+        reference.setPublicationContext(degree);
+        publication.getEntityDescription().setReference(reference);
+        return publication.getEntityDescription();
+    }
+
+    @NotNull
+    private static AdditionalIdentifier cristinAdditionalIdentifier(String cristinIdentifier) {
+        return new AdditionalIdentifier("Cristin", cristinIdentifier);
     }
 
     @Test
@@ -1067,7 +1111,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var cristinIdentifier = randomString();
         var existingPublication = randomPublication().copy()
                                       .withAdditionalIdentifiers(
-                                          Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)))
+                                          Set.of(cristinAdditionalIdentifier(cristinIdentifier)))
                                       .build();
         Resource.fromPublication(existingPublication)
             .persistNew(resourceService, UserInstance.fromPublication(existingPublication));
@@ -1233,7 +1277,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private Publication createCristinPublication(String cristinIdentifier) throws BadRequestException {
         var publication = randomPublication().copy()
                               .withAdditionalIdentifiers(
-                                  Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)))
+                                  Set.of(cristinAdditionalIdentifier(cristinIdentifier)))
                               .withAssociatedArtifacts(List.of())
                               .build();
         return Resource.fromPublication(publication)
@@ -1267,7 +1311,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         throws BadRequestException {
         var publication = randomPublication().copy()
                               .withAdditionalIdentifiers(
-                                  Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)))
+                                  Set.of(cristinAdditionalIdentifier(cristinIdentifier)))
                               .withHandle(handle)
                               .build();
         return Resource.fromPublication(publication)

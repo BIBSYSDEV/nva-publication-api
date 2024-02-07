@@ -61,7 +61,6 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     public static final String DUPLICATE_PUBLICATIONS_MESSAGE =
         "More than one publication with this cristin identifier already exists";
     private static final int MAX_SLEEP_TIME = 100;
-    private static final int SINGLE_EXPECTED_RECORD = 0;
     private static final String S3_URI_TEMPLATE = "s3://%s/%s";
     private static final String ERROR_SAVING_BRAGE_IMPORT = "Error saving brage import for record with object key: ";
     private static final Logger logger = LoggerFactory.getLogger(BrageEntryEventConsumer.class);
@@ -124,7 +123,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                 return false;
             }
 
-            var firstPublicationHitByDoi = publicationsByDoi.get(0);
+            var firstPublicationHitByDoi = publicationsByDoi.getFirst();
 
             var upToDateVersionOfPublication =
                 resourceService.getPublicationByIdentifier(firstPublicationHitByDoi.getIdentifier());
@@ -226,7 +225,8 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                    .orElseThrow();
     }
 
-    private Publication updatedPublication(Publication publication, Publication existingPublication) {
+    private Publication updatedPublication(Publication publication, Publication existingPublication)
+        throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var cristinImportPublicationMerger = new CristinImportPublicationMerger(existingPublication, publication);
         return cristinImportPublicationMerger.mergePublications();
     }
@@ -353,7 +353,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private String timePath(S3Event event) {
-        return event.getRecords().get(SINGLE_EXPECTED_RECORD).getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
+        return event.getRecords().getFirst().getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
     }
 
     private Publication parseBrageRecord(S3Event event)
@@ -387,14 +387,14 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private String extractInstitutionName(S3Event event) {
-        return event.getRecords().get(SINGLE_EXPECTED_RECORD).getS3().getObject().getKey().split("/")[0];
+        return event.getRecords().getFirst().getS3().getObject().getKey().split("/")[0];
     }
 
     private String extractObjectKey(S3Event event) {
-        return event.getRecords().get(SINGLE_EXPECTED_RECORD).getS3().getObject().getKey();
+        return event.getRecords().getFirst().getS3().getObject().getKey();
     }
 
     private String extractBucketName(S3Event event) {
-        return event.getRecords().get(SINGLE_EXPECTED_RECORD).getS3().getBucket().getName();
+        return event.getRecords().getFirst().getS3().getBucket().getName();
     }
 }
