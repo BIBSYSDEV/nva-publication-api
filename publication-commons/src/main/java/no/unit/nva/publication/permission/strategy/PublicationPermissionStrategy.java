@@ -32,7 +32,7 @@ public final class PublicationPermissionStrategy {
 
     public boolean allowsAction(PublicationAction permission) {
         return permissionStrategies.stream()
-                   .anyMatch(p -> p.allowsAction(permission));
+                   .anyMatch(strategy -> strategy.allowsAction(permission));
     }
 
     public void authorize(PublicationAction requestedPermission) throws UnauthorizedException {
