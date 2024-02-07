@@ -73,7 +73,7 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 @SuppressWarnings("PMD.GodClass")
 public class UpdatePublicationHandler
-    extends ApiGatewayHandler<UpdatePublicationRequestI, PublicationResponseElevatedUser> {
+    extends ApiGatewayHandler<PublicationRequest, PublicationResponseElevatedUser> {
 
     private static final Logger logger = LoggerFactory.getLogger(UpdatePublicationHandler.class);
     public static final String IDENTIFIER_MISMATCH_ERROR_MESSAGE = "Identifiers in path and in body, do not match";
@@ -132,7 +132,7 @@ public class UpdatePublicationHandler
                                     S3Client s3Client,
                                     SecretsManagerClient secretsManagerClient,
                                     HttpClient httpClient) {
-        super(UpdatePublicationRequestI.class, environment);
+        super(PublicationRequest.class, environment);
         this.resourceService = resourceService;
         this.ticketService = ticketService;
         this.identityServiceClient = identityServiceClient;
@@ -149,7 +149,7 @@ public class UpdatePublicationHandler
     }
 
     @Override
-    protected PublicationResponseElevatedUser processInput(UpdatePublicationRequestI input,
+    protected PublicationResponseElevatedUser processInput(PublicationRequest input,
                                                            RequestInfo requestInfo,
                                                            Context context)
         throws ApiGatewayException {
@@ -161,7 +161,7 @@ public class UpdatePublicationHandler
         var permissionStrategy = PublicationPermissionStrategy.create(existingPublication, userInstance);
 
         Publication updatedPublication = switch (input) {
-            case UpdatePublicationMetadataRequest publicationMetadata ->
+            case UpdatePublicationRequest publicationMetadata ->
                 updateMetadata(publicationMetadata, identifierInPath, existingPublication, permissionStrategy);
 
             case UnpublishPublicationRequest unpublishPublicationRequest ->
@@ -276,7 +276,7 @@ public class UpdatePublicationHandler
                    .getUri();
     }
 
-    private Publication updateMetadata(UpdatePublicationMetadataRequest input, SortableIdentifier identifierInPath,
+    private Publication updateMetadata(UpdatePublicationRequest input, SortableIdentifier identifierInPath,
                                        Publication existingPublication,
                                        PublicationPermissionStrategy permissionStrategy)
         throws ApiGatewayException {
@@ -381,9 +381,9 @@ public class UpdatePublicationHandler
     }
 
     @Override
-    protected Integer getSuccessStatusCode(UpdatePublicationRequestI input, PublicationResponseElevatedUser output) {
+    protected Integer getSuccessStatusCode(PublicationRequest input, PublicationResponseElevatedUser output) {
         switch (input) {
-            case UpdatePublicationMetadataRequest ignored -> {
+            case UpdatePublicationRequest ignored -> {
                 return HttpStatus.SC_OK;
             }
             case UnpublishPublicationRequest ignored -> {
@@ -412,7 +412,7 @@ public class UpdatePublicationHandler
     }
 
     private boolean identifiersDoNotMatch(SortableIdentifier identifierInPath,
-                                          UpdatePublicationMetadataRequest input) {
+                                          UpdatePublicationRequest input) {
         return !identifierInPath.equals(input.getIdentifier());
     }
 
@@ -459,7 +459,7 @@ public class UpdatePublicationHandler
         }
     }
 
-    private void validateRequest(SortableIdentifier identifierInPath, UpdatePublicationMetadataRequest input)
+    private void validateRequest(SortableIdentifier identifierInPath, UpdatePublicationRequest input)
         throws BadRequestException {
         if (identifiersDoNotMatch(identifierInPath, input)) {
             throw new BadRequestException(IDENTIFIER_MISMATCH_ERROR_MESSAGE);

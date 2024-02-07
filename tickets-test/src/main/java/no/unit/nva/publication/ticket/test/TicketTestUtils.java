@@ -117,7 +117,7 @@ public final class TicketTestUtils {
     }
 
     private static boolean isNonDegreeClass(Class<?> publicationInstance) {
-        var listOfDegreeClasses = Set.of("DegreeMaster", "DegreeBachelor", "DegreePhd");
+        var listOfDegreeClasses = Set.of("DegreeMaster", "DegreeBachelor", "DegreePhd", "DegreeLicentiate");
         return !listOfDegreeClasses.contains(publicationInstance.getSimpleName());
     }
 
@@ -288,7 +288,7 @@ public final class TicketTestUtils {
     private static void unpublishFiles(Publication publication) {
         var list = publication.getAssociatedArtifacts()
                        .stream()
-                       .filter(artifact -> artifact instanceof File)
+                       .filter(File.class::isInstance)
                        .map(File.class::cast)
                        .map(File::toUnpublishedFile)
                        .collect(Collectors.toCollection(() -> new ArrayList<AssociatedArtifact>()));

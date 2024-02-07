@@ -23,8 +23,8 @@ import java.util.Objects;
 import static java.util.Objects.isNull;
 
 @JsonTypeName("Publication")
-public class UpdatePublicationMetadataRequest
-    extends UpdatePublicationRequestI
+public class UpdatePublicationRequest
+    extends PublicationRequest
     implements WithIdentifier, WithMetadata, WithAssociatedArtifact, WithContext {
 
     public static final String WRONG_PUBLICATION_UPDATE_ERROR = "Trying to update a publication with different "
@@ -173,7 +173,7 @@ public class UpdatePublicationMetadataRequest
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        UpdatePublicationMetadataRequest that = (UpdatePublicationMetadataRequest) o;
+        UpdatePublicationRequest that = (UpdatePublicationRequest) o;
         return Objects.equals(identifier, that.identifier)
                && Objects.equals(entityDescription, that.entityDescription)
                && Objects.equals(associatedArtifacts, that.associatedArtifacts)

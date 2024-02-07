@@ -102,6 +102,7 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.License;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
+import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
@@ -147,7 +148,6 @@ import org.hamcrest.core.Is;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -247,7 +247,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         return publicationInstance instanceof DegreeBachelor
                || publicationInstance instanceof DegreeMaster
-               || publicationInstance instanceof DegreePhd;
+               || publicationInstance instanceof DegreePhd
+               || publicationInstance instanceof DegreeLicentiate;
     }
 
     private static Publication randomPublicationWithPublisher(URI customerId) {
@@ -1217,7 +1218,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var institutionId = RandomPersonServiceResponse.randomUri();
         var curatorUsername = randomString();
-        var curatorAccessRight = AccessRight.MANAGE_RESOURCES_STANDARD;
         var resourceOwnerUsername = randomString();
 
         var publication = createAndPersistPublicationWithoutDoiAndWithResourceOwner(resourceOwnerUsername,
@@ -1225,7 +1225,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         var inputStream = createUnpublishHandlerRequest(publication.getIdentifier(), curatorUsername, institutionId,
-                                                        curatorAccessRight);
+                                                        MANAGE_RESOURCES_STANDARD);
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -1762,7 +1762,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private boolean isNonDegreeClass(Class<?> publicationInstance) {
-        var listOfDegreeClasses = Set.of("DegreeMaster", "DegreeBachelor", "DegreePhd");
+        var listOfDegreeClasses = Set.of("DegreeMaster", "DegreeBachelor", "DegreePhd", "DegreeLicentiate");
         return !listOfDegreeClasses.contains(publicationInstance.getSimpleName());
     }
 

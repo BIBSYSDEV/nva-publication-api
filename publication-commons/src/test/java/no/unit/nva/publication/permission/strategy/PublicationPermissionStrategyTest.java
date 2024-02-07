@@ -73,7 +73,7 @@ class PublicationPermissionStrategyTest {
     }
 
     @Test
-    void shouldDenyPermissionToDeletePublicationWhenUserHasNoAccessRights()
+    void shouldDenyPermissionToUnpublishPublicationWhenUserHasNoAccessRights()
         throws JsonProcessingException, UnauthorizedException {
         var cristinId = randomUri();
         var requestInfo = createRequestInfo(randomString(), randomUri(), new ArrayList<>(), cristinId);
@@ -86,7 +86,7 @@ class PublicationPermissionStrategyTest {
     }
 
     @Test
-    void shouldDenyPermissionToDeletePublicationWhenUserMissingBasicInfo()
+    void shouldDenyPermissionToUnpublishPublicationWhenUserMissingBasicInfo()
         throws JsonProcessingException {
         var cristinId = randomUri();
         var requestInfo = createRequestInfo(null, URI.create(""), cristinId);
@@ -95,10 +95,32 @@ class PublicationPermissionStrategyTest {
         Assertions.assertThrows(UnauthorizedException.class, () -> PublicationPermissionStrategy
                                    .create(publication, RequestUtil.createUserInstanceFromRequest(
                                                         requestInfo, identityServiceClient))
-                                   .hasPermission(PublicationAction.UNPUBLISH));    }
+                                   .hasPermission(PublicationAction.UNPUBLISH));
+    }
 
     @Test
-    void shouldGiveEditorPermissionToDeletePublicationWhenPublicationIsFromTheirInstitution()
+    void whenDegreeAndDraftStatusAllowUpdateForResourceOwner()
+        throws JsonProcessingException, UnauthorizedException {
+
+        var editorName = randomString();
+        var editorInstitution = randomUri();
+        var resourceOwner = randomString();
+        var cristinId = randomUri();
+
+        var requestInfo = createRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId);
+        var publication = createDegreePhd(resourceOwner, editorInstitution)
+                              .copy()
+                              .withStatus(PublicationStatus.DRAFT)
+                              .build();
+
+        Assertions.assertTrue(PublicationPermissionStrategy
+                                  .create(publication, RequestUtil.createUserInstanceFromRequest(
+                                      requestInfo, identityServiceClient))
+                                  .hasPermission(PublicationAction.UNPUBLISH));
+    }
+
+    @Test
+    void shouldGiveEditorPermissionToUnpublishPublicationWhenPublicationIsFromTheirInstitution()
         throws JsonProcessingException, UnauthorizedException {
 
         var editorName = randomString();
@@ -116,7 +138,7 @@ class PublicationPermissionStrategyTest {
     }
 
     @Test
-    void shouldGiveEditorPermissionToDeletePublicationWhenPublicationIsFromAnotherInstitution()
+    void shouldGiveEditorPermissionToUnpublishPublicationWhenPublicationIsFromAnotherInstitution()
         throws JsonProcessingException, UnauthorizedException {
 
         var editorName = randomString();
@@ -135,7 +157,7 @@ class PublicationPermissionStrategyTest {
     }
 
     @Test
-    void shouldGiveEditorPermissionToDeleteDegreeWhenDegreeIsFromTheirInstitution()
+    void shouldGiveEditorPermissionToUnpublishDegreeWhenDegreeIsFromTheirInstitution()
         throws JsonProcessingException, UnauthorizedException {
         var editorName = randomString();
         var editorInstitution = randomUri();
@@ -152,7 +174,7 @@ class PublicationPermissionStrategyTest {
     }
 
     @Test
-    void shouldGiveEditorPermissionToDeleteDegreeWhenDegreeIsFromAnotherInstitution()
+    void shouldGiveEditorPermissionToUnpublishDegreeWhenDegreeIsFromAnotherInstitution()
         throws JsonProcessingException, UnauthorizedException {
         var editorName = randomString();
         var editorInstitution = randomUri();
@@ -192,7 +214,7 @@ class PublicationPermissionStrategyTest {
     }
 
     @Test
-    void shouldDenyPermissionToDeleteDegreeWhenUserIsDoesNotHaveAccessRightPublishDegree()
+    void shouldDenyPermissionToUnpublishDegreeWhenUserIsDoesNotHaveAccessRightPublishDegree()
         throws JsonProcessingException, UnauthorizedException {
         var username = randomString();
         var institution = randomUri();
@@ -207,7 +229,7 @@ class PublicationPermissionStrategyTest {
     }
 
     @Test
-    void shouldAllowPermissionToDeleteDegreeWhenUserIsCuratorWithPermissionToPublishDegree()
+    void shouldAllowPermissionToUnpublishDegreeWhenUserIsCuratorWithPermissionToPublishDegree()
         throws JsonProcessingException, UnauthorizedException {
         var username = randomString();
         var institution = randomUri();
@@ -225,7 +247,7 @@ class PublicationPermissionStrategyTest {
     }
 
     @Test
-    void shouldGiveCuratorPermissionToDeleteDegreePublicationWhenUserHasPublishDegreeAccessRight()
+    void shouldGiveCuratorPermissionToUnpublishDegreePublicationWhenUserHasPublishDegreeAccessRight()
         throws JsonProcessingException, UnauthorizedException {
 
         var curatorName = randomString();
@@ -246,7 +268,7 @@ class PublicationPermissionStrategyTest {
     }
 
     @Test
-    void shouldDenyAccessRightForCuratorToDeleteDegreePublicationForDifferentInstitution()
+    void shouldDenyAccessRightForCuratorToUnpublishDegreePublicationForDifferentInstitution()
         throws JsonProcessingException, UnauthorizedException {
         var curatorName = randomString();
         var resourceOwner = randomString();
@@ -265,7 +287,7 @@ class PublicationPermissionStrategyTest {
     }
 
     @Test
-    void shouldDenyCuratorPermissionToDeletePublicationWhenPublicationIsFromAnotherInstitution()
+    void shouldDenyCuratorPermissionToUnpublishPublicationWhenPublicationIsFromAnotherInstitution()
         throws JsonProcessingException, UnauthorizedException {
 
         var curatorName = randomString();
@@ -284,7 +306,7 @@ class PublicationPermissionStrategyTest {
     }
 
     @Test
-    void shouldGivePermissionToDeletePublicationWhenUserIsContributor()
+    void shouldGivePermissionToUnpublishPublicationWhenUserIsContributor()
         throws JsonProcessingException, UnauthorizedException {
         var contributorName = randomString();
         var contributorCristinId = randomUri();
@@ -300,7 +322,7 @@ class PublicationPermissionStrategyTest {
     }
 
     @Test
-    void shouldDenyPermissionToDeletePublicationWhenUserIsContributorButNotCreator()
+    void shouldDenyPermissionToUnpublishPublicationWhenUserIsContributorButNotCreator()
         throws JsonProcessingException, UnauthorizedException {
         var contributorName = randomString();
         var contributorCristinId = randomUri();
@@ -316,7 +338,7 @@ class PublicationPermissionStrategyTest {
     }
 
     @Test
-    void shouldGivePermissionToDeletePublicationWhenUserIsResourceOwner()
+    void shouldGivePermissionToUnpublishPublicationWhenUserIsResourceOwner()
         throws JsonProcessingException, UnauthorizedException {
         var resourceOwner = randomString();
         var institutionId = randomUri();
