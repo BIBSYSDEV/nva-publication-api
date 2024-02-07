@@ -14,7 +14,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.api.PublicationResponseElevatedUser;
@@ -176,16 +175,10 @@ public class UpdatePublicationHandler
         return PublicationResponseElevatedUser.fromPublication(updatedPublication);
     }
 
-    private static void throwUnauthorizedUnless(Function<PublicationAction, Boolean> a, PublicationAction requestedPermission) throws UnauthorizedException {
-        if (!a.apply(requestedPermission)) {
-            throw new UnauthorizedException();
-        }
-    }
-
     private Publication deletePublication(Publication existingPublication,
                                           PublicationPermissionStrategy permissionStrategy)
         throws UnauthorizedException, BadRequestException, NotFoundException {
-        throwUnauthorizedUnless(permissionStrategy::allowsAction, PublicationAction.DELETE);
+        permissionStrategy.authorize(PublicationAction.DELETE);
 
         deleteFiles(existingPublication);
         resourceService.deletePublication(existingPublication);
@@ -209,7 +202,7 @@ public class UpdatePublicationHandler
                                              PublicationPermissionStrategy permissionStrategy)
         throws ApiGatewayException {
         validateUnpublishRequest(unpublishPublicationRequest);
-        throwUnauthorizedUnless(permissionStrategy::allowsAction, PublicationAction.UNPUBLISH);
+        permissionStrategy.authorize(PublicationAction.UNPUBLISH);
 
         var updatedPublication = toPublicationWithDuplicate(unpublishPublicationRequest, existingPublication);
         resourceService.unpublishPublication(updatedPublication);
@@ -283,7 +276,7 @@ public class UpdatePublicationHandler
                                        PublicationPermissionStrategy permissionStrategy)
         throws ApiGatewayException {
         validateRequest(identifierInPath, input);
-        throwUnauthorizedUnless(permissionStrategy::allowsAction, PublicationAction.UPDATE);
+        permissionStrategy.authorize(PublicationAction.UPDATE);
 
         Publication publicationUpdate = input.generatePublicationUpdate(existingPublication);
 

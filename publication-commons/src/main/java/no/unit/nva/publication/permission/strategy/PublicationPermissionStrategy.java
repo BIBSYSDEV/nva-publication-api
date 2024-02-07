@@ -3,14 +3,20 @@ package no.unit.nva.publication.permission.strategy;
 import java.util.Set;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.UserInstance;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 
 public final class PublicationPermissionStrategy {
+
     private final Set<PermissionStrategy> permissionStrategies;
+    private final UserInstance userInstance;
+    private final Publication publication;
 
     private PublicationPermissionStrategy(
         Publication publication,
         UserInstance userInstance
     ) {
+        this.userInstance = userInstance;
+        this.publication = publication;
         this.permissionStrategies = Set.of(
             new EditorPermissionStrategy(publication, userInstance),
             new CuratorPermissionStrategy(publication, userInstance),
@@ -27,6 +33,14 @@ public final class PublicationPermissionStrategy {
     public boolean allowsAction(PublicationAction permission) {
         return permissionStrategies.stream()
                    .anyMatch(p -> p.allowsAction(permission));
+    }
+
+    public void authorize(PublicationAction requestedPermission) throws UnauthorizedException {
+        if (!allowsAction(requestedPermission)) {
+            throw new UnauthorizedException(
+                String.format("Unauthorized: %s is not allowed to perform %s on %s", userInstance.getUsername(),
+                              requestedPermission, publication.getIdentifier()));
+        }
     }
 }
 

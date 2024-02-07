@@ -551,7 +551,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var problem = response.getBodyObject(Problem.class);
 
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
-        assertThat(problem.getDetail(), is(equalTo("Unauthorized")));
+        assertThat(problem.getDetail(), is(startsWith("Unauthorized: some@curator is not allowed to perform UPDATE on ")));
     }
 
     @Test
