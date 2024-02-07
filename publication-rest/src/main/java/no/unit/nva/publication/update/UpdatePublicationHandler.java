@@ -9,6 +9,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.time.Clock;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -259,7 +260,7 @@ public class UpdatePublicationHandler
         var duplicateIdentifier = unpublishPublicationRequest.getDuplicateOf().map(SortableIdentifier::toString).orElse(null);
         var comment = unpublishPublicationRequest.getComment();
 
-        var notes = publication.getPublicationNotes();
+        var notes = new ArrayList<>(publication.getPublicationNotes());
         notes.add(new UnpublishingNote(comment));
 
         return publication.copy()
