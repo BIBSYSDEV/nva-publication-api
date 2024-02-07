@@ -801,6 +801,8 @@ components:
     Publication:
       type: object
       description: Complete Publication entity
+      required:
+        - type
       properties:
         type:
           type: string
@@ -927,6 +929,8 @@ components:
     DeletePublicationRequest:
       type: object
       description: Delete publication request
+      required:
+        - type
       properties:
         type:
           type: string
@@ -935,6 +939,9 @@ components:
     UnpublishPublicationRequest:
       type: object
       description: Unpublish publication request
+      required:
+        - type
+        - comment
       properties:
         type:
           type: string
