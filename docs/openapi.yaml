@@ -808,6 +808,10 @@ components:
       type: object
       description: Complete Publication entity
       properties:
+        type:
+          type: string
+          enum: [ 'Publication' ]
+          description: Type of the request
         abstract:
           type: string
           description: short abstract of content
@@ -929,10 +933,19 @@ components:
     DeletePublicationRequest:
       type: object
       description: Delete publication request
+      properties:
+        type:
+          type: string
+          enum: [ 'DeletePublicationRequest' ]
+          description: Type of the request
     UnpublishPublicationRequest:
       type: object
       description: Unpublish publication request
       properties:
+        type:
+          type: string
+          enum: [ 'UnpublishPublicationRequest' ]
+          description: Type of the request
         duplicateOf:
           type: string
           description: Identifier of the publication the current publication is a duplicate of
