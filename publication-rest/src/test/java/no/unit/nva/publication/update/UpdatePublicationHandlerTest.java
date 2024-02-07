@@ -147,7 +147,6 @@ import org.hamcrest.core.Is;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -1040,9 +1039,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
-        var inputStream = createRequestWithDuplicateOfValue(publication.getIdentifier(), userName,
-                                                            RandomPersonServiceResponse.randomUri(),
-                                                            duplicate, USER);
+        var inputStream = createUnpublishRequestWithDuplicateOfValue(publication.getIdentifier(), userName,
+                                                                     RandomPersonServiceResponse.randomUri(),
+                                                                     duplicate, USER);
 
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
@@ -1145,7 +1144,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnSuccessAndUpdatePublicationStatusToDeletedWhenUserCanEditOwnInstitutionResources()
+    void shouldReturnSuccessAndUpdatePublicationStatusToUnpublishedWhenUserCanEditOwnInstitutionResources()
         throws IOException, ApiGatewayException {
 
         var publication = createAndPersistPublicationWithoutDoi(true);
@@ -1192,16 +1191,16 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void curatorShouldUpdateDeletedResourceWithDuplicateOfValueWhenResourceIsADuplicate()
+    void curatorShouldUpdateUnpublishedResourceWithDuplicateOfValueWhenResourceIsADuplicate()
         throws ApiGatewayException, IOException {
         var publication = createAndPersistDegreeWithoutDoi();
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         var duplicate = SortableIdentifier.next();
-        var request = createRequestWithDuplicateOfValue(publication.getIdentifier(),
-                                                        randomString(),
-                                                        publication.getPublisher().getId(),
-                                                        duplicate,
-                                                        MANAGE_DEGREE, MANAGE_RESOURCES_ALL);
+        var request = createUnpublishRequestWithDuplicateOfValue(publication.getIdentifier(),
+                                                                 randomString(),
+                                                                 publication.getPublisher().getId(),
+                                                                 duplicate,
+                                                                 MANAGE_DEGREE, MANAGE_RESOURCES_STANDARD);
         updatePublicationHandler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         var updatedPublication = publicationService.getPublication(publication);
@@ -1281,7 +1280,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publisherUri = publication.getPublisher().getId();
         var request = creatDeleteHandlerRequest(publication.getIdentifier(), randomString(),
                                                 publisherUri, null, MANAGE_RESOURCES_ALL,
-                                                MANAGE_DEGREE);// MANAGE_DEGREE here?
+                                                MANAGE_DEGREE);
         updatePublicationHandler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
@@ -1365,10 +1364,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return request.build();
     }
 
-    private InputStream createRequestWithDuplicateOfValue(SortableIdentifier publicationIdentifier, String username,
-                                                          URI institutionId,
-                                                          SortableIdentifier duplicateOf,
-                                                          AccessRight... accessRight)
+    private InputStream createUnpublishRequestWithDuplicateOfValue(SortableIdentifier publicationIdentifier, String username,
+                                                                   URI institutionId,
+                                                                   SortableIdentifier duplicateOf,
+                                                                   AccessRight... accessRight)
         throws JsonProcessingException {
         var unpublishRequest = new UnpublishPublicationRequest();
         unpublishRequest.setComment("comment");
