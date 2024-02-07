@@ -99,7 +99,7 @@ class PublicationPermissionStrategyTest {
     }
 
     @Test
-    void whenDegreeAndDraftStatusAllowUpdateForResourceOwner()
+    void shouldAllowResourceOwnerToUpdateDegreeInDraftStatus()
         throws JsonProcessingException, UnauthorizedException {
 
         var editorName = randomString();
@@ -116,7 +116,7 @@ class PublicationPermissionStrategyTest {
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
                                       requestInfo, identityServiceClient))
-                                  .allowsAction(PublicationAction.UNPUBLISH));
+                                  .allowsAction(PublicationAction.UPDATE));
     }
 
     @Test
