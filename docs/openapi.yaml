@@ -119,7 +119,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Publication'
+              oneOf:
+                - $ref: '#/components/schemas/Publication'
+                - $ref: '#/components/schemas/DeletePublicationRequest'
+                - $ref: '#/components/schemas/UnpublishPublicationRequest'
       parameters:
         - in: path
           name: publicationIdentifier
@@ -135,12 +138,36 @@ paths:
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        '200':
+        200:
           description: OK
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Publication'
+        202:
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Publication'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
     delete:
       summary: Delete Publication for Identifier
       tags:
@@ -899,6 +926,19 @@ components:
             type: string
         title:
           type: string
+    DeletePublicationRequest:
+      type: object
+      description: Delete publication request
+    UnpublishPublicationRequest:
+      type: object
+      description: Unpublish publication request
+      properties:
+        duplicateOf:
+          type: string
+          description: Identifier of the publication the current publication is a duplicate of
+        comment:
+          type: string
+          description: Reason for unpublishing
     ImportCandidate:
       type: object
       description: Complete Import candidate entity
