@@ -640,7 +640,14 @@ Resources:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
-      Role: !GetAtt LambdaRole.Arn
+          NVA_EVENT_BUS_NAME: !Ref NewNvaEventBusName
+          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
+      Policies:
+        - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
+        - !GetAtt EventsLambdaManagedPolicy.PolicyArn
+        - !GetAtt S3DeleteAccessManagedPolicy.PolicyArn
+        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt S3AccessManagedPolicy.PolicyArn
       Events:
         PutEvent:
           Type: Api
@@ -659,14 +666,9 @@ Resources:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
           DOMAIN_NAME: !Ref ApiDomain
-          NVA_EVENT_BUS_NAME: !Ref NewNvaEventBusName
-          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
       Policies:
         - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
-        - !GetAtt EventsLambdaManagedPolicy.PolicyArn
-        - !GetAtt S3DeleteAccessManagedPolicy.PolicyArn
         - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
-        - !GetAtt S3AccessManagedPolicy.PolicyArn
       Events:
         PutEvent:
           Type: Api
