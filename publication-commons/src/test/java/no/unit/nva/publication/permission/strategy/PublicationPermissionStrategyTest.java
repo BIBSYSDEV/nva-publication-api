@@ -447,7 +447,7 @@ class PublicationPermissionStrategyTest {
     }
 
     private boolean isNonDegreeClass(Class<?> publicationInstance) {
-        var listOfDegreeClasses = Set.of("DegreeMaster", "DegreeBachelor", "DegreePhd");
+        var listOfDegreeClasses = Set.of("DegreeMaster", "DegreeBachelor", "DegreePhd", "DegreeLicentiate");
         return !listOfDegreeClasses.contains(publicationInstance.getSimpleName());
     }
 
