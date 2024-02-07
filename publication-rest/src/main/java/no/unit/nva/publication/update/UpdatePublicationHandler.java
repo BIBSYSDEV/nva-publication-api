@@ -184,7 +184,7 @@ public class UpdatePublicationHandler
     private Publication deletePublication(Publication existingPublication,
                                           PublicationPermissionStrategy permissionStrategy)
         throws UnauthorizedException, BadRequestException, NotFoundException {
-        throwUnauthorizedUnless(permissionStrategy::hasPermission, PublicationAction.DELETE);
+        throwUnauthorizedUnless(permissionStrategy::allowsAction, PublicationAction.DELETE);
 
         deleteFiles(existingPublication);
         resourceService.deletePublication(existingPublication);
@@ -207,7 +207,7 @@ public class UpdatePublicationHandler
                                              PublicationPermissionStrategy permissionStrategy)
         throws ApiGatewayException {
         validateUnpublishRequest(unpublishPublicationRequest);
-        throwUnauthorizedUnless(permissionStrategy::hasPermission, PublicationAction.UNPUBLISH);
+        throwUnauthorizedUnless(permissionStrategy::allowsAction, PublicationAction.UNPUBLISH);
 
         var updatedPublication = toPublicationWithDuplicate(unpublishPublicationRequest, existingPublication);
         resourceService.unpublishPublication(updatedPublication);
@@ -281,7 +281,7 @@ public class UpdatePublicationHandler
                                        PublicationPermissionStrategy permissionStrategy)
         throws ApiGatewayException {
         validateRequest(identifierInPath, input);
-        throwUnauthorizedUnless(permissionStrategy::hasPermission, PublicationAction.UPDATE);
+        throwUnauthorizedUnless(permissionStrategy::allowsAction, PublicationAction.UPDATE);
 
         Publication publicationUpdate = input.generatePublicationUpdate(existingPublication);
 

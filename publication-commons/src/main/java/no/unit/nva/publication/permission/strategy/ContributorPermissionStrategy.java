@@ -20,7 +20,7 @@ public class ContributorPermissionStrategy extends PermissionStrategy {
     }
 
     @Override
-    protected boolean hasPermission(PublicationAction permission) {
+    protected boolean allowsAction(PublicationAction permission) {
         return switch (permission) {
             case UPDATE, UNPUBLISH -> canModify();
             default -> false;

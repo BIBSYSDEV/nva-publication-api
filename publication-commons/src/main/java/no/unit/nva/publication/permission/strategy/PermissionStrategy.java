@@ -23,7 +23,7 @@ public abstract class PermissionStrategy {
         this.userInstance = userInstance;
     }
 
-    protected abstract boolean hasPermission(PublicationAction permission);
+    protected abstract boolean allowsAction(PublicationAction permission);
 
     protected boolean hasAccessRight(AccessRight accessRight) {
         return userInstance.getAccessRights().contains(accessRight);
