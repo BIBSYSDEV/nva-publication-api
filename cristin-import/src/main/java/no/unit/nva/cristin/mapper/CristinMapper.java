@@ -46,6 +46,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.Publication.Builder;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationNote;
+import no.unit.nva.model.PublicationNoteBase;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
@@ -174,7 +175,7 @@ public class CristinMapper extends CristinMappingModule {
                    .orElse(null);
     }
 
-    private List<PublicationNote> extractPublicationNotes() {
+    private List<PublicationNoteBase> extractPublicationNotes() {
         return hasPublicationNote() ? List.of(new PublicationNote(cristinObject.getNote())) : List.of();
     }
 

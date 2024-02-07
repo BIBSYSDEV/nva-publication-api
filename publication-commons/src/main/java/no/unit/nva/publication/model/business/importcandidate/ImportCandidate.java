@@ -13,7 +13,7 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationNote;
+import no.unit.nva.model.PublicationNoteBase;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
@@ -229,7 +229,7 @@ public class ImportCandidate extends Publication implements JsonSerializable {
             return this;
         }
 
-        public Builder withPublicationNotes(List<PublicationNote> publicationNotes) {
+        public Builder withPublicationNotes(List<PublicationNoteBase> publicationNotes) {
             this.importCandidate.setPublicationNotes(publicationNotes);
             return this;
         }

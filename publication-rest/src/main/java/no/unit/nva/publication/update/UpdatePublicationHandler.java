@@ -21,6 +21,7 @@ import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.UnpublishingNote;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -77,6 +78,7 @@ public class UpdatePublicationHandler
     public static final String IDENTIFIER_MISMATCH_ERROR_MESSAGE = "Identifiers in path and in body, do not match";
     private static final String ENV_KEY_BACKEND_CLIENT_SECRET_NAME = "BACKEND_CLIENT_SECRET_NAME";
     private static final String ENV_KEY_BACKEND_CLIENT_AUTH_URL = "BACKEND_CLIENT_AUTH_URL";
+    public static final String UNPUBLISH_REQUEST_REQUIRES_A_COMMENT = "Unpublish request requires a comment";
     private final TicketService ticketService;
     private final ResourceService resourceService;
     private final IdentityServiceClient identityServiceClient;
@@ -203,10 +205,10 @@ public class UpdatePublicationHandler
                                              Publication existingPublication,
                                              PublicationPermissionStrategy permissionStrategy)
         throws ApiGatewayException {
+        validateUnpublishRequest(unpublishPublicationRequest);
         throwUnauthorizedUnless(permissionStrategy::hasPermission, PublicationAction.UNPUBLISH);
 
-        var duplicate = unpublishPublicationRequest.getDuplicateOf().map(SortableIdentifier::toString).orElse(null);
-        var updatedPublication = toPublicationWithDuplicate(duplicate, existingPublication);
+        var updatedPublication = toPublicationWithDuplicate(unpublishPublicationRequest, existingPublication);
         resourceService.unpublishPublication(updatedPublication);
 
         updatedPublication = resourceService.getPublication(updatedPublication);
@@ -214,6 +216,13 @@ public class UpdatePublicationHandler
         updateNvaDoi(updatedPublication);
 
         return updatedPublication;
+    }
+
+    private void validateUnpublishRequest(UnpublishPublicationRequest unpublishPublicationRequest)
+        throws BadRequestException {
+        if (!nonNull(unpublishPublicationRequest.getComment())) {
+            throw new BadRequestException(UNPUBLISH_REQUEST_REQUIRES_A_COMMENT);
+        }
     }
 
     private void updateNvaDoi(Publication publication) {
@@ -246,10 +255,17 @@ public class UpdatePublicationHandler
         TicketEntry.requestNewTicket(publication, UnpublishRequest.class).persistNewTicket(ticketService);
     }
 
-    private Publication toPublicationWithDuplicate(String duplicateIdentifier, Publication publication) {
-        return nonNull(duplicateIdentifier) ? publication.copy()
-                                                  .withDuplicateOf(toPublicationUri(duplicateIdentifier))
-                                                  .build() : publication;
+    private Publication toPublicationWithDuplicate(UnpublishPublicationRequest unpublishPublicationRequest, Publication publication) {
+        var duplicateIdentifier = unpublishPublicationRequest.getDuplicateOf().map(SortableIdentifier::toString).orElse(null);
+        var comment = unpublishPublicationRequest.getComment();
+
+        var notes = publication.getPublicationNotes();
+        notes.add(new UnpublishingNote(comment));
+
+        return publication.copy()
+                   .withDuplicateOf(nonNull(duplicateIdentifier) ? toPublicationUri(duplicateIdentifier) : publication.getDuplicateOf())
+                   .withPublicationNotes(notes)
+                   .build();
     }
 
     private static URI toPublicationUri(String duplicateIdentifier) {

@@ -172,6 +172,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     public static final String EVENT_BUS_NAME = "EVENT_BUS_NAME";
     private static final String API_HOST = "API_HOST";
     private static final String PUBLICATION = "publication";
+    public static final String UNPUBLISH_REQUEST_REQUIRES_A_COMMENT = "Unpublish request requires a comment";
     private final GetExternalClientResponse getExternalClientResponse = mock(GetExternalClientResponse.class);
     private final Context context = new FakeContext();
     private ResourceService publicationService;
@@ -1086,6 +1087,32 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_BAD_REQUEST)));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenCommentIsMissingWhenUnpublishingPublication()
+        throws ApiGatewayException, IOException {
+
+        var userName = randomString();
+        var institutionId = RandomPersonServiceResponse.randomUri();
+
+        var publication = createAndPersistPublicationWithoutDoiAndWithResourceOwner(userName, institutionId);
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+
+        var unpublishRequest = new UnpublishPublicationRequest();
+        var request = new HandlerRequestBuilder<UnpublishPublicationRequest>(restApiMapper)
+                          .withUserName(userName)
+                          .withCurrentCustomer(institutionId)
+                          .withAccessRights(institutionId, USER)
+                          .withBody(unpublishRequest)
+                          .withPathParameters(
+                              Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()));
+
+        updatePublicationHandler.handleRequest(request.build(), output, context);
+        var gatewayResponse = toGatewayResponseProblem();
+
+        assertThat(gatewayResponse.getStatusCode(), Is.is(IsEqual.equalTo(SC_BAD_REQUEST)));
+        assertThat(getProblemDetail(gatewayResponse), containsString(UNPUBLISH_REQUEST_REQUIRES_A_COMMENT));
     }
 
     // TODO: Should this return 200 OK?

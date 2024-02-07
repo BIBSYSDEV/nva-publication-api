@@ -8,7 +8,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
-import no.unit.nva.model.PublicationNote;
+import no.unit.nva.model.PublicationNoteBase;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
@@ -37,7 +37,7 @@ public final class ResourceBuilder {
     private List<Funding> fundings;
     private String rightsHolder;
     private ImportStatus importStatus;
-    private List<PublicationNote> publicationNotes;
+    private List<PublicationNoteBase> publicationNotes;
     private URI duplicateOf;
 
     ResourceBuilder() {
@@ -138,7 +138,7 @@ public final class ResourceBuilder {
         return this;
     }
 
-    public ResourceBuilder withPublicationNotes(List<PublicationNote> publicationNotes) {
+    public ResourceBuilder withPublicationNotes(List<PublicationNoteBase> publicationNotes) {
         this.publicationNotes = publicationNotes;
         return this;
     }

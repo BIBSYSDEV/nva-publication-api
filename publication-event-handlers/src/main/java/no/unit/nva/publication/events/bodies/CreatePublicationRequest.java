@@ -12,7 +12,7 @@ import no.unit.nva.WithContext;
 import no.unit.nva.WithMetadata;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.PublicationNote;
+import no.unit.nva.model.PublicationNoteBase;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.Publication;
@@ -33,7 +33,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
     private String rightsHolder;
     private PublicationStatus status;
 
-    private List<PublicationNote> publicationNotes;
+    private List<PublicationNoteBase> publicationNotes;
 
     public static CreatePublicationRequest fromPublication(Publication publication) {
         CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
@@ -163,11 +163,11 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
         this.status = status;
     }
 
-    public List<PublicationNote> getPublicationNotes() {
+    public List<PublicationNoteBase> getPublicationNotes() {
         return publicationNotes;
     }
 
-    public void setPublicationNotes(List<PublicationNote> publicationNotes) {
+    public void setPublicationNotes(List<PublicationNoteBase> publicationNotes) {
         this.publicationNotes = publicationNotes;
     }
 
