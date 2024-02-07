@@ -1,7 +1,6 @@
 package no.unit.nva.publication.delete;
 
-import static no.unit.nva.publication.RequestUtil.createExternalUserInstance;
-import static no.unit.nva.publication.RequestUtil.createInternalUserInstance;
+import static no.unit.nva.publication.RequestUtil.createUserInstanceFromRequest;
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -50,7 +49,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
 
     @Override
     protected Void processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
-        var userInstance = createUserInstanceFromRequest(requestInfo);
+        var userInstance = createUserInstanceFromRequest(requestInfo, identityServiceClient);
         var publicationIdentifier = RequestUtil.getIdentifier(requestInfo);
 
         var publication = resourceService.getPublicationByIdentifier(publicationIdentifier);
@@ -77,10 +76,5 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     private void handleDraftDeletion(UserInstance userInstance, SortableIdentifier publicationIdentifier)
         throws ApiGatewayException {
         resourceService.markPublicationForDeletion(userInstance, publicationIdentifier);
-    }
-
-    private UserInstance createUserInstanceFromRequest(RequestInfo requestInfo) throws ApiGatewayException {
-        return requestInfo.clientIsThirdParty() ? createExternalUserInstance(requestInfo, identityServiceClient)
-                   : createInternalUserInstance(requestInfo);
     }
 }

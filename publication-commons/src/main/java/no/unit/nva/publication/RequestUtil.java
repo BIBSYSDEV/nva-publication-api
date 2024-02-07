@@ -72,7 +72,7 @@ public final class RequestUtil {
         return attempt(requestInfo::getUserName).orElseThrow(fail -> new UnauthorizedException());
     }
 
-    public static UserInstance createExternalUserInstance(RequestInfo requestInfo,
+    private static UserInstance createExternalUserInstance(RequestInfo requestInfo,
                                                           IdentityServiceClient identityServiceClient)
         throws UnauthorizedException {
         var client = attempt(() -> requestInfo.getClientId().orElseThrow())
@@ -87,7 +87,7 @@ public final class RequestUtil {
         return UserInstance.createExternalUser(resourceOwner, client.getCustomerUri());
     }
 
-    public static UserInstance createInternalUserInstance(RequestInfo requestInfo) throws ApiGatewayException {
+    private static UserInstance createInternalUserInstance(RequestInfo requestInfo) throws ApiGatewayException {
         String owner = RequestUtil.getOwner(requestInfo);
         var customerId = requestInfo.getCurrentCustomer();
         var personCristinId = attempt(requestInfo::getPersonCristinId).toOptional().orElse(null);
@@ -95,8 +95,8 @@ public final class RequestUtil {
         return UserInstance.create(owner, customerId, personCristinId, accessRights);
     }
 
-    public static UserInstance createAnyUserInstanceFromRequest(RequestInfo requestInfo,
-                                                              IdentityServiceClient identityServiceClient)
+    public static UserInstance createUserInstanceFromRequest(RequestInfo requestInfo,
+                                                             IdentityServiceClient identityServiceClient)
         throws UnauthorizedException {
         try {
             return requestInfo.clientIsThirdParty()

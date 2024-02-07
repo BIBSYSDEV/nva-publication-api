@@ -157,7 +157,7 @@ public class UpdatePublicationHandler
 
         Publication existingPublication = fetchPublication(identifierInPath);
 
-        var userInstance = RequestUtil.createAnyUserInstanceFromRequest(requestInfo, identityServiceClient);
+        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         var permissionStrategy = PublicationPermissionStrategy.create(existingPublication, userInstance);
 
         Publication updatedPublication = switch (input) {
