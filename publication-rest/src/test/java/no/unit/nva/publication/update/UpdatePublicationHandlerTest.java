@@ -1116,7 +1116,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(getProblemDetail(gatewayResponse), containsString(UNPUBLISH_REQUEST_REQUIRES_A_COMMENT));
     }
 
-    // TODO: Should this return 200 OK?
     @Test
     void shouldReturnNotFoundWhenPublicationDoesNotExist() throws IOException {
         var inputStream = createUnpublishHandlerRequest(SortableIdentifier.next(), randomString(),
@@ -1193,7 +1192,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void curatorShouldUpdateUnpublishedResourceWithDuplicateOfValueWhenResourceIsADuplicate()
+    void shouldUpdateUnpublishedResourceWithDuplicateOfValueWhenUserIsCurator()
         throws ApiGatewayException, IOException {
         var publication = createAndPersistDegreeWithoutDoi();
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());

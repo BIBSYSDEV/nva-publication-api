@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -197,9 +198,10 @@ public class UpdatePublicationHandler
             .stream()
             .filter(File.class::isInstance)
             .map(File.class::cast)
-            .forEach(
-                file -> s3Driver.deleteFile(UnixPath.of(file.getIdentifier().toString()))
-            );
+            .map(File::getIdentifier)
+            .map(UUID::toString)
+            .map(UnixPath::of)
+            .forEach(s3Driver::deleteFile);
     }
 
     private Publication unpublishPublication(UnpublishPublicationRequest unpublishPublicationRequest,
