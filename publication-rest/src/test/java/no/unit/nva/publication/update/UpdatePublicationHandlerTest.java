@@ -482,10 +482,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(problem.getDetail(), containsString(UpdatePublicationHandler.IDENTIFIER_MISMATCH_ERROR_MESSAGE));
     }
 
-    private Builder persistPublication(Builder b) {
+    private Builder persistPublication(Builder publicationBuilder) {
         try {
             return Resource
-                       .fromPublication(b.build())
+                       .fromPublication(publicationBuilder.build())
                        .persistNew(publicationService, UserInstance.fromPublication(publication))
                        .copy();
         } catch (BadRequestException e) {

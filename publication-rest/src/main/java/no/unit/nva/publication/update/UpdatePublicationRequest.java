@@ -24,8 +24,7 @@ import static java.util.Objects.isNull;
 
 @JsonTypeName("Publication")
 public class UpdatePublicationRequest
-    extends PublicationRequest
-    implements WithIdentifier, WithMetadata, WithAssociatedArtifact, WithContext {
+    implements PublicationRequest, WithIdentifier, WithMetadata, WithAssociatedArtifact, WithContext {
 
     public static final String WRONG_PUBLICATION_UPDATE_ERROR = "Trying to update a publication with different "
                                                                 + "identifier:";

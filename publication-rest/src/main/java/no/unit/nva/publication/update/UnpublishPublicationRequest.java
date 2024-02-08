@@ -3,7 +3,7 @@ package no.unit.nva.publication.update;
 import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
 
-public class UnpublishPublicationRequest extends PublicationRequest {
+public class UnpublishPublicationRequest implements PublicationRequest {
     private Optional<SortableIdentifier> duplicateOf = Optional.empty();
     private String comment;
 
