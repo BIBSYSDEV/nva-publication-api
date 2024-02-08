@@ -25,7 +25,7 @@ class UserInstanceTest {
         Publication publication = PublicationGenerator.randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         assertThat(userInstance.getUsername(), is(equalTo(publication.getResourceOwner().getOwner().getValue())));
-        assertThat(userInstance.getOrganizationUri(), is(equalTo(publication.getPublisher().getId())));
+        assertThat(userInstance.getCustomerId(), is(equalTo(publication.getPublisher().getId())));
     }
     
     @Test
@@ -34,7 +34,7 @@ class UserInstanceTest {
         var doiRequest = DoiRequest.fromPublication(publication);
         var userInstance = UserInstance.fromDoiRequest(doiRequest);
         assertThat(userInstance.getUsername(), is(equalTo(publication.getResourceOwner().getOwner().getValue())));
-        assertThat(userInstance.getOrganizationUri(), is(equalTo(publication.getPublisher().getId())));
+        assertThat(userInstance.getCustomerId(), is(equalTo(publication.getPublisher().getId())));
     }
 
     @ParameterizedTest
@@ -45,7 +45,7 @@ class UserInstanceTest {
         var message = Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
         var userInstance = UserInstance.fromMessage(message);
         assertThat(userInstance.getUsername(), is(equalTo(publication.getResourceOwner().getOwner().getValue())));
-        assertThat(userInstance.getOrganizationUri(), is(equalTo(publication.getPublisher().getId())));
+        assertThat(userInstance.getCustomerId(), is(equalTo(publication.getPublisher().getId())));
     }
     
     @Test
@@ -59,6 +59,6 @@ class UserInstanceTest {
         var requestInfo = RequestInfo.fromRequest(httpRequest);
         var userInstance = UserInstance.fromRequestInfo(requestInfo);
         assertThat(userInstance.getUsername(), is(equalTo(username)));
-        assertThat(userInstance.getOrganizationUri(), is(equalTo(customerId)));
+        assertThat(userInstance.getCustomerId(), is(equalTo(customerId)));
     }
 }

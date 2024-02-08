@@ -55,7 +55,7 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
         logger.info(String.format("Requested publications for owner with username/feideId=%s and publisher with "
                                   + "customerId=%s",
             userInstance.getUsername(),
-            userInstance.getOrganizationUri())
+            userInstance.getCustomerId())
         );
         
         List<PublicationSummary> publicationsByOwner;

@@ -29,7 +29,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketHandler;
 import no.unit.nva.publication.ticket.UpdateTicketRequest;
-import no.unit.nva.publication.ticket.utils.RequestUtils;
+import no.unit.nva.publication.utils.RequestUtils;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
@@ -121,7 +121,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     }
 
     private static boolean isUserFromSameCustomerAsTicket(RequestUtils requestUtils, TicketEntry ticket) {
-        return requestUtils.customer().equals(ticket.getCustomerId());
+        return requestUtils.customerId().equals(ticket.getCustomerId());
     }
 
     private static boolean assigneeDoesNotExist(TicketEntry ticket) {
@@ -265,7 +265,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
                                                                                    RequestUtils requestUtils)
         throws ForbiddenException {
         var suppliedPublicationIdentifier =
-            requestUtils.pathParameterAsIdentifier(PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME);
+            requestUtils.publicationIdentifier();
         if (!suppliedPublicationIdentifier.equals(ticket.getResourceIdentifier())) {
             throw new ForbiddenException();
         }
@@ -339,7 +339,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     }
 
     private Publication getPublication(RequestUtils requestUtils) throws NotFoundException {
-        var publicationIdentifier = requestUtils.pathParameterAsIdentifier(PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME);
+        var publicationIdentifier = requestUtils.publicationIdentifier();
         return resourceService.getPublicationByIdentifier(publicationIdentifier);
     }
 

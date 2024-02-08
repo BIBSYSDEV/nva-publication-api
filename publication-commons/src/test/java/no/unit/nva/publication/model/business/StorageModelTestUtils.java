@@ -20,7 +20,7 @@ public final class StorageModelTestUtils {
         var userInstance = UserInstance.fromPublication(publication);
         var sample = new PublishingRequestCase();
         sample.setOwner(userInstance.getUser());
-        sample.setCustomerId(userInstance.getOrganizationUri());
+        sample.setCustomerId(userInstance.getCustomerId());
         sample.setIdentifier(SortableIdentifier.next());
         sample.setResourceIdentifier(SortableIdentifier.next());
         sample.setCreatedDate(randomInstant());

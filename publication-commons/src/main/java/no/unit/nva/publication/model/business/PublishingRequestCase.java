@@ -86,7 +86,7 @@ public class PublishingRequestCase extends TicketEntry {
         var userInstance = UserInstance.fromPublication(publication);
         var openingCaseObject = new PublishingRequestCase();
         openingCaseObject.setOwner(userInstance.getUser());
-        openingCaseObject.setCustomerId(userInstance.getOrganizationUri());
+        openingCaseObject.setCustomerId(userInstance.getCustomerId());
         openingCaseObject.setStatus(TicketStatus.PENDING);
         openingCaseObject.setViewedBy(ViewedBy.addAll(openingCaseObject.getOwner()));
         openingCaseObject.setResourceIdentifier(publication.getIdentifier());
@@ -364,7 +364,7 @@ public class PublishingRequestCase extends TicketEntry {
 
         var newPublishingRequest = new PublishingRequestCase();
         newPublishingRequest.setOwner(userInstance.getUser());
-        newPublishingRequest.setCustomerId(userInstance.getOrganizationUri());
+        newPublishingRequest.setCustomerId(userInstance.getCustomerId());
         newPublishingRequest.setResourceIdentifier(publicationIdentifier);
         newPublishingRequest.setIdentifier(publishingRequestIdentifier);
         return newPublishingRequest;

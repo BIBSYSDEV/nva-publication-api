@@ -32,6 +32,6 @@ class PublishingRequestTest {
         var userInstance = UserInstance.fromPublication(publication);
         assertThat(objectForCreatingNewEntry.getResourceIdentifier(), is(equalTo(publication.getIdentifier())));
         assertThat(objectForCreatingNewEntry.getOwner(), is(equalTo(userInstance.getUser())));
-        assertThat(objectForCreatingNewEntry.getCustomerId(), is(equalTo(userInstance.getOrganizationUri())));
+        assertThat(objectForCreatingNewEntry.getCustomerId(), is(equalTo(userInstance.getCustomerId())));
     }
 }

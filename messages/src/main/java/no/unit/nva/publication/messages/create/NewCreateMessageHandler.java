@@ -1,32 +1,28 @@
 package no.unit.nva.publication.messages.create;
 
-import static java.util.Objects.isNull;
 import static no.unit.nva.publication.messages.MessageApiConfig.LOCATION_HEADER;
 import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
+import static nva.commons.apigateway.AccessRight.SUPPORT;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Username;
-import no.unit.nva.publication.messages.MessageApiConfig;
 import no.unit.nva.publication.messages.model.NewMessageDto;
-import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.publication.utils.RequestUtils;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.JacocoGenerated;
 
 public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest, Void> {
@@ -48,14 +44,21 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
     @Override
     protected Void processInput(CreateMessageRequest input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-        var ticketIdentifier = extractTicketIdentifier(requestInfo);
-        var user = UserInstance.fromRequestInfo(requestInfo);
-        var ticket = fetchTicketForUser(requestInfo, ticketIdentifier, user);
+        var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
+        var ticket = fetchTicketForUser(requestUtils, requestUtils.ticketIdentifier());
+        isAuthorizedToManageTicket(requestUtils, ticket);
         updateStatusToPendingWhenCompletedGeneralSupportRequest(ticket);
-        injectAssigneeWhenUnassignedTicket(ticket, requestInfo);
-        var message = messageService.createMessage(ticket, user, input.getMessage());
+        injectAssigneeWhenUnassignedTicket(ticket, requestUtils);
+        var message = messageService.createMessage(ticket, requestUtils.toUserInstance(), input.getMessage());
         addAdditionalHeaders(() -> Map.of(LOCATION_HEADER, createLocationHeader(message)));
         return null;
+    }
+
+    private static void isAuthorizedToManageTicket(RequestUtils requestUtils, TicketEntry ticket)
+        throws ForbiddenException {
+        if (!requestUtils.isAuthorizedToManage(ticket) && !requestUtils.isTicketOwner(ticket)) {
+            throw new ForbiddenException();
+        }
     }
 
     @Override
@@ -67,113 +70,44 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
         return NewMessageDto.constructMessageId(message).toString();
     }
 
-    private static SortableIdentifier extractTicketIdentifier(RequestInfo requestInfo) {
-        var identifierString = requestInfo.getPathParameter(MessageApiConfig.TICKET_IDENTIFIER_PATH_PARAMETER);
-        return new SortableIdentifier(identifierString);
-    }
-
-    private static Username usernameFromRequestInfo(RequestInfo requestInfo) throws UnauthorizedException {
-        return new Username(requestInfo.getUserName());
-    }
-
-    private static boolean userIsElevatedUser(RequestInfo requestInfo) {
-        return userIsAuthorizedToApproveDoiRequest(requestInfo)
-               || userIsAuthorizedToApprovePublishingRequest(requestInfo);
-    }
-
-    private static boolean userIsAuthorizedToApprovePublishingRequest(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(MANAGE_PUBLISHING_REQUESTS);
-    }
-
-    private static boolean userIsAuthorizedToApproveDoiRequest(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(MANAGE_DOI);
-    }
-
-    private void updateStatusToPendingWhenCompletedGeneralSupportRequest(TicketEntry ticket) {
+    private static void updateStatusToPendingWhenCompletedGeneralSupportRequest(TicketEntry ticket) {
         if (ticket instanceof GeneralSupportRequest) {
             ticket.setStatus(TicketStatus.PENDING);
         }
     }
 
-    private static boolean ticketHasNoAssigne(TicketEntry ticket) {
-        return isNull(ticket.getAssignee());
-    }
-
-    private static String getOwner(TicketEntry ticket) {
-        return ticket.getOwner().toString();
-    }
-
-    private void injectAssigneeWhenUnassignedTicket(TicketEntry ticket, RequestInfo requestInfo)
-        throws UnauthorizedException {
-        if (userCanBeSetAsAssignee(ticket, requestInfo)) {
-            ticket.setAssignee(usernameFromRequestInfo(requestInfo));
+    private static void injectAssigneeWhenUnassignedTicket(TicketEntry ticket, RequestUtils requestUtils) {
+        if (userCanBeSetAsAssignee(ticket, requestUtils)) {
+            ticket.setAssignee(new Username(requestUtils.username()));
         }
     }
 
-    private boolean userCanBeSetAsAssignee(TicketEntry ticket, RequestInfo requestInfo)
-        throws UnauthorizedException {
-        return ticketHasNoAssigne(ticket)
-               && userIsElevatedUser(requestInfo)
-               && userIsNotTicketOwner(ticket, requestInfo);
+    private static boolean userCanBeSetAsAssignee(TicketEntry ticket, RequestUtils requestUtils) {
+        return !ticket.hasAssignee() && !requestUtils.isTicketOwner(ticket) && requestUtils.isAuthorizedToManage(ticket);
     }
 
-    private boolean userIsNotTicketOwner(TicketEntry ticket, RequestInfo requestInfo) throws UnauthorizedException {
-        return !getOwner(ticket).equals(requestInfo.getUserName());
-    }
-
-    private TicketEntry fetchTicketForUser(RequestInfo requestInfo, SortableIdentifier ticketIdentifier,
-                                           UserInstance user)
+    private TicketEntry fetchTicketForUser(RequestUtils requestUtils, SortableIdentifier ticketIdentifier)
         throws ApiGatewayException {
-        return userIsElevatedUser(requestInfo)
-                   ? fetchTicketAndValidateAccessRightsForElevatedUser(requestInfo, ticketIdentifier, user)
-                   : fetchTicketForPublicationOwner(ticketIdentifier, user);
+        return requestUtils.hasOneOfAccessRights(MANAGE_DOI, MANAGE_PUBLISHING_REQUESTS, SUPPORT)
+                   ? fetchTicketAndValidateAccessRightsForElevatedUser(requestUtils, ticketIdentifier)
+                   : fetchTicketForPublicationOwner(ticketIdentifier, requestUtils);
     }
 
-    private TicketEntry fetchTicketAndValidateAccessRightsForElevatedUser(RequestInfo requestInfo,
-                                                                          SortableIdentifier ticketIdentifier,
-                                                                          UserInstance user)
+    private TicketEntry fetchTicketAndValidateAccessRightsForElevatedUser(RequestUtils requestUtils,
+                                                                          SortableIdentifier ticketIdentifier)
         throws ApiGatewayException {
-        var ticketEntry = fetchTicketForElevatedUser(ticketIdentifier, user);
-        validateAccessRightsForTicketType(requestInfo, ticketEntry.getClass());
-        return ticketEntry;
+        return fetchTicketForElevatedUser(ticketIdentifier, requestUtils);
     }
 
-    private TicketEntry fetchTicketForPublicationOwner(SortableIdentifier ticketIdentifier, UserInstance user)
+    private TicketEntry fetchTicketForPublicationOwner(SortableIdentifier ticketIdentifier, RequestUtils requestUtils)
         throws ApiGatewayException {
-        return attempt(() -> ticketService.fetchTicket(user, ticketIdentifier))
+        return attempt(() -> ticketService.fetchTicket(requestUtils.toUserInstance(), ticketIdentifier))
                    .orElseThrow(fail -> handleFetchingTicketForUserError(fail.getException()));
     }
 
-    private void validateAccessRightsForTicketType(RequestInfo requestInfo, Class<? extends TicketEntry> ticketType)
+    private TicketEntry fetchTicketForElevatedUser(SortableIdentifier ticketIdentifier, RequestUtils requestUtils)
         throws ApiGatewayException {
-        if (userIsNotAuthorizedToCreateMessageForDoiRequest(requestInfo, ticketType)
-            || userIsNotAuthorizedToCreateMessageForPublishingRequestCase(requestInfo, ticketType)) {
-            throw new ForbiddenException();
-        }
-    }
-
-    private boolean userIsNotAuthorizedToCreateMessageForPublishingRequestCase(
-        RequestInfo requestInfo, Class<? extends TicketEntry> ticketType) {
-        return ticketType.equals(PublishingRequestCase.class)
-               && userIsNotAuthorizedToApprovePublishingRequest(requestInfo);
-    }
-
-    private boolean userIsNotAuthorizedToCreateMessageForDoiRequest(
-        RequestInfo requestInfo, Class<? extends TicketEntry> ticketType) {
-        return ticketType.equals(DoiRequest.class) && userIsNotAuthorizedToApproveDoiRequest(requestInfo);
-    }
-
-    private boolean userIsNotAuthorizedToApprovePublishingRequest(RequestInfo requestInfo) {
-        return !userIsAuthorizedToApprovePublishingRequest(requestInfo);
-    }
-
-    private boolean userIsNotAuthorizedToApproveDoiRequest(RequestInfo requestInfo) {
-        return !userIsAuthorizedToApproveDoiRequest(requestInfo);
-    }
-
-    private TicketEntry fetchTicketForElevatedUser(SortableIdentifier ticketIdentifier, UserInstance user)
-        throws ApiGatewayException {
-        return attempt(() -> ticketService.fetchTicketForElevatedUser(user, ticketIdentifier))
+        return attempt(() -> ticketService.fetchTicketForElevatedUser(requestUtils.toUserInstance(), ticketIdentifier))
                    .orElseThrow(fail -> handleFetchingTicketForUserError(fail.getException()));
     }
 

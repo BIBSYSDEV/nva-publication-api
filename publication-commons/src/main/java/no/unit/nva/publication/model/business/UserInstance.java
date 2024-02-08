@@ -18,7 +18,7 @@ import nva.commons.core.JacocoGenerated;
 public class UserInstance implements JsonSerializable {
 
     public static final URI UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI = null;
-    private final URI organizationUri;
+    private final URI customerId;
     private final User user;
     private final URI topLevelOrgCristinId;
     private final URI personCristinId;
@@ -27,28 +27,28 @@ public class UserInstance implements JsonSerializable {
 
     private boolean isExternalClient;
 
-    protected UserInstance(String userIdentifier, URI organizationUri, URI topLevelOrgCristinId, URI personCristinId, List<AccessRight> accessRights) {
+    protected UserInstance(String userIdentifier, URI customerId, URI topLevelOrgCristinId, URI personCristinId, List<AccessRight> accessRights) {
         this.user = new User(userIdentifier);
-        this.organizationUri = organizationUri;
+        this.customerId = customerId;
         this.topLevelOrgCristinId = topLevelOrgCristinId;
         this.personCristinId = personCristinId;
         this.accessRights = accessRights == null ? List.of() : accessRights;
     }
 
-    public static UserInstance create(User user, URI organizationUri) {
-        return new UserInstance(user.toString(), organizationUri, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, null, null);
+    public static UserInstance create(User user, URI customerId) {
+        return new UserInstance(user.toString(), customerId, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, null, null);
     }
 
-    public static UserInstance create(String userIdentifier, URI organizationUri) {
-        return new UserInstance(userIdentifier, organizationUri, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, null, null);
+    public static UserInstance create(String userIdentifier, URI customerId) {
+        return new UserInstance(userIdentifier, customerId, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, null, null);
     }
 
-    public static UserInstance create(String userIdentifier, URI organizationUri, URI personCristinId, List<AccessRight> accessRights) {
-        return new UserInstance(userIdentifier, organizationUri, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, personCristinId, accessRights);
+    public static UserInstance create(String userIdentifier, URI customerId, URI personCristinId, List<AccessRight> accessRights) {
+        return new UserInstance(userIdentifier, customerId, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, personCristinId, accessRights);
     }
 
-    public static UserInstance create(ResourceOwner resourceOwner, URI organizationUri) {
-        return new UserInstance(resourceOwner.getOwner().getValue(), organizationUri,
+    public static UserInstance create(ResourceOwner resourceOwner, URI customerId) {
+        return new UserInstance(resourceOwner.getOwner().getValue(), customerId,
                                 resourceOwner.getOwnerAffiliation(), null, null);
     }
 
@@ -88,11 +88,11 @@ public class UserInstance implements JsonSerializable {
 
     public boolean isOwner(Message message) {
         return this.user.equals(message.getOwner())
-               && this.organizationUri.equals(message.getCustomerId());
+               && this.customerId.equals(message.getCustomerId());
     }
 
-    public URI getOrganizationUri() {
-        return organizationUri;
+    public URI getCustomerId() {
+        return customerId;
     }
 
     public String getUsername() {
@@ -119,7 +119,7 @@ public class UserInstance implements JsonSerializable {
     @Override
     @JacocoGenerated
     public int hashCode() {
-        return Objects.hash(getOrganizationUri(), getUsername(), getTopLevelOrgCristinId());
+        return Objects.hash(getCustomerId(), getUsername(), getTopLevelOrgCristinId());
     }
 
     @Override
@@ -132,7 +132,7 @@ public class UserInstance implements JsonSerializable {
             return false;
         }
         UserInstance that = (UserInstance) o;
-        return Objects.equals(getOrganizationUri(), that.getOrganizationUri()) && Objects.equals(
+        return Objects.equals(getCustomerId(), that.getCustomerId()) && Objects.equals(
             getUsername(), that.getUsername()) && Objects.equals(getTopLevelOrgCristinId(),
                                                                  that.getTopLevelOrgCristinId());
     }

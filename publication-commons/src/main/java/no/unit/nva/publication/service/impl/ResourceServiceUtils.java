@@ -44,7 +44,7 @@ public final class ResourceServiceUtils {
     }
     
     static Organization userOrganization(UserInstance user) {
-        return newOrganization(user.getOrganizationUri());
+        return newOrganization(user.getCustomerId());
     }
     
     static <T> Map<String, AttributeValue> conditionValueMapToAttributeValueMap(Map<String, Object> valuesMap,

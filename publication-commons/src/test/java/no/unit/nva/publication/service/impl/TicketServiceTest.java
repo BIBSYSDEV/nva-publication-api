@@ -327,7 +327,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest(name = "ticket type:{0}")
-    @DisplayName("should retrieve ticket by customer id and resource identifier")
+    @DisplayName("should retrieve ticket by customerId id and resource identifier")
     @MethodSource("ticketTypeProvider")
     void shouldRetrieveTicketByCustomerIdAndResourceIdentifier(Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
@@ -829,7 +829,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
 
         var publication = new Publication.Builder().withResourceOwner(
                 new ResourceOwner(new Username(owner.getUsername()), randomOrgUnitId()))
-                              .withPublisher(createOrganization(owner.getOrganizationUri()))
+                              .withPublisher(createOrganization(owner.getCustomerId()))
                               .withStatus(DRAFT)
                               .build();
 

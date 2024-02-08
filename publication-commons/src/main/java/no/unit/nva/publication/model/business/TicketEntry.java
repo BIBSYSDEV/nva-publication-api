@@ -348,6 +348,10 @@ public abstract class TicketEntry implements Entity {
         return PUBLISHED_STATUSES.contains(publication.getStatus());
     }
 
+    public boolean hasAssignee() {
+        return nonNull(this.getAssignee());
+    }
+
     public static final class Constants {
 
         public static final String STATUS_FIELD = "status";

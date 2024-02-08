@@ -35,8 +35,8 @@ public class CuratorPermissionStrategy extends PermissionStrategy {
     }
 
     private boolean userIsFromSameInstitutionAsPublication() {
-        return userInstance.getOrganizationUri() != null && publication.getPublisher() != null &&
-               userInstance.getOrganizationUri().equals(publication.getPublisher().getId());
+        return userInstance.getCustomerId() != null && publication.getPublisher() != null &&
+               userInstance.getCustomerId().equals(publication.getPublisher().getId());
     }
 
     private boolean userAndContributorInTheSameInstitution() {
@@ -49,6 +49,6 @@ public class CuratorPermissionStrategy extends PermissionStrategy {
                                              .map(Organization.class::cast)
                                              .map(Organization::getId))
                    .anyMatch(id ->
-                                 id.equals(userInstance.getOrganizationUri()));
+                                 id.equals(userInstance.getCustomerId()));
     }
 }

@@ -44,7 +44,7 @@ public class MessageDao extends Dao
     public static MessageDao queryObject(UserInstance owner, SortableIdentifier identifier) {
         Message message = Message.builder()
                               .withOwner(owner.getUser())
-                              .withCustomerId(owner.getOrganizationUri())
+                              .withCustomerId(owner.getCustomerId())
                               .withIdentifier(identifier)
                               .build();
         return new MessageDao(message);
@@ -52,7 +52,7 @@ public class MessageDao extends Dao
     
     public static MessageDao listMessagesAndResourcesForUser(UserInstance owner) {
         Message message = Message.builder()
-                              .withCustomerId(owner.getOrganizationUri())
+                              .withCustomerId(owner.getCustomerId())
                               .withOwner(owner.getUser())
                               .build();
         return new MessageDao(message);

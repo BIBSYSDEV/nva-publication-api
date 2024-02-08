@@ -73,7 +73,7 @@ public class ResourceDao extends Dao
     public static ResourceDao queryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         Resource resource = Resource.emptyResource(
             userInstance.getUser(),
-            userInstance.getOrganizationUri(),
+            userInstance.getCustomerId(),
             resourceIdentifier);
         return new ResourceDao(resource);
     }

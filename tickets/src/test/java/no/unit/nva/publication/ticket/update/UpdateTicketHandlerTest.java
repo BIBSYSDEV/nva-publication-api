@@ -568,7 +568,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
 
         var updatedPublication = resourceService.getPublication(publication);
 
-        var file = updatedPublication.getAssociatedArtifacts().get(0);
+        var file = updatedPublication.getAssociatedArtifacts().getFirst();
         assertThat(file, is(instanceOf(AdministrativeAgreement.class)));
         assertThat(((AdministrativeAgreement) file).isAdministrativeAgreement(), is(false));
     }
@@ -586,7 +586,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         handler.handleRequest(httpRequest, output, CONTEXT);
 
         var completedPublishingRequest = (PublishingRequestCase) ticketService.fetchTicket(ticket);
-        var approvedFile = (File) publication.getAssociatedArtifacts().get(0);
+        var approvedFile = (File) publication.getAssociatedArtifacts().getFirst();
 
         assertThat(completedPublishingRequest.getApprovedFiles(), contains(approvedFile.getIdentifier()));
     }
@@ -608,7 +608,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                                                           AccessRight.MANAGE_PUBLISHING_REQUESTS);
         handler.handleRequest(httpRequest, output, CONTEXT);
         var completedPublishingRequest = (PublishingRequestCase) ticketService.fetchTicket(ticket);
-        var approvedFile = (File) publication.getAssociatedArtifacts().get(0);
+        var approvedFile = (File) publication.getAssociatedArtifacts().getFirst();
 
         assertThat(completedPublishingRequest.getApprovedFiles(), contains(approvedFile.getIdentifier()));
         assertThat(completedPublishingRequest.getFilesForApproval(), is(emptyIterable()));
@@ -639,6 +639,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                    .withUserName(ticket.getOwner().toString())
                    .withBody(new UpdateTicketRequest(ticket.getStatus(), null, viewStatus))
                    .withPathParameters(createPathParameters(ticket, publication.getIdentifier()))
+                   .withPersonCristinId(randomUri())
                    .build();
     }
 
@@ -650,6 +651,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                    .withAccessRights(customerId, AccessRight.MANAGE_DOI)
                    .withBody(new UpdateTicketRequest(ticket.getStatus(), null, viewStatus))
                    .withPathParameters(createPathParameters(ticket, publication.getIdentifier()))
+                   .withPersonCristinId(randomUri())
                    .build();
     }
 
@@ -663,6 +665,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                                      AccessRight.SUPPORT)
                    .withBody(new UpdateTicketRequest(ticket.getStatus(), ticket.getAssignee(), viewStatus))
                    .withPathParameters(createPathParameters(ticket, publication.getIdentifier()))
+                   .withPersonCristinId(randomUri())
                    .build();
     }
 
@@ -692,8 +695,9 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                 pathParameters(publication, ticket))
                    .withBody(new UpdateTicketRequest(ticket.getStatus(), ticket.getAssignee(), null))
                    .withUserName(user.getUsername())
-                   .withCurrentCustomer(user.getOrganizationUri())
-                   .withAccessRights(user.getOrganizationUri(), AccessRight.MANAGE_DOI)
+                   .withCurrentCustomer(user.getCustomerId())
+                   .withAccessRights(user.getCustomerId(), AccessRight.MANAGE_DOI)
+                   .withPersonCristinId(randomUri())
                    .build();
     }
 
@@ -707,6 +711,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                                               ticket.getResourceIdentifier().toString(),
                                               TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME,
                                               ticket.getIdentifier().toString()))
+                   .withPersonCristinId(randomUri())
                    .build();
     }
 
@@ -725,6 +730,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                                               ticket.getResourceIdentifier().toString(),
                                               TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME,
                                               ticket.getIdentifier().toString()))
+                   .withPersonCristinId(randomUri())
                    .build();
     }
 
@@ -737,6 +743,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                    .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
                                               publicationIdentifier, TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME,
                                               ticketIdentifier))
+                   .withPersonCristinId(randomUri())
                    .build();
     }
 
@@ -749,6 +756,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                    .withBody(new UpdateTicketRequest(ticket.getStatus(), null, ViewStatus.UNREAD))
                    .withPathParameters(createPathParameters(ticket, wrongPublicationIdentifier))
                    .withAccessRights(ticket.getCustomerId(), AccessRight.MANAGE_DOI)
+                   .withPersonCristinId(randomUri())
                    .build();
     }
 
@@ -789,6 +797,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                    .withCurrentCustomer(ticket.getCustomerId())
                    .withUserName(ticket.getOwner().toString())
                    .withPathParameters(createPathParameters(ticket, wrongPublicationIdentifier))
+                   .withPersonCristinId(randomUri())
                    .build();
     }
 }

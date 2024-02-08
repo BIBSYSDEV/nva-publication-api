@@ -3,11 +3,13 @@ package no.unit.nva.publication.model.business;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
+import nva.commons.apigateway.exceptions.ConflictException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -56,6 +58,14 @@ class TicketEntryTest {
         assertThrows(UnsupportedOperationException.class,
                      () -> TicketEntry.createNewTicket(publication, TicketEntry.class,
                                                        SortableIdentifier::next));
+    }
+
+    @Test
+    void shouldReturnFalseWhenTicketWithoutAssignee() throws ConflictException {
+        var publication = TicketTestUtils.createNonPersistedPublication(PublicationStatus.DRAFT);
+        var ticket = TicketEntry.createNewTicket(publication, DoiRequest.class, SortableIdentifier::next);
+
+        assertFalse(ticket.hasAssignee());
     }
 
     private static UserInstance getExpectedUserInstance(Publication publication) {
