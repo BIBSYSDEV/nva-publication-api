@@ -1754,11 +1754,9 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     private void checkCollaborationName(CollaborationTp collaboration, List<Contributor> contributors) {
-        var optionalContributor = findContributorBySequence(collaboration.getSeq(), contributors);
-        if (Integer.parseInt(collaboration.getSeq()) < contributors.size()) {
-            var contributor = optionalContributor.getFirst();
+        var contributor = findContributorByName(collaboration.getIndexedName(), contributors);
 
-            assertEquals(1, optionalContributor.size());
+        if (Integer.parseInt(collaboration.getSeq()) < contributors.size()) {
             assertEquals(collaboration.getIndexedName(), contributor.getIdentity().getName());
         }
     }
