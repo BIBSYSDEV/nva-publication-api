@@ -949,7 +949,8 @@ components:
           description: Type of the request
         duplicateOf:
           type: string
-          description: Identifier of the publication the current publication is a duplicate of
+          format: uri
+          description: The URI representing a publication of which the current one is a duplicate of.
         comment:
           type: string
           description: Reason for unpublishing

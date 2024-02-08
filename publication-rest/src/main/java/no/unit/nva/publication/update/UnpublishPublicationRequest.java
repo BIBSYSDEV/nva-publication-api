@@ -1,17 +1,17 @@
 package no.unit.nva.publication.update;
 
+import java.net.URI;
 import java.util.Optional;
-import no.unit.nva.identifiers.SortableIdentifier;
 
 public class UnpublishPublicationRequest implements PublicationRequest {
-    private Optional<SortableIdentifier> duplicateOf = Optional.empty();
+    private Optional<URI> duplicateOf = Optional.empty();
     private String comment;
 
-    public Optional<SortableIdentifier> getDuplicateOf() {
+    public Optional<URI> getDuplicateOf() {
         return duplicateOf;
     }
 
-    public void setDuplicateOf(SortableIdentifier duplicateOf) {
+    public void setDuplicateOf(URI duplicateOf) {
         this.duplicateOf = Optional.of(duplicateOf);
     }
 

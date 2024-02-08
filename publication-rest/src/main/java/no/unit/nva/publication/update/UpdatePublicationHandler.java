@@ -60,7 +60,6 @@ import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UnixPath;
-import nva.commons.core.paths.UriWrapper;
 import nva.commons.secrets.SecretsReader;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -83,8 +82,6 @@ public class UpdatePublicationHandler
     private final TicketService ticketService;
     private final ResourceService resourceService;
     private final IdentityServiceClient identityServiceClient;
-    public static final String API_HOST = "API_HOST";
-    public static final String PUBLICATION = "publication";
     public static final String NVA_EVENT_BUS_NAME_KEY = "NVA_EVENT_BUS_NAME";
     public static final String LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS =
         "Lambda Function Invocation Result - Success";
@@ -252,23 +249,16 @@ public class UpdatePublicationHandler
     }
 
     private Publication toPublicationWithDuplicate(UnpublishPublicationRequest unpublishPublicationRequest, Publication publication) {
-        var duplicateIdentifier = unpublishPublicationRequest.getDuplicateOf().map(SortableIdentifier::toString).orElse(null);
+        var duplicate = unpublishPublicationRequest.getDuplicateOf().orElse(null);
         var comment = unpublishPublicationRequest.getComment();
 
         var notes = new ArrayList<>(publication.getPublicationNotes());
         notes.add(new UnpublishingNote(comment));
 
         return publication.copy()
-                   .withDuplicateOf(nonNull(duplicateIdentifier) ? toPublicationUri(duplicateIdentifier) : publication.getDuplicateOf())
+                   .withDuplicateOf(duplicate)
                    .withPublicationNotes(notes)
                    .build();
-    }
-
-    private static URI toPublicationUri(String duplicateIdentifier) {
-        return UriWrapper.fromHost(new Environment().readEnv(API_HOST))
-                   .addChild(PUBLICATION)
-                   .addChild(duplicateIdentifier)
-                   .getUri();
     }
 
     private Publication updateMetadata(UpdatePublicationRequest input, SortableIdentifier identifierInPath,
