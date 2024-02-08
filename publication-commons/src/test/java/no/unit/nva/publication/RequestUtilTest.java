@@ -111,7 +111,7 @@ class RequestUtilTest {
         var identityServiceClient = mock(IdentityServiceClient.class);
         when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
 
-        var userInstance = RequestUtil.createExternalUserInstance(requestInfo, identityServiceClient);
+        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         assertNotNull(userInstance);
     }
 
@@ -127,7 +127,7 @@ class RequestUtilTest {
         var identityServiceClient = mock(IdentityServiceClient.class);
         when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
 
-        assertThrows(UnauthorizedException.class, () -> RequestUtil.createExternalUserInstance(requestInfo, identityServiceClient));
+        assertThrows(UnauthorizedException.class, () -> RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient));
     }
 
     @Test
@@ -140,8 +140,9 @@ class RequestUtilTest {
         when(requestInfo.getCurrentCustomer()).thenReturn(customer);
         when(requestInfo.getUserName()).thenReturn(username);
 
+        var identityServiceClient = mock(IdentityServiceClient.class);
 
-        var userInstance = RequestUtil.createInternalUserInstance(requestInfo);
+        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         assertEquals(username, userInstance.getUsername());
         assertEquals(customer, userInstance.getOrganizationUri());
     }

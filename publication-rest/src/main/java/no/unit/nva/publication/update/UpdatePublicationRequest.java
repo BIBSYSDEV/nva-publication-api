@@ -1,6 +1,7 @@
 package no.unit.nva.publication.update;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.JsonNode;
 import no.unit.nva.WithAssociatedArtifact;
 import no.unit.nva.WithContext;
@@ -21,8 +22,10 @@ import java.util.Objects;
 
 import static java.util.Objects.isNull;
 
-public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, WithAssociatedArtifact, WithContext {
-    
+@JsonTypeName("Publication")
+public class UpdatePublicationRequest
+    implements PublicationRequest, WithIdentifier, WithMetadata, WithAssociatedArtifact, WithContext {
+
     public static final String WRONG_PUBLICATION_UPDATE_ERROR = "Trying to update a publication with different "
                                                                 + "identifier:";
     private SortableIdentifier identifier;
@@ -34,20 +37,20 @@ public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, W
     private List<URI> subjects;
     private List<Funding> fundings;
     private String rightsHolder;
-    
+
     public Publication generatePublicationUpdate(Publication existingPublication) throws ForbiddenException {
         if (!this.identifier.equals(existingPublication.getIdentifier())) {
             throw new IllegalArgumentException(
                 WRONG_PUBLICATION_UPDATE_ERROR + existingPublication.getIdentifier());
         }
         return validateNonNulls(existingPublication.copy()
-                   .withEntityDescription(this.entityDescription)
-                   .withAssociatedArtifacts(this.associatedArtifacts)
-                   .withProjects(this.projects)
-                   .withSubjects(this.subjects)
-                   .withFundings(this.fundings)
-                   .withRightsHolder(this.rightsHolder)
-                   .build());
+                                    .withEntityDescription(this.entityDescription)
+                                    .withAssociatedArtifacts(this.associatedArtifacts)
+                                    .withProjects(this.projects)
+                                    .withSubjects(this.subjects)
+                                    .withFundings(this.fundings)
+                                    .withRightsHolder(this.rightsHolder)
+                                    .build());
     }
 
     private Publication validateNonNulls(Publication publication)
@@ -63,49 +66,49 @@ public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, W
     public SortableIdentifier getIdentifier() {
         return identifier;
     }
-    
+
     @JacocoGenerated
     @Override
     public void setIdentifier(SortableIdentifier identifier) {
         this.identifier = identifier;
     }
-    
+
     @JacocoGenerated
     @Override
     public EntityDescription getEntityDescription() {
         return entityDescription;
     }
-    
+
     @JacocoGenerated
     @Override
     public void setEntityDescription(EntityDescription entityDescription) {
         this.entityDescription = entityDescription;
     }
-    
+
     @Override
     @JacocoGenerated
     public List<ResearchProject> getProjects() {
         return projects;
     }
-    
+
     @Override
     @JacocoGenerated
     public void setProjects(List<ResearchProject> projects) {
         this.projects = projects;
     }
-    
+
     @Override
     @JacocoGenerated
     public List<URI> getSubjects() {
         return subjects;
     }
-    
+
     @Override
     @JacocoGenerated
     public void setSubjects(List<URI> subjects) {
         this.subjects = subjects;
     }
-    
+
     @Override
     @JacocoGenerated
     public AssociatedArtifactList getAssociatedArtifacts() {
@@ -117,13 +120,13 @@ public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, W
     public void setAssociatedArtifacts(AssociatedArtifactList associatedArtifacts) {
         this.associatedArtifacts = associatedArtifacts;
     }
-    
+
     @Override
     @JacocoGenerated
     public JsonNode getContext() {
         return context;
     }
-    
+
     @Override
     @JacocoGenerated
     public void setContext(JsonNode context) {
@@ -159,7 +162,7 @@ public class UpdatePublicationRequest implements WithIdentifier, WithMetadata, W
     public int hashCode() {
         return Objects.hash(identifier, entityDescription, associatedArtifacts, subjects, context);
     }
-    
+
     @Override
     @JacocoGenerated
     public boolean equals(Object o) {

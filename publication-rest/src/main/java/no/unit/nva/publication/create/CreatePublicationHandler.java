@@ -51,7 +51,8 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     public static final String API_SCHEME = "https";
     public static final String API_HOST = "API_HOST";
     private static final Logger logger = LoggerFactory.getLogger(CreatePublicationHandler.class);
-    private static final List<String> THESIS_INSTANCE_TYPES = List.of("DegreeBachelor", "DegreeMaster", "DegreePhd");
+    private static final List<String> THESIS_INSTANCE_TYPES = List.of("DegreeBachelor", "DegreeMaster", "DegreePhd",
+                                                                      "DegreeLicentiate");
     private final ResourceService publicationService;
     private final PublicationValidator publicationValidator;
     private final String apiHost;

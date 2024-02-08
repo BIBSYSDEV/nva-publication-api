@@ -6,15 +6,19 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.model.testing.PublicationInstanceBuilder.listPublicationInstanceTypes;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
+import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
@@ -43,6 +47,10 @@ import org.junit.jupiter.params.provider.Arguments;
 public final class TicketTestUtils {
 
     private static final Set<PublicationStatus> PUBLISHED_STATUSES = Set.of(PUBLISHED, PUBLISHED_METADATA);
+    public static final Random RANDOM = new Random(System.currentTimeMillis());
+
+    private TicketTestUtils() {
+    }
 
     public static Stream<Arguments> ticketTypeAndPublicationStatusProvider() {
         return Stream.of(Arguments.of(DoiRequest.class, PUBLISHED),
@@ -66,22 +74,38 @@ public final class TicketTestUtils {
         return randomPublicationWithStatus(status);
     }
 
-    public static Publication createPersistedPublication(PublicationStatus status, ResourceService resourceService)
+    public static Publication createPersistedNonDegreePublication(URI publisherId, PublicationStatus status,
+                                                                  ResourceService resourceService)
         throws ApiGatewayException {
-        return createPersistedPublication(null, status, resourceService);
+        var publication = randomNonDegreePublication(status)
+                              .copy()
+                              .withPublisher(new Organization.Builder()
+                                                 .withId(publisherId)
+                                                 .build())
+                              .build();
+        return persistPublication(resourceService, publication);
     }
 
-    public static Publication createPersistedPublication(URI publisherId,
-                                                         PublicationStatus status,
+    public static Publication createPersistedPublication(URI publisherId, PublicationStatus status,
                                                          ResourceService resourceService)
         throws ApiGatewayException {
-        var publication = randomPublicationWithStatus(status);
+        var publication = randomNonDegreePublication(status);
         if (publisherId != null) {
             publication = publication.copy()
                               .withPublisher(new Organization.Builder().withId(publisherId).build())
                               .build();
         }
+        return persistPublication(resourceService, publication);
+    }
 
+    public static Publication createPersistedPublication(PublicationStatus status, ResourceService resourceService)
+        throws ApiGatewayException {
+        var publication = randomPublicationWithStatus(status);
+        return persistPublication(resourceService, publication);
+    }
+
+    private static Publication persistPublication(ResourceService resourceService, Publication publication)
+        throws ApiGatewayException {
         var persistedPublication = Resource
                                        .fromPublication(publication)
                                        .persistNew(resourceService, UserInstance.fromPublication(publication));
@@ -92,52 +116,39 @@ public final class TicketTestUtils {
         return persistedPublication;
     }
 
+    private static boolean isNonDegreeClass(Class<?> publicationInstance) {
+        var listOfDegreeClasses = Set.of("DegreeMaster", "DegreeBachelor", "DegreePhd", "DegreeLicentiate");
+        return !listOfDegreeClasses.contains(publicationInstance.getSimpleName());
+    }
+
     public static Publication createPersistedPublicationWithAdministrativeAgreement(ResourceService resourceService)
         throws ApiGatewayException {
         var publication = randomPublication().copy()
                               .withAssociatedArtifacts(List.of(administrativeAgreement()))
                               .build();
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
-                                                                                    UserInstance.fromPublication(
-                                                                                        publication));
-        if (isPublished(publication)) {
-            publishPublication(resourceService, persistedPublication);
-            return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
-        }
-        return persistedPublication;
+
+        return persistPublication(resourceService, publication);
     }
 
     public static Publication createPersistedPublicationWithAdministrativeAgreement(URI publisherId,
                                                                                     ResourceService resourceService)
         throws ApiGatewayException {
-        var publication = randomPublication().copy()
+        var publication = randomNonDegreePublication(
+            randomElement(Arrays.stream(PublicationStatus.values()).toList())).copy()
                               .withAssociatedArtifacts(List.of(administrativeAgreement()))
-                              .withPublisher(new Organization.Builder()
+                              .withPublisher(new Builder()
                                                  .withId(publisherId)
                                                  .build())
                               .build();
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
-                                                                                    UserInstance.fromPublication(
-                                                                                        publication));
-        if (isPublished(publication)) {
-            publishPublication(resourceService, persistedPublication);
-            return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
-        }
-        return persistedPublication;
+
+        return persistPublication(resourceService, publication);
     }
 
     public static Publication createPersistedPublicationWithUnpublishedFiles(PublicationStatus status,
                                                                              ResourceService resourceService)
         throws ApiGatewayException {
         var publication = randomPublicationWithUnpublishedFiles(status);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
-                                                                                    UserInstance.fromPublication(
-                                                                                        publication));
-        if (isPublished(publication)) {
-            publishPublication(resourceService, persistedPublication);
-            return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
-        }
-        return persistedPublication;
+        return persistPublication(resourceService, publication);
     }
 
     public static Publication createPersistedPublicationWithUnpublishedFiles(URI publisher,
@@ -145,28 +156,14 @@ public final class TicketTestUtils {
                                                                              ResourceService resourceService)
         throws ApiGatewayException {
         var publication = randomPublicationWithUnpublishedFiles(publisher, status);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
-                                                                                    UserInstance.fromPublication(
-                                                                                        publication));
-        if (isPublished(publication)) {
-            publishPublication(resourceService, persistedPublication);
-            return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
-        }
-        return persistedPublication;
+        return persistPublication(resourceService, publication);
     }
 
     public static Publication createPersistedPublicationWithAssociatedLink(PublicationStatus status,
                                                                            ResourceService resourceService)
         throws ApiGatewayException {
         var publication = randomPublicationWithAssociatedLink(status);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
-                                                                                    UserInstance.fromPublication(
-                                                                                        publication));
-        if (isPublished(publication)) {
-            publishPublication(resourceService, persistedPublication);
-            return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
-        }
-        return persistedPublication;
+        return persistPublication(resourceService, publication);
     }
 
     public static Publication createPersistedPublicationWithDoi(PublicationStatus status,
@@ -272,10 +269,26 @@ public final class TicketTestUtils {
                    .build();
     }
 
+    private static Publication randomNonDegreePublication(PublicationStatus status) {
+        var publicationInstanceTypes = listPublicationInstanceTypes();
+        var nonDegreePublicationInstances = publicationInstanceTypes.stream()
+                                                .filter(TicketTestUtils::isNonDegreeClass)
+                                                .toList();
+        var publication = PublicationGenerator.randomPublication(randomElement(nonDegreePublicationInstances));
+        return publication.copy()
+                   .withStatus(status)
+                   .withDoi(null)
+                   .build();
+    }
+
+    private static <T> T randomElement(List<T> elements) {
+        return elements.get(RANDOM.nextInt(elements.size()));
+    }
+
     private static void unpublishFiles(Publication publication) {
         var list = publication.getAssociatedArtifacts()
                        .stream()
-                       .filter(artifact -> artifact instanceof File)
+                       .filter(File.class::isInstance)
                        .map(File.class::cast)
                        .map(File::toUnpublishedFile)
                        .collect(Collectors.toCollection(() -> new ArrayList<AssociatedArtifact>()));

@@ -3,38 +3,28 @@ package no.unit.nva.publication.permission.strategy;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_ALL;
 import no.unit.nva.model.Publication;
-import nva.commons.apigateway.RequestInfo;
+import no.unit.nva.publication.model.business.UserInstance;
 
 public class EditorPermissionStrategy extends PermissionStrategy {
 
-    private final RequestInfo requestInfo;
-
-    public EditorPermissionStrategy(RequestInfo requestInfo) {
-        super();
-        this.requestInfo = requestInfo;
-    }
-
-    public static EditorPermissionStrategy fromRequestInfo(RequestInfo requestInfo) {
-        return new EditorPermissionStrategy(requestInfo);
+    public EditorPermissionStrategy(Publication publication, UserInstance userInstance) {
+        super(publication, userInstance);
     }
 
     @Override
-    public boolean hasPermission(RequestInfo requestInfo, Publication publication) {
-        if (isDegree(publication)) {
-            return hasAccessRight(requestInfo, MANAGE_DEGREE)
-                   && hasAccessRight(requestInfo, MANAGE_RESOURCES_ALL);
+    protected boolean allowsAction(PublicationAction permission) {
+        return switch (permission) {
+            case UPDATE, DELETE, UNPUBLISH -> canManage();
+            default -> false;
+        };
+    }
+
+    private boolean canManage() {
+        if (isDegree()) {
+            return hasAccessRight(MANAGE_DEGREE)
+                   && hasAccessRight(MANAGE_RESOURCES_ALL);
         }
 
-        return hasAccessRight(requestInfo, MANAGE_RESOURCES_ALL);
-    }
-
-    public boolean hasPermission(Publication publication) {
-        return hasPermissionToOperateOnDegree(publication)
-               || hasAccessRight(requestInfo, MANAGE_RESOURCES_ALL);
-    }
-
-    private boolean hasPermissionToOperateOnDegree(Publication publication) {
-        return isDegree(publication) && hasAccessRight(requestInfo, MANAGE_DEGREE)
-               && hasAccessRight(requestInfo, MANAGE_RESOURCES_ALL);
+        return hasAccessRight(MANAGE_RESOURCES_ALL);
     }
 }

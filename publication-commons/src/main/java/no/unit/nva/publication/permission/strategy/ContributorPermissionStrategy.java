@@ -1,36 +1,50 @@
 package no.unit.nva.publication.permission.strategy;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.model.role.Role.CREATOR;
 import static nva.commons.core.attempt.Try.attempt;
-import java.net.URI;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.role.RoleType;
-import nva.commons.apigateway.RequestInfo;
+import no.unit.nva.publication.model.business.UserInstance;
 
 public class ContributorPermissionStrategy extends PermissionStrategy {
 
-    @Override
-    public boolean hasPermission(RequestInfo requestInfo, Publication publication) {
-        if (isDegree(publication)) {
-            return false;
-        }
-        return attempt(requestInfo::getPersonCristinId)
-                           .map(cristinId -> publicationContainsContributor(cristinId, publication))
-                           .orElse(fail -> false);
+    public ContributorPermissionStrategy(Publication publication, UserInstance userInstance) {
+        super(publication, userInstance);
     }
 
-    private boolean publicationContainsContributor(URI contributor, Publication publication) {
-        return publication.getEntityDescription()
-                   .getContributors()
-                   .stream()
+    @Override
+    protected boolean allowsAction(PublicationAction permission) {
+        return switch (permission) {
+            case UPDATE, UNPUBLISH -> canModify();
+            default -> false;
+        };
+    }
+
+    private boolean canModify() {
+        if (isDegree()) {
+            return false;
+        }
+
+        return userIsVerifiedContributor();
+    }
+
+    private boolean userIsVerifiedContributor() {
+        return nonNull(this.userInstance.getPersonCristinId()) &&
+               Optional.ofNullable(publication.getEntityDescription())
+                   .map(EntityDescription::getContributors)
+                   .stream().flatMap(List::stream)
                    .filter(ContributorPermissionStrategy::isCreator)
                    .map(Contributor::getIdentity)
                    .map(Identity::getId)
                    .filter(Objects::nonNull)
-                   .anyMatch(contributor::equals);
+                   .anyMatch(a -> a.equals(this.userInstance.getPersonCristinId()));
     }
 
     private static boolean isCreator(Contributor contributor) {

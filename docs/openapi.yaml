@@ -119,7 +119,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Publication'
+              oneOf:
+                - $ref: '#/components/schemas/Publication'
+                - $ref: '#/components/schemas/DeletePublicationRequest'
+                - $ref: '#/components/schemas/UnpublishPublicationRequest'
       parameters:
         - in: path
           name: publicationIdentifier
@@ -135,12 +138,36 @@ paths:
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        '200':
+        200:
           description: OK
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Publication'
+        202:
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Publication'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
     delete:
       summary: Delete Publication for Identifier
       tags:
@@ -159,12 +186,6 @@ paths:
             format: uuid
           required: true
           description: UUID identifier of the Publication to delete.
-        - in: query
-          name: duplicate
-          description: 'UUID to duplicate NVA publication'
-          required: false
-          schema:
-            type: string
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaDeletePublicationFunction.Arn}/invocations
@@ -780,7 +801,13 @@ components:
     Publication:
       type: object
       description: Complete Publication entity
+      required:
+        - type
       properties:
+        type:
+          type: string
+          enum: [ 'Publication' ]
+          description: Type of the request
         abstract:
           type: string
           description: short abstract of content
@@ -899,6 +926,33 @@ components:
             type: string
         title:
           type: string
+    DeletePublicationRequest:
+      type: object
+      description: Delete publication request
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum: [ 'DeletePublicationRequest' ]
+          description: Type of the request
+    UnpublishPublicationRequest:
+      type: object
+      description: Unpublish publication request
+      required:
+        - type
+        - comment
+      properties:
+        type:
+          type: string
+          enum: [ 'UnpublishPublicationRequest' ]
+          description: Type of the request
+        duplicateOf:
+          type: string
+          description: Identifier of the publication the current publication is a duplicate of
+        comment:
+          type: string
+          description: Reason for unpublishing
     ImportCandidate:
       type: object
       description: Complete Import candidate entity

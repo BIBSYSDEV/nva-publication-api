@@ -18,7 +18,7 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationNote;
+import no.unit.nva.model.PublicationNoteBase;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
@@ -80,7 +80,7 @@ public class Resource implements Entity {
     @JsonProperty
     private ImportStatus importStatus;
     @JsonProperty
-    private List<PublicationNote> publicationNotes;
+    private List<PublicationNoteBase> publicationNotes;
     @JsonProperty
     private URI duplicateOf;
 
@@ -229,11 +229,11 @@ public class Resource implements Entity {
         this.importStatus = importStatus;
     }
 
-    public List<PublicationNote> getPublicationNotes() {
+    public List<PublicationNoteBase> getPublicationNotes() {
         return nonNull(publicationNotes) ? publicationNotes : List.of();
     }
 
-    public void setPublicationNotes(List<PublicationNote> publicationNotes) {
+    public void setPublicationNotes(List<PublicationNoteBase> publicationNotes) {
         this.publicationNotes = publicationNotes;
     }
 

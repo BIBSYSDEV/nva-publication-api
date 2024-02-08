@@ -1,7 +1,6 @@
 package no.unit.nva.publication.fetch;
 
-import static no.unit.nva.publication.RequestUtil.createExternalUserInstance;
-import static no.unit.nva.publication.RequestUtil.createInternalUserInstance;
+import static no.unit.nva.publication.RequestUtil.createUserInstanceFromRequest;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.time.Clock;
@@ -9,7 +8,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -52,7 +50,7 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
     protected PublicationsByOwnerResponse processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
 
-        var userInstance = createUserInstanceFromLoginInformation(requestInfo);
+        var userInstance = createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         logger.info(String.format("Requested publications for owner with username/feideId=%s and publisher with "
                                   + "customerId=%s",
@@ -67,12 +65,6 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
                                   .collect(Collectors.toList());
         
         return new PublicationsByOwnerResponse(publicationsByOwner);
-    }
-
-    private UserInstance createUserInstanceFromLoginInformation(RequestInfo requestInfo) throws ApiGatewayException {
-        return requestInfo.clientIsThirdParty()
-                   ? createExternalUserInstance(requestInfo, identityServiceClient)
-                   : createInternalUserInstance(requestInfo);
     }
     
     @Override
