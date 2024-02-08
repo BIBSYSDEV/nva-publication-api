@@ -193,7 +193,7 @@ public final class TicketTestUtils {
         return persistedPublication;
     }
 
-    public static TicketEntry createPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType,
+    public static TicketEntry   createPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType,
                                                     TicketService ticketService)
         throws ApiGatewayException {
         return TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
@@ -252,7 +252,7 @@ public final class TicketTestUtils {
     }
 
     private static Publication randomPublicationWithUnpublishedFiles(URI publisherId, PublicationStatus status) {
-        var publication = randomPublication().copy()
+        var publication = randomNonDegreePublication(PUBLISHED).copy()
                               .withPublisher(new Organization.Builder()
                                                  .withId(publisherId)
                                                  .build())

@@ -135,7 +135,7 @@ public class TicketService extends ServiceWithTransactions {
                    .map(Dao::getData)
                    .map(TicketEntry.class::cast)
                    .toOptional()
-                   .filter(ticketEntry -> ticketEntry.getCustomerId().equals(user.getOrganizationUri()))
+                   .filter(ticketEntry -> ticketEntry.getCustomerId().equals(user.getCustomerId()))
                    .orElseThrow(TicketService::notFoundException);
     }
 

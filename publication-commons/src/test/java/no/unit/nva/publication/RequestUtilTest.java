@@ -144,7 +144,7 @@ class RequestUtilTest {
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         assertEquals(username, userInstance.getUsername());
-        assertEquals(customer, userInstance.getOrganizationUri());
+        assertEquals(customer, userInstance.getCustomerId());
     }
     
     private JsonNode getRequestContextForClaim(String key, String value) throws JsonProcessingException {

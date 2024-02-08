@@ -37,7 +37,7 @@ class MessageDaoTest extends ResourcesLocalTest {
     public static final String SAMPLE_OWNER_USERNAME = "some@owner";
     public static final UserInstance SAMPLE_OWNER = UserInstance.create(SAMPLE_OWNER_USERNAME, SAMPLE_ORG);
     public static final ResourceOwner RANDOM_RESOURCE_OWNER =
-         new ResourceOwner(new Username(SAMPLE_OWNER.getUsername()), SAMPLE_OWNER.getOrganizationUri());
+         new ResourceOwner(new Username(SAMPLE_OWNER.getUsername()), SAMPLE_OWNER.getCustomerId());
     private MessageService messageService;
     private TicketService ticketService;
     private ResourceService resourceService;
@@ -74,7 +74,7 @@ class MessageDaoTest extends ResourcesLocalTest {
     void listMessagesAndResourcesForUserReturnsDaoWithOwnerAndPublisher() {
         var actualMessage = MessageDao.listMessagesAndResourcesForUser(SAMPLE_OWNER);
         assertThat(actualMessage.getOwner(), is(equalTo(SAMPLE_OWNER.getUser())));
-        assertThat(actualMessage.getCustomerId(), is(equalTo(SAMPLE_OWNER.getOrganizationUri())));
+        assertThat(actualMessage.getCustomerId(), is(equalTo(SAMPLE_OWNER.getCustomerId())));
     }
     
     private Message fetchMessageFromDatabase(MessageDao queryObject) {
@@ -87,7 +87,7 @@ class MessageDaoTest extends ResourcesLocalTest {
     
     private Message insertSampleMessageInDatabase(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException {
-        Organization publisher = new Builder().withId(SAMPLE_OWNER.getOrganizationUri()).build();
+        Organization publisher = new Builder().withId(SAMPLE_OWNER.getCustomerId()).build();
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status,
                 UserInstance.create(RANDOM_RESOURCE_OWNER, publisher.getId()), resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);

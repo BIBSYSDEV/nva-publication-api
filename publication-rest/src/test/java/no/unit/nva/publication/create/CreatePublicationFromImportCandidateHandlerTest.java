@@ -570,7 +570,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         return new HandlerRequestBuilder<ImportCandidate>(restApiMapper)
                    .withHeaders(headers)
                    .withBody(importCandidate)
-                   .withCurrentCustomer(user.getOrganizationUri())
+                   .withCurrentCustomer(user.getCustomerId())
                    .build();
     }
 
@@ -581,8 +581,8 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                    .withHeaders(headers)
                    .withUserName(randomString())
                    .withBody(importCandidate)
-                   .withCurrentCustomer(user.getOrganizationUri())
-                   .withAccessRights(user.getOrganizationUri(), AccessRight.MANAGE_IMPORT)
+                   .withCurrentCustomer(user.getCustomerId())
+                   .withAccessRights(user.getCustomerId(), AccessRight.MANAGE_IMPORT)
                    .build();
     }
 

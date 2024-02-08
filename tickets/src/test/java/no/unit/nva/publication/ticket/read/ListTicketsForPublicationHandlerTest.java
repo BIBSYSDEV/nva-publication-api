@@ -185,6 +185,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .withPathParameters(constructPathParameters(publication))
                    .withCurrentCustomer(publication.getPublisher().getId())
                    .withUserName(publication.getResourceOwner().getOwner().getValue())
+                   .withPersonCristinId(randomUri())
                    .build();
     }
 
@@ -194,6 +195,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .withPathParameters(constructPathParameters(publication))
                    .withCurrentCustomer(publication.getPublisher().getId())
                    .withUserName(randomString())
+                   .withPersonCristinId(randomUri())
                    .build();
     }
 
@@ -210,6 +212,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .withCurrentCustomer(customerId)
                    .withUserName(randomString())
                    .withAccessRights(customerId, AccessRight.MANAGE_DOI)
+                   .withPersonCristinId(randomUri())
                    .build();
     }
 
@@ -220,6 +223,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .withCurrentCustomer(publication.getPublisher().getId())
                    .withUserName(randomString())
                    .withAccessRights(publication.getPublisher().getId(), AccessRight.MANAGE_DOI)
+                   .withPersonCristinId(randomUri())
                    .build();
     }
 
@@ -231,6 +235,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .withCurrentCustomer(publication.getPublisher().getId())
                    .withUserName(randomString())
                    .withAccessRights(publication.getPublisher().getId(), accessRight)
+                   .withPersonCristinId(randomUri())
                    .build();
     }
 
@@ -242,6 +247,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .withCurrentCustomer(publication.getPublisher().getId())
                    .withUserName(publication.getResourceOwner().getOwner().getValue())
                    .withAccessRights(publication.getPublisher().getId(), accessRight)
+                   .withPersonCristinId(randomUri())
                    .build();
     }
 

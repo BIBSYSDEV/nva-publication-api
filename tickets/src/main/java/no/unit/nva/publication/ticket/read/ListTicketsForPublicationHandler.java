@@ -16,7 +16,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketDto;
 import no.unit.nva.publication.ticket.TicketHandler;
-import no.unit.nva.publication.ticket.utils.RequestUtils;
+import no.unit.nva.publication.utils.RequestUtils;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ForbiddenException;

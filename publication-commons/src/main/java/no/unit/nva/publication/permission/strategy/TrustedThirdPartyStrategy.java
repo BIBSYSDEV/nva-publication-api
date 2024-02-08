@@ -21,7 +21,7 @@ public class TrustedThirdPartyStrategy extends PermissionStrategy {
     private boolean canModify() {
         return userInstance.isExternalClient() &&
                attempt(
-                   () -> userInstance.getOrganizationUri().equals(publication.getPublisher().getId()))
+                   () -> userInstance.getCustomerId().equals(publication.getPublisher().getId()))
                    .orElse(fail -> false);
     }
 }

@@ -39,7 +39,7 @@ public final class TestingUtils extends TestDataSource {
     public static Publication createUnpersistedPublication(UserInstance userInstance) {
         return randomPublicationWithoutDoi().copy()
                    .withResourceOwner(new ResourceOwner(new Username(userInstance.getUsername()), randomOrgUnitId()))
-                   .withPublisher(createOrganization(userInstance.getOrganizationUri()))
+                   .withPublisher(createOrganization(userInstance.getCustomerId()))
                    .build();
     }
     

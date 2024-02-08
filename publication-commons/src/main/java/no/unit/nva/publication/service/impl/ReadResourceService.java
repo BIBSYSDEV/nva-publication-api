@@ -120,7 +120,7 @@ public class ReadResourceService {
     }
 
     private String constructPrimaryPartitionKey(UserInstance userInstance) {
-        return ResourceDao.constructPrimaryPartitionKey(userInstance.getOrganizationUri(),
+        return ResourceDao.constructPrimaryPartitionKey(userInstance.getCustomerId(),
                                                         userInstance.getUsername());
     }
 

@@ -85,7 +85,7 @@ public class Resource implements Entity {
     private URI duplicateOf;
 
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
-        return emptyResource(userInstance.getUser(), userInstance.getOrganizationUri(),
+        return emptyResource(userInstance.getUser(), userInstance.getCustomerId(),
                              resourceIdentifier);
     }
 

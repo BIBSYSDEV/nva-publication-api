@@ -342,7 +342,7 @@ public class ResourceService extends ServiceWithTransactions {
     public Stream<TicketEntry> fetchAllTicketsForElevatedUser(UserInstance userInstance,
                                                               SortableIdentifier publicationIdentifier)
         throws NotFoundException {
-        var resource = fetchResourceForElevatedUser(userInstance.getOrganizationUri(), publicationIdentifier);
+        var resource = fetchResourceForElevatedUser(userInstance.getCustomerId(), publicationIdentifier);
         return resource.fetchAllTickets(this);
     }
 
@@ -381,7 +381,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private Organization createOrganization(UserInstance userInstance) {
-        return new Organization.Builder().withId(userInstance.getOrganizationUri()).build();
+        return new Organization.Builder().withId(userInstance.getCustomerId()).build();
     }
 
     private Owner createResourceOwner(UserInstance userInstance) {

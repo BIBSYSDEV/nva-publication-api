@@ -37,7 +37,7 @@ public final class UntypedTicketQueryObject extends TicketDao {
     
     @Override
     public URI getCustomerId() {
-        return owner.getOrganizationUri();
+        return owner.getCustomerId();
     }
     
     @Override

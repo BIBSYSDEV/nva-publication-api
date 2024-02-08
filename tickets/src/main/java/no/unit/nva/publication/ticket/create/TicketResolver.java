@@ -22,7 +22,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.model.identityservice.CustomerPublishingWorkflowResponse;
-import no.unit.nva.publication.ticket.utils.RequestUtils;
+import no.unit.nva.publication.utils.RequestUtils;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.core.JacocoGenerated;
@@ -181,6 +181,6 @@ public class TicketResolver {
     }
 
     private BadGatewayException createBadGatewayException() {
-        return new BadGatewayException("Unable to fetch customer publishing workflow from upstream");
+        return new BadGatewayException("Unable to fetch customerId publishing workflow from upstream");
     }
 }

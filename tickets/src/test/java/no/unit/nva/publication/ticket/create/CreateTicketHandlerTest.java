@@ -532,7 +532,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
 
         var problem = response.getBodyObject(Problem.class);
 
-        assertThat(problem.getDetail(), is(equalTo("Unable to fetch customer publishing workflow from upstream")));
+        assertThat(problem.getDetail(), is(equalTo("Unable to fetch customerId publishing workflow from upstream")));
         assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(DRAFT)));
     }
 
@@ -798,21 +798,8 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                    .withAuthorizerClaim(PERSON_AFFILIATION_CLAIM, userCredentials.getUsername())
                    .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
                    .withUserName(userCredentials.getUsername())
-                   .withCurrentCustomer(userCredentials.getOrganizationUri())
-                   .build();
-    }
-
-    private InputStream createHttpTicketCreationRequestByCurator(TicketDto ticketDto,
-                                                        Publication publication,
-                                                        UserInstance userCredentials)
-        throws JsonProcessingException {
-        return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
-                   .withBody(ticketDto)
-                   .withAuthorizerClaim(PERSON_AFFILIATION_CLAIM, userCredentials.getUsername())
-                   .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
-                   .withUserName(userCredentials.getUsername())
-                   .withCurrentCustomer(userCredentials.getOrganizationUri())
-                   .withAccessRights(publication.getPublisher().getId(), AccessRight.MANAGE_DOI)
+                   .withCurrentCustomer(userCredentials.getCustomerId())
+                   .withPersonCristinId(randomUri())
                    .build();
     }
 
@@ -828,6 +815,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                    .withUserName(publication.getResourceOwner().getOwner().getValue())
                    .withCurrentCustomer(publication.getPublisher().getId())
                    .withAccessRights(publication.getPublisher().getId(), accessRight)
+                   .withPersonCristinId(randomUri())
                    .build();
     }
 
@@ -843,6 +831,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                    .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
                    .withUserName(randomString())
                    .withCurrentCustomer(customerId)
+                   .withPersonCristinId(randomUri())
                    .build();
     }
 

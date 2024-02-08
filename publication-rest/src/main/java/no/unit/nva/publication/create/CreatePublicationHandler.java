@@ -214,7 +214,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     }
 
     private static CustomerAwareUserContext fromUserInstance(UserInstance userInstance) {
-        return new CustomerAwareUserContext(userInstance, userInstance.getOrganizationUri());
+        return new CustomerAwareUserContext(userInstance, userInstance.getCustomerId());
     }
 
     private record CustomerAwareUserContext(UserInstance userInstance, URI customerUri) {

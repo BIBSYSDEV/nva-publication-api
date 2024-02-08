@@ -317,7 +317,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         Publication newResource = resourceService.getPublication(newOwner, originalResource.getIdentifier());
 
         assertThat(newResource.getResourceOwner().getOwner().getValue(), is(equalTo(newOwner.getUsername())));
-        assertThat(newResource.getPublisher().getId(), is(equalTo(newOwner.getOrganizationUri())));
+        assertThat(newResource.getPublisher().getId(), is(equalTo(newOwner.getCustomerId())));
     }
 
     @Test
@@ -1308,7 +1308,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         return publication.copy()
                    .withResourceOwner(new ResourceOwner(new Username(userInstance.getUsername()),
                                                         AFFILIATION_NOT_IMPORTANT))
-                   .withPublisher(new Organization.Builder().withId(userInstance.getOrganizationUri()).build())
+                   .withPublisher(new Organization.Builder().withId(userInstance.getCustomerId()).build())
                    .build();
     }
 
