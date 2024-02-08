@@ -1761,12 +1761,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         }
     }
 
-    private List<Contributor> findContributorBySequence(String sequence, List<Contributor> contributors) {
-        return contributors.stream()
-                   .filter(contributor -> sequence.equals(String.valueOf(contributor.getSequence())))
-                   .collect(Collectors.toList());
-    }
-
     private String getExpectedFullAuthorName(AuthorTp authorTp) {
         return authorTp.getPreferredName().getGivenName() + StringUtils.SPACE + authorTp.getPreferredName()
                                                                                     .getSurname();
