@@ -49,6 +49,7 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isA;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
@@ -428,7 +429,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualContributors = publication.getEntityDescription().getContributors();
         authors.forEach(author -> checkContributor(author, actualContributors));
-        collaborations.forEach(collaboration -> checkCollaborationName(collaboration, actualContributors));
+        collaborations.forEach(collaboration -> checkCollaboration(collaboration, actualContributors));
     }
 
     @Test
@@ -1753,20 +1754,10 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                    .orElseThrow();
     }
 
-    private void checkCollaborationName(CollaborationTp collaboration, List<Contributor> contributors) {
-        var optionalContributor = findContributorBySequence(collaboration.getSeq(), contributors);
-        if (Integer.parseInt(collaboration.getSeq()) < contributors.size()) {
-            var contributor = optionalContributor.getFirst();
+    private void checkCollaboration(CollaborationTp collaboration, List<Contributor> contributors) {
+        var contributor = findContributorByName(collaboration.getIndexedName(), contributors);
 
-            assertEquals(1, optionalContributor.size());
-            assertEquals(collaboration.getIndexedName(), contributor.getIdentity().getName());
-        }
-    }
-
-    private List<Contributor> findContributorBySequence(String sequence, List<Contributor> contributors) {
-        return contributors.stream()
-                   .filter(contributor -> sequence.equals(String.valueOf(contributor.getSequence())))
-                   .collect(Collectors.toList());
+        assertThat(contributor, is(notNullValue()));
     }
 
     private String getExpectedFullAuthorName(AuthorTp authorTp) {
