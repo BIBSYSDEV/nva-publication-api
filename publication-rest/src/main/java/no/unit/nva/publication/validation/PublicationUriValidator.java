@@ -4,7 +4,7 @@ import java.net.URI;
 import java.util.Arrays;
 import no.unit.nva.identifiers.SortableIdentifier;
 
-public class PublicationUriValidator {
+public final class PublicationUriValidator {
 
     public static final String PATH_DELIMITER = "/";
     public static final int TWO_ELEMENTS = 2;
