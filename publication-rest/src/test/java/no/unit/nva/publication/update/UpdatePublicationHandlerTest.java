@@ -170,9 +170,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
     public static final String NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY = "NVA_PERSISTED_STORAGE_BUCKET_NAME";
     public static final String EVENT_BUS_NAME = "EVENT_BUS_NAME";
-    private static final String API_HOST = "API_HOST";
-    private static final String PUBLICATION = "publication";
     public static final String UNPUBLISH_REQUEST_REQUIRES_A_COMMENT = "Unpublish request requires a comment";
+    private static final String API_HOST_KEY = "API_HOST";
+    private static final String API_HOST_DOMAIN = "example.com";
+    public static final String PUBLICATION = "publication";
+    public static final String MUST_BE_A_VALID_PUBLICATION_API_URI = "must be a valid publication API URI";
+
     private final GetExternalClientResponse getExternalClientResponse = mock(GetExternalClientResponse.class);
     private final Context context = new FakeContext();
     private ResourceService publicationService;
@@ -198,6 +201,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
         when(environment.readEnv(NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY)).thenReturn(
             NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY);
+        when(environment.readEnv(API_HOST_KEY)).thenReturn("example.com");
         lenient().when(environment.readEnv("BACKEND_CLIENT_SECRET_NAME")).thenReturn("secret");
 
         var baseUrl = URI.create(wireMockRuntimeInfo.getHttpsBaseUrl());
@@ -1029,13 +1033,37 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldThrowExceptionOnFailingDuplicateOfValidationWhenUnpublishing()
+        throws Exception {
+
+        var userCristinId = RandomPersonServiceResponse.randomUri();
+        var userName = randomString();
+        var doi = RandomPersonServiceResponse.randomUri();
+        var duplicate = URI.create("https://badactor.org/publication/"+SortableIdentifier.next());
+
+        var publication = createPublicationWithOwnerAndDoi(userCristinId, userName, doi);
+
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+
+        var inputStream = createUnpublishRequestWithDuplicateOfValue(publication.getIdentifier(), userName,
+                                                                     RandomPersonServiceResponse.randomUri(),
+                                                                     duplicate, USER);
+        updatePublicationHandler.handleRequest(inputStream, output, context);
+
+        var gatewayResponse = toGatewayResponseProblem();
+
+        assertThat(gatewayResponse.getStatusCode(), Is.is(IsEqual.equalTo(SC_BAD_REQUEST)));
+        assertThat(getProblemDetail(gatewayResponse), containsString(MUST_BE_A_VALID_PUBLICATION_API_URI));
+    }
+
+    @Test
     void shouldProduceUpdateDoiEventWithDuplicateWhenUnpublishing()
         throws ApiGatewayException, IOException {
 
         var userCristinId = RandomPersonServiceResponse.randomUri();
         var userName = randomString();
         var doi = RandomPersonServiceResponse.randomUri();
-        var duplicate = SortableIdentifier.next();
+        var duplicate = randomPublicationApiUri();
 
         var publication = createPublicationWithOwnerAndDoi(userCristinId, userName, doi);
 
@@ -1056,7 +1084,11 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                        .findFirst()
                        .orElseThrow()
                        .getDuplicateOf(),
-                   Is.is(IsEqual.equalTo(toPublicationUri(duplicate.toString()))));
+                   Is.is(IsEqual.equalTo(duplicate)));
+    }
+
+    private static URI randomPublicationApiUri() {
+        return URI.create("https://" + API_HOST_DOMAIN + "/" + PUBLICATION + "/" + SortableIdentifier.next());
     }
 
     @Test
@@ -1196,7 +1228,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var publication = createAndPersistDegreeWithoutDoi();
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
-        var duplicate = SortableIdentifier.next();
+        var duplicate = randomPublicationApiUri();
         var request = createUnpublishRequestWithDuplicateOfValue(publication.getIdentifier(),
                                                                  randomString(),
                                                                  publication.getPublisher().getId(),
@@ -1205,10 +1237,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         var updatedPublication = publicationService.getPublication(publication);
-        String duplicateIdentifier = UriWrapper.fromUri(updatedPublication.getDuplicateOf()).getLastPathElement();
 
         assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_ACCEPTED)));
-        assertThat(duplicateIdentifier, Is.is(IsEqual.equalTo(duplicate.toString())));
+        assertThat(updatedPublication.getDuplicateOf(), Is.is(IsEqual.equalTo(duplicate)));
     }
 
     @Test
@@ -1366,7 +1397,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private InputStream createUnpublishRequestWithDuplicateOfValue(SortableIdentifier publicationIdentifier, String username,
                                                                    URI institutionId,
-                                                                   SortableIdentifier duplicateOf,
+                                                                   URI duplicateOf,
                                                                    AccessRight... accessRight)
         throws JsonProcessingException {
         var unpublishRequest = new UnpublishPublicationRequest();
@@ -1465,13 +1496,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         return Resource.fromPublication(publication)
                    .persistNew(publicationService, UserInstance.fromPublication(publication));
-    }
-
-    private static URI toPublicationUri(String identifier) {
-        return UriWrapper.fromHost(new Environment().readEnv(API_HOST))
-                   .addChild(PUBLICATION)
-                   .addChild(identifier)
-                   .getUri();
     }
 
     private static LambdaDestinationInvocationDetail<DoiMetadataUpdateEvent> getDoiMetadataUpdateEvent(
