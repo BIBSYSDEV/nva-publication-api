@@ -1,8 +1,10 @@
 package no.unit.nva.publication.update;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.defaultEventBridgeClient;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
+import static no.unit.nva.publication.validation.PublicationUriValidator.isValid;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -14,8 +16,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.api.PublicationResponseElevatedUser;
@@ -81,13 +81,12 @@ public class UpdatePublicationHandler
     private static final String ENV_KEY_BACKEND_CLIENT_SECRET_NAME = "BACKEND_CLIENT_SECRET_NAME";
     private static final String ENV_KEY_BACKEND_CLIENT_AUTH_URL = "BACKEND_CLIENT_AUTH_URL";
     public static final String UNPUBLISH_REQUEST_REQUIRES_A_COMMENT = "Unpublish request requires a comment";
-    public static final String THE_DUPLICATE_OF_FIELD_MUST_BE_A_VALID_PUBLICATION_API_URI = "The duplicateOf field must be a valid publication API URI";
+    public static final String DUPLICATE_OF_MUST_BE_A_PUBLICATION_API_URI = "The duplicateOf field must be a valid publication API URI";
     private final TicketService ticketService;
     private final ResourceService resourceService;
     private final IdentityServiceClient identityServiceClient;
     public static final String NVA_EVENT_BUS_NAME_KEY = "NVA_EVENT_BUS_NAME";
     private static final String API_HOST_ENV_KEY = "API_HOST";
-    private static final String PUBLICATION = "publication";
     public static final String LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS =
         "Lambda Function Invocation Result - Success";
     public static final String NVA_PUBLICATION_DELETE_SOURCE = "nva.publication.delete";
@@ -220,26 +219,16 @@ public class UpdatePublicationHandler
 
     private void validateUnpublishRequest(UnpublishPublicationRequest unpublishPublicationRequest)
         throws BadRequestException {
-        if (!nonNull(unpublishPublicationRequest.getComment())) {
+        if (isNull(unpublishPublicationRequest.getComment())) {
             throw new BadRequestException(UNPUBLISH_REQUEST_REQUIRES_A_COMMENT);
         }
 
-        var duplicateOf = unpublishPublicationRequest.getDuplicateOf();
-        if (duplicateOf.isPresent() && !isValidDuplicateOfUri(duplicateOf.get())) {
-            throw new BadRequestException(THE_DUPLICATE_OF_FIELD_MUST_BE_A_VALID_PUBLICATION_API_URI);
+        var duplicateUri = unpublishPublicationRequest.getDuplicateOf();
+
+        if (duplicateUri.isPresent()) {
+            duplicateUri.filter(uri -> isValid(uri, apiHost))
+                 .orElseThrow(() -> new BadRequestException(DUPLICATE_OF_MUST_BE_A_PUBLICATION_API_URI));
         }
-    }
-
-    private boolean isValidDuplicateOfUri(URI duplicateOf) {
-        var escapedDomain = apiHost.replace(".", "\\.");
-        var sortedIdentifierPattern = "[0-9a-fA-F]{12}-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0"
-                                      + "-9a-fA-F]{12}";
-        String regex = "^https://" + escapedDomain + "/" + PUBLICATION + "/" + sortedIdentifierPattern+"$";
-
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(duplicateOf.toString());
-
-        return matcher.matches();
     }
 
     private void updateNvaDoi(Publication publication) {
