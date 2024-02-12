@@ -51,6 +51,7 @@ import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedTicket;
 import no.unit.nva.expansion.model.ExpandedTicketStatus;
 import no.unit.nva.expansion.model.ExpandedUnpublishRequest;
+import no.unit.nva.expansion.model.ExpansionException;
 import no.unit.nva.expansion.model.nvi.ScientificIndex;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
@@ -535,7 +536,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException, JsonProcessingException {
         var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
         var resourceUpdate = Resource.fromPublication(publication);
-        var expansionService = expansionServiceReturningNviCandidate(publication);
+        var expansionService = expansionServiceReturningNviCandidate(publication, nviCandidateResponse(), 200);
         var expandedResourceAsJson = expansionService.expandEntry(resourceUpdate).toJsonString();
         var json = JsonUtils.dtoObjectMapper.readTree(expandedResourceAsJson);
         var nviStatusNode = json.get(ScientificIndex.SCIENTIFIC_INDEX_FIELD);
@@ -549,35 +550,34 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException, JsonProcessingException {
         var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
         var resourceUpdate = Resource.fromPublication(publication);
-        var expansionService = expansionServiceReturningNviCandidateNotFound(publication);
+        var expansionService = expansionServiceReturningNviCandidate(publication, nviCandidateResponse(), 404);
         var expandedResourceAsJson = expansionService.expandEntry(resourceUpdate).toJsonString();
         var json = JsonUtils.dtoObjectMapper.readTree(expandedResourceAsJson);
 
         assertThat(json.get("nviStatus"), is(nullValue()));
     }
 
-    private ResourceExpansionServiceImpl expansionServiceReturningNviCandidate(Publication publication) {
+    @Test
+    void shouldThrowExpansionExceptionWhenUnexpectedErrorFetchingNviCandidateForPublication()
+        throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
+        var resourceUpdate = Resource.fromPublication(publication);
+        var expansionService = expansionServiceReturningNviCandidate(publication, randomString(), 200);
+
+        assertThrows(ExpansionException.class, () -> expansionService.expandEntry(resourceUpdate));
+    }
+
+    private ResourceExpansionServiceImpl expansionServiceReturningNviCandidate(Publication publication,
+                                                                               String responseBody, int statusCode) {
         var mock = mock(UriRetriever.class);
         var response = mock(HttpResponse.class);
-        when(response.statusCode()).thenReturn(200);
-        when(response.body()).thenReturn(nviCandidateResponse());
+        when(response.statusCode()).thenReturn(statusCode);
+        when(response.body()).thenReturn(responseBody);
         when(mock.fetchResponse(fetchNviCandidateUri(publication), "application/json")).thenReturn(Optional.of(response));
         return new ResourceExpansionServiceImpl(new ResourceService(client, CLOCK),
                                                             new TicketService(client),
                                                             mock,
                                                             mock);
-    }
-
-    private ResourceExpansionServiceImpl expansionServiceReturningNviCandidateNotFound(Publication publication) {
-        var mock = mock(UriRetriever.class);
-        var response = mock(HttpResponse.class);
-        when(response.statusCode()).thenReturn(404);
-        when(response.body()).thenReturn(randomString());
-        when(mock.fetchResponse(fetchNviCandidateUri(publication), "application/json")).thenReturn(Optional.of(response));
-        return new ResourceExpansionServiceImpl(new ResourceService(client, CLOCK),
-                                                new TicketService(client),
-                                                mock,
-                                                mock);
     }
 
     private String nviCandidateResponse() {
@@ -779,6 +779,9 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         ticketService = new TicketService(client);
         personRetriever = mock(UriRetriever.class);
         orgRetriever = mock(UriRetriever.class);
+        var response = mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(400);
+        when(personRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(response));
         expansionService = new ResourceExpansionServiceImpl(resourceService,
                                                             ticketService,
                                                             personRetriever,

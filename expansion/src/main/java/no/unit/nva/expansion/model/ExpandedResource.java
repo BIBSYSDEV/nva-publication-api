@@ -38,7 +38,7 @@ import java.util.stream.StreamSupport;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.external.services.RawContentRetriever;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
@@ -63,7 +63,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         this.allFields = new LinkedHashMap<>();
     }
 
-    public static ExpandedResource fromPublication(UriRetriever uriRetriever, Publication publication)
+    public static ExpandedResource fromPublication(RawContentRetriever uriRetriever, Publication publication)
         throws JsonProcessingException {
         var documentWithId = transformToJsonLd(publication);
         var enrichedJson = enrichJson(uriRetriever, documentWithId);
@@ -201,7 +201,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         return root.at(INSTANCE_TYPE_JSON_PTR).asText();
     }
 
-    private static String enrichJson(UriRetriever uriRetriever, ObjectNode documentWithId) {
+    private static String enrichJson(RawContentRetriever uriRetriever, ObjectNode documentWithId) {
         return attempt(() -> new IndexDocumentWrapperLinkedData(uriRetriever))
                    .map(documentWithLinkedData -> documentWithLinkedData.toFramedJsonLd(documentWithId))
                    .orElseThrow();

@@ -33,13 +33,16 @@ import no.unit.nva.expansion.model.nvi.NviCandidateResponse;
 import no.unit.nva.expansion.model.nvi.ScientificIndex;
 import no.unit.nva.expansion.utils.FramedJsonGenerator;
 import no.unit.nva.expansion.utils.SearchIndexFrame;
-import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.external.services.RawContentRetriever;
 import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class IndexDocumentWrapperLinkedData {
 
+    private static final Logger logger = LoggerFactory.getLogger(IndexDocumentWrapperLinkedData.class);
     public static final String CRISTIN_VERSION = "; version=2023-05-26";
     private static final String MEDIA_TYPE_JSON_LD_V2 = APPLICATION_JSON_LD.toString() + CRISTIN_VERSION;
     private static final String SOURCE = "source";
@@ -56,9 +59,13 @@ public class IndexDocumentWrapperLinkedData {
         + "  }\n"
         + "}\n";
     private static final JsonNode CONTEXT_NODE = attempt(() -> objectMapper.readTree(contextAsString)).get();
-    private final UriRetriever uriRetriever;
+    public static final String FETCHING_NVI_CANDIDATE_ERROR_MESSAGE =
+        "Could not fetch nvi candidate for publication with identifier: %s";
+    public static final String EXCEPTION = "Exception {}:";
+    public static final String IDENTIFIER = "identifier";
+    private final RawContentRetriever uriRetriever;
 
-    public IndexDocumentWrapperLinkedData(UriRetriever uriRetriever) {
+    public IndexDocumentWrapperLinkedData(RawContentRetriever uriRetriever) {
         this.uriRetriever = uriRetriever;
     }
 
@@ -87,27 +94,38 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     private JsonNode fetchNviStatus(JsonNode indexDocument) {
-        return Optional.ofNullable(uriRetriever.fetchResponse(fetchNviCandidateUri(indexDocument), "application/json"))
-                   .filter(Optional::isPresent)
-                   .map(Optional::get)
-                   .filter(response -> response.statusCode() == 200)
-                   .map(HttpResponse::body)
-                   .map(this::toNviCandidateResponse)
-                   .map(NviCandidateResponse::toNviStatus)
-                   .filter(ScientificIndex::isReported)
-                   .map(ScientificIndex::toJsonNode)
-                   .orElse(null);
+            var publicationIdentifier = indexDocument.get(IDENTIFIER).asText();
+        try {
+            return fetchNviCandidate(publicationIdentifier)
+                       .filter(response -> response.statusCode() == 200)
+                       .map(HttpResponse::body)
+                       .map(this::toNviCandidateResponse)
+                       .map(NviCandidateResponse::toNviStatus)
+                       .filter(ScientificIndex::isReported)
+                       .map(ScientificIndex::toJsonNode)
+                       .orElse(null);
+        } catch (Exception e) {
+            logger.error(EXCEPTION, e.toString());
+            throw ExpansionException.withMessage(String.format(FETCHING_NVI_CANDIDATE_ERROR_MESSAGE, publicationIdentifier));
+        }
+
+
+    }
+
+    private Optional<HttpResponse<String>> fetchNviCandidate(String publicationIdentifier) {
+        return attempt(() -> uriRetriever.fetchResponse(fetchNviCandidateUri(publicationIdentifier), "application/json"))
+                   .orElseThrow();
     }
 
     private NviCandidateResponse toNviCandidateResponse(String value) {
         return attempt(() -> JsonUtils.dtoObjectMapper.readValue(value, NviCandidateResponse.class)).orElseThrow();
     }
 
-    private static URI fetchNviCandidateUri(JsonNode indexDocument) {
+    private static URI fetchNviCandidateUri(String publicationIdentifier) {
         return UriWrapper.fromHost(new Environment().readEnv("API_HOST"))
                       .addChild("scientific-index")
                       .addChild("candidate")
-                      .addChild(indexDocument.get("identifier").asText())
+                      .addChild(publicationIdentifier)
                       .getUri();
     }
 
