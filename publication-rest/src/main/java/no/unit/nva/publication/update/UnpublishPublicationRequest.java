@@ -4,15 +4,16 @@ import java.net.URI;
 import java.util.Optional;
 
 public class UnpublishPublicationRequest implements PublicationRequest {
-    private Optional<URI> duplicateOf = Optional.empty();
+
+    private URI duplicateOf;
     private String comment;
 
     public Optional<URI> getDuplicateOf() {
-        return duplicateOf;
+        return Optional.ofNullable(duplicateOf);
     }
 
     public void setDuplicateOf(URI duplicateOf) {
-        this.duplicateOf = Optional.of(duplicateOf);
+        this.duplicateOf = duplicateOf;
     }
 
     public String getComment() {
