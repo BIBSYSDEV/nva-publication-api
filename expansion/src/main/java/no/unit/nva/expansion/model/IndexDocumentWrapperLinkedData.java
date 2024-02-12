@@ -27,11 +27,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
+import no.unit.nva.expansion.model.nvi.NviCandidateResponse;
+import no.unit.nva.expansion.model.nvi.ScientificIndex;
 import no.unit.nva.expansion.utils.FramedJsonGenerator;
 import no.unit.nva.expansion.utils.SearchIndexFrame;
 import no.unit.nva.publication.external.services.UriRetriever;
+import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
+import nva.commons.core.paths.UriWrapper;
 
 public class IndexDocumentWrapperLinkedData {
 
@@ -67,6 +72,7 @@ public class IndexDocumentWrapperLinkedData {
 
     private List<InputStream> getInputStreams(JsonNode indexDocument) {
         final List<InputStream> inputStreams = new ArrayList<>();
+        injectScientificIndexStatus(indexDocument);
         inputStreams.add(stringToStream(toJsonString(indexDocument)));
         fetchAnthologyContent(indexDocument).ifPresent(inputStreams::add);
         inputStreams.addAll(fetchAllAffiliationContent(indexDocument));
@@ -74,6 +80,35 @@ public class IndexDocumentWrapperLinkedData {
         inputStreams.addAll(fetchFundingSources(indexDocument));
         inputStreams.removeIf(Objects::isNull);
         return inputStreams;
+    }
+
+    private void injectScientificIndexStatus(JsonNode indexDocument) {
+        ((ObjectNode) indexDocument).set(ScientificIndex.SCIENTIFIC_INDEX_FIELD, fetchNviStatus(indexDocument));
+    }
+
+    private JsonNode fetchNviStatus(JsonNode indexDocument) {
+        return Optional.ofNullable(uriRetriever.fetchResponse(fetchNviCandidateUri(indexDocument), "application/json"))
+                   .filter(Optional::isPresent)
+                   .map(Optional::get)
+                   .filter(response -> response.statusCode() == 200)
+                   .map(HttpResponse::body)
+                   .map(this::toNviCandidateResponse)
+                   .map(NviCandidateResponse::toNviStatus)
+                   .filter(ScientificIndex::isReported)
+                   .map(ScientificIndex::toJsonNode)
+                   .orElse(null);
+    }
+
+    private NviCandidateResponse toNviCandidateResponse(String value) {
+        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(value, NviCandidateResponse.class)).orElseThrow();
+    }
+
+    private static URI fetchNviCandidateUri(JsonNode indexDocument) {
+        return UriWrapper.fromHost(new Environment().readEnv("API_HOST"))
+                      .addChild("scientific-index")
+                      .addChild("candidate")
+                      .addChild(indexDocument.get("identifier").asText())
+                      .getUri();
     }
 
     @Deprecated
