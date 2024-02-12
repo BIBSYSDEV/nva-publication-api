@@ -30,7 +30,9 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.util.ArrayList;
@@ -93,7 +95,6 @@ import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -595,11 +596,13 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     private URI fetchNviCandidateUri(Publication publication) {
-        return UriWrapper.fromHost(new Environment().readEnv("API_HOST"))
+        var uri = UriWrapper.fromHost(API_HOST)
                    .addChild("scientific-index")
                    .addChild("candidate")
-                   .addChild(publication.getIdentifier().toString())
+                   .addChild("publication")
                    .getUri();
+        return URI.create(uri + "/" + URLEncoder.encode(constructExpectedPublicationId(publication).toString(),
+                                                        StandardCharsets.UTF_8));
     }
 
     private TicketEntry createCompletedTicketAndPublishFiles(Publication publication) throws ApiGatewayException {

@@ -20,7 +20,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -62,7 +64,7 @@ public class IndexDocumentWrapperLinkedData {
     public static final String FETCHING_NVI_CANDIDATE_ERROR_MESSAGE =
         "Could not fetch nvi candidate for publication with identifier: %s";
     public static final String EXCEPTION = "Exception {}:";
-    public static final String IDENTIFIER = "identifier";
+    public static final String ID = "id";
     private final RawContentRetriever uriRetriever;
 
     public IndexDocumentWrapperLinkedData(RawContentRetriever uriRetriever) {
@@ -94,9 +96,10 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     private JsonNode fetchNviStatus(JsonNode indexDocument) {
-            var publicationIdentifier = indexDocument.get(IDENTIFIER).asText();
+        var publicationId = indexDocument.get(ID).asText();
+        var urlEncodedPublicationId = URLEncoder.encode(publicationId, StandardCharsets.UTF_8);
         try {
-            return fetchNviCandidate(publicationIdentifier)
+            return fetchNviCandidate(urlEncodedPublicationId)
                        .filter(response -> response.statusCode() == 200)
                        .map(HttpResponse::body)
                        .map(this::toNviCandidateResponse)
@@ -106,14 +109,14 @@ public class IndexDocumentWrapperLinkedData {
                        .orElse(null);
         } catch (Exception e) {
             logger.error(EXCEPTION, e.toString());
-            throw ExpansionException.withMessage(String.format(FETCHING_NVI_CANDIDATE_ERROR_MESSAGE, publicationIdentifier));
+            throw ExpansionException.withMessage(String.format(FETCHING_NVI_CANDIDATE_ERROR_MESSAGE, publicationId));
         }
 
 
     }
 
-    private Optional<HttpResponse<String>> fetchNviCandidate(String publicationIdentifier) {
-        return attempt(() -> uriRetriever.fetchResponse(fetchNviCandidateUri(publicationIdentifier), "application/json"))
+    private Optional<HttpResponse<String>> fetchNviCandidate(String publicationId) {
+        return attempt(() -> uriRetriever.fetchResponse(fetchNviCandidateUri(publicationId), "application/json"))
                    .orElseThrow();
     }
 
@@ -121,12 +124,13 @@ public class IndexDocumentWrapperLinkedData {
         return attempt(() -> JsonUtils.dtoObjectMapper.readValue(value, NviCandidateResponse.class)).orElseThrow();
     }
 
-    private static URI fetchNviCandidateUri(String publicationIdentifier) {
-        return UriWrapper.fromHost(new Environment().readEnv("API_HOST"))
-                      .addChild("scientific-index")
-                      .addChild("candidate")
-                      .addChild(publicationIdentifier)
-                      .getUri();
+    private static URI fetchNviCandidateUri(String publicationId) {
+        var uri = UriWrapper.fromHost(new Environment().readEnv("API_HOST"))
+                   .addChild("scientific-index")
+                   .addChild("candidate")
+                   .addChild("publication")
+                   .getUri();
+        return URI.create(uri + "/" + publicationId);
     }
 
     @Deprecated
