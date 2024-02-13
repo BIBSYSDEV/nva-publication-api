@@ -50,6 +50,7 @@ import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.model.Customer;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -275,10 +276,11 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output,
                                               context);
         var gatewayResponse = parseFailureResponse();
-        var expectedTombstone = publication.copy().withAssociatedArtifacts(List.of()).build();
+        var expectedTombstone =
+            PublicationResponseElevatedUser.fromPublication(publication.copy().withAssociatedArtifacts(List.of()).build());
         var problem = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(), Problem.class);
         var actualPublication = JsonUtils.dtoObjectMapper.convertValue(problem.getParameters().get(RESOURCE),
-                                                                       Publication.class);
+                                                                       PublicationResponseElevatedUser.class);
         assertThat(actualPublication, is(equalTo(expectedTombstone)));
     }
 
@@ -289,13 +291,13 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output,
                                               context);
         var gatewayResponse = parseFailureResponse();
-        var expectedTombstone = publication.copy().withAssociatedArtifacts(List.of()).build();
+        var expectedTombstone = PublicationResponseElevatedUser.fromPublication(publication.copy().withAssociatedArtifacts(List.of()).build());
 
         var problem = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(), Problem.class);
-        var resource = JsonUtils.dtoObjectMapper.convertValue(problem.getParameters().get(RESOURCE),
-                                                              Publication.class);
+        var actualPublication = JsonUtils.dtoObjectMapper.convertValue(problem.getParameters().get(RESOURCE),
+                                                                       PublicationResponseElevatedUser.class);
 
-        assertThat(resource, is(equalTo(expectedTombstone)));
+        assertThat(actualPublication, is(equalTo(expectedTombstone)));
     }
 
     @Test
@@ -333,11 +335,12 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         fetchPublicationHandler.handleRequest(handlerRequest,
                                               output,
                                               context);
-        var expectedTombstone = publication.copy().withAssociatedArtifacts(List.of()).build();
+        var expectedTombstone =
+            PublicationResponseElevatedUser.fromPublication(publication.copy().withAssociatedArtifacts(List.of()).build());
         var gatewayResponse = parseFailureResponse();
         var problem = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(), Problem.class);
         var actualPublication = JsonUtils.dtoObjectMapper.convertValue(problem.getParameters().get(RESOURCE),
-                                                                       Publication.class);
+                                                                       PublicationResponseElevatedUser.class);
         assertThat(actualPublication, is(equalTo(expectedTombstone)));
     }
 
