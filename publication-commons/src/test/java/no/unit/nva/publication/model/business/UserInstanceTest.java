@@ -55,7 +55,6 @@ class UserInstanceTest {
         var username = randomString();
         var httpRequest = new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
                               .withCurrentCustomer(customerId)
-                              .withAccessRights(customerId, randomAccessRight())
                               .withNvaUsername(username)
                               .build();
         var requestInfo = RequestInfo.fromRequest(httpRequest);

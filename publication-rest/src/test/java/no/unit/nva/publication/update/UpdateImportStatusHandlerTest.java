@@ -65,7 +65,7 @@ public class UpdateImportStatusHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnUnauthorizedIfUserHasNoRelevantAccessRights() throws IOException, NotFoundException {
+    void shouldReturnUnauthorizedIfUserHasNoAccessRights() throws IOException, NotFoundException {
         var importCandidate = createPersistedImportCandidate();
         var request = requestWithoutAccessRight(importCandidate, notApplicableImportStatus());
         handler.handleRequest(request, output, CONTEXT);
