@@ -9,9 +9,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
-import static nva.commons.apigateway.AccessRight.USER;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.util.List;
@@ -43,7 +41,6 @@ public class RequestUtilsTest {
     public static Stream<Arguments> ticketTypeAndAccessRightProvider() {
         return Stream.of(Arguments.of(DoiRequest.class, MANAGE_DOI),
                          Arguments.of(PublishingRequestCase.class, MANAGE_PUBLISHING_REQUESTS),
-                         Arguments.of(UnpublishRequest.class, USER),
                          Arguments.of(GeneralSupportRequest.class, SUPPORT));
     }
 

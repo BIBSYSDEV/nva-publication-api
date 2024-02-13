@@ -68,14 +68,14 @@ class GetMessageHandlerTest {
     }
     
     private UserInstance randomUserInstance() {
-        return UserInstance.create(randomString(), randomUri(), randomUri(), List.of(AccessRight.USER));
+        return UserInstance.create(randomString(), randomUri(), randomUri(), List.of());
     }
     
     private InputStream createHttpRequest(UserInstance sender, Message message)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
                    .withNvaUsername(sender.getUsername())
-                   .withCustomerId(sender.getCustomerId())
+                   .withCurrentCustomer(sender.getCustomerId())
                    .withPathParameters(messagePathParameters(message))
                    .build();
     }

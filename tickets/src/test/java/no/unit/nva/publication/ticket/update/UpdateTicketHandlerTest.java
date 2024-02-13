@@ -252,8 +252,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var ticket = createPersistedDoiTicket(publication);
         var completedTicket = ticket.complete(publication, USER_NAME);
         var request = createCompleteTicketHttpRequest(completedTicket,
-                                                      completedTicket.getCustomerId(),
-                                                      AccessRight.USER);
+                                                      completedTicket.getCustomerId());
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
@@ -704,7 +703,6 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     private InputStream createAssigneeTicketHttpRequest(TicketEntry ticket, URI customer)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper).withBody(TicketDto.fromTicket(ticket))
-                   .withAccessRights(customer, AccessRight.USER)
                    .withCurrentCustomer(customer)
                    .withUserName(USER_NAME.getValue())
                    .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,

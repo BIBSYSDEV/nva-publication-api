@@ -65,9 +65,9 @@ public class UpdateImportStatusHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnUnauthorizedIfUserHasNoAccessRights() throws IOException, NotFoundException {
+    void shouldReturnUnauthorizedIfUserHasNoRelevantAccessRights() throws IOException, NotFoundException {
         var importCandidate = createPersistedImportCandidate();
-        var request = request(importCandidate, notApplicableImportStatus(), AccessRight.USER);
+        var request = requestWithoutAccessRight(importCandidate, notApplicableImportStatus());
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, ImportCandidate.class);
 
@@ -111,6 +111,18 @@ public class UpdateImportStatusHandlerTest extends ResourcesLocalTest {
                    .withCurrentCustomer(customerId)
                    .withBody(toImportStatusDto(importStatus))
                    .withAccessRights(customerId, accessRight)
+                   .withPathParameters(pathParameters)
+                   .build();
+    }
+
+    private InputStream requestWithoutAccessRight(ImportCandidate importCandidate, ImportStatus importStatus)
+        throws JsonProcessingException {
+        Map<String, String> pathParameters = Map.of(IDENTIFIER, importCandidate.getIdentifier().toString());
+        var customerId = importCandidate.getPublisher().getId();
+        return new HandlerRequestBuilder<ImportStatusDto>(restApiMapper)
+                   .withUserName(importCandidate.getResourceOwner().getOwner().getValue())
+                   .withCurrentCustomer(customerId)
+                   .withBody(toImportStatusDto(importStatus))
                    .withPathParameters(pathParameters)
                    .build();
     }
