@@ -4,6 +4,7 @@ import static java.net.HttpURLConnection.HTTP_OK;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toList;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
+import static no.unit.nva.expansion.ResourceExpansionServiceImpl.API_HOST;
 import static no.unit.nva.expansion.model.ExpandedResource.extractAffiliationUris;
 import static no.unit.nva.expansion.model.ExpandedResource.extractPublicationContextUri;
 import static no.unit.nva.expansion.model.ExpandedResource.extractPublicationContextUris;
@@ -65,6 +66,10 @@ public class IndexDocumentWrapperLinkedData {
         "Could not fetch nvi candidate for publication with identifier: %s";
     public static final String EXCEPTION = "Exception {}:";
     public static final String ID = "id";
+    public static final String SCIENTIFIC_INDEX = "scientific-index";
+    public static final String CANDIDATE = "candidate";
+    public static final String PUBLICATION = "publication";
+    public static final String PATH_DELIMITER = "/";
     private final RawContentRetriever uriRetriever;
 
     public IndexDocumentWrapperLinkedData(RawContentRetriever uriRetriever) {
@@ -125,12 +130,12 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     private static URI fetchNviCandidateUri(String publicationId) {
-        var uri = UriWrapper.fromHost(new Environment().readEnv("API_HOST"))
-                   .addChild("scientific-index")
-                   .addChild("candidate")
-                   .addChild("publication")
+        var uri = UriWrapper.fromHost(API_HOST)
+                   .addChild(SCIENTIFIC_INDEX)
+                   .addChild(CANDIDATE)
+                   .addChild(PUBLICATION)
                    .getUri();
-        return URI.create(uri + "/" + publicationId);
+        return URI.create(String.format("%s/%s", uri, publicationId));
     }
 
     @Deprecated
