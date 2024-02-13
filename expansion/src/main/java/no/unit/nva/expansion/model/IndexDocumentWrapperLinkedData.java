@@ -37,7 +37,6 @@ import no.unit.nva.expansion.model.nvi.ScientificIndex;
 import no.unit.nva.expansion.utils.FramedJsonGenerator;
 import no.unit.nva.expansion.utils.SearchIndexFrame;
 import no.unit.nva.publication.external.services.RawContentRetriever;
-import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
