@@ -80,10 +80,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Publication'
+                $ref: '#/components/schemas/PublicationResponse'
             application/ld+json:
               schema:
-                $ref: '#/components/schemas/Publication'
+                $ref: '#/components/schemas/PublicationResponse'
             application/vnd.datacite.datacite+xml:
               schema:
                 $ref: '#/components/schemas/PublicationDataCiteXml'
@@ -803,6 +803,17 @@ paths:
 
 components:
   schemas:
+    PublicationResponse:
+      allOf:
+      - $ref: '#/components/schemas/Publication'
+      - type: object
+        properties:
+          allowedOperations:
+            type: array
+            items:
+              type: string
+              description: List of allowed operations for the current user
+              enum: ["update", "delete", "unpublish", "republish"]
     Publication:
       type: object
       description: Complete Publication entity

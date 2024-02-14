@@ -2,6 +2,9 @@ package no.unit.nva.publication.update;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationOperation.DELETE;
+import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
+import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.defaultEventBridgeClient;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.validation.PublicationUriValidator.isValid;
@@ -23,6 +26,7 @@ import no.unit.nva.auth.CognitoCredentials;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.UnpublishingNote;
 import no.unit.nva.model.Username;
@@ -44,7 +48,6 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permission.strategy.PublicationAction;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -181,7 +184,7 @@ public class UpdatePublicationHandler
     private Publication deletePublication(Publication existingPublication,
                                           PublicationPermissionStrategy permissionStrategy)
         throws UnauthorizedException, BadRequestException, NotFoundException {
-        permissionStrategy.authorize(PublicationAction.DELETE);
+        permissionStrategy.authorize(DELETE);
 
         deleteFiles(existingPublication);
         resourceService.deletePublication(existingPublication);
@@ -205,7 +208,7 @@ public class UpdatePublicationHandler
                                              PublicationPermissionStrategy permissionStrategy)
         throws ApiGatewayException {
         validateUnpublishRequest(unpublishPublicationRequest);
-        permissionStrategy.authorize(PublicationAction.UNPUBLISH);
+        permissionStrategy.authorize(UNPUBLISH);
 
         var updatedPublication = toPublicationWithDuplicate(unpublishPublicationRequest, existingPublication);
         resourceService.unpublishPublication(updatedPublication);
@@ -280,7 +283,7 @@ public class UpdatePublicationHandler
                                        PublicationPermissionStrategy permissionStrategy)
         throws ApiGatewayException {
         validateRequest(identifierInPath, input);
-        permissionStrategy.authorize(PublicationAction.UPDATE);
+        permissionStrategy.authorize(UPDATE);
 
         Publication publicationUpdate = input.generatePublicationUpdate(existingPublication);
 

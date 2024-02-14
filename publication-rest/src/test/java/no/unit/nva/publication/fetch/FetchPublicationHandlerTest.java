@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.api.PublicationResponseElevatedUser;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.model.Customer;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -113,12 +114,13 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     private ByteArrayOutputStream output;
     private FetchPublicationHandler fetchPublicationHandler;
     private Environment environment;
+    private IdentityServiceClient identityServiceClient;
 
     /**
      * Set up environment.
      */
     @BeforeEach
-    public void setUp(@Mock Environment environment) {
+    public void setUp(@Mock Environment environment, @Mock IdentityServiceClient identityServiceClient) {
         super.init();
         this.environment = environment;
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
@@ -127,7 +129,10 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         publicationService = new ResourceService(client, Clock.systemDefaultZone());
         output = new ByteArrayOutputStream();
         this.uriRetriever = new UriRetriever(WiremockHttpClient.create());
-        fetchPublicationHandler = new FetchPublicationHandler(publicationService, uriRetriever, environment);
+        fetchPublicationHandler = new FetchPublicationHandler(publicationService,
+                                                              uriRetriever,
+                                                              environment,
+                                                              identityServiceClient);
     }
 
     @Test
@@ -275,7 +280,10 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
             .when(serviceThrowingException)
             .getPublicationByIdentifier(any(SortableIdentifier.class));
 
-        fetchPublicationHandler = new FetchPublicationHandler(serviceThrowingException, uriRetriever, environment);
+        fetchPublicationHandler = new FetchPublicationHandler(serviceThrowingException,
+                                                              uriRetriever,
+                                                              environment,
+                                                              identityServiceClient);
         fetchPublicationHandler.handleRequest(generateHandlerRequest(IDENTIFIER_VALUE), output, context);
 
         var gatewayResponse = parseFailureResponse();

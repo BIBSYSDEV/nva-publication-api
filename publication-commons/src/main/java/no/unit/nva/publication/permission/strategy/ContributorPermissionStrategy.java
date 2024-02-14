@@ -10,6 +10,7 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.business.UserInstance;
 
@@ -20,7 +21,7 @@ public class ContributorPermissionStrategy extends PermissionStrategy {
     }
 
     @Override
-    protected boolean allowsAction(PublicationAction permission) {
+    protected boolean allowsAction(PublicationOperation permission) {
         return switch (permission) {
             case UPDATE, UNPUBLISH -> canModify();
             default -> false;
