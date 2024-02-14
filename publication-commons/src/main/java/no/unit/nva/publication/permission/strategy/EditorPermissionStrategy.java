@@ -3,6 +3,7 @@ package no.unit.nva.publication.permission.strategy;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_ALL;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.UserInstance;
 
 public class EditorPermissionStrategy extends PermissionStrategy {
@@ -12,7 +13,7 @@ public class EditorPermissionStrategy extends PermissionStrategy {
     }
 
     @Override
-    protected boolean allowsAction(PublicationAction permission) {
+    protected boolean allowsAction(PublicationOperation permission) {
         return switch (permission) {
             case UPDATE, DELETE, UNPUBLISH -> canManage();
             default -> false;

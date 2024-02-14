@@ -17,6 +17,7 @@ import no.unit.nva.expansion.model.ExpandedPerson;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedTicket;
 import no.unit.nva.expansion.model.cristin.CristinPerson;
+import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
@@ -60,32 +61,32 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     private static final String PART_OF_PROPERTY = "https://nva.sikt.no/ontology/publication#partOf";
     private final ResourceService resourceService;
     private final TicketService ticketService;
-    private final UriRetriever personRetriever;
-    private final UriRetriever organizationRetriever;
+    private final RawContentRetriever authorizedUriRetriever;
+    private final RawContentRetriever uriRetriever;
 
     public ResourceExpansionServiceImpl(ResourceService resourceService,
                                         TicketService ticketService) {
         this.resourceService = resourceService;
         this.ticketService = ticketService;
-        this.personRetriever = new UriRetriever();
-        this.organizationRetriever = new UriRetriever();
+        this.authorizedUriRetriever = new UriRetriever();
+        this.uriRetriever = new UriRetriever();
     }
 
     public ResourceExpansionServiceImpl(ResourceService resourceService,
                                         TicketService ticketService,
-                                        UriRetriever personRetriever,
-                                        UriRetriever organizationRetriever) {
+                                        RawContentRetriever authorizedUriRetriever,
+                                        RawContentRetriever uriRetriever) {
         this.resourceService = resourceService;
         this.ticketService = ticketService;
-        this.personRetriever = personRetriever;
-        this.organizationRetriever = organizationRetriever;
+        this.authorizedUriRetriever = authorizedUriRetriever;
+        this.uriRetriever = uriRetriever;
     }
 
     @Override
     public ExpandedDataEntry expandEntry(Entity dataEntry) throws JsonProcessingException, NotFoundException {
         if (dataEntry instanceof Resource resource) {
             logger.info("Expanding Resource: {}", resource.getIdentifier());
-            var expandedResource = ExpandedResource.fromPublication(personRetriever,
+            var expandedResource = ExpandedResource.fromPublication(authorizedUriRetriever,
                                                                     resource.toPublication(resourceService));
             var resourceWithContextUri = replaceInlineContextWithUriContext(expandedResource);
             return attempt(
@@ -111,7 +112,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
                                       : resourceService.getResourceByIdentifier(ticketEntry.getResourceIdentifier())
                                           .getResourceOwner().getOwnerAffiliation();
 
-            var partOf = attempt(() -> this.organizationRetriever.getRawContent(organizationIds, CONTENT_TYPE)).map(
+            var partOf = attempt(() -> this.uriRetriever.getRawContent(organizationIds, CONTENT_TYPE)).map(
                     Optional::orElseThrow)
                              .map(str -> createModel(stringToStream(str)))
                              .map(model -> model.listObjectsOfProperty(model.createProperty(PART_OF_PROPERTY)))
@@ -127,7 +128,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     @Override
     public ExpandedPerson expandPerson(User owner) {
         return attempt(() -> constructUri(owner))
-                   .map(uri -> personRetriever.getRawContent(uri, CONTENT_TYPE))
+                   .map(uri -> authorizedUriRetriever.getRawContent(uri, CONTENT_TYPE))
                    .map(response -> toExpandedPerson(response.orElse(null), owner))
                    .orElse(failure -> getDefaultExpandedPerson(owner));
     }

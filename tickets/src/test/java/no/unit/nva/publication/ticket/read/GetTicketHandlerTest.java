@@ -284,9 +284,9 @@ class GetTicketHandlerTest extends TicketTestLocal {
                                                                               AccessRight accessRight)
         throws NotFoundException {
         return createHttpRequest(ticket)
-                   .withCustomerId(customerId)
+                   .withCurrentCustomer(customerId)
                    .withNvaUsername(randomString())
-                   .withAccessRights(ticket.getCustomerId(), accessRight);
+                   .withAccessRights(customerId, accessRight);
     }
 
     private TicketEntry createPersistedTicket(Class<? extends TicketEntry> ticketType, Publication publication)
@@ -311,7 +311,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
     private HandlerRequestBuilder<TicketDto> createHttpRequest(Publication publication, TicketEntry ticket,
                                                                User owner) {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
-                   .withCustomerId(ticket.getCustomerId())
+                   .withCurrentCustomer(ticket.getCustomerId())
                    .withNvaUsername(owner.toString())
                    .withPathParameters(createPathParameters(publication, ticket));
     }

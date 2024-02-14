@@ -103,6 +103,7 @@ public final class RequestUtil {
                        ? createExternalUserInstance(requestInfo, identityServiceClient)
                        : createInternalUserInstance(requestInfo);
         } catch (ApiGatewayException e) {
+            e.printStackTrace();
             throw new UnauthorizedException(e.getMessage());
         }
     }

@@ -1,28 +1,28 @@
 [versions]
 
 
-nva = { strictly = '1.36.15' }
-nvaDatamodel = { strictly = '0.20.82' }
+nva = { strictly = '1.37.3' }
+nvaDatamodel = { strictly = '0.21.1' }
 nvaDoiPartnerData = { strictly = '0.5.8' }
-jackson = { strictly = '2.15.3' }
-awsSdk = { strictly = '1.12.544' }
-awsSdk2 = { strictly = '2.20.141' }
-log4j = { strictly = '2.22.0' }
+jackson = { strictly = '2.16.1' }
+awsSdk = { strictly = '1.12.646' }
+awsSdk2 = { strictly = '2.23.12' }
+log4j = { strictly = '2.22.1' }
 # slf4j takes "require", not "strictly" as wiremock has multiple versions
-slf4j = { require = '2.0.5' }
+slf4j = { require = '2.0.11' }
 zalandoProblem = { strictly = '0.27.1' }
-awsLambdaCore = { strictly = '1.2.2' }
+awsLambdaCore = { strictly = '1.2.3' }
 awsLambdaEvents = { strictly = '3.11.4' }
 # jsonld and awssdk have different versions. update libraries and check again
 httpcore = { require = '4.4.13' }
 dynamoDbLocal = { strictly = '2.0.0' }
 awsIon = { strictly = '1.5.1' }
-commonsValidator = { strictly = '1.7' }
+commonsValidator = { strictly = '1.8.0' }
 apacheCommons = { require = '4.4' }
 hamcrest = { strictly = '2.2' }
 cucumber = { strictly = '6.11.0' }
-junit = { strictly = '5.10.0' }
-mockito = { strictly = '5.3.1' }
+junit = { strictly = '5.10.1' }
+mockito = { strictly = '5.10.0' }
 wiremock = { strictly = "3.0.2" }
 configTypesafe = { strictly = '1.4.1' }
 jsonld = { strictly = '0.13.4' }
@@ -34,9 +34,9 @@ jakarta = { strictly = '2.3.3' }
 karate-core = { strictly = '1.1.0' }
 karate-apache = { strictly = '0.9.6' }
 karate-junit5 = { strictly = '1.1.0' }
-jena = { strictly = '4.7.0'}
+jena = { strictly = '4.9.0'}
 jsonassert = { strictly = '1.5.1'}
-datafaker = { strictly = '2.0.1' }
+datafaker = { strictly = '2.1.0' }
 tika = { strictly = '2.9.0' }
 
 

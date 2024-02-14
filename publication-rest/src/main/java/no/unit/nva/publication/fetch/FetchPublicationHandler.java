@@ -10,7 +10,7 @@ import static java.net.HttpURLConnection.HTTP_MOVED_PERM;
 import static java.net.HttpURLConnection.HTTP_SEE_OTHER;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
-import static no.unit.nva.publication.fetch.DeletedPublicationResponse.craftDeletedPublicationResponse;
+import static no.unit.nva.publication.RequestUtil.createUserInstanceFromRequest;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_DATACITE_XML;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.apigateway.MediaTypes.SCHEMA_ORG;
@@ -23,16 +23,21 @@ import com.google.common.net.MediaType;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.PublicationResponseElevatedUser;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.doi.DataCiteMetadataDtoMapper;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
+import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.schemaorg.SchemaOrgDocument;
 import no.unit.nva.transformer.Transformer;
@@ -55,19 +60,22 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     protected static final String ENV_NAME_NVA_FRONTEND_DOMAIN = "NVA_FRONTEND_DOMAIN";
     private static final String REGISTRATION_PATH = "registration";
     public static final String DO_NOT_REDIRECT_QUERY_PARAM = "doNotRedirect";
+    private final IdentityServiceClient identityServiceClient;
     private final ResourceService resourceService;
     private final RawContentRetriever uriRetriever;
     private int statusCode = HttpURLConnection.HTTP_OK;
 
     @JacocoGenerated
     public FetchPublicationHandler() {
-        this(AmazonDynamoDBClientBuilder.defaultClient(),
-             new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME));
+        this(
+            AmazonDynamoDBClientBuilder.defaultClient(),
+            new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME)
+        );
     }
 
     @JacocoGenerated
     public FetchPublicationHandler(AmazonDynamoDB client, RawContentRetriever uriRetriever) {
-        this(defaultResourceService(client), uriRetriever, new Environment());
+        this(defaultResourceService(client), uriRetriever, new Environment(), IdentityServiceClient.prepare());
     }
 
     /**
@@ -76,11 +84,14 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
      * @param resourceService publicationService
      * @param environment     environment
      */
-    public FetchPublicationHandler(ResourceService resourceService, RawContentRetriever uriRetriever,
-                                   Environment environment) {
+    public FetchPublicationHandler(ResourceService resourceService,
+                                   RawContentRetriever uriRetriever,
+                                   Environment environment,
+                                   IdentityServiceClient identityServiceClient) {
         super(Void.class, environment);
         this.uriRetriever = uriRetriever;
         this.resourceService = resourceService;
+        this.identityServiceClient = identityServiceClient;
     }
 
     @Override
@@ -120,8 +131,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         if (nonNull(publication.getDuplicateOf()) && shouldRedirect(requestInfo)) {
             return produceRedirect(publication.getDuplicateOf());
         } else {
-            throw new GoneException(GONE_MESSAGE,
-                                    craftDeletedPublicationResponse(publication));
+            throw new GoneException(GONE_MESSAGE, DeletedPublicationResponse.fromPublication(publication));
         }
     }
 
@@ -182,7 +192,15 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         // then only those should get the PublicationResponseElevatedUser
         //Regular users should receive PublicationResponse.class
         var publicationResponse = PublicationMapper.convertValue(publication, PublicationResponseElevatedUser.class);
+        publicationResponse.setAllowedOperations(getAllowedOperations(requestInfo, publication));
         return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(publicationResponse)).orElseThrow();
+    }
+
+    private Set<PublicationOperation> getAllowedOperations(RequestInfo requestInfo, Publication publication) {
+        return attempt(() -> createUserInstanceFromRequest(requestInfo, identityServiceClient)).toOptional()
+                   .map(userInstance -> PublicationPermissionStrategy.create(publication, userInstance))
+                   .map(PublicationPermissionStrategy::getAllAllowedActions)
+                   .orElse(Collections.emptySet());
     }
 
     private String createDataCiteMetadata(Publication publication) {

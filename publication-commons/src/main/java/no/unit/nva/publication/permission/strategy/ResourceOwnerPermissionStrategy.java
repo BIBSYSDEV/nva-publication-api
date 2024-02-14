@@ -2,6 +2,7 @@ package no.unit.nva.publication.permission.strategy;
 
 import static nva.commons.core.attempt.Try.attempt;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 
@@ -12,7 +13,7 @@ public class ResourceOwnerPermissionStrategy extends PermissionStrategy {
     }
 
     @Override
-    protected boolean allowsAction(PublicationAction permission) {
+    protected boolean allowsAction(PublicationOperation permission) {
         return switch (permission) {
             case UPDATE, UNPUBLISH -> canModify();
             default -> false;

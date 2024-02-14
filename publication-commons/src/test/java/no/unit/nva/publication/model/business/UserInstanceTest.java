@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business;
 
+import static no.unit.nva.testutils.RandomDataGenerator.randomAccessRight;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -53,7 +54,7 @@ class UserInstanceTest {
         var customerId = randomUri();
         var username = randomString();
         var httpRequest = new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
-                              .withCustomerId(customerId)
+                              .withCurrentCustomer(customerId)
                               .withNvaUsername(username)
                               .build();
         var requestInfo = RequestInfo.fromRequest(httpRequest);

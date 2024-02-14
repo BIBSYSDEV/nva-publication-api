@@ -3,6 +3,7 @@ package no.unit.nva.publication.permission.strategy;
 import java.util.Optional;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
@@ -23,7 +24,7 @@ public abstract class PermissionStrategy {
         this.userInstance = userInstance;
     }
 
-    protected abstract boolean allowsAction(PublicationAction permission);
+    protected abstract boolean allowsAction(PublicationOperation permission);
 
     protected boolean hasAccessRight(AccessRight accessRight) {
         return userInstance.getAccessRights().contains(accessRight);
