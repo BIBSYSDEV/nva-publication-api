@@ -107,7 +107,7 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
     private static InputStream buildHttpRequest(UserInstance user) throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
                    .withNvaUsername(user.getUsername())
-                   .withCustomerId(user.getCustomerId())
+                   .withCurrentCustomer(user.getCustomerId())
                    .build();
     }
     

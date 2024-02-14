@@ -78,7 +78,7 @@ class PublicationsByOwnerHandlerTest {
     
         InputStream input = new HandlerRequestBuilder<Void>(restApiMapper)
                                 .withNvaUsername(randomString())
-                                .withCustomerId(randomUri())
+                                .withCurrentCustomer(randomUri())
                                 .build();
         publicationsByOwnerHandler.handleRequest(input, output, context);
         

@@ -23,6 +23,7 @@ import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
@@ -176,6 +177,21 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var contentType = gatewayResponse.getHeaders().get(CONTENT_TYPE);
         assertThat(contentType, is(equalTo(MediaTypes.SCHEMA_ORG.toString())));
         assertThat(gatewayResponse.getBody(), containsString("\"@vocab\" : \"https://schema.org/\""));
+    }
+
+    @Test
+    void shouldReturnAllowedOperations(WireMockRuntimeInfo wireMockRuntimeInfo)
+        throws ApiGatewayException, IOException {
+        var publication = createPublicationWithPublisher(wireMockRuntimeInfo);
+        var publicationIdentifier = publication.getIdentifier().toString();
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        createCustomerMock(publication.getPublisher());
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier),
+                                              output,
+                                              context);
+        var gatewayResponse = parseHandlerResponse();
+        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertThat(gatewayResponse.getBody(), containsString("allowedOperations"));
     }
 
     @ParameterizedTest(name = "should redirect to frontend landing page when accept header is {0}")

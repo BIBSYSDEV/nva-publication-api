@@ -56,6 +56,7 @@ class PublicationPermissionStrategyTest {
     public static final String AUTHORIZER = "authorizer";
     public static final String CLAIMS = "claims";
     public static final String INJECT_NVA_USERNAME_CLAIM = "custom:nvaUsername";
+    public static final String INJECT_CUSTOMER_ID_CLAIM = "custom:customerId";
     public static final String INJECT_COGNITO_GROUPS_CLAIM = "cognito:groups";
     public static final String INJECT_CRISTIN_ID_CLAIM = "custom:cristinId";
     private IdentityServiceClient identityServiceClient;
@@ -506,13 +507,11 @@ class PublicationPermissionStrategyTest {
                                           URI cristinId)
         throws JsonProcessingException {
 
-        if (!accessRights.contains(AccessRight.USER)) {
-            accessRights.add(AccessRight.USER);
-        }
-
         var cognitoGroups = accessRights.stream().map(getCognitoGroup(institutionId)).toList();
 
         var claims = new HashMap<String, String>();
+        claims.put(INJECT_CUSTOMER_ID_CLAIM, institutionId.toString());
+
         claims.put(INJECT_COGNITO_GROUPS_CLAIM, String.join(",", cognitoGroups));
 
         if (nonNull(username)) {
