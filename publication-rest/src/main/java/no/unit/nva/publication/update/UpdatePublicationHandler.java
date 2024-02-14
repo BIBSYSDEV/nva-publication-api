@@ -48,10 +48,12 @@ import no.unit.nva.publication.permission.strategy.PublicationAction;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.publication.utils.RequestUtils;
 import no.unit.nva.publication.validation.DefaultPublicationValidator;
 import no.unit.nva.publication.validation.PublicationValidationException;
 import no.unit.nva.publication.validation.PublicationValidator;
 import no.unit.nva.s3.S3Driver;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -162,10 +164,10 @@ public class UpdatePublicationHandler
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         var permissionStrategy = PublicationPermissionStrategy.create(existingPublication, userInstance);
-
+        var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
         Publication updatedPublication = switch (input) {
             case UpdatePublicationRequest publicationMetadata ->
-                updateMetadata(publicationMetadata, identifierInPath, existingPublication, permissionStrategy);
+                updateMetadata(publicationMetadata, identifierInPath, existingPublication, permissionStrategy, requestUtils);
 
             case UnpublishPublicationRequest unpublishPublicationRequest ->
                 unpublishPublication(unpublishPublicationRequest, existingPublication, permissionStrategy);
@@ -277,7 +279,7 @@ public class UpdatePublicationHandler
 
     private Publication updateMetadata(UpdatePublicationRequest input, SortableIdentifier identifierInPath,
                                        Publication existingPublication,
-                                       PublicationPermissionStrategy permissionStrategy)
+                                       PublicationPermissionStrategy permissionStrategy, RequestUtils requestUtils)
         throws ApiGatewayException {
         validateRequest(identifierInPath, input);
         permissionStrategy.authorize(PublicationAction.UPDATE);
@@ -287,8 +289,7 @@ public class UpdatePublicationHandler
         var customerApiClient = getCustomerApiClient();
         var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, publicationUpdate.getPublisher().getId());
         validatePublication(publicationUpdate, customer);
-
-        upsertPublishingRequestIfNeeded(existingPublication, publicationUpdate, customer);
+        upsertPublishingRequestIfNeeded(existingPublication, publicationUpdate, customer, requestUtils);
 
         return resourceService.updatePublication(publicationUpdate);
     }
@@ -304,11 +305,13 @@ public class UpdatePublicationHandler
         return new JavaHttpClientCustomerApiClient(httpClient, cognitoCredentials);
     }
 
+
     private void upsertPublishingRequestIfNeeded(Publication existingPublication,
                                                  Publication publicationUpdate,
-                                                 Customer customer) {
+                                                 Customer customer,
+                                                 RequestUtils requestUtils) {
         if (isAlreadyPublished(existingPublication) && !thereIsRelatedPendingPublishingRequest(publicationUpdate)) {
-            createPublishingRequestOnFileUpdate(publicationUpdate, customer);
+            createPublishingRequestOnFileUpdate(publicationUpdate, customer, requestUtils);
         }
         if (isAlreadyPublished(existingPublication) && thereAreNoFiles(publicationUpdate)) {
             autoCompletePendingPublishingRequestsIfNeeded(publicationUpdate);
@@ -444,18 +447,29 @@ public class UpdatePublicationHandler
                    .orElseThrow(failure -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
     }
 
+    private void createPublishingRequestOnFileUpdate(Publication publicationUpdate, Customer customer,
+                                                     RequestUtils requestUtils) {
+        if (containsNewPublishableFiles(publicationUpdate)) {
+            persistPendingPublishingRequest(publicationUpdate, customer, requestUtils);
+        }
+    }
+
+    private void persistPendingPublishingRequest(Publication publicationUpdate, Customer customer, RequestUtils requestUtils) {
+        attempt(() -> TicketEntry.requestNewTicket(publicationUpdate, PublishingRequestCase.class))
+            .map(publishingRequest -> injectPublishingWorkflow((PublishingRequestCase) publishingRequest, customer))
+            .map(publishingRequest -> persistPublishingRequest(publicationUpdate, requestUtils, publishingRequest));
+    }
+
+    private TicketEntry persistPublishingRequest(Publication publicationUpdate, RequestUtils requestUtils,
+                                       PublishingRequestCase publishingRequest) throws ApiGatewayException {
+        return requestUtils.hasAccessRight(AccessRight.MANAGE_PUBLISHING_REQUESTS)
+                   ? publishingRequest.persistAutoComplete(ticketService, publicationUpdate)
+                   : publishingRequest.persistNewTicket(ticketService);
+    }
+
     private PublishingRequestCase injectPublishingWorkflow(PublishingRequestCase ticket, Customer customer) {
         ticket.setWorkflow(PublishingWorkflow.lookUp(customer.getPublicationWorkflow()));
         return ticket;
-    }
-
-    private void createPublishingRequestOnFileUpdate(Publication publicationUpdate, Customer customer) {
-        if (containsNewPublishableFiles(publicationUpdate)) {
-            attempt(() -> TicketEntry.requestNewTicket(publicationUpdate, PublishingRequestCase.class))
-                .map(publishingRequest -> injectPublishingWorkflow((PublishingRequestCase) publishingRequest,
-                                                                   customer))
-                .map(publishingRequest -> publishingRequest.persistNewTicket(ticketService));
-        }
     }
 
     private void validateRequest(SortableIdentifier identifierInPath, UpdatePublicationRequest input)
