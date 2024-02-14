@@ -6,57 +6,36 @@ import java.util.List;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.cristin.lambda.PublicationRepresentations;
 import no.unit.nva.cristin.mapper.CristinLocale;
+import no.unit.nva.cristin.mapper.ScientificResource;
+import no.unit.nva.model.PublicationDate;
 
 public record NviReport(String publicationIdentifier,
                         String cristinIdentifier,
-                        List<CristinLocale> nviReport,
-                        Integer yearReported,
-                        Instant publicationDate) implements JsonSerializable {
+                        List<ScientificResource> nviReport,
+                        String yearReported,
+                        PublicationDate publicationDate) implements JsonSerializable {
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    public boolean hasBeenNviReported() {
-        return hasBeenReported() && isReportable();
-    }
-
-    private boolean hasBeenReported() {
-        return nonNull(nviReport())
-               && nviReport().stream()
-                      .anyMatch(NviReport::hasControlStatusJ);
-    }
-
-    private boolean isReportable() {
-        return nonNull(yearReported()) && yearReported() >= 2011;
-    }
-
-    private static boolean hasControlStatusJ(CristinLocale cristinLocale) {
-        return nonNull(cristinLocale.getControlStatus())
-               && "J".equals(cristinLocale.getControlStatus());
     }
 
     public static NviReport fromPublicationRepresentation(PublicationRepresentations publicationRepresentations) {
         return NviReport.builder()
                    .withPublicationIdentifier(publicationRepresentations.getNvaPublicationIdentifier())
                    .withCristinIdentifier(publicationRepresentations.getCristinObject().getSourceRecordIdentifier())
-                   .withNviReport(publicationRepresentations.getCristinObject().getCristinLocales())
-                   .withYearReported(getYearReported(publicationRepresentations))
-                   .withPublicationDate(publicationRepresentations.getPublication().getCreatedDate())
+                   .withNviReport(publicationRepresentations.getCristinObject().getScientificResources())
+                   .withYearReported(publicationRepresentations.getCristinObject().getScientificResources().getFirst().getReportedYear())
+                   .withPublicationDate(publicationRepresentations.getPublication().getEntityDescription().getPublicationDate())
                    .build();
-    }
-
-    private static Integer getYearReported(PublicationRepresentations publicationRepresentations) {
-        return publicationRepresentations.getCristinObject().getYearReported();
     }
 
     public static final class Builder {
 
         private String publicationIdentifier;
         private String cristinIdentifier;
-        private List<CristinLocale> nviReport;
-        private Integer yearReported;
-        private Instant publicationDate;
+        private List<ScientificResource> nviReport;
+        private String yearReported;
+        private PublicationDate publicationDate;
 
         private Builder() {
         }
@@ -71,17 +50,17 @@ public record NviReport(String publicationIdentifier,
             return this;
         }
 
-        public Builder withNviReport(List<CristinLocale> nviReport) {
+        public Builder withNviReport(List<ScientificResource> nviReport) {
             this.nviReport = nviReport;
             return this;
         }
 
-        public Builder withYearReported(Integer yearReported) {
+        public Builder withYearReported(String yearReported) {
             this.yearReported = yearReported;
             return this;
         }
 
-        public Builder withPublicationDate(Instant publicationDate) {
+        public Builder withPublicationDate(PublicationDate publicationDate) {
             this.publicationDate = publicationDate;
             return this;
         }

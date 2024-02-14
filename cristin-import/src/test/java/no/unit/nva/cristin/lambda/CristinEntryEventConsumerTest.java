@@ -63,6 +63,7 @@ import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryExceptio
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryException;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.instancetypes.artistic.music.Concert;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
@@ -195,7 +196,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
         var publications = handler.handleRequest(sqsEvent, CONTEXT);
-        var actualPublication = publications.get(0);
+        var actualPublication = publications.getFirst();
         var expectedFileNameStoredInS3 = actualPublication.getIdentifier().toString();
 
         var expectedTimestamp = eventBody.getTimestamp();
@@ -212,11 +213,11 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
     private NviReport createExpectedNviReport(CristinObject cristinObject, Publication publication) {
         return NviReport.builder()
-                   .withNviReport(cristinObject.getCristinLocales())
+                   .withNviReport(cristinObject.getScientificResources())
                    .withCristinIdentifier(cristinObject.getSourceRecordIdentifier())
                    .withPublicationIdentifier(publication.getIdentifier().toString())
-                   .withYearReported(cristinObject.getYearReported())
-                   .withPublicationDate(publication.getCreatedDate())
+                   .withYearReported(cristinObject.getScientificResources().getFirst().getReportedYear().toString())
+                   .withPublicationDate(publication.getEntityDescription().getPublicationDate())
                    .build();
     }
 
@@ -361,7 +362,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var eventBody = createEventBody(cristinObjectWithoutContributors);
         var sqsEvent = createSqsEvent(eventBody);
         var publications = handler.handleRequest(sqsEvent, CONTEXT);
-        var actualtPublication = publications.get(0);
+        var actualtPublication = publications.getFirst();
         assertThat(actualtPublication.getEntityDescription().getContributors(), hasSize(0));
     }
 

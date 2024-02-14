@@ -38,6 +38,8 @@ import no.unit.nva.cristin.lambda.constants.HardcodedValues;
 import no.unit.nva.cristin.mapper.CristinLocale;
 import no.unit.nva.cristin.mapper.CristinLectureOrPosterMetaData;
 import no.unit.nva.cristin.mapper.PresentationEvent;
+import no.unit.nva.cristin.mapper.ScientificPerson;
+import no.unit.nva.cristin.mapper.ScientificResource;
 import no.unit.nva.cristin.mapper.artisticproduction.ArtisticGenre;
 import no.unit.nva.cristin.mapper.artisticproduction.ArtisticProductionTimeUnit;
 import no.unit.nva.cristin.mapper.artisticproduction.CristinArtisticProduction;
@@ -107,6 +109,7 @@ public final class CristinDataGenerator {
     private static final Integer VALID_PUBLISHER_NSD_NUMBER = 5269;
     public static final String J = "J";
     public static final int VALID_SERIES_NSD_CODE = 339741;
+    public static final String SCIENTIFIC_RESOURCES = "scientificResources";
 
     private CristinDataGenerator() {
 
@@ -180,7 +183,26 @@ public final class CristinDataGenerator {
         var cristinObject = newCristinObject(largeRandomNumber());
         cristinObject.setYearReported(year);
         cristinObject.setCristinLocales(randomCristinLocales());
+        cristinObject.setScientificResources(List.of(randomScientificResource()));
         return cristinObject;
+    }
+
+    private static ScientificResource randomScientificResource() {
+        return ScientificResource.builder()
+                   .withQualityCode(randomString())
+                   .withScientificPeople(List.of(randomScientificPerson()))
+                   .withReportedYear(randomString())
+                   .build();
+    }
+
+    private static ScientificPerson randomScientificPerson() {
+        return ScientificPerson.builder()
+                   .withCristinPersonIdentifier(randomString())
+                   .withDepartmentIdentifier(randomString())
+                   .withGroupIdentifier(randomString())
+                   .withInstitutionIdentifier(randomString())
+                   .withSubDepartmentIdentifier(randomString())
+                   .build();
     }
 
     public static CristinObject randomObject(String secondaryCategory) {
@@ -786,7 +808,8 @@ public final class CristinDataGenerator {
                    "cristinExhibition",
                    SOURCE_CODE, CRISTIN_PRESENTATIONAL_WORK, CRISTIN_SUBJECT_FIELD, BOOK_OR_REPORT_METADATA_FIELD,
                    BOOK_OR_REPORT_PART_METADATA, HRCS_CATEGORIES_AND_ACTIVITIES, CRISTIN_MODIFIED_DATE,
-                   LECTURE_OR_POSTER_METADATA, YEAR_REPORTED, CRISTIN_GRANTS, CRISTIN_SOURCES, MEDIA_CONTRIBUTION)));
+                   LECTURE_OR_POSTER_METADATA, YEAR_REPORTED, CRISTIN_GRANTS, CRISTIN_SOURCES, MEDIA_CONTRIBUTION,
+                   SCIENTIFIC_RESOURCES)));
 
         return (ObjectNode) eventHandlerObjectMapper.readTree(cristinObject.toJsonString());
     }
