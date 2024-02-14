@@ -181,10 +181,17 @@ public class CristinEntryEventConsumer
     }
 
     private void persistNviReportIfNeeded(PublicationRepresentations publicationRepresentations) {
-        var nviReport = NviReport.fromPublicationRepresentation(publicationRepresentations);
-        if (nviReport.hasBeenNviReported()) {
+        if (hasScientificResource(publicationRepresentations)) {
+            var nviReport = NviReport.fromPublicationRepresentation(publicationRepresentations);
             saveNviReport(publicationRepresentations, nviReport);
         }
+    }
+
+    private static boolean hasScientificResource(PublicationRepresentations publicationRepresentations) {
+        return Optional.ofNullable(publicationRepresentations.getCristinObject())
+                   .map(CristinObject::getScientificResources)
+                   .map(list -> !list.isEmpty())
+                   .orElse(false);
     }
 
     private void saveNviReport(PublicationRepresentations publicationRepresentations, NviReport nviReport) {

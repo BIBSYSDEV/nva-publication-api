@@ -69,7 +69,7 @@ public class CristinMapper extends CristinMappingModule {
     public static final String CRISTIN_INSTITUTION_CODE = "CRIS";
     public static final String UNIT_INSTITUTION_CODE = "UNIT";
     public static final ResourceOwner SIKT_OWNER = new CristinLocale("SIKT", "20754", "0", "0",
-                                                                     "0", null, null, null).toResourceOwner();
+                                                                     "0", null, null, null, null).toResourceOwner();
     private static final String SCOPUS_CASING_ACCEPTED_BY_FRONTEND = "Scopus";
     private static final String DOMAIN_NAME = new Environment().readEnv("DOMAIN_NAME");
     private static final Map<String, String> CUSTOMER_MAP = Map.of("api.sandbox.nva.aws.unit.no",

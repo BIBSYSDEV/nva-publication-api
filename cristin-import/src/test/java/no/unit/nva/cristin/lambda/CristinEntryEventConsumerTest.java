@@ -195,7 +195,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
         var publications = handler.handleRequest(sqsEvent, CONTEXT);
-        var actualPublication = publications.get(0);
+        var actualPublication = publications.getFirst();
         var expectedFileNameStoredInS3 = actualPublication.getIdentifier().toString();
 
         var expectedTimestamp = eventBody.getTimestamp();
@@ -212,11 +212,12 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
     private NviReport createExpectedNviReport(CristinObject cristinObject, Publication publication) {
         return NviReport.builder()
-                   .withNviReport(cristinObject.getCristinLocales())
+                   .withScientificResource(cristinObject.getScientificResources())
+                   .withCristinLocales(cristinObject.getCristinLocales())
                    .withCristinIdentifier(cristinObject.getSourceRecordIdentifier())
                    .withPublicationIdentifier(publication.getIdentifier().toString())
-                   .withYearReported(cristinObject.getYearReported())
-                   .withPublicationDate(publication.getCreatedDate())
+                   .withYearReported(cristinObject.getScientificResources().getFirst().getReportedYear())
+                   .withPublicationDate(publication.getEntityDescription().getPublicationDate())
                    .build();
     }
 
@@ -361,7 +362,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var eventBody = createEventBody(cristinObjectWithoutContributors);
         var sqsEvent = createSqsEvent(eventBody);
         var publications = handler.handleRequest(sqsEvent, CONTEXT);
-        var actualtPublication = publications.get(0);
+        var actualtPublication = publications.getFirst();
         assertThat(actualtPublication.getEntityDescription().getContributors(), hasSize(0));
     }
 
