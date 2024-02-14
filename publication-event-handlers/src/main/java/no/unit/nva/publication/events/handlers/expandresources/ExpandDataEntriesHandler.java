@@ -22,6 +22,7 @@ import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
+import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
@@ -30,6 +31,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.paths.UnixPath;
@@ -44,11 +46,14 @@ public class ExpandDataEntriesHandler
     public static final String HANDLER_EVENTS_FOLDER = "PublicationService-DataEntryExpansion";
     public static final String EXPANDED_ENTRY_UPDATED_EVENT_TOPIC = "PublicationService.ExpandedDataEntry.Update";
     public static final String EMPTY_EVENT_TOPIC = "Event.Empty";
+    public static final Environment ENVIRONMENT = new Environment();
     public static final List<PublicationStatus> PUBLICATION_STATUS_TO_BE_ENRICHED = List.of(PUBLISHED,
                                                                                             PUBLISHED_METADATA,
                                                                                             UNPUBLISHED,
                                                                                             DELETED);
     private static final Logger logger = LoggerFactory.getLogger(ExpandDataEntriesHandler.class);
+    public static final String BACKEND_CLIENT_AUTH_URL = "BACKEND_CLIENT_AUTH_URL";
+    public static final String BACKEND_CLIENT_SECRET_NAME = "BACKEND_CLIENT_SECRET_NAME";
     private final S3Driver s3Driver;
     private final ResourceExpansionService resourceExpansionService;
 
@@ -82,9 +87,11 @@ public class ExpandDataEntriesHandler
     @JacocoGenerated
     private static ResourceExpansionService defaultResourceExpansionService() {
         var uriRetriever = new UriRetriever();
+        var authorizedUriRetriever = new AuthorizedBackendUriRetriever(ENVIRONMENT.readEnv(BACKEND_CLIENT_AUTH_URL),
+                                                                   ENVIRONMENT.readEnv(BACKEND_CLIENT_SECRET_NAME));
         return new ResourceExpansionServiceImpl(defaultResourceService(),
                                                 TicketService.defaultService(),
-                                                uriRetriever,
+                                                authorizedUriRetriever,
                                                 uriRetriever);
     }
 
