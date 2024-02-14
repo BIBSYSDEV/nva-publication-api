@@ -15,7 +15,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.external.services.RawContentRetriever;
 import nva.commons.core.ioutils.IoUtils;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.riot.Lang;
@@ -26,9 +26,9 @@ public class ExpandedParentPublication {
 
     public static final String FRAME = IoUtils.stringFromResources(Path.of("parentPublicationFrame.json"));
     private static final String PUBLICATION_ONTOLOGY = "https://nva.sikt.no/ontology/publication#Publication";
-    private final UriRetriever uriRetriever;
+    private final RawContentRetriever uriRetriever;
 
-    public ExpandedParentPublication(UriRetriever uriRetriever) {
+    public ExpandedParentPublication(RawContentRetriever uriRetriever) {
         this.uriRetriever = uriRetriever;
     }
 

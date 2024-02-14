@@ -23,6 +23,7 @@ import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
@@ -50,6 +51,7 @@ import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.model.Customer;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -177,6 +179,21 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         assertThat(gatewayResponse.getBody(), containsString("\"@vocab\" : \"https://schema.org/\""));
     }
 
+    @Test
+    void shouldReturnAllowedOperations(WireMockRuntimeInfo wireMockRuntimeInfo)
+        throws ApiGatewayException, IOException {
+        var publication = createPublicationWithPublisher(wireMockRuntimeInfo);
+        var publicationIdentifier = publication.getIdentifier().toString();
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        createCustomerMock(publication.getPublisher());
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier),
+                                              output,
+                                              context);
+        var gatewayResponse = parseHandlerResponse();
+        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertThat(gatewayResponse.getBody(), containsString("allowedOperations"));
+    }
+
     @ParameterizedTest(name = "should redirect to frontend landing page when accept header is {0}")
     @ValueSource(strings = {
         TEXT_HTML,
@@ -275,10 +292,11 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output,
                                               context);
         var gatewayResponse = parseFailureResponse();
-        var expectedTombstone = publication.copy().withAssociatedArtifacts(List.of()).build();
+        var expectedTombstone =
+            PublicationResponseElevatedUser.fromPublication(publication.copy().withAssociatedArtifacts(List.of()).build());
         var problem = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(), Problem.class);
         var actualPublication = JsonUtils.dtoObjectMapper.convertValue(problem.getParameters().get(RESOURCE),
-                                                                       Publication.class);
+                                                                       PublicationResponseElevatedUser.class);
         assertThat(actualPublication, is(equalTo(expectedTombstone)));
     }
 
@@ -289,13 +307,13 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output,
                                               context);
         var gatewayResponse = parseFailureResponse();
-        var expectedTombstone = publication.copy().withAssociatedArtifacts(List.of()).build();
+        var expectedTombstone = PublicationResponseElevatedUser.fromPublication(publication.copy().withAssociatedArtifacts(List.of()).build());
 
         var problem = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(), Problem.class);
-        var resource = JsonUtils.dtoObjectMapper.convertValue(problem.getParameters().get(RESOURCE),
-                                                              Publication.class);
+        var actualPublication = JsonUtils.dtoObjectMapper.convertValue(problem.getParameters().get(RESOURCE),
+                                                                       PublicationResponseElevatedUser.class);
 
-        assertThat(resource, is(equalTo(expectedTombstone)));
+        assertThat(actualPublication, is(equalTo(expectedTombstone)));
     }
 
     @Test
@@ -333,11 +351,12 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         fetchPublicationHandler.handleRequest(handlerRequest,
                                               output,
                                               context);
-        var expectedTombstone = publication.copy().withAssociatedArtifacts(List.of()).build();
+        var expectedTombstone =
+            PublicationResponseElevatedUser.fromPublication(publication.copy().withAssociatedArtifacts(List.of()).build());
         var gatewayResponse = parseFailureResponse();
         var problem = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(), Problem.class);
         var actualPublication = JsonUtils.dtoObjectMapper.convertValue(problem.getParameters().get(RESOURCE),
-                                                                       Publication.class);
+                                                                       PublicationResponseElevatedUser.class);
         assertThat(actualPublication, is(equalTo(expectedTombstone)));
     }
 

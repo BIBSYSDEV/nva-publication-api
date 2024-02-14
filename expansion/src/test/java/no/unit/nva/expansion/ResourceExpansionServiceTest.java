@@ -30,6 +30,9 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.util.ArrayList;
@@ -50,6 +53,8 @@ import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedTicket;
 import no.unit.nva.expansion.model.ExpandedTicketStatus;
 import no.unit.nva.expansion.model.ExpandedUnpublishRequest;
+import no.unit.nva.expansion.model.ExpansionException;
+import no.unit.nva.expansion.model.nvi.ScientificIndex;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
@@ -527,6 +532,79 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(filesForApproval, containsInAnyOrder(expectedFilesForApproval));
     }
 
+    @Test
+    void shouldExpandPublicationWithNviStatusWhenPublicationIsReportedNviCandidate()
+        throws ApiGatewayException, JsonProcessingException {
+        var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
+        var resourceUpdate = Resource.fromPublication(publication);
+        var expansionService = expansionServiceReturningNviCandidate(publication, nviCandidateResponse(), 200);
+        var expandedResourceAsJson = expansionService.expandEntry(resourceUpdate).toJsonString();
+        var json = JsonUtils.dtoObjectMapper.readTree(expandedResourceAsJson);
+        var nviStatusNode = json.get(ScientificIndex.SCIENTIFIC_INDEX_FIELD);
+
+        assertThat(nviStatusNode.get("year").asText(), is(equalTo("2024")));
+        assertThat(nviStatusNode.get("status").asText(), is(equalTo("Reported")));
+    }
+
+    @Test
+    void shouldNotAddNviStatusToPublicationWhenNotFoundResponseFromNvi()
+        throws ApiGatewayException, JsonProcessingException {
+        var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
+        var resourceUpdate = Resource.fromPublication(publication);
+        var expansionService = expansionServiceReturningNviCandidate(publication, nviCandidateResponse(), 404);
+        var expandedResourceAsJson = expansionService.expandEntry(resourceUpdate).toJsonString();
+        var json = JsonUtils.dtoObjectMapper.readTree(expandedResourceAsJson);
+
+        assertThat(json.get("nviStatus"), is(nullValue()));
+    }
+
+    @Test
+    void shouldThrowExpansionExceptionWhenUnexpectedErrorFetchingNviCandidateForPublication()
+        throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
+        var resourceUpdate = Resource.fromPublication(publication);
+        var expansionService = expansionServiceReturningNviCandidate(publication, randomString(), 200);
+
+        assertThrows(ExpansionException.class, () -> expansionService.expandEntry(resourceUpdate));
+    }
+
+    private ResourceExpansionServiceImpl expansionServiceReturningNviCandidate(Publication publication,
+                                                                               String responseBody, int statusCode) {
+        var mock = mock(UriRetriever.class);
+        var response = mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(statusCode);
+        when(response.body()).thenReturn(responseBody);
+        when(mock.fetchResponse(fetchNviCandidateUri(publication), "application/json")).thenReturn(Optional.of(response));
+        return new ResourceExpansionServiceImpl(new ResourceService(client, CLOCK),
+                                                            new TicketService(client),
+                                                            mock,
+                                                            mock);
+    }
+
+    private String nviCandidateResponse() {
+        return """
+            {
+             "type": "NviCandidate",
+             "status": "Reported",
+             "period": {
+                    "type": "NviReportingPeriod",
+                    "id": "https://api.sandbox.nva.aws.unit.no/scientific-index/period/2024",
+                    "year": "2024"
+                }
+           }
+           """;
+    }
+
+    private URI fetchNviCandidateUri(Publication publication) {
+        var uri = UriWrapper.fromHost(API_HOST)
+                   .addChild("scientific-index")
+                   .addChild("candidate")
+                   .addChild("publication")
+                   .getUri();
+        return URI.create(uri + "/" + URLEncoder.encode(constructExpectedPublicationId(publication).toString(),
+                                                        StandardCharsets.UTF_8));
+    }
+
     private TicketEntry createCompletedTicketAndPublishFiles(Publication publication) throws ApiGatewayException {
         var ticket = TicketTestUtils.createCompletedTicket(publication, PublishingRequestCase.class, ticketService);
         publishFiles(publication);
@@ -704,6 +782,9 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         ticketService = new TicketService(client);
         personRetriever = mock(UriRetriever.class);
         orgRetriever = mock(UriRetriever.class);
+        var response = mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(400);
+        when(personRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(response));
         expansionService = new ResourceExpansionServiceImpl(resourceService,
                                                             ticketService,
                                                             personRetriever,

@@ -10,7 +10,6 @@ import static java.net.HttpURLConnection.HTTP_MOVED_PERM;
 import static java.net.HttpURLConnection.HTTP_SEE_OTHER;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
-import static no.unit.nva.publication.fetch.DeletedPublicationResponse.craftDeletedPublicationResponse;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_DATACITE_XML;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.apigateway.MediaTypes.SCHEMA_ORG;
@@ -25,11 +24,13 @@ import java.net.URI;
 import java.time.Clock;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.doi.DataCiteMetadataDtoMapper;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
@@ -120,8 +121,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         if (nonNull(publication.getDuplicateOf()) && shouldRedirect(requestInfo)) {
             return produceRedirect(publication.getDuplicateOf());
         } else {
-            throw new GoneException(GONE_MESSAGE,
-                                    craftDeletedPublicationResponse(publication));
+            throw new GoneException(GONE_MESSAGE, DeletedPublicationResponse.fromPublication(publication));
         }
     }
 
@@ -182,7 +182,13 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         // then only those should get the PublicationResponseElevatedUser
         //Regular users should receive PublicationResponse.class
         var publicationResponse = PublicationMapper.convertValue(publication, PublicationResponseElevatedUser.class);
+        publicationResponse.setAllowedOperations(getAllowedOperations(requestInfo, publication));
         return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(publicationResponse)).orElseThrow();
+    }
+
+    private static Set<PublicationOperation> getAllowedOperations(RequestInfo requestInfo, Publication publication) {
+        //TODO: implement
+        return Set.of();
     }
 
     private String createDataCiteMetadata(Publication publication) {

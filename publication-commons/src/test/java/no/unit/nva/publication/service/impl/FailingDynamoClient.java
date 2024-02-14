@@ -112,6 +112,8 @@ import com.amazonaws.services.dynamodbv2.model.UpdateGlobalTableSettingsRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateGlobalTableSettingsResult;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
+import com.amazonaws.services.dynamodbv2.model.UpdateKinesisStreamingDestinationRequest;
+import com.amazonaws.services.dynamodbv2.model.UpdateKinesisStreamingDestinationResult;
 import com.amazonaws.services.dynamodbv2.model.UpdateTableReplicaAutoScalingRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateTableReplicaAutoScalingResult;
 import com.amazonaws.services.dynamodbv2.model.UpdateTableRequest;
@@ -530,6 +532,12 @@ public class FailingDynamoClient implements AmazonDynamoDB {
   public UpdateItemResult updateItem(String tableName, Map<String, AttributeValue> key,
     Map<String, AttributeValueUpdate> attributeUpdates, String returnValues) {
     return this.client.updateItem(tableName, key, attributeUpdates, returnValues);
+  }
+
+  @Override
+  public UpdateKinesisStreamingDestinationResult updateKinesisStreamingDestination(
+      UpdateKinesisStreamingDestinationRequest updateKinesisStreamingDestinationRequest) {
+    return new UpdateKinesisStreamingDestinationResult();
   }
 
   @Override
