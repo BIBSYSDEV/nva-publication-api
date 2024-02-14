@@ -1,7 +1,5 @@
 package no.unit.nva.cristin.mapper.nva;
 
-import static java.util.Objects.nonNull;
-import java.time.Instant;
 import java.util.List;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.cristin.lambda.PublicationRepresentations;
@@ -11,7 +9,8 @@ import no.unit.nva.model.PublicationDate;
 
 public record NviReport(String publicationIdentifier,
                         String cristinIdentifier,
-                        List<ScientificResource> nviReport,
+                        List<ScientificResource> scientificResources,
+                        List<CristinLocale> cristinLocales,
                         String yearReported,
                         PublicationDate publicationDate) implements JsonSerializable {
 
@@ -23,7 +22,8 @@ public record NviReport(String publicationIdentifier,
         return NviReport.builder()
                    .withPublicationIdentifier(publicationRepresentations.getNvaPublicationIdentifier())
                    .withCristinIdentifier(publicationRepresentations.getCristinObject().getSourceRecordIdentifier())
-                   .withNviReport(publicationRepresentations.getCristinObject().getScientificResources())
+                   .withCristinLocales(publicationRepresentations.getCristinObject().getCristinLocales())
+                   .withScientificResource(publicationRepresentations.getCristinObject().getScientificResources())
                    .withYearReported(publicationRepresentations.getCristinObject().getScientificResources().getFirst().getReportedYear())
                    .withPublicationDate(publicationRepresentations.getPublication().getEntityDescription().getPublicationDate())
                    .build();
@@ -33,9 +33,10 @@ public record NviReport(String publicationIdentifier,
 
         private String publicationIdentifier;
         private String cristinIdentifier;
-        private List<ScientificResource> nviReport;
+        private List<ScientificResource> scientificResources;
         private String yearReported;
         private PublicationDate publicationDate;
+        private List<CristinLocale> cristinLocales;
 
         private Builder() {
         }
@@ -50,8 +51,8 @@ public record NviReport(String publicationIdentifier,
             return this;
         }
 
-        public Builder withNviReport(List<ScientificResource> nviReport) {
-            this.nviReport = nviReport;
+        public Builder withScientificResource(List<ScientificResource> nviReport) {
+            this.scientificResources = nviReport;
             return this;
         }
 
@@ -65,8 +66,14 @@ public record NviReport(String publicationIdentifier,
             return this;
         }
 
+        public Builder withCristinLocales(List<CristinLocale> cristinLocales) {
+            this.cristinLocales = cristinLocales;
+            return this;
+        }
+
         public NviReport build() {
-            return new NviReport(publicationIdentifier, cristinIdentifier, nviReport, yearReported, publicationDate);
+            return new NviReport(publicationIdentifier, cristinIdentifier, scientificResources, cristinLocales,
+                                 yearReported, publicationDate);
         }
 
     }

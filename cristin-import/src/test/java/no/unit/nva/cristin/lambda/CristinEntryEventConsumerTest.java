@@ -63,7 +63,6 @@ import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryExceptio
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryException;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.instancetypes.artistic.music.Concert;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
@@ -213,10 +212,11 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
     private NviReport createExpectedNviReport(CristinObject cristinObject, Publication publication) {
         return NviReport.builder()
-                   .withNviReport(cristinObject.getScientificResources())
+                   .withScientificResource(cristinObject.getScientificResources())
+                   .withCristinLocales(cristinObject.getCristinLocales())
                    .withCristinIdentifier(cristinObject.getSourceRecordIdentifier())
                    .withPublicationIdentifier(publication.getIdentifier().toString())
-                   .withYearReported(cristinObject.getScientificResources().getFirst().getReportedYear().toString())
+                   .withYearReported(cristinObject.getScientificResources().getFirst().getReportedYear())
                    .withPublicationDate(publication.getEntityDescription().getPublicationDate())
                    .build();
     }

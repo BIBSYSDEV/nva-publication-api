@@ -32,7 +32,7 @@ import nva.commons.core.paths.UriWrapper;
 @JsonIgnoreProperties({"brukernavn_opprettet", "dato_opprettet", "brukernavn_siste_endring",
     "dato_siste_endring", "status_bekreftet_arkivsporsmal",
     "brukernavn_avlvrt_arkivsystem", "dato_avlvrt_arkivsystem", "status_fulgt_medf_reg",
-    "brukernavn_svart_medforf_reg", "dato_svart_medforf_regel"})
+    "brukernavn_svart_medforf_reg", "dato_svart_medforf_regel", "person_kontrollert"})
 public class CristinLocale {
 
     public static final String OWNER_CODE_FIELD = "eierkode";
@@ -47,6 +47,7 @@ public class CristinLocale {
     public static final String CONTROLLED_BY_FIELD = "brukernavn_kontrollert";
     public static final String DATE_CONTROLLED_FIELD = "dato_kontrollert";
     public static final String CONTROL_STATUS_FIELD = "status_kontrollert";
+    public static final String CONTROLLED_BY_USER_FIELD = "person_kontrollert";
     @JsonProperty(OWNER_CODE_FIELD)
     private String ownerCode;
 
@@ -70,6 +71,8 @@ public class CristinLocale {
 
     @JsonProperty(CONTROL_STATUS_FIELD)
     private String controlStatus;
+    @JsonProperty(CONTROLLED_BY_USER_FIELD)
+    private CristinUser controlledByUser;
 
 
     @JacocoGenerated
