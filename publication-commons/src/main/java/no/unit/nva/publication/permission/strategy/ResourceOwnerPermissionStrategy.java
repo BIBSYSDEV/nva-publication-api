@@ -16,14 +16,27 @@ public class ResourceOwnerPermissionStrategy extends PermissionStrategy {
     protected boolean allowsAction(PublicationOperation permission) {
         return switch (permission) {
             case UPDATE, UNPUBLISH -> canModify();
+            case DELETE -> canDelete();
             default -> false;
         };
     }
 
+    private boolean canDelete() {
+        return isDraft() && isOwner();
+    }
+
+    private boolean isDraft() {
+        return publication.getStatus().equals(PublicationStatus.DRAFT);
+    }
+
     private boolean canModify() {
-        if (isDegree() && !publication.getStatus().equals(PublicationStatus.DRAFT)) {
+        if (isDegree() && !isDraft()) {
             return false;
         }
+        return isOwner();
+    }
+
+    private Boolean isOwner() {
         return attempt(userInstance::getUsername)
                    .map(username -> UserInstance.fromPublication(publication).getUsername().equals(username))
                    .orElse(fail -> false);

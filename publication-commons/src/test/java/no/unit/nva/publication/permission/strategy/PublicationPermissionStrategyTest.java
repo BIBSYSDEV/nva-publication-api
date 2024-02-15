@@ -7,11 +7,13 @@ import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationInstanceBuilder.listPublicationInstanceTypes;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
+import static no.unit.nva.publication.service.impl.ResourceService.IMPORT_CANDIDATE_HAS_BEEN_DELETED_MESSAGE;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -54,6 +56,8 @@ import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
+import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.TestAppender;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -459,6 +463,26 @@ class PublicationPermissionStrategyTest {
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
                     requestInfo, identityServiceClient))
                 .getAllAllowedActions(), containsInAnyOrder(UPDATE, DELETE, UNPUBLISH));
+    }
+
+    @Test
+    void shouldLogWhenAuthorizingAnOperation() throws JsonProcessingException, UnauthorizedException {
+        var appender = LogUtils.getTestingAppenderForRootLogger();
+
+        var contributorName = randomString();
+        var contributorCristinId = randomUri();
+        var contributorInstitutionId = randomUri();
+
+        var requestInfo = createRequestInfo(contributorName, contributorInstitutionId, contributorCristinId);
+        var publication = createPublicationWithContributor(contributorName, contributorCristinId, Role.CREATOR);
+
+        PublicationPermissionStrategy
+            .create(publication, RequestUtil.createUserInstanceFromRequest(
+                requestInfo, identityServiceClient))
+            .authorize(UNPUBLISH);
+        assertThat(appender.getMessages(), containsString(contributorName));
+        assertThat(appender.getMessages(), containsString(publication.getIdentifier().toString()));
+        assertThat(appender.getMessages(), containsString("ContributorPermissionStrategy"));
     }
 
     private static Function<AccessRight, String> getCognitoGroup(URI institutionId) {
