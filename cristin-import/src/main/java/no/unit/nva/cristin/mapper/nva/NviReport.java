@@ -12,7 +12,8 @@ public record NviReport(String publicationIdentifier,
                         List<ScientificResource> scientificResources,
                         List<CristinLocale> cristinLocales,
                         String yearReported,
-                        PublicationDate publicationDate) implements JsonSerializable {
+                        PublicationDate publicationDate,
+                        String instanceType) implements JsonSerializable {
 
     public static Builder builder() {
         return new Builder();
@@ -26,6 +27,10 @@ public record NviReport(String publicationIdentifier,
                    .withScientificResource(publicationRepresentations.getCristinObject().getScientificResources())
                    .withYearReported(publicationRepresentations.getCristinObject().getScientificResources().getFirst().getReportedYear())
                    .withPublicationDate(publicationRepresentations.getPublication().getEntityDescription().getPublicationDate())
+                   .withInstanceType(publicationRepresentations.getPublication().getEntityDescription()
+                                         .getReference()
+                                         .getPublicationInstance()
+                                         .getInstanceType())
                    .build();
     }
 
@@ -37,6 +42,7 @@ public record NviReport(String publicationIdentifier,
         private String yearReported;
         private PublicationDate publicationDate;
         private List<CristinLocale> cristinLocales;
+        private String instanceType;
 
         private Builder() {
         }
@@ -71,9 +77,14 @@ public record NviReport(String publicationIdentifier,
             return this;
         }
 
+        public Builder withInstanceType(String instanceType) {
+            this.instanceType = instanceType;
+            return this;
+        }
+
         public NviReport build() {
             return new NviReport(publicationIdentifier, cristinIdentifier, scientificResources, cristinLocales,
-                                 yearReported, publicationDate);
+                                 yearReported, publicationDate, instanceType);
         }
 
     }

@@ -218,6 +218,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                    .withPublicationIdentifier(publication.getIdentifier().toString())
                    .withYearReported(cristinObject.getScientificResources().getFirst().getReportedYear())
                    .withPublicationDate(publication.getEntityDescription().getPublicationDate())
+                   .withInstanceType(publication.getEntityDescription().getReference().getPublicationInstance().getInstanceType())
                    .build();
     }
 
