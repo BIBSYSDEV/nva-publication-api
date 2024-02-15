@@ -9,7 +9,6 @@ import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.apache.http.HttpStatus.SC_ACCEPTED;
-import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -123,7 +122,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         // Return BadRequest because Dynamo cannot distinguish between the primary key (containing the user info)
         // being wrong or the status of the resource not being "DRAFT"
-        assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
+        assertEquals(SC_UNAUTHORIZED, gatewayResponse.getStatusCode());
     }
 
     @Test
@@ -142,9 +141,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(inputStream, outputStream, context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Problem.class);
-        // Return BadRequest because Dynamo cannot distinguish between the primary key (containing the user info)
-        // being wrong or the status of the resource not being "DRAFT"
-        assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
+        assertEquals(SC_UNAUTHORIZED, gatewayResponse.getStatusCode());
     }
 
     @Test
