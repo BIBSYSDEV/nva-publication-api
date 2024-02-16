@@ -251,11 +251,11 @@ public class GeneralMappingRules {
     @Given("the Contributor has the role {string}")
     public void theContributorHasTheRoleCristinRole(String roleCode) {
         List<CristinContributor> cristinContributors = this.scenarioContext.getCristinEntry().getContributors();
-        if (cristinContributors.size() != 1 || cristinContributors.get(0).getAffiliations().size() != 1) {
+        if (cristinContributors.size() != 1 || cristinContributors.getFirst().getAffiliations().size() != 1) {
             throw new IllegalStateException(WRONG_NUMBER_OF_CONTRIBUTORS_OR_AFFILIATIONS_SET_BY_SCENARIO);
         }
-        CristinContributor contributor = cristinContributors.get(0);
-        CristinContributorsAffiliation affiliation = contributor.getAffiliations().get(0);
+        CristinContributor contributor = cristinContributors.getFirst();
+        CristinContributorsAffiliation affiliation = contributor.getAffiliations().getFirst();
         CristinContributorRoleCode injectedRoleCode = CristinContributorRoleCode.fromString(roleCode);
         CristinContributorRole injectedRole = CristinContributorRole.builder().withRoleCode(injectedRoleCode).build();
         affiliation.setRoles(List.of(injectedRole));
@@ -512,9 +512,9 @@ public class GeneralMappingRules {
                                                                                               String id) {
         var nvaFundings = scenarioContext.getNvaEntry().getFundings();
         assertThat(nvaFundings, hasSize(1));
-        assertThat(nvaFundings.get(0), allOf(is(instanceOf(ConfirmedFunding.class)),
-                                             hasProperty("identifier", equalTo(identifier)),
-                                             hasProperty("id", equalTo(UriWrapper.fromUri(id).getUri()))));
+        assertThat(nvaFundings.getFirst(), allOf(is(instanceOf(ConfirmedFunding.class)),
+                                                 hasProperty("identifier", equalTo(identifier)),
+                                                 hasProperty("id", equalTo(UriWrapper.fromUri(id).getUri()))));
     }
 
     @Given("that Cristin Result has grants:")
@@ -588,7 +588,7 @@ public class GeneralMappingRules {
         var actualNotes = scenarioContext.getNvaEntry().getPublicationNotes();
         assertThat(actualNotes, hasSize(1));
         var publicationNote = (PublicationNote)actualNotes.getFirst();
-        assertThat(publicationNote.publicationNoteMessage(), equalTo(expectedNote));
+        assertThat(publicationNote.getNote(), equalTo(expectedNote));
     }
 
     @Then("the NVA resource has a empty list as publicationNotes")
@@ -605,9 +605,9 @@ public class GeneralMappingRules {
                               .build();
         var contributors = scenarioContext.getCristinEntry().getContributors();
         assertThat(contributors, hasSize(1));
-        var affiliations = contributors.get(0).getAffiliations();
+        var affiliations = contributors.getFirst().getAffiliations();
         assertThat(affiliations, hasSize(1));
-        affiliations.get(0).setRoles(List.of(cristinRole));
+        affiliations.getFirst().setRoles(List.of(cristinRole));
     }
 
     @Given("that Cristin Result has a grant with properties finansieringsreferanse {string} and sourceCode {string}:")
@@ -644,7 +644,7 @@ public class GeneralMappingRules {
     public void theNvaContributorHasNoAffiliation() {
         var contributors = scenarioContext.getNvaEntry().getEntityDescription().getContributors();
         assertThat(contributors, hasSize(1));
-        var contributor = contributors.get(0);
+        var contributor = contributors.getFirst();
         assertThat(contributor.getAffiliations(), hasSize(0));
     }
 
@@ -652,7 +652,7 @@ public class GeneralMappingRules {
     public void theContributorIsMissingAffiliation() {
         var contributors = scenarioContext.getCristinEntry().getContributors();
         assertThat(contributors, hasSize(1));
-        contributors.get(0).setAffiliations(List.of());
+        contributors.getFirst().setAffiliations(List.of());
     }
 
     private void injectAffiliationsIntoContributors(List<CristinContributorsAffiliation> desiredInjectedAffiliations,
@@ -674,6 +674,6 @@ public class GeneralMappingRules {
     private Contributor getFirstContributor() {
         var contributors = scenarioContext.getNvaEntry().getEntityDescription().getContributors();
         assertThat(contributors, hasSize(1));
-        return contributors.get(0);
+        return contributors.getFirst();
     }
 }
