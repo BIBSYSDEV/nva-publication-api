@@ -1,4 +1,4 @@
-package no.unit.nva.publication.permission.strategy;
+package no.unit.nva.publication.permission.strategy.grant;
 
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
@@ -7,14 +7,14 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.UserInstance;
 
-public class CuratorPermissionStrategy extends PermissionStrategy {
+public class CuratorPermissionStrategy extends GrantPermissionStrategy {
 
     public CuratorPermissionStrategy(Publication publication, UserInstance userInstance) {
         super(publication, userInstance);
     }
 
     @Override
-    protected boolean allowsAction(PublicationOperation permission) {
+    public boolean allowsAction(PublicationOperation permission) {
         return switch (permission) {
             case UPDATE, REPUBLISH, UNPUBLISH -> canManage();
             default -> false;
@@ -22,17 +22,8 @@ public class CuratorPermissionStrategy extends PermissionStrategy {
     }
 
     private boolean canManage() {
-        if (userIsFromSameInstitutionAsPublication() ||
-            userAndContributorInTheSameInstitution()) {
-            if (isDegree()) {
-                return hasAccessRight(MANAGE_DEGREE) &&
-                       hasAccessRight(MANAGE_RESOURCES_STANDARD);
-            }
-
-            return hasAccessRight(MANAGE_RESOURCES_STANDARD);
-        }
-
-        return false;
+        return (userIsFromSameInstitutionAsPublication() || userAndContributorInTheSameInstitution())
+               && hasAccessRight(MANAGE_RESOURCES_STANDARD);
     }
 
     private boolean userIsFromSameInstitutionAsPublication() {

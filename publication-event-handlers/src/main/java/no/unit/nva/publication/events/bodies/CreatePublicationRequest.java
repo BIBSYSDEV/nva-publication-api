@@ -34,6 +34,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
     private PublicationStatus status;
 
     private List<PublicationNoteBase> publicationNotes;
+    private URI duplicateOf;
 
     public static CreatePublicationRequest fromPublication(Publication publication) {
         CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
@@ -46,6 +47,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
         createPublicationRequest.setRightsHolder(publication.getRightsHolder());
         createPublicationRequest.setStatus(publication.getStatus());
         createPublicationRequest.setPublicationNotes(publication.getPublicationNotes());
+        createPublicationRequest.setDuplicateOf(publication.getDuplicateOf());
         return createPublicationRequest;
     }
     
@@ -67,6 +69,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
         publication.setFundings(getFundings());
         publication.setRightsHolder(getRightsHolder());
         publication.setStatus(getStatus());
+        publication.setDuplicateOf(getDuplicateOf());
         publication.setPublicationNotes(getPublicationNotes());
         return publication;
     }
@@ -167,6 +170,14 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
         return publicationNotes;
     }
 
+    public URI getDuplicateOf() {
+        return duplicateOf;
+    }
+
+    public void setDuplicateOf(URI duplicateOf) {
+        this.duplicateOf = duplicateOf;
+    }
+
     public void setPublicationNotes(List<PublicationNoteBase> publicationNotes) {
         this.publicationNotes = publicationNotes;
     }
@@ -181,6 +192,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
                             getSubjects(),
                             getAdditionalIdentifiers(),
                             getPublicationNotes(),
+                            getDuplicateOf(),
                             getStatus());
     }
 
@@ -199,6 +211,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
                && Objects.equals(getContext(), that.getContext())
                && Objects.equals(getProjects(), that.getProjects())
                && Objects.equals(getSubjects(), that.getSubjects())
+               && Objects.equals(getDuplicateOf(), that.getDuplicateOf())
                && Objects.equals(getAdditionalIdentifiers(), that.getAdditionalIdentifiers())
                && Objects.equals(getPublicationNotes(), that.getPublicationNotes())
                && Objects.equals(getStatus(), that.getStatus());

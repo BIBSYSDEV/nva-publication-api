@@ -1,9 +1,12 @@
 package no.unit.nva.publication.permission.strategy;
 
+import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
+import static nva.commons.core.attempt.Try.attempt;
 import java.util.Optional;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
@@ -24,8 +27,6 @@ public abstract class PermissionStrategy {
         this.userInstance = userInstance;
     }
 
-    protected abstract boolean allowsAction(PublicationOperation permission);
-
     protected boolean hasAccessRight(AccessRight accessRight) {
         return userInstance.getAccessRights().contains(accessRight);
     }
@@ -36,6 +37,24 @@ public abstract class PermissionStrategy {
                    .map(Reference::getPublicationInstance)
                    .map(PermissionStrategy::publicationInstanceIsDegree)
                    .orElse(false);
+    }
+
+    protected Boolean isOwner() {
+        return attempt(userInstance::getUsername)
+                   .map(username -> UserInstance.fromPublication(publication).getUsername().equals(username))
+                   .orElse(fail -> false);
+    }
+
+    protected boolean isDraft() {
+        return publication.getStatus().equals(DRAFT);
+    }
+
+    protected boolean isUnpublished() {
+        return publication.getStatus().equals(UNPUBLISHED);
+    }
+
+    protected boolean isPublished() {
+        return publication.getStatus().equals(PUBLISHED);
     }
 
     private static Boolean publicationInstanceIsDegree(PublicationInstance<? extends Pages> publicationInstance) {
