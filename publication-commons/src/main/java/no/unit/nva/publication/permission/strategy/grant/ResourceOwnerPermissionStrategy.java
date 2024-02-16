@@ -28,10 +28,4 @@ public class ResourceOwnerPermissionStrategy extends GrantPermissionStrategy {
     private boolean canModify() {
         return isOwner();
     }
-
-    private Boolean isOwner() {
-        return attempt(userInstance::getUsername)
-                   .map(username -> UserInstance.fromPublication(publication).getUsername().equals(username))
-                   .orElse(fail -> false);
-    }
 }

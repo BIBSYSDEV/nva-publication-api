@@ -3,6 +3,7 @@ package no.unit.nva.publication.permission.strategy;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
+import static nva.commons.core.attempt.Try.attempt;
 import java.util.Optional;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
@@ -38,6 +39,12 @@ public abstract class PermissionStrategy {
                    .map(Reference::getPublicationInstance)
                    .map(PermissionStrategy::publicationInstanceIsDegree)
                    .orElse(false);
+    }
+
+    protected Boolean isOwner() {
+        return attempt(userInstance::getUsername)
+                   .map(username -> UserInstance.fromPublication(publication).getUsername().equals(username))
+                   .orElse(fail -> false);
     }
 
     protected boolean isDraft() {

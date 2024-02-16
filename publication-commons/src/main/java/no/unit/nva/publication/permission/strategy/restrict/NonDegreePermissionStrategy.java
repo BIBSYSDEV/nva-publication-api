@@ -31,6 +31,10 @@ public class NonDegreePermissionStrategy extends RestrictPermissionStrategy {
     }
 
     private boolean canManage() {
-        return isDegree() && !hasAccessRight(MANAGE_DEGREE) && !isDraft();
+        return isDegree() && !hasAccessRight(MANAGE_DEGREE) && !isUsersDraft();
+    }
+
+    private boolean isUsersDraft() {
+        return isDraft() && isOwner();
     }
 }
