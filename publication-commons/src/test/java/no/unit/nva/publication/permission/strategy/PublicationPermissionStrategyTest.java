@@ -2,6 +2,7 @@ package no.unit.nva.publication.permission.strategy;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationOperation.DELETE;
+import static no.unit.nva.model.PublicationOperation.REPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
@@ -324,7 +325,8 @@ class PublicationPermissionStrategyTest {
         var contributorInstitutionId = randomUri();
 
         var requestInfo = createUserRequestInfo(contributorName, contributorInstitutionId, contributorCristinId);
-        var publication = createPublicationWithContributor(contributorName, contributorCristinId, Role.CREATOR);
+        var publication = createPublicationWithContributor(contributorName, contributorCristinId, Role.CREATOR,
+                                                           randomUri());
 
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
@@ -340,7 +342,7 @@ class PublicationPermissionStrategyTest {
         var contributorInstitutionId = randomUri();
 
         var requestInfo = createUserRequestInfo(contributorName, contributorInstitutionId, contributorCristinId);
-        var publication = createPublicationWithContributor(contributorName, contributorCristinId, null);
+        var publication = createPublicationWithContributor(contributorName, contributorCristinId, null, randomUri());
 
         Assertions.assertFalse(PublicationPermissionStrategy
                                    .create(publication, RequestUtil.createUserInstanceFromRequest(
@@ -429,7 +431,7 @@ class PublicationPermissionStrategyTest {
 
     @Test
     void getAllAllowedOperationsShouldReturnNothingWhenUserHasNoAccessRights() throws JsonProcessingException,
-                                                                         UnauthorizedException {
+                                                                                      UnauthorizedException {
         var editorName = randomString();
         var editorInstitution = randomUri();
         var resourceOwner = randomString();
@@ -445,8 +447,9 @@ class PublicationPermissionStrategyTest {
     }
 
     @Test
-    void getAllAllowedOperationsShouldReturnUpdateDeleteUnpublishWhenUserHasAllAccessRights() throws JsonProcessingException,
-                                                                                      UnauthorizedException {
+    void getAllAllowedOperationsShouldReturnUpdateDeleteUnpublishWhenUserHasAllAccessRights()
+        throws JsonProcessingException,
+               UnauthorizedException {
         var editorName = randomString();
         var editorInstitution = randomUri();
         var resourceOwner = randomString();
@@ -459,7 +462,7 @@ class PublicationPermissionStrategyTest {
         assertThat(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
                     requestInfo, identityServiceClient))
-                .getAllAllowedActions(), containsInAnyOrder(UPDATE, DELETE, UNPUBLISH));
+                .getAllAllowedActions(), containsInAnyOrder(UPDATE, DELETE, UNPUBLISH, REPUBLISH));
     }
 
     @Test
@@ -471,7 +474,8 @@ class PublicationPermissionStrategyTest {
         var contributorInstitutionId = randomUri();
 
         var requestInfo = createUserRequestInfo(contributorName, contributorInstitutionId, contributorCristinId);
-        var publication = createPublicationWithContributor(contributorName, contributorCristinId, Role.CREATOR);
+        var publication = createPublicationWithContributor(contributorName, contributorCristinId, Role.CREATOR,
+                                                           randomUri());
 
         PublicationPermissionStrategy
             .create(publication, RequestUtil.createUserInstanceFromRequest(
@@ -527,8 +531,8 @@ class PublicationPermissionStrategyTest {
         return publication.copy().withEntityDescription(entityDescription).build();
     }
 
-    private Publication createPublicationWithContributor(String contributorName, URI contributorId,
-                                                         Role contributorRole) {
+    protected Publication createPublicationWithContributor(String contributorName, URI contributorId,
+                                                           Role contributorRole, URI institutionId) {
         var publicationInstanceTypes = listPublicationInstanceTypes();
         var nonDegreePublicationInstances = publicationInstanceTypes.stream()
                                                 .filter(this::isNonDegreeClass)
@@ -540,6 +544,7 @@ class PublicationPermissionStrategyTest {
                            .build();
         var contributor = new Contributor.Builder()
                               .withIdentity(identity)
+                              .withAffiliations(List.of(new Organization.Builder().withId(institutionId).build()))
                               .withRole(new RoleType(contributorRole))
                               .build();
         var entityDescription = publication.getEntityDescription().copy()
@@ -556,8 +561,15 @@ class PublicationPermissionStrategyTest {
         return accessRights;
     }
 
-    private List<AccessRight> getCuratorAccessRights() {
+    protected List<AccessRight> getCuratorAccessRights() {
         var accessRights = new ArrayList<AccessRight>();
+        accessRights.add(AccessRight.MANAGE_RESOURCES_STANDARD);
+        return accessRights;
+    }
+
+    protected List<AccessRight> getCuratorAccessRightsWithDegree() {
+        var accessRights = new ArrayList<AccessRight>();
+        accessRights.add(AccessRight.MANAGE_DEGREE);
         accessRights.add(AccessRight.MANAGE_RESOURCES_STANDARD);
         return accessRights;
     }
