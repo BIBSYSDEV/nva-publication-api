@@ -3,6 +3,7 @@ package no.unit.nva.publication.update;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationOperation.DELETE;
+import static no.unit.nva.model.PublicationOperation.TERMINATE;
 import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.defaultEventBridgeClient;
@@ -26,7 +27,6 @@ import no.unit.nva.auth.CognitoCredentials;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.UnpublishingNote;
 import no.unit.nva.model.Username;
@@ -173,7 +173,7 @@ public class UpdatePublicationHandler
             case UnpublishPublicationRequest unpublishPublicationRequest ->
                 unpublishPublication(unpublishPublicationRequest, existingPublication, permissionStrategy);
 
-            case DeletePublicationRequest ignored -> deletePublication(existingPublication, permissionStrategy);
+            case DeletePublicationRequest ignored -> terminatePublication(existingPublication, permissionStrategy);
 
             default -> throw new BadRequestException("Unknown input body type");
         };
@@ -181,10 +181,10 @@ public class UpdatePublicationHandler
         return PublicationResponseElevatedUser.fromPublication(updatedPublication);
     }
 
-    private Publication deletePublication(Publication existingPublication,
-                                          PublicationPermissionStrategy permissionStrategy)
+    private Publication terminatePublication(Publication existingPublication,
+                                             PublicationPermissionStrategy permissionStrategy)
         throws UnauthorizedException, BadRequestException, NotFoundException {
-        permissionStrategy.authorize(DELETE);
+        permissionStrategy.authorize(TERMINATE);
 
         deleteFiles(existingPublication);
         resourceService.deletePublication(existingPublication);

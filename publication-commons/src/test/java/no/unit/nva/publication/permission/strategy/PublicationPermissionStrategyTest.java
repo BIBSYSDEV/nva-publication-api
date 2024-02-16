@@ -445,7 +445,7 @@ class PublicationPermissionStrategyTest {
     }
 
     @Test
-    void getAllAllowedOperationsShouldReturnUpdateDeleteUnpublishWhenUserHasAllAccessRights() throws JsonProcessingException,
+    void getAllAllowedOperationsShouldReturnUpdateUnpublishWhenUserHasAllAccessRights() throws JsonProcessingException,
                                                                                       UnauthorizedException {
         var editorName = randomString();
         var editorInstitution = randomUri();
@@ -459,7 +459,7 @@ class PublicationPermissionStrategyTest {
         assertThat(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
                     requestInfo, identityServiceClient))
-                .getAllAllowedActions(), containsInAnyOrder(UPDATE, DELETE, UNPUBLISH));
+                .getAllAllowedActions(), containsInAnyOrder(UPDATE, UNPUBLISH));
     }
 
     @Test
