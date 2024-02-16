@@ -14,7 +14,7 @@ import no.unit.nva.publication.permission.strategy.grant.GrantPermissionStrategy
 import no.unit.nva.publication.permission.strategy.grant.ResourceOwnerPermissionStrategy;
 import no.unit.nva.publication.permission.strategy.grant.TrustedThirdPartyStrategy;
 import no.unit.nva.publication.permission.strategy.restrict.NonDegreePermissionStrategy;
-import no.unit.nva.publication.permission.strategy.restrict.RestrictPermissionStrategy;
+import no.unit.nva.publication.permission.strategy.restrict.DenyPermissionStrategy;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +24,7 @@ public final class PublicationPermissionStrategy {
     private static final Logger logger = LoggerFactory.getLogger(PublicationPermissionStrategy.class);
     public static final String COMMA_DELIMITER = ", ";
     private final Set<GrantPermissionStrategy> grantStrategies;
-    private final Set<RestrictPermissionStrategy> restrictStrategies;
+    private final Set<DenyPermissionStrategy> denyStrategies;
     private final UserInstance userInstance;
     private final Publication publication;
 
@@ -41,7 +41,7 @@ public final class PublicationPermissionStrategy {
             new ResourceOwnerPermissionStrategy(publication, userInstance),
             new TrustedThirdPartyStrategy(publication, userInstance)
         );
-        this.restrictStrategies = Set.of(
+        this.denyStrategies = Set.of(
             new NonDegreePermissionStrategy(publication, userInstance)
         );
     }
@@ -51,18 +51,18 @@ public final class PublicationPermissionStrategy {
     }
 
     public boolean allowsAction(PublicationOperation permission) {
-        return !findStrategiesAllowingOperation(permission).isEmpty()
-               && findStrategiesRestrictingOperation(permission).isEmpty();
+        return !findAllowances(permission).isEmpty()
+               && findDenials(permission).isEmpty();
     }
 
-    private List<GrantPermissionStrategy> findStrategiesAllowingOperation(PublicationOperation permission) {
+    private List<GrantPermissionStrategy> findAllowances(PublicationOperation permission) {
         return grantStrategies.stream()
                    .filter(strategy -> strategy.allowsAction(permission))
                    .toList();
     }
 
-    private List<RestrictPermissionStrategy> findStrategiesRestrictingOperation(PublicationOperation permission) {
-        return restrictStrategies.stream()
+    private List<DenyPermissionStrategy> findDenials(PublicationOperation permission) {
+        return denyStrategies.stream()
                    .filter(strategy -> strategy.deniesAction(permission))
                    .toList();
     }
@@ -74,22 +74,22 @@ public final class PublicationPermissionStrategy {
     }
 
     public void authorize(PublicationOperation requestedPermission) throws UnauthorizedException {
-        authorizeRestrictions(requestedPermission);
-        authorizeGrants(requestedPermission);
+        validateDenyStrategiesRestrictions(requestedPermission);
+        validateGrantStrategies(requestedPermission);
     }
 
-    private void authorizeRestrictions(PublicationOperation requestedPermission) throws UnauthorizedException {
-        var restrictStrategies = findStrategiesRestrictingOperation(requestedPermission).stream()
-                                     .map(RestrictPermissionStrategy::getClass)
+    private void validateDenyStrategiesRestrictions(PublicationOperation requestedPermission) throws UnauthorizedException {
+        var strategies = findDenials(requestedPermission).stream()
+                                     .map(DenyPermissionStrategy::getClass)
                                      .map(Class::getSimpleName)
                                      .toList();
 
-        if (!restrictStrategies.isEmpty()) {
-            logger.info("User {} was denies access {} on publication {} from strategies {}",
+        if (!strategies.isEmpty()) {
+            logger.info("User {} was denied access {} on publication {} from strategies {}",
                         userInstance.getUsername(),
                         requestedPermission,
                         publication.getIdentifier(),
-                        String.join(COMMA_DELIMITER, restrictStrategies));
+                        String.join(COMMA_DELIMITER, strategies));
 
             throw new UnauthorizedException(formatUnauthorizedMessage(requestedPermission));
         }
@@ -97,13 +97,13 @@ public final class PublicationPermissionStrategy {
 
 
 
-    private void authorizeGrants(PublicationOperation requestedPermission) throws UnauthorizedException {
-        var grantStrategies = findStrategiesAllowingOperation(requestedPermission).stream()
+    private void validateGrantStrategies(PublicationOperation requestedPermission) throws UnauthorizedException {
+        var strategies = findAllowances(requestedPermission).stream()
                                   .map(GrantPermissionStrategy::getClass)
                                   .map(Class::getSimpleName)
                                   .toList();
 
-        if (grantStrategies.isEmpty()) {
+        if (strategies.isEmpty()) {
             throw new UnauthorizedException(formatUnauthorizedMessage(requestedPermission));
         }
 
@@ -111,7 +111,7 @@ public final class PublicationPermissionStrategy {
                     userInstance.getUsername(),
                     requestedPermission,
                     publication.getIdentifier(),
-                    String.join(COMMA_DELIMITER, grantStrategies));
+                    String.join(COMMA_DELIMITER, strategies));
     }
 
     private String formatUnauthorizedMessage(PublicationOperation requestedPermission) {

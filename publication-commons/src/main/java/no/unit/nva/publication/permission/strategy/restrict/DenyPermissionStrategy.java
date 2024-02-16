@@ -5,9 +5,9 @@ import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permission.strategy.PermissionStrategy;
 
-public abstract class RestrictPermissionStrategy extends PermissionStrategy {
+public abstract class DenyPermissionStrategy extends PermissionStrategy {
 
-    protected RestrictPermissionStrategy(Publication publication, UserInstance userInstance) {
+    protected DenyPermissionStrategy(Publication publication, UserInstance userInstance) {
         super(publication, userInstance);
     }
 

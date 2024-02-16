@@ -5,7 +5,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.UserInstance;
 
-public class NonDegreePermissionStrategy extends RestrictPermissionStrategy {
+public class NonDegreePermissionStrategy extends DenyPermissionStrategy {
 
     public NonDegreePermissionStrategy(Publication publication, UserInstance userInstance) {
         super(publication, userInstance);
@@ -13,12 +13,6 @@ public class NonDegreePermissionStrategy extends RestrictPermissionStrategy {
 
     @Override
     public boolean deniesAction(PublicationOperation permission) {
-        return switch (permission) {
-            default -> canManage();
-        };
-    }
-
-    private boolean canManage() {
         return isDegree() && !hasAccessRight(MANAGE_DEGREE) && !isUsersDraft();
     }
 
