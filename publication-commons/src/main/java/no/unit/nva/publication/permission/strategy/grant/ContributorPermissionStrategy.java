@@ -1,4 +1,4 @@
-package no.unit.nva.publication.permission.strategy;
+package no.unit.nva.publication.permission.strategy.grant;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.role.Role.CREATOR;
@@ -14,14 +14,14 @@ import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.business.UserInstance;
 
-public class ContributorPermissionStrategy extends PermissionStrategy {
+public class ContributorPermissionStrategy extends GrantPermissionStrategy {
 
     public ContributorPermissionStrategy(Publication publication, UserInstance userInstance) {
         super(publication, userInstance);
     }
 
     @Override
-    protected boolean allowsAction(PublicationOperation permission) {
+    public boolean allowsAction(PublicationOperation permission) {
         return switch (permission) {
             case UPDATE, UNPUBLISH -> canModify();
             default -> false;
@@ -29,10 +29,6 @@ public class ContributorPermissionStrategy extends PermissionStrategy {
     }
 
     private boolean canModify() {
-        if (isDegree()) {
-            return false;
-        }
-
         return userIsVerifiedContributor();
     }
 

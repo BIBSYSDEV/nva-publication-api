@@ -4,7 +4,9 @@ import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
+import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationInstanceBuilder.listPublicationInstanceTypes;
@@ -274,8 +276,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     void handlerCreatesPendingPublishingRequestTicketForPublishedPublicationWhenUpdatingFiles()
         throws ApiGatewayException, IOException {
         var publishedPublication = TicketTestUtils.createPersistedNonDegreePublication(customerId,
-                                                                                       PublicationStatus.PUBLISHED,
-                                                                                       publicationService);
+                                                                              PUBLISHED,
+                                                                              publicationService);
 
         var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
 
@@ -296,7 +298,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     void handlerCreatesPendingPublishingRequestTicketForPublishedPublicationWhenCompletedPublishingRequestExists()
         throws ApiGatewayException, IOException {
         var publishedPublication = TicketTestUtils.createPersistedPublication(customerId,
-                                                                              PublicationStatus.PUBLISHED,
+                                                                              PUBLISHED,
                                                                               publicationService);
         var completedTicket = persistCompletedPublishingRequest(publishedPublication);
         var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
@@ -317,7 +319,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     void handlerDoesNotCreateNewPublishingRequestWhenThereExistsPendingPublishingRequest()
         throws IOException, ApiGatewayException {
         var publishedPublication = TicketTestUtils.createPersistedPublication(customerId,
-                                                                              PublicationStatus.PUBLISHED,
+                                                                              PUBLISHED,
                                                                               publicationService);
         var pendingTicket = createPendingPublishingRequest(publishedPublication);
         var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
@@ -335,7 +337,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     void handlerDoesNotCreateNewPublishingRequestWhenThereExistsPendingAndCompletedPublishingRequest()
         throws ApiGatewayException, IOException {
         var publishedPublication = TicketTestUtils.createPersistedPublication(customerId,
-                                                                              PublicationStatus.PUBLISHED,
+                                                                              PUBLISHED,
                                                                               publicationService);
         persistCompletedPublishingRequest(publishedPublication);
         var pendingPublishingRequest = createPendingPublishingRequest(publishedPublication);
@@ -640,7 +642,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     void shouldReturnBadGatewayWhenHttpClientUnableToRetrievePublishingWorkflow()
         throws IOException, ApiGatewayException {
         var publishedPublication = TicketTestUtils.createPersistedPublication(customerId,
-                                                                              PublicationStatus.PUBLISHED,
+                                                                              PUBLISHED,
                                                                               publicationService);
 
         var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
@@ -816,7 +818,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldUpdateFilesForApprovalWhenPublicationUpdateHasFileChanges() throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
-            customerId, PublicationStatus.PUBLISHED, publicationService);
+            customerId, PUBLISHED, publicationService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
         var expectedFilesForApprovalBeforePublicationUpdate = getUnpublishedFiles(publication);
 
@@ -1060,7 +1062,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnBadRequestWhenUnpublishingNotPublishedPublication() throws IOException, ApiGatewayException {
+    void shouldReturnUnauthorizedWhenUnpublishingNotPublishedPublication() throws IOException, ApiGatewayException {
         var unpublishedPublication = createAndPersistPublicationWithoutDoi(false);
         var publisherUri = unpublishedPublication.getPublisher().getId();
 
@@ -1070,7 +1072,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_BAD_REQUEST)));
+        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_UNAUTHORIZED)));
     }
 
     @Test
@@ -1109,7 +1111,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnBadRequestWhenDeletingUnsupportedPublicationStatus() throws IOException {
+    void shouldReturnUnauthorizedWhenDeletingUnsupportedPublicationStatus() throws IOException {
         Publication persistedPublication = persistPublication(createNonDegreePublication()
                                                                   .copy()
                                                                   .withStatus(PublicationStatus.NEW))
@@ -1122,7 +1124,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_BAD_REQUEST)));
+        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HTTP_UNAUTHORIZED)));
     }
 
     @Test
