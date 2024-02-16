@@ -383,7 +383,7 @@ class PublicationPermissionStrategyTest {
     @Test
     void shouldGivePermissionToEditPublicationWhenTrustedClient()
         throws JsonProcessingException, UnauthorizedException {
-        var publication = createPublication(randomString(), EXTERNAL_CLIENT_CUSTOMER_URI);
+        var publication = createNonDegreePublication(randomString(), EXTERNAL_CLIENT_CUSTOMER_URI);
         var requestInfo = createThirdPartyRequestInfo(getEditorAccessRights());
 
         Assertions.assertTrue(
