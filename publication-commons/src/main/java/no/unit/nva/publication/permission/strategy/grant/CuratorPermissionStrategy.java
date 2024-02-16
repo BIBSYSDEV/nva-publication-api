@@ -1,6 +1,5 @@
 package no.unit.nva.publication.permission.strategy.grant;
 
-import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -15,8 +14,14 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
 
     @Override
     public boolean allowsAction(PublicationOperation permission) {
+        if (!canManage()) {
+            return false;
+        }
+
         return switch (permission) {
-            case UPDATE, REPUBLISH, UNPUBLISH -> canManage();
+            case UPDATE -> true;
+            case REPUBLISH -> isUnpublished() || isDraft();
+            case UNPUBLISH -> isPublished();
             default -> false;
         };
     }

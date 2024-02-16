@@ -2,9 +2,9 @@ package no.unit.nva.publication.permission.strategy;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationOperation.DELETE;
-import static no.unit.nva.model.PublicationOperation.REPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationInstanceBuilder.listPublicationInstanceTypes;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
@@ -499,7 +499,7 @@ class PublicationPermissionStrategyTest {
         return randomPublication().copy()
                    .withResourceOwner(new ResourceOwner(new Username(resourceOwner), customer))
                    .withPublisher(new Organization.Builder().withId(customer).build())
-                   .withStatus(PublicationStatus.PUBLISHED)
+                   .withStatus(PUBLISHED)
                    .build();
     }
 
@@ -510,7 +510,7 @@ class PublicationPermissionStrategyTest {
         return PublicationGenerator.randomPublication(randomElement(nonDegreePublicationInstances)).copy()
                    .withResourceOwner(new ResourceOwner(new Username(resourceOwner), customer))
                    .withPublisher(new Organization.Builder().withId(customer).build())
-                   .withStatus(PublicationStatus.PUBLISHED)
+                   .withStatus(PUBLISHED)
                    .build();
     }
 
@@ -550,7 +550,8 @@ class PublicationPermissionStrategyTest {
                                     .withContributors(List.of(contributor))
                                     .build();
 
-        return publication.copy().withEntityDescription(entityDescription).build();
+        return publication.copy().withEntityDescription(entityDescription)
+                   .withStatus(PUBLISHED).build();
     }
 
     protected List<AccessRight> getEditorAccessRights() {

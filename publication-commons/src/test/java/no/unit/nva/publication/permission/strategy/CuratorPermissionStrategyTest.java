@@ -17,8 +17,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
     //region Non-degree publications
     @ParameterizedTest(name = "Should allow Curator {0} operation on non-degree resources belonging to the "
                               + "institution based on publication owner")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "TERMINATE"}) // and terminate
-    //and terminate
+    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "TERMINATE", "REPUBLISH"})
     void shouldAllowCuratorOnNonDegreeBasedOnOwner(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
@@ -38,8 +37,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should allow Curator {0} operation on non-degree resources belonging to the "
                               + "institution based on contributors")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE"}) // and terminate
-        //and terminate
+    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "TERMINATE", "REPUBLISH"})
     void shouldAllowCuratorOnNonDegreeBasedOnContributors(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
@@ -61,7 +59,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should deny Curator {0} operation on non-degree resources belonging to the institution"
                               + " for not allowed operations")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"REPUBLISH", "UNPUBLISH", "UPDATE"})
+    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"UNPUBLISH", "UPDATE"})
     void shouldDenyCuratorOnNonDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
@@ -102,7 +100,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should allow Curator {0} operation on degree resources belonging to the institution "
                               + "with MANAGE_DEGREE access rights")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE"}) // and terminate
+    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "TERMINATE", "REPUBLISH"})
     void shouldAllowCuratorOnDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
