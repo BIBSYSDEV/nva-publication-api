@@ -7,8 +7,6 @@ import static nva.commons.core.attempt.Try.attempt;
 import java.util.Optional;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationOperation;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
