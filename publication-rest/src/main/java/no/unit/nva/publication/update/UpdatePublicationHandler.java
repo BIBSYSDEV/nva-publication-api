@@ -2,7 +2,6 @@ package no.unit.nva.publication.update;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static no.unit.nva.model.PublicationOperation.DELETE;
 import static no.unit.nva.model.PublicationOperation.TERMINATE;
 import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
@@ -15,6 +14,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -171,7 +171,10 @@ public class UpdatePublicationHandler
                 updateMetadata(publicationMetadata, identifierInPath, existingPublication, permissionStrategy);
 
             case UnpublishPublicationRequest unpublishPublicationRequest ->
-                unpublishPublication(unpublishPublicationRequest, existingPublication, permissionStrategy);
+                unpublishPublication(unpublishPublicationRequest,
+                                     existingPublication,
+                                     permissionStrategy,
+                                     userInstance);
 
             case DeletePublicationRequest ignored -> terminatePublication(existingPublication, permissionStrategy);
 
@@ -205,12 +208,15 @@ public class UpdatePublicationHandler
 
     private Publication unpublishPublication(UnpublishPublicationRequest unpublishPublicationRequest,
                                              Publication existingPublication,
-                                             PublicationPermissionStrategy permissionStrategy)
+                                             PublicationPermissionStrategy permissionStrategy,
+                                             UserInstance userInstance)
         throws ApiGatewayException {
         validateUnpublishRequest(unpublishPublicationRequest);
         permissionStrategy.authorize(UNPUBLISH);
 
-        var updatedPublication = toPublicationWithDuplicate(unpublishPublicationRequest, existingPublication);
+        var updatedPublication = toPublicationWithDuplicate(unpublishPublicationRequest,
+                                                            existingPublication,
+                                                            userInstance);
         resourceService.unpublishPublication(updatedPublication);
 
         updatedPublication = resourceService.getPublication(updatedPublication);
@@ -265,12 +271,12 @@ public class UpdatePublicationHandler
     }
 
     private Publication toPublicationWithDuplicate(UnpublishPublicationRequest unpublishPublicationRequest,
-                                                   Publication publication) {
+                                                   Publication publication, UserInstance userInstance) {
         var duplicate = unpublishPublicationRequest.getDuplicateOf().orElse(null);
         var comment = unpublishPublicationRequest.getComment();
 
         var notes = new ArrayList<>(publication.getPublicationNotes());
-        notes.add(new UnpublishingNote(comment));
+        notes.add(new UnpublishingNote(comment, new Username(userInstance.getUsername()), Instant.now()));
 
         return publication.copy()
                    .withDuplicateOf(duplicate)

@@ -7,6 +7,7 @@ import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationInstanceBuilder.listPublicationInstanceTypes;
@@ -41,15 +42,20 @@ import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
+import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.emptyIterable;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -96,6 +102,7 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.UnpublishingNote;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
@@ -176,6 +183,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private static final String API_HOST_DOMAIN = "example.com";
     public static final String PUBLICATION = "publication";
     public static final String MUST_BE_A_VALID_PUBLICATION_API_URI = "must be a valid publication API URI";
+    public static final String COMMENT_ON_UNPUBLISHING_REQUEST = "comment";
 
     private final GetExternalClientResponse getExternalClientResponse = mock(GetExternalClientResponse.class);
     private final Context context = new FakeContext();
@@ -941,7 +949,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publication = createAndPersistPublicationWithoutDoi(true);
 
         var unpublishRequest = new UnpublishPublicationRequest();
-        unpublishRequest.setComment("comment");
+        unpublishRequest.setComment(COMMENT_ON_UNPUBLISHING_REQUEST);
 
         var inputStream = new HandlerRequestBuilder<UnpublishPublicationRequest>(restApiMapper)
                               .withUserName(randomString())
@@ -1005,7 +1013,13 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = createUnpublishHandlerRequest(publication.getIdentifier(), userName,
                                                         RandomPersonServiceResponse.randomUri(), userCristinId);
         updatePublicationHandler.handleRequest(inputStream, output, context);
-
+        var updatedPublication = publicationService.getPublication(publication);
+        assertThat(updatedPublication.getStatus(), is(equalTo(UNPUBLISHED)));
+        assertThat(updatedPublication.getPublicationNotes(),
+                   hasItem(allOf(instanceOf(UnpublishingNote.class),
+                                 hasProperty("note", equalTo(COMMENT_ON_UNPUBLISHING_REQUEST)),
+                                 hasProperty("createdBy", equalTo(new Username(userName))),
+                                 hasProperty("createdDate", is(notNullValue())))));
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_ACCEPTED)));
     }
@@ -1358,7 +1372,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                       URI institutionId, URI cristinId, AccessRight... accessRight)
         throws JsonProcessingException {
         var unpublishRequest = new UnpublishPublicationRequest();
-        unpublishRequest.setComment("comment");
+        unpublishRequest.setComment(COMMENT_ON_UNPUBLISHING_REQUEST);
         var request = new HandlerRequestBuilder<UnpublishPublicationRequest>(restApiMapper)
                           .withUserName(username)
                           .withCurrentCustomer(institutionId)
@@ -1398,7 +1412,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                    AccessRight... accessRight)
         throws JsonProcessingException {
         var unpublishRequest = new UnpublishPublicationRequest();
-        unpublishRequest.setComment("comment");
+        unpublishRequest.setComment(COMMENT_ON_UNPUBLISHING_REQUEST);
         unpublishRequest.setDuplicateOf(duplicateOf);
         var request = new HandlerRequestBuilder<UnpublishPublicationRequest>(restApiMapper)
                           .withUserName(username)
