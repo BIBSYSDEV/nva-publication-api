@@ -97,7 +97,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
 
     private void throwExceptionIfUnauthorized(RequestUtils requestUtils, TicketEntry ticket)
         throws ForbiddenException {
-        if (userIsAuthorized(requestUtils, ticket)) {
+        if (!userIsAuthorized(requestUtils, ticket)) {
             throw new ForbiddenException();
         }
     }

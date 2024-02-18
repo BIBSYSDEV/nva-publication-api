@@ -604,6 +604,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var completedTicket = ticket.complete(publication, USER_NAME);
         var httpRequest = createCompleteTicketHttpRequest(completedTicket,
                                                           ticket.getCustomerId(),
+                                                          AccessRight.MANAGE_RESOURCES_STANDARD,
                                                           AccessRight.MANAGE_PUBLISHING_REQUESTS);
         handler.handleRequest(httpRequest, output, CONTEXT);
         var completedPublishingRequest = (PublishingRequestCase) ticketService.fetchTicket(ticket);
@@ -659,6 +660,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         return new HandlerRequestBuilder<UpdateTicketRequest>(JsonUtils.dtoObjectMapper).withCurrentCustomer(customerId)
                    .withUserName(ticket.getAssignee().toString())
                    .withAccessRights(customerId,
+                                     AccessRight.MANAGE_RESOURCES_STANDARD,
                                      AccessRight.MANAGE_DOI,
                                      AccessRight.MANAGE_PUBLISHING_REQUESTS,
                                      AccessRight.SUPPORT)
@@ -714,7 +716,8 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     }
 
     private InputStream authorizedUserCompletesTicket(TicketEntry ticket) throws JsonProcessingException {
-        return createCompleteTicketHttpRequest(ticket, ticket.getCustomerId(), AccessRight.MANAGE_DOI,
+        return createCompleteTicketHttpRequest(ticket, ticket.getCustomerId(), AccessRight.MANAGE_RESOURCES_STANDARD,
+                                               AccessRight.MANAGE_DOI,
                                                AccessRight.MANAGE_PUBLISHING_REQUESTS, AccessRight.SUPPORT);
     }
 
