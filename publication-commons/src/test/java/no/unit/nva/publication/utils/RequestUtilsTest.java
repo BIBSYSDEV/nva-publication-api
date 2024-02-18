@@ -12,6 +12,7 @@ import static nva.commons.apigateway.AccessRight.SUPPORT;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,29 +25,40 @@ import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class RequestUtilsTest {
+public class RequestUtilsTest extends ResourcesLocalTest {
+
+    private ResourceService resourceService;
+
+    @BeforeEach
+    public void setup() {
+        super.init();
+        this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
+    }
 
     public static Stream<Arguments> ticketTypeAndAccessRightProvider() {
         return Stream.of(Arguments.of(DoiRequest.class, MANAGE_DOI),
-                         Arguments.of(PublishingRequestCase.class, MANAGE_PUBLISHING_REQUESTS),
                          Arguments.of(GeneralSupportRequest.class, SUPPORT));
     }
 
     @Test
     void shouldReturnFalseWhenCheckingAuthorizationForNullTicket() throws UnauthorizedException {
-        Assertions.assertFalse(RequestUtils.fromRequestInfo(mockedRequestInfo()).isAuthorizedToManage(null));
+        Assertions.assertFalse(RequestUtils.fromRequestInfo(mockedRequestInfo()).isAuthorizedToManage(null, null));
     }
 
     @Test
@@ -75,7 +87,7 @@ public class RequestUtilsTest {
         var ticket = TicketEntry.requestNewTicket(publicationWithOwner(randomString()), ticketType);
         var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
 
-        Assertions.assertTrue(requestUtils.isAuthorizedToManage(ticket));
+        Assertions.assertTrue(requestUtils.isAuthorizedToManage(ticket, null));
     }
 
     @Test

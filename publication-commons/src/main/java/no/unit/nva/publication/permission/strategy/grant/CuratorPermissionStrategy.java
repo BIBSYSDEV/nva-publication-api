@@ -16,7 +16,7 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
     @Override
     public boolean allowsAction(PublicationOperation permission) {
         return switch (permission) {
-            case UPDATE, UNPUBLISH -> canManage();
+            case UPDATE, UNPUBLISH, REPUBLISH -> canManage();
             default -> false;
         };
     }

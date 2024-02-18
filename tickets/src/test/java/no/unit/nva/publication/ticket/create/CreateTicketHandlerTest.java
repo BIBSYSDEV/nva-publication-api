@@ -13,6 +13,8 @@ import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_SECRET_NAME;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.LOCATION_HEADER;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -431,7 +433,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         handler = new CreateTicketHandler(resourceService, ticketResolver);
         handler.handleRequest(
             createHttpTicketCreationRequestWithAccessRight(
-                requestBody, publication, AccessRight.MANAGE_PUBLISHING_REQUESTS), output, CONTEXT);
+                requestBody, publication, MANAGE_PUBLISHING_REQUESTS, MANAGE_RESOURCES_STANDARD), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
         var publishedPublication = resourceService.getPublication(publication);
@@ -451,7 +453,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         handler = new CreateTicketHandler(resourceService, ticketResolver);
         handler.handleRequest(
             createHttpTicketCreationRequestWithAccessRight(
-                requestBody, publication, AccessRight.MANAGE_PUBLISHING_REQUESTS), output, CONTEXT);
+                requestBody, publication, MANAGE_PUBLISHING_REQUESTS, MANAGE_RESOURCES_STANDARD), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
         var completedPublishingRequest = fetchTicket(publication, PublishingRequestCase.class);
@@ -804,8 +806,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     }
 
     private InputStream createHttpTicketCreationRequestWithAccessRight(TicketDto ticketDto,
-                                                                 Publication publication,
-                                                                 AccessRight accessRight)
+                                                                 Publication publication, AccessRight... accessRight)
         throws JsonProcessingException {
         var user = randomString();
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)

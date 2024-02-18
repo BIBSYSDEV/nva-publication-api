@@ -7,8 +7,10 @@ import static no.unit.nva.publication.messages.MessageApiConfig.LOCATION_HEADER;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.publication.utils.RequestUtils.TICKET_IDENTIFIER;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
@@ -23,6 +25,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
+import java.util.List;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
@@ -48,6 +51,7 @@ import nva.commons.core.SingletonCollector;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -66,7 +70,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
         this.ticketService = new TicketService(client);
         MessageService messageService = new MessageService(client);
-        this.handler = new NewCreateMessageHandler(messageService, ticketService);
+        this.handler = new NewCreateMessageHandler(messageService, ticketService, resourceService);
         this.output = new ByteArrayOutputStream();
         this.context = new FakeContext();
     }
@@ -128,7 +132,8 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
         var expectedText = randomString();
         var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText,
-                                                             MANAGE_DOI, MANAGE_PUBLISHING_REQUESTS, SUPPORT);
+                                                             MANAGE_DOI, MANAGE_PUBLISHING_REQUESTS,
+                                                             MANAGE_RESOURCES_STANDARD, SUPPORT);
 
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -172,7 +177,8 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
         var expectedText = randomString();
-        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText, accessRight);
+        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText,
+                                                             MANAGE_RESOURCES_STANDARD, accessRight);
 
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -192,7 +198,8 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var curator = UserInstance.create("CURATOR", publication.getPublisher().getId());
         var request = createNewMessageRequestForElevatedUser(publication, ticket, curator, randomString(),
-                                                             MANAGE_DOI, MANAGE_PUBLISHING_REQUESTS, SUPPORT);
+                                                             MANAGE_RESOURCES_STANDARD, MANAGE_DOI, MANAGE_DEGREE,
+                                                             MANAGE_PUBLISHING_REQUESTS, SUPPORT);
         handler.handleRequest(request, output, context);
         var updatedTicket = ticket.fetch(ticketService);
         assertThat(updatedTicket.getViewedBy(), hasSize(1));
