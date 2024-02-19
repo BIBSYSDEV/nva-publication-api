@@ -9,7 +9,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.messages.model.NewMessageDto;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
