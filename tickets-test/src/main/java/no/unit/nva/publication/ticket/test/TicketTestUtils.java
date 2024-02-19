@@ -286,11 +286,7 @@ public final class TicketTestUtils {
     }
 
     private static Publication randomNonDegreePublication(PublicationStatus status) {
-        var publicationInstanceTypes = listPublicationInstanceTypes();
-        var nonDegreePublicationInstances = publicationInstanceTypes.stream()
-                                                .filter(TicketTestUtils::isNonDegreeClass)
-                                                .toList();
-        var publication = PublicationGenerator.randomPublication(randomElement(nonDegreePublicationInstances));
+        var publication = PublicationGenerator.randomPublicationNonDegree();
         return publication.copy()
                    .withStatus(status)
                    .withDoi(null)

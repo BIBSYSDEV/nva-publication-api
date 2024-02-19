@@ -1,6 +1,6 @@
 package no.unit.nva.publication.utils;
 
-import static no.unit.nva.model.PublicationOperation.REPUBLISH;
+import static no.unit.nva.model.PublicationOperation.TICKET_PUBLISH;
 import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
 import java.net.URI;
@@ -9,8 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -79,7 +77,7 @@ public record RequestUtils(List<AccessRight> accessRights,
 
     private boolean isAuthorizedToManagePublishingRequest(TicketEntry ticket, ResourceService resourceService) {
         var publication = ticket.toPublication(resourceService);
-        return PublicationPermissionStrategy.create(publication, toUserInstance()).allowsAction(REPUBLISH);
+        return PublicationPermissionStrategy.create(publication, toUserInstance()).allowsAction(TICKET_PUBLISH);
     }
 
     public boolean isTicketOwner(TicketEntry ticketEntry) {

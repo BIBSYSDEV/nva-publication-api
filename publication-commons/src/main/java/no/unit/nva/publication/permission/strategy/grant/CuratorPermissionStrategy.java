@@ -21,7 +21,7 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
 
         return switch (permission) {
             case UPDATE, UNPUBLISH -> userRelatesToPublication();
-            case REPUBLISH -> userRelatesToPublication() && canManagePublishingRequests();
+            case TICKET_PUBLISH -> userRelatesToPublication() && canManagePublishingRequests();
             default -> false;
         };
     }
