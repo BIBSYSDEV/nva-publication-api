@@ -588,7 +588,7 @@ public class GeneralMappingRules {
         var actualNotes = scenarioContext.getNvaEntry().getPublicationNotes();
         assertThat(actualNotes, hasSize(1));
         var publicationNote = (PublicationNote)actualNotes.getFirst();
-        assertThat(publicationNote.publicationNoteMessage(), equalTo(expectedNote));
+        assertThat(publicationNote.getNote(), equalTo(expectedNote));
     }
 
     @Then("the NVA resource has a empty list as publicationNotes")
