@@ -151,6 +151,22 @@ public final class TicketTestUtils {
         return persistPublication(resourceService, publication);
     }
 
+    public static Publication createPersistedPublicationWithPublishedFiles(URI customerId, PublicationStatus status,
+                                                                             ResourceService resourceService)
+        throws ApiGatewayException {
+        var publisher = new Builder().withId(customerId).build();
+        var publication = randomPublicationWithPublishedFiles(status).copy().withPublisher(publisher).build();
+        return persistPublication(resourceService, publication);
+    }
+
+    private static Publication randomPublicationWithPublishedFiles(PublicationStatus status) {
+        var publication = randomPublication().copy()
+                              .withStatus(status)
+                              .build();
+        publishFiles(publication);
+        return publication;
+    }
+
     public static Publication createPersistedPublicationWithUnpublishedFiles(URI publisher,
                                                                              PublicationStatus status,
                                                                              ResourceService resourceService)
@@ -291,6 +307,16 @@ public final class TicketTestUtils {
                        .filter(File.class::isInstance)
                        .map(File.class::cast)
                        .map(File::toUnpublishedFile)
+                       .collect(Collectors.toCollection(() -> new ArrayList<AssociatedArtifact>()));
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(list));
+    }
+
+    private static void publishFiles(Publication publication) {
+        var list = publication.getAssociatedArtifacts()
+                       .stream()
+                       .filter(File.class::isInstance)
+                       .map(File.class::cast)
+                       .map(File::toPublishedFile)
                        .collect(Collectors.toCollection(() -> new ArrayList<AssociatedArtifact>()));
         publication.setAssociatedArtifacts(new AssociatedArtifactList(list));
     }
