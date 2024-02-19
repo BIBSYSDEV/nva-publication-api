@@ -2,6 +2,7 @@ package no.unit.nva.publication.permission.strategy;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationOperation.DELETE;
+import static no.unit.nva.model.PublicationOperation.TICKET_PUBLISH;
 import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
@@ -459,7 +460,7 @@ class PublicationPermissionStrategyTest {
         assertThat(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
                     requestInfo, identityServiceClient))
-                .getAllAllowedActions(), containsInAnyOrder(UPDATE, UNPUBLISH));
+                .getAllAllowedActions(), containsInAnyOrder(UPDATE, UNPUBLISH, TICKET_PUBLISH));
     }
 
     @Test
@@ -501,10 +502,7 @@ class PublicationPermissionStrategyTest {
     }
 
     Publication createNonDegreePublication(String resourceOwner, URI customer) {
-        var publicationInstanceTypes = listPublicationInstanceTypes();
-        var nonDegreePublicationInstances = publicationInstanceTypes.stream().filter(this::isNonDegreeClass).collect(
-            Collectors.toList());
-        return PublicationGenerator.randomPublication(randomElement(nonDegreePublicationInstances)).copy()
+        return PublicationGenerator.randomPublicationNonDegree().copy()
                    .withResourceOwner(new ResourceOwner(new Username(resourceOwner), customer))
                    .withPublisher(new Organization.Builder().withId(customer).build())
                    .withStatus(PublicationStatus.PUBLISHED)
@@ -529,11 +527,7 @@ class PublicationPermissionStrategyTest {
 
     private Publication createPublicationWithContributor(String contributorName, URI contributorId,
                                                          Role contributorRole) {
-        var publicationInstanceTypes = listPublicationInstanceTypes();
-        var nonDegreePublicationInstances = publicationInstanceTypes.stream()
-                                                .filter(this::isNonDegreeClass)
-                                                .collect(Collectors.toList());
-        var publication = PublicationGenerator.randomPublication(randomElement(nonDegreePublicationInstances));
+        var publication = PublicationGenerator.randomPublicationNonDegree();
         var identity = new Identity.Builder()
                            .withName(contributorName)
                            .withId(contributorId)

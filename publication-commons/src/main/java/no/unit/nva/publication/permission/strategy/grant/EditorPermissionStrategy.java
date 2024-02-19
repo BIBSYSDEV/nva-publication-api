@@ -1,6 +1,5 @@
 package no.unit.nva.publication.permission.strategy.grant;
 
-import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_ALL;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
@@ -18,7 +17,7 @@ public class EditorPermissionStrategy extends GrantPermissionStrategy {
             return false;
         }
         return switch (permission) {
-            case REPUBLISH -> isDraft() || isUnpublished();
+            case TICKET_PUBLISH -> isDraft() || isUnpublished();
             case UPDATE -> true;
             case UNPUBLISH -> isPublished();
             case TERMINATE -> isUnpublished();

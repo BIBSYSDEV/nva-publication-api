@@ -2,16 +2,21 @@ package no.unit.nva.publication.utils;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublicationNonDegree;
 import static no.unit.nva.publication.utils.RequestUtils.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.utils.RequestUtils.TICKET_IDENTIFIER;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
 import static org.junit.Assert.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import java.net.URI;
+import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -21,22 +26,35 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 public class RequestUtilsTest {
+
+    private ResourceService resourceService;
+
+    @BeforeEach
+    public void setup() {
+        this.resourceService = mock(ResourceService.class);
+    }
 
     public static Stream<Arguments> ticketTypeAndAccessRightProvider() {
         return Stream.of(Arguments.of(DoiRequest.class, MANAGE_DOI),
@@ -46,7 +64,7 @@ public class RequestUtilsTest {
 
     @Test
     void shouldReturnFalseWhenCheckingAuthorizationForNullTicket() throws UnauthorizedException {
-        Assertions.assertFalse(RequestUtils.fromRequestInfo(mockedRequestInfo()).isAuthorizedToManage(null));
+        Assertions.assertFalse(RequestUtils.fromRequestInfo(mockedRequestInfo()).isAuthorizedToManage(null, null));
     }
 
     @Test
@@ -70,12 +88,16 @@ public class RequestUtilsTest {
     @ParameterizedTest
     @MethodSource("ticketTypeAndAccessRightProvider")
     void shouldReturnTrueWhenUserHasAccessRightToManageTicket(Class<? extends TicketEntry> ticketType,
-                                                              AccessRight accessRight) throws UnauthorizedException {
-        var requestInfo = requestInfoWithAccessRight(accessRight);
-        var ticket = TicketEntry.requestNewTicket(publicationWithOwner(randomString()), ticketType);
+                                                              AccessRight accessRight)
+        throws UnauthorizedException, BadRequestException, NotFoundException {
+        var publication = publicationWithOwner(randomString());
+        var requestInfo = requestInfoWithAccessRight(publication.getPublisher().getId(), accessRight);
+        var ticket = TicketEntry.requestNewTicket(publication, ticketType);
         var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
 
-        Assertions.assertTrue(requestUtils.isAuthorizedToManage(ticket));
+        when(resourceService.getPublicationByIdentifier(any())).thenReturn(publication);
+
+        Assertions.assertTrue(requestUtils.isAuthorizedToManage(ticket, resourceService));
     }
 
     @Test
@@ -101,21 +123,22 @@ public class RequestUtilsTest {
 
     @Test
     void shouldReturnTrueWhenUserHasOneOfAccessRights() throws UnauthorizedException {
-        var requestInfo = requestInfoWithAccessRight(MANAGE_DOI);
+        var requestInfo = requestInfoWithAccessRight(randomUri(), MANAGE_DOI);
 
         Assertions.assertTrue(RequestUtils.fromRequestInfo(requestInfo)
                                   .hasOneOfAccessRights(MANAGE_DOI, MANAGE_PUBLISHING_REQUESTS));
     }
 
     private static Publication publicationWithOwner(String owner) {
-        return randomPublication().copy()
+        return randomPublicationNonDegree().copy()
                    .withStatus(PublicationStatus.PUBLISHED)
                    .withResourceOwner(new ResourceOwner(new Username(owner), randomUri())).build();
     }
 
-    private RequestInfo requestInfoWithAccessRight(AccessRight accessRight) {
+    private RequestInfo requestInfoWithAccessRight(URI customer, AccessRight accessRight) throws UnauthorizedException {
         var requestInfo = mock(RequestInfo.class);
-        when(requestInfo.getAccessRights()).thenReturn(List.of(accessRight));
+        when(requestInfo.getAccessRights()).thenReturn(List.of(MANAGE_RESOURCES_STANDARD, accessRight));
+        when(requestInfo.getCurrentCustomer()).thenReturn(customer);
         return requestInfo;
     }
 

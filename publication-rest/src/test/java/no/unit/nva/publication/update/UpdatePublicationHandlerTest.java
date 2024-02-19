@@ -10,6 +10,7 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublicationNonDegree;
 import static no.unit.nva.model.testing.PublicationInstanceBuilder.listPublicationInstanceTypes;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypes;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseNotFound;
@@ -102,6 +103,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Publication.Builder;
 import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
@@ -1837,11 +1839,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication createNonDegreePublication() {
-        var publicationInstanceTypes = listPublicationInstanceTypes();
-        var nonDegreePublicationInstances = publicationInstanceTypes.stream()
-                                                .filter(this::isNonDegreeClass)
-                                                .collect(Collectors.toList());
-        var publication = randomPublication(randomElement(nonDegreePublicationInstances));
+        var publication = randomPublicationNonDegree();
         publication.setIdentifier(SortableIdentifier.next());
         return publication;
     }

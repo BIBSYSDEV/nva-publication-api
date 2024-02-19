@@ -14,7 +14,8 @@ import org.junit.jupiter.params.provider.EnumSource.Mode;
 class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
     //region Non-degree publications
     @ParameterizedTest(name = "Should allow Curator {0} operation on non-degree resources belonging to the institution")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "TERMINATE", "REPUBLISH"})
+    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "TERMINATE",
+        "TICKET_PUBLISH"})
     void shouldAllowResourceOwnerOnNonDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
