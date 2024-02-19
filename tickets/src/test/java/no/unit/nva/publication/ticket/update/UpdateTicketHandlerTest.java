@@ -14,6 +14,8 @@ import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENT
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -562,7 +564,8 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var closedTicket = ticket.close(new Username(randomString()));
         var httpRequest = createCompleteTicketHttpRequest(closedTicket,
                                                           ticket.getCustomerId(),
-                                                          AccessRight.MANAGE_PUBLISHING_REQUESTS);
+                                                          MANAGE_RESOURCES_STANDARD,
+                                                          MANAGE_PUBLISHING_REQUESTS);
         handler.handleRequest(httpRequest, output, CONTEXT);
 
         var updatedPublication = resourceService.getPublication(publication);
@@ -581,7 +584,8 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var closedTicket = ticket.complete(publication, USER_NAME);
         var httpRequest = createCompleteTicketHttpRequest(closedTicket,
                                                           ticket.getCustomerId(),
-                                                          AccessRight.MANAGE_PUBLISHING_REQUESTS);
+                                                          MANAGE_RESOURCES_STANDARD,
+                                                          MANAGE_PUBLISHING_REQUESTS);
         handler.handleRequest(httpRequest, output, CONTEXT);
 
         var completedPublishingRequest = (PublishingRequestCase) ticketService.fetchTicket(ticket);
@@ -604,8 +608,8 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var completedTicket = ticket.complete(publication, USER_NAME);
         var httpRequest = createCompleteTicketHttpRequest(completedTicket,
                                                           ticket.getCustomerId(),
-                                                          AccessRight.MANAGE_RESOURCES_STANDARD,
-                                                          AccessRight.MANAGE_PUBLISHING_REQUESTS);
+                                                          MANAGE_RESOURCES_STANDARD,
+                                                          MANAGE_PUBLISHING_REQUESTS);
         handler.handleRequest(httpRequest, output, CONTEXT);
         var completedPublishingRequest = (PublishingRequestCase) ticketService.fetchTicket(ticket);
         var approvedFile = (File) publication.getAssociatedArtifacts().getFirst();
@@ -660,9 +664,9 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         return new HandlerRequestBuilder<UpdateTicketRequest>(JsonUtils.dtoObjectMapper).withCurrentCustomer(customerId)
                    .withUserName(ticket.getAssignee().toString())
                    .withAccessRights(customerId,
-                                     AccessRight.MANAGE_RESOURCES_STANDARD,
+                                     MANAGE_RESOURCES_STANDARD,
                                      AccessRight.MANAGE_DOI,
-                                     AccessRight.MANAGE_PUBLISHING_REQUESTS,
+                                     MANAGE_PUBLISHING_REQUESTS,
                                      AccessRight.SUPPORT)
                    .withBody(new UpdateTicketRequest(ticket.getStatus(), ticket.getAssignee(), viewStatus))
                    .withPathParameters(createPathParameters(ticket, publication.getIdentifier()))
@@ -716,9 +720,9 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     }
 
     private InputStream authorizedUserCompletesTicket(TicketEntry ticket) throws JsonProcessingException {
-        return createCompleteTicketHttpRequest(ticket, ticket.getCustomerId(), AccessRight.MANAGE_RESOURCES_STANDARD,
+        return createCompleteTicketHttpRequest(ticket, ticket.getCustomerId(), MANAGE_RESOURCES_STANDARD,
                                                AccessRight.MANAGE_DOI,
-                                               AccessRight.MANAGE_PUBLISHING_REQUESTS, AccessRight.SUPPORT);
+                                               MANAGE_PUBLISHING_REQUESTS, AccessRight.SUPPORT);
     }
 
     private InputStream createCompleteTicketHttpRequest(TicketEntry ticket, URI customer, AccessRight... accessRights)
