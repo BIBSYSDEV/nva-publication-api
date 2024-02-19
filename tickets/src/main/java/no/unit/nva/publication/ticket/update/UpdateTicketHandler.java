@@ -116,8 +116,8 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     }
 
     private boolean userIsAuthorized(RequestUtils requestUtils, TicketEntry ticket) {
-        return requestUtils.isAuthorizedToManage(ticket, resourceService) && isUserFromSameCustomerAsTicket(requestUtils
-            , ticket);
+        return requestUtils.isAuthorizedToManage(ticket, resourceService)
+               && isUserFromSameCustomerAsTicket(requestUtils, ticket);
     }
 
     private static boolean isUserFromSameCustomerAsTicket(RequestUtils requestUtils, TicketEntry ticket) {
