@@ -63,7 +63,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     public static final String DO_NOT_REDIRECT_QUERY_PARAM = "doNotRedirect";
     private final IdentityServiceClient identityServiceClient;
     private final ResourceService resourceService;
-    private final RawContentRetriever rawContentUriRetriever;
+    private final RawContentRetriever authorizedBackendUriRetriever;
     private final UriRetriever uriRetriever;
     private int statusCode = HttpURLConnection.HTTP_OK;
 
@@ -77,9 +77,9 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     }
 
     @JacocoGenerated
-    public FetchPublicationHandler(AmazonDynamoDB client, RawContentRetriever rawContentUriRetriever,
+    public FetchPublicationHandler(AmazonDynamoDB client, RawContentRetriever authorizedBackendUriRetriever,
                                    UriRetriever uriRetriever) {
-        this(defaultResourceService(client), rawContentUriRetriever, new Environment(),
+        this(defaultResourceService(client), authorizedBackendUriRetriever, new Environment(),
              IdentityServiceClient.prepare(), uriRetriever);
     }
 
@@ -90,12 +90,12 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
      * @param environment     environment
      */
     public FetchPublicationHandler(ResourceService resourceService,
-                                   RawContentRetriever rawContentUriRetriever,
+                                   RawContentRetriever authorizedBackendUriRetriever,
                                    Environment environment,
                                    IdentityServiceClient identityServiceClient,
                                    UriRetriever uriRetriever) {
         super(Void.class, environment);
-        this.rawContentUriRetriever = rawContentUriRetriever;
+        this.authorizedBackendUriRetriever = authorizedBackendUriRetriever;
         this.uriRetriever = uriRetriever;
         this.resourceService = resourceService;
         this.identityServiceClient = identityServiceClient;
@@ -211,7 +211,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     }
 
     private String createDataCiteMetadata(Publication publication) {
-        var dataCiteMetadataDto = DataCiteMetadataDtoMapper.fromPublication(publication, uriRetriever);
+        var dataCiteMetadataDto = DataCiteMetadataDtoMapper.fromPublication(publication, authorizedBackendUriRetriever);
         return attempt(() -> new Transformer(dataCiteMetadataDto).asXml()).orElseThrow();
     }
 

@@ -6,7 +6,6 @@ import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import java.io.InputStream;
 import java.net.URI;
 import no.unit.nva.publication.external.services.UriRetriever;
-import no.unit.nva.publication.permission.strategy.grant.CuratorPermissionStrategy;
 import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QueryFactory;
 import org.apache.jena.rdf.model.Model;
@@ -18,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class JenaUtils {
-    private static final String PART_OF_PROPERTY = "https://nva.sikt.no/ontology/publication#partOf";
     public static final String APPLICATION_JSON = "application/json";
     public static final Logger logger = LoggerFactory.getLogger(JenaUtils.class);
 

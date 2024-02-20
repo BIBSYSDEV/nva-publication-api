@@ -17,7 +17,6 @@ import no.unit.nva.publication.permission.strategy.grant.TrustedThirdPartyStrate
 import no.unit.nva.publication.permission.strategy.restrict.NonDegreePermissionStrategy;
 import no.unit.nva.publication.permission.strategy.restrict.DenyPermissionStrategy;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
-import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
