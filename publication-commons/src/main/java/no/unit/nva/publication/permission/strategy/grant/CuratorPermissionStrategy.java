@@ -1,5 +1,6 @@
 package no.unit.nva.publication.permission.strategy.grant;
 
+import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -14,21 +15,32 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
 
     @Override
     public boolean allowsAction(PublicationOperation permission) {
-        if (!canManage()) {
+        if (!canManageStandardResources() || !userRelatesToPublication()) {
             return false;
         }
 
         return switch (permission) {
             case UPDATE -> true;
-            case REPUBLISH -> isUnpublished() || isDraft();
+            case TICKET_PUBLISH -> isPublishableState() && canManagePublishingRequests();
             case UNPUBLISH -> isPublished();
             default -> false;
         };
     }
 
-    private boolean canManage() {
-        return (userIsFromSameInstitutionAsPublication() || userAndContributorInTheSameInstitution())
-               && hasAccessRight(MANAGE_RESOURCES_STANDARD);
+    private boolean isPublishableState() {
+        return isUnpublished() || isDraft();
+    }
+
+    private boolean canManageStandardResources() {
+        return hasAccessRight(MANAGE_RESOURCES_STANDARD);
+    }
+
+    private boolean canManagePublishingRequests() {
+        return hasAccessRight(MANAGE_PUBLISHING_REQUESTS);
+    }
+
+    private boolean userRelatesToPublication() {
+        return userIsFromSameInstitutionAsPublication() || userAndContributorInTheSameInstitution();
     }
 
     private boolean userIsFromSameInstitutionAsPublication() {

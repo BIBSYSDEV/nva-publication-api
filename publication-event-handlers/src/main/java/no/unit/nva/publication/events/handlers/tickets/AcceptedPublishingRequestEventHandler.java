@@ -21,6 +21,7 @@ import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -80,9 +81,21 @@ public class AcceptedPublishingRequestEventHandler
     }
 
     private static boolean noEffectiveChanges(DataEntryUpdateEvent updateEvent) {
-        var newStatus = updateEvent.getNewData().getStatusString();
-        var oldStatus = updateEvent.getOldData().getStatusString();
+        var newStatus = getNewStatus(updateEvent);
+        var oldStatus = getOldStatus(updateEvent);
         return oldStatus.equals(newStatus);
+    }
+
+    private static Optional<String> getOldStatus(DataEntryUpdateEvent updateEvent) {
+        return Optional.of(updateEvent)
+                   .map(DataEntryUpdateEvent::getOldData)
+                   .map(Entity::getStatusString);
+    }
+
+    private static Optional<String> getNewStatus(DataEntryUpdateEvent updateEvent) {
+        return Optional.of(updateEvent)
+                   .map(DataEntryUpdateEvent::getNewData)
+                   .map(Entity::getStatusString);
     }
 
     private boolean hasEffectiveChanges(String eventBlob) {

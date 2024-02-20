@@ -16,6 +16,7 @@ import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.service.impl.MessageService;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.utils.RequestUtils;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -29,16 +30,18 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
 
     private final MessageService messageService;
     private final TicketService ticketService;
+    private final ResourceService resourceService;
 
     @JacocoGenerated
     public NewCreateMessageHandler() {
-        this(MessageService.defaultService(), TicketService.defaultService());
+        this(MessageService.defaultService(), TicketService.defaultService(), ResourceService.defaultService());
     }
 
-    public NewCreateMessageHandler(MessageService messageService, TicketService ticketService) {
+    public NewCreateMessageHandler(MessageService messageService, TicketService ticketService, ResourceService resourceService) {
         super(CreateMessageRequest.class);
         this.messageService = messageService;
         this.ticketService = ticketService;
+        this.resourceService = resourceService;
     }
 
     @Override
@@ -54,9 +57,9 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
         return null;
     }
 
-    private static void isAuthorizedToManageTicket(RequestUtils requestUtils, TicketEntry ticket)
+    private void isAuthorizedToManageTicket(RequestUtils requestUtils, TicketEntry ticket)
         throws ForbiddenException {
-        if (!requestUtils.isAuthorizedToManage(ticket) && !requestUtils.isTicketOwner(ticket)) {
+        if (!requestUtils.isAuthorizedToManage(ticket, resourceService) && !requestUtils.isTicketOwner(ticket)) {
             throw new ForbiddenException();
         }
     }
@@ -76,14 +79,16 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
         }
     }
 
-    private static void injectAssigneeWhenUnassignedTicket(TicketEntry ticket, RequestUtils requestUtils) {
+    private void injectAssigneeWhenUnassignedTicket(TicketEntry ticket, RequestUtils requestUtils) {
         if (userCanBeSetAsAssignee(ticket, requestUtils)) {
             ticket.setAssignee(new Username(requestUtils.username()));
         }
     }
 
-    private static boolean userCanBeSetAsAssignee(TicketEntry ticket, RequestUtils requestUtils) {
-        return !ticket.hasAssignee() && !requestUtils.isTicketOwner(ticket) && requestUtils.isAuthorizedToManage(ticket);
+    private boolean userCanBeSetAsAssignee(TicketEntry ticket, RequestUtils requestUtils) {
+        return !ticket.hasAssignee()
+               && !requestUtils.isTicketOwner(ticket)
+               && requestUtils.isAuthorizedToManage(ticket, resourceService);
     }
 
     private TicketEntry fetchTicketForUser(RequestUtils requestUtils, SortableIdentifier ticketIdentifier)

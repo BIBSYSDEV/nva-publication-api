@@ -3,7 +3,6 @@ package no.unit.nva.publication.ticket.update;
 import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
 import static no.unit.nva.publication.model.business.TicketStatus.CLOSED;
 import static no.unit.nva.publication.ticket.TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME;
 import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
@@ -96,9 +95,9 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         return HTTP_ACCEPTED;
     }
 
-    private static void throwExceptionIfUnauthorized(RequestUtils requestUtils, TicketEntry ticket)
+    private void throwExceptionIfUnauthorized(RequestUtils requestUtils, TicketEntry ticket)
         throws ForbiddenException {
-        if (userIsNotAuthorized(requestUtils, ticket)) {
+        if (!userIsAuthorized(requestUtils, ticket)) {
             throw new ForbiddenException();
         }
     }
@@ -116,8 +115,9 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         return !ticketRequest.getAssignee().equals(ticket.getAssignee());
     }
 
-    private static boolean userIsNotAuthorized(RequestUtils requestUtils, TicketEntry ticket) {
-        return !(requestUtils.isAuthorizedToManage(ticket) && isUserFromSameCustomerAsTicket(requestUtils, ticket));
+    private boolean userIsAuthorized(RequestUtils requestUtils, TicketEntry ticket) {
+        return requestUtils.isAuthorizedToManage(ticket, resourceService)
+               && isUserFromSameCustomerAsTicket(requestUtils, ticket);
     }
 
     private static boolean isUserFromSameCustomerAsTicket(RequestUtils requestUtils, TicketEntry ticket) {

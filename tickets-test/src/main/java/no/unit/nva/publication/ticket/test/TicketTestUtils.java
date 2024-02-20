@@ -5,6 +5,7 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublicationNonDegree;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.PublicationInstanceBuilder.listPublicationInstanceTypes;
 import java.net.URI;
@@ -100,7 +101,7 @@ public final class TicketTestUtils {
 
     public static Publication createPersistedPublication(PublicationStatus status, ResourceService resourceService)
         throws ApiGatewayException {
-        var publication = randomPublicationWithStatus(status);
+        var publication = randomNonDegreePublication(status);
         return persistPublication(resourceService, publication);
     }
 
@@ -123,7 +124,7 @@ public final class TicketTestUtils {
 
     public static Publication createPersistedPublicationWithAdministrativeAgreement(ResourceService resourceService)
         throws ApiGatewayException {
-        var publication = randomPublication().copy()
+        var publication = randomPublicationNonDegree().copy()
                               .withAssociatedArtifacts(List.of(administrativeAgreement()))
                               .build();
 
@@ -149,6 +150,22 @@ public final class TicketTestUtils {
         throws ApiGatewayException {
         var publication = randomPublicationWithUnpublishedFiles(status);
         return persistPublication(resourceService, publication);
+    }
+
+    public static Publication createPersistedPublicationWithPublishedFiles(URI customerId, PublicationStatus status,
+                                                                             ResourceService resourceService)
+        throws ApiGatewayException {
+        var publisher = new Builder().withId(customerId).build();
+        var publication = randomPublicationWithPublishedFiles(status).copy().withPublisher(publisher).build();
+        return persistPublication(resourceService, publication);
+    }
+
+    private static Publication randomPublicationWithPublishedFiles(PublicationStatus status) {
+        var publication = randomPublicationNonDegree().copy()
+                              .withStatus(status)
+                              .build();
+        publishFiles(publication);
+        return publication;
     }
 
     public static Publication createPersistedPublicationWithUnpublishedFiles(URI publisher,
@@ -237,14 +254,14 @@ public final class TicketTestUtils {
     }
 
     private static Publication randomPublicationWithStatus(PublicationStatus status) {
-        return PublicationGenerator.randomPublication().copy()
+        return randomPublicationNonDegree().copy()
                    .withDoi(null)
                    .withStatus(status)
                    .build();
     }
 
     private static Publication randomPublicationWithUnpublishedFiles(PublicationStatus status) {
-        var publication = randomPublication().copy()
+        var publication = randomPublicationNonDegree().copy()
                               .withStatus(status)
                               .build();
         unpublishFiles(publication);
@@ -263,18 +280,14 @@ public final class TicketTestUtils {
     }
 
     private static Publication randomPublicationWithAssociatedLink(PublicationStatus status) {
-        return randomPublication().copy()
+        return randomPublicationNonDegree().copy()
                    .withStatus(status)
                    .withAssociatedArtifacts(List.of(new AssociatedLink(randomUri(), null, null)))
                    .build();
     }
 
     private static Publication randomNonDegreePublication(PublicationStatus status) {
-        var publicationInstanceTypes = listPublicationInstanceTypes();
-        var nonDegreePublicationInstances = publicationInstanceTypes.stream()
-                                                .filter(TicketTestUtils::isNonDegreeClass)
-                                                .toList();
-        var publication = PublicationGenerator.randomPublication(randomElement(nonDegreePublicationInstances));
+        var publication = randomPublicationNonDegree();
         return publication.copy()
                    .withStatus(status)
                    .withDoi(null)
@@ -291,6 +304,16 @@ public final class TicketTestUtils {
                        .filter(File.class::isInstance)
                        .map(File.class::cast)
                        .map(File::toUnpublishedFile)
+                       .collect(Collectors.toCollection(() -> new ArrayList<AssociatedArtifact>()));
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(list));
+    }
+
+    private static void publishFiles(Publication publication) {
+        var list = publication.getAssociatedArtifacts()
+                       .stream()
+                       .filter(File.class::isInstance)
+                       .map(File.class::cast)
+                       .map(File::toPublishedFile)
                        .collect(Collectors.toCollection(() -> new ArrayList<AssociatedArtifact>()));
         publication.setAssociatedArtifacts(new AssociatedArtifactList(list));
     }

@@ -3,6 +3,7 @@ package no.unit.nva.publication.ticket.read;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasSize;
@@ -234,7 +235,8 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .withPathParameters(constructPathParameters(publication))
                    .withCurrentCustomer(publication.getPublisher().getId())
                    .withUserName(randomString())
-                   .withAccessRights(publication.getPublisher().getId(), accessRight)
+                   .withAccessRights(publication.getPublisher().getId(), MANAGE_RESOURCES_STANDARD,
+                                     accessRight)
                    .withPersonCristinId(randomUri())
                    .build();
     }
