@@ -31,6 +31,7 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
 
     public static final Logger logger = LoggerFactory.getLogger(CuratorPermissionStrategy.class);
     private static final String PART_OF_PROPERTY = "https://nva.sikt.no/ontology/publication#partOf";
+    public static final String APPLICATION_JSON = "application/json";
 
     public CuratorPermissionStrategy(Publication publication, UserInstance userInstance, UriRetriever uriRetriever) {
         super(publication, userInstance, uriRetriever);
@@ -63,7 +64,7 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
     }
 
     private boolean userRelatesToPublication() {
-        return userSharesTopLevelOrgWithAtLeastOneContributor() || userIsFromSameInstitutionAsPublication() || userSharesTopLevelOrgWithAtLeastOneContributor();
+        return userIsFromSameInstitutionAsPublication() || userSharesTopLevelOrgWithAtLeastOneContributor();
     }
 
     private boolean userIsFromSameInstitutionAsPublication() {
@@ -72,8 +73,9 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
     }
 
     private boolean userSharesTopLevelOrgWithAtLeastOneContributor() {
-        var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
         var contributorTopLevelOrgs = getContributorTopLevelOrgs();
+        var userTopLevelOrg = getTopLevelOrgUri(userInstance.getCustomerId());
+
 
         logger.info("found topLevels {} for user with {} ", contributorTopLevelOrgs, userTopLevelOrg);
 
@@ -95,16 +97,13 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
     }
 
     private URI getTopLevelOrgUri(URI id) {
-        var data = attempt(() -> uriRetriever.getRawContent(id,
-                                                            "application/json")).orElseThrow();
+        var data = attempt(() -> uriRetriever.getRawContent(id, APPLICATION_JSON)).orElseThrow();
 
         if (data.isEmpty()) {
             return id;
         }
 
         var model = createModel(stringToStream(data.get()));
-        //var model = ModelFactory.createDefaultModel();
-        //model.read(id.toString());
         var query = QueryFactory.create("prefix : <https://nva.sikt.no/ontology/publication#> "
                                         + "SELECT ?organization WHERE {"
                                         + "?organization a :Organization ."
@@ -112,27 +111,14 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
                                         + "OPTIONAL {?organization :partOf ?somethingelse}"
                                         + "FILTER (!BOUND(?somethingelse))"
                                         + "}");
+
         try( var qe = QueryExecutionFactory.create(query, model)) {
             var result = qe.execSelect();
-            while( result.hasNext()) {
-                var THEResult = URI.create(result.next().get("organization").asResource().getURI());
-                return THEResult;
+            if (result.hasNext()) {
+                return URI.create(result.next().get("organization").asResource().getURI());
             }
         }
         return id;
-
-//        var partOf = attempt(() -> uriRetriever.getRawContent(URI.create("https://api.nva.unit"
-//                                                                         + ".no/cristin/organization/209.6.3.0"), "application/json")).map(
-//                Optional::orElseThrow)
-//                         .map(str -> createModel(stringToStream(str)))
-//                         .map(model -> model.listObjectsOfProperty(model.createProperty(PART_OF_PROPERTY)))
-//                         .map(nodeIterator -> nodeIterator.toList()
-//                                                  .stream().map(RDFNode::toString).map(URI::create).toList())
-//                         .orElseThrow();
-//        Collections.reverse(partOf);
-//        logger.info("found partOfs {} for {}", partOf, id.toString());
-//        var v = partOf.stream().findFirst().orElse(id);
-//        return v;
     }
 
     private Model createModel(InputStream inputStream) {

@@ -7,16 +7,20 @@ import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
+import static no.unit.nva.publication.permission.strategy.grant.CuratorPermissionStrategy.APPLICATION_JSON;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
+import static nva.commons.core.ioutils.IoUtils.streamToString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -27,6 +31,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import no.unit.nva.clients.GetExternalClientResponse;
@@ -67,6 +72,10 @@ class PublicationPermissionStrategyTest {
     public static final String INJECT_CUSTOMER_ID_CLAIM = "custom:customerId";
     public static final String INJECT_COGNITO_GROUPS_CLAIM = "cognito:groups";
     public static final String INJECT_CRISTIN_ID_CLAIM = "custom:cristinId";
+    protected static final String TEST_ORG_NTNU_ROOT = "194.0.0.0";
+    protected static final String TEST_ORG_NTNU_OFFICE_INTERNATIONAL = "194.14.62.0";
+    protected static final String TEST_ORG_NTNU_DEPARTMENT_OF_LANGUAGES = "194.62.60.0";
+    protected static final String TEST_ORG_SIKT_DEPARTMENT_OF_COMMUNICATION = "20754.6.0.0";
     IdentityServiceClient identityServiceClient;
     public static final ObjectMapper dtoObjectMapper = JsonUtils.dtoObjectMapper;
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
@@ -79,9 +88,28 @@ class PublicationPermissionStrategyTest {
     @BeforeEach
     void setUp() throws NotFoundException {
         this.identityServiceClient = mock(IdentityServiceClient.class);
-        this.uriRetriever = mock(UriRetriever.class);
+        setupUriRetriever();
+
         when(this.identityServiceClient.getExternalClient(any())).thenReturn(
             new GetExternalClientResponse(randomString(), randomString(), EXTERNAL_CLIENT_CUSTOMER_URI, randomUri()));
+    }
+
+    private void setupUriRetriever() {
+        this.uriRetriever = mock(UriRetriever.class);
+        setupCristinResponse(TEST_ORG_NTNU_ROOT);
+        setupCristinResponse(TEST_ORG_NTNU_OFFICE_INTERNATIONAL);
+        setupCristinResponse(TEST_ORG_NTNU_DEPARTMENT_OF_LANGUAGES);
+        setupCristinResponse(TEST_ORG_SIKT_DEPARTMENT_OF_COMMUNICATION);
+    }
+
+    protected URI uriFromTestCase(String testCase) {
+        return URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/"+testCase);
+    }
+
+    private void setupCristinResponse(String testCase) {
+        var content = streamToString(inputStreamFromResources("cristin-orgs/"+testCase+".json"));
+        when(uriRetriever.getRawContent(eq(uriFromTestCase(testCase)), eq(APPLICATION_JSON)))
+            .thenReturn(Optional.of(content));
     }
 
     @Test

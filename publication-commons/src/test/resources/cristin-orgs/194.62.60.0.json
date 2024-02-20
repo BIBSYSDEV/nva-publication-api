@@ -1,0 +1,28 @@
+{
+  "@context" : "https://bibsysdev.github.io/src/organization-context.json",
+  "type" : "Organization",
+  "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.62.60.0",
+  "labels" : {
+    "en" : "Department of Language and Literature",
+    "nb" : "Institutt for språk og litteratur"
+  },
+  "acronym" : "HF-ISL",
+  "country" : "NO",
+  "partOf" : [ {
+    "type" : "Organization",
+    "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.62.0.0",
+    "labels" : {
+      "en" : "Faculty of Humanities",
+      "nb" : "Det humanistiske fakultet"
+    },
+    "partOf" : [ {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0",
+      "labels" : {
+        "en" : "Norwegian University of Science and Technology",
+        "nb" : "Norges teknisk-naturvitenskapelige universitet",
+        "nn" : "Noregs teknisk-naturvitskaplege universitet"
+      }
+    } ]
+  } ]
+}

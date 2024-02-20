@@ -1,0 +1,1169 @@
+{
+  "@context" : "https://bibsysdev.github.io/src/organization-context.json",
+  "type" : "Organization",
+  "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0",
+  "labels" : {
+    "en" : "Norwegian University of Science and Technology",
+    "nb" : "Norges teknisk-naturvitenskapelige universitet",
+    "nn" : "Noregs teknisk-naturvitskaplege universitet"
+  },
+  "acronym" : "NTNU",
+  "country" : "NO",
+  "hasPart" : [ {
+    "type" : "Organization",
+    "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.66.0.0",
+    "labels" : {
+      "en" : "Faculty of Natural Sciences",
+      "nb" : "Fakultet for naturvitenskap"
+    },
+    "hasPart" : [ {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.66.50.0",
+      "labels" : {
+        "en" : "Research Infrastructure",
+        "nb" : "Felles forskningsinfrastruktur"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.66.15.0",
+      "labels" : {
+        "en" : "Department of Biotechnology and Food Science",
+        "nb" : "Institutt for bioteknologi og matvitenskap"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.66.40.0",
+      "labels" : {
+        "en" : "Department of Biomedical Laboratory Science",
+        "nb" : "Institutt for bioingeniørfag"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.66.20.0",
+      "labels" : {
+        "en" : "Department of Physics",
+        "nb" : "Institutt for fysikk"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.66.1.0",
+      "labels" : {
+        "en" : "NV Faculty Administration",
+        "nb" : "NV fakultetsadministrasjon"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.66.30.0",
+      "labels" : {
+        "en" : "Department of Chemical Engineering",
+        "nb" : "Institutt for kjemisk prosessteknologi"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.66.25.0",
+      "labels" : {
+        "en" : "Department of Chemistry",
+        "nb" : "Institutt for kjemi"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.66.10.0",
+      "labels" : {
+        "en" : "Department of Biology",
+        "nb" : "Institutt for biologi"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.66.35.0",
+      "labels" : {
+        "en" : "Department of Materials Science and Engineering",
+        "nb" : "Institutt for materialteknologi"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.66.45.0",
+      "labels" : {
+        "en" : "Department of Biological Sciences Ålesund",
+        "nb" : "Institutt for biologiske fag Ålesund"
+      }
+    } ]
+  }, {
+    "type" : "Organization",
+    "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.64.0.0",
+    "labels" : {
+      "en" : "Faculty of Engineering",
+      "nb" : "Fakultet for ingeniørvitenskap"
+    },
+    "hasPart" : [ {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.64.1.0",
+      "labels" : {
+        "en" : "IV Faculty Administration",
+        "nb" : "IV fakultetsadministrasjon"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.64.92.0",
+      "labels" : {
+        "en" : "Department of Mechanical and Industrial Engineering",
+        "nb" : "Institutt for maskinteknikk og produksjon"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.64.91.0",
+      "labels" : {
+        "en" : "Department of Civil and Environmental Engineering",
+        "nb" : "Institutt for bygg- og miljøteknikk"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.64.93.0",
+      "labels" : {
+        "en" : "Department of Ocean Operations and Civil Engineering",
+        "nb" : "Institutt for havromsoperasjoner og byggteknikk"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.64.45.0",
+      "labels" : {
+        "en" : "Department of Structural Engineering",
+        "nb" : "Institutt for konstruksjonsteknikk"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.64.90.0",
+      "labels" : {
+        "en" : "Department of Geoscience and Petroleum",
+        "nb" : "Institutt for geovitenskap og petroleum"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.64.80.0",
+      "labels" : {
+        "en" : "Centre for autonomous marine operations and systems",
+        "nb" : "Senter for autonome marine operasjoner og systemer"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.64.25.0",
+      "labels" : {
+        "en" : "Department of Energy and Process Engineering",
+        "nb" : "Institutt for energi- og prosessteknikk"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.64.94.0",
+      "labels" : {
+        "en" : "Department of Manufacturing and Civil Engineering",
+        "nb" : "Institutt for vareproduksjon og byggteknikk"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.64.20.0",
+      "labels" : {
+        "en" : "Department of Marine Technology",
+        "nb" : "Institutt for marin teknikk"
+      }
+    } ]
+  }, {
+    "type" : "Organization",
+    "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.61.0.0",
+    "labels" : {
+      "en" : "Faculty of Architecture and Design",
+      "nb" : "Fakultet for arkitektur og design"
+    },
+    "hasPart" : [ {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.61.50.0",
+      "labels" : {
+        "en" : "Department of Architecture and Planning",
+        "nb" : "Institutt for arkitektur og planlegging"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.61.55.0",
+      "labels" : {
+        "en" : "Department of Architecture and Technology",
+        "nb" : "Institutt for arkitektur og teknologi"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.61.1.0",
+      "labels" : {
+        "en" : "AD Faculty Administration",
+        "nb" : "AD fakultetsadministrasjon"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.61.45.0",
+      "labels" : {
+        "en" : "Department of Design",
+        "nb" : "Institutt for design"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.61.30.0",
+      "labels" : {
+        "en" : "Trondheim Academy of Fine Art",
+        "nb" : "Kunstakademiet i Trondheim"
+      }
+    } ]
+  }, {
+    "type" : "Organization",
+    "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.12.1.0",
+    "labels" : {
+      "en" : "Rector and Board",
+      "nb" : "Rektor og styre"
+    },
+    "hasPart" : [ {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.12.1.1",
+      "labels" : {
+        "en" : "Rectors Staff",
+        "nb" : "Rektors stab"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.12.1.2",
+      "labels" : {
+        "en" : "Board",
+        "nb" : "Styret"
+      }
+    } ]
+  }, {
+    "type" : "Organization",
+    "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.62.0.0",
+    "labels" : {
+      "en" : "Faculty of Humanities",
+      "nb" : "Det humanistiske fakultet"
+    },
+    "hasPart" : [ {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.62.65.0",
+      "labels" : {
+        "en" : "Department of Historical Studies",
+        "nb" : "Institutt for historiske studier"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.62.80.0",
+      "labels" : {
+        "en" : "Department of Modern History and Society",
+        "nb" : "Institutt for moderne samfunnshistorie"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.62.35.0",
+      "labels" : {
+        "en" : "Department of Art and Media Studies",
+        "nb" : "Institutt for kunst- og medievitenskap"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.62.60.0",
+      "labels" : {
+        "en" : "Department of Language and Literature",
+        "nb" : "Institutt for språk og litteratur"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.62.1.0",
+      "labels" : {
+        "en" : "HF faculty administration",
+        "nb" : "HF fakultetsadministrasjon"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.62.75.0",
+      "labels" : {
+        "en" : "Department of Historical and Classical Studies",
+        "nb" : "Institutt for historiske og klassiske studier"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.62.40.0",
+      "labels" : {
+        "en" : "Department of Interdisciplinary Studies of Culture",
+        "nb" : "Institutt for tverrfaglige kulturstudier"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.62.45.0",
+      "labels" : {
+        "en" : "Department of Music",
+        "nb" : "Institutt for musikk"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.62.70.0",
+      "labels" : {
+        "en" : "Department of Philosophy and Religious Studies",
+        "nb" : "Institutt for filosofi og religionsvitenskap"
+      }
+    } ]
+  }, {
+    "type" : "Organization",
+    "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.20.11.0",
+    "labels" : {
+      "en" : "Vice-Rector Gjøvik",
+      "nb" : "Viserektor Gjøvik"
+    },
+    "hasPart" : [ {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.20.12.0",
+      "labels" : {
+        "en" : "Property and operations section, Gjøvik",
+        "nb" : "Seksjon for eiendom og drift i Gjøvik"
+      }
+    } ]
+  }, {
+    "type" : "Organization",
+    "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.12.0.0",
+    "labels" : {
+      "en" : "Rector",
+      "nb" : "Rektor"
+    }
+  }, {
+    "type" : "Organization",
+    "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.14.0.0",
+    "labels" : {
+      "en" : "Pro-Rector for Education",
+      "nb" : "Prorektor for utdanning"
+    },
+    "hasPart" : [ {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.14.50.0",
+      "labels" : {
+        "en" : "Academic Administrative Division",
+        "nb" : "Avdeling for studieadministrasjon"
+      },
+      "hasPart" : [ {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.14.52.0",
+        "labels" : {
+          "en" : "Education Section in Ålesund",
+          "nb" : "Seksjon for utdanning i Ålesund"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.14.51.0",
+        "labels" : {
+          "en" : "Education Section in Gjøvik",
+          "nb" : "Seksjon for utdanning i Gjøvik"
+        }
+      } ]
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.14.1.0",
+      "labels" : {
+        "en" : "Pro-Rector Education",
+        "nb" : "Prorektor utdanning"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.14.40.0",
+      "labels" : {
+        "en" : "Education Quality Division",
+        "nb" : "Avdeling for utdanningskvalitet"
+      },
+      "hasPart" : [ {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.14.41.0",
+        "labels" : {
+          "en" : "Centre for Continuing Education and Professional Development",
+          "nb" : "Seksjon for etter- og videreutdanning"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.14.42.0",
+        "labels" : {
+          "en" : "Section for Teaching and Learning Support",
+          "nb" : "Seksjon for læringsstøtte"
+        }
+      } ]
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.14.61.0",
+      "labels" : {
+        "en" : "Student Services Division",
+        "nb" : "Avdeling for studenttjenester"
+      },
+      "hasPart" : [ {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.14.62.0",
+        "labels" : {
+          "en" : "Office of International Relations",
+          "nb" : "Internasjonal seksjon"
+        }
+      } ]
+    } ]
+  }, {
+    "type" : "Organization",
+    "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.65.0.0",
+    "labels" : {
+      "en" : "Faculty of Medicine and Health Sciences",
+      "nb" : "Fakultet for medisin og helsevitenskap"
+    },
+    "hasPart" : [ {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.65.80.0",
+      "labels" : {
+        "en" : "Department of Health Sciences Ålesund",
+        "nb" : "Institutt for helsevitenskap Ålesund"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.65.1.0",
+      "labels" : {
+        "en" : "MH Faculty Administration",
+        "nb" : "MH fakultetsadministrasjon"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.65.20.0",
+      "labels" : {
+        "en" : "Department of Public Health and Nursing",
+        "nb" : "Institutt for samfunnsmedisin og sykepleie"
+      },
+      "hasPart" : [ {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.65.20.10",
+        "labels" : {
+          "en" : "General Practice Research Unit",
+          "nb" : "Allmennmedisinsk forskningsenhet i Trondheim"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.65.20.15",
+        "labels" : {
+          "en" : "HUNT Research Centre",
+          "nb" : "HUNT forskningssenter"
+        }
+      } ]
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.65.30.0",
+      "labels" : {
+        "en" : "Department of Neuromedicine and Movement Science",
+        "nb" : "Institutt for nevromedisin og bevegelsesvitenskap"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.65.70.0",
+      "labels" : {
+        "en" : "Department of Health Sciences Gjøvik",
+        "nb" : "Institutt for helsevitenskap Gjøvik"
+      },
+      "hasPart" : [ {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.65.70.20",
+        "labels" : {
+          "en" : "Centre for Care Research",
+          "nb" : "Senter for omsorgsforskning"
+        }
+      } ]
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.65.60.0",
+      "labels" : {
+        "en" : "Kavli Institute for Systems Neuroscience",
+        "nb" : "Kavliinstitutt for nevrovitenskap"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.65.35.0",
+      "labels" : {
+        "en" : "Department of Mental Health",
+        "nb" : "Institutt for psykisk helse"
+      },
+      "hasPart" : [ {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.65.35.20",
+        "labels" : {
+          "en" : "The National Institute on Intellectual Disability and Community",
+          "nb" : "Nasjonalt kompetansemiljø om utviklingshemming (NAKU)"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.65.35.5",
+        "labels" : {
+          "en" : "Regional Centre for Child and Youth Mental Health and Child Welfare",
+          "nb" : "RKBU Midt-Norge - Regionalt kunnskapssenter for barn og unge - psykisk helse og barnevern"
+        }
+      } ]
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.65.15.0",
+      "labels" : {
+        "en" : "Department of Clinical and Molecular Medicine",
+        "nb" : "Institutt for klinisk og molekylær medisin"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.65.25.0",
+      "labels" : {
+        "en" : "Department of Circulation and Medical Imaging",
+        "nb" : "Institutt for sirkulasjon og bildediagnostikk"
+      }
+    } ]
+  }, {
+    "type" : "Organization",
+    "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.13.0.0",
+    "labels" : {
+      "en" : "Pro-Rector for Research",
+      "nb" : "Prorektor for forskning"
+    },
+    "hasPart" : [ {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.13.1.0",
+      "labels" : {
+        "en" : "Pro-Rector Research",
+        "nb" : "Prorektor forskning"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.13.10.0",
+      "labels" : {
+        "en" : "NTNU University Library",
+        "nb" : "NTNU Universitetsbiblioteket"
+      },
+      "hasPart" : [ {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.13.10.4",
+        "labels" : {
+          "en" : "Library Services, Inspiration and Knowledge Centre",
+          "nb" : "Seksjon for bibliotek, kunnskapssted og inspirasjon"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.13.10.7",
+        "labels" : {
+          "en" : "Library Section for Collections, Resources and Digital Services",
+          "nb" : "Seksjon for samlinger, ressurser og digitale tjenester"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.13.10.6",
+        "labels" : {
+          "en" : "Library Section for Teaching and Learning Support",
+          "nb" : "Seksjon for undervisning og læringsstøtte"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.13.10.8",
+        "labels" : {
+          "en" : "Library Section for Communication, Innovation and Competence",
+          "nb" : "Seksjon for kommunikasjon, innovasjon og kompetanse"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.13.10.5",
+        "labels" : {
+          "en" : "Library Section for Research Support, Data and Analysis",
+          "nb" : "Seksjon for forskningsstøtte, data og analyse"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.13.10.1",
+        "labels" : {
+          "en" : "Library Administration",
+          "nb" : "Bibliotekadministrasjonen"
+        }
+      } ]
+    } ]
+  }, {
+    "type" : "Organization",
+    "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.67.0.0",
+    "labels" : {
+      "en" : "Faculty of Social and Educational Sciences",
+      "nb" : "Fakultet for samfunns- og utdanningsvitenskap"
+    },
+    "hasPart" : [ {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.67.80.0",
+      "labels" : {
+        "en" : "Department of Teacher Education",
+        "nb" : "Institutt for lærerutdanning"
+      },
+      "hasPart" : [ {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.67.80.30",
+        "labels" : {
+          "en" : "Norwegian Centre for Mathematics Education",
+          "nb" : "Nasjonalt senter for matematikk i opplæringen"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.67.80.40",
+        "labels" : {
+          "en" : "The Norwegian Centre for Writing Education and Research (The Writing Centre)",
+          "nb" : "Nasjonalt senter for skriveopplæring og skriveforsking"
+        }
+      } ]
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.67.25.0",
+      "labels" : {
+        "en" : "Department of Sociology and Political Science",
+        "nb" : "Institutt for sosiologi og statsvitenskap"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.67.40.0",
+      "labels" : {
+        "en" : "Department of Psychology",
+        "nb" : "Institutt for psykologi"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.67.90.0",
+      "labels" : {
+        "en" : "Department of Social Work",
+        "nb" : "Institutt for sosialt arbeid"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.67.70.0",
+      "labels" : {
+        "en" : "Department of Education and Lifelong Learning",
+        "nb" : "Institutt for pedagogikk og livslang læring"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.67.1.0",
+      "labels" : {
+        "en" : "SU Faculty Administration",
+        "nb" : "SU fakultetsadministrasjon"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.67.10.0",
+      "labels" : {
+        "en" : "Department of Geography",
+        "nb" : "Institutt for geografi"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.67.45.0",
+      "labels" : {
+        "en" : "Department of Social Anthropology",
+        "nb" : "Institutt for sosialantropologi"
+      }
+    } ]
+  }, {
+    "type" : "Organization",
+    "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.31.0.0",
+    "labels" : {
+      "en" : "NTNU University Museum",
+      "nb" : "NTNU Vitenskapsmuseet"
+    },
+    "hasPart" : [ {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.31.10.0",
+      "labels" : {
+        "en" : "Department of Natural History",
+        "nb" : "Institutt for naturhistorie"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.31.1.0",
+      "labels" : {
+        "en" : "Museum administration",
+        "nb" : "Vitenskapsmuseet administrasjon"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.31.5.0",
+      "labels" : {
+        "en" : "Department of Archaeology and Cultural History",
+        "nb" : "Institutt for arkeologi og kulturhistorie"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.31.15.15",
+      "labels" : {
+        "en" : "National Laboratory for Age Determination",
+        "nb" : "Nasjonallaboratoriene for datering"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.31.15.0",
+      "labels" : {
+        "en" : "Department of Public Outreach and Exhibitions",
+        "nb" : "Seksjon for formidling"
+      }
+    } ]
+  }, {
+    "type" : "Organization",
+    "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.35.0.0",
+    "labels" : {
+      "nb" : "Enheter under Kunnskapdepartementet og Utdanningdirektoratet"
+    }
+  }, {
+    "type" : "Organization",
+    "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.0.0",
+    "labels" : {
+      "en" : "Faculty of Information Technology and Electrical Engineering",
+      "nb" : "Fakultet for informasjonsteknologi og elektroteknikk"
+    },
+    "hasPart" : [ {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.30.0",
+      "labels" : {
+        "en" : "Department of Information Security and Communication Technology",
+        "nb" : "Institutt for informasjonssikkerhet og kommunikasjonsteknologi"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.55.0",
+      "labels" : {
+        "en" : "Department of ICT and Natural Sciences",
+        "nb" : "Institutt for IKT og realfag"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.20.0",
+      "labels" : {
+        "en" : "Department of electric energy",
+        "nb" : "Institutt for elektrisk energi"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.35.0",
+      "labels" : {
+        "en" : "Department of Electronic Systems",
+        "nb" : "Institutt for elektroniske systemer"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.25.0",
+      "labels" : {
+        "en" : "Department of Engineering Cybernetics",
+        "nb" : "Institutt for teknisk kybernetikk"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.15.0",
+      "labels" : {
+        "en" : "Department of Mathematical Sciences",
+        "nb" : "Institutt for matematiske fag"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.10.0",
+      "labels" : {
+        "en" : "Department of Computer Science",
+        "nb" : "Institutt for datateknologi og informatikk"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.1.0",
+      "labels" : {
+        "en" : "IE Faculty Administration",
+        "nb" : "IE fakultetsadministrasjon"
+      },
+      "hasPart" : [ {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.1.20",
+        "labels" : {
+          "en" : "The National Centre for Science Recruitment",
+          "nb" : "Nasjonalt senter for realfagsrekruttering"
+        }
+      } ]
+    } ]
+  }, {
+    "type" : "Organization",
+    "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.17.0.0",
+    "labels" : {
+      "en" : "Pro-Rector for Innovation",
+      "nb" : "Prorektor for nyskaping"
+    },
+    "hasPart" : [ {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.17.1.0",
+      "labels" : {
+        "en" : "Pro-Rector Innovation",
+        "nb" : "Prorektor nyskaping"
+      }
+    } ]
+  }, {
+    "type" : "Organization",
+    "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.20.21.0",
+    "labels" : {
+      "en" : "Vice-Rector Ålesund",
+      "nb" : "Viserektor Ålesund"
+    },
+    "hasPart" : [ {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.20.22.0",
+      "labels" : {
+        "en" : "Property and operations section, Ålesund",
+        "nb" : "Seksjon for eiendom og drift i Ålesund"
+      }
+    } ]
+  }, {
+    "type" : "Organization",
+    "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.15.0.0",
+    "labels" : {
+      "en" : "Director of Finance and Property",
+      "nb" : "Økonomi- og eiendomsdirektør"
+    }
+  }, {
+    "type" : "Organization",
+    "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.60.0.0",
+    "labels" : {
+      "en" : "Faculty of Economics and Management",
+      "nb" : "Fakultet for økonomi"
+    },
+    "hasPart" : [ {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.60.15.0",
+      "labels" : {
+        "en" : "Department of International Business",
+        "nb" : "Institutt for internasjonal forretningsdrift"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.60.20.0",
+      "labels" : {
+        "en" : "Department of Economics",
+        "nb" : "Institutt for samfunnsøkonomi"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.60.25.0",
+      "labels" : {
+        "en" : "Department of Industrial Economics and Technology Management",
+        "nb" : "Institutt for industriell økonomi og teknologiledelse"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.60.10.0",
+      "labels" : {
+        "en" : "NTNU Business School",
+        "nb" : "NTNU Handelshøyskolen"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.60.1.0",
+      "labels" : {
+        "en" : "Economics and Management Faculty Administration",
+        "nb" : "ØK fakultetsadministrasjon"
+      }
+    } ]
+  }, {
+    "type" : "Organization",
+    "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.0.0",
+    "labels" : {
+      "en" : "Director, Organization and Infrastructure",
+      "nb" : "Direktør for organisasjon og infrastruktur"
+    },
+    "hasPart" : [ {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.1.15",
+      "labels" : {
+        "en" : "Universitetsavisa",
+        "nb" : "Universitetsavisa"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.15.11.0",
+      "labels" : {
+        "en" : "Financial Division",
+        "nb" : "Økonomiavdelingen"
+      },
+      "hasPart" : [ {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.15.13.20",
+        "labels" : {
+          "en" : "Transaction Services Section - Joint Administrative Units",
+          "nb" : "Seksjon for økonomitjenester i fellesadministrasjonen (FA)"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.15.15.20",
+        "labels" : {
+          "en" : "Accounting and Project Economics Section",
+          "nb" : "Seksjon for regnskap og prosjektøkonomi"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.15.14.20",
+        "labels" : {
+          "en" : "Procurement and Purchasing Section",
+          "nb" : "Seksjon for anskaffelser og innkjøp"
+        }
+      } ]
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.15.50.0",
+      "labels" : {
+        "en" : "Division for Governance and Management Systems",
+        "nb" : "Avdeling for virksomhetsstyring"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.5.0",
+      "labels" : {
+        "en" : "Research, Innovation and External Relations Division",
+        "nb" : "Avdeling for forskning, innovasjon og eksterne relasjoner"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.15.40.0",
+      "labels" : {
+        "en" : "Campus Development NTNU",
+        "nb" : "Campusutvikling NTNU"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.93.0",
+      "labels" : {
+        "en" : "Communication Division",
+        "nb" : "Kommunikasjonsavdelingen"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.30.0",
+      "labels" : {
+        "en" : "Records Management Division",
+        "nb" : "Avdeling for dokumentasjonsforvaltning"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.50.0",
+      "labels" : {
+        "en" : "HR and HSE Division",
+        "nb" : "HR- og HMS-avdelingen"
+      },
+      "hasPart" : [ {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.55.0",
+        "labels" : {
+          "en" : "HR Section, Joint Administrative Units",
+          "nb" : "Seksjon for HR i fellesadministrasjonen"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.54.0",
+        "labels" : {
+          "en" : "HSE and Emergency Preparedness Section",
+          "nb" : "Seksjon for HMS og beredskap NTNU"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.56.0",
+        "labels" : {
+          "en" : "HR - NTNU Section",
+          "nb" : "Seksjon for HR - NTNU"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.57.0",
+        "labels" : {
+          "en" : "Payroll and HR-services Section",
+          "nb" : "Seksjon for lønn og HR-tjenester"
+        }
+      } ]
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.70.0",
+      "labels" : {
+        "en" : "IT Division",
+        "nb" : "IT-avdelingen"
+      },
+      "hasPart" : [ {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.74.0",
+        "labels" : {
+          "en" : "IT Infrastructure Section",
+          "nb" : "Seksjon for IT-infrastruktur"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.76.0",
+        "labels" : {
+          "en" : "IT Management Section",
+          "nb" : "Seksjon for IT-forvaltning"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.79.0",
+        "labels" : {
+          "en" : "Digital Security Section",
+          "nb" : "Seksjon for digital sikkerhet"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.75.0",
+        "labels" : {
+          "en" : "IT Support Section",
+          "nb" : "Seksjon for IT-brukerstøtte"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.77.0",
+        "labels" : {
+          "en" : "IT Development Section",
+          "nb" : "Seksjon for IT-utvikling"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.78.0",
+        "labels" : {
+          "en" : "IT Strategy and Governance Section",
+          "nb" : "Seksjon for IT- strategi og -styring"
+        }
+      } ]
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.1.0",
+      "labels" : {
+        "en" : "Director Organization and Infrastructure",
+        "nb" : "Direktør organisasjon og infrastruktur"
+      }
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.90.0",
+      "labels" : {
+        "en" : "Education Division",
+        "nb" : "Avdeling for utdanning"
+      },
+      "hasPart" : [ {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.90.9",
+        "labels" : {
+          "en" : "Section for teaching, learning and digital services",
+          "nb" : "Seksjon for læringsstøtte og digitale tjenester"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.90.30",
+        "labels" : {
+          "en" : "Education Section in Gjøvik",
+          "nb" : "Seksjon for utdanning Gjøvik"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.90.25",
+        "labels" : {
+          "en" : "Education Section in Ålesund",
+          "nb" : "Seksjon for utdanning Ålesund"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.90.5",
+        "labels" : {
+          "en" : "Education Division Staff",
+          "nb" : "Avdeling for utdanning, støttetjenester"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.90.10",
+        "labels" : {
+          "en" : "Section for teaching, learning and digital services",
+          "nb" : "Seksjon for læringsstøtte og digitale tjenester"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.90.15",
+        "labels" : {
+          "en" : "Section for quality in education and learning environment",
+          "nb" : "Seksjon for utdanningskvalitet og læringsmiljø"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.90.20",
+        "labels" : {
+          "en" : "Office of Admission and International Relations",
+          "nb" : "Seksjon for opptak og internasjonale relasjoner"
+        }
+      } ]
+    }, {
+      "type" : "Organization",
+      "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.15.30.0",
+      "labels" : {
+        "en" : "NTNU Property Division",
+        "nb" : "NTNU Eiendomsavdeling"
+      },
+      "hasPart" : [ {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.60.35",
+        "labels" : {
+          "en" : "Property Division Staff",
+          "nb" : "Støttetjenester"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.60.20",
+        "labels" : {
+          "en" : "Property Maintenance Section",
+          "nb" : "Seksjon for vedlikehold eiendom"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.15.31.0",
+        "labels" : {
+          "en" : "NTNU Property Division Staff",
+          "nb" : "NTNU Eiendomsavdeling, stab"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.15.39.20",
+        "labels" : {
+          "en" : "Planning, Development and Management Section",
+          "nb" : "Seksjon for plan, utvikling og forvaltning"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.15.36.0",
+        "labels" : {
+          "en" : "Property Service Centre",
+          "nb" : "Servicesenter for eiendom"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.15.32.0",
+        "labels" : {
+          "en" : "Building Management Section",
+          "nb" : "Seksjon for bygningsdrift"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.15.39.30",
+        "labels" : {
+          "en" : "Project Section",
+          "nb" : "Prosjektseksjonen"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.60.30",
+        "labels" : {
+          "en" : "Sustainable Property Development Section",
+          "nb" : "Seksjon for bærekraftig eiendomsutvikling"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.60.10",
+        "labels" : {
+          "en" : "Property Management Section",
+          "nb" : "Seksjon for eiendomsdrift"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.60.15",
+        "labels" : {
+          "en" : "Property Service Section",
+          "nb" : "Seksjon for eiendomservice"
+        }
+      }, {
+        "type" : "Organization",
+        "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.15.38.0",
+        "labels" : {
+          "en" : "Technical Management Section",
+          "nb" : "Seksjon for teknisk drift"
+        }
+      } ]
+    } ]
+  } ]
+}

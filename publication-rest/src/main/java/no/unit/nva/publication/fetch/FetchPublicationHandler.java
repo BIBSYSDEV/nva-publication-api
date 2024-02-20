@@ -77,6 +77,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         );
     }
 
+    @JacocoGenerated
     public FetchPublicationHandler(AmazonDynamoDB client, RawContentRetriever rawContentUriRetriever,
                                    UriRetriever uriRetriever) {
         this(defaultResourceService(client), rawContentUriRetriever, new Environment(),
