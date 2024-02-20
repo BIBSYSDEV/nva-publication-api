@@ -6,6 +6,7 @@ import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import java.io.InputStream;
 import java.net.URI;
 import no.unit.nva.publication.external.services.UriRetriever;
+import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QueryFactory;
 import org.apache.jena.rdf.model.Model;
@@ -29,21 +30,29 @@ public class JenaUtils {
         }
 
         var model = createModel(stringToStream(data.get()));
-        var query = QueryFactory.create("prefix : <https://nva.sikt.no/ontology/publication#> "
-                                        + "SELECT ?organization WHERE {"
-                                        + "?organization a :Organization ."
-                                        + "OPTIONAL {?somethingelse :hasPart ?organization}"
-                                        + "OPTIONAL {?organization :partOf ?somethingelse}"
-                                        + "FILTER (!BOUND(?somethingelse))"
-                                        + "}");
+        var query = getTopLevelQuery();
 
+        return getFirstResultFromQuery(query, model);
+    }
+
+    private static URI getFirstResultFromQuery(Query query, Model model) {
         try( var qe = QueryExecutionFactory.create(query, model)) {
             var result = qe.execSelect();
             if (result.hasNext()) {
                 return URI.create(result.next().get("organization").asResource().getURI());
             }
         }
-        return id;
+        throw new IllegalStateException("Could not find topLevel of org");
+    }
+
+    private static Query getTopLevelQuery() {
+        return QueryFactory.create("prefix : <https://nva.sikt.no/ontology/publication#> "
+                                   + "SELECT ?organization WHERE {"
+                                   + "?organization a :Organization ."
+                                   + "OPTIONAL {?somethingelse :hasPart ?organization}"
+                                   + "OPTIONAL {?organization :partOf ?somethingelse}"
+                                   + "FILTER (!BOUND(?somethingelse))"
+                                   + "}");
     }
 
     private static Model createModel(InputStream inputStream) {
