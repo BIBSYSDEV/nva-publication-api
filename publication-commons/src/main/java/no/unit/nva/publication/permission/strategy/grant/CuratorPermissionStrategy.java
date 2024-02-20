@@ -1,16 +1,39 @@
 package no.unit.nva.publication.permission.strategy.grant;
 
+import static java.util.Objects.isNull;
 import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
+import static nva.commons.core.attempt.Try.attempt;
+import static nva.commons.core.ioutils.IoUtils.stringToStream;
+import java.io.InputStream;
+import java.net.URI;
+import java.util.Collections;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.UserInstance;
+import org.apache.jena.query.QueryExecutionFactory;
+import org.apache.jena.query.QueryFactory;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.RDFNode;
+import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.riot.RiotException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CuratorPermissionStrategy extends GrantPermissionStrategy {
 
-    public CuratorPermissionStrategy(Publication publication, UserInstance userInstance) {
-        super(publication, userInstance);
+    public static final Logger logger = LoggerFactory.getLogger(CuratorPermissionStrategy.class);
+    private static final String PART_OF_PROPERTY = "https://nva.sikt.no/ontology/publication#partOf";
+
+    public CuratorPermissionStrategy(Publication publication, UserInstance userInstance, UriRetriever uriRetriever) {
+        super(publication, userInstance, uriRetriever);
     }
 
     @Override
@@ -40,7 +63,7 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
     }
 
     private boolean userRelatesToPublication() {
-        return userIsFromSameInstitutionAsPublication() || userAndContributorInTheSameInstitution();
+        return userSharesTopLevelOrgWithAtLeastOneContributor() || userIsFromSameInstitutionAsPublication() || userSharesTopLevelOrgWithAtLeastOneContributor();
     }
 
     private boolean userIsFromSameInstitutionAsPublication() {
@@ -48,16 +71,81 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
                userInstance.getCustomerId().equals(publication.getPublisher().getId());
     }
 
-    private boolean userAndContributorInTheSameInstitution() {
+    private boolean userSharesTopLevelOrgWithAtLeastOneContributor() {
+        var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
+        var contributorTopLevelOrgs = getContributorTopLevelOrgs();
+
+        logger.info("found topLevels {} for user with {} ", contributorTopLevelOrgs, userTopLevelOrg);
+
+        return contributorTopLevelOrgs.stream().anyMatch(org -> org.equals(userTopLevelOrg));
+    }
+
+    private Set<URI> getContributorTopLevelOrgs() {
         return publication.getEntityDescription().getContributors()
                    .stream()
                    .filter(contributor -> contributor.getIdentity() != null)
                    .flatMap(contributor ->
-                                         contributor.getAffiliations().stream()
-                                             .filter(Organization.class::isInstance)
-                                             .map(Organization.class::cast)
-                                             .map(Organization::getId))
-                   .anyMatch(id ->
-                                 id.equals(userInstance.getCustomerId()));
+                                contributor.getAffiliations().stream()
+                                    .filter(Organization.class::isInstance)
+                                    .map(Organization.class::cast)
+                                    .map(Organization::getId))
+                   .collect(Collectors.toSet())
+                   .stream().map(this::getTopLevelOrgUri)
+                   .collect(Collectors.toSet());
+    }
+
+    private URI getTopLevelOrgUri(URI id) {
+        var data = attempt(() -> uriRetriever.getRawContent(id,
+                                                            "application/json")).orElseThrow();
+
+        if (data.isEmpty()) {
+            return id;
+        }
+
+        var model = createModel(stringToStream(data.get()));
+        //var model = ModelFactory.createDefaultModel();
+        //model.read(id.toString());
+        var query = QueryFactory.create("prefix : <https://nva.sikt.no/ontology/publication#> "
+                                        + "SELECT ?organization WHERE {"
+                                        + "?organization a :Organization ."
+                                        + "OPTIONAL {?somethingelse :hasPart ?organization}"
+                                        + "OPTIONAL {?organization :partOf ?somethingelse}"
+                                        + "FILTER (!BOUND(?somethingelse))"
+                                        + "}");
+        try( var qe = QueryExecutionFactory.create(query, model)) {
+            var result = qe.execSelect();
+            while( result.hasNext()) {
+                var THEResult = URI.create(result.next().get("organization").asResource().getURI());
+                return THEResult;
+            }
+        }
+        return id;
+
+//        var partOf = attempt(() -> uriRetriever.getRawContent(URI.create("https://api.nva.unit"
+//                                                                         + ".no/cristin/organization/209.6.3.0"), "application/json")).map(
+//                Optional::orElseThrow)
+//                         .map(str -> createModel(stringToStream(str)))
+//                         .map(model -> model.listObjectsOfProperty(model.createProperty(PART_OF_PROPERTY)))
+//                         .map(nodeIterator -> nodeIterator.toList()
+//                                                  .stream().map(RDFNode::toString).map(URI::create).toList())
+//                         .orElseThrow();
+//        Collections.reverse(partOf);
+//        logger.info("found partOfs {} for {}", partOf, id.toString());
+//        var v = partOf.stream().findFirst().orElse(id);
+//        return v;
+    }
+
+    private Model createModel(InputStream inputStream) {
+        var model = ModelFactory.createDefaultModel();
+
+        if (isNull(inputStream)) {
+            return model;
+        }
+        try {
+            RDFDataMgr.read(model, inputStream, Lang.JSONLD);
+        } catch (RiotException e) {
+            logger.warn("Invalid JSON LD input encountered: ", e);
+        }
+        return model;
     }
 }

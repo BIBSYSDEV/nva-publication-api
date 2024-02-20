@@ -24,6 +24,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -44,10 +45,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class RequestUtilsTest {
 
     private ResourceService resourceService;
+    private UriRetriever uriRetriever;
 
     @BeforeEach
     public void setup() {
         this.resourceService = mock(ResourceService.class);
+        this.uriRetriever = mock(UriRetriever.class);
     }
 
     public static Stream<Arguments> ticketTypeAndAccessRightProvider() {
@@ -59,7 +62,7 @@ public class RequestUtilsTest {
 
     @Test
     void shouldReturnFalseWhenCheckingAuthorizationForNullTicket() throws UnauthorizedException {
-        Assertions.assertFalse(RequestUtils.fromRequestInfo(mockedRequestInfo()).isAuthorizedToManage(null, null));
+        Assertions.assertFalse(RequestUtils.fromRequestInfo(mockedRequestInfo(), uriRetriever).isAuthorizedToManage(null, null));
     }
 
     @Test
@@ -67,14 +70,14 @@ public class RequestUtilsTest {
         var requestInfo = mockedRequestInfoWithoutPathParams();
 
         assertThrows(IllegalArgumentException.class,
-                     () -> RequestUtils.fromRequestInfo(requestInfo).publicationIdentifier());
+                     () -> RequestUtils.fromRequestInfo(requestInfo, uriRetriever).publicationIdentifier());
         assertThrows(IllegalArgumentException.class,
-                     () -> RequestUtils.fromRequestInfo(requestInfo).ticketIdentifier());
+                     () -> RequestUtils.fromRequestInfo(requestInfo, uriRetriever).ticketIdentifier());
     }
 
     @Test
     void shouldReturnIdentifiersFromPathParamsWhenTheyArePresent() throws UnauthorizedException {
-        var requestUtils = RequestUtils.fromRequestInfo(mockedRequestInfo());
+        var requestUtils = RequestUtils.fromRequestInfo(mockedRequestInfo(), uriRetriever);
 
         Assertions.assertTrue(nonNull(requestUtils.publicationIdentifier()));
         Assertions.assertTrue(nonNull(requestUtils.ticketIdentifier()));
@@ -89,7 +92,7 @@ public class RequestUtilsTest {
         var publication = publicationWithOwner(randomString()).copy().withStatus(publicationStatus).build();
         var requestInfo = requestInfoWithAccessRight(publication.getPublisher().getId(), accessRight);
         var ticket = TicketEntry.requestNewTicket(publication, ticketType);
-        var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
+        var requestUtils = RequestUtils.fromRequestInfo(requestInfo, uriRetriever);
 
         when(resourceService.getPublicationByIdentifier(any())).thenReturn(publication);
 
@@ -100,7 +103,7 @@ public class RequestUtilsTest {
     void shouldReturnTrueWhenUserIsTicketOwner() throws UnauthorizedException {
         var requestInfo = mockedRequestInfo();
         var ticket = TicketEntry.requestNewTicket(publicationWithOwner(requestInfo.getUserName()), DoiRequest.class);
-        var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
+        var requestUtils = RequestUtils.fromRequestInfo(requestInfo, uriRetriever);
 
         Assertions.assertTrue(requestUtils.isTicketOwner(ticket));
     }
@@ -114,14 +117,14 @@ public class RequestUtilsTest {
                                                        requestInfo.getTopLevelOrgCristinId().orElseThrow(),
                                                        requestInfo.getAccessRights());
 
-        Assertions.assertEquals(RequestUtils.fromRequestInfo(requestInfo).toUserInstance(), expectedUserInstance);
+        Assertions.assertEquals(RequestUtils.fromRequestInfo(requestInfo, uriRetriever).toUserInstance(), expectedUserInstance);
     }
 
     @Test
     void shouldReturnTrueWhenUserHasOneOfAccessRights() throws UnauthorizedException {
         var requestInfo = requestInfoWithAccessRight(randomUri(), MANAGE_DOI);
 
-        Assertions.assertTrue(RequestUtils.fromRequestInfo(requestInfo)
+        Assertions.assertTrue(RequestUtils.fromRequestInfo(requestInfo, uriRetriever)
                                   .hasOneOfAccessRights(MANAGE_DOI, MANAGE_PUBLISHING_REQUESTS));
     }
 

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -28,16 +29,19 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
     private final ResourceService resourceService;
 
     private final TicketService ticketService;
+    private final UriRetriever uriRetriever;
 
     @JacocoGenerated
     public ListTicketsForPublicationHandler() {
-        this(ResourceService.defaultService(), TicketService.defaultService());
+        this(ResourceService.defaultService(), TicketService.defaultService(), RequestUtils.defaultUriRetriever());
     }
 
-    public ListTicketsForPublicationHandler(ResourceService resourceService, TicketService ticketService) {
+    public ListTicketsForPublicationHandler(ResourceService resourceService, TicketService ticketService,
+                                            UriRetriever uriRetriever) {
         super(Void.class);
         this.resourceService = resourceService;
         this.ticketService = ticketService;
+        this.uriRetriever = uriRetriever;
     }
 
     @Override
@@ -45,7 +49,7 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
         throws ApiGatewayException {
         var publicationIdentifier = extractPublicationIdentifierFromPath(requestInfo);
         var userInstance = UserInstance.fromRequestInfo(requestInfo);
-        var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
+        var requestUtils = RequestUtils.fromRequestInfo(requestInfo, uriRetriever);
         var ticketDtos = fetchTickets(requestUtils, publicationIdentifier, userInstance);
         return TicketCollection.fromTickets(ticketDtos);
     }

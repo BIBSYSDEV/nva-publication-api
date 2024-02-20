@@ -23,6 +23,7 @@ dependencies {
 
     implementation libs.guava
     implementation libs.zalando
+    implementation libs.bundles.jena
     implementation (libs.bundles.jackson) {
         exclude group: 'org.zalando', module : 'jackson-datatype-problem'
     }

@@ -12,12 +12,13 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.role.RoleType;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.UserInstance;
 
 public class ContributorPermissionStrategy extends GrantPermissionStrategy {
 
-    public ContributorPermissionStrategy(Publication publication, UserInstance userInstance) {
-        super(publication, userInstance);
+    public ContributorPermissionStrategy(Publication publication, UserInstance userInstance, UriRetriever uriRetriever) {
+        super(publication, userInstance, uriRetriever);
     }
 
     @Override

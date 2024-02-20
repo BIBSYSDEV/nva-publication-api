@@ -10,6 +10,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.mockito.Mockito.mock;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,6 +22,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationServiceConfig;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
@@ -45,6 +47,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
 
     private ListTicketsForPublicationHandler handler;
     private MessageService messageService;
+    private UriRetriever uriRetriever;
 
     public static Stream<Arguments> accessRightAndTicketTypeProvider() {
         return Stream.of(Arguments.of(DoiRequest.class, AccessRight.MANAGE_DOI),
@@ -58,7 +61,8 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     @BeforeEach
     public void setup() {
         super.init();
-        this.handler = new ListTicketsForPublicationHandler(resourceService, ticketService);
+        this.uriRetriever = mock(UriRetriever.class);
+        this.handler = new ListTicketsForPublicationHandler(resourceService, ticketService, uriRetriever);
         this.messageService = new MessageService(client);
     }
 

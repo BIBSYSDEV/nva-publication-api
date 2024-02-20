@@ -14,6 +14,7 @@ import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.pages.Pages;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.AccessRight;
 
@@ -21,10 +22,12 @@ public abstract class PermissionStrategy {
 
     protected final Publication publication;
     protected final UserInstance userInstance;
+    protected final UriRetriever uriRetriever;
 
-    protected PermissionStrategy(Publication publication, UserInstance userInstance) {
+    protected PermissionStrategy(Publication publication, UserInstance userInstance, UriRetriever uriRetriever) {
         this.publication = publication;
         this.userInstance = userInstance;
+        this.uriRetriever = uriRetriever;
     }
 
     protected boolean hasAccessRight(AccessRight accessRight) {

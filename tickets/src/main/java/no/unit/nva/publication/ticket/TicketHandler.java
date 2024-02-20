@@ -1,6 +1,7 @@
 package no.unit.nva.publication.ticket;
 
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.external.services.UriRetriever;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 

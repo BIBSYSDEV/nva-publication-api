@@ -18,6 +18,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.mockito.Mockito.mock;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -30,6 +31,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -61,14 +63,16 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     private NewCreateMessageHandler handler;
     private ByteArrayOutputStream output;
     private FakeContext context;
+    private UriRetriever uriRetriever;
 
     @BeforeEach
     public void setup() {
         super.init();
         this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
         this.ticketService = new TicketService(client);
+        this.uriRetriever = mock(UriRetriever.class);
         MessageService messageService = new MessageService(client);
-        this.handler = new NewCreateMessageHandler(messageService, ticketService, resourceService);
+        this.handler = new NewCreateMessageHandler(messageService, ticketService, resourceService, uriRetriever);
         this.output = new ByteArrayOutputStream();
         this.context = new FakeContext();
     }

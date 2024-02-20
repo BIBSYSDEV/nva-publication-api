@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permission.strategy.grant.ContributorPermissionStrategy;
 import no.unit.nva.publication.permission.strategy.grant.CuratorPermissionStrategy;
@@ -16,6 +17,7 @@ import no.unit.nva.publication.permission.strategy.grant.TrustedThirdPartyStrate
 import no.unit.nva.publication.permission.strategy.restrict.NonDegreePermissionStrategy;
 import no.unit.nva.publication.permission.strategy.restrict.DenyPermissionStrategy;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
+import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,24 +32,26 @@ public final class PublicationPermissionStrategy {
 
     private PublicationPermissionStrategy(
         Publication publication,
-        UserInstance userInstance
+        UserInstance userInstance,
+        UriRetriever uriRetriever
     ) {
         this.userInstance = userInstance;
         this.publication = publication;
         this.grantStrategies = Set.of(
-            new EditorPermissionStrategy(publication, userInstance),
-            new CuratorPermissionStrategy(publication, userInstance),
-            new ContributorPermissionStrategy(publication, userInstance),
-            new ResourceOwnerPermissionStrategy(publication, userInstance),
-            new TrustedThirdPartyStrategy(publication, userInstance)
+            new EditorPermissionStrategy(publication, userInstance, uriRetriever),
+            new CuratorPermissionStrategy(publication, userInstance, uriRetriever),
+            new ContributorPermissionStrategy(publication, userInstance, uriRetriever),
+            new ResourceOwnerPermissionStrategy(publication, userInstance, uriRetriever),
+            new TrustedThirdPartyStrategy(publication, userInstance, uriRetriever)
         );
         this.denyStrategies = Set.of(
-            new NonDegreePermissionStrategy(publication, userInstance)
+            new NonDegreePermissionStrategy(publication, userInstance, uriRetriever)
         );
     }
 
-    public static PublicationPermissionStrategy create(Publication publication, UserInstance userInstance) {
-        return new PublicationPermissionStrategy(publication, userInstance);
+    public static PublicationPermissionStrategy create(Publication publication, UserInstance userInstance,
+                                                       UriRetriever uriRetriever) {
+        return new PublicationPermissionStrategy(publication, userInstance, uriRetriever);
     }
 
     public boolean allowsAction(PublicationOperation permission) {

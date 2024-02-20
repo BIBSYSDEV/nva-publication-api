@@ -28,6 +28,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
@@ -41,6 +42,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
@@ -54,6 +56,7 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.FileForApproval;
@@ -113,6 +116,8 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     private FakeSecretsManagerClient secretsManagerClient;
     private CreateTicketHandler handler;
     private TicketResolver ticketResolver;
+    @Mock
+    private UriRetriever uriRetriever;
 
     public static Stream<Arguments> ticketEntryProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class).map(Arguments::of);
@@ -123,12 +128,13 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         super.init();
         lenient().when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
         lenient().when(environment.readEnv("API_HOST")).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
+        lenient().when(uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.empty());
         secretsManagerClient = new FakeSecretsManagerClient();
         var credentials = new BackendClientCredentials("id", "secret");
         secretsManagerClient.putPlainTextSecret("someSecret", credentials.toString());
-        var uriRetriever = getUriRetriever(getHttpClientWithPublisherAllowingPublishing(), secretsManagerClient);
-        ticketResolver = new TicketResolver(resourceService, ticketService, uriRetriever);
-        this.handler = new CreateTicketHandler(resourceService, ticketResolver);
+        var uriRetrieverBackend = getUriRetriever(getHttpClientWithPublisherAllowingPublishing(), secretsManagerClient);
+        ticketResolver = new TicketResolver(resourceService, ticketService, uriRetrieverBackend);
+        this.handler = new CreateTicketHandler(resourceService, ticketResolver, uriRetriever);
     }
 
     @ParameterizedTest
@@ -259,7 +265,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         ticketResolver = new TicketResolver(resourceService, ticketService,
                                             getUriRetriever(getHttpClientWithUnresolvableClient(),
                                                             secretsManagerClient));
-        this.handler = new CreateTicketHandler(resourceService, ticketResolver);
+        this.handler = new CreateTicketHandler(resourceService, ticketResolver, uriRetriever);
         var firstRequest = createHttpTicketCreationRequest(requestBody, publication, owner);
         handler.handleRequest(firstRequest, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -271,7 +277,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         ticketResolver = new TicketResolver(resourceService, ticketService,
                                             getUriRetriever(getHttpClientWithUnresolvableClient(),
                                                             secretsManagerClient));
-        this.handler = new CreateTicketHandler(resourceService, ticketResolver);
+        this.handler = new CreateTicketHandler(resourceService, ticketResolver, uriRetriever);
         handler.handleRequest(secondRequest, output, CONTEXT);
 
         var secondResponse = GatewayResponse.fromOutputStream(output, Void.class);
@@ -340,7 +346,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         ticketResolver = new TicketResolver(resourceService, ticketService,
                                             getUriRetriever(getHttpClientWithPublisherAllowingPublishing(),
                                                             secretsManagerClient));
-        handler = new CreateTicketHandler(resourceService, ticketResolver);
+        handler = new CreateTicketHandler(resourceService, ticketResolver, uriRetriever);
         handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
@@ -357,7 +363,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         ticketResolver = new TicketResolver(resourceService, ticketService,
                                             getUriRetriever(getHttpClientWithCustomerAllowingPublishingMetadataOnly(),
                                                             secretsManagerClient));
-        handler = new CreateTicketHandler(resourceService, ticketResolver);
+        handler = new CreateTicketHandler(resourceService, ticketResolver, uriRetriever);
         handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
@@ -375,7 +381,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         ticketResolver = new TicketResolver(resourceService, ticketService,
                                             getUriRetriever(getHttpClientWithPublisherRequiringApproval(),
                                                             secretsManagerClient));
-        handler = new CreateTicketHandler(resourceService, ticketResolver);
+        handler = new CreateTicketHandler(resourceService, ticketResolver, uriRetriever);
         handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
@@ -393,7 +399,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         ticketResolver = new TicketResolver(resourceService, ticketService,
                                             getUriRetriever(getHttpClientWithPublisherAllowingPublishing(),
                                                             secretsManagerClient));
-        handler = new CreateTicketHandler(resourceService, ticketResolver);
+        handler = new CreateTicketHandler(resourceService, ticketResolver, uriRetriever);
         handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
@@ -412,7 +418,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         ticketResolver = new TicketResolver(resourceService, ticketService,
                                             getUriRetriever(getHttpClientWithCustomerAllowingPublishingMetadataOnly(),
                                                             secretsManagerClient));
-        handler = new CreateTicketHandler(resourceService, ticketResolver);
+        handler = new CreateTicketHandler(resourceService, ticketResolver, uriRetriever);
         handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
@@ -430,7 +436,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         ticketResolver = new TicketResolver(resourceService, ticketService,
                                             getUriRetriever(getHttpClientWithCustomerAllowingPublishingMetadataOnly(),
                                                             secretsManagerClient));
-        handler = new CreateTicketHandler(resourceService, ticketResolver);
+        handler = new CreateTicketHandler(resourceService, ticketResolver, uriRetriever);
         handler.handleRequest(
             createHttpTicketCreationRequestWithAccessRight(
                 requestBody, publication, MANAGE_PUBLISHING_REQUESTS, MANAGE_RESOURCES_STANDARD), output, CONTEXT);
@@ -450,7 +456,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         ticketResolver = new TicketResolver(resourceService, ticketService,
                                             getUriRetriever(getHttpClientWithCustomerAllowingPublishingMetadataOnly(),
                                                             secretsManagerClient));
-        handler = new CreateTicketHandler(resourceService, ticketResolver);
+        handler = new CreateTicketHandler(resourceService, ticketResolver, uriRetriever);
         handler.handleRequest(
             createHttpTicketCreationRequestWithAccessRight(
                 requestBody, publication, MANAGE_PUBLISHING_REQUESTS, MANAGE_RESOURCES_STANDARD), output, CONTEXT);
@@ -471,7 +477,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         ticketResolver = new TicketResolver(resourceService, ticketService,
                                             getUriRetriever(getHttpClientWithCustomerAllowingPublishingMetadataOnly(),
                                                             secretsManagerClient));
-        handler = new CreateTicketHandler(resourceService, ticketResolver);
+        handler = new CreateTicketHandler(resourceService, ticketResolver, uriRetriever);
         handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
@@ -490,7 +496,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         ticketResolver = new TicketResolver(resourceService, ticketService,
                                             getUriRetriever(getHttpClientWithPublisherAllowingPublishing(),
                                                             secretsManagerClient));
-        handler = new CreateTicketHandler(resourceService, ticketResolver);
+        handler = new CreateTicketHandler(resourceService, ticketResolver, uriRetriever);
         handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
@@ -509,7 +515,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         ticketResolver = new TicketResolver(resourceService, ticketService,
                                             getUriRetriever(getHttpClientWithNonResolvedPublishingWorkflow(),
                                                             secretsManagerClient));
-        this.handler = new CreateTicketHandler(resourceService, ticketResolver);
+        this.handler = new CreateTicketHandler(resourceService, ticketResolver, uriRetriever);
         handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
 
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
@@ -526,7 +532,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         ticketResolver = new TicketResolver(resourceService, ticketService,
                                             getUriRetriever(getHttpClientWithUnresolvableClient(),
                                                             secretsManagerClient));
-        this.handler = new CreateTicketHandler(resourceService, ticketResolver);
+        this.handler = new CreateTicketHandler(resourceService, ticketResolver, uriRetriever);
         handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
 
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
@@ -548,7 +554,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         ticketResolver = new TicketResolver(resourceService, ticketService,
                                             getUriRetriever(getHttpClientWithPublisherAllowingPublishing(),
                                                             secretsManagerClient));
-        handler = new CreateTicketHandler(resourceService, ticketResolver);
+        handler = new CreateTicketHandler(resourceService, ticketResolver, uriRetriever);
         handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
@@ -573,7 +579,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         ticketResolver = new TicketResolver(resourceService, ticketService,
                                             getUriRetriever(getHttpClientWithPublisherAllowingPublishing(),
                                                             secretsManagerClient));
-        handler = new CreateTicketHandler(resourceService, ticketResolver);
+        handler = new CreateTicketHandler(resourceService, ticketResolver, uriRetriever);
         handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
@@ -593,7 +599,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         ticketResolver = new TicketResolver(resourceService, ticketService,
                                             getUriRetriever(getHttpClientWithPublisherRequiringApproval(),
                                                             secretsManagerClient));
-        handler = new CreateTicketHandler(resourceService, ticketResolver);
+        handler = new CreateTicketHandler(resourceService, ticketResolver, uriRetriever);
         handler.handleRequest(createHttpTicketCreationRequest(requestBody, publication, owner), output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
@@ -619,7 +625,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         ticketResolver = new TicketResolver(resourceService, ticketService,
                                             getUriRetriever(getHttpClientWithCustomerAllowingPublishingMetadataOnly(),
                                                             secretsManagerClient));
-        handler = new CreateTicketHandler(resourceService, ticketResolver);
+        handler = new CreateTicketHandler(resourceService, ticketResolver, uriRetriever);
         handler.handleRequest(
             createHttpTicketCreationRequestWithAccessRight(
                 requestBody, publication, AccessRight.MANAGE_DOI), output, CONTEXT);

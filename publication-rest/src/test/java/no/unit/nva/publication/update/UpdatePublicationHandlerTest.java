@@ -126,6 +126,7 @@ import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.delete.LambdaDestinationInvocationDetail;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -203,6 +204,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private FakeEventBridgeClient eventBridgeClient;
     private S3Client s3Client;
     private URI customerId;
+    private UriRetriever uriRetriever;
 
     /**
      * Set up environment.
@@ -212,6 +214,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         super.init();
 
         environment = mock(Environment.class);
+        uriRetriever = mock(UriRetriever.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
         when(environment.readEnv(NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY)).thenReturn(
             NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY);
@@ -238,7 +241,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var httpClient = WiremockHttpClient.create();
         updatePublicationHandler =
             new UpdatePublicationHandler(publicationService, ticketService, environment, identityServiceClient,
-                                         eventBridgeClient, s3Client, secretsManagerClient, httpClient);
+                                         eventBridgeClient, s3Client, secretsManagerClient, httpClient, uriRetriever);
         publication = createNonDegreePublication();
 
         customerId = UriWrapper.fromUri(wireMockRuntimeInfo.getHttpsBaseUrl())
@@ -469,7 +472,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                 eventBridgeClient,
                                                                 S3Driver.defaultS3Client().build(),
                                                                 secretsManagerClient,
-                                                                WiremockHttpClient.create());
+                                                                WiremockHttpClient.create(),
+                                                                uriRetriever);
 
         var savedPublication = createSamplePublication();
         var event = ownerUpdatesOwnPublication(savedPublication.getIdentifier(), savedPublication);
@@ -494,7 +498,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                 eventBridgeClient,
                                                                 S3Driver.defaultS3Client().build(),
                                                                 secretsManagerClient,
-                                                                WiremockHttpClient.create());
+                                                                WiremockHttpClient.create(),
+                                                                uriRetriever);
 
         var savedPublication = createSamplePublication();
 
