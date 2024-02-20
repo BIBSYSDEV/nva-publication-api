@@ -1,15 +1,11 @@
 package no.unit.nva.expansion;
 
-import static java.util.Objects.isNull;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
-import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.io.InputStream;
 import java.net.URI;
 import java.util.Objects;
-import java.util.Optional;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedOrganization;
@@ -26,22 +22,16 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.publication.utils.JenaUtils;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.rdf.model.RDFNode;
-import org.apache.jena.riot.Lang;
-import org.apache.jena.riot.RDFDataMgr;
-import org.apache.jena.riot.RiotException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
     public static final Logger logger = LoggerFactory.getLogger(ResourceExpansionServiceImpl.class);
-    public static final String CONTENT_TYPE = "application/json";
     public static final String UNSUPPORTED_TYPE = "Expansion is not supported for type:";
     public static final String CRISTIN = "cristin";
     public static final String PERSON = "person";
@@ -58,11 +48,11 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     public static final String CONTEXT_FIELD_PROPERTY_NAME = "@context";
     private static final String EXPAND_PERSON_DEFAULT_INFO = "Could not retrieve Cristin Person. Creating default "
                                                              + "expanded person for owner";
-    private static final String PART_OF_PROPERTY = "https://nva.sikt.no/ontology/publication#partOf";
+    private static final String APPLICATION_JSON = "application/json";
     private final ResourceService resourceService;
     private final TicketService ticketService;
     private final RawContentRetriever authorizedUriRetriever;
-    private final RawContentRetriever uriRetriever;
+    private final UriRetriever uriRetriever;
 
     public ResourceExpansionServiceImpl(ResourceService resourceService,
                                         TicketService ticketService) {
@@ -75,7 +65,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     public ResourceExpansionServiceImpl(ResourceService resourceService,
                                         TicketService ticketService,
                                         RawContentRetriever authorizedUriRetriever,
-                                        RawContentRetriever uriRetriever) {
+                                        UriRetriever uriRetriever) {
         this.resourceService = resourceService;
         this.ticketService = ticketService;
         this.authorizedUriRetriever = authorizedUriRetriever;
@@ -107,20 +97,13 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     public ExpandedOrganization getOrganization(Entity dataEntry) throws NotFoundException {
         if (dataEntry instanceof TicketEntry ticketEntry) {
 
-            var organizationIds = Objects.nonNull(ticketEntry.getOwnerAffiliation())
+            var organizationId = Objects.nonNull(ticketEntry.getOwnerAffiliation())
                                       ? ticketEntry.getOwnerAffiliation()
                                       : resourceService.getResourceByIdentifier(ticketEntry.getResourceIdentifier())
                                           .getResourceOwner().getOwnerAffiliation();
 
-            var partOf = attempt(() -> this.uriRetriever.getRawContent(organizationIds, CONTENT_TYPE)).map(
-                    Optional::orElseThrow)
-                             .map(str -> createModel(stringToStream(str)))
-                             .map(model -> model.listObjectsOfProperty(model.createProperty(PART_OF_PROPERTY)))
-                             .map(nodeIterator -> nodeIterator.toList()
-                                                      .stream().map(RDFNode::toString).map(URI::create).toList())
-                             .orElseThrow();
-
-            return new ExpandedOrganization(organizationIds, partOf);
+            var partOf = JenaUtils.getAllNestedPartOfs(uriRetriever, organizationId);
+            return new ExpandedOrganization(organizationId, partOf);
         }
         return null;
     }
@@ -128,7 +111,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     @Override
     public ExpandedPerson expandPerson(User owner) {
         return attempt(() -> constructUri(owner))
-                   .map(uri -> authorizedUriRetriever.getRawContent(uri, CONTENT_TYPE))
+                   .map(uri -> authorizedUriRetriever.getRawContent(uri, APPLICATION_JSON))
                    .map(response -> toExpandedPerson(response.orElse(null), owner))
                    .orElse(failure -> getDefaultExpandedPerson(owner));
     }
@@ -178,19 +161,5 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
                    .addChild(PERSON)
                    .addChild(extractCristinId(owner))
                    .getUri();
-    }
-
-    private Model createModel(InputStream inputStream) {
-        var model = ModelFactory.createDefaultModel();
-
-        if (isNull(inputStream)) {
-            return model;
-        }
-        try {
-            RDFDataMgr.read(model, inputStream, Lang.JSONLD);
-        } catch (RiotException e) {
-            logger.warn("Invalid JSON LD input encountered: ", e);
-        }
-        return model;
     }
 }
