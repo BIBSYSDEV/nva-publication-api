@@ -4,10 +4,8 @@ import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublicationNonDegree;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
-import static no.unit.nva.model.testing.PublicationInstanceBuilder.listPublicationInstanceTypes;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,8 +60,9 @@ public final class TicketTestUtils {
     }
 
     public static Stream<Arguments> ticketTypeAndAccessRightProvider() {
-        return Stream.of(Arguments.of(DoiRequest.class, AccessRight.MANAGE_DOI),
-                         Arguments.of(PublishingRequestCase.class, AccessRight.MANAGE_PUBLISHING_REQUESTS));
+        return Stream.of(Arguments.of(PUBLISHED, DoiRequest.class, AccessRight.MANAGE_DOI),
+                         Arguments.of(DRAFT, PublishingRequestCase.class,
+                                      AccessRight.MANAGE_PUBLISHING_REQUESTS));
     }
 
     public static Stream<Arguments> invalidAccessRightForTicketTypeProvider() {
@@ -115,11 +114,6 @@ public final class TicketTestUtils {
             return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
         }
         return persistedPublication;
-    }
-
-    private static boolean isNonDegreeClass(Class<?> publicationInstance) {
-        var listOfDegreeClasses = Set.of("DegreeMaster", "DegreeBachelor", "DegreePhd", "DegreeLicentiate");
-        return !listOfDegreeClasses.contains(publicationInstance.getSimpleName());
     }
 
     public static Publication createPersistedPublicationWithAdministrativeAgreement(ResourceService resourceService)

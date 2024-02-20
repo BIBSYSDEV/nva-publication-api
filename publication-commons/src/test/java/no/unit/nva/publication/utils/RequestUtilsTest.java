@@ -1,7 +1,6 @@
 package no.unit.nva.publication.utils;
 
 import static java.util.Objects.nonNull;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublicationNonDegree;
 import static no.unit.nva.publication.utils.RequestUtils.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.utils.RequestUtils.TICKET_IDENTIFIER;
@@ -16,7 +15,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.net.URI;
-import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,18 +24,14 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
-import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
@@ -57,9 +51,10 @@ public class RequestUtilsTest {
     }
 
     public static Stream<Arguments> ticketTypeAndAccessRightProvider() {
-        return Stream.of(Arguments.of(DoiRequest.class, MANAGE_DOI),
-                         Arguments.of(PublishingRequestCase.class, MANAGE_PUBLISHING_REQUESTS),
-                         Arguments.of(GeneralSupportRequest.class, SUPPORT));
+        return Stream.of(Arguments.of(PublicationStatus.PUBLISHED, DoiRequest.class, MANAGE_DOI),
+                         Arguments.of(PublicationStatus.DRAFT, PublishingRequestCase.class,
+                                      MANAGE_PUBLISHING_REQUESTS),
+                         Arguments.of(PublicationStatus.PUBLISHED, GeneralSupportRequest.class, SUPPORT));
     }
 
     @Test
@@ -87,10 +82,11 @@ public class RequestUtilsTest {
 
     @ParameterizedTest
     @MethodSource("ticketTypeAndAccessRightProvider")
-    void shouldReturnTrueWhenUserHasAccessRightToManageTicket(Class<? extends TicketEntry> ticketType,
+    void shouldReturnTrueWhenUserHasAccessRightToManageTicket(PublicationStatus publicationStatus,
+                                                              Class<? extends TicketEntry> ticketType,
                                                               AccessRight accessRight)
-        throws UnauthorizedException, BadRequestException, NotFoundException {
-        var publication = publicationWithOwner(randomString());
+        throws UnauthorizedException, NotFoundException {
+        var publication = publicationWithOwner(randomString()).copy().withStatus(publicationStatus).build();
         var requestInfo = requestInfoWithAccessRight(publication.getPublisher().getId(), accessRight);
         var ticket = TicketEntry.requestNewTicket(publication, ticketType);
         var requestUtils = RequestUtils.fromRequestInfo(requestInfo);

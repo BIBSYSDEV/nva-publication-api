@@ -2,15 +2,13 @@ package no.unit.nva.publication.permission.strategy;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationOperation.DELETE;
-import static no.unit.nva.model.PublicationOperation.TICKET_PUBLISH;
 import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.model.testing.PublicationInstanceBuilder.listPublicationInstanceTypes;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
-import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -31,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
@@ -325,7 +322,8 @@ class PublicationPermissionStrategyTest {
         var contributorInstitutionId = randomUri();
 
         var requestInfo = createUserRequestInfo(contributorName, contributorInstitutionId, contributorCristinId);
-        var publication = createPublicationWithContributor(contributorName, contributorCristinId, Role.CREATOR);
+        var publication = createPublicationWithContributor(contributorName, contributorCristinId, Role.CREATOR,
+                                                           randomUri());
 
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
@@ -341,7 +339,7 @@ class PublicationPermissionStrategyTest {
         var contributorInstitutionId = randomUri();
 
         var requestInfo = createUserRequestInfo(contributorName, contributorInstitutionId, contributorCristinId);
-        var publication = createPublicationWithContributor(contributorName, contributorCristinId, null);
+        var publication = createPublicationWithContributor(contributorName, contributorCristinId, null, randomUri());
 
         Assertions.assertFalse(PublicationPermissionStrategy
                                    .create(publication, RequestUtil.createUserInstanceFromRequest(
@@ -430,7 +428,7 @@ class PublicationPermissionStrategyTest {
 
     @Test
     void getAllAllowedOperationsShouldReturnNothingWhenUserHasNoAccessRights() throws JsonProcessingException,
-                                                                         UnauthorizedException {
+                                                                                      UnauthorizedException {
         var editorName = randomString();
         var editorInstitution = randomUri();
         var resourceOwner = randomString();
@@ -447,7 +445,7 @@ class PublicationPermissionStrategyTest {
 
     @Test
     void getAllAllowedOperationsShouldReturnUpdateUnpublishWhenUserHasAllAccessRights() throws JsonProcessingException,
-                                                                                      UnauthorizedException {
+                                                                                               UnauthorizedException {
         var editorName = randomString();
         var editorInstitution = randomUri();
         var resourceOwner = randomString();
@@ -460,7 +458,7 @@ class PublicationPermissionStrategyTest {
         assertThat(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
                     requestInfo, identityServiceClient))
-                .getAllAllowedActions(), containsInAnyOrder(UPDATE, UNPUBLISH, TICKET_PUBLISH));
+                .getAllAllowedActions(), containsInAnyOrder(UPDATE, UNPUBLISH));
     }
 
     @Test
@@ -472,7 +470,8 @@ class PublicationPermissionStrategyTest {
         var contributorInstitutionId = randomUri();
 
         var requestInfo = createUserRequestInfo(contributorName, contributorInstitutionId, contributorCristinId);
-        var publication = createPublicationWithContributor(contributorName, contributorCristinId, Role.CREATOR);
+        var publication = createPublicationWithContributor(contributorName, contributorCristinId, Role.CREATOR,
+                                                           randomUri());
 
         PublicationPermissionStrategy
             .create(publication, RequestUtil.createUserInstanceFromRequest(
@@ -497,7 +496,7 @@ class PublicationPermissionStrategyTest {
         return randomPublication().copy()
                    .withResourceOwner(new ResourceOwner(new Username(resourceOwner), customer))
                    .withPublisher(new Organization.Builder().withId(customer).build())
-                   .withStatus(PublicationStatus.PUBLISHED)
+                   .withStatus(PUBLISHED)
                    .build();
     }
 
@@ -505,13 +504,8 @@ class PublicationPermissionStrategyTest {
         return PublicationGenerator.randomPublicationNonDegree().copy()
                    .withResourceOwner(new ResourceOwner(new Username(resourceOwner), customer))
                    .withPublisher(new Organization.Builder().withId(customer).build())
-                   .withStatus(PublicationStatus.PUBLISHED)
+                   .withStatus(PUBLISHED)
                    .build();
-    }
-
-    private boolean isNonDegreeClass(Class<?> publicationInstance) {
-        var listOfDegreeClasses = Set.of("DegreeMaster", "DegreeBachelor", "DegreePhd", "DegreeLicentiate");
-        return !listOfDegreeClasses.contains(publicationInstance.getSimpleName());
     }
 
     Publication createDegreePhd(String resourceOwner, URI customer) {
@@ -525,8 +519,8 @@ class PublicationPermissionStrategyTest {
         return publication.copy().withEntityDescription(entityDescription).build();
     }
 
-    private Publication createPublicationWithContributor(String contributorName, URI contributorId,
-                                                         Role contributorRole) {
+    protected Publication createPublicationWithContributor(String contributorName, URI contributorId,
+                                                         Role contributorRole, URI institutionId) {
         var publication = PublicationGenerator.randomPublicationNonDegree();
         var identity = new Identity.Builder()
                            .withName(contributorName)
@@ -534,13 +528,15 @@ class PublicationPermissionStrategyTest {
                            .build();
         var contributor = new Contributor.Builder()
                               .withIdentity(identity)
+                              .withAffiliations(List.of(new Organization.Builder().withId(institutionId).build()))
                               .withRole(new RoleType(contributorRole))
                               .build();
         var entityDescription = publication.getEntityDescription().copy()
                                     .withContributors(List.of(contributor))
                                     .build();
 
-        return publication.copy().withEntityDescription(entityDescription).build();
+        return publication.copy().withEntityDescription(entityDescription)
+                   .withStatus(PUBLISHED).build();
     }
 
     protected List<AccessRight> getEditorAccessRights() {
@@ -550,8 +546,15 @@ class PublicationPermissionStrategyTest {
         return accessRights;
     }
 
-    private List<AccessRight> getCuratorAccessRights() {
+    protected List<AccessRight> getCuratorAccessRights() {
         var accessRights = new ArrayList<AccessRight>();
+        accessRights.add(AccessRight.MANAGE_RESOURCES_STANDARD);
+        return accessRights;
+    }
+
+    protected List<AccessRight> getCuratorAccessRightsWithDegree() {
+        var accessRights = new ArrayList<AccessRight>();
+        accessRights.add(AccessRight.MANAGE_DEGREE);
         accessRights.add(AccessRight.MANAGE_RESOURCES_STANDARD);
         return accessRights;
     }

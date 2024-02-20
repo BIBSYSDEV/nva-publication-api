@@ -48,8 +48,11 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
 
     public static Stream<Arguments> accessRightAndTicketTypeProvider() {
         return Stream.of(Arguments.of(DoiRequest.class, AccessRight.MANAGE_DOI),
-            Arguments.of(PublishingRequestCase.class, AccessRight.MANAGE_PUBLISHING_REQUESTS),
             Arguments.of(GeneralSupportRequest.class, AccessRight.SUPPORT));
+    }
+
+    public static Stream<Arguments> accessRightAndTicketTypeProviderDraft() {
+        return Stream.of(Arguments.of(PublishingRequestCase.class, AccessRight.MANAGE_PUBLISHING_REQUESTS));
     }
 
     @BeforeEach
@@ -135,8 +138,26 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
 
         TicketTestUtils.createPersistedTicket(publication, DoiRequest.class, ticketService);
-        TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
         TicketTestUtils.createPersistedTicket(publication, GeneralSupportRequest.class, ticketService);
+
+        var request = curatorWithAccessRightRequestTicketsForPublication(publication, accessRight);
+        handler.handleRequest(request, output, CONTEXT);
+
+        var response = GatewayResponse.fromOutputStream(output, TicketCollection.class);
+        var body = response.getBodyObject(TicketCollection.class);
+
+        assertThat(body.getTickets(), hasSize(1));
+        assertThat(body.getTickets().getFirst().ticketType(), is(equalTo(ticketType)));
+    }
+
+    @ParameterizedTest
+    @MethodSource("accessRightAndTicketTypeProviderDraft")
+    void shouldListTicketsOfTypeCuratorHasAccessRightToOperateOnDraft(
+        Class<? extends TicketEntry> ticketType, AccessRight accessRight)
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.DRAFT, resourceService);
+
+        TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
 
         var request = curatorWithAccessRightRequestTicketsForPublication(publication, accessRight);
         handler.handleRequest(request, output, CONTEXT);
