@@ -2,16 +2,13 @@ package no.unit.nva.publication.permission.strategy;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationOperation.DELETE;
-import static no.unit.nva.model.PublicationOperation.TICKET_PUBLISH;
 import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.model.testing.PublicationInstanceBuilder.listPublicationInstanceTypes;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
-import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -32,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
@@ -462,7 +458,7 @@ class PublicationPermissionStrategyTest {
         assertThat(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
                     requestInfo, identityServiceClient))
-                .getAllAllowedActions(), containsInAnyOrder(UPDATE, UNPUBLISH, TICKET_PUBLISH));
+                .getAllAllowedActions(), containsInAnyOrder(UPDATE, UNPUBLISH));
     }
 
     @Test
@@ -512,11 +508,6 @@ class PublicationPermissionStrategyTest {
                    .build();
     }
 
-    private boolean isNonDegreeClass(Class<?> publicationInstance) {
-        var listOfDegreeClasses = Set.of("DegreeMaster", "DegreeBachelor", "DegreePhd", "DegreeLicentiate");
-        return !listOfDegreeClasses.contains(publicationInstance.getSimpleName());
-    }
-
     Publication createDegreePhd(String resourceOwner, URI customer) {
         var publication = createPublication(resourceOwner, customer);
 
@@ -528,7 +519,7 @@ class PublicationPermissionStrategyTest {
         return publication.copy().withEntityDescription(entityDescription).build();
     }
 
-    private Publication createPublicationWithContributor(String contributorName, URI contributorId,
+    protected Publication createPublicationWithContributor(String contributorName, URI contributorId,
                                                          Role contributorRole, URI institutionId) {
         var publication = PublicationGenerator.randomPublicationNonDegree();
         var identity = new Identity.Builder()
