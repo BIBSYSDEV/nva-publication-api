@@ -121,7 +121,7 @@ public class UpdatePublicationHandler
              S3Driver.defaultS3Client().build(),
              SecretsReader.defaultSecretsManagerClient(),
              HttpClient.newHttpClient(),
-             RequestUtils.defaultUriRetriever());
+             UriRetriever.defaultUriRetriever());
     }
 
     /**

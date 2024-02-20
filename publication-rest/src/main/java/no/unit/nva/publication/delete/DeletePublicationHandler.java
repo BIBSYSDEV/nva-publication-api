@@ -12,7 +12,6 @@ import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.utils.RequestUtils;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -35,7 +34,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
      */
     @JacocoGenerated
     public DeletePublicationHandler() {
-        this(ResourceService.defaultService(), new Environment(), IdentityServiceClient.prepare(), RequestUtils.defaultUriRetriever());
+        this(ResourceService.defaultService(), new Environment(), IdentityServiceClient.prepare(), UriRetriever.defaultUriRetriever());
     }
 
     /**

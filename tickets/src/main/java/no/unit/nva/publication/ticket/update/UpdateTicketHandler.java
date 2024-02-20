@@ -66,7 +66,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
              ResourceService.defaultService(),
              new DataCiteDoiClient(HttpClient.newHttpClient(), SecretsReader.defaultSecretsManagerClient(),
                                    new Environment().readEnv(API_HOST)),
-             RequestUtils.defaultUriRetriever());
+             UriRetriever.defaultUriRetriever());
     }
 
     protected UpdateTicketHandler(TicketService ticketService, ResourceService resourceService, DoiClient doiClient,

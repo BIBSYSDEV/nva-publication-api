@@ -24,6 +24,11 @@ public class UriRetriever implements RawContentRetriever {
         this.httpClient = httpClient;
     }
 
+    @JacocoGenerated
+    public static UriRetriever defaultUriRetriever() {
+        return new UriRetriever();
+    }
+
     @Override
     public Optional<String> getRawContent(URI uri, String mediaType) {
         return attempt(() -> httpClient.send(createHttpRequest(uri, mediaType),
@@ -49,4 +54,6 @@ public class UriRetriever implements RawContentRetriever {
                                              BodyHandlers.ofString(StandardCharsets.UTF_8)))
                    .toOptional();
     }
+
+
 }

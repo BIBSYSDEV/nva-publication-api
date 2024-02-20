@@ -7,7 +7,7 @@ import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
-import static no.unit.nva.publication.permission.strategy.grant.CuratorPermissionStrategy.APPLICATION_JSON;
+import static no.unit.nva.publication.utils.JenaUtils.APPLICATION_JSON;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;

@@ -40,7 +40,6 @@ import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.utils.RequestUtils;
 import no.unit.nva.schemaorg.SchemaOrgDocument;
 import no.unit.nva.transformer.Transformer;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -73,7 +72,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         this(
             AmazonDynamoDBClientBuilder.defaultClient(),
             new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME),
-            RequestUtils.defaultUriRetriever()
+            UriRetriever.defaultUriRetriever()
         );
     }
 

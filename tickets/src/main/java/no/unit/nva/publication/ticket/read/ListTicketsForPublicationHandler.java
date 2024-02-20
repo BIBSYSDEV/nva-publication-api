@@ -33,7 +33,7 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
 
     @JacocoGenerated
     public ListTicketsForPublicationHandler() {
-        this(ResourceService.defaultService(), TicketService.defaultService(), RequestUtils.defaultUriRetriever());
+        this(ResourceService.defaultService(), TicketService.defaultService(), UriRetriever.defaultUriRetriever());
     }
 
     public ListTicketsForPublicationHandler(ResourceService resourceService, TicketService ticketService,

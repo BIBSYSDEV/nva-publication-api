@@ -90,8 +90,4 @@ public record RequestUtils(List<AccessRight> accessRights,
     public UserInstance toUserInstance() {
         return UserInstance.create(username, customerId, cristinId, accessRights);
     }
-
-    public static UriRetriever defaultUriRetriever() {
-        return new UriRetriever();
-    }
 }

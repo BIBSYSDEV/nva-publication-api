@@ -1,6 +1,7 @@
 package no.unit.nva.publication.utils;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublicationNonDegree;
 import static no.unit.nva.publication.utils.RequestUtils.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.utils.RequestUtils.TICKET_IDENTIFIER;
@@ -29,6 +30,7 @@ import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.AccessRight;
@@ -54,10 +56,11 @@ public class RequestUtilsTest {
     }
 
     public static Stream<Arguments> ticketTypeAndAccessRightProvider() {
-        return Stream.of(Arguments.of(PublicationStatus.PUBLISHED, DoiRequest.class, MANAGE_DOI),
+        return Stream.of(Arguments.of(PUBLISHED, DoiRequest.class, MANAGE_DOI),
                          Arguments.of(PublicationStatus.DRAFT, PublishingRequestCase.class,
                                       MANAGE_PUBLISHING_REQUESTS),
-                         Arguments.of(PublicationStatus.PUBLISHED, GeneralSupportRequest.class, SUPPORT));
+                         Arguments.of(PUBLISHED, UnpublishRequest.class, MANAGE_PUBLISHING_REQUESTS),
+                         Arguments.of(PUBLISHED, GeneralSupportRequest.class, SUPPORT));
     }
 
     @Test
@@ -130,7 +133,7 @@ public class RequestUtilsTest {
 
     private static Publication publicationWithOwner(String owner) {
         return randomPublicationNonDegree().copy()
-                   .withStatus(PublicationStatus.PUBLISHED)
+                   .withStatus(PUBLISHED)
                    .withResourceOwner(new ResourceOwner(new Username(owner), randomUri())).build();
     }
 

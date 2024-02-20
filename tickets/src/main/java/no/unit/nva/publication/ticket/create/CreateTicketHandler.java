@@ -50,7 +50,7 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
              new TicketResolver(ResourceService.defaultService(), TicketService.defaultService(),
                                 new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL,
                                                                   BACKEND_CLIENT_SECRET_NAME)),
-             RequestUtils.defaultUriRetriever());
+             UriRetriever.defaultUriRetriever());
     }
 
     public CreateTicketHandler(ResourceService resourceService, TicketResolver ticketResolver, UriRetriever uriRetriever) {

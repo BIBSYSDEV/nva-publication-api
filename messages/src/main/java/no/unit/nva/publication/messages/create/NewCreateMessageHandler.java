@@ -37,7 +37,7 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
     @JacocoGenerated
     public NewCreateMessageHandler() {
         this(MessageService.defaultService(), TicketService.defaultService(), ResourceService.defaultService(),
-             RequestUtils.defaultUriRetriever());
+             UriRetriever.defaultUriRetriever());
     }
 
     public NewCreateMessageHandler(MessageService messageService, TicketService ticketService,
