@@ -24,7 +24,7 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
 
     @Override
     public boolean allowsAction(PublicationOperation permission) {
-        if (!canManageStandardResources() || !userRelatesToPublication()) {
+        if (!canManageStandardResources() || !userRelatesToPublication() || userInstance.isExternalClient()) {
             return false;
         }
 
@@ -77,7 +77,7 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
                                     .map(Organization::getId))
                    .collect(Collectors.toSet())
                    .parallelStream()
-                   .map((orgId) -> getTopLevelOrgUri(uriRetriever, orgId))
+                   .map(orgId -> getTopLevelOrgUri(uriRetriever, orgId))
                    .collect(Collectors.toSet());
     }
 

@@ -17,6 +17,10 @@ public class ContributorPermissionStrategy extends GrantPermissionStrategy {
 
     @Override
     public boolean allowsAction(PublicationOperation permission) {
+        if (userInstance.isExternalClient()) {
+            return false;
+        }
+
         return switch (permission) {
             case UPDATE, UNPUBLISH -> userIsVerifiedContributor();
             default -> false;

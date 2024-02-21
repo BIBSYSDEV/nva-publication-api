@@ -27,7 +27,8 @@ public class UserInstance implements JsonSerializable {
 
     private boolean isExternalClient;
 
-    protected UserInstance(String userIdentifier, URI customerId, URI topLevelOrgCristinId, URI personCristinId, List<AccessRight> accessRights) {
+    protected UserInstance(String userIdentifier, URI customerId, URI topLevelOrgCristinId, URI personCristinId,
+                           List<AccessRight> accessRights) {
         this.user = new User(userIdentifier);
         this.customerId = customerId;
         this.topLevelOrgCristinId = topLevelOrgCristinId;
@@ -43,8 +44,16 @@ public class UserInstance implements JsonSerializable {
         return new UserInstance(userIdentifier, customerId, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, null, null);
     }
 
-    public static UserInstance create(String userIdentifier, URI customerId, URI personCristinId, List<AccessRight> accessRights) {
-        return new UserInstance(userIdentifier, customerId, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, personCristinId, accessRights);
+    public static UserInstance create(String userIdentifier, URI customerId, URI personCristinId,
+                                      List<AccessRight> accessRights) {
+        return new UserInstance(userIdentifier, customerId, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, personCristinId,
+                                accessRights);
+    }
+
+    public static UserInstance create(String userIdentifier, URI customerId, URI topLevelOrgCristinId,
+                                      URI personCristinId,
+                                      List<AccessRight> accessRights) {
+        return new UserInstance(userIdentifier, customerId, topLevelOrgCristinId, personCristinId, accessRights);
     }
 
     public static UserInstance create(ResourceOwner resourceOwner, URI customerId) {
@@ -52,8 +61,10 @@ public class UserInstance implements JsonSerializable {
                                 resourceOwner.getOwnerAffiliation(), null, null);
     }
 
-    public static UserInstance createExternalUser(ResourceOwner resourceOwner, URI topLevelOrgCristinId) {
-        var userInstance = create(resourceOwner, topLevelOrgCristinId);
+    public static UserInstance createExternalUser(ResourceOwner resourceOwner, URI customerUri,
+                                                  List<AccessRight> accessRights) {
+        var userInstance = create(resourceOwner.getOwner().getValue(), customerUri,
+                                  resourceOwner.getOwnerAffiliation(), null, accessRights);
         userInstance.isExternalClient = true;
         return userInstance;
     }
