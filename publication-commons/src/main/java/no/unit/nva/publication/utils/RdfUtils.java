@@ -22,15 +22,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @JacocoGenerated
-public class JenaUtils {
+public class RdfUtils {
     private static final String PART_OF_PROPERTY = "https://nva.sikt.no/ontology/publication#partOf";
     public static final String APPLICATION_JSON = "application/json";
-    public static final Logger logger = LoggerFactory.getLogger(JenaUtils.class);
+    public static final Logger logger = LoggerFactory.getLogger(RdfUtils.class);
 
     public static List<URI> getAllNestedPartOfs(UriRetriever uriRetriever, URI organizationId) {
         return attempt(() -> uriRetriever.getRawContent(organizationId, APPLICATION_JSON)).map(
                 Optional::orElseThrow)
-                   .map(str -> JenaUtils.createModel(stringToStream(str)))
+                   .map(str -> createModel(stringToStream(str)))
                    .map(model -> model.listObjectsOfProperty(model.createProperty(PART_OF_PROPERTY)))
                    .map(nodeIterator -> nodeIterator.toList()
                                             .stream().map(RDFNode::toString).map(URI::create).toList())

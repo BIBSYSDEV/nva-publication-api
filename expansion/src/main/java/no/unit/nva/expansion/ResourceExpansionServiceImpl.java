@@ -22,7 +22,7 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
-import no.unit.nva.publication.utils.JenaUtils;
+import no.unit.nva.publication.utils.RdfUtils;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
@@ -102,7 +102,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
                                       : resourceService.getResourceByIdentifier(ticketEntry.getResourceIdentifier())
                                           .getResourceOwner().getOwnerAffiliation();
 
-            var partOf = JenaUtils.getAllNestedPartOfs(uriRetriever, organizationId);
+            var partOf = RdfUtils.getAllNestedPartOfs(uriRetriever, organizationId);
             return new ExpandedOrganization(organizationId, partOf);
         }
         return null;

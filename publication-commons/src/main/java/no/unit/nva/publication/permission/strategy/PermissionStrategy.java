@@ -5,6 +5,7 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static nva.commons.core.attempt.Try.attempt;
 import java.util.Optional;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
@@ -40,6 +41,10 @@ public abstract class PermissionStrategy {
                    .map(Reference::getPublicationInstance)
                    .map(PermissionStrategy::publicationInstanceIsDegree)
                    .orElse(false);
+    }
+
+    protected boolean isVerifiedContributor(Contributor contributor) {
+        return contributor.getIdentity() != null && contributor.getIdentity().getId() != null;
     }
 
     protected Boolean isOwner() {

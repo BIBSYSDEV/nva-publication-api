@@ -1,6 +1,6 @@
 package no.unit.nva.publication.permission.strategy.grant;
 
-import static no.unit.nva.publication.utils.JenaUtils.getTopLevelOrgUri;
+import static no.unit.nva.publication.utils.RdfUtils.getTopLevelOrgUri;
 import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import java.net.URI;
@@ -11,7 +11,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.utils.JenaUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,7 +69,7 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
     private Set<URI> getContributorTopLevelOrgs() {
         return publication.getEntityDescription().getContributors()
                    .stream()
-                   .filter(contributor -> contributor.getIdentity() != null)
+                   .filter(this::isVerifiedContributor)
                    .flatMap(contributor ->
                                 contributor.getAffiliations().stream()
                                     .filter(Organization.class::isInstance)
