@@ -50,6 +50,7 @@ import java.net.URI;
 import java.time.Clock;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.clients.IdentityServiceClient;
@@ -132,7 +133,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         fetchPublicationHandler = new FetchPublicationHandler(publicationService,
                                                               uriRetriever,
                                                               environment,
-                                                              identityServiceClient);
+                                                              identityServiceClient,
+                                                              uriRetriever);
     }
 
     @Test
@@ -283,7 +285,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         fetchPublicationHandler = new FetchPublicationHandler(serviceThrowingException,
                                                               uriRetriever,
                                                               environment,
-                                                              identityServiceClient);
+                                                              identityServiceClient,
+                                                              uriRetriever);
         fetchPublicationHandler.handleRequest(generateHandlerRequest(IDENTIFIER_VALUE), output, context);
 
         var gatewayResponse = parseFailureResponse();

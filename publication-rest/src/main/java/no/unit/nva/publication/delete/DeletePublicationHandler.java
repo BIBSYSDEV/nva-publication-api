@@ -8,6 +8,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.RequestUtil;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -26,13 +27,14 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     public static final String NVA_PUBLICATION_DELETE_SOURCE = "nva.publication.delete";
     private final ResourceService resourceService;
     private final IdentityServiceClient identityServiceClient;
+    private UriRetriever uriRetriever;
 
     /**
      * Default constructor for DeletePublicationHandler.
      */
     @JacocoGenerated
     public DeletePublicationHandler() {
-        this(ResourceService.defaultService(), new Environment(), IdentityServiceClient.prepare());
+        this(ResourceService.defaultService(), new Environment(), IdentityServiceClient.prepare(), UriRetriever.defaultUriRetriever());
     }
 
     /**
@@ -43,10 +45,12 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
      */
     public DeletePublicationHandler(ResourceService resourceService,
                                     Environment environment,
-                                    IdentityServiceClient identityServiceClient) {
+                                    IdentityServiceClient identityServiceClient,
+                                    UriRetriever uriRetriever) {
         super(Void.class, environment);
         this.resourceService = resourceService;
         this.identityServiceClient = identityServiceClient;
+        this.uriRetriever = uriRetriever;
     }
 
     @Override
@@ -58,7 +62,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
 
 
         if (publication.getStatus() == PublicationStatus.DRAFT) {
-            PublicationPermissionStrategy.create(publication, userInstance).authorize(DELETE);
+            PublicationPermissionStrategy.create(publication, userInstance, uriRetriever).authorize(DELETE);
             handleDraftDeletion(userInstance, publicationIdentifier);
         } else {
             unsupportedPublicationForDeletion(publication);

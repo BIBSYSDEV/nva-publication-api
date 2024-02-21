@@ -2,7 +2,6 @@ package no.sikt.nva.scopus.update;
 
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusHandler.SCOPUS_IDENTIFIER;
-import static no.unit.nva.expansion.ResourceExpansionServiceImpl.CONTENT_TYPE;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.util.Optional;
@@ -30,6 +29,7 @@ public class ScopusUpdater {
     private static final int UNIQUE_HIT_FROM_SEARCH_API = 0;
     private final ResourceService resourceService;
     private final UriRetriever uriRetriever;
+    private static final String APPLICATION_JSON = "application/json";
 
     public ScopusUpdater(ResourceService resourceService, UriRetriever uriRetriever) {
         this.resourceService = resourceService;
@@ -108,7 +108,7 @@ public class ScopusUpdater {
     }
 
     private Optional<String> getResponseBody(URI uri) {
-        return uriRetriever.getRawContent(uri, CONTENT_TYPE);
+        return uriRetriever.getRawContent(uri, APPLICATION_JSON);
     }
 
     private boolean isScopusIdentifier(AdditionalIdentifier identifier) {

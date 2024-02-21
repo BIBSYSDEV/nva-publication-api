@@ -15,6 +15,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -41,19 +42,22 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
     private final Logger logger = LoggerFactory.getLogger(CreateTicketHandler.class);
     private final ResourceService resourceService;
     private final TicketResolver ticketResolver;
+    private final UriRetriever uriRetriever;
 
     @JacocoGenerated
     public CreateTicketHandler() {
         this(ResourceService.defaultService(),
              new TicketResolver(ResourceService.defaultService(), TicketService.defaultService(),
                                 new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL,
-                                                                  BACKEND_CLIENT_SECRET_NAME)));
+                                                                  BACKEND_CLIENT_SECRET_NAME)),
+             UriRetriever.defaultUriRetriever());
     }
 
-    public CreateTicketHandler(ResourceService resourceService, TicketResolver ticketResolver) {
+    public CreateTicketHandler(ResourceService resourceService, TicketResolver ticketResolver, UriRetriever uriRetriever) {
         super(TicketDto.class);
         this.resourceService = resourceService;
         this.ticketResolver = ticketResolver;
+        this.uriRetriever = uriRetriever;
     }
 
     @Override
@@ -65,7 +69,7 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
         logger.info("ownerAffiliation {}", requestInfo.getPersonAffiliation());
         newTicket.setOwnerAffiliation(requestInfo.getPersonAffiliation());
         var customer = requestInfo.getCurrentCustomer();
-        var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
+        var requestUtils = RequestUtils.fromRequestInfo(requestInfo, uriRetriever);
         var persistedTicket = ticketResolver.resolveAndPersistTicket(newTicket, publication, customer, requestUtils);
         var ticketLocation = createTicketLocation(publicationIdentifier, persistedTicket);
         addAdditionalHeaders(() -> Map.of(LOCATION_HEADER, ticketLocation));

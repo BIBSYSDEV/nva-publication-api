@@ -25,6 +25,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -56,14 +57,16 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     private Environment environment;
     private ByteArrayOutputStream outputStream;
     private GetExternalClientResponse getExternalClientResponse;
+    private UriRetriever uriRetriever;
 
     @BeforeEach
     public void setUp() throws NotFoundException {
         init();
         prepareEnvironment();
         prepareIdentityServiceClient();
+        uriRetriever = mock(UriRetriever.class);
         publicationService = new ResourceService(client, Clock.systemDefaultZone());
-        handler = new DeletePublicationHandler(publicationService, environment, identityServiceClient);
+        handler = new DeletePublicationHandler(publicationService, environment, identityServiceClient, uriRetriever);
         outputStream = new ByteArrayOutputStream();
     }
 

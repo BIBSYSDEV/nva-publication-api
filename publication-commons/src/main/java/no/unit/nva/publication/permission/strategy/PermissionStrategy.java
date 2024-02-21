@@ -5,6 +5,7 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static nva.commons.core.attempt.Try.attempt;
 import java.util.Optional;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
@@ -14,6 +15,7 @@ import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.pages.Pages;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.AccessRight;
 
@@ -21,10 +23,12 @@ public abstract class PermissionStrategy {
 
     protected final Publication publication;
     protected final UserInstance userInstance;
+    protected final UriRetriever uriRetriever;
 
-    protected PermissionStrategy(Publication publication, UserInstance userInstance) {
+    protected PermissionStrategy(Publication publication, UserInstance userInstance, UriRetriever uriRetriever) {
         this.publication = publication;
         this.userInstance = userInstance;
+        this.uriRetriever = uriRetriever;
     }
 
     protected boolean hasAccessRight(AccessRight accessRight) {
@@ -37,6 +41,10 @@ public abstract class PermissionStrategy {
                    .map(Reference::getPublicationInstance)
                    .map(PermissionStrategy::publicationInstanceIsDegree)
                    .orElse(false);
+    }
+
+    protected boolean isVerifiedContributor(Contributor contributor) {
+        return contributor.getIdentity() != null && contributor.getIdentity().getId() != null;
     }
 
     protected Boolean isOwner() {

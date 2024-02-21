@@ -27,6 +27,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
+import static org.mockito.Mockito.mock;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
@@ -43,6 +44,7 @@ import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.PublicationServiceConfig;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -78,11 +80,13 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     public static final Username ASSIGNEE = new Username("Assignee");
     public static final String TICKET_IDENTIFIER_PATH_PARAMETER = "ticketIdentifier";
     private UpdateTicketHandler handler;
+    private UriRetriever uriRetriever;
 
     @BeforeEach
     public void setup() {
         super.init();
-        this.handler = new UpdateTicketHandler(ticketService, resourceService, new FakeDoiClient());
+        this.uriRetriever = mock(UriRetriever.class);
+        this.handler = new UpdateTicketHandler(ticketService, resourceService, new FakeDoiClient(), uriRetriever);
     }
 
     @Test
@@ -212,7 +216,10 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     @Test
     void shouldReturnErrorForDoiTicketCompletedWhenDoiClientRespondsWithError()
         throws ApiGatewayException, IOException {
-        this.handler = new UpdateTicketHandler(ticketService, resourceService, new FakeDoiClientThrowingException());
+        this.handler = new UpdateTicketHandler(ticketService,
+                                               resourceService,
+                                               new FakeDoiClientThrowingException(),
+                                               uriRetriever);
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedDoiTicket(publication);
         var completedTicket = ticket.complete(publication, USER_NAME);
@@ -225,7 +232,10 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     @Test
     void shouldReturnErrorForDeleteDraftDoiTicketWhenDoiClientRespondsWithError()
         throws IOException, ApiGatewayException {
-        this.handler = new UpdateTicketHandler(ticketService, resourceService, new FakeDoiClientThrowingException());
+        this.handler = new UpdateTicketHandler(ticketService,
+                                               resourceService,
+                                               new FakeDoiClientThrowingException(),
+                                               uriRetriever);
         var publication = TicketTestUtils.createPersistedPublicationWithDoi(PublicationStatus.PUBLISHED,
                                                                             resourceService);
         var ticket = createPersistedDoiTicket(publication);
@@ -239,7 +249,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
 
     @Test
     void shouldDeleteDraftDoiAndUpdatePublicationSuccessfully() throws IOException, ApiGatewayException {
-        this.handler = new UpdateTicketHandler(ticketService, resourceService, new FakeDoiClient());
+        this.handler = new UpdateTicketHandler(ticketService, resourceService, new FakeDoiClient(), uriRetriever);
         var publication = TicketTestUtils.createPersistedPublicationWithDoi(PublicationStatus.PUBLISHED,
                                                                             resourceService);
         var ticket = TicketTestUtils.createClosedTicket(publication, DoiRequest.class, ticketService);

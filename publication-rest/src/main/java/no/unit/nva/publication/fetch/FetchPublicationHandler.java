@@ -37,6 +37,7 @@ import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.schemaorg.SchemaOrgDocument;
@@ -62,20 +63,24 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     public static final String DO_NOT_REDIRECT_QUERY_PARAM = "doNotRedirect";
     private final IdentityServiceClient identityServiceClient;
     private final ResourceService resourceService;
-    private final RawContentRetriever uriRetriever;
+    private final RawContentRetriever authorizedBackendUriRetriever;
+    private final UriRetriever uriRetriever;
     private int statusCode = HttpURLConnection.HTTP_OK;
 
     @JacocoGenerated
     public FetchPublicationHandler() {
         this(
             AmazonDynamoDBClientBuilder.defaultClient(),
-            new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME)
+            new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME),
+            UriRetriever.defaultUriRetriever()
         );
     }
 
     @JacocoGenerated
-    public FetchPublicationHandler(AmazonDynamoDB client, RawContentRetriever uriRetriever) {
-        this(defaultResourceService(client), uriRetriever, new Environment(), IdentityServiceClient.prepare());
+    public FetchPublicationHandler(AmazonDynamoDB client, RawContentRetriever authorizedBackendUriRetriever,
+                                   UriRetriever uriRetriever) {
+        this(defaultResourceService(client), authorizedBackendUriRetriever, new Environment(),
+             IdentityServiceClient.prepare(), uriRetriever);
     }
 
     /**
@@ -85,10 +90,12 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
      * @param environment     environment
      */
     public FetchPublicationHandler(ResourceService resourceService,
-                                   RawContentRetriever uriRetriever,
+                                   RawContentRetriever authorizedBackendUriRetriever,
                                    Environment environment,
-                                   IdentityServiceClient identityServiceClient) {
+                                   IdentityServiceClient identityServiceClient,
+                                   UriRetriever uriRetriever) {
         super(Void.class, environment);
+        this.authorizedBackendUriRetriever = authorizedBackendUriRetriever;
         this.uriRetriever = uriRetriever;
         this.resourceService = resourceService;
         this.identityServiceClient = identityServiceClient;
@@ -198,13 +205,13 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     private Set<PublicationOperation> getAllowedOperations(RequestInfo requestInfo, Publication publication) {
         return attempt(() -> createUserInstanceFromRequest(requestInfo, identityServiceClient)).toOptional()
-                   .map(userInstance -> PublicationPermissionStrategy.create(publication, userInstance))
+                   .map(userInstance -> PublicationPermissionStrategy.create(publication, userInstance, uriRetriever))
                    .map(PublicationPermissionStrategy::getAllAllowedActions)
                    .orElse(Collections.emptySet());
     }
 
     private String createDataCiteMetadata(Publication publication) {
-        var dataCiteMetadataDto = DataCiteMetadataDtoMapper.fromPublication(publication, uriRetriever);
+        var dataCiteMetadataDto = DataCiteMetadataDtoMapper.fromPublication(publication, authorizedBackendUriRetriever);
         return attempt(() -> new Transformer(dataCiteMetadataDto).asXml()).orElseThrow();
     }
 

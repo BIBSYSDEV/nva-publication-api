@@ -18,6 +18,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -57,19 +58,24 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     private final TicketService ticketService;
     private final ResourceService resourceService;
     private final DoiClient doiClient;
+    private final UriRetriever uriRetriever;
 
     @JacocoGenerated
     public UpdateTicketHandler() {
-        this(TicketService.defaultService(), ResourceService.defaultService(),
+        this(TicketService.defaultService(),
+             ResourceService.defaultService(),
              new DataCiteDoiClient(HttpClient.newHttpClient(), SecretsReader.defaultSecretsManagerClient(),
-                                   new Environment().readEnv(API_HOST)));
+                                   new Environment().readEnv(API_HOST)),
+             UriRetriever.defaultUriRetriever());
     }
 
-    protected UpdateTicketHandler(TicketService ticketService, ResourceService resourceService, DoiClient doiClient) {
+    protected UpdateTicketHandler(TicketService ticketService, ResourceService resourceService, DoiClient doiClient,
+                                  UriRetriever uriRetriever) {
         super(UpdateTicketRequest.class);
         this.ticketService = ticketService;
         this.resourceService = resourceService;
         this.doiClient = doiClient;
+        this.uriRetriever = uriRetriever;
     }
 
     protected static SortableIdentifier extractTicketIdentifierFromPath(RequestInfo requestInfo)
@@ -83,7 +89,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         throws ApiGatewayException {
         var ticketIdentifier = extractTicketIdentifierFromPath(requestInfo);
         var ticket = fetchTicketForElevatedUser(ticketIdentifier, UserInstance.fromRequestInfo(requestInfo));
-        var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
+        var requestUtils = RequestUtils.fromRequestInfo(requestInfo, uriRetriever);
         if (hasEffectiveChanges(ticket, input)) {
             updateTicket(input, requestUtils, ticket);
         }

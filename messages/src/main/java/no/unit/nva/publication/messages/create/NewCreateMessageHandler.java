@@ -10,6 +10,7 @@ import java.net.HttpURLConnection;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Username;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.messages.model.NewMessageDto;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
@@ -31,23 +32,27 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
     private final MessageService messageService;
     private final TicketService ticketService;
     private final ResourceService resourceService;
+    private final UriRetriever uriRetriever;
 
     @JacocoGenerated
     public NewCreateMessageHandler() {
-        this(MessageService.defaultService(), TicketService.defaultService(), ResourceService.defaultService());
+        this(MessageService.defaultService(), TicketService.defaultService(), ResourceService.defaultService(),
+             UriRetriever.defaultUriRetriever());
     }
 
-    public NewCreateMessageHandler(MessageService messageService, TicketService ticketService, ResourceService resourceService) {
+    public NewCreateMessageHandler(MessageService messageService, TicketService ticketService,
+                                   ResourceService resourceService, UriRetriever uriRetriever) {
         super(CreateMessageRequest.class);
         this.messageService = messageService;
         this.ticketService = ticketService;
         this.resourceService = resourceService;
+        this.uriRetriever = uriRetriever;
     }
 
     @Override
     protected Void processInput(CreateMessageRequest input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-        var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
+        var requestUtils = RequestUtils.fromRequestInfo(requestInfo, uriRetriever);
         var ticket = fetchTicketForUser(requestUtils, requestUtils.ticketIdentifier());
         isAuthorizedToManageTicket(requestUtils, ticket);
         updateStatusToPendingWhenCompletedGeneralSupportRequest(ticket);
