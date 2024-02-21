@@ -5,6 +5,7 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationOperation.TERMINATE;
 import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
+import static no.unit.nva.publication.RequestUtil.createUserInstanceFromRequest;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.defaultEventBridgeClient;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.validation.PublicationUriValidator.isValid;
@@ -16,6 +17,7 @@ import java.net.http.HttpClient;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -27,6 +29,7 @@ import no.unit.nva.auth.CognitoCredentials;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.UnpublishingNote;
 import no.unit.nva.model.Username;
@@ -188,7 +191,17 @@ public class UpdatePublicationHandler
             default -> throw new BadRequestException("Unknown input body type");
         };
 
-        return PublicationResponseElevatedUser.fromPublication(updatedPublication);
+        var publicationResponse = PublicationResponseElevatedUser.fromPublication(updatedPublication);
+        publicationResponse.setAllowedOperations(getAllowedOperations(requestInfo, updatedPublication));
+
+        return publicationResponse;
+    }
+
+    private Set<PublicationOperation> getAllowedOperations(RequestInfo requestInfo, Publication publication) {
+        return attempt(() -> createUserInstanceFromRequest(requestInfo, identityServiceClient)).toOptional()
+                   .map(userInstance -> PublicationPermissionStrategy.create(publication, userInstance, uriRetriever))
+                   .map(PublicationPermissionStrategy::getAllAllowedActions)
+                   .orElse(Collections.emptySet());
     }
 
     private Publication terminatePublication(Publication existingPublication,
