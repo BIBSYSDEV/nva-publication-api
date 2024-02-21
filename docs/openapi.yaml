@@ -810,9 +810,15 @@ components:
         properties:
           allowedOperations:
             type: array
+            description: >
+              Returns a list of allowed operations for the current user on the publication:
+                * update - Can edit the publication. Accessed though PUT  
+                * delete - Permanently delete. Accessed though DELETE  
+                * terminate - Can mark publication as deleted and remove associated files. Accessed though PUT
+                * unpublish - Can change published publication status to unpublished. Accessed though PUT
+                * ticket/publish - Allowed to approve a PublishingRequest ticket
             items:
               type: string
-              description: List of allowed operations for the current user
               enum: ["update", "delete", "terminate", "unpublish", "ticket/publish"]
     Publication:
       type: object
