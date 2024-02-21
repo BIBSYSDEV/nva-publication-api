@@ -76,7 +76,8 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
                                     .map(Organization.class::cast)
                                     .map(Organization::getId))
                    .collect(Collectors.toSet())
-                   .stream().map((orgId) -> getTopLevelOrgUri(uriRetriever, orgId))
+                   .parallelStream()
+                   .map((orgId) -> getTopLevelOrgUri(uriRetriever, orgId))
                    .collect(Collectors.toSet());
     }
 

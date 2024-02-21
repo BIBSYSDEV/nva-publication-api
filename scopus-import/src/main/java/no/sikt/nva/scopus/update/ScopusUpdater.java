@@ -29,7 +29,7 @@ public class ScopusUpdater {
     private static final int UNIQUE_HIT_FROM_SEARCH_API = 0;
     private final ResourceService resourceService;
     private final UriRetriever uriRetriever;
-    private String APPLICATION_JSON = "application/json";
+    private final String APPLICATION_JSON = "application/json";
 
     public ScopusUpdater(ResourceService resourceService, UriRetriever uriRetriever) {
         this.resourceService = resourceService;
