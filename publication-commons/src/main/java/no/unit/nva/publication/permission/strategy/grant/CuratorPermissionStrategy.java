@@ -59,7 +59,7 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
 
     private boolean userSharesTopLevelOrgWithAtLeastOneContributor() {
         var contributorTopLevelOrgs = getContributorTopLevelOrgs();
-        var userTopLevelOrg = getTopLevelOrgUri(uriRetriever, userInstance.getCustomerId());
+        var userTopLevelOrg = getTopLevelOrgUri(uriRetriever, userInstance.getTopLevelOrgCristinId());
 
         logger.info("found topLevels {} for user with {} ", contributorTopLevelOrgs, userTopLevelOrg);
 

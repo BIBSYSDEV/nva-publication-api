@@ -27,7 +27,8 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var curatorUsername = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRights(), cristinId);
+        var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRights(), cristinId,
+                                                null);
         var publication = createNonDegreePublication(resourceOwner, institution);
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
@@ -43,14 +44,14 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
     void shouldAllowCuratorOnNonDegreeBasedOnContributors(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
-        var userInstitution = uriFromTestCase(TEST_ORG_NTNU_OFFICE_INTERNATIONAL);
+        var usersTopCristinOrg = uriFromTestCase(TEST_ORG_NTNU_OFFICE_INTERNATIONAL);
         var institution = uriFromTestCase(TEST_ORG_NTNU_DEPARTMENT_OF_LANGUAGES);
         var contributor = randomString();
         var contributorCristinId = randomUri();
         var curatorUsername = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(curatorUsername, userInstitution, getCuratorAccessRights(), cristinId);
+        var requestInfo = createUserRequestInfo(curatorUsername, randomUri(), getCuratorAccessRights(), cristinId, usersTopCristinOrg);
         var publication = createPublicationWithContributor(contributor, contributorCristinId, Role.CREATOR,
                                                            institution);
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
@@ -71,7 +72,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var curatorUsername = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRights(), cristinId);
+        var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRights(), cristinId, null);
         var publication = createNonDegreePublication(resourceOwner, institution);
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
@@ -92,7 +93,8 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var curatorUsername = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRights(), cristinId);
+        var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRights(), cristinId,
+                                                null);
         var publication = createDegreePhd(resourceOwner, institution);
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
@@ -114,7 +116,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var cristinId = randomUri();
 
         var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRightsWithDegree(),
-                                                cristinId);
+                                                cristinId, null);
         var publication = createDegreePhd(resourceOwner, institution);
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
