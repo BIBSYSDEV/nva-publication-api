@@ -263,6 +263,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .withAccessRights(publication.getPublisher().getId(), MANAGE_RESOURCES_STANDARD,
                                      accessRight)
                    .withPersonCristinId(randomUri())
+                   .withTopLevelCristinOrgId(publication.getResourceOwner().getOwnerAffiliation())
                    .build();
     }
 

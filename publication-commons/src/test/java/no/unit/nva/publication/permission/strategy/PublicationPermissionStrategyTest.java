@@ -71,6 +71,7 @@ class PublicationPermissionStrategyTest {
     public static final String INJECT_CUSTOMER_ID_CLAIM = "custom:customerId";
     public static final String INJECT_COGNITO_GROUPS_CLAIM = "cognito:groups";
     public static final String INJECT_CRISTIN_ID_CLAIM = "custom:cristinId";
+    public static final String INJECT_TOP_ORG_CRISTIN_ID_CLAIM = "custom:topOrgCristinId";
     protected static final String TEST_ORG_NTNU_ROOT = "194.0.0.0";
     protected static final String TEST_ORG_NTNU_OFFICE_INTERNATIONAL = "194.14.62.0";
     protected static final String TEST_ORG_NTNU_DEPARTMENT_OF_LANGUAGES = "194.62.60.0";
@@ -115,8 +116,8 @@ class PublicationPermissionStrategyTest {
     void shouldDenyPermissionToUnpublishPublicationWhenUserHasNoAccessRights()
         throws JsonProcessingException, UnauthorizedException {
         var cristinId = randomUri();
-        var requestInfo = createUserRequestInfo(randomString(), randomUri(), new ArrayList<>(), cristinId);
-        var publication = createPublication(randomString(), randomUri());
+        var requestInfo = createUserRequestInfo(randomString(), randomUri(), new ArrayList<>(), cristinId, null);
+        var publication = createPublication(randomString(), randomUri(), randomUri());
 
         Assertions.assertFalse(PublicationPermissionStrategy
                                    .create(publication, RequestUtil.createUserInstanceFromRequest(
@@ -128,8 +129,8 @@ class PublicationPermissionStrategyTest {
     void shouldDenyPermissionToUnpublishPublicationWhenUserMissingBasicInfo()
         throws JsonProcessingException {
         var cristinId = randomUri();
-        var requestInfo = createUserRequestInfo(null, URI.create(""), cristinId);
-        var publication = createPublication(randomString(), randomUri());
+        var requestInfo = createUserRequestInfo(null, URI.create(""), cristinId, randomUri());
+        var publication = createPublication(randomString(), randomUri(), randomUri());
 
         Assertions.assertThrows(UnauthorizedException.class, () -> PublicationPermissionStrategy
                                                                        .create(publication,
@@ -170,8 +171,8 @@ class PublicationPermissionStrategyTest {
         var resourceOwner = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, List.of(), cristinId);
-        var publication = createPublication(resourceOwner, editorInstitution);
+        var requestInfo = createUserRequestInfo(editorName, editorInstitution, List.of(), cristinId, null);
+        var publication = createPublication(resourceOwner, editorInstitution, randomUri());
 
         assertThat(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
@@ -188,8 +189,8 @@ class PublicationPermissionStrategyTest {
         var cristinId = randomUri();
 
         var allAccessRights = List.of(AccessRight.values());
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, allAccessRights, cristinId);
-        var publication = createPublication(resourceOwner, editorInstitution);
+        var requestInfo = createUserRequestInfo(editorName, editorInstitution, allAccessRights, cristinId, null);
+        var publication = createPublication(resourceOwner, editorInstitution, randomUri());
 
         assertThat(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
@@ -205,9 +206,9 @@ class PublicationPermissionStrategyTest {
         var contributorCristinId = randomUri();
         var contributorInstitutionId = randomUri();
 
-        var requestInfo = createUserRequestInfo(contributorName, contributorInstitutionId, contributorCristinId);
+        var requestInfo = createUserRequestInfo(contributorName, contributorInstitutionId, contributorCristinId, randomUri());
         var publication = createPublicationWithContributor(contributorName, contributorCristinId, Role.CREATOR,
-                                                           randomUri());
+                                                           randomUri(), randomUri());
 
         PublicationPermissionStrategy
             .create(publication, RequestUtil.createUserInstanceFromRequest(
@@ -228,9 +229,9 @@ class PublicationPermissionStrategyTest {
         return curatorAccessRight;
     }
 
-    Publication createPublication(String resourceOwner, URI customer) {
+    Publication createPublication(String resourceOwner, URI customer, URI cristinId) {
         return randomPublication().copy()
-                   .withResourceOwner(new ResourceOwner(new Username(resourceOwner), customer))
+                   .withResourceOwner(new ResourceOwner(new Username(resourceOwner), cristinId))
                    .withPublisher(new Organization.Builder().withId(customer).build())
                    .withStatus(PUBLISHED)
                    .build();
@@ -245,7 +246,7 @@ class PublicationPermissionStrategyTest {
     }
 
     Publication createDegreePhd(String resourceOwner, URI customer) {
-        var publication = createPublication(resourceOwner, customer);
+        var publication = createPublication(resourceOwner, customer, randomUri());
 
         var degreePhd = new DegreePhd(new MonographPages(), new PublicationDate(),
                                       Set.of(new UnconfirmedDocument(randomString())));
@@ -255,14 +256,26 @@ class PublicationPermissionStrategyTest {
         return publication.copy().withEntityDescription(entityDescription).build();
     }
 
-    Publication createPublicationWithContributor(String contributorName, URI contributorId,
-                                                         Role contributorRole, URI institutionId) {
+    Publication createDegreePhdWithResourceOwner(String resourceOwner, URI customer, URI resourceOwnerAffiliation) {
+        var publication = createPublication(resourceOwner, customer, resourceOwnerAffiliation);
+
+        var degreePhd = new DegreePhd(new MonographPages(), new PublicationDate(),
+                                      Set.of(new UnconfirmedDocument(randomString())));
+        var reference = new Reference.Builder().withPublicationInstance(degreePhd).build();
+        var entityDescription = publication.getEntityDescription().copy().withReference(reference).build();
+
+        return publication.copy().withEntityDescription(entityDescription).build();
+    }
+
+    protected Publication createPublicationWithContributor(String contributorName, URI contributorId,
+                                                         Role contributorRole, URI institutionId,
+                                                           URI topLevelCristinOrgId) {
         var publication = PublicationGenerator.randomPublicationNonDegree();
-        return setContributor(contributorName, contributorId, contributorRole, institutionId, publication);
+        return setContributor(contributorName, contributorId, contributorRole, institutionId, publication, topLevelCristinOrgId);
     }
 
     static Publication setContributor(String contributorName, URI contributorId, Role contributorRole,
-                                              URI institutionId, Publication publication) {
+                                              URI institutionId, Publication publication, URI topLevelCristinOrgId) {
         var identity = new Identity.Builder()
                            .withName(contributorName)
                            .withId(contributorId)
@@ -277,6 +290,7 @@ class PublicationPermissionStrategyTest {
                                     .build();
 
         return publication.copy().withEntityDescription(entityDescription)
+                   .withResourceOwner(new ResourceOwner(new Username(randomString()), topLevelCristinOrgId ))
                    .withStatus(PUBLISHED).build();
     }
 
@@ -303,13 +317,13 @@ class PublicationPermissionStrategyTest {
         return accessRights;
     }
 
-    RequestInfo createUserRequestInfo(String username, URI institutionId, URI cristinId)
+    RequestInfo createUserRequestInfo(String username, URI institutionId, URI cristinId, URI topLevelCristinOrgId)
         throws JsonProcessingException {
-        return createUserRequestInfo(username, institutionId, new ArrayList<>(), cristinId);
+        return createUserRequestInfo(username, institutionId, new ArrayList<>(), cristinId, topLevelCristinOrgId);
     }
 
     RequestInfo createUserRequestInfo(String username, URI institutionId, List<AccessRight> accessRights,
-                                      URI cristinId)
+                                      URI personCristinId, URI topLevelCristinOrgId)
         throws JsonProcessingException {
 
         var cognitoGroups = accessRights.stream().map(getCognitoGroup(institutionId)).toList();
@@ -323,8 +337,12 @@ class PublicationPermissionStrategyTest {
             claims.put(INJECT_NVA_USERNAME_CLAIM, username);
         }
 
-        if (nonNull(cristinId)) {
-            claims.put(INJECT_CRISTIN_ID_CLAIM, cristinId.toString());
+        if (nonNull(personCristinId)) {
+            claims.put(INJECT_CRISTIN_ID_CLAIM, personCristinId.toString());
+        }
+
+        if (nonNull(topLevelCristinOrgId)) {
+            claims.put(INJECT_TOP_ORG_CRISTIN_ID_CLAIM, topLevelCristinOrgId.toString());
         }
 
         var requestInfo = new RequestInfo();

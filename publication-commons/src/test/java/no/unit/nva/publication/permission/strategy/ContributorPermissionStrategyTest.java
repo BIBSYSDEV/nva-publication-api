@@ -27,9 +27,9 @@ class ContributorPermissionStrategyTest extends PublicationPermissionStrategyTes
         var contributor = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(contributor, institution, cristinId);
+        var requestInfo = createUserRequestInfo(contributor, institution, cristinId, randomUri());
         var publication = createPublicationWithContributor(contributor, cristinId, Role.CREATOR,
-                                                           randomUri());
+                                                           randomUri(), randomUri());
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissionStrategy
@@ -46,9 +46,9 @@ class ContributorPermissionStrategyTest extends PublicationPermissionStrategyTes
         var contributor = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(contributor, institution, cristinId);
+        var requestInfo = createUserRequestInfo(contributor, institution, cristinId, randomUri());
         var publication = createPublicationWithContributor(contributor, cristinId, Role.CREATOR,
-                                                           randomUri());
+                                                           randomUri(), randomUri());
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissionStrategy
@@ -64,8 +64,8 @@ class ContributorPermissionStrategyTest extends PublicationPermissionStrategyTes
         var contributorCristinId = randomUri();
         var contributorInstitutionId = randomUri();
 
-        var requestInfo = createUserRequestInfo(contributorName, contributorInstitutionId, contributorCristinId);
-        var publication = createPublicationWithContributor(contributorName, contributorCristinId, null, randomUri());
+        var requestInfo = createUserRequestInfo(contributorName, contributorInstitutionId, contributorCristinId, randomUri());
+        var publication = createPublicationWithContributor(contributorName, contributorCristinId, null, randomUri(), randomUri());
 
         Assertions.assertFalse(PublicationPermissionStrategy
                                    .create(publication, RequestUtil.createUserInstanceFromRequest(

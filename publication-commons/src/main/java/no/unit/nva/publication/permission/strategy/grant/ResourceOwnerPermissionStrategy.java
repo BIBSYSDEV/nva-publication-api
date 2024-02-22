@@ -18,7 +18,8 @@ public class ResourceOwnerPermissionStrategy extends GrantPermissionStrategy {
         }
 
         return switch (permission) {
-            case UPDATE, UNPUBLISH -> true;
+            case UPDATE -> true;
+            case UNPUBLISH -> isPublished();
             case DELETE -> isDraft();
             default -> false;
         };

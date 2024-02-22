@@ -93,8 +93,9 @@ public final class RequestUtil {
         String owner = RequestUtil.getOwner(requestInfo);
         var customerId = requestInfo.getCurrentCustomer();
         var personCristinId = attempt(requestInfo::getPersonCristinId).toOptional().orElse(null);
+        var topLevelOrg = attempt(requestInfo::getTopLevelOrgCristinId).map(Optional::get).toOptional().orElse(null);
         var accessRights = requestInfo.getAccessRights();
-        return UserInstance.create(owner, customerId, personCristinId, accessRights);
+        return new UserInstance(owner, customerId, topLevelOrg, personCristinId, accessRights);
     }
 
     public static UserInstance createUserInstanceFromRequest(RequestInfo requestInfo,

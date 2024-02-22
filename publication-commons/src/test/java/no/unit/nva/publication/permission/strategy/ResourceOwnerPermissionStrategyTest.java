@@ -25,7 +25,7 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
         var resourceOwner = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(resourceOwner, institution, cristinId);
+        var requestInfo = createUserRequestInfo(resourceOwner, institution, cristinId, randomUri());
         var publication = createNonDegreePublication(resourceOwner, institution);
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
@@ -43,7 +43,7 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
         var resourceOwner = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(resourceOwner, institution, cristinId);
+        var requestInfo = createUserRequestInfo(resourceOwner, institution, cristinId, randomUri());
         var publication = createNonDegreePublication(resourceOwner, institution);
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
@@ -60,7 +60,7 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
         var resourceOwner = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(resourceOwner, editorInstitution, cristinId);
+        var requestInfo = createUserRequestInfo(resourceOwner, editorInstitution, cristinId, randomUri());
         var publication = createDegreePhd(resourceOwner, editorInstitution)
                               .copy()
                               .withStatus(PublicationStatus.DRAFT)
@@ -79,7 +79,7 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
         var editorInstitution = randomUri();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(randomString(), editorInstitution, cristinId);
+        var requestInfo = createUserRequestInfo(randomString(), editorInstitution, cristinId, randomUri());
         var publication = createDegreePhd(randomString(), editorInstitution)
                               .copy()
                               .withStatus(PublicationStatus.DRAFT)

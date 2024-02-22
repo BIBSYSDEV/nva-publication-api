@@ -1,5 +1,7 @@
 package no.unit.nva.publication.permission.strategy;
 
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -12,6 +14,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 
 class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest {
+
     @ParameterizedTest(name = "Should deny Curator {0} operation on degree resources belonging to the institution")
     @EnumSource(value = PublicationOperation.class)
     void shouldDenyCuratorOnDegree(PublicationOperation operation)
@@ -22,7 +25,8 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
         var curatorUsername = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRights(), cristinId);
+        var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRights(), cristinId,
+                                                randomUri());
         var publication = createDegreePhd(resourceOwner, institution);
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
@@ -33,8 +37,7 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
 
     @ParameterizedTest(name = "Should allow Curator {0} operation on degree resources belonging to the institution "
                               + "with MANAGE_DEGREE access rights")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "TERMINATE",
-        "TICKET_PUBLISH"})
+    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "TERMINATE"})
     void shouldAllowCuratorOnDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
@@ -43,9 +46,11 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
         var curatorUsername = randomString();
         var cristinId = randomUri();
 
+        var publication = createDegreePhd(resourceOwner, institution).copy()
+                              .withStatus(PublicationOperation.UNPUBLISH == operation ? PUBLISHED : UNPUBLISHED)
+                              .build();;
         var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRightsWithDegree(),
-                                                cristinId);
-        var publication = createDegreePhd(resourceOwner, institution);
+                                                cristinId, publication.getResourceOwner().getOwnerAffiliation());
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissionStrategy

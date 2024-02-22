@@ -27,8 +27,8 @@ public class UserInstance implements JsonSerializable {
 
     private boolean isExternalClient;
 
-    protected UserInstance(String userIdentifier, URI customerId, URI topLevelOrgCristinId, URI personCristinId,
-                           List<AccessRight> accessRights) {
+    public UserInstance(String userIdentifier, URI customerId, URI topLevelOrgCristinId, URI personCristinId,
+                   List<AccessRight> accessRights) {
         this.user = new User(userIdentifier);
         this.customerId = customerId;
         this.topLevelOrgCristinId = topLevelOrgCristinId;

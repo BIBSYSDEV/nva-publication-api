@@ -47,7 +47,14 @@ public class RdfUtils {
         var model = createModel(stringToStream(data.get()));
         var query = getTopLevelQuery();
 
-        return getFirstResultFromQuery(query, model);
+        return Optional.ofNullable(getFirstResultFromQuery(query, model))
+                   .orElseGet(() -> logAndReturnDefaultId(id, data.get()));
+    }
+
+    private static URI logAndReturnDefaultId(URI id, String data) {
+        logger.warn("Could not find topLevel of org {}", id);
+        logger.warn(data);
+        return id;
     }
 
     private static URI getFirstResultFromQuery(Query query, Model model) {
@@ -57,7 +64,7 @@ public class RdfUtils {
                 return URI.create(result.next().get("organization").asResource().getURI());
             }
         }
-        throw new IllegalStateException("Could not find topLevel of org");
+        return null;
     }
 
     private static Query getTopLevelQuery() {

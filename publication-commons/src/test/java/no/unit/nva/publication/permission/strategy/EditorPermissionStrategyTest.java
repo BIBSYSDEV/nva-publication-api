@@ -27,7 +27,8 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var editorUsername = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(editorUsername, institution, getEditorAccessRightsWithDegree(), cristinId);
+        var requestInfo = createUserRequestInfo(editorUsername, institution, getEditorAccessRightsWithDegree(),
+                                                cristinId, randomUri());
         var publication =
             createNonDegreePublication(resourceOwner, institution).copy()
                 .withStatus(PublicationOperation.UNPUBLISH == operation ? PUBLISHED : UNPUBLISHED)
@@ -50,7 +51,8 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var editorUsername = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(editorUsername, institution, getEditorAccessRightsWithDegree(), cristinId);
+        var requestInfo = createUserRequestInfo(editorUsername, institution, getEditorAccessRightsWithDegree(),
+                                                cristinId, randomUri());
         var publication = createNonDegreePublication(resourceOwner, institution);
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
@@ -68,8 +70,9 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var resourceOwner = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRightsWithDegree(), cristinId);
-        var publication = createPublication(resourceOwner, editorInstitution);
+        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRightsWithDegree(),
+                                                cristinId, randomUri());
+        var publication = createPublication(resourceOwner, editorInstitution, cristinId);
 
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
@@ -87,8 +90,9 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var resourceOwnerInstitution = randomUri();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRightsWithDegree(), cristinId);
-        var publication = createPublication(resourceOwner, resourceOwnerInstitution);
+        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRightsWithDegree(),
+                                                cristinId, resourceOwnerInstitution);
+        var publication = createPublication(resourceOwner, resourceOwnerInstitution, cristinId);
 
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .create(publication, RequestUtil.createUserInstanceFromRequest(

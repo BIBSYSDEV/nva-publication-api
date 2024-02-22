@@ -33,7 +33,7 @@ public class ContributorPermissionStrategy extends GrantPermissionStrategy {
                    .map(EntityDescription::getContributors)
                    .stream().flatMap(List::stream)
                    .filter(this::isVerifiedContributor)
-                   .anyMatch(a -> a.getIdentity().getId().equals(this.userInstance.getPersonCristinId()));
+                   .anyMatch(contributor -> contributor.getIdentity().getId().equals(this.userInstance.getPersonCristinId()));
     }
 
 }

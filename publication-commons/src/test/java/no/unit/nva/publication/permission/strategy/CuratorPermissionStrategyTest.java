@@ -29,10 +29,12 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var curatorUsername = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRights(), cristinId);
         var publication = createNonDegreePublication(resourceOwner, institution).copy()
-                .withStatus(PublicationOperation.UNPUBLISH == operation ? PUBLISHED : UNPUBLISHED)
-                .build();
+                              .withStatus(PublicationOperation.UNPUBLISH == operation ? PUBLISHED : UNPUBLISHED)
+                              .build();
+
+        var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRights(), cristinId,
+                                                publication.getResourceOwner().getOwnerAffiliation());
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissionStrategy
@@ -46,16 +48,16 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
     void shouldAllowCuratorOnNonDegreeBasedOnContributors(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
-        var userInstitution = uriFromTestCase(TEST_ORG_NTNU_OFFICE_INTERNATIONAL);
+        var usersTopCristinOrg = uriFromTestCase(TEST_ORG_NTNU_ROOT);
         var institution = uriFromTestCase(TEST_ORG_NTNU_DEPARTMENT_OF_LANGUAGES);
         var contributor = randomString();
         var contributorCristinId = randomUri();
         var curatorUsername = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(curatorUsername, userInstitution, getCuratorAccessRights(), cristinId);
+        var requestInfo = createUserRequestInfo(curatorUsername, randomUri(), getCuratorAccessRights(), cristinId, usersTopCristinOrg);
         var publication = createPublicationWithContributor(contributor, contributorCristinId, Role.CREATOR,
-                                                           institution).copy()
+                                                           institution, randomUri()).copy()
                               .withStatus(PublicationOperation.UNPUBLISH == operation ? PUBLISHED : UNPUBLISHED)
                               .build();
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
@@ -76,7 +78,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var curatorUsername = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRights(), cristinId);
+        var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRights(), cristinId, null);
         var publication = createNonDegreePublication(resourceOwner, institution);
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
@@ -92,10 +94,12 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var resourceOwner = randomString();
         var institution = randomUri();
         var cristinId = randomUri();
+
         var requestInfo = createUserRequestInfo(curatorName,
                                                 institution,
                                                 getCuratorWithPublishDegreeAccessRight(),
-                                                cristinId);
+                                                cristinId,
+                                                null);
         var publication = createDegreePhd(resourceOwner, randomUri());
 
         Assertions.assertFalse(PublicationPermissionStrategy
@@ -115,7 +119,8 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var resourceOwnerInstitution = randomUri();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(curatorName, curatorInstitution, getCuratorAccessRights(), cristinId);
+        var requestInfo = createUserRequestInfo(curatorName, curatorInstitution, getCuratorAccessRights(), cristinId,
+                                                null);
         var publication = createDegreePhd(resourceOwner, resourceOwnerInstitution);
 
         Assertions.assertFalse(PublicationPermissionStrategy
