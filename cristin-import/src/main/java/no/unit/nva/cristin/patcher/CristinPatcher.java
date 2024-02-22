@@ -34,6 +34,9 @@ public final class CristinPatcher {
     }
 
     private static URI createPartOfUri(Publication parentPublication) {
-        return UriWrapper.fromUri(NVA_API_DOMAIN + PUBLICATION_PATH + "/" + parentPublication.getIdentifier()).getUri();
+        return UriWrapper.fromHost(NVA_API_DOMAIN)
+                   .addChild(PUBLICATION_PATH)
+                   .addChild(parentPublication.getIdentifier().toString())
+                   .getUri();
     }
 }
