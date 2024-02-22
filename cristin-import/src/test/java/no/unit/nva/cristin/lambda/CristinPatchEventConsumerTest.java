@@ -30,6 +30,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 
+import java.util.stream.Stream;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOf;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
 import no.unit.nva.cristin.patcher.exception.NotFoundException;
@@ -40,10 +41,27 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Anthology;
+import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
+import no.unit.nva.model.instancetypes.book.Encyclopedia;
+import no.unit.nva.model.instancetypes.book.ExhibitionCatalog;
+import no.unit.nva.model.instancetypes.book.NonFictionMonograph;
+import no.unit.nva.model.instancetypes.book.PopularScienceMonograph;
+import no.unit.nva.model.instancetypes.book.Textbook;
 import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
+import no.unit.nva.model.instancetypes.chapter.ChapterInReport;
+import no.unit.nva.model.instancetypes.chapter.EncyclopediaChapter;
+import no.unit.nva.model.instancetypes.chapter.Introduction;
+import no.unit.nva.model.instancetypes.chapter.NonFictionChapter;
+import no.unit.nva.model.instancetypes.chapter.PopularScienceChapter;
+import no.unit.nva.model.instancetypes.chapter.TextbookChapter;
+import no.unit.nva.model.instancetypes.report.ConferenceReport;
+import no.unit.nva.model.instancetypes.report.ReportPolicy;
+import no.unit.nva.model.instancetypes.report.ReportResearch;
+import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -59,6 +77,10 @@ import nva.commons.core.paths.UriWrapper;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import software.amazon.awssdk.services.s3.endpoints.internal.Value.Str;
 
 public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
 
@@ -90,6 +112,58 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
     private CristinPatchEventConsumer handler;
 
     private ResourceService resourceService;
+
+    public static Stream<Arguments> childParentPublicationProvider() {
+        return Stream.of(
+            Arguments.of(AcademicChapter.class, BookAnthology.class),
+            Arguments.of(AcademicChapter.class, NonFictionMonograph.class),
+            Arguments.of(AcademicChapter.class, Textbook.class),
+            Arguments.of(AcademicChapter.class, PopularScienceMonograph.class),
+            Arguments.of(AcademicChapter.class, AcademicMonograph.class),
+            Arguments.of(AcademicChapter.class, Encyclopedia.class),
+            Arguments.of(AcademicChapter.class, ExhibitionCatalog.class),
+
+            Arguments.of(NonFictionChapter.class, BookAnthology.class),
+            Arguments.of(NonFictionChapter.class, Textbook.class),
+            Arguments.of(NonFictionChapter.class, NonFictionMonograph.class),
+            Arguments.of(NonFictionChapter.class, PopularScienceMonograph.class),
+            Arguments.of(NonFictionChapter.class, Encyclopedia.class),
+            Arguments.of(NonFictionChapter.class, ExhibitionCatalog.class),
+            Arguments.of(NonFictionChapter.class, AcademicMonograph.class),
+
+            Arguments.of(Introduction.class, BookAnthology.class),
+            Arguments.of(Introduction.class, NonFictionMonograph.class),
+            Arguments.of(Introduction.class, Introduction.class),
+            Arguments.of(Introduction.class, Textbook.class),
+            Arguments.of(Introduction.class, PopularScienceMonograph.class),
+            Arguments.of(Introduction.class, AcademicMonograph.class),
+            Arguments.of(Introduction.class, ExhibitionCatalog.class),
+            Arguments.of(Introduction.class, Encyclopedia.class),
+
+            Arguments.of(PopularScienceChapter.class, BookAnthology.class),
+            Arguments.of(PopularScienceChapter.class, PopularScienceMonograph.class),
+            Arguments.of(PopularScienceChapter.class, NonFictionMonograph.class),
+            Arguments.of(PopularScienceChapter.class, Textbook.class),
+            Arguments.of(PopularScienceChapter.class, ExhibitionCatalog.class),
+            Arguments.of(PopularScienceChapter.class, Encyclopedia.class),
+            Arguments.of(PopularScienceChapter.class, AcademicMonograph.class),
+
+            Arguments.of(TextbookChapter.class, Textbook.class),
+
+            Arguments.of(EncyclopediaChapter.class, Encyclopedia.class),
+            Arguments.of(EncyclopediaChapter.class, BookAnthology.class),
+            Arguments.of(EncyclopediaChapter.class, NonFictionMonograph.class),
+            Arguments.of(EncyclopediaChapter.class, AcademicMonograph.class),
+            Arguments.of(EncyclopediaChapter.class, Textbook.class),
+            Arguments.of(EncyclopediaChapter.class, PopularScienceMonograph.class),
+            Arguments.of(EncyclopediaChapter.class, ExhibitionCatalog.class),
+
+            Arguments.of(ChapterInReport.class, ReportResearch.class),
+            Arguments.of(ChapterInReport.class, ReportPolicy.class),
+            Arguments.of(ChapterInReport.class, ConferenceReport.class),
+            Arguments.of(ChapterInReport.class, ConferenceReport.class)
+        );
+    }
 
     @BeforeEach
     public void init() {
@@ -167,16 +241,18 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         assertThat(actualReport.getException(), containsString(INVALID_PARENT_MESSAGE));
     }
 
-    @Test
-    void shouldSetParentPublicationIdentifierAsPartOfChildPublicationWhenSuccess() throws ApiGatewayException,
-                                                                                          IOException {
+    @ParameterizedTest
+    @MethodSource("childParentPublicationProvider")
+    void shouldSetParentPublicationIdentifierAsPartOfChildPublicationWhenSuccess(Class<?> child,
+                                                                                 Class<?> parent)
+        throws ApiGatewayException, IOException {
         var childPublication =
             createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString(),
-                                                                                AcademicChapter.class);
+                                                                                child);
         var partOfCristinId = randomString();
         var parentPublication =
             createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(partOfCristinId,
-                                                                                BookAnthology.class);
+                                                                                parent);
         var expectedChildPartOfURI = createExpectedPartOfUri(parentPublication.getIdentifier());
         var partOfEventReference = createPartOfEventReference(childPublication.getIdentifier().toString(),
                                                               partOfCristinId);
