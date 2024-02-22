@@ -44,7 +44,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
     void shouldAllowCuratorOnNonDegreeBasedOnContributors(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
-        var usersTopCristinOrg = uriFromTestCase(TEST_ORG_NTNU_OFFICE_INTERNATIONAL);
+        var usersTopCristinOrg = uriFromTestCase(TEST_ORG_NTNU_ROOT);
         var institution = uriFromTestCase(TEST_ORG_NTNU_DEPARTMENT_OF_LANGUAGES);
         var contributor = randomString();
         var contributorCristinId = randomUri();
