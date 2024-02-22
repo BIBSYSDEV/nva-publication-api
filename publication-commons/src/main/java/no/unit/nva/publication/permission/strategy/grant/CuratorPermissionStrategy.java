@@ -55,8 +55,13 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
     }
 
     private boolean userIsFromSameInstitutionAsPublication() {
-        return userInstance.getCustomerId() != null && publication.getPublisher() != null &&
-               userInstance.getCustomerId().equals(publication.getPublisher().getId());
+        if (userInstance.getTopLevelOrgCristinId() == null || publication.getResourceOwner() == null) {
+            return false;
+        }
+
+        var resourceOwnerTopLevel = getTopLevelOrgUri(uriRetriever,
+                                                      publication.getResourceOwner().getOwnerAffiliation());
+        return userInstance.getTopLevelOrgCristinId().equals(resourceOwnerTopLevel);
     }
 
     private boolean userSharesTopLevelOrgWithAtLeastOneContributor() {

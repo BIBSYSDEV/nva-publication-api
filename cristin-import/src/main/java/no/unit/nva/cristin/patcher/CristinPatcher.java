@@ -29,7 +29,7 @@ public final class CristinPatcher {
         var parent = parentAndChild.getParentPublication();
         if (ChildParentInstanceComparator.isValidCombination(child, parent)) {
             var anthology = (Anthology) child.getEntityDescription().getReference().getPublicationContext();
-            anthology.setId(createPublicationId(parentAndChild.getParentPublication()));
+            anthology.setId(createPartOfUri(parentAndChild.getParentPublication()));
         } else {
             throw new ChildPatchPublicationInstanceMismatchException(
                 String.format(CHILD_PARENT_REFERENCE_MISMATCH,
@@ -56,7 +56,7 @@ public final class CristinPatcher {
         var parent = parentAndChild.getParentPublication();
         if (ParentChildInstanceComparator.isValidCombination(child, parent)) {
             var degreePhd = (DegreePhd) parent.getEntityDescription().getReference().getPublicationInstance();
-            degreePhd.getRelated().add(new ConfirmedDocument(createPublicationId(child)));
+            degreePhd.getRelated().add(new ConfirmedDocument(createPartOfUri(child)));
             return parentAndChild;
         } else {
             throw new ParentPatchPublicationInstanceMismatchException(
@@ -66,7 +66,10 @@ public final class CristinPatcher {
         }
     }
 
-    private static URI createPublicationId(Publication publication) {
-        return UriWrapper.fromUri(NVA_API_DOMAIN + PUBLICATION_PATH + "/" + publication.getIdentifier()).getUri();
+    private static URI createPartOfUri(Publication parentPublication) {
+        return UriWrapper.fromHost(NVA_API_DOMAIN)
+                   .addChild(PUBLICATION_PATH)
+                   .addChild(parentPublication.getIdentifier().toString())
+                   .getUri();
     }
 }
