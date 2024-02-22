@@ -6,12 +6,13 @@ import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationOperation.DELETE;
+import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublicationNonDegree;
-import static no.unit.nva.model.testing.PublicationInstanceBuilder.listPublicationInstanceTypes;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypes;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseNotFound;
 import static no.unit.nva.publication.CustomerApiStubs.stubSuccessfulCustomerResponseAllowingFilesForNoTypes;
@@ -27,7 +28,6 @@ import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
-import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -91,6 +91,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
@@ -103,7 +104,6 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Publication.Builder;
 import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
@@ -1389,6 +1389,24 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_UNAUTHORIZED)));
         verify(s3Client, never()).deleteObject(any(DeleteObjectRequest.class));
+    }
+
+    @Test
+    void handlerUpdatesPublicationShouldReturnAllowedOperations()
+        throws IOException, ApiGatewayException {
+        publication = publicationWithoutIdentifier(customerId);
+        var savedPublication = createSamplePublication();
+
+        var publicationUpdate = updateTitle(savedPublication);
+
+        var event = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
+
+        updatePublicationHandler.handleRequest(event, output, context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
+
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
+        final var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
+        assertThat(body.getAllowedOperations(), containsInAnyOrder(UPDATE, DELETE));
     }
 
     private Publication createUnpublishedPublication() throws ApiGatewayException {

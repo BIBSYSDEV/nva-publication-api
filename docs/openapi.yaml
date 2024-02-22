@@ -148,13 +148,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Publication'
+                $ref: '#/components/schemas/PublicationResponse'
         202:
           description: Accepted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Publication'
+                $ref: '#/components/schemas/PublicationResponse'
         400:
           description: Bad Request
           content:
