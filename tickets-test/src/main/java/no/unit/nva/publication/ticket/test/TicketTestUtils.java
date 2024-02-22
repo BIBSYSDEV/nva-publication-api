@@ -243,7 +243,7 @@ public final class TicketTestUtils {
 
     private static Publication randomPublicationWithStatusAndOwner(PublicationStatus status, UserInstance owner) {
         return randomPublicationWithStatus(status).copy()
-                   .withResourceOwner(new ResourceOwner(new Username(owner.getUsername()), null))
+                   .withResourceOwner(new ResourceOwner(new Username(owner.getUsername()), owner.getTopLevelOrgCristinId()))
                    .build();
     }
 

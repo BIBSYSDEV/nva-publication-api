@@ -93,7 +93,7 @@ public class RequestUtilsTest {
                                                               AccessRight accessRight)
         throws UnauthorizedException, NotFoundException {
         var publication = publicationWithOwner(randomString()).copy().withStatus(publicationStatus).build();
-        var requestInfo = requestInfoWithAccessRight(publication.getPublisher().getId(), accessRight);
+        var requestInfo = requestInfoWithAccessRight(publication.getResourceOwner().getOwnerAffiliation(), accessRight);
         var ticket = TicketEntry.requestNewTicket(publication, ticketType);
         var requestUtils = RequestUtils.fromRequestInfo(requestInfo, uriRetriever);
 
@@ -115,12 +115,13 @@ public class RequestUtilsTest {
     void shouldConvertRequestUtilToUserInstance() throws UnauthorizedException {
         var requestInfo = mockedRequestInfo();
 
-        var expectedUserInstance = UserInstance.create(requestInfo.getUserName(),
+        var expectedUserInstance = new UserInstance(requestInfo.getUserName(),
                                                        requestInfo.getCurrentCustomer(),
                                                        requestInfo.getTopLevelOrgCristinId().orElseThrow(),
+                                                       requestInfo.getPersonCristinId(),
                                                        requestInfo.getAccessRights());
-
-        Assertions.assertEquals(RequestUtils.fromRequestInfo(requestInfo, uriRetriever).toUserInstance(), expectedUserInstance);
+        var createdUserInstance = RequestUtils.fromRequestInfo(requestInfo, uriRetriever).toUserInstance();
+        Assertions.assertEquals(createdUserInstance, expectedUserInstance);
     }
 
     @Test
@@ -141,6 +142,7 @@ public class RequestUtilsTest {
         var requestInfo = mock(RequestInfo.class);
         when(requestInfo.getAccessRights()).thenReturn(List.of(MANAGE_RESOURCES_STANDARD, accessRight));
         when(requestInfo.getCurrentCustomer()).thenReturn(customer);
+        when(requestInfo.getTopLevelOrgCristinId()).thenReturn(Optional.of(customer));
         return requestInfo;
     }
 
