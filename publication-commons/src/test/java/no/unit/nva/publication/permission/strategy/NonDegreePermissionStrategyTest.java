@@ -48,7 +48,7 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
 
         var publication = createDegreePhd(resourceOwner, institution).copy()
                               .withStatus(PublicationOperation.UNPUBLISH == operation ? PUBLISHED : UNPUBLISHED)
-                              .build();;
+                              .build();
         var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRightsWithDegree(),
                                                 cristinId, publication.getResourceOwner().getOwnerAffiliation());
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);

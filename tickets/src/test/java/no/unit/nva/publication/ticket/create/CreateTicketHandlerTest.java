@@ -83,7 +83,6 @@ import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
@@ -751,13 +750,6 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var ticketIdentifier = new SortableIdentifier(UriWrapper.fromUri(response.getHeaders().get(LOCATION_HEADER))
                                                           .getLastPathElement());
         return ticketService.fetchTicketByIdentifier(ticketIdentifier);
-    }
-
-    private Publication createUnpublishablePublication() throws BadRequestException {
-        var publication = randomPublication().copy().withEntityDescription(null).build();
-        publication = Resource.fromPublication(publication)
-                          .persistNew(resourceService, UserInstance.fromPublication(publication));
-        return publication;
     }
 
     private void assertThatLocationHeaderPointsToCreatedTicket(URI ticketUri)

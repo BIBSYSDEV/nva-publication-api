@@ -256,17 +256,6 @@ class PublicationPermissionStrategyTest {
         return publication.copy().withEntityDescription(entityDescription).build();
     }
 
-    Publication createDegreePhdWithResourceOwner(String resourceOwner, URI customer, URI resourceOwnerAffiliation) {
-        var publication = createPublication(resourceOwner, customer, resourceOwnerAffiliation);
-
-        var degreePhd = new DegreePhd(new MonographPages(), new PublicationDate(),
-                                      Set.of(new UnconfirmedDocument(randomString())));
-        var reference = new Reference.Builder().withPublicationInstance(degreePhd).build();
-        var entityDescription = publication.getEntityDescription().copy().withReference(reference).build();
-
-        return publication.copy().withEntityDescription(entityDescription).build();
-    }
-
     protected Publication createPublicationWithContributor(String contributorName, URI contributorId,
                                                          Role contributorRole, URI institutionId,
                                                            URI topLevelCristinOrgId) {
