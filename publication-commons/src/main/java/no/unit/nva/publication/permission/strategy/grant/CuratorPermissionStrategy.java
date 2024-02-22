@@ -6,6 +6,8 @@ import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import java.net.URI;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
@@ -59,17 +61,19 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
 
     private boolean userSharesTopLevelOrgWithAtLeastOneContributor() {
         var contributorTopLevelOrgs = getContributorTopLevelOrgs();
-        var userTopLevelOrg = getTopLevelOrgUri(uriRetriever, userInstance.getTopLevelOrgCristinId());
+        var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
 
-        logger.info("found topLevels {} for user with {} ", contributorTopLevelOrgs, userTopLevelOrg);
+        logger.info("found topLevels {} for user {} of {}. Verified contributors: {} ",
+                    contributorTopLevelOrgs,
+                    userInstance.getUser().toString(),
+                    userTopLevelOrg,
+                    getVerifiedContributors().collect(Collectors.toSet()));
 
         return contributorTopLevelOrgs.stream().anyMatch(org -> org.equals(userTopLevelOrg));
     }
 
     private Set<URI> getContributorTopLevelOrgs() {
-        return publication.getEntityDescription().getContributors()
-                   .stream()
-                   .filter(this::isVerifiedContributor)
+        return getVerifiedContributors()
                    .flatMap(contributor ->
                                 contributor.getAffiliations().stream()
                                     .filter(Organization.class::isInstance)
@@ -81,5 +85,9 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
                    .collect(Collectors.toSet());
     }
 
-
+    private Stream<Contributor> getVerifiedContributors() {
+        return publication.getEntityDescription().getContributors()
+                   .stream()
+                   .filter(this::isVerifiedContributor);
+    }
 }

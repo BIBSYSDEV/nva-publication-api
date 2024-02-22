@@ -47,7 +47,8 @@ public class RdfUtils {
         var model = createModel(stringToStream(data.get()));
         var query = getTopLevelQuery();
 
-        return Optional.ofNullable(getFirstResultFromQuery(query, model)).orElse(logAndReturnDefaultId(id, data.get()));
+        return Optional.ofNullable(getFirstResultFromQuery(query, model))
+                   .orElse(logAndReturnDefaultId(id, data.get()));
     }
 
     private static URI logAndReturnDefaultId(URI id, String data) {
