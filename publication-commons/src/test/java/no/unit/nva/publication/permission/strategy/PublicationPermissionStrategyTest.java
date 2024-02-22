@@ -73,6 +73,7 @@ class PublicationPermissionStrategyTest {
     public static final String INJECT_CUSTOMER_ID_CLAIM = "custom:customerId";
     public static final String INJECT_COGNITO_GROUPS_CLAIM = "cognito:groups";
     public static final String INJECT_CRISTIN_ID_CLAIM = "custom:cristinId";
+    public static final String INJECT_TOP_ORG_CRISTIN_ID_CLAIM = "custom:topOrgCristinId";
     protected static final String TEST_ORG_NTNU_ROOT = "194.0.0.0";
     protected static final String TEST_ORG_NTNU_OFFICE_INTERNATIONAL = "194.14.62.0";
     protected static final String TEST_ORG_NTNU_DEPARTMENT_OF_LANGUAGES = "194.62.60.0";
@@ -117,7 +118,7 @@ class PublicationPermissionStrategyTest {
     void shouldDenyPermissionToUnpublishPublicationWhenUserHasNoAccessRights()
         throws JsonProcessingException, UnauthorizedException {
         var cristinId = randomUri();
-        var requestInfo = createUserRequestInfo(randomString(), randomUri(), new ArrayList<>(), cristinId);
+        var requestInfo = createUserRequestInfo(randomString(), randomUri(), new ArrayList<>(), cristinId, null);
         var publication = createPublication(randomString(), randomUri());
 
         Assertions.assertFalse(PublicationPermissionStrategy
@@ -150,7 +151,8 @@ class PublicationPermissionStrategyTest {
         var resourceOwner = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId);
+        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId,
+                                                null);
         var publication = createDegreePhd(resourceOwner, editorInstitution)
                               .copy()
                               .withStatus(PublicationStatus.DRAFT)
@@ -171,7 +173,8 @@ class PublicationPermissionStrategyTest {
         var resourceOwner = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId);
+        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId,
+                                                null);
         var publication = createPublication(resourceOwner, editorInstitution);
 
         Assertions.assertTrue(PublicationPermissionStrategy
@@ -190,7 +193,8 @@ class PublicationPermissionStrategyTest {
         var resourceOwnerInstitution = randomUri();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId);
+        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId,
+                                                null);
         var publication = createPublication(resourceOwner, resourceOwnerInstitution);
 
         Assertions.assertTrue(PublicationPermissionStrategy
@@ -207,7 +211,8 @@ class PublicationPermissionStrategyTest {
         var resourceOwner = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId);
+        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId,
+                                                null);
         var publication = createDegreePhd(resourceOwner, editorInstitution);
 
         Assertions.assertTrue(PublicationPermissionStrategy
@@ -225,7 +230,8 @@ class PublicationPermissionStrategyTest {
         var resourceInstitution = randomUri();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId);
+        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId,
+                                                null);
         var publication = createDegreePhd(resourceOwner, resourceInstitution);
 
         Assertions.assertTrue(PublicationPermissionStrategy
@@ -246,7 +252,7 @@ class PublicationPermissionStrategyTest {
         var accessRights = new ArrayList<AccessRight>();
         accessRights.add(AccessRight.MANAGE_RESOURCES_ALL);
 
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, accessRights, cristinId);
+        var requestInfo = createUserRequestInfo(editorName, editorInstitution, accessRights, cristinId, null);
         var publication = createDegreePhd(resourceOwner, resourceInstitution);
 
         Assertions.assertFalse(PublicationPermissionStrategy
@@ -263,7 +269,7 @@ class PublicationPermissionStrategyTest {
         var username = randomString();
         var institution = randomUri();
         var cristinId = randomUri();
-        var requestInfo = createUserRequestInfo(username, institution, getCuratorAccessRights(), cristinId);
+        var requestInfo = createUserRequestInfo(username, institution, getCuratorAccessRights(), cristinId, null);
         var publication = createDegreePhd(username, institution);
 
         Assertions.assertFalse(PublicationPermissionStrategy
@@ -281,7 +287,8 @@ class PublicationPermissionStrategyTest {
         var requestInfo = createUserRequestInfo(username,
                                                 institution,
                                                 getCuratorWithPublishDegreeAccessRight(),
-                                                cristinId);
+                                                cristinId,
+                                                null);
         var publication = createDegreePhd(username, institution);
 
         Assertions.assertTrue(PublicationPermissionStrategy
@@ -302,7 +309,8 @@ class PublicationPermissionStrategyTest {
         var requestInfo = createUserRequestInfo(curatorName,
                                                 institution,
                                                 getCuratorWithPublishDegreeAccessRight(),
-                                                cristinId);
+                                                cristinId,
+                                                null);
         var publication = createDegreePhd(resourceOwner, institution);
 
         Assertions.assertTrue(PublicationPermissionStrategy
@@ -321,7 +329,8 @@ class PublicationPermissionStrategyTest {
         var requestInfo = createUserRequestInfo(curatorName,
                                                 institution,
                                                 getCuratorWithPublishDegreeAccessRight(),
-                                                cristinId);
+                                                cristinId,
+                                                null);
         var publication = createDegreePhd(resourceOwner, randomUri());
 
         Assertions.assertFalse(PublicationPermissionStrategy
@@ -340,7 +349,7 @@ class PublicationPermissionStrategyTest {
         var resourceOwnerInstitution = randomUri();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(curatorName, curatorInstitution, getCuratorAccessRights(), cristinId);
+        var requestInfo = createUserRequestInfo(curatorName, curatorInstitution, getCuratorAccessRights(), cristinId, null);
         var publication = createDegreePhd(resourceOwner, resourceOwnerInstitution);
 
         Assertions.assertFalse(PublicationPermissionStrategy
@@ -406,7 +415,7 @@ class PublicationPermissionStrategyTest {
         var resourceOwner = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId);
+        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId, null);
         var publication = createPublication(resourceOwner, editorInstitution);
 
         Assertions.assertTrue(
@@ -470,7 +479,7 @@ class PublicationPermissionStrategyTest {
         var resourceOwner = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, List.of(), cristinId);
+        var requestInfo = createUserRequestInfo(editorName, editorInstitution, List.of(), cristinId, null);
         var publication = createPublication(resourceOwner, editorInstitution);
 
         assertThat(
@@ -488,7 +497,7 @@ class PublicationPermissionStrategyTest {
         var cristinId = randomUri();
 
         var allAccessRights = List.of(AccessRight.values());
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, allAccessRights, cristinId);
+        var requestInfo = createUserRequestInfo(editorName, editorInstitution, allAccessRights, cristinId, null);
         var publication = createPublication(resourceOwner, editorInstitution);
 
         assertThat(
@@ -597,11 +606,11 @@ class PublicationPermissionStrategyTest {
 
     RequestInfo createUserRequestInfo(String username, URI institutionId, URI cristinId)
         throws JsonProcessingException {
-        return createUserRequestInfo(username, institutionId, new ArrayList<>(), cristinId);
+        return createUserRequestInfo(username, institutionId, new ArrayList<>(), cristinId, null);
     }
 
     RequestInfo createUserRequestInfo(String username, URI institutionId, List<AccessRight> accessRights,
-                                      URI cristinId)
+                                      URI personCristinId, URI topLevelCristinOrgId)
         throws JsonProcessingException {
 
         var cognitoGroups = accessRights.stream().map(getCognitoGroup(institutionId)).toList();
@@ -615,8 +624,12 @@ class PublicationPermissionStrategyTest {
             claims.put(INJECT_NVA_USERNAME_CLAIM, username);
         }
 
-        if (nonNull(cristinId)) {
-            claims.put(INJECT_CRISTIN_ID_CLAIM, cristinId.toString());
+        if (nonNull(personCristinId)) {
+            claims.put(INJECT_CRISTIN_ID_CLAIM, personCristinId.toString());
+        }
+
+        if (nonNull(topLevelCristinOrgId)) {
+            claims.put(INJECT_TOP_ORG_CRISTIN_ID_CLAIM, topLevelCristinOrgId.toString());
         }
 
         var requestInfo = new RequestInfo();

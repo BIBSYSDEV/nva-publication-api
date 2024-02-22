@@ -764,10 +764,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var contributor = createContributorForPublicationUpdate(cristinId);
         injectContributor(savedPublication, contributor);
         var customerId = ((Organization) contributor.getAffiliations().get(0)).getId();
+        var topLevelCristinOrgId = ((Organization) contributor.getAffiliations().get(0)).getId();
 
         var publicationUpdate = updateTitle(savedPublication);
 
-        var event = curatorWithAccessRightsUpdatesPublication(publicationUpdate, customerId, MANAGE_DOI, MANAGE_RESOURCES_STANDARD);
+        var event = curatorWithAccessRightsUpdatesPublication(publicationUpdate, customerId, topLevelCristinOrgId,
+                                                              MANAGE_DOI, MANAGE_RESOURCES_STANDARD);
         updatePublicationHandler.handleRequest(event, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Publication.class);
@@ -1876,6 +1878,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private InputStream curatorWithAccessRightsUpdatesPublication(Publication publication, URI customerId,
+                                                                  URI topLevelCristinOrgId,
                                                                   AccessRight... accessRights)
         throws JsonProcessingException {
         var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString());
@@ -1885,7 +1888,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .withCurrentCustomer(customerId)
                    .withBody(publication)
                    .withAccessRights(customerId, accessRights)
-                   .withTopLevelCristinOrgId(randomUri())
+                   .withTopLevelCristinOrgId(topLevelCristinOrgId)
                    .withPersonCristinId(randomUri())
                    .build();
     }
