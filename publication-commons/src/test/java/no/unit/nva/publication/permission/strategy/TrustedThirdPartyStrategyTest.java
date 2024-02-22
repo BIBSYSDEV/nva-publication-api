@@ -6,6 +6,7 @@ import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.ArrayList;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.RequestUtil;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
@@ -64,12 +65,12 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
 
 
     @Test
-    void shouldDenyTrustedClientEditPublicationWithoutMatchingCustomer()
+    void shouldAllowTrustedClientEditPublicationOnDegree()
         throws JsonProcessingException, UnauthorizedException {
-        var publication = createPublication(randomString(), randomUri());
-        var requestInfo = createThirdPartyRequestInfo(getEditorAccessRightsWithDegree());
+        var publication = createDegreePhd(randomString(), EXTERNAL_CLIENT_CUSTOMER_URI);
+        var requestInfo = createThirdPartyRequestInfo(new ArrayList<>());
 
-        Assertions.assertFalse(
+        Assertions.assertTrue(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
                     requestInfo, identityServiceClient), uriRetriever)
                 .allowsAction(UPDATE));
