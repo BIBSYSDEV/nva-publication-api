@@ -11,7 +11,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.UserInstance;
-import nva.commons.apigateway.RequestInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
