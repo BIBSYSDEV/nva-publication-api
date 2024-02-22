@@ -24,9 +24,9 @@ import nva.commons.apigateway.exceptions.UnauthorizedException;
 
 public record RequestUtils(List<AccessRight> accessRights,
                            URI customerId,
-                           URI customerCristinId,
+                           URI topLevelCristinOrgId,
                            String username,
-                           URI cristinId,
+                           URI personCristinId,
                            Map<String, String> pathParameters,
                            UriRetriever uriRetriever) {
 
@@ -88,6 +88,6 @@ public record RequestUtils(List<AccessRight> accessRights,
     }
 
     public UserInstance toUserInstance() {
-        return UserInstance.create(username, customerId, cristinId, accessRights);
+        return new UserInstance(username, customerId, topLevelCristinOrgId, personCristinId, accessRights);
     }
 }

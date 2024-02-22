@@ -23,7 +23,7 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
         var resourceOwner = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(resourceOwner, institution, cristinId);
+        var requestInfo = createUserRequestInfo(resourceOwner, institution, cristinId, randomUri());
         var publication = createNonDegreePublication(resourceOwner, institution);
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
@@ -41,7 +41,7 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
         var resourceOwner = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(resourceOwner, institution, cristinId);
+        var requestInfo = createUserRequestInfo(resourceOwner, institution, cristinId, randomUri());
         var publication = createNonDegreePublication(resourceOwner, institution);
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
@@ -61,7 +61,7 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
         var resourceOwner = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(resourceOwner, institution, cristinId);
+        var requestInfo = createUserRequestInfo(resourceOwner, institution, cristinId, randomUri());
         var publication = createDegreePhd(resourceOwner, institution);
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
