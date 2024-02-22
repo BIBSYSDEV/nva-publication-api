@@ -14,9 +14,10 @@ public class EditorPermissionStrategy extends GrantPermissionStrategy {
 
     @Override
     public boolean allowsAction(PublicationOperation permission) {
-        if (!hasAccessRight(MANAGE_RESOURCES_ALL) || userInstance.isExternalClient()) {
+        if (!hasAccessRight(MANAGE_RESOURCES_ALL)) {
             return false;
         }
+
         return switch (permission) {
             case TICKET_PUBLISH -> isDraft() || isUnpublished();
             case UPDATE -> true;

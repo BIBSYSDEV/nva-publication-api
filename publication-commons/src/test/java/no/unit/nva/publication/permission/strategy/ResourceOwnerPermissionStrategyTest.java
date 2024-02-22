@@ -61,7 +61,7 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
         var cristinId = randomUri();
 
         var requestInfo = createUserRequestInfo(resourceOwner, editorInstitution, cristinId, randomUri());
-        var publication = createDegreePhd(resourceOwner, editorInstitution)
+        var publication = createDegreePhd(resourceOwner, editorInstitution, randomUri())
                               .copy()
                               .withStatus(PublicationStatus.DRAFT)
                               .build();
@@ -79,8 +79,9 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
         var editorInstitution = randomUri();
         var cristinId = randomUri();
 
+
         var requestInfo = createUserRequestInfo(randomString(), editorInstitution, cristinId, randomUri());
-        var publication = createDegreePhd(randomString(), editorInstitution)
+        var publication = createDegreePhd(randomString(), editorInstitution, randomUri())
                               .copy()
                               .withStatus(PublicationStatus.DRAFT)
                               .withResourceOwner(null)

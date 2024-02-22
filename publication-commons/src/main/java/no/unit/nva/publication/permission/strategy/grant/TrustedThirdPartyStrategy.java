@@ -5,6 +5,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.UserInstance;
+import nva.commons.core.JacocoGenerated;
 
 public class TrustedThirdPartyStrategy extends GrantPermissionStrategy {
     // we should make sure all external users gets the claims they need and remove this class
@@ -12,21 +13,22 @@ public class TrustedThirdPartyStrategy extends GrantPermissionStrategy {
         super(publication, userInstance, uriRetriever);
     }
 
+    @JacocoGenerated
     @Override
     public boolean allowsAction(PublicationOperation permission) {
-        if (!userInstance.isExternalClient() || !userMatchesPublisher()) {
+        if (!userInstance.isExternalClient() || !userMatchesResourceOwner()) {
             return false;
         }
 
         return switch (permission) {
             case UPDATE, UNPUBLISH, TICKET_PUBLISH, TERMINATE -> true;
             case DELETE -> isDraft();
-            default -> false;
         };
     }
 
-    private boolean userMatchesPublisher() {
-        return attempt(() -> userInstance.getCustomerId().equals(publication.getPublisher().getId()))
+    @JacocoGenerated
+    private boolean userMatchesResourceOwner() {
+        return attempt(() -> userInstance.getTopLevelOrgCristinId().equals(publication.getResourceOwner().getOwnerAffiliation()))
                    .orElse(fail -> false);
     }
 }

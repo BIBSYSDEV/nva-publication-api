@@ -13,7 +13,7 @@ public class ResourceOwnerPermissionStrategy extends GrantPermissionStrategy {
 
     @Override
     public boolean allowsAction(PublicationOperation permission) {
-        if (userInstance.isExternalClient() || !isOwner()) {
+        if (!isOwner()) {
             return false;
         }
 

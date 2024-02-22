@@ -24,10 +24,11 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
         var resourceOwner = randomString();
         var curatorUsername = randomString();
         var cristinId = randomUri();
+        var topLevelCristinOrgId = randomUri();
 
         var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRights(), cristinId,
-                                                randomUri());
-        var publication = createDegreePhd(resourceOwner, institution);
+                                                topLevelCristinOrgId);
+        var publication = createDegreePhd(resourceOwner, institution, topLevelCristinOrgId);
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissionStrategy
@@ -46,7 +47,7 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
         var curatorUsername = randomString();
         var cristinId = randomUri();
 
-        var publication = createDegreePhd(resourceOwner, institution).copy()
+        var publication = createDegreePhd(resourceOwner, institution, randomUri()).copy()
                               .withStatus(PublicationOperation.UNPUBLISH == operation ? PUBLISHED : UNPUBLISHED)
                               .build();
         var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRightsWithDegree(),

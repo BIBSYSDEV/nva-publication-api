@@ -94,13 +94,14 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var resourceOwner = randomString();
         var institution = randomUri();
         var cristinId = randomUri();
+        var topLevelCristinOrgId = randomUri();
 
         var requestInfo = createUserRequestInfo(curatorName,
                                                 institution,
                                                 getCuratorWithPublishDegreeAccessRight(),
                                                 cristinId,
-                                                null);
-        var publication = createDegreePhd(resourceOwner, randomUri());
+                                                topLevelCristinOrgId);
+        var publication = createDegreePhd(resourceOwner, randomUri(), randomUri());
 
         Assertions.assertFalse(PublicationPermissionStrategy
                                    .create(publication, RequestUtil.createUserInstanceFromRequest(
@@ -120,8 +121,8 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var cristinId = randomUri();
 
         var requestInfo = createUserRequestInfo(curatorName, curatorInstitution, getCuratorAccessRights(), cristinId,
-                                                null);
-        var publication = createDegreePhd(resourceOwner, resourceOwnerInstitution);
+                                                randomUri());
+        var publication = createDegreePhd(resourceOwner, resourceOwnerInstitution, randomUri());
 
         Assertions.assertFalse(PublicationPermissionStrategy
                                    .create(publication, RequestUtil.createUserInstanceFromRequest(

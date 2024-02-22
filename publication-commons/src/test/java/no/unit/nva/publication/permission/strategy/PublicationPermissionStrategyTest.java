@@ -143,7 +143,7 @@ class PublicationPermissionStrategyTest {
     @Test
     void shouldThrowUnauthorizedExceptionOnValidateDenyFromAuthorize() throws JsonProcessingException,
                                                                          UnauthorizedException {
-        var publication = createDegreePhd(randomString(), randomUri());
+        var publication = createDegreePhd(randomString(), randomUri(), randomUri());
         var requestInfo = createThirdPartyRequestInfo(getCuratorAccessRights());
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         var strategy = PublicationPermissionStrategy.create(publication, userInstance, uriRetriever);
@@ -229,24 +229,27 @@ class PublicationPermissionStrategyTest {
         return curatorAccessRight;
     }
 
-    Publication createPublication(String resourceOwner, URI customer, URI cristinId) {
+    Publication createPublication(String resourceOwner, URI customer, URI ownerAffiliation) {
         return randomPublication().copy()
-                   .withResourceOwner(new ResourceOwner(new Username(resourceOwner), cristinId))
+                   .withResourceOwner(new ResourceOwner(new Username(resourceOwner), ownerAffiliation))
                    .withPublisher(new Organization.Builder().withId(customer).build())
                    .withStatus(PUBLISHED)
                    .build();
     }
 
     Publication createNonDegreePublication(String resourceOwner, URI customer) {
+        return createNonDegreePublication(resourceOwner, customer, randomUri());
+    }
+    Publication createNonDegreePublication(String resourceOwner, URI customer, URI ownerAffiliation) {
         return PublicationGenerator.randomPublicationNonDegree().copy()
-                   .withResourceOwner(new ResourceOwner(new Username(resourceOwner), customer))
+                   .withResourceOwner(new ResourceOwner(new Username(resourceOwner), ownerAffiliation))
                    .withPublisher(new Organization.Builder().withId(customer).build())
                    .withStatus(PUBLISHED)
                    .build();
     }
 
-    Publication createDegreePhd(String resourceOwner, URI customer) {
-        var publication = createPublication(resourceOwner, customer, randomUri());
+    Publication createDegreePhd(String resourceOwner, URI customerId, URI ownerAffiliation) {
+        var publication = createPublication(resourceOwner, customerId, ownerAffiliation);
 
         var degreePhd = new DegreePhd(new MonographPages(), new PublicationDate(),
                                       Set.of(new UnconfirmedDocument(randomString())));
