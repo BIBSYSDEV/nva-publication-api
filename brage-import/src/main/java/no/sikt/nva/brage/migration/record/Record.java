@@ -10,7 +10,7 @@ import java.util.Set;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import nva.commons.core.JacocoGenerated;
 
-@JsonPropertyOrder({"customer", "resourceOwner", "brageLocation", "id", "personCristinId", "doi", "link", "publishedDate",
+@JsonPropertyOrder({"customer", "resourceOwner", "brageLocation", "id", "cristinId", "doi", "link", "publishedDate",
     "publisherAuthority", "rightsholder", "type", "partOf", "hasPart", "publisherAuthority", "spatialCoverage", "date",
     "language", "publication", "entityDescription", "recordContent", "errors", "warnings"})
 @SuppressWarnings({"PMD.TooManyFields", "PMD.GodClass"})
@@ -173,7 +173,7 @@ public class Record {
     }
 
     @JacocoGenerated
-    @JsonProperty("personCristinId")
+    @JsonProperty("cristinId")
     public String getCristinId() {
         return cristinId;
     }
