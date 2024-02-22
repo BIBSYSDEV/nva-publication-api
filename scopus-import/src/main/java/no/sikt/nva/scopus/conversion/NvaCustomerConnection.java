@@ -16,7 +16,7 @@ public class NvaCustomerConnection {
 
     public static final String API_HOST = "API_HOST";
     public static final String CUSTOMER = "customer";
-    public static final String CRISTIN_ID = "personCristinId";
+    public static final String CRISTIN_ID = "cristinId";
     public static final URI FETCH_CUSTOMER_ENDPOINT = UriWrapper.fromHost(new Environment().readEnv(API_HOST))
                                                           .addChild(CUSTOMER)
                                                           .addChild(CRISTIN_ID)

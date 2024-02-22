@@ -78,7 +78,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     public static final String DEPTH = "depth";
     public static final String TOP = "top";
     public static final String CUSTOMER = "customer";
-    public static final String CRISTIN_ID = "personCristinId";
+    public static final String CRISTIN_ID = "cristinId";
     public static final String IS_CUSTOMER_MESSAGE = "Cristin organization {} is nva customer: {}";
     @JsonProperty(ID_FIELD)
     private URI identifier;
