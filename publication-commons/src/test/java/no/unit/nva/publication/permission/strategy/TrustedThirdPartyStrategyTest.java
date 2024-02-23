@@ -10,8 +10,9 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.ArrayList;
 import no.unit.nva.model.PublicationOperation;
+import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
@@ -28,12 +29,13 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
     void shouldAllowTrustedThirdPartyOnNonDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
-        var requestInfo = createThirdPartyRequestInfo(getEditorAccessRightsWithDegree());
+        var requestInfo = createThirdPartyRequestInfo();
+        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         var publication =
             createNonDegreePublication(randomString(), EXTERNAL_CLIENT_CUSTOMER_URI).copy()
+                .withResourceOwner(new ResourceOwner(new Username(userInstance.getUsername()), userInstance.getTopLevelOrgCristinId()))
                 .withStatus(PublicationOperation.UNPUBLISH == operation ? PUBLISHED : UNPUBLISHED)
                 .build();
-        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .create(publication, userInstance, uriRetriever)
@@ -46,7 +48,7 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
     void shouldDenyTrustedThirdPartyOnNonDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
-        var requestInfo = createThirdPartyRequestInfo(getEditorAccessRightsWithDegree());
+        var requestInfo = createThirdPartyRequestInfo();
         var publication = createNonDegreePublication(randomString(), EXTERNAL_CLIENT_CUSTOMER_URI);
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
@@ -59,7 +61,7 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
     void shouldAllowTrustedThirdPartyDeleteOnDraftNonDegree()
         throws JsonProcessingException, UnauthorizedException {
 
-        var requestInfo = createThirdPartyRequestInfo(getEditorAccessRightsWithDegree());
+        var requestInfo = createThirdPartyRequestInfo();
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         var publication =
             createNonDegreePublication(randomString(), EXTERNAL_CLIENT_CUSTOMER_URI,
@@ -94,7 +96,7 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
         throws JsonProcessingException, UnauthorizedException {
         var publication = createNonDegreePublication(randomString(), randomUri());
         publication.setPublisher(null);
-        var requestInfo = createThirdPartyRequestInfo(new ArrayList<>());
+        var requestInfo = createThirdPartyRequestInfo();
 
         Assertions.assertFalse(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
@@ -105,7 +107,7 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
     @Test
     void shouldAllowTrustedClientEditPublicationOnDegree()
         throws JsonProcessingException, UnauthorizedException {
-        var requestInfo = createThirdPartyRequestInfo(new ArrayList<>());
+        var requestInfo = createThirdPartyRequestInfo();
         var userInstanse = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         var publication = createDegreePhd(randomString(), EXTERNAL_CLIENT_CUSTOMER_URI,
                                           userInstanse.getTopLevelOrgCristinId());

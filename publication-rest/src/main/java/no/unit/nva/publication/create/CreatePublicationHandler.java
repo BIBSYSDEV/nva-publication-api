@@ -201,8 +201,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
             client.getCristinUrgUri()
         );
 
-        final var userInstance = UserInstance.createExternalUser(resourceOwner, client.getCustomerUri(),
-                                                                 requestInfo.getAccessRights());
+        final var userInstance = UserInstance.createExternalUser(resourceOwner, client.getCustomerUri());
 
         return new CustomerAwareUserContext(userInstance, customerUri);
     }

@@ -50,21 +50,14 @@ public class UserInstance implements JsonSerializable {
                                 accessRights);
     }
 
-    public static UserInstance create(String userIdentifier, URI customerId, URI topLevelOrgCristinId,
-                                      URI personCristinId,
-                                      List<AccessRight> accessRights) {
-        return new UserInstance(userIdentifier, customerId, topLevelOrgCristinId, personCristinId, accessRights);
-    }
-
     public static UserInstance create(ResourceOwner resourceOwner, URI customerId) {
         return new UserInstance(resourceOwner.getOwner().getValue(), customerId,
                                 resourceOwner.getOwnerAffiliation(), null, null);
     }
 
-    public static UserInstance createExternalUser(ResourceOwner resourceOwner, URI customerUri,
-                                                  List<AccessRight> accessRights) {
-        var userInstance = create(resourceOwner.getOwner().getValue(), customerUri,
-                                  resourceOwner.getOwnerAffiliation(), null, accessRights);
+    public static UserInstance createExternalUser(ResourceOwner resourceOwner, URI customerUri) {
+        var userInstance = new UserInstance(resourceOwner.getOwner().getValue(), customerUri,
+                                            resourceOwner.getOwnerAffiliation(), null, null);
         userInstance.isExternalClient = true;
         return userInstance;
     }

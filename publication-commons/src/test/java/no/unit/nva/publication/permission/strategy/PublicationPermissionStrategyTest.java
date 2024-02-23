@@ -144,7 +144,7 @@ class PublicationPermissionStrategyTest {
     void shouldThrowUnauthorizedExceptionOnValidateDenyFromAuthorize() throws JsonProcessingException,
                                                                          UnauthorizedException {
         var publication = createDegreePhd(randomString(), randomUri(), randomUri());
-        var requestInfo = createThirdPartyRequestInfo(getCuratorAccessRights());
+        var requestInfo = createThirdPartyRequestInfo();
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         var strategy = PublicationPermissionStrategy.create(publication, userInstance, uriRetriever);
 
@@ -155,7 +155,7 @@ class PublicationPermissionStrategyTest {
     void shouldThrowUnauthorizedExceptionOnValidateGrantFromAuthorize() throws JsonProcessingException,
                                                                          UnauthorizedException {
         var publication = createNonDegreePublication(randomString(), randomUri());
-        var requestInfo = createThirdPartyRequestInfo(getCuratorAccessRights());
+        var requestInfo = createThirdPartyRequestInfo();
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         var strategy = PublicationPermissionStrategy.create(publication, userInstance, uriRetriever);
 
@@ -343,14 +343,10 @@ class PublicationPermissionStrategyTest {
         return requestInfo;
     }
 
-    protected RequestInfo createThirdPartyRequestInfo(List<AccessRight> accessRights)
+    protected RequestInfo createThirdPartyRequestInfo()
         throws JsonProcessingException {
 
-        var cognitoGroups = accessRights.stream().map(getCognitoGroup(
-            PublicationPermissionStrategyTest.EXTERNAL_CLIENT_CUSTOMER_URI)).toList();
-
         var claims = new HashMap<String, String>();
-        claims.put(INJECT_COGNITO_GROUPS_CLAIM, String.join(",", cognitoGroups));
         claims.put(ISS_CLAIM, EXTERNAL_ISSUER);
         claims.put(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID);
 
