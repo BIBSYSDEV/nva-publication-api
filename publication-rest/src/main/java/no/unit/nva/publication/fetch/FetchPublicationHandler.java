@@ -19,6 +19,7 @@ import static nva.commons.core.paths.UriWrapper.HTTPS;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.net.MediaType;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -30,6 +31,7 @@ import java.util.Set;
 import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.DataCiteMetadataDtoMapper;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -51,6 +53,8 @@ import nva.commons.apigateway.exceptions.UnsupportedAcceptHeaderException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
@@ -66,6 +70,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     private final RawContentRetriever authorizedBackendUriRetriever;
     private final UriRetriever uriRetriever;
     private int statusCode = HttpURLConnection.HTTP_OK;
+    private final Logger logger = LoggerFactory.getLogger(FetchPublicationHandler.class);
 
     @JacocoGenerated
     public FetchPublicationHandler() {
@@ -111,7 +116,11 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     protected String processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
 
         statusCode = HttpURLConnection.HTTP_OK; // make sure to reset to default on each invocation
-
+        try {//debug code, delete me
+            logger.info(JsonUtils.singleLineObjectMapper.writeValueAsString(requestInfo));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
         var identifier = RequestUtil.getIdentifier(requestInfo);
         var publication = resourceService.getPublicationByIdentifier(identifier);
 
