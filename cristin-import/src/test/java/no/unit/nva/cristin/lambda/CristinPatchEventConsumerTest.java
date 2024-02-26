@@ -11,37 +11,35 @@ import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToStrin
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.StringContains.containsString;
-
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-
 import java.io.IOException;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
-
 import java.util.stream.Stream;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOf;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
+import no.unit.nva.cristin.patcher.exception.ChildPatchPublicationInstanceMismatchException;
 import no.unit.nva.cristin.patcher.exception.NotFoundException;
+import no.unit.nva.cristin.patcher.exception.ParentPatchPublicationInstanceMismatchException;
 import no.unit.nva.cristin.patcher.exception.ParentPublicationException;
-import no.unit.nva.cristin.patcher.exception.PublicationInstanceMismatchException;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Anthology;
-import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
@@ -58,10 +56,11 @@ import no.unit.nva.model.instancetypes.chapter.Introduction;
 import no.unit.nva.model.instancetypes.chapter.NonFictionChapter;
 import no.unit.nva.model.instancetypes.chapter.PopularScienceChapter;
 import no.unit.nva.model.instancetypes.chapter.TextbookChapter;
+import no.unit.nva.model.instancetypes.degree.ConfirmedDocument;
+import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.report.ConferenceReport;
 import no.unit.nva.model.instancetypes.report.ReportPolicy;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
-import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -80,7 +79,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import software.amazon.awssdk.services.s3.endpoints.internal.Value.Str;
 
 public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
 
@@ -271,7 +269,7 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
 
 
     @Test
-    void shouldStoreErrorReportWhenParentAndChildPublicationDoesNotMatch()
+    void shouldStoreErrorReportWhenParentAndChildPublicationDoesNotMatchWhenUpdatingChild()
         throws ApiGatewayException, IOException {
         var bookMonographChild =
             createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString(),
@@ -286,11 +284,67 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         var sqsEvent = createSqsEvent(eventReference);
         handler.handleRequest(sqsEvent, CONTEXT);
         var actualReport = extractActualReportFromS3Client(eventReference,
-                                                           PublicationInstanceMismatchException.class.getSimpleName(),
+                                                           ChildPatchPublicationInstanceMismatchException.class.getSimpleName(),
                                                            bookMonographChild.getIdentifier().toString());
         assertThat(actualReport.getInput().getChildPublication(), is(Matchers.equalTo(bookMonographChild)));
         assertThat(actualReport.getInput().getPartOf().getParentPublication(),
                    is(Matchers.equalTo(bookMonographParent)));
+    }
+
+    @Test
+    void shouldAddChildPublicationIdentifierAsRelatedDocumentForParentPublicationWhenSuccess() throws ApiGatewayException,
+                                                                                          IOException {
+        var childPublication =
+            createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString(),
+                                                                                NonFictionMonograph.class);
+        var partOfCristinId = randomString();
+        var parentPublication =
+            createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(partOfCristinId,
+                                                                                DegreePhd.class);
+        var expectedRelatedDocumentId = createExpectedPartOfUri(childPublication.getIdentifier());
+        var partOfEventReference = createPartOfEventReference(childPublication.getIdentifier().toString(),
+                                                              partOfCristinId);
+        var fileUri = s3Driver.insertFile(randomPath(), partOfEventReference);
+        var eventReference = createInputEventForFile(fileUri);
+        var sqsEvent = createSqsEvent(eventReference);
+        handler.handleRequest(sqsEvent, CONTEXT);
+        var actualUpdatedParentPublication =
+            resourceService.getPublicationByIdentifier(parentPublication.getIdentifier());
+        var updatedRelatedDocuments = ((DegreePhd) actualUpdatedParentPublication.getEntityDescription()
+                                                    .getReference()
+                                                    .getPublicationInstance()).getRelated();
+        assertThat(updatedRelatedDocuments, hasItem(new ConfirmedDocument(expectedRelatedDocumentId)));
+
+        var actualReport = extractSuccessReportFromS3Client(eventReference, parentPublication);
+        assertThat(actualReport, containsString(parentPublication.getIdentifier().toString()));
+    }
+
+    @Test
+    void shouldStoreErrorReportWhenParentAndChildPublicationDoesNotMatchWhenUpdatingParent()
+        throws ApiGatewayException, IOException {
+        var child =
+            createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString(), Textbook.class);
+        var partOfCristinId = randomString();
+        var parent =
+            createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(partOfCristinId, DegreePhd.class);
+        var partOfEventReference = createPartOfEventReference(child.getIdentifier().toString(),
+                                                              partOfCristinId);
+        var fileUri = s3Driver.insertFile(randomPath(), partOfEventReference);
+        var eventReference = createInputEventForFile(fileUri);
+        var sqsEvent = createSqsEvent(eventReference);
+        handler.handleRequest(sqsEvent, CONTEXT);
+        var childPatchReport = extractActualReportFromS3Client(eventReference,
+                                                           ChildPatchPublicationInstanceMismatchException.class.getSimpleName(),
+                                                           child.getIdentifier().toString());
+        var parentPatchReport = extractActualReportFromS3Client(eventReference,
+                                                               ParentPatchPublicationInstanceMismatchException.class.getSimpleName(),
+                                                               child.getIdentifier().toString());
+        assertThat(childPatchReport.getInput().getChildPublication(), is(Matchers.equalTo(child)));
+        assertThat(parentPatchReport.getInput().getChildPublication(), is(Matchers.equalTo(child)));
+        assertThat(childPatchReport.getInput().getPartOf().getParentPublication(),
+                   is(Matchers.equalTo(parent)));
+        assertThat(parentPatchReport.getInput().getPartOf().getParentPublication(),
+                   is(Matchers.equalTo(parent)));
     }
 
     private static void removePartOfInPublicationContext(Publication publication) {
