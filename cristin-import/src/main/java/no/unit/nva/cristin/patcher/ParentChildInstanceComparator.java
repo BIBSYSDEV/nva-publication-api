@@ -1,6 +1,6 @@
 package no.unit.nva.cristin.patcher;
 
-import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import java.util.List;
 import java.util.Map;
 import no.unit.nva.model.Publication;
@@ -9,7 +9,7 @@ import no.unit.nva.model.instancetypes.chapter.Introduction;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import nva.commons.core.JacocoGenerated;
 
-public class ParentChildInstanceComparator {
+public final class ParentChildInstanceComparator {
 
     private static final Map<String, List<String>> VALID_PUBLICATION_INSTANCE =
         Map.of(NonFictionMonograph.class.getSimpleName(), List.of(DegreePhd.class.getSimpleName()),
@@ -23,10 +23,7 @@ public class ParentChildInstanceComparator {
 
     public static boolean isValidCombination(Publication child, Publication parent) {
         var validChildren = VALID_PUBLICATION_INSTANCE.get(getPublicationsInstanceName(child));
-        if (isNull(validChildren)) {
-            return false;
-        }
-        return validChildren.contains(getPublicationsInstanceName(parent));
+        return nonNull(validChildren) && validChildren.contains(getPublicationsInstanceName(parent));
     }
 
     public static String getPublicationsInstanceName(Publication publication) {
