@@ -51,6 +51,14 @@ paths:
       summary: Fetch Publication by Identifier
       tags:
         - external
+      security:
+        - { }
+        - CognitoUserPool: [
+          'https://api.nva.unit.no/scopes/backend',
+          'https://api.nva.unit.no/scopes/frontend',
+          'aws.cognito.signin.user.admin',
+          'https://api.nva.unit.no/scopes/third-party/publication-upsert'
+        ]
       parameters:
         - in: path
           name: publicationIdentifier
