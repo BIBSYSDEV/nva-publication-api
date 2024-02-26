@@ -117,6 +117,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
         statusCode = HttpURLConnection.HTTP_OK; // make sure to reset to default on each invocation
         try {//debug code, delete me
+            logger.info(JsonUtils.singleLineObjectMapper.writeValueAsString(context));
             logger.info(JsonUtils.singleLineObjectMapper.writeValueAsString(requestInfo));
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
