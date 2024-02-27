@@ -410,7 +410,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     }
 
     @Test
-    void shouldNotReturnOkStatusCodeWhenAttemptToPublishFails() throws ApiGatewayException,
+    void shouldReturnConflictStatusCodeWhenAttemptingToPublishUnpublishablePublication() throws ApiGatewayException,
                                                                        IOException {
         var unpublishablePublication = TicketTestUtils.createdPersistedPublicationWithoutMainTitle(DRAFT,
                                                                                                    resourceService);
