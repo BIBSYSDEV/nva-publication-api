@@ -6,12 +6,13 @@ import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationOperation.DELETE;
+import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublicationNonDegree;
-import static no.unit.nva.model.testing.PublicationInstanceBuilder.listPublicationInstanceTypes;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypes;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseNotFound;
 import static no.unit.nva.publication.CustomerApiStubs.stubSuccessfulCustomerResponseAllowingFilesForNoTypes;
@@ -27,7 +28,6 @@ import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
-import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -91,6 +91,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
@@ -103,7 +104,6 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Publication.Builder;
 import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
@@ -764,10 +764,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var contributor = createContributorForPublicationUpdate(cristinId);
         injectContributor(savedPublication, contributor);
         var customerId = ((Organization) contributor.getAffiliations().get(0)).getId();
+        var topLevelCristinOrgId = ((Organization) contributor.getAffiliations().get(0)).getId();
 
         var publicationUpdate = updateTitle(savedPublication);
 
-        var event = curatorWithAccessRightsUpdatesPublication(publicationUpdate, customerId, MANAGE_DOI, MANAGE_RESOURCES_STANDARD);
+        var event = curatorWithAccessRightsUpdatesPublication(publicationUpdate, customerId, topLevelCristinOrgId,
+                                                              MANAGE_DOI, MANAGE_RESOURCES_STANDARD);
         updatePublicationHandler.handleRequest(event, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Publication.class);
@@ -1004,7 +1006,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                                                    ApiGatewayException {
         var publication = createAndPersistPublicationWithoutDoi(true);
 
-        var inputStream = createUnpublishHandlerRequest(publication.getIdentifier(), randomString(),
+        var inputStream = createUnpublishHandlerRequest(publication, randomString(),
                                                         RandomPersonServiceResponse.randomUri(),
                                                         randomUri());
         updatePublicationHandler.handleRequest(inputStream, output, context);
@@ -1023,7 +1025,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publication = createPublicationWithoutDoiAndWithContributor(userId, userName);
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
-        var inputStream = createUnpublishHandlerRequest(publication.getIdentifier(), randomString(),
+        var inputStream = createUnpublishHandlerRequest(publication, randomString(),
                                                         RandomPersonServiceResponse.randomUri(),
                                                         RandomPersonServiceResponse.randomUri());
         updatePublicationHandler.handleRequest(inputStream, output, context);
@@ -1043,7 +1045,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
-        var inputStream = createUnpublishHandlerRequest(publication.getIdentifier(), userName,
+        var inputStream = createUnpublishHandlerRequest(publication, userName,
                                                         RandomPersonServiceResponse.randomUri(), userCristinId);
         updatePublicationHandler.handleRequest(inputStream, output, context);
         var updatedPublication = publicationService.getPublication(publication);
@@ -1069,7 +1071,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
-        var inputStream = createUnpublishHandlerRequest(publication.getIdentifier(), userName,
+        var inputStream = createUnpublishHandlerRequest(publication, userName,
                                                         RandomPersonServiceResponse.randomUri(), userCristinId);
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
@@ -1092,7 +1094,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
-        var inputStream = createUnpublishRequestWithDuplicateOfValue(publication.getIdentifier(), userName,
+        var inputStream = createUnpublishRequestWithDuplicateOfValue(publication, userName,
                                                                      RandomPersonServiceResponse.randomUri(),
                                                                      duplicate);
         updatePublicationHandler.handleRequest(inputStream, output, context);
@@ -1116,7 +1118,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
-        var inputStream = createUnpublishRequestWithDuplicateOfValue(publication.getIdentifier(), userName,
+        var inputStream = createUnpublishRequestWithDuplicateOfValue(publication, userName,
                                                                      RandomPersonServiceResponse.randomUri(),
                                                                      duplicate);
 
@@ -1148,7 +1150,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publication = createAndPersistPublicationWithoutDoiAndWithResourceOwner(userName, institutionId);
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
-        var inputStream = createUnpublishHandlerRequest(publication.getIdentifier(), userName, institutionId);
+        var inputStream = createUnpublishHandlerRequest(publication, userName, institutionId);
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -1160,7 +1162,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var unpublishedPublication = createAndPersistPublicationWithoutDoi(false);
         var publisherUri = unpublishedPublication.getPublisher().getId();
 
-        var inputStream = createUnpublishHandlerRequest(unpublishedPublication.getIdentifier(), randomString(),
+        var inputStream = createUnpublishHandlerRequest(unpublishedPublication, randomString(),
                                                         publisherUri,
                                                         AccessRight.MANAGE_RESOURCES_ALL);
         updatePublicationHandler.handleRequest(inputStream, output, context);
@@ -1198,7 +1200,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldReturnNotFoundWhenPublicationDoesNotExist() throws IOException {
-        var inputStream = createUnpublishHandlerRequest(SortableIdentifier.next(), randomString(),
+        var inputStream = createUnpublishHandlerRequest(randomPublication(), randomString(),
                                                         RandomPersonServiceResponse.randomUri());
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
@@ -1214,7 +1216,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                .build();
 
         var publisherUri = publication.getPublisher().getId();
-        var inputStream = createUnpublishHandlerRequest(persistedPublication.getIdentifier(), randomString(),
+        var inputStream = createUnpublishHandlerRequest(persistedPublication, randomString(),
                                                         publisherUri,
                                                         AccessRight.MANAGE_RESOURCES_ALL);
         updatePublicationHandler.handleRequest(inputStream, output, context);
@@ -1231,7 +1233,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         var publisherUri = publication.getPublisher().getId();
-        var inputStream = createUnpublishHandlerRequest(publication.getIdentifier(), randomString(), publisherUri,
+        var inputStream = createUnpublishHandlerRequest(publication, randomString(), publisherUri,
                                                         AccessRight.MANAGE_RESOURCES_STANDARD);
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
@@ -1248,7 +1250,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         var publisherUri = publication.getPublisher().getId();
-        var inputStream = createUnpublishHandlerRequest(publication.getIdentifier(), randomString(), publisherUri,
+        var inputStream = createUnpublishHandlerRequest(publication, randomString(), publisherUri,
                                                         MANAGE_DEGREE, MANAGE_RESOURCES_ALL);
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
@@ -1262,7 +1264,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         var publisherUri = publication.getPublisher().getId();
-        var inputStream = createUnpublishHandlerRequest(publication.getIdentifier(), randomString(), publisherUri);
+        var inputStream = createUnpublishHandlerRequest(publication, randomString(), publisherUri);
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -1275,7 +1277,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publication = createAndPersistDegreeWithoutDoi();
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         var duplicate = randomPublicationApiUri();
-        var request = createUnpublishRequestWithDuplicateOfValue(publication.getIdentifier(),
+        var request = createUnpublishRequestWithDuplicateOfValue(publication,
                                                                  randomString(),
                                                                  publication.getPublisher().getId(),
                                                                  duplicate,
@@ -1300,7 +1302,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                                     institutionId);
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
-        var inputStream = createUnpublishHandlerRequest(publication.getIdentifier(), curatorUsername, institutionId,
+        var inputStream = createUnpublishHandlerRequest(publication, curatorUsername, institutionId,
                                                         MANAGE_RESOURCES_STANDARD);
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
@@ -1322,8 +1324,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                                     resourceOwnerInstitutionId);
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
-        var inputStream = createUnpublishHandlerRequest(publication.getIdentifier(), curatorUsername,
-                                                        curatorInstitutionId,
+        var inputStream = createUnpublishHandlerRequestForTopLevelCristinOrg(publication, curatorUsername,
+                                                        curatorInstitutionId, null, randomUri(),
                                                         AccessRight.MANAGE_RESOURCES_STANDARD);
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
@@ -1337,7 +1339,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publication = createAndPersistDegreeWithoutDoi();
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         var publisherUri = publication.getPublisher().getId();
-        var request = createUnpublishHandlerRequest(publication.getIdentifier(), randomString(), publisherUri,
+        var request = createUnpublishHandlerRequest(publication, randomString(), publisherUri,
                                                     MANAGE_DEGREE, MANAGE_RESOURCES_STANDARD);
         updatePublicationHandler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -1389,6 +1391,24 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         verify(s3Client, never()).deleteObject(any(DeleteObjectRequest.class));
     }
 
+    @Test
+    void handlerUpdatesPublicationShouldReturnAllowedOperations()
+        throws IOException, ApiGatewayException {
+        publication = publicationWithoutIdentifier(customerId);
+        var savedPublication = createSamplePublication();
+
+        var publicationUpdate = updateTitle(savedPublication);
+
+        var event = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
+
+        updatePublicationHandler.handleRequest(event, output, context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
+
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
+        final var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
+        assertThat(body.getAllowedOperations(), containsInAnyOrder(UPDATE, DELETE));
+    }
+
     private Publication createUnpublishedPublication() throws ApiGatewayException {
         var publication = createAndPersistDegreeWithoutDoi();
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
@@ -1396,14 +1416,14 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return publicationService.getPublication(publication);
     }
 
-    private InputStream createUnpublishHandlerRequest(SortableIdentifier publicationIdentifier, String username,
+    private InputStream createUnpublishHandlerRequest(Publication publication, String username,
                                                       URI institutionId, AccessRight... accessRight)
         throws JsonProcessingException {
 
-        return createUnpublishHandlerRequest(publicationIdentifier, username, institutionId, null, accessRight);
+        return createUnpublishHandlerRequest(publication, username, institutionId, null, accessRight);
     }
 
-    private InputStream createUnpublishHandlerRequest(SortableIdentifier publicationIdentifier, String username,
+    private InputStream createUnpublishHandlerRequest(Publication publication, String username,
                                                       URI institutionId, URI cristinId, AccessRight... accessRight)
         throws JsonProcessingException {
         var unpublishRequest = new UnpublishPublicationRequest();
@@ -1413,9 +1433,32 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                           .withCurrentCustomer(institutionId)
                           .withAccessRights(institutionId, accessRight)
                           .withBody(unpublishRequest)
-                          .withTopLevelCristinOrgId(randomUri())
+                          .withTopLevelCristinOrgId(publication.getResourceOwner().getOwnerAffiliation())
                           .withPersonCristinId(randomUri())
-                          .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString()));
+                          .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()));
+
+        if (nonNull(cristinId)) {
+            request.withPersonCristinId(cristinId);
+        }
+
+        return request.build();
+    }
+
+    private InputStream createUnpublishHandlerRequestForTopLevelCristinOrg(Publication publication, String username,
+                                                      URI institutionId, URI cristinId,
+                                                                           URI topLevelCristinOrg,
+                                                                           AccessRight... accessRight)
+        throws JsonProcessingException {
+        var unpublishRequest = new UnpublishPublicationRequest();
+        unpublishRequest.setComment(COMMENT_ON_UNPUBLISHING_REQUEST);
+        var request = new HandlerRequestBuilder<UnpublishPublicationRequest>(restApiMapper)
+                          .withUserName(username)
+                          .withCurrentCustomer(institutionId)
+                          .withAccessRights(institutionId, accessRight)
+                          .withBody(unpublishRequest)
+                          .withTopLevelCristinOrgId(topLevelCristinOrg)
+                          .withPersonCristinId(randomUri())
+                          .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()));
 
         if (nonNull(cristinId)) {
             request.withPersonCristinId(cristinId);
@@ -1443,7 +1486,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return request.build();
     }
 
-    private InputStream createUnpublishRequestWithDuplicateOfValue(SortableIdentifier publicationIdentifier, String username,
+    private InputStream createUnpublishRequestWithDuplicateOfValue(Publication publication, String username,
                                                                    URI institutionId,
                                                                    URI duplicateOf,
                                                                    AccessRight... accessRight)
@@ -1455,10 +1498,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                           .withUserName(username)
                           .withCurrentCustomer(institutionId)
                           .withAccessRights(institutionId, accessRight)
-                          .withTopLevelCristinOrgId(randomUri())
+                          .withTopLevelCristinOrgId(publication.getResourceOwner().getOwnerAffiliation())
                           .withPersonCristinId(randomUri())
                           .withBody(unpublishRequest)
-                          .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString()));
+                          .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()));
 
         return request.build();
     }
@@ -1748,7 +1791,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .withBody(publicationUpdate)
                    .withPersonCristinId(randomUri())
                    .withAccessRights(customerId, MANAGE_RESOURCES_STANDARD, MANAGE_DEGREE)
-                   .withTopLevelCristinOrgId(randomUri())
+                   .withTopLevelCristinOrgId(publicationUpdate.getResourceOwner().getOwnerAffiliation())
                    .withPersonCristinId(randomUri())
                    .build();
     }
@@ -1876,6 +1919,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private InputStream curatorWithAccessRightsUpdatesPublication(Publication publication, URI customerId,
+                                                                  URI topLevelCristinOrgId,
                                                                   AccessRight... accessRights)
         throws JsonProcessingException {
         var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString());
@@ -1885,7 +1929,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .withCurrentCustomer(customerId)
                    .withBody(publication)
                    .withAccessRights(customerId, accessRights)
-                   .withTopLevelCristinOrgId(randomUri())
+                   .withTopLevelCristinOrgId(topLevelCristinOrgId)
                    .withPersonCristinId(randomUri())
                    .build();
     }

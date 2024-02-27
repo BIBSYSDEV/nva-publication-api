@@ -152,7 +152,8 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     void shouldCreateMessageAndDoNotSetCuratorAsAssigneeWhenSenderIsCuratorAndPublicationOwnerAndTicketHasNoAssignee(
         Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, IOException {
-        var curatorAndOwner = UserInstance.create(new User(randomString()), randomUri());
+        var curatorAndOwner = new UserInstance(new User(randomString()).toString(), randomUri(), randomUri(), null,
+                                               null);
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, curatorAndOwner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var expectedText = randomString();
@@ -178,7 +179,9 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
 
         var publication = TicketTestUtils.createPersistedPublication(publicationStatus, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        var sender = UserInstance.create(randomString(), publication.getPublisher().getId());
+        var sender = new UserInstance(randomString(), publication.getPublisher().getId(),
+                                      publication.getResourceOwner().getOwnerAffiliation(), null,
+                                      null);
         var expectedText = randomString();
         var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText,
                                                              MANAGE_RESOURCES_STANDARD, accessRight);
@@ -303,6 +306,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
                    .withBody(messageBody(message))
                    .withUserName(user.getUsername())
                    .withCurrentCustomer(user.getCustomerId())
+                   .withTopLevelCristinOrgId(publication.getResourceOwner().getOwnerAffiliation())
                    .withPersonCristinId(randomUri())
                    .withAccessRights(user.getCustomerId(), accessRights)
                    .build();

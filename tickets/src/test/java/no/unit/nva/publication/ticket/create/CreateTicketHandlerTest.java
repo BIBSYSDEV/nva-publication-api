@@ -827,7 +827,6 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     private InputStream createHttpTicketCreationRequestWithAccessRight(TicketDto ticketDto,
                                                                  Publication publication, AccessRight... accessRight)
         throws JsonProcessingException {
-        var user = randomString();
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
                    .withBody(ticketDto)
                    .withAuthorizerClaim(PERSON_AFFILIATION_CLAIM, publication.getResourceOwner().getOwner().getValue())
@@ -836,6 +835,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                    .withCurrentCustomer(publication.getPublisher().getId())
                    .withAccessRights(publication.getPublisher().getId(), accessRight)
                    .withPersonCristinId(randomUri())
+                   .withTopLevelCristinOrgId(publication.getResourceOwner().getOwnerAffiliation())
                    .build();
     }
 

@@ -15,8 +15,11 @@ public final class ExceptionHandling {
         if (exception instanceof ParentPublicationException) {
             return (ParentPublicationException) exception;
         }
-        if (exception instanceof PublicationInstanceMismatchException) {
-            return (PublicationInstanceMismatchException) exception;
+        if (exception instanceof ChildPatchPublicationInstanceMismatchException e) {
+            return e;
+        }
+        if (exception instanceof ParentPatchPublicationInstanceMismatchException e) {
+            return e;
         }
         return new RuntimeException(exception);
     }

@@ -635,6 +635,7 @@ Resources:
     Properties:
       CodeUri: publication-rest
       Handler: no.unit.nva.publication.update.UpdatePublicationHandler::handleRequest
+      MemorySize: 8192
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'

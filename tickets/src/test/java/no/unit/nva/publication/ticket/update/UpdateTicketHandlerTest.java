@@ -680,6 +680,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                                      AccessRight.SUPPORT)
                    .withBody(new UpdateTicketRequest(ticket.getStatus(), ticket.getAssignee(), viewStatus))
                    .withPathParameters(createPathParameters(ticket, publication.getIdentifier()))
+                   .withTopLevelCristinOrgId(publication.getResourceOwner().getOwnerAffiliation())
                    .withPersonCristinId(randomUri())
                    .build();
     }
@@ -737,6 +738,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
 
     private InputStream createCompleteTicketHttpRequest(TicketEntry ticket, URI customer, AccessRight... accessRights)
         throws JsonProcessingException {
+        var publication = ticket.toPublication(resourceService);
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper).withBody(TicketDto.fromTicket(ticket))
                    .withAccessRights(customer, accessRights)
                    .withCurrentCustomer(customer)
@@ -746,6 +748,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                                               TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME,
                                               ticket.getIdentifier().toString()))
                    .withPersonCristinId(randomUri())
+                   .withTopLevelCristinOrgId(publication.getResourceOwner().getOwnerAffiliation())
                    .build();
     }
 
