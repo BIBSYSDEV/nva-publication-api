@@ -7,7 +7,9 @@ import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.HTTPS_
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static org.hamcrest.MatcherAssert.assertThat;
 import java.net.URI;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -62,6 +64,9 @@ public final class BrageNvaMapper {
     public static final String PERSON = "person";
     public static final String BASE_PATH = new Environment().readEnv("DOMAIN_NAME");
     public static final String ORGANIZATION = "organization";
+    public static final String LEGAL_NOTE_WITH_EMBARGO_V1 = "Klausulert: Kan bare siteres etter nærmere avtale med forfatter.";
+    private static final CharSequence LEGAL_NOTE_WITH_EMBARGO_V2 = "Klausulert: Kan bare tillates lest etter nærmere avtale med forfatter.";
+    public static final int HUNDRED_YEARS = 36_524;
 
     private BrageNvaMapper() {
 
@@ -170,13 +175,30 @@ public final class BrageNvaMapper {
     }
 
     private static AssociatedArtifact generateFile(ContentFile file, Record brageRecord) {
+        var legalNote = extractLegalNote(brageRecord);
+        var embargoDate = defineEmbargoDate(legalNote, file);
         return File.builder()
                    .withName(file.getFilename())
                    .withIdentifier(file.getIdentifier())
                    .withLicense(getLicenseUri(file))
                    .withPublisherAuthority(extractPublisherAuthority(brageRecord))
-                   .withEmbargoDate(extractEmbargoDate(file))
+                   .withEmbargoDate(embargoDate)
+                   .withLegalNote(legalNote)
                    .buildPublishedFile();
+    }
+
+    private static Instant defineEmbargoDate(String legalNote, ContentFile file) {
+        if (nonNull(legalNote)
+            && (legalNote.contains(LEGAL_NOTE_WITH_EMBARGO_V1)
+            || legalNote.contains(LEGAL_NOTE_WITH_EMBARGO_V2))) {
+            return Instant.now().plus(Duration.ofDays(HUNDRED_YEARS));
+        } else {
+            return extractEmbargoDate(file);
+        }
+    }
+
+    private static String extractLegalNote(Record brageRecord) {
+        return Optional.ofNullable(brageRecord).map(Record::getAccessCode).orElse(null);
     }
 
     private static Instant extractEmbargoDate(ContentFile file) {
