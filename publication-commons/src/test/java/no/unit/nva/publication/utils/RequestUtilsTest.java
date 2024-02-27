@@ -65,7 +65,7 @@ public class RequestUtilsTest {
 
     @Test
     void shouldReturnFalseWhenCheckingAuthorizationForNullTicket() throws UnauthorizedException {
-        Assertions.assertFalse(RequestUtils.fromRequestInfo(mockedRequestInfo(), uriRetriever).isAuthorizedToManage(null, null));
+        Assertions.assertFalse(RequestUtils.fromRequestInfo(mockedRequestInfo(), uriRetriever).isAuthorizedToManage(null));
     }
 
     @Test
@@ -99,7 +99,7 @@ public class RequestUtilsTest {
 
         when(resourceService.getPublicationByIdentifier(any())).thenReturn(publication);
 
-        Assertions.assertTrue(requestUtils.isAuthorizedToManage(ticket, resourceService));
+        Assertions.assertTrue(requestUtils.isAuthorizedToManage(ticket));
     }
 
     @Test

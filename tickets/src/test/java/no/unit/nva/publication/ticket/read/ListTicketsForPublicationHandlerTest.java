@@ -51,7 +51,8 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
 
     public static Stream<Arguments> accessRightAndTicketTypeProvider() {
         return Stream.of(Arguments.of(DoiRequest.class, AccessRight.MANAGE_DOI),
-            Arguments.of(GeneralSupportRequest.class, AccessRight.SUPPORT));
+            Arguments.of(GeneralSupportRequest.class, AccessRight.SUPPORT),
+                         Arguments.of(PublishingRequestCase.class, AccessRight.MANAGE_PUBLISHING_REQUESTS));
     }
 
     public static Stream<Arguments> accessRightAndTicketTypeProviderDraft() {
@@ -143,6 +144,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
 
         TicketTestUtils.createPersistedTicket(publication, DoiRequest.class, ticketService);
         TicketTestUtils.createPersistedTicket(publication, GeneralSupportRequest.class, ticketService);
+        TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
 
         var request = curatorWithAccessRightRequestTicketsForPublication(publication, accessRight);
         handler.handleRequest(request, output, CONTEXT);
@@ -260,8 +262,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .withPathParameters(constructPathParameters(publication))
                    .withCurrentCustomer(publication.getPublisher().getId())
                    .withUserName(randomString())
-                   .withAccessRights(publication.getPublisher().getId(), MANAGE_RESOURCES_STANDARD,
-                                     accessRight)
+                   .withAccessRights(publication.getPublisher().getId(), accessRight)
                    .withPersonCristinId(randomUri())
                    .withTopLevelCristinOrgId(publication.getResourceOwner().getOwnerAffiliation())
                    .build();

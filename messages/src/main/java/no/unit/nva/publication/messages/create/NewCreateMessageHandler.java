@@ -31,21 +31,19 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
 
     private final MessageService messageService;
     private final TicketService ticketService;
-    private final ResourceService resourceService;
     private final UriRetriever uriRetriever;
 
     @JacocoGenerated
     public NewCreateMessageHandler() {
-        this(MessageService.defaultService(), TicketService.defaultService(), ResourceService.defaultService(),
+        this(MessageService.defaultService(), TicketService.defaultService(),
              UriRetriever.defaultUriRetriever());
     }
 
     public NewCreateMessageHandler(MessageService messageService, TicketService ticketService,
-                                   ResourceService resourceService, UriRetriever uriRetriever) {
+                                   UriRetriever uriRetriever) {
         super(CreateMessageRequest.class);
         this.messageService = messageService;
         this.ticketService = ticketService;
-        this.resourceService = resourceService;
         this.uriRetriever = uriRetriever;
     }
 
@@ -64,7 +62,7 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
 
     private void isAuthorizedToManageTicket(RequestUtils requestUtils, TicketEntry ticket)
         throws ForbiddenException {
-        if (!requestUtils.isAuthorizedToManage(ticket, resourceService) && !requestUtils.isTicketOwner(ticket)) {
+        if (!requestUtils.isAuthorizedToManage(ticket) && !requestUtils.isTicketOwner(ticket)) {
             throw new ForbiddenException();
         }
     }
@@ -93,7 +91,7 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
     private boolean userCanBeSetAsAssignee(TicketEntry ticket, RequestUtils requestUtils) {
         return !ticket.hasAssignee()
                && !requestUtils.isTicketOwner(ticket)
-               && requestUtils.isAuthorizedToManage(ticket, resourceService);
+               && requestUtils.isAuthorizedToManage(ticket);
     }
 
     private TicketEntry fetchTicketForUser(RequestUtils requestUtils, SortableIdentifier ticketIdentifier)
