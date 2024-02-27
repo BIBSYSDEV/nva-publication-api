@@ -146,6 +146,14 @@ public final class TicketTestUtils {
         return persistPublication(resourceService, publication);
     }
 
+    public static Publication createdPersistedPublicationWithoutMainTitle(PublicationStatus status,
+                                                                          ResourceService resourceService)
+        throws ApiGatewayException {
+        var publication = randomPublicationWithUnpublishedFiles(status);
+        publication.getEntityDescription().setMainTitle(null);
+        return persistPublication(resourceService, publication);
+    }
+
     public static Publication createPersistedPublicationWithPublishedFiles(URI customerId, PublicationStatus status,
                                                                              ResourceService resourceService)
         throws ApiGatewayException {

@@ -577,22 +577,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void publishResourceThrowsInvalidPublicationExceptionExceptionWhenResourceHasNoLinkNoFilesAndNoDoi()
-        throws BadRequestException {
-        Publication sampleResource = publicationWithIdentifier();
-        sampleResource.setLink(null);
-        sampleResource.getEntityDescription().getReference().setDoi(null);
-        sampleResource.setAssociatedArtifacts(createEmptyArtifactList());
-        Publication savedResource = createPersistedPublicationWithoutDoi(sampleResource);
-
-        Executable action = () -> publishResource(savedResource);
-        InvalidPublicationException exception = assertThrows(InvalidPublicationException.class, action);
-        String actualMessage = exception.getMessage();
-
-        assertThat(actualMessage, containsString(RESOURCE_LACKS_DATA));
-    }
-
-    @Test
     void publishResourcePublishesResourceWhenDoiIsPresentButNoFiles() throws ApiGatewayException {
         Publication sampleResource = publicationWithIdentifier();
         sampleResource.getEntityDescription().getReference().setDoi(randomDoi());

@@ -1,5 +1,6 @@
 package no.unit.nva.publication.ticket.create;
 
+import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
@@ -83,7 +84,6 @@ import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
@@ -407,6 +407,26 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(getAssociatedFiles(publishedPublication), everyItem(instanceOf(PublishedFile.class)));
         assertThat(publishedPublication.getStatus(), is(equalTo(PUBLISHED)));
         assertThat(getTicketStatusForPublication(publication), is(equalTo(COMPLETED)));
+    }
+
+    @Test
+    void shouldReturnConflictStatusCodeWhenAttemptingToPublishUnpublishablePublication() throws ApiGatewayException,
+                                                                       IOException {
+        var unpublishablePublication = TicketTestUtils.createdPersistedPublicationWithoutMainTitle(DRAFT,
+                                                                                                   resourceService);
+        var requestBody = constructDto(PublishingRequestCase.class);
+        var owner = UserInstance.fromPublication(unpublishablePublication);
+        ticketResolver = new TicketResolver(resourceService, ticketService,
+                                            getUriRetriever(getHttpClientWithPublisherAllowingPublishing(),
+                                                            secretsManagerClient));
+        handler = new CreateTicketHandler(resourceService, ticketResolver, uriRetriever);
+        handler.handleRequest(createHttpTicketCreationRequest(requestBody, unpublishablePublication, owner), output,
+                              CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CONFLICT)));
+        var publishedPublication = resourceService.getPublication(unpublishablePublication);
+        assertThat(publishedPublication.getStatus(), is(equalTo(DRAFT)));
+        assertThat(getPublishingRequestCase(unpublishablePublication), is(nullValue()));
     }
 
     @Test
@@ -751,13 +771,6 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var ticketIdentifier = new SortableIdentifier(UriWrapper.fromUri(response.getHeaders().get(LOCATION_HEADER))
                                                           .getLastPathElement());
         return ticketService.fetchTicketByIdentifier(ticketIdentifier);
-    }
-
-    private Publication createUnpublishablePublication() throws BadRequestException {
-        var publication = randomPublication().copy().withEntityDescription(null).build();
-        publication = Resource.fromPublication(publication)
-                          .persistNew(resourceService, UserInstance.fromPublication(publication));
-        return publication;
     }
 
     private void assertThatLocationHeaderPointsToCreatedTicket(URI ticketUri)
