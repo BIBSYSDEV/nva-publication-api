@@ -56,6 +56,8 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     private static final String INSTANCE_TYPE_ACADEMIC_CHAPTER = "AcademicChapter";
     public static final JsonPointer CONTRIBUTORS_PTR = JsonPointer.compile("/entityDescription/contributors");
     public static final String CONTRIBUTOR_SEQUENCE = "sequence";
+    public static final String PUBLICATION_CHANNELS_V2_API_PATH = "publication-channels-v2";
+    public static final String PUBLICATION_CHANNELS_API_PATH = "publication-channels";
     @JsonAnySetter
     private final Map<String, Object> allFields;
 
@@ -229,7 +231,9 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     }
 
     private static boolean isPublicationChannelId(String uriCandidate) {
-        return isNotBlank(uriCandidate) && uriCandidate.contains("publication-channels");
+        return isNotBlank(uriCandidate)
+               && (uriCandidate.contains(PUBLICATION_CHANNELS_API_PATH)
+                   || uriCandidate.contains(PUBLICATION_CHANNELS_V2_API_PATH));
     }
 
     private static boolean isJournal(JsonNode root) {
