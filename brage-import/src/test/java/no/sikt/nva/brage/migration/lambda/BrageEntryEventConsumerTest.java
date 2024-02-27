@@ -748,7 +748,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldAdd100YearEmbargoToPublicationWhenLegalNoteRequiresEmbargo() throws IOException {
-        var accessCode = "Klausulert: Kan bare siteres etter nærmere avtale med forfatter.";
+        var accessCode = "Klausulert: Kan bare siteres etter nærmere avtale med forfatter";
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_TEXTBOOK)
                                  .withAccessCode(accessCode)
                                  .withResourceContent(createResourceContent())
