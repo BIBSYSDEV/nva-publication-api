@@ -1,7 +1,7 @@
 package no.unit.nva.publication.utils;
 
-import static no.unit.nva.model.PublicationOperation.TICKET_PUBLISH;
 import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
+import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
 import java.net.URI;
 import java.util.Arrays;
@@ -16,8 +16,6 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
-import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
@@ -68,19 +66,14 @@ public record RequestUtils(List<AccessRight> accessRights,
         return accessRights.contains(accessRight);
     }
 
-    public boolean isAuthorizedToManage(TicketEntry ticket, ResourceService resourceService) {
+    public boolean isAuthorizedToManage(TicketEntry ticket) {
         return switch (ticket) {
             case DoiRequest doi -> hasAccessRight(MANAGE_DOI);
-            case PublishingRequestCase publishing -> isAuthorizedToManagePublishingRequest(ticket, resourceService);
+            case PublishingRequestCase publishing -> hasAccessRight(MANAGE_PUBLISHING_REQUESTS);
             case GeneralSupportRequest support -> hasAccessRight(SUPPORT);
             case UnpublishRequest unpublish -> true;
             case null, default -> false;
         };
-    }
-
-    private boolean isAuthorizedToManagePublishingRequest(TicketEntry ticket, ResourceService resourceService) {
-        var publication = ticket.toPublication(resourceService);
-        return PublicationPermissionStrategy.create(publication, toUserInstance(), uriRetriever).allowsAction(TICKET_PUBLISH);
     }
 
     public boolean isTicketOwner(TicketEntry ticketEntry) {

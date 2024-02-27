@@ -63,7 +63,7 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
                                          UserInstance userInstance) throws ApiGatewayException {
         var ticketEntries = isNotPublicationOwnerAndHasAccessRightsToListTickets(requestUtils, publicationIdentifier)
                                 ? fetchTicketsForElevatedUser(userInstance, publicationIdentifier)
-                                      .filter(ticket -> requestUtils.isAuthorizedToManage(ticket, resourceService))
+                                      .filter(requestUtils::isAuthorizedToManage)
                                 : fetchTicketsForPublicationOwner(publicationIdentifier, userInstance);
 
         return ticketEntries.map(this::createDto).collect(Collectors.toList());

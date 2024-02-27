@@ -71,7 +71,7 @@ public class TicketResolver {
                                                           Publication publication,
                                                           RequestUtils requestUtils)
         throws ApiGatewayException {
-        return requestUtils.isAuthorizedToManage(publishingRequestCase, resourceService)
+        return requestUtils.isAuthorizedToManage(publishingRequestCase)
                    ? createPublishingRequestForCurator(publishingRequestCase, publication)
                    : createPublishingRequestForNonCurator(publishingRequestCase, publication);
     }

@@ -122,7 +122,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     }
 
     private boolean userIsAuthorized(RequestUtils requestUtils, TicketEntry ticket) {
-        return requestUtils.isAuthorizedToManage(ticket, resourceService)
+        return requestUtils.isAuthorizedToManage(ticket)
                && isUserFromSameCustomerAsTicket(requestUtils, ticket);
     }
 
