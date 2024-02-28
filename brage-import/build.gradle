@@ -31,6 +31,8 @@ dependencies {
     implementation libs.tika.core
     implementation libs.tika.langdetect.optimaize
 
+    implementation group: 'com.amazonaws', name: 'aws-java-sdk-s3', version: '1.12.646'
+
     testImplementation libs.cucumber.java
     testImplementation libs.cucumber.junit
     testImplementation libs.cucumber.picocontainer
