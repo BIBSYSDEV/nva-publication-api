@@ -158,6 +158,7 @@ public class NvaBrageMigrationDataGenerator {
         brageRecord.setSubjectCode(builder.getSubjectCode());
         brageRecord.setPart(Optional.ofNullable(builder.getHasPart())
                                 .orElse(Set.of()).stream().toList());
+        brageRecord.setAccessCode(builder.getAccessCode());
         return brageRecord;
     }
 
@@ -251,6 +252,7 @@ public class NvaBrageMigrationDataGenerator {
         private String subjectCode;
         private Set<String> hasPart;
         private List<String> ismnList;
+        private String accessCode;
 
         public static URI randomHandle() {
             return UriWrapper.fromUri("http://hdl.handle.net/11250/" + randomInteger()).getUri();
@@ -430,6 +432,11 @@ public class NvaBrageMigrationDataGenerator {
 
         public Builder withLink(URI link) {
             this.link = link;
+            return this;
+        }
+
+        public Builder withAccessCode(String accessCode) {
+            this.accessCode = accessCode;
             return this;
         }
 
@@ -705,6 +712,14 @@ public class NvaBrageMigrationDataGenerator {
 
         public String getSubjectCode() {
             return subjectCode;
+        }
+
+        public void setAccessCode(String accessCode) {
+            this.accessCode = accessCode;
+        }
+
+        public String getAccessCode() {
+            return accessCode;
         }
 
         private static no.unit.nva.model.PublicationDate createPublicationDateForPublication(

@@ -72,7 +72,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         this.ticketService = new TicketService(client);
         this.uriRetriever = mock(UriRetriever.class);
         MessageService messageService = new MessageService(client);
-        this.handler = new NewCreateMessageHandler(messageService, ticketService, resourceService, uriRetriever);
+        this.handler = new NewCreateMessageHandler(messageService, ticketService, uriRetriever);
         this.output = new ByteArrayOutputStream();
         this.context = new FakeContext();
     }

@@ -71,7 +71,7 @@ public class TicketResolver {
                                                           Publication publication,
                                                           RequestUtils requestUtils)
         throws ApiGatewayException {
-        return requestUtils.isAuthorizedToManage(publishingRequestCase, resourceService)
+        return requestUtils.isAuthorizedToManage(publishingRequestCase)
                    ? createPublishingRequestForCurator(publishingRequestCase, publication)
                    : createPublishingRequestForNonCurator(publishingRequestCase, publication);
     }
@@ -144,19 +144,17 @@ public class TicketResolver {
                    .orElseThrow();
     }
 
-    private void publishPublicationAndFiles(Publication publication) {
+    private void publishPublicationAndFiles(Publication publication) throws ApiGatewayException {
         var updatedPublication = toPublicationWithPublishedFiles(publication);
-        attempt(() -> resourceService.updatePublication(updatedPublication));
         publishPublication(updatedPublication);
     }
 
-    private void publishPublication(Publication publication) {
-        attempt(() -> resourceService.updatePublication(publication));
-        attempt(() -> resourceService.publishPublication(UserInstance.fromPublication(publication),
-                                                         publication.getIdentifier()));
+    private void publishPublication(Publication publication) throws ApiGatewayException {
+        resourceService.updatePublication(publication);
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
     }
 
-    private void publishMetadata(Publication publication) {
+    private void publishMetadata(Publication publication) throws ApiGatewayException {
         publishPublication(publication);
     }
 
