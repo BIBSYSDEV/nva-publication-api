@@ -85,6 +85,7 @@ public class AssociatedArtifactMover {
                    .withEmbargoDate(file.getEmbargoDate().orElse(null))
                    .withMimeType(mimeType)
                    .withSize(size)
+                   .withLegalNote(file.getLegalNote())
                    .buildPublishedFile();
     }
 
