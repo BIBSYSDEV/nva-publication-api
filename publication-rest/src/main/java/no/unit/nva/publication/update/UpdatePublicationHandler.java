@@ -48,6 +48,7 @@ import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UnpublishRequest;
@@ -85,21 +86,22 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 public class UpdatePublicationHandler
     extends ApiGatewayHandler<PublicationRequest, PublicationResponseElevatedUser> {
 
-    private static final Logger logger = LoggerFactory.getLogger(UpdatePublicationHandler.class);
     public static final String IDENTIFIER_MISMATCH_ERROR_MESSAGE = "Identifiers in path and in body, do not match";
-    private static final String ENV_KEY_BACKEND_CLIENT_SECRET_NAME = "BACKEND_CLIENT_SECRET_NAME";
-    private static final String ENV_KEY_BACKEND_CLIENT_AUTH_URL = "BACKEND_CLIENT_AUTH_URL";
     public static final String UNPUBLISH_REQUEST_REQUIRES_A_COMMENT = "Unpublish request requires a comment";
-    public static final String DUPLICATE_OF_MUST_BE_A_PUBLICATION_API_URI = "The duplicateOf field must be a valid publication API URI";
-    private final TicketService ticketService;
-    private final ResourceService resourceService;
-    private final IdentityServiceClient identityServiceClient;
+    public static final String DUPLICATE_OF_MUST_BE_A_PUBLICATION_API_URI = "The duplicateOf field must be a valid "
+                                                                            + "publication API URI";
     public static final String NVA_EVENT_BUS_NAME_KEY = "NVA_EVENT_BUS_NAME";
-    private static final String API_HOST_ENV_KEY = "API_HOST";
     public static final String LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS =
         "Lambda Function Invocation Result - Success";
     public static final String NVA_PUBLICATION_DELETE_SOURCE = "nva.publication.delete";
     public static final String NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY = "NVA_PERSISTED_STORAGE_BUCKET_NAME";
+    private static final Logger logger = LoggerFactory.getLogger(UpdatePublicationHandler.class);
+    private static final String ENV_KEY_BACKEND_CLIENT_SECRET_NAME = "BACKEND_CLIENT_SECRET_NAME";
+    private static final String ENV_KEY_BACKEND_CLIENT_AUTH_URL = "BACKEND_CLIENT_AUTH_URL";
+    private static final String API_HOST_ENV_KEY = "API_HOST";
+    private final TicketService ticketService;
+    private final ResourceService resourceService;
+    private final IdentityServiceClient identityServiceClient;
     private final EventBridgeClient eventBridgeClient;
     private final String nvaEventBusName;
     private final S3Driver s3Driver;
@@ -160,10 +162,6 @@ public class UpdatePublicationHandler
         this.uriRetriever = uriRetriever;
     }
 
-    private static boolean isPending(TicketEntry publishingRequest) {
-        return TicketStatus.PENDING.equals(publishingRequest.getStatus());
-    }
-
     @Override
     protected PublicationResponseElevatedUser processInput(PublicationRequest input,
                                                            RequestInfo requestInfo,
@@ -178,7 +176,8 @@ public class UpdatePublicationHandler
         var requestUtils = RequestUtils.fromRequestInfo(requestInfo, uriRetriever);
         Publication updatedPublication = switch (input) {
             case UpdatePublicationRequest publicationMetadata ->
-                updateMetadata(publicationMetadata, identifierInPath, existingPublication, permissionStrategy, requestUtils);
+                updateMetadata(publicationMetadata, identifierInPath, existingPublication, permissionStrategy,
+                               requestUtils);
 
             case UnpublishPublicationRequest unpublishPublicationRequest ->
                 unpublishPublication(unpublishPublicationRequest,
@@ -195,6 +194,42 @@ public class UpdatePublicationHandler
         publicationResponse.setAllowedOperations(getAllowedOperations(requestInfo, updatedPublication));
 
         return publicationResponse;
+    }
+
+    @Override
+    protected Integer getSuccessStatusCode(PublicationRequest input, PublicationResponseElevatedUser output) {
+        switch (input) {
+            case UpdatePublicationRequest ignored -> {
+                return HttpStatus.SC_OK;
+            }
+            case UnpublishPublicationRequest ignored -> {
+                return HttpStatus.SC_ACCEPTED;
+            }
+            case DeletePublicationRequest ignored -> {
+                return HttpStatus.SC_ACCEPTED;
+            }
+            default -> {
+                return HttpStatus.SC_BAD_REQUEST;
+            }
+        }
+    }
+
+    private static boolean isPending(TicketEntry publishingRequest) {
+        return TicketStatus.PENDING.equals(publishingRequest.getStatus());
+    }
+
+    private static Customer fetchCustomerOrFailWithBadGateway(CustomerApiClient customerApiClient,
+                                                              URI customerUri) throws BadGatewayException {
+        try {
+            return customerApiClient.fetch(customerUri);
+        } catch (CustomerNotAvailableException e) {
+            logger.error("Problems fetching customer", e);
+            throw new BadGatewayException("Customer API not responding or not responding as expected!");
+        }
+    }
+
+    private static Username getOwner(Publication publication) {
+        return publication.getResourceOwner().getOwner();
     }
 
     private Set<PublicationOperation> getAllowedOperations(RequestInfo requestInfo, Publication publication) {
@@ -240,10 +275,35 @@ public class UpdatePublicationHandler
         resourceService.unpublishPublication(updatedPublication);
 
         updatedPublication = resourceService.getPublication(updatedPublication);
+        notifySearchApiToRemoveExistingTicketsFromIndex(updatedPublication);
         persistNotification(updatedPublication);
         updateNvaDoi(updatedPublication);
 
         return updatedPublication;
+    }
+
+    private void notifySearchApiToRemoveExistingTicketsFromIndex(Publication publication) {
+        var tickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication));
+        tickets.forEach(this::notifySearchApi);
+    }
+
+
+    private void notifySearchApi(TicketEntry ticket) {
+        var detail = new DeleteNotification(ticket.getIdentifier().toString());
+        var ebResult =
+            eventBridgeClient.putEvents(PutEventsRequest
+                                            .builder()
+                                            .entries(PutEventsRequestEntry.builder()
+                                                         .eventBusName(nvaEventBusName)
+                                                         .source(
+                                                             NVA_PUBLICATION_DELETE_SOURCE)
+                                                         .detailType(
+                                                             LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS)
+                                                         .detail(new LambdaDestinationInvocationDetail<>(
+                                                             detail).toJsonString())
+
+                                                         .build()).build());
+        logger.info("failedEntryCount={}", ebResult.failedEntryCount());
     }
 
     private void validateUnpublishRequest(UnpublishPublicationRequest unpublishPublicationRequest)
@@ -256,7 +316,7 @@ public class UpdatePublicationHandler
 
         if (duplicateUri.isPresent()) {
             duplicateUri.filter(uri -> isValid(uri, apiHost))
-                 .orElseThrow(() -> new BadRequestException(DUPLICATE_OF_MUST_BE_A_PUBLICATION_API_URI));
+                .orElseThrow(() -> new BadRequestException(DUPLICATE_OF_MUST_BE_A_PUBLICATION_API_URI));
         }
     }
 
@@ -332,7 +392,6 @@ public class UpdatePublicationHandler
         return new JavaHttpClientCustomerApiClient(httpClient, cognitoCredentials);
     }
 
-
     private void upsertPublishingRequestIfNeeded(Publication existingPublication,
                                                  Publication publicationUpdate,
                                                  Customer customer,
@@ -369,16 +428,6 @@ public class UpdatePublicationHandler
                && new HashSet<>(updatedFiles).containsAll(existingFiles);
     }
 
-    private static Customer fetchCustomerOrFailWithBadGateway(CustomerApiClient customerApiClient,
-                                                              URI customerUri) throws BadGatewayException {
-        try {
-            return customerApiClient.fetch(customerUri);
-        } catch (CustomerNotAvailableException e) {
-            logger.error("Problems fetching customer", e);
-            throw new BadGatewayException("Customer API not responding or not responding as expected!");
-        }
-    }
-
     private void validatePublication(Publication publicationUpdate, Customer customer) throws BadRequestException {
         try {
             publicationValidator.validate(publicationUpdate, customer);
@@ -400,31 +449,9 @@ public class UpdatePublicationHandler
                    .map(PublishingRequestCase.class::cast);
     }
 
-    private static Username getOwner(Publication publication) {
-        return publication.getResourceOwner().getOwner();
-    }
-
     private boolean thereAreNoFiles(Publication publicationUpdate) {
         return publicationUpdate.getAssociatedArtifacts().stream()
                    .noneMatch(File.class::isInstance);
-    }
-
-    @Override
-    protected Integer getSuccessStatusCode(PublicationRequest input, PublicationResponseElevatedUser output) {
-        switch (input) {
-            case UpdatePublicationRequest ignored -> {
-                return HttpStatus.SC_OK;
-            }
-            case UnpublishPublicationRequest ignored -> {
-                return HttpStatus.SC_ACCEPTED;
-            }
-            case DeletePublicationRequest ignored -> {
-                return HttpStatus.SC_ACCEPTED;
-            }
-            default -> {
-                return HttpStatus.SC_BAD_REQUEST;
-            }
-        }
     }
 
     private boolean containsNewPublishableFiles(Publication publicationUpdate) {
@@ -481,14 +508,15 @@ public class UpdatePublicationHandler
         }
     }
 
-    private void persistPendingPublishingRequest(Publication publicationUpdate, Customer customer, RequestUtils requestUtils) {
+    private void persistPendingPublishingRequest(Publication publicationUpdate, Customer customer,
+                                                 RequestUtils requestUtils) {
         attempt(() -> TicketEntry.requestNewTicket(publicationUpdate, PublishingRequestCase.class))
             .map(publishingRequest -> injectPublishingWorkflow((PublishingRequestCase) publishingRequest, customer))
             .map(publishingRequest -> persistPublishingRequest(publicationUpdate, requestUtils, publishingRequest));
     }
 
     private TicketEntry persistPublishingRequest(Publication publicationUpdate, RequestUtils requestUtils,
-                                       PublishingRequestCase publishingRequest) throws ApiGatewayException {
+                                                 PublishingRequestCase publishingRequest) throws ApiGatewayException {
         return requestUtils.hasAccessRight(AccessRight.MANAGE_PUBLISHING_REQUESTS)
                    ? publishingRequest.persistAutoComplete(ticketService, publicationUpdate)
                    : publishingRequest.persistNewTicket(ticketService);

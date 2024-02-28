@@ -129,6 +129,7 @@ import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.FileForApproval;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -1079,6 +1080,28 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                        .stream()
                        .anyMatch(entry -> entry.source().equals(NVA_PUBLICATION_DELETE_SOURCE)
                                           && entry.detailType().equals(LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS)));
+    }
+
+    @Test
+    void shouldProduceDeleteTicketsFromSearchApiEventWhenUnpublishingRequestIsSuccessful()
+        throws ApiGatewayException, IOException {
+        var userCristinId = RandomPersonServiceResponse.randomUri();
+        var userName = randomString();
+        var doi = RandomPersonServiceResponse.randomUri();
+
+        var publication = createPublicationWithContributorAndDoi(userCristinId, userName, doi);
+
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        var ticket = GeneralSupportRequest.fromPublication(publication).persistNewTicket(ticketService);
+        var inputStream = createUnpublishHandlerRequest(publication, userName,
+                                                        RandomPersonServiceResponse.randomUri(), userCristinId);
+        updatePublicationHandler.handleRequest(inputStream, output, context);
+
+        assertTrue(eventBridgeClient.getRequestEntries()
+                       .stream()
+                       .anyMatch(entry -> entry.source().equals(NVA_PUBLICATION_DELETE_SOURCE)
+                                          && entry.detailType().equals(LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS)
+                                          && entry.detail().contains(ticket.getIdentifier().toString())));
     }
 
     @Test
