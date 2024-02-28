@@ -1,6 +1,7 @@
 package no.sikt.nva.brage.migration.merger;
 
 import com.amazonaws.services.lambda.runtime.events.S3Event;
+import java.util.stream.Collectors;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
@@ -12,10 +13,7 @@ import nva.commons.core.paths.UnixPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
-
-import java.util.stream.Collectors;
 
 public class AssociatedArtifactMover {
 
@@ -49,19 +47,13 @@ public class AssociatedArtifactMover {
             if (associatedArtifact instanceof File) {
                 var file = (PublishedFile) associatedArtifact;
                 var objectKey = file.getIdentifier().toString();
-                var objectKeyPath = getObjectKeyPath();
-                var sourceBucket = getSourceBucket();
-                logger.info("sourceBucket: {}", sourceBucket);
-                logger.info("Nva resource storage bucket: {}", persistedStorageBucket);
-                logger.info("sourceKey {}", objectKeyPath + objectKey);
-                logger.info("destinationKey {}", objectKey);
-                var copyObjRequest = CopyObjectRequest.builder()
-                                         .sourceBucket(sourceBucket)
-                                         .destinationBucket(persistedStorageBucket)
-                                         .sourceKey(objectKeyPath + objectKey)
-                                         .destinationKey(objectKey)
-                                         .build();
-                s3Client.copyObject(copyObjRequest);
+
+                S3MultipartCopier.fromSourceKey(getObjectKeyPath() + objectKey)
+                    .sourceBucket(getSourceBucket())
+                    .destinationKey(objectKey)
+                    .destinationBucket(persistedStorageBucket)
+                    .copy(s3Client);
+
                 return extractMimeTypeAndSize(file, objectKey);
             } else {
                 return associatedArtifact;
@@ -94,7 +86,7 @@ public class AssociatedArtifactMover {
     }
 
     private String getSourceBucket() {
-        return s3Event.getRecords().get(0).getS3().getBucket().getName();
+        return s3Event.getRecords().getFirst().getS3().getBucket().getName();
     }
 
     private String getObjectKeyPath() {
@@ -103,6 +95,6 @@ public class AssociatedArtifactMover {
     }
 
     private String getRecordObjectKey() {
-        return s3Event.getRecords().get(0).getS3().getObject().getKey();
+        return s3Event.getRecords().getFirst().getS3().getObject().getKey();
     }
 }
