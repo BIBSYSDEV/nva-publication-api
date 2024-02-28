@@ -453,7 +453,7 @@ public final class ReferenceGenerator {
     private static BookSeries generateSeries(Builder builder) throws InvalidIssnException {
         if (nonNull(builder.getSeriesId())) {
             return new Series(UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY_V_2)
-                                  .addChild(ChannelType.JOURNAL.getType())
+                                  .addChild(ChannelType.SERIES.getType())
                                   .addChild(builder.getSeriesId())
                                   .addChild(nonNull(getYear(builder)) ? getYear(builder) : CURRENT_YEAR)
                                   .getUri());
