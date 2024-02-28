@@ -25,17 +25,20 @@ public final class S3MultipartCopier {
                                                                        + "perform multipart copy!";
     private static final long PARTITION_SIZE = 5L * 1024 * 1024;
     private final Logger logger = LoggerFactory.getLogger(S3MultipartCopier.class);
-    private final String sourceKey;
-    private final String sourceBucket;
-    private final String destinationKey;
-    private final String destinationBucket;
+    private final String sourceS3Key;
+    private final String sourceS3Bucket;
+    private final String destinationS3Key;
+    private final String destinationS3Bucket;
     private final List<CompletedPart> completedParts;
 
-    private S3MultipartCopier(String sourceKey, String sourceBucket, String destinationKey, String destinationBucket) {
-        this.sourceKey = sourceKey;
-        this.sourceBucket = sourceBucket;
-        this.destinationKey = destinationKey;
-        this.destinationBucket = destinationBucket;
+    private S3MultipartCopier(String sourceS3Key,
+                              String sourceS3Bucket,
+                              String destinationS3Key,
+                              String destinationS3Bucket) {
+        this.sourceS3Key = sourceS3Key;
+        this.sourceS3Bucket = sourceS3Bucket;
+        this.destinationS3Key = destinationS3Key;
+        this.destinationS3Bucket = destinationS3Bucket;
         this.completedParts = new ArrayList<>();
     }
 
@@ -73,10 +76,10 @@ public final class S3MultipartCopier {
     }
 
     private Builder copy() {
-        return builder().withSourceKey(this.sourceKey)
-                   .withSourceBucket(this.sourceBucket)
-                   .withDestinationKey(this.destinationKey)
-                   .withDestinationBucket(this.destinationBucket);
+        return builder().withSourceKey(this.sourceS3Key)
+                   .withSourceBucket(this.sourceS3Bucket)
+                   .withDestinationKey(this.destinationS3Key)
+                   .withDestinationBucket(this.destinationS3Bucket);
     }
 
     private CompletedMultipartUpload completeMultipartUpload() {
@@ -90,7 +93,7 @@ public final class S3MultipartCopier {
     }
 
     private boolean missingRequiredValues() {
-        return Stream.of(sourceKey, sourceBucket, destinationKey, destinationKey).anyMatch(Objects::isNull);
+        return Stream.of(sourceS3Key, sourceS3Bucket, destinationS3Key, destinationS3Key).anyMatch(Objects::isNull);
     }
 
     private void performCopying(S3Client s3Client) throws MultipartCopyException {
@@ -98,18 +101,11 @@ public final class S3MultipartCopier {
         var request = initiateMultiUploadRequest(headOfObjectToCopy.contentDisposition());
         var response = s3Client.createMultipartUpload(request);
         try {
-            long currentPosition = 0;
+            long position = 0;
             int partNumber = 1;
             long totalSize = headOfObjectToCopy.contentLength();
-            while (currentPosition < totalSize) {
-                long endPosition = Math.min(currentPosition + PARTITION_SIZE - 1, totalSize - 1);
-
-                var uploadPartCopyRequest = createUploadPartCopyRequest(currentPosition, endPosition, response,
-                                                                        partNumber);
-
-                var uploadPartResponse = s3Client.uploadPartCopy(uploadPartCopyRequest);
-                completedParts.add(createCompletedPart(partNumber, uploadPartResponse));
-                currentPosition = endPosition + 1;
+            while (position < totalSize) {
+                position = copyPartAndUpdatePosition(s3Client, position, totalSize, response, partNumber);
                 partNumber++;
             }
             s3Client.completeMultipartUpload(createCompleteMultipartUploadRequest(response));
@@ -120,13 +116,25 @@ public final class S3MultipartCopier {
         }
     }
 
+    private long copyPartAndUpdatePosition(S3Client s3Client, long currentPosition, long totalSize,
+                                           CreateMultipartUploadResponse response, int partNumber) {
+        long endPosition = Math.min(currentPosition + PARTITION_SIZE - 1, totalSize - 1);
+
+        var uploadPartCopyRequest =
+            createUploadPartCopyRequest(currentPosition, endPosition, response, partNumber);
+
+        var uploadPartResponse = s3Client.uploadPartCopy(uploadPartCopyRequest);
+        completedParts.add(createCompletedPart(partNumber, uploadPartResponse));
+        return ++endPosition;
+    }
+
     private UploadPartCopyRequest createUploadPartCopyRequest(long currentPosition, long endPosition,
                                                               CreateMultipartUploadResponse response, int partNumber) {
         return UploadPartCopyRequest.builder()
-                   .destinationBucket(destinationBucket)
-                   .destinationKey(destinationKey)
-                   .sourceBucket(sourceBucket)
-                   .sourceKey(sourceKey)
+                   .destinationBucket(destinationS3Bucket)
+                   .destinationKey(destinationS3Key)
+                   .sourceBucket(sourceS3Bucket)
+                   .sourceKey(sourceS3Key)
                    .copySourceRange(constructSourceRange(currentPosition, endPosition))
                    .uploadId(response.uploadId())
                    .partNumber(partNumber)
@@ -135,22 +143,22 @@ public final class S3MultipartCopier {
 
     private AbortMultipartUploadRequest createAbortMultipartUploadRequest(CreateMultipartUploadResponse response) {
         return AbortMultipartUploadRequest.builder()
-                   .bucket(destinationBucket)
-                   .key(destinationKey)
+                   .bucket(destinationS3Bucket)
+                   .key(destinationS3Key)
                    .uploadId(response.uploadId())
                    .build();
     }
 
     private HeadObjectResponse getHeadOfObjectToCopy(S3Client s3Client) {
-        var metadataRequest = HeadObjectRequest.builder().bucket(sourceBucket).key(sourceKey).build();
+        var metadataRequest = HeadObjectRequest.builder().bucket(sourceS3Bucket).key(sourceS3Key).build();
         return s3Client.headObject(metadataRequest);
     }
 
     private CompleteMultipartUploadRequest createCompleteMultipartUploadRequest(
         CreateMultipartUploadResponse response) {
         return CompleteMultipartUploadRequest.builder()
-                   .bucket(destinationBucket)
-                   .key(destinationKey)
+                   .bucket(destinationS3Bucket)
+                   .key(destinationS3Key)
                    .uploadId(response.uploadId())
                    .multipartUpload(completeMultipartUpload())
                    .build();
@@ -158,8 +166,8 @@ public final class S3MultipartCopier {
 
     private CreateMultipartUploadRequest initiateMultiUploadRequest(String contentDisposition) {
         return CreateMultipartUploadRequest.builder()
-                   .bucket(this.destinationBucket)
-                   .key(this.destinationKey)
+                   .bucket(this.destinationS3Bucket)
+                   .key(this.destinationS3Key)
                    .contentDisposition(contentDisposition)
                    .build();
     }

@@ -10,8 +10,6 @@ import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import nva.commons.core.Environment;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UnixPath;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 
@@ -22,7 +20,6 @@ public class AssociatedArtifactMover {
     private final S3Client s3Client;
     private final S3Event s3Event;
     private final String persistedStorageBucket;
-    private final Logger logger = LoggerFactory.getLogger(AssociatedArtifactMover.class);
 
     public AssociatedArtifactMover(S3Client s3Client, S3Event s3Event) {
         this.s3Client = s3Client;
