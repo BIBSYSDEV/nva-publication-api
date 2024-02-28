@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
+import no.unit.nva.identifiers.SortableIdentifier;
 import nva.commons.core.JacocoGenerated;
 
 public class DeleteNotification implements JsonSerializable {
@@ -12,15 +13,15 @@ public class DeleteNotification implements JsonSerializable {
     private final static String TOPIC = "PublicationService.UnpublishedResource.Ticket";
 
     @JsonProperty("identifier")
-    private final String identifier;
+    private final SortableIdentifier identifier;
 
     @JsonCreator
-    public DeleteNotification(@JsonProperty("identifier") String identifier) {
+    public DeleteNotification(@JsonProperty("identifier") SortableIdentifier identifier) {
         this.identifier = identifier;
     }
 
     @JacocoGenerated
-    public String getIdentifier() {
+    public SortableIdentifier getIdentifier() {
         return identifier;
     }
 
@@ -48,6 +49,7 @@ public class DeleteNotification implements JsonSerializable {
         return Objects.equals(identifier, that.identifier);
     }
 
+    @JacocoGenerated
     public String toString() {
         return toJsonString();
     }

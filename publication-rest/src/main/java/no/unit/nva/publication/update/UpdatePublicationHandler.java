@@ -289,7 +289,7 @@ public class UpdatePublicationHandler
 
 
     private void notifySearchApi(TicketEntry ticket) {
-        var detail = new DeleteNotification(ticket.getIdentifier().toString());
+        var detail = new DeleteNotification(ticket.getIdentifier());
         var ebResult =
             eventBridgeClient.putEvents(PutEventsRequest
                                             .builder()
