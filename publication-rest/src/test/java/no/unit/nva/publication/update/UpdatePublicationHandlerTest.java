@@ -24,6 +24,7 @@ import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.delete.DeletePublicationHandler.LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS;
 import static no.unit.nva.publication.delete.DeletePublicationHandler.NVA_PUBLICATION_DELETE_SOURCE;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
+import static no.unit.nva.publication.model.business.TicketStatus.NOT_RELEVANT;
 import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
@@ -128,7 +129,9 @@ import no.unit.nva.publication.delete.LambdaDestinationInvocationDetail;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.BackendClientCredentials;
+import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.FileForApproval;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -763,8 +766,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var cristinId = randomUri();
         var contributor = createContributorForPublicationUpdate(cristinId);
         injectContributor(savedPublication, contributor);
-        var customerId = ((Organization) contributor.getAffiliations().get(0)).getId();
-        var topLevelCristinOrgId = ((Organization) contributor.getAffiliations().get(0)).getId();
+        var customerId = ((Organization) contributor.getAffiliations().getFirst()).getId();
+        var topLevelCristinOrgId = ((Organization) contributor.getAffiliations().getFirst()).getId();
 
         var publicationUpdate = updateTitle(savedPublication);
 
@@ -1057,6 +1060,40 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                  hasProperty("createdDate", is(notNullValue())))));
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_ACCEPTED)));
+    }
+
+    @Test
+    void shouldSetAllPendingAndNewTicketsToNotRelevantExceptUnpublishingTicketWhenUnpublishingPublication()
+        throws ApiGatewayException, IOException {
+        var userCristinId = RandomPersonServiceResponse.randomUri();
+        var userName = randomString();
+
+        var publication = createPublicationWithoutDoiAndWithContributor(userCristinId, userName);
+
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+
+        GeneralSupportRequest.fromPublication(publication).persistNewTicket(ticketService);
+        DoiRequest.fromPublication(publication).persistNewTicket(ticketService);
+        var publishingRequestTicket =
+            PublishingRequestCase.createOpeningCaseObject(publication).persistNewTicket(ticketService);
+        var completedPublishingRequest = publishingRequestTicket.complete(publication, new Username(userName));
+        ticketService.updateTicket(completedPublishingRequest);
+
+        var inputStream = createUnpublishHandlerRequest(publication, userName,
+                                                        RandomPersonServiceResponse.randomUri(), userCristinId);
+        updatePublicationHandler.handleRequest(inputStream, output, context);
+        var ticketsAfterUnpublishing =
+            publicationService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
+        assertThat(ticketsAfterUnpublishing,
+                   hasItem(allOf(instanceOf(UnpublishRequest.class),
+                                 hasProperty("status", equalTo(PENDING)))));
+
+        assertThat(ticketsAfterUnpublishing, hasItem(allOf(instanceOf(PublishingRequestCase.class),
+                                                           hasProperty("status", equalTo(COMPLETED)))));
+        assertThat(ticketsAfterUnpublishing, hasItem(allOf(instanceOf(DoiRequest.class),
+                                                           hasProperty("status", equalTo(NOT_RELEVANT)))));
+        assertThat(ticketsAfterUnpublishing, hasItem(allOf(instanceOf(GeneralSupportRequest.class),
+                                                           hasProperty("status", equalTo(NOT_RELEVANT)))));
     }
 
     @Test
@@ -1890,11 +1927,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publication = randomPublicationNonDegree();
         publication.setIdentifier(SortableIdentifier.next());
         return publication;
-    }
-
-    private boolean isNonDegreeClass(Class<?> publicationInstance) {
-        var listOfDegreeClasses = Set.of("DegreeMaster", "DegreeBachelor", "DegreePhd", "DegreeLicentiate");
-        return !listOfDegreeClasses.contains(publicationInstance.getSimpleName());
     }
 
     private GatewayResponse<Problem> toGatewayResponseProblem() throws JsonProcessingException {
