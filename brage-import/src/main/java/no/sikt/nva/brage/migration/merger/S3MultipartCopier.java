@@ -98,7 +98,7 @@ public final class S3MultipartCopier {
 
     private void performCopying(S3Client s3Client) throws MultipartCopyException {
         var headOfObjectToCopy = getHeadOfObjectToCopy(s3Client);
-        var request = initiateMultiUploadRequest(headOfObjectToCopy.contentDisposition());
+        var request = initiateMultiUploadRequest(headOfObjectToCopy);
         var response = s3Client.createMultipartUpload(request);
         try {
             long position = 0;
@@ -164,11 +164,12 @@ public final class S3MultipartCopier {
                    .build();
     }
 
-    private CreateMultipartUploadRequest initiateMultiUploadRequest(String contentDisposition) {
+    private CreateMultipartUploadRequest initiateMultiUploadRequest(HeadObjectResponse headObjectResponse) {
         return CreateMultipartUploadRequest.builder()
                    .bucket(this.destinationS3Bucket)
                    .key(this.destinationS3Key)
-                   .contentDisposition(contentDisposition)
+                   .contentDisposition(headObjectResponse.contentDisposition())
+                   .contentType(headObjectResponse.contentType())
                    .build();
     }
 
