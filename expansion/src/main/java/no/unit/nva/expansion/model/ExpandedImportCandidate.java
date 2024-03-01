@@ -80,6 +80,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     public static final String CUSTOMER = "customer";
     public static final String CRISTIN_ID = "cristinId";
     public static final String IS_CUSTOMER_MESSAGE = "Cristin organization {} is nva customer: {}";
+    public static final String HAS_FILE_FIELD = "hasFile";
     @JsonProperty(ID_FIELD)
     private URI identifier;
     @JsonProperty(ADDITIONAL_IDENTIFIERS_FIELD)
@@ -117,6 +118,8 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     private String printIssn;
     @JsonProperty(ONLINE_ISSN_FIELD)
     private String onlineIssn;
+    @JsonProperty(HAS_FILE_FIELD)
+    private HasFile hasFile;
 
     public static ExpandedImportCandidate fromImportCandidate(ImportCandidate importCandidate,
                                                               RawContentRetriever uriRetriever) {
@@ -139,11 +142,20 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .withAssociatedArtifacts(importCandidate.getAssociatedArtifacts())
                    .withPrintIssn(extractPrintIssn(importCandidate))
                    .withOnlineIssn(extractOnlineIssn(importCandidate))
+                   .withHasFile(HasFile.fromPublication(importCandidate))
                    .build();
     }
 
     public String getPrintIssn() {
         return printIssn;
+    }
+
+    public HasFile getHasFile() {
+        return hasFile;
+    }
+
+    public void setHasFile(HasFile hasFile) {
+        this.hasFile = hasFile;
     }
 
     private void setPrintIssn(String printIssn) {
@@ -618,6 +630,11 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
 
         public Builder withOnlineIssn(String onlineIssn) {
             expandedImportCandidate.setOnlineIssn(onlineIssn);
+            return this;
+        }
+
+        public Builder withHasFile(HasFile hasFile) {
+            expandedImportCandidate.setHasFile(hasFile);
             return this;
         }
     }
