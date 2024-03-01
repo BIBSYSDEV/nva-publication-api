@@ -8,7 +8,6 @@ import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.core.JacocoGenerated;
 
 public class TrustedThirdPartyStrategy extends GrantPermissionStrategy {
-    // we should make sure all external users gets the claims they need and remove this class
     public TrustedThirdPartyStrategy(Publication publication, UserInstance userInstance, UriRetriever uriRetriever) {
         super(publication, userInstance, uriRetriever);
     }
