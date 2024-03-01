@@ -1,0 +1,11 @@
+#Constructs an list of a publications contributors affiliations + nested parents.
+
+PREFIX  nva: <https://nva.sikt.no/ontology/publication#>
+
+CONSTRUCT {
+  ?publication nva:contributorOrganization ?parents, ?affiliation  .
+  } WHERE {
+  ?publication a nva:Publication .
+  [] nva:affiliation ?affiliation .
+  [] nva:partOf ?parents .
+}

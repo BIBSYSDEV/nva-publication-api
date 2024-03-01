@@ -36,8 +36,10 @@ public class FramedJsonGenerator {
     private Model createModel(List<InputStream> streams) {
         var model = ModelFactory.createDefaultModel();
         streams.forEach(s -> loadDataIntoModel(model, s));
-        addTopLevelAffiliation(model);
-        return addSubUnitsToTopLevelAffiliation(model);
+        addTopLevelOrganizations(model);
+        addContributorOrganizations(model);
+        addSubUnitsToTopLevelAffiliation(model);
+        return model;
     }
 
     private void loadDataIntoModel(Model model, InputStream inputStream) {
@@ -51,11 +53,19 @@ public class FramedJsonGenerator {
         }
     }
 
-    private void addTopLevelAffiliation(Model model) {
-        var query = AffiliationQueries.TOP_LEVEL_AFFILIATION;
+    private void addTopLevelOrganizations(Model model) {
+        var query = AffiliationQueries.TOP_LEVEL_ORGANIZATION;
         try (var qexec = QueryExecutionFactory.create(query, model)) {
             var topLevelNode = qexec.execConstruct();
             model.add(topLevelNode);
+        }
+    }
+
+    private void addContributorOrganizations(Model model) {
+        var query = AffiliationQueries.CONTRIBUTOR_ORGANIZATION;
+        try (var qexec = QueryExecutionFactory.create(query, model)) {
+            var organizations = qexec.execConstruct();
+            model.add(organizations);
         }
     }
 

@@ -32,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -41,6 +42,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpResponse;
@@ -91,6 +93,7 @@ class ExpandedResourceTest {
 
     public static final String COUNTRY_CODE_NO = "NO";
     public static final String JSON_PTR_TOP_LEVEL_ORGS = "/topLevelOrganizations";
+    public static final String JSON_CONTRIBUTOR_ORGANIZATIONS = "/contributorOrganizations";
     public static final String JSON_PTR_ID = "/id";
     public static final String JSON_PTR_HAS_PART = "/hasPart";
     public static final String CRISTIN_ORG_JSON = "cristin_org.json";
@@ -172,6 +175,59 @@ class ExpandedResourceTest {
 
         assertThat(findDeepestNestedSubUnit(topLevelForExpandedAffiliation).at(JSON_PTR_ID).textValue(),
                    is(equalTo(affiliationToBeExpanded.toString())));
+    }
+
+    @Test
+    void shouldReturnIndexDocumentWithContributorsPartsOfsOfRelevantOrgs() throws Exception {
+        var publication = randomPublication();
+        var contributor1org = orgWithReadableId("contributor1org");
+        var contributor1parentOrg = orgWithReadableId("contributor1parentOrg");
+        var contributor2org = orgWithReadableId("contributor2org");
+        var contributor2parentOrg = orgWithReadableId("contributor2parentOrg");
+        var sharedGrandParent = orgWithReadableId("sharedGrandParent");
+
+        var contributor1 = contributorWithOneAffiliation(contributor1org);
+        var contributor2 = contributorWithOneAffiliation(contributor2org);
+        publication.getEntityDescription().setContributors(List.of(contributor1, contributor2));
+
+        final var mockUriRetriever = mock(UriRetriever.class);
+        mockOrganizationResponseWithParents(mockUriRetriever, contributor1org, contributor1parentOrg, sharedGrandParent);
+        mockOrganizationResponseWithParents(mockUriRetriever, contributor2org, contributor2parentOrg, sharedGrandParent);
+
+        var framedResultNode = fromPublication(mockUriRetriever, publication).asJsonNode();
+        var contributorOrganizationsNode = framedResultNode.at(JSON_CONTRIBUTOR_ORGANIZATIONS);
+        var actualOrganizations =
+            Lists.newArrayList(contributorOrganizationsNode.elements()).stream().map(JsonNode::textValue).toList();
+
+
+        var expectedOrganizations = Stream.of(contributor1org, contributor2org, contributor1parentOrg,
+                                              contributor2parentOrg, sharedGrandParent).map(Organization::getId).map(URI::toString).toArray();
+
+
+        assertThat(actualOrganizations, containsInAnyOrder(expectedOrganizations));
+    }
+
+    private static void mockOrganizationResponseWithParents(UriRetriever uriRetriever, Organization org, Organization parentOrg,
+                                                            Organization grandParentOrg) {
+        mockGetRawContentResponse(uriRetriever, org.getId(),
+                                  getCristinResponseWithNestedPartOfsForOrganization( org.getId().toString(),
+                                                                                      parentOrg.getId().toString(),
+                                                                                      grandParentOrg.getId().toString()));
+    }
+
+    private static Contributor contributorWithOneAffiliation(Organization contributor1org) {
+        return new Contributor.Builder()
+                   .withIdentity(new Identity.Builder().withName(randomString()).build())
+                   .withRole(new RoleType(Role.ACTOR))
+                   .withSequence(randomInteger(10000))
+                   .withAffiliations(List.of(contributor1org))
+                   .build();
+    }
+
+    private Organization orgWithReadableId(String readable) {
+        return new Organization.Builder()
+            .withId(URI.create(("https://example.org/" + readable)))
+            .build();
     }
 
     @Test
@@ -565,8 +621,8 @@ class ExpandedResourceTest {
             .map(Organization.class::cast)
             .map(Organization::getId)
             .forEach(id -> mockGetRawContentResponse(mockUriRetriever, id,
-                                                     getCristinResponseForOrganization(id.toString(),
-                                                                                       COUNTRY_CODE_NO)));
+                                                     getCristinResponseWithCountryCodeForOrganization(id.toString(),
+                                                                                                      COUNTRY_CODE_NO)));
     }
 
     private static void assertHasExpectedFundings(URI sourceUri0, URI sourceUri1, ObjectNode framedResultNode) {
@@ -645,7 +701,7 @@ class ExpandedResourceTest {
         );
     }
 
-    private static String getCristinResponseForOrganization(String id, String countryCode) {
+    private static String getCristinResponseWithCountryCodeForOrganization(String id, String countryCode) {
         return "{\n"
                + "  \"@context\": \"https://bibsysdev.github.io/src/organization-context.json\",\n"
                + "  \"type\": \"Organization\",\n"
@@ -655,6 +711,29 @@ class ExpandedResourceTest {
                + "    \"nb\": \"Institutt for Noe\"\n"
                + "  },\n"
                + "  \"country\": \"" + countryCode + "\"\n"
+               + "}";
+    }
+
+    private static String getCristinResponseWithNestedPartOfsForOrganization(String id, String parentOrgId,
+                                                                             String topOrgId) {
+        return "{\n"
+               + "  \"@context\" : \"https://bibsysdev.github.io/src/organization-context.json\",\n"
+               + "  \"type\" : \"Organization\",\n"
+               + "  \"id\": \"" + id + "\",\n"
+               + "  \"labels\" : {\n"
+               + "    \"en\" : \"Office of International Relations\",\n"
+               + "    \"nb\" : \"Internasjonal seksjon\"\n"
+               + "  },\n"
+               + "  \"acronym\" : \"UTD-ST-INT\",\n"
+               + "  \"country\" : \"NO\",\n"
+               + "  \"partOf\" : [ {\n"
+               + "    \"type\" : \"Organization\",\n"
+               + "    \"id\": \"" + parentOrgId + "\",\n"
+               + "    \"partOf\" : [ {\n"
+               + "      \"type\" : \"Organization\",\n"
+               + "      \"id\": \"" + topOrgId + "\"\n"
+               + "    } ]\n"
+               + "  } ]\n"
                + "}";
     }
 
