@@ -104,7 +104,6 @@ public final class RequestUtil {
         return new UserInstance(owner, customerId, topLevelOrg, personCristinId, accessRights);
     }
 
-    @JacocoGenerated
     public static UserInstance createUserInstanceFromRequest(RequestInfo requestInfo,
                                                              IdentityServiceClient identityServiceClient)
         throws UnauthorizedException {
