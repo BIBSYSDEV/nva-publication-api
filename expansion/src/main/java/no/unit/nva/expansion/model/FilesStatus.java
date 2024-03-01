@@ -5,18 +5,18 @@ import java.util.List;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
 
-public enum HasFile {
+public enum FilesStatus {
 
     NO_FILES("noFiles"), HAS_PUBLIC_FILES("hasPublicFiles");
 
-    public static final String HAS_FILE = "hasFile";
+    public static final String FILES_STATUS = "filesStatus";
     private final String value;
 
-    HasFile(String value) {
+    FilesStatus(String value) {
         this.value = value;
     }
 
-    public static HasFile fromPublication(Publication publication) {
+    public static FilesStatus fromPublication(Publication publication) {
         var files = getFiles(publication);
         if (noFiles(files) || !containsVisibleForNonOwnerFile(files)) {
             return NO_FILES;

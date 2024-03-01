@@ -78,7 +78,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     }
 
     private static void injectHasFileEnum(Publication publication, ObjectNode sortedJson) {
-        sortedJson.put(HasFile.HAS_FILE, HasFile.fromPublication(publication).getValue());
+        sortedJson.put(FilesStatus.FILES_STATUS, FilesStatus.fromPublication(publication).getValue());
     }
 
     private static JsonNode strToJsonWithSortedContributors(String jsonStr) {

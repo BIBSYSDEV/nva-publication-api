@@ -80,7 +80,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     public static final String CUSTOMER = "customer";
     public static final String CRISTIN_ID = "cristinId";
     public static final String IS_CUSTOMER_MESSAGE = "Cristin organization {} is nva customer: {}";
-    public static final String HAS_FILE_FIELD = "hasFile";
+    public static final String HAS_FILE_FIELD = "filesStatus";
     @JsonProperty(ID_FIELD)
     private URI identifier;
     @JsonProperty(ADDITIONAL_IDENTIFIERS_FIELD)
@@ -119,7 +119,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     @JsonProperty(ONLINE_ISSN_FIELD)
     private String onlineIssn;
     @JsonProperty(HAS_FILE_FIELD)
-    private HasFile hasFile;
+    private FilesStatus filesStatus;
 
     public static ExpandedImportCandidate fromImportCandidate(ImportCandidate importCandidate,
                                                               RawContentRetriever uriRetriever) {
@@ -142,7 +142,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .withAssociatedArtifacts(importCandidate.getAssociatedArtifacts())
                    .withPrintIssn(extractPrintIssn(importCandidate))
                    .withOnlineIssn(extractOnlineIssn(importCandidate))
-                   .withHasFile(HasFile.fromPublication(importCandidate))
+                   .withHasFile(FilesStatus.fromPublication(importCandidate))
                    .build();
     }
 
@@ -150,12 +150,12 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
         return printIssn;
     }
 
-    public HasFile getHasFile() {
-        return hasFile;
+    public FilesStatus getFilesStatus() {
+        return filesStatus;
     }
 
-    public void setHasFile(HasFile hasFile) {
-        this.hasFile = hasFile;
+    public void setFilesStatus(FilesStatus hasFile) {
+        this.filesStatus = hasFile;
     }
 
     private void setPrintIssn(String printIssn) {
@@ -633,8 +633,8 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
             return this;
         }
 
-        public Builder withHasFile(HasFile hasFile) {
-            expandedImportCandidate.setHasFile(hasFile);
+        public Builder withHasFile(FilesStatus hasFile) {
+            expandedImportCandidate.setFilesStatus(hasFile);
             return this;
         }
     }
