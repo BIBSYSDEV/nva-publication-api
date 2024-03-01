@@ -178,7 +178,7 @@ class ExpandedResourceTest {
     }
 
     @Test
-    void shouldReturnIndexDocumentWithContributorsPartsOfsOfRelevantOrgs() throws Exception {
+    void shouldReturnIndexDocumentWithContributorsOrganizations() throws Exception {
         var publication = randomPublication();
         var contributor1org = orgWithReadableId("contributor1org");
         var contributor1parentOrg = orgWithReadableId("contributor1parentOrg");
