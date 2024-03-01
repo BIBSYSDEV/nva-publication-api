@@ -46,7 +46,7 @@ public class CorporationWithContributors {
     }
 
     public List<CristinOrganization> getCristinOrganizations() {
-        return (isNull(cristinOrganizations)) ? List.of() : cristinOrganizations;
+        return isNull(cristinOrganizations) ? List.of() : cristinOrganizations;
     }
 
     public void setCristinOrganizations(List<CristinOrganization> cristinOrganizations) {
