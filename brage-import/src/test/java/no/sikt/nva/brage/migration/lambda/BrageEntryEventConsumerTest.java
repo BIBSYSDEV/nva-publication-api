@@ -86,9 +86,9 @@ import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import no.sikt.nva.brage.migration.record.content.ResourceContent.BundleType;
 import no.sikt.nva.brage.migration.record.license.License;
 import no.sikt.nva.brage.migration.record.license.NvaLicense;
+import no.sikt.nva.brage.migration.testutils.ExtendedFakeS3Client;
 import no.sikt.nva.brage.migration.testutils.FakeResourceServiceThrowingException;
 import no.sikt.nva.brage.migration.testutils.FakeS3ClientThrowingExceptionWhenCopying;
-import no.sikt.nva.brage.migration.testutils.FakeS3cClientWithCopyObjectSupport;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -123,7 +123,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
 
 public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
@@ -229,7 +229,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     public void init() {
         super.init();
         this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
-        this.s3Client = new FakeS3cClientWithCopyObjectSupport();
+        this.s3Client = new ExtendedFakeS3Client();
         this.s3Driver = new S3Driver(s3Client, INPUT_BUCKET_NAME);
         this.uriRetriever = mock(UriRetriever.class);
         this.handler = new BrageEntryEventConsumer(s3Client, resourceService, uriRetriever);
@@ -963,19 +963,16 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                  .withType(TYPE_BOOK)
                                  .build();
         var s3Event = createNewBrageRecordEventWithSpecifiedObjectKey(brageGenerator.getBrageRecord());
-        var objectKey = UUID;
-        var expectedDopyObjRequest = CopyObjectRequest.builder()
-                                         .sourceBucket(INPUT_BUCKET_NAME)
-                                         .destinationBucket(
-                                             new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME"))
-                                         .sourceKey("my/path/" + objectKey)
-                                         .destinationKey(objectKey.toString())
-                                         .build();
+        var expectedMultipartCopyObjectRequest =
+            CompleteMultipartUploadResponse.builder()
+                .bucket(new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME"))
+                .key(UUID.toString())
+                .build();
         handler.handleRequest(s3Event, CONTEXT);
-        var fakeS3cClientWithCopyObjectSupport = (FakeS3cClientWithCopyObjectSupport) s3Client;
-        var actualCopyObjectRequests = fakeS3cClientWithCopyObjectSupport.getCopyObjectRequestList();
+        var fakeS3Client = (ExtendedFakeS3Client) s3Client;
+        var actualCopyObjectRequests = fakeS3Client.getMultipartCopiedResults();
         assertThat(actualCopyObjectRequests, hasSize(1));
-        assertThat(actualCopyObjectRequests, contains(expectedDopyObjRequest));
+        assertThat(actualCopyObjectRequests, contains(expectedMultipartCopyObjectRequest));
     }
 
     @Test
@@ -1585,8 +1582,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                            .withIdentifier(UUID)
                            .withLicense(LICENSE_URI)
                            .withName(FILENAME)
-                           .withSize(FakeS3cClientWithCopyObjectSupport.SOME_CONTENT_LENGTH)
-                           .withMimeType(FakeS3cClientWithCopyObjectSupport.APPLICATION_PDF_MIMETYPE)
+                           .withSize(ExtendedFakeS3Client.SOME_CONTENT_LENGTH)
+                           .withMimeType(ExtendedFakeS3Client.APPLICATION_PDF_MIMETYPE)
                            .withEmbargoDate(EMBARGO_DATE)
                            .withLegalNote(legalNote)
                            .buildPublishedFile());

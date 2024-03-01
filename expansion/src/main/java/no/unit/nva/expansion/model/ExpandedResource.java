@@ -67,8 +67,18 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         throws JsonProcessingException {
         var documentWithId = transformToJsonLd(publication);
         var enrichedJson = enrichJson(uriRetriever, documentWithId);
-        var sortedJson = strToJsonWithSortedContributors(enrichedJson);
+        var sortedJson = addFields(enrichedJson, publication);
         return attempt(() -> objectMapper.treeToValue(sortedJson, ExpandedResource.class)).orElseThrow();
+    }
+
+    private static JsonNode addFields(String json, Publication publication) {
+        var sortedJson = strToJsonWithSortedContributors(json);
+        injectHasFileEnum(publication, (ObjectNode) sortedJson);
+        return sortedJson;
+    }
+
+    private static void injectHasFileEnum(Publication publication, ObjectNode sortedJson) {
+        sortedJson.put(FilesStatus.FILES_STATUS, FilesStatus.fromPublication(publication).getValue());
     }
 
     private static JsonNode strToJsonWithSortedContributors(String jsonStr) {
