@@ -1,85 +1,45 @@
 package no.sikt.nva.scopus.conversion;
 
 import static java.util.Objects.nonNull;
-import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
 import static no.sikt.nva.scopus.ScopusConverter.extractContentString;
-import static no.unit.nva.language.LanguageConstants.ENGLISH;
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.concurrent.ForkJoinPool;
+import no.scopus.generated.AffiliationTp;
 import no.scopus.generated.AffiliationType;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.OrganizationTp;
+import no.sikt.nva.scopus.conversion.model.CorporationWithContributors;
 import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
-import no.unit.nva.language.LanguageMapper;
-import no.unit.nva.model.Corporation;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.UnconfirmedOrganization;
-import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class AffiliationGenerator {
+public class AffiliationGenerator {
 
-    private static final Logger logger = LoggerFactory.getLogger(AffiliationGenerator.class);
+    public static final String NORWEGIAN_LAND_CODE = "NO";
+    public static final String OTHER_INSTITUTIONS = "Andre institusjoner";
     public static final int SINGLE_HIT = 1;
+    private static final Logger logger = LoggerFactory.getLogger(AffiliationGenerator.class);
+    private final PiaConnection piaConnection;
+    private final CristinConnection cristinConnection;
 
-    private AffiliationGenerator() {
+    public AffiliationGenerator(PiaConnection piaConnection,
+                                CristinConnection cristinConnection) {
+        this.piaConnection = piaConnection;
+        this.cristinConnection = cristinConnection;
     }
 
-    public static List<Corporation> fromCristinOrganization(CristinOrganization cristinOrganization) {
-        return List.of(new Organization.Builder().withId(cristinOrganization.id())
-                           .build());
+    public List<CorporationWithContributors> getCorporations(List<AuthorGroupTp> authorGroupList) {
+        var corporations = getCorporationsIds(authorGroupList);
+        return fillCristinOrganizationData(corporations);
     }
 
-    public static List<Corporation> fromAuthorGroupTp(AuthorGroupTp authorGroup, CristinConnection cristinConnection) {
-        var organizationNames = extractOrganizationNames(authorGroup);
-        var cristinOrganizations = fetchCristinOrganizations(cristinConnection, organizationNames);
-        return cristinOrganizations.isEmpty()
-                   ? getOrganizationsFromAuthorGroup(authorGroup)
-                   : cristinOrganizations.stream().map(AffiliationGenerator::toOrganization).toList();
+    private static boolean isNotOtherNorwegianInstitution(CristinOrganization org) {
+        return !(NORWEGIAN_LAND_CODE.equals(org.country()) && org.labels().containsValue(OTHER_INSTITUTIONS));
     }
 
-    private static List<Corporation> getOrganizationsFromAuthorGroup(AuthorGroupTp authorGroup) {
-        var name = getOrganizationNameFromAuthorGroup(authorGroup).orElse(null);
-        return List.of(new UnconfirmedOrganization(name));
-    }
-
-    private static Corporation toOrganization(CristinOrganization cristinOrganization) {
-        return new Organization.Builder()
-                   .withId(cristinOrganization.id())
-                   .build();
-    }
-
-    private static List<CristinOrganization> fetchCristinOrganizations(CristinConnection cristinConnection,
-                                                     List<String> organizationNames) {
-        return organizationNames.stream()
-                   .map(organization -> searchCristinOrganization(organization, cristinConnection))
-                   .filter(Optional::isPresent)
-                   .map(Optional::get)
-                   .toList();
-    }
-
-    private static Optional<CristinOrganization> searchCristinOrganization(String organization,
-                                                                           CristinConnection cristinConnection) {
-        var searchResponse = cristinConnection.searchCristinOrganization(organization);
-        return searchResponse.isPresent() && hasSingleOrganization(searchResponse.get())
-                   ? Optional.ofNullable(getSingleOrganization(searchResponse.get()))
-                   : Optional.empty();
-    }
-
-    private static CristinOrganization getSingleOrganization(SearchOrganizationResponse searchResponse) {
-        logger.info("Fetched cristin organization from author affiliation labels: {}", searchResponse);
-        return searchResponse.hits().get(0);
-    }
-
-    private static boolean hasSingleOrganization(SearchOrganizationResponse searchOrganizationResponse) {
-        return searchOrganizationResponse.size() == SINGLE_HIT;
-    }
-
-    @NotNull
     private static List<String> extractOrganizationNames(AuthorGroupTp authorGroup) {
         return Optional.ofNullable(authorGroup.getAffiliation())
                    .map(AffiliationType::getOrganization)
@@ -87,35 +47,98 @@ public final class AffiliationGenerator {
                    .orElse(List.of());
     }
 
-    private static List<String> extractNames(List<OrganizationTp> organizationTps) {
-        return organizationTps.stream().map(AffiliationGenerator::extractName).toList();
-    }
-
     private static String extractName(OrganizationTp org) {
         return extractContentString(org.getContent());
     }
 
-    private static Optional<String> getOrganizationNameFromAuthorGroup(AuthorGroupTp authorGroup) {
-        return Optional.ofNullable(authorGroup.getAffiliation())
-                   .map(AffiliationType::getOrganization)
-                   .map(AffiliationGenerator::toOrganizationName);
+    private static List<String> extractNames(List<OrganizationTp> organizationTps) {
+        return organizationTps.stream().map(AffiliationGenerator::extractName).toList();
     }
 
-    private static String toOrganizationName(List<OrganizationTp> organizationTps) {
-        return organizationTps.stream()
-                   .map(organizationTp -> extractContentString(organizationTp.getContent()))
-                   .collect(Collectors.joining(AFFILIATION_DELIMITER));
+    private static CristinOrganization getSingleOrganization(SearchOrganizationResponse searchResponse) {
+        logger.info("Fetched cristin organization from author affiliation labels: {}", searchResponse);
+        return searchResponse.hits().getFirst();
     }
 
-    public static String getLanguageIso6391Code(String textToBeGuessedLanguageCodeFrom) {
-        var detector = new OptimaizeLangDetector().loadModels();
-        var result = detector.detect(textToBeGuessedLanguageCodeFrom);
-        return result.isReasonablyCertain() ? getIso6391LanguageCodeForSupportedNvaLanguage(result.getLanguage())
-                   : ENGLISH.getIso6391Code();
+    private static boolean hasSingleOrganization(SearchOrganizationResponse searchOrganizationResponse) {
+        return searchOrganizationResponse.size() == SINGLE_HIT;
     }
 
-    private static String getIso6391LanguageCodeForSupportedNvaLanguage(String possiblyUnsupportedLanguageIso6391code) {
-        var language = LanguageMapper.getLanguageByIso6391Code(possiblyUnsupportedLanguageIso6391code);
-        return nonNull(language.getIso6391Code()) ? language.getIso6391Code() : ENGLISH.getIso6391Code();
+    private List<CorporationWithContributors> getCorporationsIds(List<AuthorGroupTp> authorGroupList) {
+        try (var customThreadPool = new ForkJoinPool(8)) {
+            var result =
+                customThreadPool.submit(() -> authorGroupList.parallelStream().map(this::retrieveCristinId))
+                    .join()
+                    .toList();
+            customThreadPool.shutdown();
+            return result;
+        } catch (Exception e) {
+            logger.warn("Parallel fetching of corporations id from PIA failed", e);
+            return authorGroupList.stream().map(this::retrieveCristinId).toList();
+        }
+    }
+
+    private CorporationWithContributors retrieveCristinId(AuthorGroupTp authorGroupTp) {
+        var corporation = new CorporationWithContributors();
+        corporation.setScopusAuthors(authorGroupTp);
+        corporation.setCristinOrganizationId(getCristinOrganizationUri(authorGroupTp).orElse(null));
+        return corporation;
+    }
+
+    private List<CorporationWithContributors> fillCristinOrganizationData(
+        List<CorporationWithContributors> corporations) {
+        try (var customThreadPool = new ForkJoinPool(8)) {
+            var result =
+                customThreadPool.submit(() -> corporations.parallelStream().map(this::addCristinOrganisationData))
+                    .join()
+                    .toList();
+            customThreadPool.shutdown();
+            return result;
+        } catch (Exception e) {
+            logger.warn("Parallel fetching of corporations failed", e);
+            return corporations.stream().map(this::addCristinOrganisationData).toList();
+        }
+    }
+
+    private CorporationWithContributors addCristinOrganisationData(CorporationWithContributors corporation) {
+        return nonNull(corporation.getCristinOrganizationId())
+                   ? fetCristinOrganizationsById(corporation)
+                   : searchForCristinOrganizationByName(corporation);
+    }
+
+    private CorporationWithContributors searchForCristinOrganizationByName(CorporationWithContributors corporation) {
+        var organizationNames = extractOrganizationNames(corporation.getScopusAuthors());
+        var cristinOrganizations =
+            organizationNames.stream()
+                .map(this::searchCristinOrganization)
+                .flatMap(Optional::stream)
+                .toList();
+        return corporation.copy().withCristinCorporations(cristinOrganizations).build();
+    }
+
+    private CorporationWithContributors fetCristinOrganizationsById(CorporationWithContributors corporation) {
+        var organization = cristinConnection.fetchCristinOrganizationByCristinId(
+            corporation.getCristinOrganizationId());
+        List<CristinOrganization> validOrganizations = isValidOrganization(organization) ?
+                                                           List.of(organization) : List.of();
+        return corporation.copy().withCristinCorporations(validOrganizations).build();
+    }
+
+    private boolean isValidOrganization(CristinOrganization organization) {
+        return nonNull(organization) && isNotOtherNorwegianInstitution(organization);
+    }
+
+    private Optional<CristinOrganization> searchCristinOrganization(String organization) {
+        var searchResponse = cristinConnection.searchCristinOrganization(organization);
+        return searchResponse.isPresent() && hasSingleOrganization(searchResponse.get())
+                   ? Optional.ofNullable(getSingleOrganization(searchResponse.get()))
+                   : Optional.empty();
+    }
+
+    private Optional<URI> getCristinOrganizationUri(AuthorGroupTp authorGroup) {
+        return Optional.ofNullable(authorGroup)
+                   .map(AuthorGroupTp::getAffiliation)
+                   .map(AffiliationTp::getAfid)
+                   .flatMap(piaConnection::fetchCristinOrganizationIdentifier);
     }
 }
