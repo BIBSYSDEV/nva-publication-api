@@ -9,6 +9,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.publication.RequestUtil;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -20,9 +21,9 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should allow Curator {0} operation on non-degree resources belonging to the "
                               + "institution based on publication owner")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "TERMINATE"})
+    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "TERMINATE", "TICKET_PUBLISH"})
     void shouldAllowCuratorOnNonDegreeBasedOnOwner(PublicationOperation operation)
-        throws JsonProcessingException, UnauthorizedException {
+        throws JsonProcessingException, ApiGatewayException {
 
         var institution = randomUri();
         var resourceOwner = randomString();
@@ -44,7 +45,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should allow Curator {0} operation on non-degree resources belonging to the "
                               + "institution based on contributors")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "TERMINATE"})
+    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "TERMINATE", "TICKET_PUBLISH"})
     void shouldAllowCuratorOnNonDegreeBasedOnContributors(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 

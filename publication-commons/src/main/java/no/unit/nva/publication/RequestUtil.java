@@ -1,8 +1,10 @@
 package no.unit.nva.publication;
 
 import static nva.commons.core.attempt.Try.attempt;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ResourceOwner;
@@ -12,21 +14,22 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
+import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class RequestUtil {
-    
+
     public static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
     public static final String IMPORT_CANDIDATE_IDENTIFIER = "importCandidateIdentifier";
     public static final String TICKET_IDENTIFIER = "ticketIdentifier";
     public static final String FILE_IDENTIFIER = "fileIdentifier";
     public static final String IDENTIFIER_IS_NOT_A_VALID_UUID = "Identifier is not a valid UUID: ";
     private static final Logger logger = LoggerFactory.getLogger(RequestUtil.class);
-    
+
     private RequestUtil() {
     }
-    
+
     /**
      * Get identifier from request path parameters.
      *
@@ -47,10 +50,10 @@ public final class RequestUtil {
     }
 
     public static SortableIdentifier getImportCandidateIdentifier(RequestInfo requestInfo) throws ApiGatewayException {
-            return Optional.ofNullable(requestInfo.getPathParameters())
-                       .map(params -> params.get(IMPORT_CANDIDATE_IDENTIFIER))
-                       .map(SortableIdentifier::new)
-                       .orElseThrow(() -> new BadRequestException("Could not get import candidate identifier!"));
+        return Optional.ofNullable(requestInfo.getPathParameters())
+                   .map(params -> params.get(IMPORT_CANDIDATE_IDENTIFIER))
+                   .map(SortableIdentifier::new)
+                   .orElseThrow(() -> new BadRequestException("Could not get import candidate identifier!"));
     }
 
     public static UUID getFileIdentifier(RequestInfo requestInfo) throws ApiGatewayException {
@@ -59,7 +62,7 @@ public final class RequestUtil {
                    .map(UUID::fromString)
                    .orElseThrow(() -> new BadRequestException("Could not get file identifier!"));
     }
-    
+
     /**
      * Get owner from requestContext authorizer claims.
      *
@@ -73,17 +76,21 @@ public final class RequestUtil {
     }
 
     private static UserInstance createExternalUserInstance(RequestInfo requestInfo,
-                                                          IdentityServiceClient identityServiceClient)
+                                                           IdentityServiceClient identityServiceClient)
         throws UnauthorizedException {
-        var client = attempt(() -> requestInfo.getClientId().orElseThrow())
-                         .map(identityServiceClient::getExternalClient)
-                         .orElseThrow(fail -> new UnauthorizedException());
+        var client =
+            attempt(() -> identityServiceClient.getExternalClientByToken(requestInfo.getAuthHeader())).orElseThrow(
+                fail -> new UnauthorizedException());
+
+        Stream.of(client.getActingUser(), client.getCristinUrgUri(), client.getCustomerUri())
+            .filter(Objects::nonNull)
+            .findFirst()
+            .orElseThrow(UnauthorizedException::new);
 
         var resourceOwner = new ResourceOwner(
             new Username(client.getActingUser()),
             client.getCristinUrgUri()
         );
-
 
         return UserInstance.createExternalUser(resourceOwner, client.getCustomerUri());
     }
@@ -97,16 +104,15 @@ public final class RequestUtil {
         return new UserInstance(owner, customerId, topLevelOrg, personCristinId, accessRights);
     }
 
+    @JacocoGenerated
     public static UserInstance createUserInstanceFromRequest(RequestInfo requestInfo,
                                                              IdentityServiceClient identityServiceClient)
         throws UnauthorizedException {
+
         try {
-            return requestInfo.clientIsThirdParty()
-                       ? createExternalUserInstance(requestInfo, identityServiceClient)
-                       : createInternalUserInstance(requestInfo);
-        } catch (ApiGatewayException e) {
-            e.printStackTrace();
-            throw new UnauthorizedException(e.getMessage());
+            return createInternalUserInstance(requestInfo);
+        } catch (Exception e) {
+            return createExternalUserInstance(requestInfo, identityServiceClient);
         }
     }
 }

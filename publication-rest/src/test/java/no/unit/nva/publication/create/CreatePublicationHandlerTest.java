@@ -47,6 +47,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.api.PublicationResponse;
@@ -100,6 +101,8 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         = "Customer API not responding or not responding as expected!";
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
     private static final String EXTERNAL_CLIENT_ID = "external-client-id";
+    public static final String AUTHORIZATION = "Authorization";
+    public static final String BEARER_TOKEN = "Bearer token";
     private final Context context = new FakeContext();
     private String testUserName;
     private CreatePublicationHandler handler;
@@ -160,6 +163,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                                                                   "someone@123",
                                                                   customerId,
                                                                   randomUri());
+        lenient().when(identityServiceClient.getExternalClientByToken(any())).thenReturn(getExternalClientResponse);
         lenient().when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
 
         stubSuccessfulTokenResponse();
@@ -606,6 +610,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                    .withBody(request)
                    .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
                    .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
+                   .withHeaders(Map.of(AUTHORIZATION, BEARER_TOKEN))
                    .build();
     }
 

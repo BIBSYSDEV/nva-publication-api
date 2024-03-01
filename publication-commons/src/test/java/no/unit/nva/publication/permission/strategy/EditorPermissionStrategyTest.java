@@ -18,7 +18,7 @@ import org.junit.jupiter.params.provider.EnumSource.Mode;
 class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should allow editor {0} operation on non-degree resources")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE"})
+    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "TICKET_PUBLISH"})
     void shouldAllowEditorOnNonDegreeBasedOnOwner(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
@@ -41,8 +41,7 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
     }
 
     @ParameterizedTest(name = "Should deny editor {0} operation on non-degree resources")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"UNPUBLISH", "UPDATE",
-        "TICKET_PUBLISH", "TERMINATE"})
+    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"UNPUBLISH", "UPDATE", "TERMINATE"})
     void shouldDenyEditorOnNonDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 

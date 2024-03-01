@@ -76,6 +76,8 @@ class PublicationPermissionStrategyTest {
     protected static final String TEST_ORG_NTNU_OFFICE_INTERNATIONAL = "194.14.62.0";
     protected static final String TEST_ORG_NTNU_DEPARTMENT_OF_LANGUAGES = "194.62.60.0";
     protected static final String TEST_ORG_SIKT_DEPARTMENT_OF_COMMUNICATION = "20754.6.0.0";
+    public static final String AUTHORIZATION = "Authorization";
+    public static final String BEARER_TOKEN = "Bearer token";
     IdentityServiceClient identityServiceClient;
     public static final ObjectMapper dtoObjectMapper = JsonUtils.dtoObjectMapper;
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
@@ -90,7 +92,7 @@ class PublicationPermissionStrategyTest {
         this.identityServiceClient = mock(IdentityServiceClient.class);
         setupUriRetriever();
 
-        when(this.identityServiceClient.getExternalClient(any())).thenReturn(
+        when(this.identityServiceClient.getExternalClientByToken(any())).thenReturn(
             new GetExternalClientResponse(randomString(), randomString(), EXTERNAL_CLIENT_CUSTOMER_URI, randomUri()));
     }
 
@@ -352,6 +354,7 @@ class PublicationPermissionStrategyTest {
 
         var requestInfo = new RequestInfo();
         requestInfo.setRequestContext(getRequestContextForClaim(claims));
+        requestInfo.setHeaders(Map.of(AUTHORIZATION, BEARER_TOKEN));
 
         return requestInfo;
     }

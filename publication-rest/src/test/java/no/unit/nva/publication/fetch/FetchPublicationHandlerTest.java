@@ -9,22 +9,28 @@ import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.HttpHeaders.LOCATION;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.util.UUID.randomUUID;
+import static no.unit.nva.model.PublicationOperation.TERMINATE;
+import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
+import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.DO_NOT_REDIRECT_QUERY_PARAM;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ENV_NAME_NVA_FRONTEND_DOMAIN;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
+import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
+import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static nva.commons.apigateway.ApiGatewayHandler.RESOURCE;
+import static nva.commons.apigateway.RequestInfoConstants.EXTERNAL_USER_POOL_URI;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.core.Is.is;
@@ -38,6 +44,8 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
@@ -50,9 +58,9 @@ import java.net.URI;
 import java.time.Clock;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.api.PublicationResponseElevatedUser;
+import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.model.Customer;
@@ -109,6 +117,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     private static final String WEBKIT_DEFAULT_ACCEPT_HEADER = "application/xml,application/xhtml+xml,text/html;q=0"
                                                                + ".9,text/plain;q=0.8,image/png,*/*;q=0.5";
     private static final String IDENTIFIER_NULL_ERROR = "Identifier is not a valid UUID: null";
+    public static final String AUTHORIZATION = "Authorization";
+    public static final String BEARER_TOKEN = "Bearer token";
     private final Context context = new FakeContext();
     private ResourceService publicationService;
     private UriRetriever uriRetriever;
@@ -135,6 +145,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
                                                               environment,
                                                               identityServiceClient,
                                                               uriRetriever);
+        this.identityServiceClient = identityServiceClient;
     }
 
     @Test
@@ -144,7 +155,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         var publicationIdentifier = publication.getIdentifier().toString();
 
-        fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier), output, context);
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier),
+                                              output, context);
         var gatewayResponse = parseHandlerResponse();
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertTrue(gatewayResponse.getHeaders().containsKey(CONTENT_TYPE));
@@ -159,9 +171,10 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         var headers = Map.of(HttpHeaders.ACCEPT, MediaTypes.APPLICATION_DATACITE_XML.toString());
         createCustomerMock(publication.getPublisher());
-        fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier, headers, NO_QUERY_PARAMS),
-                                              output,
-                                              context);
+        fetchPublicationHandler.handleRequest(
+            generateHandlerRequest(publicationIdentifier, headers, NO_QUERY_PARAMS),
+            output,
+            context);
         var gatewayResponse = parseHandlerResponse();
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertTrue(gatewayResponse.getHeaders().containsKey(CONTENT_TYPE));
@@ -178,8 +191,9 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         var identifier = publication.getIdentifier().toString();
         var headers = Map.of(ACCEPT, MediaTypes.SCHEMA_ORG.toString());
-        fetchPublicationHandler.handleRequest(generateHandlerRequest(identifier, headers, NO_QUERY_PARAMS), output,
-                                              context);
+        fetchPublicationHandler.handleRequest(
+            generateHandlerRequest(identifier, headers, NO_QUERY_PARAMS), output,
+            context);
         var gatewayResponse = parseHandlerResponse();
         var contentType = gatewayResponse.getHeaders().get(CONTENT_TYPE);
         assertThat(contentType, is(equalTo(MediaTypes.SCHEMA_ORG.toString())));
@@ -201,6 +215,54 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         assertThat(gatewayResponse.getBody(), containsString("allowedOperations"));
     }
 
+    @Test
+    void shouldReturnAllowedOperationsForExternalUser(WireMockRuntimeInfo wireMockRuntimeInfo)
+        throws ApiGatewayException, IOException {
+        var publication = createPublicationWithPublisher(wireMockRuntimeInfo);
+        var externalUser = UserInstance.createExternalUser(publication.getResourceOwner(),
+                                                           publication.getPublisher().getId());
+        publicationService.publishPublication(externalUser, publication.getIdentifier());
+        when(identityServiceClient.getExternalClientByToken(any())).thenReturn(
+            new GetExternalClientResponse("externalClientId",
+                                          externalUser.getUsername(),
+                                          externalUser.getCustomerId(),
+                                          externalUser.getTopLevelOrgCristinId()));
+
+        fetchPublicationHandler.handleRequest(
+            generateExternalHandlerRequest(publication, NO_QUERY_PARAMS),
+            output,
+            context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
+        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        final var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
+
+        assertThat(body.getAllowedOperations(), containsInAnyOrder(UPDATE, TERMINATE, UNPUBLISH));
+    }
+
+    private InputStream generateExternalHandlerRequest(Publication publication,
+                                                       Map<String, String> queryParams)
+        throws JsonProcessingException {
+        Map<String, String> headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType(), AUTHORIZATION,
+                                             BEARER_TOKEN);
+        Map<String, String> pathParameters = Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString());
+        return new HandlerRequestBuilder<InputStream>(restApiMapper)
+                    .withHeaders(headers)
+                    .withPathParameters(pathParameters)
+                    .withQueryParameters(queryParams)
+                    .withTopLevelCristinOrgId(publication.getResourceOwner().getOwnerAffiliation())
+                    .withPersonCristinId(randomUri())
+                    .withCurrentCustomer(publication.getPublisher().getId())
+                    .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_USER_POOL_URI.get())
+                    .withAuthorizerClaim(CLIENT_ID_CLAIM, "client_id")
+                    .withUserName(publication.getResourceOwner().getOwner().getValue())
+                    .withRequestContext(getEmptyRequestContext())
+                    .build();
+    }
+
+    private static ObjectNode getEmptyRequestContext() {
+        return new ObjectNode(JsonNodeFactory.instance);
+    }
+
     @ParameterizedTest(name = "should redirect to frontend landing page when accept header is {0}")
     @ValueSource(strings = {
         TEXT_HTML,
@@ -215,8 +277,9 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         var identifier = publication.getIdentifier().toString();
         var headers = Map.of(ACCEPT, acceptHeaderValue);
-        fetchPublicationHandler.handleRequest(generateHandlerRequest(identifier, headers, NO_QUERY_PARAMS), output,
-                                              context);
+        fetchPublicationHandler.handleRequest(
+            generateHandlerRequest(identifier, headers, NO_QUERY_PARAMS), output,
+            context);
 
         var valueType = restApiMapper.getTypeFactory()
                             .constructParametricType(
@@ -235,7 +298,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     @DisplayName("handler Returns NotFound Response On Publication Missing")
     void handlerReturnsNotFoundResponseOnPublicationMissing() throws IOException {
 
-        fetchPublicationHandler.handleRequest(generateHandlerRequest(IDENTIFIER_VALUE), output, context);
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(IDENTIFIER_VALUE), output,
+                                              context);
         var gatewayResponse = parseFailureResponse();
 
         assertEquals(SC_NOT_FOUND, gatewayResponse.getStatusCode());
@@ -287,7 +351,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
                                                               environment,
                                                               identityServiceClient,
                                                               uriRetriever);
-        fetchPublicationHandler.handleRequest(generateHandlerRequest(IDENTIFIER_VALUE), output, context);
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(IDENTIFIER_VALUE), output,
+                                              context);
 
         var gatewayResponse = parseFailureResponse();
         var actualDetail = getProblemDetail(gatewayResponse);
@@ -300,11 +365,13 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     void handlerReturnsGoneWithPublicationDetailWhenPublicationIsUnpublishedAndDuplicateOfValueIsNotPresent()
         throws ApiGatewayException, IOException {
         var publication = createUnpublishedPublicationWithDuplicate(null);
-        fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output,
-                                              context);
+        fetchPublicationHandler.handleRequest(
+            generateHandlerRequest(publication.getIdentifier().toString()), output,
+            context);
         var gatewayResponse = parseFailureResponse();
         var expectedTombstone =
-            PublicationResponseElevatedUser.fromPublication(publication.copy().withAssociatedArtifacts(List.of()).build());
+            PublicationResponseElevatedUser.fromPublication(
+                publication.copy().withAssociatedArtifacts(List.of()).build());
         var problem = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(), Problem.class);
         var actualPublication = JsonUtils.dtoObjectMapper.convertValue(problem.getParameters().get(RESOURCE),
                                                                        PublicationResponseElevatedUser.class);
@@ -315,10 +382,12 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     void handlerReturnsGoneWithPublicationDetailWhenPublicationIsDeletedAndDuplicateOfValueIsNotPresent()
         throws IOException, ApiGatewayException {
         var publication = createDeletedPublicationWithDuplicate(null);
-        fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output,
-                                              context);
+        fetchPublicationHandler.handleRequest(
+            generateHandlerRequest(publication.getIdentifier().toString()), output,
+            context);
         var gatewayResponse = parseFailureResponse();
-        var expectedTombstone = PublicationResponseElevatedUser.fromPublication(publication.copy().withAssociatedArtifacts(List.of()).build());
+        var expectedTombstone = PublicationResponseElevatedUser.fromPublication(
+            publication.copy().withAssociatedArtifacts(List.of()).build());
 
         var problem = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(), Problem.class);
         var actualPublication = JsonUtils.dtoObjectMapper.convertValue(problem.getParameters().get(RESOURCE),
@@ -333,8 +402,9 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var duplicateOfIdentifier =
             UriWrapper.fromUri(randomUri()).addChild(SortableIdentifier.next().toString()).getUri();
         var publication = createDeletedPublicationWithDuplicate(duplicateOfIdentifier);
-        fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output,
-                                              context);
+        fetchPublicationHandler.handleRequest(
+            generateHandlerRequest(publication.getIdentifier().toString()), output,
+            context);
         var valueType = restApiMapper.getTypeFactory()
                             .constructParametricType(
                                 GatewayResponse.class,
@@ -363,7 +433,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
                                               output,
                                               context);
         var expectedTombstone =
-            PublicationResponseElevatedUser.fromPublication(publication.copy().withAssociatedArtifacts(List.of()).build());
+            PublicationResponseElevatedUser.fromPublication(
+                publication.copy().withAssociatedArtifacts(List.of()).build());
         var gatewayResponse = parseFailureResponse();
         var problem = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(), Problem.class);
         var actualPublication = JsonUtils.dtoObjectMapper.convertValue(problem.getParameters().get(RESOURCE),
@@ -375,8 +446,9 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     void handlerReturnsNotFoundWhenRequestingPublicationWithPublicationStatusNotSupportedByHandler()
         throws ApiGatewayException, IOException {
         var publication = createDraftForDeletion();
-        fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output,
-                                              context);
+        fetchPublicationHandler.handleRequest(
+            generateHandlerRequest(publication.getIdentifier().toString()), output,
+            context);
         var gatewayResponse = parseFailureResponse();
 
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
@@ -467,7 +539,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private InputStream generateHandlerRequest(String publicationIdentifier) throws JsonProcessingException {
+    private InputStream generateHandlerRequest(String publicationIdentifier)
+        throws JsonProcessingException {
         Map<String, String> headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
         return generateHandlerRequest(publicationIdentifier, headers, NO_QUERY_PARAMS);
     }
