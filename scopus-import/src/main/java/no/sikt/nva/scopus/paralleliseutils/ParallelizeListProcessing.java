@@ -12,16 +12,16 @@ import org.slf4j.LoggerFactory;
 
 public final class ParallelizeListProcessing {
 
-    //Trying to be polite here and not bomb external APIs.
-    public static final int DEFAULT_NUMBER_OF_VIRTUAL_THREADS_FOR_IO_OPERATIONS = 4;
+    //Trying to be polite here and not bomb external HTTP APIs.
+    public static final int DEFAULT_NUMBER_OF_VIRTUAL_THREADS_FOR_NETWORKING_OPERATIONS = 4;
     private static final Logger logger = LoggerFactory.getLogger(ParallelizeListProcessing.class);
 
     private ParallelizeListProcessing() {
 
     }
 
-    public static <I, R> List<R> runAsVirtualApiCallingThreads(List<I> inputList, Function<I, R> job) {
-        return runAsVirtualThreads(inputList, job, DEFAULT_NUMBER_OF_VIRTUAL_THREADS_FOR_IO_OPERATIONS);
+    public static <I, R> List<R> runAsVirtualNetworkingCallingThreads(List<I> inputList, Function<I, R> job) {
+        return runAsVirtualThreads(inputList, job, DEFAULT_NUMBER_OF_VIRTUAL_THREADS_FOR_NETWORKING_OPERATIONS);
     }
 
     public static <I, R> List<R> runAsVirtualThreads(List<I> inputList, Function<I, R> job, int parallellLevel) {

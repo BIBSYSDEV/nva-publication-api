@@ -65,7 +65,7 @@ public class AffiliationGenerator {
     }
 
     private List<CorporationWithContributors> getCorporationsIds(List<AuthorGroupTp> authorGroupList) {
-        return ParallelizeListProcessing.runAsVirtualApiCallingThreads(authorGroupList, this::retrieveCristinId);
+        return ParallelizeListProcessing.runAsVirtualNetworkingCallingThreads(authorGroupList, this::retrieveCristinId);
     }
 
     private CorporationWithContributors retrieveCristinId(AuthorGroupTp authorGroupTp) {
@@ -77,8 +77,8 @@ public class AffiliationGenerator {
 
     private List<CorporationWithContributors> fillCristinOrganizationData(
         List<CorporationWithContributors> corporations) {
-        return ParallelizeListProcessing.runAsVirtualApiCallingThreads(corporations,
-                                                                       this::addCristinOrganisationData);
+        return ParallelizeListProcessing.runAsVirtualNetworkingCallingThreads(corporations,
+                                                                              this::addCristinOrganisationData);
     }
 
     private CorporationWithContributors addCristinOrganisationData(CorporationWithContributors corporation) {
