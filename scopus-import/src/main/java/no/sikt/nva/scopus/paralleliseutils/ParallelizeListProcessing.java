@@ -24,17 +24,17 @@ public final class ParallelizeListProcessing {
         return runAsVirtualThreads(inputList, job, DEFAULT_NUMBER_OF_VIRTUAL_THREADS_FOR_NETWORKING_OPERATIONS);
     }
 
-    public static <I, R> List<R> runAsVirtualThreads(List<I> inputList, Function<I, R> job, int parallellLevel) {
-        var listPreprosessed = ListUtils.partition(inputList, parallellLevel);
+    public static <I, R> List<R> runAsVirtualThreads(List<I> inputList, Function<I, R> job, int parallelLevel) {
+        var listPreprocessed = ListUtils.partition(inputList, parallelLevel);
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             var futures =
-                listPreprosessed.stream().map(partition -> executor.submit(() -> processItems(partition, job)));
+                listPreprocessed.stream().map(partition -> executor.submit(() -> processItems(partition, job)));
 
             var result = futures.map(ParallelizeListProcessing::waitForFuture).flatMap(Collection::stream).toList();
             executor.shutdown();
             return result;
         } catch (Exception e) {
-            logger.warn("Parallelising failed attempting synchronized processing");
+            logger.warn("Parallel run failed, attempting synchronized run");
             return inputList.stream().map(job).toList();
         }
     }
