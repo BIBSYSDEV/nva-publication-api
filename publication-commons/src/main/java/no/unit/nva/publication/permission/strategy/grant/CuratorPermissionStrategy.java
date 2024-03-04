@@ -27,14 +27,14 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
 
     @Override
     public boolean allowsAction(PublicationOperation permission) {
-        if (!canManageStandardResources() || !userRelatesToPublication()) {
+        if (!userRelatesToPublication()) {
             return false;
         }
 
         return switch (permission) {
-            case UPDATE -> true;
-            case TICKET_PUBLISH -> hasUnpublishedFile() && canManagePublishingRequests();
-            case UNPUBLISH -> isPublished();
+            case UPDATE -> canManageStandardResources();
+            case TICKET_PUBLISH -> canManagePublishingRequests() && hasUnpublishedFile();
+            case UNPUBLISH -> canManageStandardResources() && isPublished();
             default -> false;
         };
     }

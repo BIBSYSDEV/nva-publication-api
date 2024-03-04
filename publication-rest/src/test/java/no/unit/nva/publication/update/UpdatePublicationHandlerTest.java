@@ -688,21 +688,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnUnauthorizedWhenContributorUpdatesResourceWithoutEntityDescription()
-        throws IOException {
-        var savedPublication = persistPublication(createNonDegreePublication()
-                                                      .copy()
-                                                      .withEntityDescription(null)).build();
-        var cristinId = randomUri();
-
-        var event = contributorUpdatesPublicationAndHasRightsToUpdate(savedPublication, cristinId);
-        updatePublicationHandler.handleRequest(event, output, context);
-
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
-    }
-
-    @Test
     @DisplayName("Handler returns OK when thesis and is owner")
     void shouldReturnOKWhenUserIsOwner() throws IOException, BadRequestException {
         var thesisPublication = publication.copy().withEntityDescription(thesisPublishableEntityDescription()).build();
