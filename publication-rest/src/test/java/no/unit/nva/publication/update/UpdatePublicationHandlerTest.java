@@ -1084,6 +1084,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(inputStream, output, context);
         var ticketsAfterUnpublishing =
             publicationService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
+        var updatedPublication = publicationService.getPublication(publication);
+        assertThat(updatedPublication.getStatus(), is(equalTo(UNPUBLISHED)));
         assertThat(ticketsAfterUnpublishing,
                    hasItem(allOf(instanceOf(UnpublishRequest.class),
                                  hasProperty("status", equalTo(PENDING)))));

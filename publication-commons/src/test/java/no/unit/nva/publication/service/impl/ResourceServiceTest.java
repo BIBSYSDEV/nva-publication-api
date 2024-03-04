@@ -21,9 +21,12 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -85,9 +88,12 @@ import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
@@ -962,6 +968,36 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void shouldSetPublicationStatusToUnpublishedWhenUnpublishingPublication() throws ApiGatewayException {
         var publication = createPublishedResource();
         resourceService.unpublishPublication(publication);
+        assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(UNPUBLISHED)));
+    }
+
+    @Test
+    void shouldSetAllPendingTicketsToNotApplicableWhenUnpublishingPublication() throws ApiGatewayException {
+        var publication = createPublishedResource();
+        var pendingGeneralSupportTicket =
+            GeneralSupportRequest.fromPublication(publication).persistNewTicket(ticketService);
+        var pendingDoiRequestTicket = DoiRequest.fromPublication(publication).persistNewTicket(ticketService);
+        var closedGeneralSupportTicket =
+            GeneralSupportRequest.fromPublication(publication)
+                .persistNewTicket(ticketService)
+                .close(new Username(randomString()));
+        ticketService.updateTicket(closedGeneralSupportTicket);
+        var publishingRequestTicket = PublishingRequestCase.createOpeningCaseObject(publication);
+        publishingRequestTicket.setStatus(TicketStatus.COMPLETED);
+        publishingRequestTicket.persistNewTicket(ticketService);
+        resourceService.unpublishPublication(publication);
+        var tickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
+        assertThat(tickets, hasSize(5));
+        assertThat(tickets, hasItem(allOf(instanceOf(GeneralSupportRequest.class)
+            , hasProperty("status", is(equalTo(TicketStatus.CLOSED))))));
+        assertThat(tickets, hasItem(allOf(instanceOf(GeneralSupportRequest.class)
+            , hasProperty("status", is(equalTo(TicketStatus.NOT_RELEVANT))))));
+        assertThat(tickets, hasItem(allOf(instanceOf(DoiRequest.class)
+            , hasProperty("status", is(equalTo(TicketStatus.NOT_RELEVANT))))));
+        assertThat(tickets, hasItem(allOf(instanceOf(UnpublishRequest.class)
+            , hasProperty("status", is(equalTo(TicketStatus.PENDING))))));
+        assertThat(tickets, hasItem(allOf(instanceOf(PublishingRequestCase.class)
+            , hasProperty("status", is(equalTo(TicketStatus.COMPLETED))))));
         assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(UNPUBLISHED)));
     }
 

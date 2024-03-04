@@ -48,10 +48,8 @@ import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
-import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -239,25 +237,9 @@ public class UpdatePublicationHandler
                                                             existingPublication,
                                                             userInstance);
         resourceService.unpublishPublication(updatedPublication);
-        setPendingTicketsToNotRelevant(updatedPublication);
         updatedPublication = resourceService.getPublication(updatedPublication);
-        persistNotification(updatedPublication);
         updateNvaDoi(updatedPublication);
         return updatedPublication;
-    }
-
-    private void setPendingTicketsToNotRelevant(Publication updatedPublication) {
-        var tickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(updatedPublication));
-        tickets.filter(this::ticketIsNoLongerRelevant).forEach(this::setTicketToNoLongerRelevant);
-    }
-
-    private void setTicketToNoLongerRelevant(TicketEntry ticket) {
-        ticket.setStatus(TicketStatus.NOT_RELEVANT);
-        ticketService.updateTicket(ticket);
-    }
-
-    private boolean ticketIsNoLongerRelevant(TicketEntry ticket) {
-        return TicketStatus.PENDING.equals(ticket.getStatus());
     }
 
     private void validateUnpublishRequest(UnpublishPublicationRequest unpublishPublicationRequest)
@@ -300,9 +282,7 @@ public class UpdatePublicationHandler
         }
     }
 
-    private void persistNotification(Publication publication) throws ApiGatewayException {
-        TicketEntry.requestNewTicket(publication, UnpublishRequest.class).persistNewTicket(ticketService);
-    }
+
 
     private Publication toPublicationWithDuplicate(UnpublishPublicationRequest unpublishPublicationRequest,
                                                    Publication publication, UserInstance userInstance) {
