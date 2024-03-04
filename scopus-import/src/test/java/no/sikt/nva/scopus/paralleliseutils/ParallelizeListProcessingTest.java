@@ -15,10 +15,6 @@ import org.junit.jupiter.api.Test;
 
 public class ParallelizeListProcessingTest {
 
-    public String throwingException(String input) {
-        throw new UnsupportedOperationException();
-    }
-
     @Test
     void shouldHandleEmptyList() {
         List<String> emptyList = new ArrayList<>();
@@ -64,7 +60,12 @@ public class ParallelizeListProcessingTest {
                 .mapToObj(ignored -> randomString().toLowerCase())
                 .toList();
         assertThrows(UnsupportedOperationException.class,
-                     () -> ParallelizeListProcessing.runAsVirtualNetworkingCallingThreads(someIrrelevantInputListWithElements,
-                                                                                          this::throwingException));
+                     () -> ParallelizeListProcessing.runAsVirtualNetworkingCallingThreads(
+                         someIrrelevantInputListWithElements,
+                         this::throwingException));
+    }
+
+    private String throwingException(String input) {
+        throw new UnsupportedOperationException();
     }
 }
