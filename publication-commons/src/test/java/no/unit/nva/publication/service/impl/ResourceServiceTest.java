@@ -991,9 +991,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(tickets, hasItem(allOf(instanceOf(GeneralSupportRequest.class)
             , hasProperty("status", is(equalTo(TicketStatus.CLOSED))))));
         assertThat(tickets, hasItem(allOf(instanceOf(GeneralSupportRequest.class)
-            , hasProperty("status", is(equalTo(TicketStatus.NOT_RELEVANT))))));
+            , hasProperty("status", is(equalTo(TicketStatus.NOT_APPLICABLE))))));
         assertThat(tickets, hasItem(allOf(instanceOf(DoiRequest.class)
-            , hasProperty("status", is(equalTo(TicketStatus.NOT_RELEVANT))))));
+            , hasProperty("status", is(equalTo(TicketStatus.NOT_APPLICABLE))))));
         assertThat(tickets, hasItem(allOf(instanceOf(UnpublishRequest.class)
             , hasProperty("status", is(equalTo(TicketStatus.PENDING))))));
         assertThat(tickets, hasItem(allOf(instanceOf(PublishingRequestCase.class)

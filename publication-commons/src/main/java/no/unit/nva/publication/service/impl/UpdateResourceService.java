@@ -199,7 +199,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     private TicketEntry setToNotApplicable(TicketEntry ticketEntry) {
         var updatedTicket = ticketEntry.copy();
-        updatedTicket.setStatus(TicketStatus.NOT_RELEVANT);
+        updatedTicket.setStatus(TicketStatus.NOT_APPLICABLE);
         updatedTicket.setModifiedDate(Instant.now());
         return updatedTicket;
     }

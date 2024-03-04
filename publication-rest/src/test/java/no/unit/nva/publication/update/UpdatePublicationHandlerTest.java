@@ -24,7 +24,7 @@ import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.delete.DeletePublicationHandler.LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS;
 import static no.unit.nva.publication.delete.DeletePublicationHandler.NVA_PUBLICATION_DELETE_SOURCE;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
-import static no.unit.nva.publication.model.business.TicketStatus.NOT_RELEVANT;
+import static no.unit.nva.publication.model.business.TicketStatus.NOT_APPLICABLE;
 import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
@@ -1093,9 +1093,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(ticketsAfterUnpublishing, hasItem(allOf(instanceOf(PublishingRequestCase.class),
                                                            hasProperty("status", equalTo(COMPLETED)))));
         assertThat(ticketsAfterUnpublishing, hasItem(allOf(instanceOf(DoiRequest.class),
-                                                           hasProperty("status", equalTo(NOT_RELEVANT)))));
+                                                           hasProperty("status", equalTo(NOT_APPLICABLE)))));
         assertThat(ticketsAfterUnpublishing, hasItem(allOf(instanceOf(GeneralSupportRequest.class),
-                                                           hasProperty("status", equalTo(NOT_RELEVANT)))));
+                                                           hasProperty("status", equalTo(NOT_APPLICABLE)))));
     }
 
     @Test

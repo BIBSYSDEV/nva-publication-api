@@ -5,7 +5,6 @@ import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusCo
 import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.COMPLETED_STATUS;
 import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.CLOSED_STATUS;
 import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.REMOVED_STATUS;
-import static no.unit.nva.publication.model.business.TicketStatus.TicketStatusConstants.NOT_RELEVANT_STATUS;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -18,7 +17,7 @@ import nva.commons.core.SingletonCollector;
 public enum TicketStatus {
     PENDING(PENDING_STATUS, "REQUESTED"),
     COMPLETED(COMPLETED_STATUS, "APPROVED"),
-    NOT_RELEVANT(NOT_RELEVANT_STATUS, "NOT RELEVANT"),
+    NOT_APPLICABLE(TicketStatusConstants.NOT_APPLICABLE, "NOT APPLICABLE"),
     CLOSED(CLOSED_STATUS, "REJECTED"),
     REMOVED(REMOVED_STATUS, "REMOVED");
     
@@ -27,7 +26,7 @@ public enum TicketStatus {
     public static final String INVALID_DOI_REQUEST_STATUS_ERROR = "Invalid DoiRequest status. Valid values:  ";
     public static final String SEPARATOR = ",";
     static final Set<TicketStatus> validStatusChangeForRejected = Set.of(COMPLETED);
-    static final Set<TicketStatus> validStatusChangeForRequested = Set.of(COMPLETED, CLOSED, NOT_RELEVANT);
+    static final Set<TicketStatus> validStatusChangeForRequested = Set.of(COMPLETED, CLOSED, NOT_APPLICABLE);
     static final Set<TicketStatus> validDefaultStatusChanges = emptySet();
     private final String value;
     private final String legacyValue;
@@ -104,7 +103,7 @@ public enum TicketStatus {
         public static final String COMPLETED_STATUS = "Completed";
         public static final String CLOSED_STATUS = "Closed";
         public static final String REMOVED_STATUS = "Removed";
-        public static final String NOT_RELEVANT_STATUS = "Not Relevant";
+        public static final String NOT_APPLICABLE = "Not Relevant";
         public static final String READ_STATUS = "Read";
         public static final String UNREAD_STATUS = "Unread";
         
