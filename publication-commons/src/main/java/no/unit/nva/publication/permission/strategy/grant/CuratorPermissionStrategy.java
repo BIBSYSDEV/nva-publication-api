@@ -49,9 +49,7 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
             return false;
         }
 
-        var resourceOwnerTopLevel = getTopLevelOrgUri(uriRetriever,
-                                                      publication.getResourceOwner().getOwnerAffiliation());
-        return userInstance.getTopLevelOrgCristinId().equals(resourceOwnerTopLevel);
+        return userInstance.getTopLevelOrgCristinId().equals(publication.getResourceOwner().getOwnerAffiliation());
     }
 
     private boolean userSharesTopLevelOrgWithAtLeastOneContributor() {
@@ -76,7 +74,7 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
                                     .map(Organization::getId))
                    .collect(Collectors.toSet())
                    .parallelStream()
-                   .map((orgId) -> getTopLevelOrgUri(uriRetriever, orgId))
+                   .map(orgId -> getTopLevelOrgUri(uriRetriever, orgId))
                    .collect(Collectors.toSet());
     }
 

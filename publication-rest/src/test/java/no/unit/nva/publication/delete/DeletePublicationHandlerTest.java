@@ -19,6 +19,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Clock;
+import java.util.HashMap;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.Publication;
@@ -93,9 +94,11 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     void handleRequestReturnsAcceptedWhenOnDraftPublicationAndClientIsExternal() throws IOException,
                                                                                         BadRequestException {
         var createdPublication = createAndPersistPublicationWithExternalOwner();
+        var headers = new HashMap<>(TestHeaders.getRequestHeaders());
+        headers.put("Authorization", "Bearer token");
 
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
-                                      .withHeaders(TestHeaders.getRequestHeaders())
+                                      .withHeaders(headers)
                                       .withPathParameters(singletonMap(PUBLICATION_IDENTIFIER,
                                                                        createdPublication.getIdentifier().toString()))
                                       .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
@@ -195,12 +198,12 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
             randomUri(),
             randomUri()
         );
-        when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
+        when(identityServiceClient.getExternalClientByToken(any())).thenReturn(getExternalClientResponse);
     }
 
     private void prepareIdentityServiceClientForNotFound() throws NotFoundException {
         identityServiceClient = mock(IdentityServiceClient.class);
-        when(identityServiceClient.getExternalClient(any())).thenThrow(NotFoundException.class);
+        when(identityServiceClient.getExternalClientByToken(any())).thenThrow(NotFoundException.class);
     }
 
     private void prepareEnvironment() {
@@ -234,5 +237,4 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
             UserInstance.create(owner, getExternalClientResponse.getCustomerUri());
         return Resource.fromPublication(publication).persistNew(publicationService, userInstance);
     }
-
 }

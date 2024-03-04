@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.util.List;
+import java.util.Map;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.Publication;
@@ -42,7 +43,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class PublicationsByOwnerHandlerTest {
-    
+
+    public static final String AUTHORIZATION = "Authorization";
+    public static final String BEARER_TOKEN = "Bearer token";
     private ResourceService resourceService;
     private final Context context = new FakeContext();
     
@@ -63,7 +66,7 @@ class PublicationsByOwnerHandlerTest {
                                                                   "someone@123",
                                                                   randomUri(),
                                                                   randomUri());
-        lenient().when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
+        lenient().when(identityServiceClient.getExternalClientByToken(any())).thenReturn(getExternalClientResponse);
         
         output = new ByteArrayOutputStream();
         publicationsByOwnerHandler =
@@ -104,6 +107,7 @@ class PublicationsByOwnerHandlerTest {
         InputStream input = new HandlerRequestBuilder<Void>(restApiMapper)
                                 .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
                                 .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
+                                .withHeaders(Map.of(AUTHORIZATION, BEARER_TOKEN))
                                 .build();
         publicationsByOwnerHandler.handleRequest(input, output, context);
 

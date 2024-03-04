@@ -42,7 +42,6 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
@@ -61,7 +60,6 @@ import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 class PublicationPermissionStrategyTest {
@@ -78,12 +76,14 @@ class PublicationPermissionStrategyTest {
     protected static final String TEST_ORG_NTNU_OFFICE_INTERNATIONAL = "194.14.62.0";
     protected static final String TEST_ORG_NTNU_DEPARTMENT_OF_LANGUAGES = "194.62.60.0";
     protected static final String TEST_ORG_SIKT_DEPARTMENT_OF_COMMUNICATION = "20754.6.0.0";
+    public static final String AUTHORIZATION = "Authorization";
+    public static final String BEARER_TOKEN = "Bearer token";
     IdentityServiceClient identityServiceClient;
     public static final ObjectMapper dtoObjectMapper = JsonUtils.dtoObjectMapper;
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
     private static final String EXTERNAL_CLIENT_ID = "external-client-id";
 
-    private static final URI EXTERNAL_CLIENT_CUSTOMER_URI = URI.create("https://example.com/external-client-org");
+    protected static final URI EXTERNAL_CLIENT_CUSTOMER_URI = URI.create("https://example.com/external-client-org");
 
     protected UriRetriever uriRetriever;
 
@@ -92,7 +92,7 @@ class PublicationPermissionStrategyTest {
         this.identityServiceClient = mock(IdentityServiceClient.class);
         setupUriRetriever();
 
-        when(this.identityServiceClient.getExternalClient(any())).thenReturn(
+        when(this.identityServiceClient.getExternalClientByToken(any())).thenReturn(
             new GetExternalClientResponse(randomString(), randomString(), EXTERNAL_CLIENT_CUSTOMER_URI, randomUri()));
     }
 
@@ -143,336 +143,27 @@ class PublicationPermissionStrategyTest {
     }
 
     @Test
-    void shouldAllowResourceOwnerToUpdateDegreeInDraftStatus()
-        throws JsonProcessingException, UnauthorizedException {
-
-        var editorName = randomString();
-        var editorInstitution = randomUri();
-        var resourceOwner = randomString();
-        var cristinId = randomUri();
-
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId,
-                                                null);
-        var publication = createDegreePhd(resourceOwner, editorInstitution)
-                              .copy()
-                              .withStatus(PublicationStatus.DRAFT)
-                              .build();
-
-        Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                      requestInfo, identityServiceClient), uriRetriever)
-                                  .allowsAction(UPDATE));
-    }
-
-    @Test
-    void shouldGiveEditorPermissionToUnpublishPublicationWhenPublicationIsFromTheirInstitution()
-        throws JsonProcessingException, UnauthorizedException {
-
-        var editorName = randomString();
-        var editorInstitution = randomUri();
-        var resourceOwner = randomString();
-        var cristinId = randomUri();
-
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId,
-                                                null);
-        var publication = createPublication(resourceOwner, editorInstitution, randomUri());
-
-        Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                      requestInfo, identityServiceClient), uriRetriever)
-                                  .allowsAction(UNPUBLISH));
-    }
-
-    @Test
-    void shouldGiveEditorPermissionToUnpublishPublicationWhenPublicationIsFromAnotherInstitution()
-        throws JsonProcessingException, UnauthorizedException {
-
-        var editorName = randomString();
-        var editorInstitution = randomUri();
-        var resourceOwner = randomString();
-        var resourceOwnerInstitution = randomUri();
-        var cristinId = randomUri();
-
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId,
-                                                null);
-        var publication = createPublication(resourceOwner, resourceOwnerInstitution, randomUri());
-
-        Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                      requestInfo, identityServiceClient), uriRetriever)
-                                  .allowsAction(UNPUBLISH));
-    }
-
-    @Test
-    void shouldGiveEditorPermissionToUnpublishDegreeWhenDegreeIsFromTheirInstitution()
-        throws JsonProcessingException, UnauthorizedException {
-        var editorName = randomString();
-        var editorInstitution = randomUri();
-        var resourceOwner = randomString();
-        var cristinId = randomUri();
-
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId,
-                                                null);
-        var publication = createDegreePhd(resourceOwner, editorInstitution);
-
-        Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                      requestInfo, identityServiceClient), uriRetriever)
-                                  .allowsAction(UNPUBLISH));
-    }
-
-    @Test
-    void shouldGiveEditorPermissionToUnpublishDegreeWhenDegreeIsFromAnotherInstitution()
-        throws JsonProcessingException, UnauthorizedException {
-        var editorName = randomString();
-        var editorInstitution = randomUri();
-        var resourceOwner = randomString();
-        var resourceInstitution = randomUri();
-        var cristinId = randomUri();
-
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId,
-                                                null);
-        var publication = createDegreePhd(resourceOwner, resourceInstitution);
-
-        Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                      requestInfo, identityServiceClient), uriRetriever)
-                                  .allowsAction(UNPUBLISH));
-    }
-
-    @Test
-    void shouldDenyEditorPermissionToDeleteDegreeWhenMissingManageDegree()
-        throws JsonProcessingException, UnauthorizedException {
-        var editorName = randomString();
-        var editorInstitution = randomUri();
-        var resourceOwner = randomString();
-        var resourceInstitution = randomUri();
-        var cristinId = randomUri();
-
-        var accessRights = new ArrayList<AccessRight>();
-        accessRights.add(AccessRight.MANAGE_RESOURCES_ALL);
-
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, accessRights, cristinId, null);
-        var publication = createDegreePhd(resourceOwner, resourceInstitution);
-
-        Assertions.assertFalse(PublicationPermissionStrategy
-                                   .create(publication,
-                                           RequestUtil.createUserInstanceFromRequest(requestInfo,
-                                                                                     identityServiceClient),
-                                           uriRetriever)
-                                   .allowsAction(DELETE));
-    }
-
-    @Test
-    void shouldDenyPermissionToUnpublishDegreeWhenUserIsDoesNotHaveAccessRightPublishDegree()
-        throws JsonProcessingException, UnauthorizedException {
-        var username = randomString();
-        var institution = randomUri();
-        var cristinId = randomUri();
-        var requestInfo = createUserRequestInfo(username, institution, getCuratorAccessRights(), cristinId, null);
-        var publication = createDegreePhd(username, institution);
-
-        Assertions.assertFalse(PublicationPermissionStrategy
-                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                       requestInfo, identityServiceClient), uriRetriever)
-                                   .allowsAction(UNPUBLISH));
-    }
-
-    @Test
-    void shouldAllowPermissionToUnpublishDegreeWhenUserIsCuratorWithPermissionToPublishDegree()
-        throws JsonProcessingException, UnauthorizedException {
-        var username = randomString();
-        var institution = randomUri();
-        var cristinId = randomUri();
-        var requestInfo = createUserRequestInfo(username,
-                                                institution,
-                                                getCuratorWithPublishDegreeAccessRight(),
-                                                cristinId,
-                                                null);
-        var publication = createDegreePhd(username, institution);
-
-        Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                      requestInfo, identityServiceClient), uriRetriever)
-                                  .allowsAction(UNPUBLISH));
-    }
-
-    @Test
-    void shouldGiveCuratorPermissionToUnpublishDegreePublicationWhenUserHasPublishDegreeAccessRight()
-        throws JsonProcessingException, UnauthorizedException {
-
-        var curatorName = randomString();
-        var resourceOwner = randomString();
-        var institutionCustomerId = randomUri();
-        var personCristinId = randomUri();
-        var topLevelCristinOrgId = randomUri();
-
-        var requestInfo = createUserRequestInfo(curatorName,
-                                                institutionCustomerId,
-                                                getCuratorWithPublishDegreeAccessRight(),
-                                                personCristinId,
-                                                topLevelCristinOrgId);
-        var publication = createDegreePhdWithResourceOwner(resourceOwner, institutionCustomerId, topLevelCristinOrgId);
-
-        Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                      requestInfo, identityServiceClient), uriRetriever)
-                                  .allowsAction(UNPUBLISH));
-    }
-
-    @Test
-    void shouldDenyAccessRightForCuratorToUnpublishDegreePublicationForDifferentInstitution()
-        throws JsonProcessingException, UnauthorizedException {
-        var curatorName = randomString();
-        var resourceOwner = randomString();
-        var institution = randomUri();
-        var cristinId = randomUri();
-        var requestInfo = createUserRequestInfo(curatorName,
-                                                institution,
-                                                getCuratorWithPublishDegreeAccessRight(),
-                                                cristinId,
-                                                null);
-        var publication = createDegreePhd(resourceOwner, randomUri());
-
-        Assertions.assertFalse(PublicationPermissionStrategy
-                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                       requestInfo, identityServiceClient), uriRetriever)
-                                   .allowsAction(UNPUBLISH));
-    }
-
-    @Test
-    void shouldDenyCuratorPermissionToUnpublishPublicationWhenPublicationIsFromAnotherInstitution()
-        throws JsonProcessingException, UnauthorizedException {
-
-        var curatorName = randomString();
-        var curatorInstitution = randomUri();
-        var resourceOwner = randomString();
-        var resourceOwnerInstitution = randomUri();
-        var cristinId = randomUri();
-
-        var requestInfo = createUserRequestInfo(curatorName, curatorInstitution, getCuratorAccessRights(), cristinId, null);
-        var publication = createDegreePhd(resourceOwner, resourceOwnerInstitution);
-
-        Assertions.assertFalse(PublicationPermissionStrategy
-                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                       requestInfo, identityServiceClient), uriRetriever)
-                                   .allowsAction(UNPUBLISH));
-    }
-
-    @Test
-    void shouldGivePermissionToUnpublishPublicationWhenUserIsContributor()
-        throws JsonProcessingException, UnauthorizedException {
-        var contributorName = randomString();
-        var contributorCristinId = randomUri();
-        var contributorInstitutionId = randomUri();
-        var topLevelCristinOrgId = randomUri();
-
-        var requestInfo = createUserRequestInfo(contributorName, contributorInstitutionId, contributorCristinId, topLevelCristinOrgId);
-        var publication = createPublicationWithContributor(contributorName, contributorCristinId, Role.CREATOR,
-                                                           randomUri(), topLevelCristinOrgId);
-
-        Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                      requestInfo, identityServiceClient), uriRetriever)
-                                  .allowsAction(UNPUBLISH));
-    }
-
-    @Disabled("Not valid anymore?")
-    @Test
-    void shouldDenyPermissionToUnpublishPublicationWhenUserIsContributorButNotCreator()
-        throws JsonProcessingException, UnauthorizedException {
-        var contributorName = randomString();
-        var contributorCristinId = randomUri();
-        var contributorInstitutionId = randomUri();
-
-        var requestInfo = createUserRequestInfo(contributorName, contributorInstitutionId, contributorCristinId, randomUri());
-        var publication = createPublicationWithContributor(contributorName, contributorCristinId, null, randomUri(),
-                                                           randomUri());
-
-        Assertions.assertFalse(PublicationPermissionStrategy
-                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                       requestInfo, identityServiceClient), uriRetriever)
-                                   .allowsAction(UNPUBLISH));
-    }
-
-    @Test
-    void shouldGivePermissionToUnpublishPublicationWhenUserIsResourceOwner()
-        throws JsonProcessingException, UnauthorizedException {
-        var resourceOwner = randomString();
-        var institutionId = randomUri();
-        var cristinId = randomUri();
-
-        var requestInfo = createUserRequestInfo(resourceOwner, institutionId, cristinId, randomUri());
-        var publication = createNonDegreePublication(resourceOwner, institutionId);
-
-        Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                      requestInfo, identityServiceClient), uriRetriever)
-                                  .allowsAction(UNPUBLISH));
-    }
-
-    @Test
-    void shouldGivePermissionToOperateOnPublicationWhenEditor() throws JsonProcessingException, UnauthorizedException {
-        var editorName = randomString();
-        var editorInstitution = randomUri();
-        var resourceOwner = randomString();
-        var cristinId = randomUri();
-
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId, null);
-        var publication = createPublication(resourceOwner, editorInstitution, randomUri());
-
-        Assertions.assertTrue(
-            PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
-                    requestInfo, identityServiceClient), uriRetriever)
-                .allowsAction(UNPUBLISH));
-    }
-
-    @Test
-    void shouldGivePermissionToEditPublicationWhenTrustedClient()
-        throws JsonProcessingException, UnauthorizedException {
-        var publication = createNonDegreePublication(randomString(), EXTERNAL_CLIENT_CUSTOMER_URI);
-        var requestInfo = createThirdPartyRequestInfo(getEditorAccessRights());
-
-        Assertions.assertTrue(
-            PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
-                    requestInfo, identityServiceClient), uriRetriever)
-                .allowsAction(UPDATE));
-    }
-
-    @Test
-    void shouldDenyTrustedClientEditPublicationWithoutMatchingCustomer()
-        throws JsonProcessingException, UnauthorizedException {
-        var publication = createPublication(randomString(), randomUri(), randomUri());
-        var requestInfo = createThirdPartyRequestInfo(getEditorAccessRights());
-
-        Assertions.assertFalse(
-            PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
-                    requestInfo, identityServiceClient), uriRetriever)
-                .allowsAction(UPDATE));
-    }
-
-    @Test
-    void shouldDenyTrustedClientEditPublicationWithMissingPublisher()
-        throws JsonProcessingException, UnauthorizedException {
-        var publication = createPublication(randomString(), randomUri(), randomUri());
-        publication.setPublisher(null);
-        var requestInfo = createThirdPartyRequestInfo(getEditorAccessRights());
-
-        Assertions.assertFalse(
-            PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
-                    requestInfo, identityServiceClient), uriRetriever)
-                .allowsAction(UPDATE));
-    }
-
-    @Test
-    void shouldThrowUnauthorizedExceptionFromAuthorize() throws JsonProcessingException, UnauthorizedException {
-        var publication = createDegreePhd(randomString(), randomUri());
-        var requestInfo = createThirdPartyRequestInfo(getCuratorAccessRights());
+    void shouldThrowUnauthorizedExceptionOnValidateDenyFromAuthorize() throws JsonProcessingException,
+                                                                         UnauthorizedException {
+        var publication = createDegreePhd(randomString(), randomUri(), randomUri());
+        var requestInfo = createThirdPartyRequestInfo();
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         var strategy = PublicationPermissionStrategy.create(publication, userInstance, uriRetriever);
 
         Assertions.assertThrows(UnauthorizedException.class, () -> strategy.authorize(UPDATE));
     }
+
+    @Test
+    void shouldThrowUnauthorizedExceptionOnValidateGrantFromAuthorize() throws JsonProcessingException,
+                                                                         UnauthorizedException {
+        var publication = createNonDegreePublication(randomString(), randomUri());
+        var requestInfo = createThirdPartyRequestInfo();
+        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+        var strategy = PublicationPermissionStrategy.create(publication, userInstance, uriRetriever);
+
+        Assertions.assertThrows(UnauthorizedException.class, () -> strategy.authorize(DELETE));
+    }
+
 
     @Test
     void getAllAllowedOperationsShouldReturnNothingWhenUserHasNoAccessRights() throws JsonProcessingException,
@@ -534,41 +225,33 @@ class PublicationPermissionStrategyTest {
         return accessRight -> accessRight.toPersistedString() + AT + institutionId.toString();
     }
 
-    private List<AccessRight> getCuratorWithPublishDegreeAccessRight() {
+    protected List<AccessRight> getCuratorWithPublishDegreeAccessRight() {
         var curatorAccessRight = getCuratorAccessRights();
         curatorAccessRight.add(AccessRight.MANAGE_DEGREE);
         return curatorAccessRight;
     }
 
-    private Publication createPublication(String resourceOwner, URI customer, URI cristinId) {
+    Publication createPublication(String resourceOwner, URI customer, URI ownerAffiliation) {
         return randomPublication().copy()
-                   .withResourceOwner(new ResourceOwner(new Username(resourceOwner), cristinId))
+                   .withResourceOwner(new ResourceOwner(new Username(resourceOwner), ownerAffiliation))
                    .withPublisher(new Organization.Builder().withId(customer).build())
                    .withStatus(PUBLISHED)
                    .build();
     }
 
     Publication createNonDegreePublication(String resourceOwner, URI customer) {
+        return createNonDegreePublication(resourceOwner, customer, randomUri());
+    }
+    Publication createNonDegreePublication(String resourceOwner, URI customer, URI ownerAffiliation) {
         return PublicationGenerator.randomPublicationNonDegree().copy()
-                   .withResourceOwner(new ResourceOwner(new Username(resourceOwner), customer))
+                   .withResourceOwner(new ResourceOwner(new Username(resourceOwner), ownerAffiliation))
                    .withPublisher(new Organization.Builder().withId(customer).build())
                    .withStatus(PUBLISHED)
                    .build();
     }
 
-    Publication createDegreePhd(String resourceOwner, URI customer) {
-        var publication = createPublication(resourceOwner, customer, randomUri());
-
-        var degreePhd = new DegreePhd(new MonographPages(), new PublicationDate(),
-                                      Set.of(new UnconfirmedDocument(randomString())));
-        var reference = new Reference.Builder().withPublicationInstance(degreePhd).build();
-        var entityDescription = publication.getEntityDescription().copy().withReference(reference).build();
-
-        return publication.copy().withEntityDescription(entityDescription).build();
-    }
-
-    Publication createDegreePhdWithResourceOwner(String resourceOwner, URI customer, URI resourceOwnerAffiliation) {
-        var publication = createPublication(resourceOwner, customer, resourceOwnerAffiliation);
+    Publication createDegreePhd(String resourceOwner, URI customerId, URI ownerAffiliation) {
+        var publication = createPublication(resourceOwner, customerId, ownerAffiliation);
 
         var degreePhd = new DegreePhd(new MonographPages(), new PublicationDate(),
                                       Set.of(new UnconfirmedDocument(randomString())));
@@ -582,6 +265,11 @@ class PublicationPermissionStrategyTest {
                                                          Role contributorRole, URI institutionId,
                                                            URI topLevelCristinOrgId) {
         var publication = PublicationGenerator.randomPublicationNonDegree();
+        return setContributor(contributorName, contributorId, contributorRole, institutionId, publication, topLevelCristinOrgId);
+    }
+
+    static Publication setContributor(String contributorName, URI contributorId, Role contributorRole,
+                                              URI institutionId, Publication publication, URI topLevelCristinOrgId) {
         var identity = new Identity.Builder()
                            .withName(contributorName)
                            .withId(contributorId)
@@ -600,15 +288,17 @@ class PublicationPermissionStrategyTest {
                    .withStatus(PUBLISHED).build();
     }
 
-    protected List<AccessRight> getEditorAccessRights() {
+    protected List<AccessRight> getEditorAccessRightsWithDegree() {
         var accessRights = new ArrayList<AccessRight>();
         accessRights.add(AccessRight.MANAGE_DEGREE);
+        accessRights.add(AccessRight.MANAGE_PUBLISHING_REQUESTS);
         accessRights.add(AccessRight.MANAGE_RESOURCES_ALL);
         return accessRights;
     }
 
     protected List<AccessRight> getCuratorAccessRights() {
         var accessRights = new ArrayList<AccessRight>();
+        accessRights.add(AccessRight.MANAGE_PUBLISHING_REQUESTS);
         accessRights.add(AccessRight.MANAGE_RESOURCES_STANDARD);
         return accessRights;
     }
@@ -616,6 +306,7 @@ class PublicationPermissionStrategyTest {
     protected List<AccessRight> getCuratorAccessRightsWithDegree() {
         var accessRights = new ArrayList<AccessRight>();
         accessRights.add(AccessRight.MANAGE_DEGREE);
+        accessRights.add(AccessRight.MANAGE_PUBLISHING_REQUESTS);
         accessRights.add(AccessRight.MANAGE_RESOURCES_STANDARD);
         return accessRights;
     }
@@ -654,19 +345,16 @@ class PublicationPermissionStrategyTest {
         return requestInfo;
     }
 
-    private RequestInfo createThirdPartyRequestInfo(List<AccessRight> accessRights)
+    protected RequestInfo createThirdPartyRequestInfo()
         throws JsonProcessingException {
 
-        var cognitoGroups = accessRights.stream().map(getCognitoGroup(
-            PublicationPermissionStrategyTest.EXTERNAL_CLIENT_CUSTOMER_URI)).toList();
-
         var claims = new HashMap<String, String>();
-        claims.put(INJECT_COGNITO_GROUPS_CLAIM, String.join(",", cognitoGroups));
         claims.put(ISS_CLAIM, EXTERNAL_ISSUER);
         claims.put(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID);
 
         var requestInfo = new RequestInfo();
         requestInfo.setRequestContext(getRequestContextForClaim(claims));
+        requestInfo.setHeaders(Map.of(AUTHORIZATION, BEARER_TOKEN));
 
         return requestInfo;
     }

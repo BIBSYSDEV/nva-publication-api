@@ -24,6 +24,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -39,7 +40,18 @@ class RequestUtilTest {
     public static final String INJECT_ISSUER_CLAIM = "iss";
     public static final String INJECT_CLIENT_ID_CLAIM = "client_id";
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
+    private IdentityServiceClient identityServiceClient;
 
+    @BeforeEach
+    public void setUp() throws NotFoundException {
+        identityServiceClient = mock(IdentityServiceClient.class);
+        var getExternalClientResponse = mock(GetExternalClientResponse.class);
+        when(getExternalClientResponse.getClientId()).thenReturn("clientId");
+        when(getExternalClientResponse.getCustomerUri()).thenReturn(RandomDataGenerator.randomUri());
+        when(getExternalClientResponse.getCristinUrgUri()).thenReturn(RandomDataGenerator.randomUri());
+        when(getExternalClientResponse.getActingUser()).thenReturn("actingUser");
+        when(identityServiceClient.getExternalClientByToken(any())).thenReturn(getExternalClientResponse);
+    }
 
     @ParameterizedTest
     @MethodSource("provideIdentifiersForTesting")
@@ -100,32 +112,57 @@ class RequestUtilTest {
 
     @Test
     void createExternalUserInstanceReturnsNonNullValue()
-        throws NotFoundException, JsonProcessingException, UnauthorizedException {
+        throws ApiGatewayException, JsonProcessingException {
         RequestInfo requestInfo = new RequestInfo();
+        requestInfo.setHeaders(Map.of("Authorization", "Bearer token"));
         requestInfo.setRequestContext(getRequestContextForClaim(Map.of(
             INJECT_ISSUER_CLAIM, EXTERNAL_ISSUER,
             INJECT_CLIENT_ID_CLAIM, "clientId"
         )));
-
-        var getExternalClientResponse = mock(GetExternalClientResponse.class);
-        var identityServiceClient = mock(IdentityServiceClient.class);
-        when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         assertNotNull(userInstance);
     }
 
     @Test
-    void createExternalUserInstanceThrowsUnauthorizedWhenClientIdIsMissing()
+    void createExternalUserInstanceThrowsUnauthorizedWhenResponseValuesIsMissing()
         throws NotFoundException, JsonProcessingException {
         RequestInfo requestInfo = new RequestInfo();
+        requestInfo.setHeaders(Map.of("Authorization", "Bearer token"));
         requestInfo.setRequestContext(getRequestContextForClaim(Map.of(
             INJECT_ISSUER_CLAIM, EXTERNAL_ISSUER
         )));
 
         var getExternalClientResponse = mock(GetExternalClientResponse.class);
-        var identityServiceClient = mock(IdentityServiceClient.class);
-        when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
+        when(identityServiceClient.getExternalClientByToken(any())).thenReturn(getExternalClientResponse);
+
+        assertThrows(UnauthorizedException.class, () -> RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient));
+    }
+
+    @Test
+    void createExternalUserInstanceThrowsUnauthorizedWhenGetExternalClientByTokenFails()
+        throws NotFoundException, JsonProcessingException {
+        RequestInfo requestInfo = new RequestInfo();
+        requestInfo.setHeaders(Map.of("Authorization", "Bearer token"));
+        requestInfo.setRequestContext(getRequestContextForClaim(Map.of(
+            INJECT_ISSUER_CLAIM, EXTERNAL_ISSUER
+        )));
+
+        when(identityServiceClient.getExternalClientByToken(any())).thenThrow(NotFoundException.class);
+
+        assertThrows(UnauthorizedException.class, () -> RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient));
+    }
+
+    @Test
+    void createUserWithMissingRequestContextShouldDefaultToExternal()
+        throws NotFoundException, JsonProcessingException {
+        RequestInfo requestInfo = new RequestInfo();
+        requestInfo.setHeaders(Map.of("Authorization", "Bearer token"));
+        requestInfo.setRequestContext(getRequestContextForClaim(Map.of(
+            INJECT_ISSUER_CLAIM, EXTERNAL_ISSUER
+        )));
+
+        when(identityServiceClient.getExternalClientByToken(any())).thenThrow(NotFoundException.class);
 
         assertThrows(UnauthorizedException.class, () -> RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient));
     }

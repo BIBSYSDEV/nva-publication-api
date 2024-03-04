@@ -14,7 +14,11 @@ public class NonDegreePermissionStrategy extends DenyPermissionStrategy {
 
     @Override
     public boolean deniesAction(PublicationOperation permission) {
-        return isDegree() && !hasAccessRight(MANAGE_DEGREE) && !isUsersDraft();
+        if (!isDegree() || isUsersDraft()) {
+            return false;
+        }
+
+        return !hasAccessRight(MANAGE_DEGREE) && !userInstance.isExternalClient();
     }
 
     private boolean isUsersDraft() {

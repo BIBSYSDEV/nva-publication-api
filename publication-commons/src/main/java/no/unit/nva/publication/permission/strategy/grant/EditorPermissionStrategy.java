@@ -17,6 +17,7 @@ public class EditorPermissionStrategy extends GrantPermissionStrategy {
         if (!hasAccessRight(MANAGE_RESOURCES_ALL)) {
             return false;
         }
+
         return switch (permission) {
             case UPDATE -> true;
             case UNPUBLISH -> isPublished();

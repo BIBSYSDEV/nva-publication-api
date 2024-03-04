@@ -44,8 +44,10 @@ public class UserInstance implements JsonSerializable {
         return new UserInstance(userIdentifier, customerId, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, null, null);
     }
 
-    public static UserInstance create(String userIdentifier, URI customerId, URI personCristinId, List<AccessRight> accessRights) {
-        return new UserInstance(userIdentifier, customerId, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, personCristinId, accessRights);
+    public static UserInstance create(String userIdentifier, URI customerId, URI personCristinId,
+                                      List<AccessRight> accessRights) {
+        return new UserInstance(userIdentifier, customerId, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, personCristinId,
+                                accessRights);
     }
 
     public static UserInstance create(ResourceOwner resourceOwner, URI customerId) {
@@ -53,8 +55,9 @@ public class UserInstance implements JsonSerializable {
                                 resourceOwner.getOwnerAffiliation(), null, null);
     }
 
-    public static UserInstance createExternalUser(ResourceOwner resourceOwner, URI topLevelOrgCristinId) {
-        var userInstance = create(resourceOwner, topLevelOrgCristinId);
+    public static UserInstance createExternalUser(ResourceOwner resourceOwner, URI customerUri) {
+        var userInstance = new UserInstance(resourceOwner.getOwner().getValue(), customerUri,
+                                            resourceOwner.getOwnerAffiliation(), null, null);
         userInstance.isExternalClient = true;
         return userInstance;
     }
