@@ -5,13 +5,13 @@ import static no.sikt.nva.scopus.ScopusConverter.extractContentString;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ForkJoinPool;
 import no.scopus.generated.AffiliationTp;
 import no.scopus.generated.AffiliationType;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.OrganizationTp;
 import no.sikt.nva.scopus.conversion.model.CorporationWithContributors;
 import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
+import no.sikt.nva.scopus.paralleliseutils.ParallelizeListProcessing;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,17 +65,7 @@ public class AffiliationGenerator {
     }
 
     private List<CorporationWithContributors> getCorporationsIds(List<AuthorGroupTp> authorGroupList) {
-        try (var customThreadPool = new ForkJoinPool(8)) {
-            var result =
-                customThreadPool.submit(() -> authorGroupList.parallelStream().map(this::retrieveCristinId))
-                    .join()
-                    .toList();
-            customThreadPool.shutdown();
-            return result;
-        } catch (Exception e) {
-            logger.warn("Parallel fetching of corporations id from PIA failed", e);
-            return authorGroupList.stream().map(this::retrieveCristinId).toList();
-        }
+        return ParallelizeListProcessing.runAsVirtualApiCallingThreads(authorGroupList, this::retrieveCristinId);
     }
 
     private CorporationWithContributors retrieveCristinId(AuthorGroupTp authorGroupTp) {
@@ -87,17 +77,8 @@ public class AffiliationGenerator {
 
     private List<CorporationWithContributors> fillCristinOrganizationData(
         List<CorporationWithContributors> corporations) {
-        try (var customThreadPool = new ForkJoinPool(8)) {
-            var result =
-                customThreadPool.submit(() -> corporations.parallelStream().map(this::addCristinOrganisationData))
-                    .join()
-                    .toList();
-            customThreadPool.shutdown();
-            return result;
-        } catch (Exception e) {
-            logger.warn("Parallel fetching of corporations failed", e);
-            return corporations.stream().map(this::addCristinOrganisationData).toList();
-        }
+        return ParallelizeListProcessing.runAsVirtualApiCallingThreads(corporations,
+                                                                       this::addCristinOrganisationData);
     }
 
     private CorporationWithContributors addCristinOrganisationData(CorporationWithContributors corporation) {
