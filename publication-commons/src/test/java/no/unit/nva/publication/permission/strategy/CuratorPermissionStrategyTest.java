@@ -3,8 +3,10 @@ package no.unit.nva.publication.permission.strategy;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.List;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.role.Role;
+import no.unit.nva.model.testing.associatedartifacts.PublishedFileGenerator;
 import no.unit.nva.publication.RequestUtil;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
@@ -17,8 +19,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
     //region Non-degree publications
     @ParameterizedTest(name = "Should allow Curator {0} operation on non-degree resources belonging to the "
                               + "institution based on publication owner")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "TERMINATE",
-        "TICKET_PUBLISH"})
+    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "TERMINATE"})
     void shouldAllowCuratorOnNonDegreeBasedOnOwner(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
@@ -27,7 +28,9 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var curatorUsername = randomString();
         var cristinId = randomUri();
 
-        var publication = createNonDegreePublication(resourceOwner, institution);
+        var publication = createNonDegreePublication(resourceOwner, institution).copy()
+                              .withAssociatedArtifacts(List.of(PublishedFileGenerator.random().toUnpublishedFile()))
+                              .build();
 
         var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRights(), cristinId,
                                                 publication.getResourceOwner().getOwnerAffiliation());
@@ -40,8 +43,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should allow Curator {0} operation on non-degree resources belonging to the "
                               + "institution based on contributors")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "TERMINATE",
-        "TICKET_PUBLISH"})
+    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "TERMINATE"})
     void shouldAllowCuratorOnNonDegreeBasedOnContributors(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
@@ -52,9 +54,12 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var curatorUsername = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(curatorUsername, randomUri(), getCuratorAccessRights(), cristinId, usersTopCristinOrg);
+        var requestInfo = createUserRequestInfo(curatorUsername, randomUri(), getCuratorAccessRights(), cristinId,
+                                                usersTopCristinOrg);
         var publication = createPublicationWithContributor(contributor, contributorCristinId, Role.CREATOR,
-                                                           institution, randomUri());
+                                                           institution, randomUri()).copy()
+                              .withAssociatedArtifacts(List.of(PublishedFileGenerator.random().toUnpublishedFile()))
+                              .build();
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissionStrategy
@@ -73,7 +78,8 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var curatorUsername = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRights(), cristinId, null);
+        var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRights(), cristinId,
+                                                null);
         var publication = createNonDegreePublication(resourceOwner, institution);
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
@@ -106,8 +112,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should allow Curator {0} operation on degree resources belonging to the institution "
                               + "with MANAGE_DEGREE access rights")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "TERMINATE",
-        "TICKET_PUBLISH"})
+    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "TERMINATE"})
     void shouldAllowCuratorOnDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
@@ -116,7 +121,9 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var curatorUsername = randomString();
         var cristinId = randomUri();
 
-        var publication = createDegreePhd(resourceOwner, institution);
+        var publication = createDegreePhd(resourceOwner, institution).copy()
+                              .withAssociatedArtifacts(List.of(PublishedFileGenerator.random().toUnpublishedFile()))
+                              .build();
 
         var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRightsWithDegree(),
                                                 cristinId, publication.getResourceOwner().getOwnerAffiliation());

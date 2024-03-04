@@ -181,6 +181,11 @@
       "@container": "@set",
       "@id": "topLevelOrganization"
     },
+    "contributorOrganizations": {
+      "@container" : "@set",
+      "@id" : "contributorOrganization",
+      "@type": "@id"
+    },
     "nviType": {
       "@type": "@vocab",
       "@context": {

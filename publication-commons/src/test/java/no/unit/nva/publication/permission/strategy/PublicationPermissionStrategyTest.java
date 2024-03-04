@@ -609,6 +609,7 @@ class PublicationPermissionStrategyTest {
 
     protected List<AccessRight> getCuratorAccessRights() {
         var accessRights = new ArrayList<AccessRight>();
+        accessRights.add(AccessRight.MANAGE_PUBLISHING_REQUESTS);
         accessRights.add(AccessRight.MANAGE_RESOURCES_STANDARD);
         return accessRights;
     }
@@ -616,6 +617,7 @@ class PublicationPermissionStrategyTest {
     protected List<AccessRight> getCuratorAccessRightsWithDegree() {
         var accessRights = new ArrayList<AccessRight>();
         accessRights.add(AccessRight.MANAGE_DEGREE);
+        accessRights.add(AccessRight.MANAGE_PUBLISHING_REQUESTS);
         accessRights.add(AccessRight.MANAGE_RESOURCES_STANDARD);
         return accessRights;
     }

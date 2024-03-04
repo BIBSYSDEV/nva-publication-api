@@ -2,6 +2,7 @@ package no.unit.nva.publication.permission.strategy.grant;
 
 import static no.unit.nva.publication.utils.RdfUtils.getTopLevelOrgUri;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
+import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import java.net.URI;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -10,6 +11,7 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
+import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.UserInstance;
 import org.slf4j.Logger;
@@ -31,6 +33,7 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
 
         return switch (permission) {
             case UPDATE -> true;
+            case TICKET_PUBLISH -> hasUnpublishedFile() && canManagePublishingRequests();
             case UNPUBLISH -> isPublished();
             default -> false;
         };
@@ -84,5 +87,13 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
         return publication.getEntityDescription().getContributors()
                    .stream()
                    .filter(this::isVerifiedContributor);
+    }
+
+    private boolean hasUnpublishedFile() {
+        return publication.getAssociatedArtifacts().stream().anyMatch(UnpublishedFile.class::isInstance);
+    }
+
+    private boolean canManagePublishingRequests() {
+        return hasAccessRight(MANAGE_PUBLISHING_REQUESTS);
     }
 }
