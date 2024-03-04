@@ -2,6 +2,7 @@ package no.unit.nva.publication.permission.strategy.grant;
 
 import static no.unit.nva.publication.utils.RdfUtils.getTopLevelOrgUri;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
+import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import java.net.URI;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -31,6 +32,7 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
 
         return switch (permission) {
             case UPDATE -> true;
+            case TICKET_PUBLISH -> isPublishableState() && canManagePublishingRequests();
             case UNPUBLISH -> isPublished();
             default -> false;
         };
@@ -84,5 +86,13 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
         return publication.getEntityDescription().getContributors()
                    .stream()
                    .filter(this::isVerifiedContributor);
+    }
+
+    private boolean isPublishableState() {
+        return isUnpublished() || isDraft();
+    }
+
+    private boolean canManagePublishingRequests() {
+        return hasAccessRight(MANAGE_PUBLISHING_REQUESTS);
     }
 }
