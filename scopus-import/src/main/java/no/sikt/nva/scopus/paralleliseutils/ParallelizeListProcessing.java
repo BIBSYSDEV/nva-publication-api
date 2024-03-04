@@ -28,7 +28,7 @@ public final class ParallelizeListProcessing {
         var listPreprosessed = ListUtils.partition(inputList, parallellLevel);
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             var futures =
-                listPreprosessed.stream().map(i -> executor.submit(() -> processItems(i, job)));
+                listPreprosessed.stream().map(partition -> executor.submit(() -> processItems(partition, job)));
 
             var result = futures.map(ParallelizeListProcessing::waitForFuture).flatMap(Collection::stream).toList();
             executor.shutdown();
