@@ -972,6 +972,16 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldCreateAPendingUnpublishingRequestTicketWhenUnpublishingPublication() throws ApiGatewayException {
+        var publication = createPublishedResource();
+        resourceService.unpublishPublication(publication);
+        var tickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
+        assertThat(tickets, hasSize(1));
+        assertThat(tickets, hasItem(allOf(instanceOf(UnpublishRequest.class)
+            , hasProperty("status", is(equalTo(TicketStatus.PENDING))))));
+    }
+
+    @Test
     void shouldSetAllPendingTicketsToNotApplicableWhenUnpublishingPublication() throws ApiGatewayException {
         var publication = createPublishedResource();
         var pendingGeneralSupportTicket =
