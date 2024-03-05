@@ -23,6 +23,8 @@ import software.amazon.awssdk.services.s3.S3Client;
 public class BrageMergingRollbackHandler extends EventHandler<EventReference, Void> {
     private static final Logger logger = LoggerFactory.getLogger(BrageMergingRollbackHandler.class);
 
+    private static final String INIT_VALUE = null;
+
     public final static String TOPIC = "BrageMerging.Rollback.Request";
     public final static String ERROR_MERGING_ROLLBACK = "ERROR_MERGING_ROLLBACK";
 
@@ -51,7 +53,7 @@ public class BrageMergingRollbackHandler extends EventHandler<EventReference, Vo
     }
 
     private void resetLambda() {
-        previousVersion = null;
+        previousVersion = INIT_VALUE;
     }
 
     private Publication handleSavingError(Failure<Publication> fail, EventReference eventReference) {
