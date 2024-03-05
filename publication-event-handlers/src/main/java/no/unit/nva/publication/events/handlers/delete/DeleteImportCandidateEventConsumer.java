@@ -30,16 +30,15 @@ public class DeleteImportCandidateEventConsumer
     public static final String EVENTS_BUCKET = new Environment().readEnv("EVENTS_BUCKET");
     public static final String API_HOST = new Environment().readEnv("API_HOST");
     public static final String SEARCH = "search";
-    public static final String IMPORT_CANDIDATES = "import-candidates";
-    public static final String QUERY = "query";
+    public static final String IMPORT_CANDIDATES_2 = "import-candidates2";
     public static final String CONTENT_TYPE = "application/json";
-    public static final int UNIQUE_HIT_FROM_SEARCH_API = 0;
     public static final String COULD_NOT_FETCH_UNIQUE_IMPORT_CANDIDATE_MESSAGE = "Could not fetch unique import "
                                                                                  + "candidate";
     public static final String NO_IMPORT_CANDIDATE_FOUND = "No import candidate found with scopus identifier %s";
     private static final Logger logger = LoggerFactory.getLogger(DeleteImportCandidateEventConsumer.class);
     private static final int ZERO_HITS = 0;
     private static final int ONE_HIT = 1;
+    public static final String SCOPUS_IDENTIFIER = "scopusIdentifier";
     private final ResourceService resourceService;
     private final RawContentRetriever uriRetriever;
 
@@ -72,7 +71,7 @@ public class DeleteImportCandidateEventConsumer
         } else if (importCandidateTotalHits > ONE_HIT) {
             throw new BadGatewayException(COULD_NOT_FETCH_UNIQUE_IMPORT_CANDIDATE_MESSAGE);
         } else {
-            var ic = importCandidateSearchApiResponse.getHits().get(UNIQUE_HIT_FROM_SEARCH_API);
+            var ic = importCandidateSearchApiResponse.getHits().getFirst();
             var importCandidate = toImportCandidate(ic);
             resourceService.deleteImportCandidate(importCandidate);
         }
@@ -110,14 +109,8 @@ public class DeleteImportCandidateEventConsumer
     private URI constructUri(String scopusIdentifier) {
         return UriWrapper.fromHost(API_HOST)
                    .addChild(SEARCH)
-                   .addChild(IMPORT_CANDIDATES)
-                   .addQueryParameter(QUERY, constructQuery(scopusIdentifier))
+                   .addChild(IMPORT_CANDIDATES_2)
+                   .addQueryParameter(SCOPUS_IDENTIFIER, scopusIdentifier)
                    .getUri();
-    }
-
-    private String constructQuery(String scopusIdentifier) {
-        return "(additionalIdentifiers.value:\""
-               + scopusIdentifier
-               + "\")+AND+(additionalIdentifiers.source:\"Scopus\")";
     }
 }
