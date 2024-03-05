@@ -971,7 +971,11 @@ Resources:
     Properties:
       CodeUri: brage-import
       Handler: no.sikt.nva.brage.migration.lambda.BrageMergingRollbackHandler::handleRequest
-      Role: !GetAtt LambdaRole.Arn
+      Policies:
+        - !GetAtt EventsLambdaManagedPolicy.PolicyArn
+        - !GetAtt S3DeleteAccessManagedPolicy.PolicyArn
+        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt S3AccessManagedPolicy.PolicyArn
       Environment:
         Variables:
           BRAGE_MIGRATION_ERROR_BUCKET_NAME: !Sub "${BrageMigrationErrorBucketName}-${AWS::AccountId}"
