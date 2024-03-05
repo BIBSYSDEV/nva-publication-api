@@ -158,7 +158,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
         var transactionItems = new ArrayList<TransactWriteItem>();
         transactionItems.add(updateResource(resource));
-        transactionItems.addAll(updatePendingTicketsToNotApplicable(existingTicketStream));
+        transactionItems.addAll(updateExistingPendingTicketsToNotApplicable(existingTicketStream));
         transactionItems.addAll(createPendingUnpublishingRequestTicket(unpublishRequest));
 
         var request = new TransactWriteItemsRequest().withTransactItems(transactionItems);
@@ -169,7 +169,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         return new UnpublishRequestDao(unpublishRequest).createInsertionTransactionRequest().getTransactItems();
     }
 
-    private List<TransactWriteItem> updatePendingTicketsToNotApplicable(Stream<TicketEntry> existingTicketStream) {
+    private List<TransactWriteItem> updateExistingPendingTicketsToNotApplicable(Stream<TicketEntry> existingTicketStream) {
         return existingTicketStream
                    .filter(this::isPendingTicket)
                    .map(this::updateToNotApplicable)
