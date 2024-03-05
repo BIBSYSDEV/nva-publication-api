@@ -153,29 +153,30 @@ public class UpdateResourceService extends ServiceWithTransactions {
                                      Stream<TicketEntry> existingTicketStream,
                                      UnpublishRequest unpublishRequest) {
         publication.setStatus(UNPUBLISHED);
-        publication.setDuplicateOf(publication.getDuplicateOf());
         publication.setModifiedDate(clockForTimestamps.instant());
         var resource = Resource.fromPublication(publication);
 
-
-        var existingTicketTransactionsItems =
-            existingTicketStream
-                .filter(this::isPendingTicket)
-                .map(this::setToNotApplicable)
-                .map(Entity::toDao)
-                .map(dao -> (TicketDao) dao)
-                .map(this::createPutTransactionItems)
-                .toList();
-        var unpublishinRequestTransationItems =
-            new UnpublishRequestDao(unpublishRequest).createInsertionTransactionRequest().getTransactItems();
-        var updateResourceTransactionItem = updateResource(resource);
-
-        var transactionItems = new ArrayList<>(existingTicketTransactionsItems);
-        transactionItems.add(updateResourceTransactionItem);
-        transactionItems.addAll(unpublishinRequestTransationItems);
+        var transactionItems = new ArrayList<TransactWriteItem>();
+        transactionItems.add(updateResource(resource));
+        transactionItems.addAll(updatePendingTicketsToNotApplicable(existingTicketStream));
+        transactionItems.addAll(createPendingUnpublishingRequestTicket(unpublishRequest));
 
         var request = new TransactWriteItemsRequest().withTransactItems(transactionItems);
         sendTransactionWriteRequest(request);
+    }
+
+    private static List<TransactWriteItem> createPendingUnpublishingRequestTicket(UnpublishRequest unpublishRequest) {
+        return new UnpublishRequestDao(unpublishRequest).createInsertionTransactionRequest().getTransactItems();
+    }
+
+    private List<TransactWriteItem> updatePendingTicketsToNotApplicable(Stream<TicketEntry> existingTicketStream) {
+        return existingTicketStream
+                   .filter(this::isPendingTicket)
+                   .map(this::updateToNotApplicable)
+                   .map(Entity::toDao)
+                   .map(dao -> (TicketDao) dao)
+                   .map(this::createPutTransactionItems)
+                   .toList();
     }
 
     private boolean isPendingTicket(TicketEntry ticketEntry) {
@@ -197,7 +198,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         return new TransactWriteItem().withPut(put);
     }
 
-    private TicketEntry setToNotApplicable(TicketEntry ticketEntry) {
+    private TicketEntry updateToNotApplicable(TicketEntry ticketEntry) {
         var updatedTicket = ticketEntry.copy();
         updatedTicket.setStatus(TicketStatus.NOT_APPLICABLE);
         updatedTicket.setModifiedDate(Instant.now());
