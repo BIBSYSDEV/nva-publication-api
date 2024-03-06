@@ -2,6 +2,7 @@ package no.unit.nva.publication.model.utils;
 
 import static no.unit.nva.publication.utils.RdfUtils.getTopLevelOrgUri;
 import java.net.URI;
+import static java.util.Objects.nonNull;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -16,15 +17,18 @@ public final class CuratingInstitutionsUtil {
 
     public static Set<URI> getCuratingInstitutions(Publication publication, UriRetriever uriRetriever) {
         return getVerifiedContributors(publication)
-                   .flatMap(contributor ->
-                                contributor.getAffiliations().stream()
-                                    .filter(Organization.class::isInstance)
-                                    .map(Organization.class::cast)
-                                    .map(Organization::getId))
+                   .flatMap(CuratingInstitutionsUtil::getOrganizationIds)
                    .collect(Collectors.toSet())
                    .parallelStream()
-                   .map((orgId) -> getTopLevelOrgUri(uriRetriever, orgId))
+                   .map(orgId -> getTopLevelOrgUri(uriRetriever, orgId))
                    .collect(Collectors.toSet());
+    }
+
+    private static Stream<URI> getOrganizationIds(Contributor contributor) {
+        return contributor.getAffiliations().stream()
+                   .filter(Organization.class::isInstance)
+                   .map(Organization.class::cast)
+                   .map(Organization::getId);
     }
 
     private static Stream<Contributor> getVerifiedContributors(Publication publication) {
@@ -34,6 +38,6 @@ public final class CuratingInstitutionsUtil {
     }
 
     private static boolean isVerifiedContributor(Contributor contributor) {
-        return contributor.getIdentity() != null && contributor.getIdentity().getId() != null;
+        return nonNull(contributor.getIdentity()) && nonNull(contributor.getIdentity().getId());
     }
 }
