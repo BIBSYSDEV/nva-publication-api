@@ -185,10 +185,9 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     private TransactWriteItem createPutTransactionItems(TicketDao ticketDao) {
 
-        Map<String, AttributeValue> primaryKeyConditionAttributeValues =
+        var primaryKeyConditionAttributeValues =
             primaryKeyEqualityConditionAttributeValues(ticketDao);
-
-        Put put = new Put()
+        var put = new Put()
                       .withItem(ticketDao.toDynamoFormat())
                       .withTableName(tableName)
                       .withConditionExpression(PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION)
