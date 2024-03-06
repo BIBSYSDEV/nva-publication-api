@@ -1195,7 +1195,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
     private static NvaCustomerConnection mockCustomerConnection() {
         var customerConnection = mock(NvaCustomerConnection.class);
-        when(customerConnection.isNvaCustomer(any())).thenReturn(true);
+        when(customerConnection.atLeastOneNvaCustomerPresent(any())).thenReturn(true);
         return customerConnection;
     }
 
