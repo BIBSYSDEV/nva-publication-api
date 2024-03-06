@@ -1,5 +1,9 @@
 package no.unit.nva.publication.create;
 
+import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.NULL_RIGHTS_RETENTION_STRATEGY;
+import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.OVERRIDABLE_RIGHTS_RETENTION_STRATEGY;
+import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.RIGHTS_RETENTION_STRATEGY;
+import static no.unit.nva.publication.rightsretention.RightsRetentionsUtils.getRightsRetentionStrategy;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -18,6 +22,15 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.FunderRightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
+import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.publication.rightsretention.RightsRetentionsUtils;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.commons.customer.CustomerNotAvailableException;
@@ -59,6 +72,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     private final IdentityServiceClient identityServiceClient;
     private final SecretsReader secretsReader;
     private final HttpClient httpClient;
+    private JavaHttpClientCustomerApiClient customerApiClient;
 
     /**
      * Default constructor for CreatePublicationHandler.
@@ -92,6 +106,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         this.secretsReader = new SecretsReader(secretsManagerClient);
         this.httpClient = httpClient;
         this.publicationValidator = new DefaultPublicationValidator();
+        this.customerApiClient = getJavaHttpClientCustomerApiClient();
     }
 
     @Override
@@ -106,6 +121,36 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
 
         var customerAwareUserContext = getCustomerAwareUserContextFromLoginInformation(requestInfo);
 
+
+        var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, customerAwareUserContext.customerUri());
+
+        validatePublication(newPublication, customer);
+
+        setRightsRetention(newPublication, customer, requestInfo);
+
+        var createdPublication = Resource.fromPublication(newPublication)
+                                     .persistNew(publicationService, customerAwareUserContext.userInstance());
+        setLocationHeader(createdPublication.getIdentifier());
+
+        return PublicationResponse.fromPublication(createdPublication);
+    }
+
+    private void setRightsRetention(Publication newPublication, Customer customer, RequestInfo requestInfo) throws BadRequestException {
+        for (AssociatedArtifact associatedArtifact : newPublication.getAssociatedArtifacts()) {
+            if (associatedArtifact instanceof File) {
+                File file = (File) associatedArtifact;
+                setRightsRetentionOnFile(customer, file, requestInfo);
+            }
+        }
+    }
+
+    private void setRightsRetentionOnFile(Customer customer, File file, RequestInfo requestInfo)
+        throws BadRequestException {
+        file.setRightsRetentionStrategy(getRightsRetentionStrategy(customer, file, requestInfo));
+    }
+
+
+    private JavaHttpClientCustomerApiClient getJavaHttpClientCustomerApiClient() {
         var backendClientCredentials = secretsReader.fetchClassSecret(
             environment.readEnv("BACKEND_CLIENT_SECRET_NAME"),
             BackendClientCredentials.class);
@@ -114,15 +159,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
                                                         backendClientCredentials::getSecret,
                                                         cognitoServerUri);
         var customerApiClient = new JavaHttpClientCustomerApiClient(httpClient, cognitoCredentials);
-
-        var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, customerAwareUserContext.customerUri());
-
-        validatePublication(newPublication, customer);
-        var createdPublication = Resource.fromPublication(newPublication)
-                                     .persistNew(publicationService, customerAwareUserContext.userInstance());
-        setLocationHeader(createdPublication.getIdentifier());
-
-        return PublicationResponse.fromPublication(createdPublication);
+        return customerApiClient;
     }
 
     private static Customer fetchCustomerOrFailWithBadGateway(CustomerApiClient customerApiClient,

@@ -2,6 +2,7 @@ package no.unit.nva.publication.commons.customer;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 
 public class CustomerApiRightsRetention {
     private static final String FIELD_TYPE = "type";
