@@ -1,12 +1,12 @@
 package no.unit.nva.publication.permission.strategy;
 
-import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.List;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.role.Role;
+import no.unit.nva.model.testing.associatedartifacts.PublishedFileGenerator;
 import no.unit.nva.publication.RequestUtil;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
@@ -29,7 +29,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var cristinId = randomUri();
 
         var publication = createNonDegreePublication(resourceOwner, institution).copy()
-                              .withStatus(PublicationOperation.TICKET_PUBLISH == operation ? UNPUBLISHED : PUBLISHED)
+                              .withAssociatedArtifacts(List.of(PublishedFileGenerator.random().toUnpublishedFile()))
                               .build();
 
         var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRights(), cristinId,
@@ -58,7 +58,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
                                                 usersTopCristinOrg);
         var publication = createPublicationWithContributor(contributor, contributorCristinId, Role.CREATOR,
                                                            institution, randomUri()).copy()
-                              .withStatus(PublicationOperation.TICKET_PUBLISH == operation ? UNPUBLISHED : PUBLISHED)
+                              .withAssociatedArtifacts(List.of(PublishedFileGenerator.random().toUnpublishedFile()))
                               .build();
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
@@ -122,7 +122,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var cristinId = randomUri();
 
         var publication = createDegreePhd(resourceOwner, institution).copy()
-                              .withStatus(PublicationOperation.TICKET_PUBLISH == operation ? UNPUBLISHED : PUBLISHED)
+                              .withAssociatedArtifacts(List.of(PublishedFileGenerator.random().toUnpublishedFile()))
                               .build();
 
         var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRightsWithDegree(),

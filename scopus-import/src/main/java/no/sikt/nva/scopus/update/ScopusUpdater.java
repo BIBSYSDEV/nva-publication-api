@@ -1,16 +1,16 @@
 package no.sikt.nva.scopus.update;
 
 import static java.util.Objects.nonNull;
-import static no.sikt.nva.scopus.ScopusHandler.SCOPUS_IDENTIFIER;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.util.Optional;
+import no.sikt.nva.scopus.ScopusHandler;
 import no.sikt.nva.scopus.conversion.model.ImportCandidateSearchApiResponse;
+import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.ExpandedImportCandidate;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
-import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.BadGatewayException;
@@ -24,9 +24,8 @@ public class ScopusUpdater {
                                                                                  + "candidate";
     private static final String API_HOST = new Environment().readEnv("API_HOST");
     private static final String SEARCH = "search";
-    private static final String IMPORT_CANDIDATES = "import-candidates";
-    private static final String QUERY = "query";
-    private static final int UNIQUE_HIT_FROM_SEARCH_API = 0;
+    private static final String IMPORT_CANDIDATES_2 = "import-candidates2";
+    private static final String SCOPUS_IDENTIFIER = "scopusIdentifier";
     private final ResourceService resourceService;
     private final UriRetriever uriRetriever;
     private static final String APPLICATION_JSON = "application/json";
@@ -62,7 +61,7 @@ public class ScopusUpdater {
     public ExpandedImportCandidate toExpandedImportCandidate(ImportCandidateSearchApiResponse response)
         throws BadGatewayException {
         if (containsSingleHit(response)) {
-            return response.getHits().get(UNIQUE_HIT_FROM_SEARCH_API);
+            return response.getHits().getFirst();
         }
         throw new BadGatewayException(COULD_NOT_FETCH_UNIQUE_IMPORT_CANDIDATE_MESSAGE);
     }
@@ -78,8 +77,8 @@ public class ScopusUpdater {
     private URI constructUri(String scopusIdentifier) {
         return UriWrapper.fromHost(API_HOST)
                    .addChild(SEARCH)
-                   .addChild(IMPORT_CANDIDATES)
-                   .addQueryParameter(QUERY, constructQuery(scopusIdentifier))
+                   .addChild(IMPORT_CANDIDATES_2)
+                   .addQueryParameter(SCOPUS_IDENTIFIER, scopusIdentifier)
                    .getUri();
     }
 
@@ -101,17 +100,11 @@ public class ScopusUpdater {
                    .orElse(null);
     }
 
-    private String constructQuery(String scopusIdentifier) {
-        return "(additionalIdentifiers.value:\""
-               + scopusIdentifier
-               + "\")+AND+(additionalIdentifiers.source:\"Scopus\")";
-    }
-
     private Optional<String> getResponseBody(URI uri) {
         return uriRetriever.getRawContent(uri, APPLICATION_JSON);
     }
 
     private boolean isScopusIdentifier(AdditionalIdentifier identifier) {
-        return SCOPUS_IDENTIFIER.equals(identifier.getSourceName());
+        return ScopusHandler.SCOPUS_IDENTIFIER.equals(identifier.getSourceName());
     }
 }

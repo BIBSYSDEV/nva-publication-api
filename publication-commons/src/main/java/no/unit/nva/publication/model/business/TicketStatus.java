@@ -17,6 +17,7 @@ import nva.commons.core.SingletonCollector;
 public enum TicketStatus {
     PENDING(PENDING_STATUS, "REQUESTED"),
     COMPLETED(COMPLETED_STATUS, "APPROVED"),
+    NOT_APPLICABLE(TicketStatusConstants.NOT_APPLICABLE, "NOT APPLICABLE"),
     CLOSED(CLOSED_STATUS, "REJECTED"),
     REMOVED(REMOVED_STATUS, "REMOVED");
     
@@ -25,7 +26,7 @@ public enum TicketStatus {
     public static final String INVALID_DOI_REQUEST_STATUS_ERROR = "Invalid DoiRequest status. Valid values:  ";
     public static final String SEPARATOR = ",";
     static final Set<TicketStatus> validStatusChangeForRejected = Set.of(COMPLETED);
-    static final Set<TicketStatus> validStatusChangeForRequested = Set.of(COMPLETED, CLOSED);
+    static final Set<TicketStatus> validStatusChangeForRequested = Set.of(COMPLETED, CLOSED, NOT_APPLICABLE);
     static final Set<TicketStatus> validDefaultStatusChanges = emptySet();
     private final String value;
     private final String legacyValue;
@@ -89,14 +90,11 @@ public enum TicketStatus {
     }
     
     private Set<TicketStatus> getValidTransitions(TicketStatus fromRequestStatus) {
-        switch (fromRequestStatus) {
-            case PENDING:
-                return validStatusChangeForRequested;
-            case CLOSED:
-                return validStatusChangeForRejected;
-            default:
-                return validDefaultStatusChanges;
-        }
+        return switch (fromRequestStatus) {
+            case PENDING -> validStatusChangeForRequested;
+            case CLOSED -> validStatusChangeForRejected;
+            default -> validDefaultStatusChanges;
+        };
     }
     
     public static class TicketStatusConstants {
@@ -105,6 +103,7 @@ public enum TicketStatus {
         public static final String COMPLETED_STATUS = "Completed";
         public static final String CLOSED_STATUS = "Closed";
         public static final String REMOVED_STATUS = "Removed";
+        public static final String NOT_APPLICABLE = "Not Applicable";
         public static final String READ_STATUS = "Read";
         public static final String UNREAD_STATUS = "Unread";
         

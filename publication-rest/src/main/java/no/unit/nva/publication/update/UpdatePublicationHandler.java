@@ -50,7 +50,6 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
-import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -238,11 +237,8 @@ public class UpdatePublicationHandler
                                                             existingPublication,
                                                             userInstance);
         resourceService.unpublishPublication(updatedPublication);
-
         updatedPublication = resourceService.getPublication(updatedPublication);
-        persistNotification(updatedPublication);
         updateNvaDoi(updatedPublication);
-
         return updatedPublication;
     }
 
@@ -286,9 +282,7 @@ public class UpdatePublicationHandler
         }
     }
 
-    private void persistNotification(Publication publication) throws ApiGatewayException {
-        TicketEntry.requestNewTicket(publication, UnpublishRequest.class).persistNewTicket(ticketService);
-    }
+
 
     private Publication toPublicationWithDuplicate(UnpublishPublicationRequest unpublishPublicationRequest,
                                                    Publication publication, UserInstance userInstance) {

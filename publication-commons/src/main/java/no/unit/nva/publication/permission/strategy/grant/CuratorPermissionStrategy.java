@@ -11,6 +11,7 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
+import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.UserInstance;
 import org.slf4j.Logger;
@@ -26,14 +27,14 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
 
     @Override
     public boolean allowsAction(PublicationOperation permission) {
-        if (!canManageStandardResources() || !userRelatesToPublication()) {
+        if (!userRelatesToPublication()) {
             return false;
         }
 
         return switch (permission) {
-            case UPDATE -> true;
-            case TICKET_PUBLISH -> isPublishableState() && canManagePublishingRequests();
-            case UNPUBLISH -> isPublished();
+            case UPDATE -> canManageStandardResources();
+            case TICKET_PUBLISH -> canManagePublishingRequests() && hasUnpublishedFile();
+            case UNPUBLISH -> canManageStandardResources() && isPublished();
             default -> false;
         };
     }
@@ -88,8 +89,8 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
                    .filter(this::isVerifiedContributor);
     }
 
-    private boolean isPublishableState() {
-        return isUnpublished() || isDraft();
+    private boolean hasUnpublishedFile() {
+        return publication.getAssociatedArtifacts().stream().anyMatch(UnpublishedFile.class::isInstance);
     }
 
     private boolean canManagePublishingRequests() {

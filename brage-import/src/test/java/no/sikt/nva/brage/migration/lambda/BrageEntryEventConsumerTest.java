@@ -72,6 +72,7 @@ import java.util.stream.IntStream;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.mapper.InvalidIsmnRuntimeException;
 import no.sikt.nva.brage.migration.merger.AssociatedArtifactException;
+import no.sikt.nva.brage.migration.merger.BrageMergingReport;
 import no.sikt.nva.brage.migration.merger.DuplicatePublicationException;
 import no.sikt.nva.brage.migration.merger.UnmappableCristinRecordException;
 import no.sikt.nva.brage.migration.record.EntityDescription;
@@ -1050,7 +1051,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldSavePublicationBeforeUpdateInS3() throws IOException, BadRequestException {
+    void shouldPersistMergeReport()
+        throws IOException, BadRequestException, nva.commons.apigateway.exceptions.NotFoundException {
         var cristinIdentifier = randomString();
         var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder().withPublishedDate(null)
                                                  .withType(TYPE_BOOK)
@@ -1061,11 +1063,14 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                      nvaBrageMigrationDataGenerator.getNvaPublication().getHandle());
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         handler.handleRequest(s3Event, CONTEXT);
-        var storedPublication =
+        var storedMergeReportString =
             extractUpdateReportFromS3(s3Event,
                                       existingPublication,
                                       nvaBrageMigrationDataGenerator.getBrageRecord().getId());
-        assertThat(storedPublication, is(equalTo(existingPublication.toString())));
+        var storedMergeReport = JsonUtils.dtoObjectMapper.readValue(storedMergeReportString, BrageMergingReport.class);
+        var updatedPublication = resourceService.getPublication(existingPublication);
+        assertThat(storedMergeReport.oldImage(), is(equalTo(existingPublication)));
+        assertThat(storedMergeReport.newImage(), is(equalTo(updatedPublication)));
     }
 
     @Test

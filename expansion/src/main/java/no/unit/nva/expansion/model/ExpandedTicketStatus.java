@@ -10,6 +10,7 @@ public enum ExpandedTicketStatus {
     NEW("New"),
     PENDING("Pending"),
     COMPLETED("Completed"),
+    NOT_APPLICABLE("Not Applicable"),
     CLOSED("Closed");
 
     private static final String INVALID_EXPANDED_TICKET_STATUS_ERROR = "Invalid ExpandedTicket status. Valid values:  ";

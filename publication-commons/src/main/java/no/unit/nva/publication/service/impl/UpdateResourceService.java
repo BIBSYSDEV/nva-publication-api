@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -40,6 +41,8 @@ import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
@@ -47,6 +50,8 @@ import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
+import no.unit.nva.publication.model.storage.TicketDao;
+import no.unit.nva.publication.model.storage.UnpublishRequestDao;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -144,16 +149,59 @@ public class UpdateResourceService extends ServiceWithTransactions {
         throw new BadRequestException("Can not update already imported candidate");
     }
 
-    public void unpublishPublication(Publication publication) {
+    public void unpublishPublication(Publication publication,
+                                     Stream<TicketEntry> existingTicketStream,
+                                     UnpublishRequest unpublishRequest) {
         publication.setStatus(UNPUBLISHED);
-        publication.setDuplicateOf(publication.getDuplicateOf());
         publication.setModifiedDate(clockForTimestamps.instant());
         var resource = Resource.fromPublication(publication);
 
-        var updateResourceTransactionItem = updateResource(resource);
+        var transactionItems = new ArrayList<TransactWriteItem>();
+        transactionItems.add(updateResource(resource));
+        transactionItems.addAll(updateExistingPendingTicketsToNotApplicable(existingTicketStream));
+        transactionItems.addAll(createPendingUnpublishingRequestTicket(unpublishRequest));
 
-        var request = new TransactWriteItemsRequest().withTransactItems(updateResourceTransactionItem);
+        var request = new TransactWriteItemsRequest().withTransactItems(transactionItems);
         sendTransactionWriteRequest(request);
+    }
+
+    private static List<TransactWriteItem> createPendingUnpublishingRequestTicket(UnpublishRequest unpublishRequest) {
+        return new UnpublishRequestDao(unpublishRequest).createInsertionTransactionRequest().getTransactItems();
+    }
+
+    private List<TransactWriteItem> updateExistingPendingTicketsToNotApplicable(Stream<TicketEntry> existingTicketStream) {
+        return existingTicketStream
+                   .filter(this::isPendingTicket)
+                   .map(this::updateToNotApplicable)
+                   .map(Entity::toDao)
+                   .map(dao -> (TicketDao) dao)
+                   .map(this::createPutTransactionItems)
+                   .toList();
+    }
+
+    private boolean isPendingTicket(TicketEntry ticketEntry) {
+        return TicketStatus.PENDING.equals(ticketEntry.getStatus());
+    }
+
+    private TransactWriteItem createPutTransactionItems(TicketDao ticketDao) {
+
+        var primaryKeyConditionAttributeValues =
+            primaryKeyEqualityConditionAttributeValues(ticketDao);
+        var put = new Put()
+                      .withItem(ticketDao.toDynamoFormat())
+                      .withTableName(tableName)
+                      .withConditionExpression(PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION)
+                      .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES)
+                      .withExpressionAttributeValues(primaryKeyConditionAttributeValues);
+
+        return new TransactWriteItem().withPut(put);
+    }
+
+    private TicketEntry updateToNotApplicable(TicketEntry ticketEntry) {
+        var updatedTicket = ticketEntry.copy();
+        updatedTicket.setStatus(TicketStatus.NOT_APPLICABLE);
+        updatedTicket.setModifiedDate(Instant.now());
+        return updatedTicket;
     }
 
     public void deletePublication(Publication publication) {

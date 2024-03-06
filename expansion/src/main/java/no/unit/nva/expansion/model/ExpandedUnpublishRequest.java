@@ -17,7 +17,7 @@ import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 
-@JsonTypeName(ExpandedGeneralSupportRequest.TYPE)
+@JsonTypeName(ExpandedUnpublishRequest.TYPE)
 public class ExpandedUnpublishRequest extends ExpandedTicket {
 
     public static final String TYPE = "UnpublishRequest";
