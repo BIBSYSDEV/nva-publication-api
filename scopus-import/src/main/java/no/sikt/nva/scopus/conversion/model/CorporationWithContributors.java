@@ -1,6 +1,7 @@
 package no.sikt.nva.scopus.conversion.model;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
 import static no.sikt.nva.scopus.ScopusConverter.extractContentString;
 import static no.unit.nva.language.LanguageConstants.ENGLISH;
@@ -86,7 +87,7 @@ public class CorporationWithContributors {
 
     private static String getIso6391LanguageCodeForSupportedNvaLanguage(String possiblyUnsupportedLanguageIso6391code) {
         var language = LanguageMapper.getLanguageByIso6391Code(possiblyUnsupportedLanguageIso6391code);
-        return language.getIso6391Code();
+        return nonNull(language.getIso6391Code()) ? language.getIso6391Code() : ENGLISH.getIso6391Code();
     }
 
     private List<Corporation> generateCorporationFromCristinOrganization() {
