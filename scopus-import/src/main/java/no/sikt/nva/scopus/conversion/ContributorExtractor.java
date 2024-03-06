@@ -64,7 +64,7 @@ public class ContributorExtractor {
                                .map(this::generateContributorsFromAuthorGroup)
                                .flatMap(List::stream)
                                .toList();
-        if (noContributorsBelongingToNvaCustomer(contributors, cristinAffiliationsAuthorgroupsTps)) {
+        if (noContributorsBelongingToNvaCustomer(cristinAffiliationsAuthorgroupsTps)) {
             var affiliationsIds = getAllAffiliationIds(contributors);
             throw new MissingNvaContributorException(MISSING_CONTRIBUTORS_OF_NVA_CUSTOMERS_MESSAGE + affiliationsIds);
         } else {
@@ -102,8 +102,8 @@ public class ContributorExtractor {
         return contributors.stream().map(Contributor.class::cast).toList();
     }
 
-    private boolean noContributorsBelongingToNvaCustomer(List<Contributor> contributors,
-                                                         List<CorporationWithContributors> corporationWithContributors) {
+    private boolean noContributorsBelongingToNvaCustomer(
+        List<CorporationWithContributors> corporationWithContributors) {
         var cristinOrganizations =
             corporationWithContributors.stream()
                 .map(CorporationWithContributors::getCristinOrganizations)
@@ -171,7 +171,7 @@ public class ContributorExtractor {
     }
 
     private Contributor cloneContributorAddingAffiliations(Contributor existingContributor,
-                                                                      List<Corporation> newAffiliations) {
+                                                           List<Corporation> newAffiliations) {
         var affiliations = new ArrayList<>(existingContributor.getAffiliations());
         affiliations.addAll(newAffiliations);
 
