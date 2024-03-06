@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.net.URI;
+import java.util.List;
 import java.util.Optional;
 import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
@@ -30,26 +31,28 @@ public class NvaCustomerConnectionTest {
     void shouldReturnTrueWhenFetchingCustomerByCristinIdReturnsOk() {
         mockResponseWithStatusCode(200);
 
-        assertTrue(nvaCustomerConnection.isNvaCustomer(cristinOrgWithId(randomUri())));
+        assertTrue(nvaCustomerConnection.isNvaCustomer(List.of(cristinOrgWithId(randomUri()))));
     }
 
     @Test
     void shouldReturnFalseWhenFetchingCustomerByCristinIdReturnsNotOk() {
         mockResponseWithStatusCode(502);
 
-        assertFalse(nvaCustomerConnection.isNvaCustomer(cristinOrgWithId(randomUri())));
+        assertFalse(nvaCustomerConnection.isNvaCustomer(List.of(cristinOrgWithId(randomUri()))));
     }
 
     @Test
     void shouldThrowExceptionWhenSomethingGoesWrongFetchingCustomer() {
-        assertThrows(NullPointerException.class, () -> nvaCustomerConnection.isNvaCustomer(cristinOrgWithId(null)));
+        assertThrows(NullPointerException.class,
+                     () -> nvaCustomerConnection.isNvaCustomer(List.of(cristinOrgWithId(null))));
     }
 
     @Test
     void shouldThrowExceptionWhenFetchedResponseIsEmpty() {
         when(uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class, () -> nvaCustomerConnection.isNvaCustomer(cristinOrgWithId(randomUri())));
+        assertThrows(RuntimeException.class,
+                     () -> nvaCustomerConnection.isNvaCustomer(List.of(cristinOrgWithId(randomUri()))));
     }
 
     private static CristinOrganization cristinOrgWithId(URI id) {

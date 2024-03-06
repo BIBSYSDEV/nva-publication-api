@@ -7,6 +7,7 @@ dependencies {
     implementation libs.tika.core
     implementation libs.tika.langdetect
     implementation libs.tika.langdetect.optimaize
+    implementation libs.apache.commons.collections
     implementation project(":scopus-generate")
     implementation libs.xsd2java.jakarta
     implementation libs.aws.sdk2.s3
