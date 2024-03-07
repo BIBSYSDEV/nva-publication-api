@@ -242,7 +242,7 @@ public class Resource implements Entity {
     }
 
     public Set<URI> getCuratingInstitutions() {
-        return Objects.nonNull(this.curatingInstitutions) ? this.curatingInstitutions : Collections.emptySet();
+        return nonNull(this.curatingInstitutions) ? this.curatingInstitutions : Collections.emptySet();
     }
 
     public void setCuratingInstitutions(Set<URI> curatingInstitutions) {
