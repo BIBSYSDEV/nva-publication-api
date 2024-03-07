@@ -324,7 +324,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void handlerCreatesPendingPublishingRequestTicketForPublishedPublicationWhenUpdatingFilesAndUserIsNotAllowedToPublishFiles()
+    void handlerCreatesPendingPublishingRequestTicketForPublishedPublicationWhenUpdatingFilesAndUserIsNotAllowedToAutoPublishFiles()
         throws ApiGatewayException, IOException {
         var publishedPublication = TicketTestUtils.createPersistedNonDegreePublication(customerId,
                                                                               PUBLISHED,
