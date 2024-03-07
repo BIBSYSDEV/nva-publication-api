@@ -10,6 +10,7 @@ public enum TicketDtoStatus {
     NEW("New"),
     PENDING("Pending"),
     COMPLETED("Completed"),
+    NOT_APPLICABLE("Not Applicable"),
     CLOSED("Closed");
 
     private static final String INVALID_TICKET_STATUS_ERROR = "Invalid ticketDto status. Valid values:  ";

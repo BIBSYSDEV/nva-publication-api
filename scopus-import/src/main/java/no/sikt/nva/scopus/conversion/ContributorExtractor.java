@@ -3,36 +3,27 @@ package no.sikt.nva.scopus.conversion;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
-import static no.sikt.nva.scopus.ScopusConverter.extractContentString;
-import static no.sikt.nva.scopus.conversion.AffiliationGenerator.getLanguageIso6391Code;
 import static no.sikt.nva.scopus.conversion.CristinContributorExtractor.generateContributorFromCristinPerson;
 import static nva.commons.core.StringUtils.isNotBlank;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import no.scopus.generated.AffiliationTp;
-import no.scopus.generated.AffiliationType;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.CorrespondenceTp;
-import no.scopus.generated.OrganizationTp;
 import no.scopus.generated.PersonalnameType;
+import no.sikt.nva.scopus.conversion.model.CorporationWithContributors;
 import no.sikt.nva.scopus.conversion.model.NvaCustomerContributor;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.exception.MissingNvaContributorException;
-import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
-import no.unit.nva.model.UnconfirmedOrganization;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import nva.commons.core.StringUtils;
@@ -42,9 +33,6 @@ public class ContributorExtractor {
 
     public static final String FIRST_NAME_CRISTIN_FIELD_NAME = "FirstName";
     public static final String LAST_NAME_CRISTIN_FIELD_NAME = "LastName";
-    public static final String NORWAY = "norway";
-    public static final String NO_LAND_CODE = "NO";
-    public static final String OTHER_INSTITUTIONS = "Andre institusjoner";
     public static final String MISSING_CONTRIBUTORS_OF_NVA_CUSTOMERS_MESSAGE = "None of contributors belongs to NVA "
                                                                                + "customer, all contributors "
                                                                                + "affiliations: ";
@@ -55,6 +43,7 @@ public class ContributorExtractor {
     private final PiaConnection piaConnection;
     private final CristinConnection cristinConnection;
     private final NvaCustomerConnection nvaCustomerConnection;
+    private final AffiliationGenerator affiliationGenerator;
 
     public ContributorExtractor(List<CorrespondenceTp> correspondenceTps, List<AuthorGroupTp> authorGroupTps,
                                 PiaConnection piaConnection, CristinConnection cristinConnection,
@@ -65,10 +54,12 @@ public class ContributorExtractor {
         this.piaConnection = piaConnection;
         this.cristinConnection = cristinConnection;
         this.nvaCustomerConnection = nvaCustomerConnection;
+        this.affiliationGenerator = new AffiliationGenerator(piaConnection, cristinConnection);
     }
 
     public List<Contributor> generateContributors() {
-        var contributors = authorGroupTps.stream()
+        var cristinAffiliationsAuthorgroupsTps = affiliationGenerator.getCorporations(authorGroupTps);
+        var contributors = cristinAffiliationsAuthorgroupsTps.stream()
                                .map(this::generateContributorsFromAuthorGroup)
                                .flatMap(List::stream)
                                .toList();
@@ -80,26 +71,10 @@ public class ContributorExtractor {
         }
     }
 
-    private static boolean isNotOtherNorwegianInstitution(CristinOrganization org) {
-        return !(NO_LAND_CODE.equals(org.country()) && org.labels().containsValue(OTHER_INSTITUTIONS));
-    }
-
-    private static boolean isNotNorway(Map<String, String> labels) {
-        return labels.values().stream().map(String::toLowerCase).noneMatch(NORWAY::equals);
-    }
-
-    private static String toOrganizationName(List<OrganizationTp> organizationTps) {
-        return organizationTps.stream()
-                   .map(organizationTp -> extractContentString(organizationTp.getContent()))
-                   .collect(Collectors.joining(AFFILIATION_DELIMITER));
-    }
-
-    private List<Contributor> getContributors() {
-        return contributors.stream().map(Contributor.class::cast).toList();
-    }
-
-    private boolean noContributorsBelongingToNvaCustomer(List<NvaCustomerContributor> contributors) {
-        return contributors.stream().noneMatch(NvaCustomerContributor::belongsToNvaCustomer);
+    protected static List<AdditionalIdentifier> extractAdditionalIdentifiers(AuthorTp authorTp) {
+        return isNotBlank(authorTp.getAuid())
+                   ? List.of(createAuidAdditionalIdentifier(authorTp))
+                   : emptyList();
     }
 
     private static List<URI> getAllAffiliationIds(List<NvaCustomerContributor> contributors) {
@@ -118,24 +93,37 @@ public class ContributorExtractor {
                    .orElse(List.of());
     }
 
+    private static AdditionalIdentifier createAuidAdditionalIdentifier(AuthorTp authorTp) {
+        return new AdditionalIdentifier(SCOPUS_AUID, authorTp.getAuid());
+    }
+
+    private List<Contributor> getContributors() {
+        return contributors.stream().map(Contributor.class::cast).toList();
+    }
+
+    private boolean noContributorsBelongingToNvaCustomer(List<NvaCustomerContributor> contributors) {
+        return contributors.stream().noneMatch(NvaCustomerContributor::belongsToNvaCustomer);
+    }
+
     private Optional<PersonalnameType> extractPersonalNameType(CorrespondenceTp correspondenceTp) {
         return Optional.ofNullable(correspondenceTp.getPerson());
     }
 
-    private List<NvaCustomerContributor> generateContributorsFromAuthorGroup(AuthorGroupTp authorGroupTp) {
-        authorGroupTp.getAuthorOrCollaboration()
+    private List<NvaCustomerContributor> generateContributorsFromAuthorGroup(
+        CorporationWithContributors corporationWithContributors) {
+        corporationWithContributors.getScopusAuthors().getAuthorOrCollaboration()
             .forEach(authorOrCollaboration -> extractContributorFromAuthorOrCollaboration(authorOrCollaboration,
-                                                                                          authorGroupTp));
+                                                                                          corporationWithContributors));
         return contributors;
     }
 
     private void extractContributorFromAuthorOrCollaboration(Object authorOrCollaboration,
-                                                             AuthorGroupTp authorGroupTp) {
+                                                             CorporationWithContributors corporationWithContributors) {
         var existingContributor = getExistingContributor(authorOrCollaboration);
         if (existingContributor.isPresent()) {
-            replaceExistingContributor(existingContributor.get(), authorGroupTp);
+            replaceExistingContributor(existingContributor.get(), corporationWithContributors);
         } else {
-            generateContributorFromAuthorOrCollaboration(authorOrCollaboration, authorGroupTp);
+            generateContributorFromAuthorOrCollaboration(authorOrCollaboration, corporationWithContributors);
         }
     }
 
@@ -154,18 +142,20 @@ public class ContributorExtractor {
                    .findAny();
     }
 
-    private void replaceExistingContributor(NvaCustomerContributor existingContributor, AuthorGroupTp authorGroupTp) {
+    private void replaceExistingContributor(NvaCustomerContributor existingContributor,
+                                            CorporationWithContributors corporationWithContributors) {
         if (isNull(existingContributor.getIdentity().getId())) {
-            var optionalNewAffiliations = generateAffiliationFromAuthorGroupTp(authorGroupTp);
-            optionalNewAffiliations.ifPresent(
-                organizations -> updateContributorWithAdditionalAffiliationsInContributorList(organizations,
-                                                                                              existingContributor));
+            var newAffiliations = corporationWithContributors.toCorporations();
+            if (!newAffiliations.isEmpty()) {
+                updateContributorWithAdditionalAffiliationsInContributorList(newAffiliations,
+                                                                             existingContributor);
+            }
         }
     }
 
     private void updateContributorWithAdditionalAffiliationsInContributorList(
-        Corporation newAffiliation, NvaCustomerContributor matchingContributor) {
-        var newContributor = cloneContributorAddingAffiliation(matchingContributor, newAffiliation);
+        List<Corporation> newAffiliations, NvaCustomerContributor matchingContributor) {
+        var newContributor = cloneContributorAddingAffiliations(matchingContributor, newAffiliations);
         replaceContributor(matchingContributor, newContributor);
     }
 
@@ -174,10 +164,10 @@ public class ContributorExtractor {
         contributors.add(newContributor);
     }
 
-    private NvaCustomerContributor cloneContributorAddingAffiliation(NvaCustomerContributor existingContributor,
-                                                                     Corporation newAffiliation) {
+    private NvaCustomerContributor cloneContributorAddingAffiliations(NvaCustomerContributor existingContributor,
+                                                                      List<Corporation> newAffiliations) {
         var affiliations = new ArrayList<>(existingContributor.getAffiliations());
-        affiliations.add(newAffiliation);
+        affiliations.addAll(newAffiliations);
 
         return new NvaCustomerContributor.Builder().withIdentity(existingContributor.getIdentity())
                    .withAffiliations(affiliations)
@@ -208,47 +198,44 @@ public class ContributorExtractor {
     }
 
     private void generateContributorFromAuthorOrCollaboration(Object authorOrCollaboration,
-                                                              AuthorGroupTp authorGroupTp) {
+                                                              CorporationWithContributors corporationWithContributors) {
         if (authorOrCollaboration instanceof AuthorTp authorTp) {
-            generateContributorFromAuthorTp(authorTp, authorGroupTp);
+            generateContributorFromAuthorTp(authorTp, corporationWithContributors);
         } else {
-            generateContributorFromCollaborationTp((CollaborationTp) authorOrCollaboration, authorGroupTp,
+            generateContributorFromCollaborationTp((CollaborationTp) authorOrCollaboration, corporationWithContributors,
                                                    getCorrespondencePerson());
         }
     }
 
-    private void generateContributorFromAuthorTp(AuthorTp author, AuthorGroupTp authorGroup) {
+    private void generateContributorFromAuthorTp(AuthorTp author,
+                                                 CorporationWithContributors corporationWithContributors) {
 
-        var cristinOrganization = fetchCristinOrganization(authorGroup);
-        var isNvaCustomer = nvaCustomerConnection.isNvaCustomer(cristinOrganization);
+        var cristinOrganizations = corporationWithContributors.getCristinOrganizations();
+        var isNvaCustomer = nvaCustomerConnection.isNvaCustomer(cristinOrganizations);
 
         var contributor = fetchCristinPerson(author).map(
                 cristinPerson -> generateContributorFromCristinPerson(cristinPerson, author, getCorrespondencePerson(),
-                                                                      cristinOrganization, isNvaCustomer))
+                                                                      cristinOrganizations, isNvaCustomer))
                               .orElseGet(
-                                  () -> generateContributorFromAuthorTp(authorGroup, author, getCorrespondencePerson(),
-                                                                        cristinOrganization, isNvaCustomer));
+                                  () -> generateContributorFromAuthorTp(corporationWithContributors, author,
+                                                                        getCorrespondencePerson(),
+                                                                        isNvaCustomer));
 
         contributors.add(contributor);
     }
 
-    private NvaCustomerContributor generateContributorFromAuthorTp(AuthorGroupTp authorGroup, AuthorTp author,
-                                                                   PersonalnameType correspondencePerson,
-                                                                   CristinOrganization cristinOrganization,
-                                                                   boolean isNvaCustomer) {
+    private NvaCustomerContributor generateContributorFromAuthorTp(
+        CorporationWithContributors corporationWithContributors,
+        AuthorTp author,
+        PersonalnameType correspondencePerson,
+        boolean isNvaCustomer) {
         return new NvaCustomerContributor.Builder().withIdentity(generateContributorIdentityFromAuthorTp(author))
-                   .withAffiliations(extractAffiliation(authorGroup, cristinOrganization))
+                   .withAffiliations(corporationWithContributors.toCorporations())
                    .withRole(new RoleType(Role.CREATOR))
                    .withSequence(getSequenceNumber(author))
                    .withCorrespondingAuthor(isCorrespondingAuthor(author, correspondencePerson))
                    .withBelongsToNvaCustomer(isNvaCustomer)
                    .build();
-    }
-
-    private List<Corporation> extractAffiliation(AuthorGroupTp authorGroup, CristinOrganization cristinOrganization) {
-        return nonNull(cristinOrganization)
-                   ? AffiliationGenerator.fromCristinOrganization(cristinOrganization)
-                   : AffiliationGenerator.fromAuthorGroupTp(authorGroup, cristinConnection);
     }
 
     private Optional<CristinPerson> fetchCristinPerson(AuthorTp author) {
@@ -269,34 +256,17 @@ public class ContributorExtractor {
                    .flatMap(cristinConnection::getCristinPersonByCristinId);
     }
 
-    private CristinOrganization fetchCristinOrganization(AuthorGroupTp authorGroup) {
-        return getCristinOrganizationUri(authorGroup).map(cristinConnection::fetchCristinOrganizationByCristinId)
-                   .filter(ContributorExtractor::isNotOtherNorwegianInstitution)
-                   .orElse(null);
-    }
-
-    private Optional<URI> getCristinOrganizationUri(AuthorGroupTp authorGroup) {
-        return Optional.ofNullable(authorGroup)
-                   .map(AuthorGroupTp::getAffiliation)
-                   .map(AffiliationTp::getAfid)
-                   .flatMap(piaConnection::fetchCristinOrganizationIdentifier);
-    }
-
-    private Optional<Corporation> generateAffiliationFromCristinOrganization(CristinOrganization cristinOrganization) {
-        return Optional.of(new Organization.Builder().withId(cristinOrganization.id()).build());
-    }
-
-    private void generateContributorFromCollaborationTp(CollaborationTp collaboration, AuthorGroupTp authorGroupTp,
+    private void generateContributorFromCollaborationTp(CollaborationTp collaboration,
+                                                        CorporationWithContributors corporationWithContributors,
                                                         PersonalnameType correspondencePerson) {
-        var cristinOrganization = fetchCristinOrganization(authorGroupTp);
+        var cristinOrganizations = corporationWithContributors.getCristinOrganizations();
 
         var newContributor = new NvaCustomerContributor.Builder().withIdentity(generateIdentity(collaboration))
-                                 .withAffiliations(generateAffiliation(cristinOrganization, authorGroupTp).map(List::of)
-                                                       .orElse(emptyList()))
+                                 .withAffiliations(corporationWithContributors.toCorporations())
                                  .withRole(new RoleType(Role.OTHER))
                                  .withSequence(getSequenceNumber(collaboration))
                                  .withCorrespondingAuthor(isCorrespondingAuthor(collaboration, correspondencePerson))
-                                 .withBelongsToNvaCustomer(nvaCustomerConnection.isNvaCustomer(cristinOrganization))
+                                 .withBelongsToNvaCustomer(nvaCustomerConnection.isNvaCustomer(cristinOrganizations))
                                  .build();
         contributors.add(newContributor);
     }
@@ -305,38 +275,12 @@ public class ContributorExtractor {
         return new Identity.Builder().withName(determineContributorName(collaboration)).build();
     }
 
-    private Optional<Corporation> generateAffiliation(CristinOrganization cristinOrganization,
-                                                       AuthorGroupTp authorGroupTp) {
-        return nonNull(cristinOrganization) ? generateAffiliationFromCristinOrganization(cristinOrganization)
-                   : generateAffiliationFromAuthorGroupTp(authorGroupTp);
-    }
-
     private Identity generateContributorIdentityFromAuthorTp(AuthorTp authorTp) {
         var identity = new Identity();
         identity.setName(determineContributorName(authorTp));
         identity.setOrcId(getOrcidAsUriString(authorTp));
         identity.setAdditionalIdentifiers(extractAdditionalIdentifiers(authorTp));
         return identity;
-    }
-
-    protected static List<AdditionalIdentifier> extractAdditionalIdentifiers(AuthorTp authorTp) {
-        return isNotBlank(authorTp.getAuid())
-                   ? List.of(createAuidAdditionalIdentifier(authorTp))
-                   : emptyList();
-    }
-
-    private static AdditionalIdentifier createAuidAdditionalIdentifier(AuthorTp authorTp) {
-        return new AdditionalIdentifier(SCOPUS_AUID, authorTp.getAuid());
-    }
-
-    private Optional<Corporation> generateAffiliationFromAuthorGroupTp(AuthorGroupTp authorGroup) {
-        var name =  getOrganizationNameFromAuthorGroup(authorGroup);
-        var labels =  name.isPresent() && !name.get().isEmpty() ? name.map(
-            organizationName -> Map.of(getLanguageIso6391Code(organizationName), organizationName))
-                          : extractCountryNameAsAffiliation(authorGroup);
-        return isNotNorway(labels.orElse(Map.of()))
-                   ? Optional.of(new UnconfirmedOrganization(name.orElse(null)))
-                   : Optional.empty();
     }
 
     private boolean isCorrespondingAuthor(CollaborationTp collaboration, PersonalnameType correspondencePerson) {
@@ -371,20 +315,8 @@ public class ContributorExtractor {
         return isNotBlank(authorTp.getOrcid()) ? craftOrcidUriString(authorTp.getOrcid()) : null;
     }
 
-    private Optional<Map<String, String>> extractCountryNameAsAffiliation(AuthorGroupTp authorGroup) {
-        return Optional.ofNullable(authorGroup.getAffiliation())
-                   .map(AffiliationTp::getCountry)
-                   .map(country -> Map.of(getLanguageIso6391Code(country), country));
-    }
-
     private String craftOrcidUriString(String potentiallyMalformedOrcidString) {
         return potentiallyMalformedOrcidString.contains(ORCID_DOMAIN_URL) ? potentiallyMalformedOrcidString
                    : ORCID_DOMAIN_URL + potentiallyMalformedOrcidString;
-    }
-
-    private Optional<String> getOrganizationNameFromAuthorGroup(AuthorGroupTp authorGroup) {
-        return Optional.ofNullable(authorGroup.getAffiliation())
-                   .map(AffiliationType::getOrganization)
-                   .map(ContributorExtractor::toOrganizationName);
     }
 }

@@ -7,6 +7,7 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import nva.commons.core.Environment;
@@ -30,18 +31,11 @@ public class NvaCustomerConnection {
         this.uriRetriever = uriRetriever;
     }
 
-    public boolean isNvaCustomer(CristinOrganization cristinOrganization) {
-        return isPresentAndHasTopLevelOrg(cristinOrganization) && isCustomer(cristinOrganization);
-    }
-
-    private Boolean isCustomer(CristinOrganization cristinOrganization) {
-        return attempt(cristinOrganization::getTopLevelOrg)
-                   .map(CristinOrganization::id)
-                   .map(NvaCustomerConnection::toFetchCustomerUri)
-                   .map(this::fetchResponse)
-                   .map(HttpResponse::statusCode)
-                   .map(NvaCustomerConnection::isHttpOk)
-                   .orElseThrow();
+    public boolean isNvaCustomer(List<CristinOrganization> cristinOrganizations) {
+        return cristinOrganizations
+                   .stream()
+                   .filter(NvaCustomerConnection::isPresentAndHasTopLevelOrg)
+                   .anyMatch(this::isCustomer);
     }
 
     private static boolean isPresentAndHasTopLevelOrg(CristinOrganization cristinOrganization) {
@@ -58,6 +52,16 @@ public class NvaCustomerConnection {
 
     private static String encodeUri(URI topLevelOrganization) {
         return URLEncoder.encode(topLevelOrganization.toString(), StandardCharsets.UTF_8);
+    }
+
+    private Boolean isCustomer(CristinOrganization cristinOrganization) {
+        return attempt(cristinOrganization::getTopLevelOrg)
+                   .map(CristinOrganization::id)
+                   .map(NvaCustomerConnection::toFetchCustomerUri)
+                   .map(this::fetchResponse)
+                   .map(HttpResponse::statusCode)
+                   .map(NvaCustomerConnection::isHttpOk)
+                   .orElseThrow();
     }
 
     private HttpResponse<String> fetchResponse(URI uri) {

@@ -43,6 +43,7 @@ import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
@@ -239,7 +240,6 @@ public class ResourceService extends ServiceWithTransactions {
         TransactWriteItemsRequest transactWriteItemsRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(transactWriteItemsRequest);
     }
-
     public DeletePublicationStatusResponse updatePublishedStatusToDeleted(SortableIdentifier resourceIdentifier)
         throws NotFoundException {
         return updateResourceService.updatePublishedStatusToDeleted(resourceIdentifier);
@@ -354,8 +354,9 @@ public class ResourceService extends ServiceWithTransactions {
         if (!PUBLISHED.equals(publication.getStatus())) {
             throw new BadRequestException(ONLY_PUBLISHED_PUBLICATIONS_CAN_BE_UNPUBLISHED_ERROR_MESSAGE);
         }
-
-        updateResourceService.unpublishPublication(publication);
+        var allTicketsForResource = fetchAllTicketsForResource(Resource.fromPublication(publication));
+        var unpublishRequestTicket = (UnpublishRequest) UnpublishRequest.fromPublication(publication);
+        updateResourceService.unpublishPublication(publication, allTicketsForResource, unpublishRequestTicket);
     }
 
     public void deletePublication(Publication publication) throws BadRequestException {

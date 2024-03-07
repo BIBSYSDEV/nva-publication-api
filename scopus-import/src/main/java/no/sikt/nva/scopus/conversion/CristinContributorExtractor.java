@@ -35,11 +35,11 @@ public final class CristinContributorExtractor {
 
     public static NvaCustomerContributor generateContributorFromCristinPerson(
         CristinPerson cristinPerson, AuthorTp authorTp, PersonalnameType correspondencePerson,
-        CristinOrganization cristinOrganization, boolean isNvaCustomer) {
+        List<CristinOrganization> cristinOrganizations, boolean isNvaCustomer) {
 
         return new NvaCustomerContributor.Builder()
                    .withIdentity(generateContributorIdentityFromCristinPerson(cristinPerson, authorTp))
-                   .withAffiliations(generateOrganizations(cristinPerson.getAffiliations(), cristinOrganization))
+                   .withAffiliations(generateOrganizations(cristinPerson.getAffiliations(), cristinOrganizations))
                    .withRole(new RoleType(Role.CREATOR))
                    .withSequence(getSequenceNumber(authorTp))
                    .withCorrespondingAuthor(isCorrespondingAuthor(authorTp, correspondencePerson))
@@ -71,10 +71,9 @@ public final class CristinContributorExtractor {
     }
 
     private static List<Corporation> generateOrganizations(Set<Affiliation> affiliations,
-                                                           CristinOrganization cristinOrganization) {
-
+                                                           List<CristinOrganization> cristinOrganizations) {
         var organizations = createOrganizationsFromCristinPersonAffiliations(affiliations).toList();
-        var organisationFromAuthorGroupTp = createOrganizationFromCristinOrganization(cristinOrganization).toList();
+        var organisationFromAuthorGroupTp = createOrganizationFromCristinOrganization(cristinOrganizations).toList();
         return Stream.concat(organizations.stream(), organisationFromAuthorGroupTp.stream())
                    .filter(Objects::nonNull)
                    .toList();
@@ -84,22 +83,24 @@ public final class CristinContributorExtractor {
         Set<Affiliation> affiliations) {
         return affiliations.stream()
                    .filter(Affiliation::isActive)
-                   .map(CristinContributorExtractor::convertToOrganization);
+                   .map(CristinContributorExtractor::toOrganization);
     }
 
-    private static Corporation convertToOrganization(Affiliation affiliation) {
+    private static Corporation toOrganization(Affiliation affiliation) {
         return new Organization.Builder().withId(affiliation.getOrganization())
                    .build();
-    }
-
-    private static Stream<Corporation> createOrganizationFromCristinOrganization(
-        CristinOrganization cristinOrganization) {
-        return Stream.ofNullable(cristinOrganization).map(CristinContributorExtractor::toOrganization);
     }
 
     private static Corporation toOrganization(CristinOrganization cristinOrganization) {
         return new Organization.Builder().withId(cristinOrganization.id())
                    .build();
+    }
+
+    private static Stream<Corporation> createOrganizationFromCristinOrganization(
+        List<CristinOrganization> cristinOrganization) {
+        return Optional.ofNullable(cristinOrganization)
+                   .map(orgs -> orgs.stream().map(CristinContributorExtractor::toOrganization))
+                   .orElse(Stream.empty());
     }
 
     private static int getSequenceNumber(AuthorTp authorTp) {

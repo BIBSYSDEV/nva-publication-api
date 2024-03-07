@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.mapper.BrageNvaMapper;
 import no.sikt.nva.brage.migration.merger.AssociatedArtifactMover;
+import no.sikt.nva.brage.migration.merger.BrageMergingReport;
 import no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger;
 import no.sikt.nva.brage.migration.merger.DuplicatePublicationException;
 import no.sikt.nva.brage.migration.merger.UnmappableCristinRecordException;
@@ -172,10 +173,10 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private Publication persistPublication(Publication publication, S3Event s3Event) {
         return attempt(() -> publication)
                    .flatMap(this::persistInDatabase)
-                   .map(pub -> storeHandleAndPublicationIdentifier(pub,
-                                                                   pub.getHandle(),
-                                                                   s3Event,
-                                                                   HANDLE_REPORTS_PATH))
+                   .map(pub -> persistHandleReport(pub,
+                                                   pub.getHandle(),
+                                                   s3Event,
+                                                   HANDLE_REPORTS_PATH))
                    .orElse(fail -> handleSavingError(fail, s3Event));
     }
 
@@ -198,10 +199,13 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                    .orElseThrow();
     }
 
-    private void storePublicationBeforeUpdate(Publication publication, S3Event s3Event, String brageHandle) {
-        var fileUri = updateResourceFilePath(publication, s3Event, brageHandle);
+    private void persistUpdateReport(S3Event s3Event,
+                                     BrageMergingReport brageMergingReport,
+                                     Publication brageConversion) {
+        var fileUri = updateResourceFilePath(brageMergingReport.newImage(), s3Event,
+                                             brageConversion.getHandle().getPath());
         var s3Driver = new S3Driver(s3Client, new Environment().readEnv(BRAGE_MIGRATION_REPORTS_BUCKET_NAME));
-        attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(), publication.toString())).orElseThrow();
+        attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(), brageMergingReport.toString())).orElseThrow();
     }
 
     private UriWrapper updateResourceFilePath(Publication publication, S3Event s3Event, String brageHandle) {
@@ -214,15 +218,27 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
     private Publication mergeTwoPublications(Publication publication, Publication existingPublication,
                                              S3Event s3Event) {
-        storePublicationBeforeUpdate(existingPublication, s3Event, publication.getHandle().getPath());
         return attempt(() -> updatedPublication(publication, existingPublication))
-                   .map(resourceService::updatePublication)
-                   .map(updatedPublication ->
-                            storeHandleAndPublicationIdentifier(updatedPublication,
-                                                                publication.getHandle(),
-                                                                s3Event,
-                                                                UPDATED_PUBLICATIONS_REPORTS_PATH))
+                   .map(publicationForUpdate -> persistInDatabaseAndCreateMergeReport(publicationForUpdate,
+                                                                                      existingPublication))
+                   .map(mergeReport -> persistMergeReports(mergeReport, s3Event, publication))
                    .orElseThrow();
+    }
+
+    private Publication persistMergeReports(BrageMergingReport mergingReport, S3Event s3Event,
+                                            Publication brageConversion) {
+        persistUpdateReport(s3Event, mergingReport, brageConversion);
+        persistHandleReport(mergingReport.newImage(),
+                            brageConversion.getHandle(),
+                            s3Event,
+                            UPDATED_PUBLICATIONS_REPORTS_PATH);
+        return mergingReport.newImage();
+    }
+
+    private BrageMergingReport persistInDatabaseAndCreateMergeReport(Publication publicationForUpdate,
+                                                                     Publication existinPublication) {
+        var newImage = resourceService.updatePublication(publicationForUpdate);
+        return new BrageMergingReport(existinPublication, newImage);
     }
 
     private Publication updatedPublication(Publication publication, Publication existingPublication)
@@ -251,10 +267,10 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         return SOURCE_CRISTIN.equals(identifier.getSourceName());
     }
 
-    private Publication storeHandleAndPublicationIdentifier(Publication publication,
-                                                            URI brageHandle,
-                                                            S3Event s3Event,
-                                                            String destinationFolder) {
+    private Publication persistHandleReport(Publication publication,
+                                            URI brageHandle,
+                                            S3Event s3Event,
+                                            String destinationFolder) {
         var fileUri = constructResourceHandleFileUri(s3Event, publication, destinationFolder, brageHandle);
         var s3Driver = new S3Driver(s3Client, new Environment().readEnv(BRAGE_MIGRATION_REPORTS_BUCKET_NAME));
         attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(), brageHandle.toString())).orElseThrow();
