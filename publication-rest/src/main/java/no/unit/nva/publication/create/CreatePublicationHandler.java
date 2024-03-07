@@ -46,7 +46,6 @@ import nva.commons.secrets.SecretsReader;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.s3.endpoints.internal.Value.Str;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicationRequest, PublicationResponse> {
@@ -130,14 +129,16 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         for (AssociatedArtifact associatedArtifact : newPublication.getAssociatedArtifacts()) {
             if (associatedArtifact instanceof File) {
                 File file = (File) associatedArtifact;
-                setRightsRetentionOnFile(customer, file, username);
+                setRightsRetentionOnFile(customer, newPublication, file, username);
             }
         }
     }
 
-    private void setRightsRetentionOnFile(Customer customer, File file, String username)
+    private void setRightsRetentionOnFile(Customer customer, Publication publication, File file, String username)
         throws BadRequestException {
-        file.setRightsRetentionStrategy(getRightsRetentionStrategy(customer.getRightsRetentionStrategy(), file, username));
+        file.setRightsRetentionStrategy(getRightsRetentionStrategy(customer.getRightsRetentionStrategy(), publication
+            , file,
+                                                                   username));
     }
 
 

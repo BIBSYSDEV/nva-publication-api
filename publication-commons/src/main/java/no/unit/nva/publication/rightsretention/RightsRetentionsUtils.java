@@ -5,6 +5,7 @@ import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfi
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.RIGHTS_RETENTION_STRATEGY;
 import static nva.commons.core.attempt.Try.attempt;
 import java.util.Set;
+import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.FunderRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
@@ -13,30 +14,34 @@ import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.publication.commons.customer.Customer;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
-import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.BadRequestException;
 
 public class RightsRetentionsUtils {
     public static RightsRetentionStrategy getRightsRetentionStrategy(CustomerApiRightsRetention configuredRrsOnCustomer,
-                                                                     File file,
+                                                                     Publication publication, File file,
                                                                      String username)
         throws BadRequestException {
         var configuredRightsRetention = getConfigFromCustomerDto(configuredRrsOnCustomer);
         var fileRightsRetention = file.getRightsRetentionStrategy();
 
-        return rrsIsIrrelevant(file)
+        return rrsIsIrrelevant(file, publication)
                    ? NullRightsRetentionStrategy.create(configuredRightsRetention)
                    : getRrsForUnPublishedFile(configuredRightsRetention, fileRightsRetention, username);
     }
 
-    private static boolean rrsIsIrrelevant(File file) {
+    private static boolean rrsIsIrrelevant(File file, Publication publication) {
         return file.isPublisherAuthority()
-               || file instanceof AdministrativeAgreement;
+               || file instanceof AdministrativeAgreement
+               || !isAcademicArticle(publication);
     }
 
-        private static RightsRetentionStrategy getRrsForUnPublishedFile(RightsRetentionStrategyConfiguration configuredRightsRetention,
+    private static boolean isAcademicArticle(Publication publication) {
+        return (publication.getEntityDescription().getReference().getPublicationInstance() instanceof AcademicArticle);
+    }
+
+    private static RightsRetentionStrategy getRrsForUnPublishedFile(RightsRetentionStrategyConfiguration configuredRightsRetention,
                                                                     RightsRetentionStrategy fileRightsRetention,
                                                                     String username) throws BadRequestException {
         var rrs = switch (fileRightsRetention) {

@@ -325,6 +325,34 @@ public class UpdatePublicationHandler
 
     private void setRrsOnFiles(Publication publicationUpdate, Publication existingPublication, Customer customer,
                                String actingUser) throws BadRequestException {
+        if (isChangedPublicaionType(publicationUpdate, existingPublication)) {
+            setRrsOnAllFiles(publicationUpdate, existingPublication, customer, actingUser);
+        } else {
+            setRrsOnFilesWhenPublicationTypeIsSame(publicationUpdate, existingPublication, customer,
+                                                   actingUser);
+        }
+    }
+
+    private static boolean isChangedPublicaionType(Publication publicationUpdate, Publication existingPublication) {
+        return !publicationUpdate.getEntityDescription().getReference().getPublicationContext().getClass()
+                    .equals(
+                        existingPublication.getEntityDescription().getReference().getPublicationContext().getClass());
+    }
+
+    private void setRrsOnAllFiles(Publication publicationUpdate, Publication existingPublication, Customer customer,
+                     String actingUser) throws BadRequestException {
+        var files = Lists.newArrayList(publicationUpdate.getAssociatedArtifacts()).stream()
+            .filter(File.class::isInstance)
+            .map(File.class::cast)
+                        .toList();
+
+        for (var file : files) {
+            setRrsOnFile(file, publicationUpdate, customer.getRightsRetentionStrategy(), actingUser);
+        }
+    }
+
+    private void setRrsOnFilesWhenPublicationTypeIsSame(Publication publicationUpdate, Publication existingPublication, Customer customer,
+                                                        String actingUser) throws BadRequestException {
         var filesOnUpdateRequest = getFilesFromPublication(publicationUpdate);
         var filesOnExistingPublication = getFilesFromPublication(existingPublication);
 
@@ -339,23 +367,26 @@ public class UpdatePublicationHandler
                                 .toList();
 
         for (File newFile : newFiles) {
-            setRrsOnNewFile(newFile, customer.getRightsRetentionStrategy(), actingUser);
+            setRrsOnFile(newFile, publicationUpdate, customer.getRightsRetentionStrategy(), actingUser);
         }
         for (File newFile : modifiedFiles) {
             var oldFile = filesOnExistingPublication.get(newFile.getIdentifier());
-            setRrsOnModifiedFile(newFile, oldFile, customer.getRightsRetentionStrategy(), actingUser);
+            setRrsOnModifiedFile(newFile, oldFile, publicationUpdate, customer.getRightsRetentionStrategy(),
+                                 actingUser);
         }
     }
 
-    private void setRrsOnModifiedFile(File file, File oldFile, CustomerApiRightsRetention rrs, String actingUser)
+    private void setRrsOnModifiedFile(File file, File oldFile, Publication publication, CustomerApiRightsRetention rrs,
+                                      String actingUser)
         throws BadRequestException {
-        file.setRightsRetentionStrategy(getRightsRetentionStrategy(rrs, file, actingUser)); //TODO: Call another
-        // method. Perserve overridenBy if non-rrs-field changed
+        if (!file.getRightsRetentionStrategy().equals(oldFile.getRightsRetentionStrategy())) {
+            file.setRightsRetentionStrategy(getRightsRetentionStrategy(rrs, publication, file, actingUser));
+        }
     }
 
-    private void setRrsOnNewFile(File file, CustomerApiRightsRetention rrs, String actingUser)
+    private void setRrsOnFile(File file, Publication publication, CustomerApiRightsRetention rrs, String actingUser)
         throws BadRequestException {
-        file.setRightsRetentionStrategy(getRightsRetentionStrategy(rrs, file, actingUser));
+        file.setRightsRetentionStrategy(getRightsRetentionStrategy(rrs, publication, file, actingUser));
     }
 
     private static Map<UUID, File> getFilesFromPublication(Publication publicationUpdate) {

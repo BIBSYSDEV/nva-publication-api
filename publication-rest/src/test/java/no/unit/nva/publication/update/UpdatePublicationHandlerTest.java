@@ -116,7 +116,9 @@ import no.unit.nva.model.UnpublishingNote;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.License;
@@ -126,6 +128,7 @@ import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
@@ -952,36 +955,23 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldSetCustomersConfiguredRrsWhenFileIsNew() throws BadRequestException, IOException, NotFoundException {
+    void shouldSetCustomersConfiguredRrsWithOverridenByWhenFileIsNew() throws BadRequestException, IOException,
+                                                                    NotFoundException {
         WireMock.reset();
-
-
-
-        var journalArticle = publication.copy()
-                              .withEntityDescription(randomEntityDescription(JournalArticle.class))
+        var academicArticle = publication.copy()
+                              .withEntityDescription(randomEntityDescription(AcademicArticle.class))
                               .withAssociatedArtifacts(List.of())
                               .build();
 
-        var persistedPublication = Resource.fromPublication(journalArticle)
-                                       .persistNew(publicationService, UserInstance.fromPublication(journalArticle));
-        var username = journalArticle.getResourceOwner().getOwner().getValue();
+        var persistedPublication = Resource.fromPublication(academicArticle)
+                                       .persistNew(publicationService, UserInstance.fromPublication(academicArticle));
+        var username = academicArticle.getResourceOwner().getOwner().getValue();
 
 
-        var file = new UnpublishedFile(UUID.randomUUID(),
-                                       RandomDataGenerator.randomString(),
-                                       RandomDataGenerator.randomString(),
-                                       RandomDataGenerator.randomInteger().longValue(),
-                                       RandomDataGenerator.randomUri(),
-                                       false,
-                                       false,
-                                       (Instant)null,
-                                       RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
-                                       RandomDataGenerator.randomString());
         OverriddenRightsRetentionStrategy userSetRrs = OverriddenRightsRetentionStrategy.create(
             OVERRIDABLE_RIGHTS_RETENTION_STRATEGY,
             username);
-
-        file.setRightsRetentionStrategy(userSetRrs);
+        var file = createFileWithRrs(userSetRrs);
 
         var update = persistedPublication.copy().withAssociatedArtifacts(List.of(file)).build();
         var input = ownerUpdatesOwnPublication(persistedPublication.getIdentifier(), update);
@@ -1000,6 +990,100 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertTrue(insertedFile.getRightsRetentionStrategy() instanceof OverriddenRightsRetentionStrategy);
         assertThat(((OverriddenRightsRetentionStrategy) insertedFile.getRightsRetentionStrategy()).getOverriddenBy(),
                    Is.is(IsEqual.equalTo(username)));
+    }
+
+    @Test
+    void shouldSetNullRightsRetentionWhenChangingAcademicArticleToSomethingElse() throws BadRequestException,
+                                                                                         IOException,
+                                                                              NotFoundException {
+        WireMock.reset();
+
+        OverriddenRightsRetentionStrategy userSetRrs = OverriddenRightsRetentionStrategy.create(
+            OVERRIDABLE_RIGHTS_RETENTION_STRATEGY,
+            randomString());
+        var file = createFileWithRrs(userSetRrs);
+        var academicArticle = publication.copy()
+                                  .withEntityDescription(randomEntityDescription(AcademicArticle.class))
+                                  .withAssociatedArtifacts(List.of(file))
+                                  .build();
+
+        var persistedPublication = Resource.fromPublication(academicArticle)
+                                       .persistNew(publicationService, UserInstance.fromPublication(academicArticle));
+
+        var update = persistedPublication.copy().withEntityDescription(
+            randomEntityDescription(DegreeBachelor.class)
+        ).build();
+        var input = ownerUpdatesOwnPublication(persistedPublication.getIdentifier(), update);
+
+        stubSuccessfulTokenResponse();
+        stubCustomerResponseAcceptingFilesForAllTypesAndOverridableRrs(publication.getPublisher().getId());
+
+        updatePublicationHandler.handleRequest(input, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Publication.class);
+        assertThat(response.getStatusCode(), is(equalTo(SC_OK)));
+
+        var updatedPublication = publicationService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+        var insertedFile = (File) updatedPublication.getAssociatedArtifacts().getFirst();
+
+        assertTrue(insertedFile.getRightsRetentionStrategy() instanceof NullRightsRetentionStrategy);
+    }
+
+    @Test
+    void shouldPreserveRrsOverridenByWhenChangingNonRrsFileMetadata() throws BadRequestException,
+                                                                                         IOException,
+                                                                                         NotFoundException {
+        WireMock.reset();
+        var rrsOverriddenBy = randomString();
+        OverriddenRightsRetentionStrategy userSetRrs = OverriddenRightsRetentionStrategy.create(
+            OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, rrsOverriddenBy
+            );
+        var fileId = UUID.randomUUID();
+        var file = createFileWithRrs(fileId, userSetRrs);
+        var updatedFile = createFileWithRrs(fileId, userSetRrs);
+        var academicArticle = publication.copy()
+                                  .withEntityDescription(randomEntityDescription(AcademicArticle.class))
+                                  .withAssociatedArtifacts(List.of(file))
+                                  .build();
+
+        var persistedPublication = Resource.fromPublication(academicArticle)
+                                       .persistNew(publicationService, UserInstance.fromPublication(academicArticle));
+
+        var update = persistedPublication.copy().withAssociatedArtifacts(
+            List.of(updatedFile)
+        ).build();
+        var input = ownerUpdatesOwnPublication(persistedPublication.getIdentifier(), update);
+
+        stubSuccessfulTokenResponse();
+        stubCustomerResponseAcceptingFilesForAllTypesAndOverridableRrs(publication.getPublisher().getId());
+
+        updatePublicationHandler.handleRequest(input, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Publication.class);
+        assertThat(response.getStatusCode(), is(equalTo(SC_OK)));
+
+        var updatedPublication = publicationService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+        var insertedFile = (File) updatedPublication.getAssociatedArtifacts().getFirst();
+
+        assertTrue(insertedFile.getRightsRetentionStrategy() instanceof OverriddenRightsRetentionStrategy);
+        assertThat(insertedFile.getMimeType(),is(equalTo(updatedFile.getMimeType())));
+        assertThat(((OverriddenRightsRetentionStrategy) insertedFile.getRightsRetentionStrategy()).getOverriddenBy(),
+                   Is.is(IsEqual.equalTo(rrsOverriddenBy)));
+    }
+
+    private static UnpublishedFile createFileWithRrs(RightsRetentionStrategy rrs) {
+        return createFileWithRrs(UUID.randomUUID(), rrs);
+    }
+
+    private static UnpublishedFile createFileWithRrs(UUID uuid, RightsRetentionStrategy rrs) {
+        return new UnpublishedFile(uuid,
+                                   RandomDataGenerator.randomString(),
+                                   RandomDataGenerator.randomString(),
+                                   RandomDataGenerator.randomInteger().longValue(),
+                                   RandomDataGenerator.randomUri(),
+                                   false,
+                                   false,
+                                   (Instant) null,
+                                   rrs,
+                                   RandomDataGenerator.randomString());
     }
 
     @Test
