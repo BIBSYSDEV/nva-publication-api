@@ -1,5 +1,6 @@
 {
   "allowFileUploadForTypes": [],
   "publicationWorkflow": "RegistratorPublishesMetadataAndFiles",
+  "rightsRetentionStrategy": "NullRightsRetentionStrategy",
   "type": "Customer"
 }

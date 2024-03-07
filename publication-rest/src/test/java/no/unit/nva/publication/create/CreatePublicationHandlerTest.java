@@ -1,5 +1,6 @@
 package no.unit.nva.publication.create;
 
+import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.NULL_RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomSuccessfulCustomerResponse;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypes;
@@ -58,9 +59,14 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
+import no.unit.nva.model.testing.associatedartifacts.PublishedFileGenerator;
 import no.unit.nva.publication.events.bodies.CreatePublicationRequest;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -430,6 +436,31 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         var body = response.getBodyObject(Problem.class);
         assertThat(body.getDetail(), containsString("Files not allowed for instance type"));
+    }
+
+    @Test
+    void shouldReturnBadRequestIfProvidedWithOneOrMoreFilesHasNullRightsRetentionSetButCustomerHasAOveridableConfig()
+        throws IOException {
+
+        WireMock.reset();
+
+        stubSuccessfulTokenResponse();
+        stubCustomerResponseAcceptingFilesForAllTypes(customerId);
+
+        var file = PublishedFileGenerator.random();
+        file.setRightsRetentionStrategy(NullRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY));
+        var associatedArtifactsInPublication = new AssociatedArtifactList(new AssociatedArtifact[]{file});
+
+        var request = createEmptyPublicationRequest();
+        request.setAssociatedArtifacts(associatedArtifactsInPublication);
+        request.setEntityDescription(randomPublishableEntityDescription());
+
+        var inputStream = createPublicationRequest(request);
+
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var actual = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+        assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
     }
 
     @Test

@@ -62,5 +62,6 @@
     "ExhibitionProduction"
   ],
   "publicationWorkflow": "RegistratorPublishesMetadataAndFiles",
+  "rightsRetentionStrategy": "NullRightsRetentionStrategy",
   "type": "Customer"
 }

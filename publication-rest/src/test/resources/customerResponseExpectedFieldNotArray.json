@@ -1,3 +1,4 @@
 {
-  "allowFileUploadForTypes": {}
+  "allowFileUploadForTypes": {},
+  "rightsRetentionStrategy": "NullRightsRetentionStrategy"
 }
