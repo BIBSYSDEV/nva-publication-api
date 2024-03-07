@@ -1,14 +1,8 @@
 package no.unit.nva.publication.permission.strategy.grant;
 
-import static no.unit.nva.publication.utils.RdfUtils.getTopLevelOrgUri;
-import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
+import static no.unit.nva.publication.model.utils.CuratingInstitutionsUtil.getCuratingInstitutions;
 import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
-import java.net.URI;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.Organization;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
@@ -52,42 +46,22 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
             return false;
         }
 
-        var resourceOwnerTopLevel = getTopLevelOrgUri(uriRetriever,
-                                                      publication.getResourceOwner().getOwnerAffiliation());
-        return userInstance.getTopLevelOrgCristinId().equals(resourceOwnerTopLevel);
+        return userInstance.getTopLevelOrgCristinId().equals(publication.getResourceOwner().getOwnerAffiliation());
     }
 
     private boolean userSharesTopLevelOrgWithAtLeastOneContributor() {
-        var contributorTopLevelOrgs = getContributorTopLevelOrgs();
+        var contributorTopLevelOrgs = getCuratingInstitutions(publication, uriRetriever);
         var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
 
-        logger.info("found topLevels {} for user {} of {}. Verified contributors: {} ",
+        logger.info("found topLevels {} for user {} of {}.",
                     contributorTopLevelOrgs,
-                    userInstance.getUser().toString(),
-                    userTopLevelOrg,
-                    getVerifiedContributors().collect(Collectors.toSet()));
+                    userInstance.getUser(),
+                    userTopLevelOrg);
 
         return contributorTopLevelOrgs.stream().anyMatch(org -> org.equals(userTopLevelOrg));
     }
 
-    private Set<URI> getContributorTopLevelOrgs() {
-        return getVerifiedContributors()
-                   .flatMap(contributor ->
-                                contributor.getAffiliations().stream()
-                                    .filter(Organization.class::isInstance)
-                                    .map(Organization.class::cast)
-                                    .map(Organization::getId))
-                   .collect(Collectors.toSet())
-                   .parallelStream()
-                   .map((orgId) -> getTopLevelOrgUri(uriRetriever, orgId))
-                   .collect(Collectors.toSet());
-    }
 
-    private Stream<Contributor> getVerifiedContributors() {
-        return publication.getEntityDescription().getContributors()
-                   .stream()
-                   .filter(this::isVerifiedContributor);
-    }
 
     private boolean hasUnpublishedFile() {
         return publication.getAssociatedArtifacts().stream().anyMatch(UnpublishedFile.class::isInstance);
