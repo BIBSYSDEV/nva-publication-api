@@ -1,5 +1,6 @@
 package cucumber.features.transformers;
 
+import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.UNKNOWN;
 import io.cucumber.java.DataTableType;
 import java.time.Instant;
 import java.util.Map;
@@ -46,7 +47,7 @@ public class PublishedFileTransformer {
         if (rightsRetentionStrategy.isPresent()) {
             logger.warn("Rights retention strategy for Brage is not supported on record: " + entry.get("identifier"));
         }
-        return NullRightsRetentionStrategy.create();
+        return NullRightsRetentionStrategy.create(UNKNOWN);
     }
 
     private static Instant parseDate(String candidate) {

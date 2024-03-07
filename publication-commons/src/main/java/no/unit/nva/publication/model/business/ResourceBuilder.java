@@ -39,6 +39,7 @@ public final class ResourceBuilder {
     private ImportStatus importStatus;
     private List<PublicationNoteBase> publicationNotes;
     private URI duplicateOf;
+    private Set<URI> curatingInstitutions;
 
     ResourceBuilder() {
     }
@@ -148,6 +149,11 @@ public final class ResourceBuilder {
         return this;
     }
 
+    public ResourceBuilder withCuratingInstitutions(Set<URI> curatingInstitutions) {
+        this.curatingInstitutions = curatingInstitutions;
+        return this;
+    }
+
     public Resource build() {
         Resource resource = new Resource();
         resource.setIdentifier(identifier);
@@ -171,6 +177,7 @@ public final class ResourceBuilder {
         resource.setImportStatus(importStatus);
         resource.setPublicationNotes(publicationNotes);
         resource.setDuplicateOf(duplicateOf);
+        resource.setCuratingInstitutions(curatingInstitutions);
         return resource;
     }
 }

@@ -200,6 +200,11 @@
     "publicationNotes": {
       "@id": "publicationNote",
       "@container": "@set"
+    },
+    "curatingInstitutions": {
+      "@id": "curatingInstitution",
+      "@container": "@set",
+      "@type": "@id"
     }
   },
   "@type": "Publication",
@@ -255,5 +260,8 @@
     "source": {
       "@embed": "@always"
     }
+  },
+  "curatingInstitutions": {
+    "@embed": "@never"
   }
 }
