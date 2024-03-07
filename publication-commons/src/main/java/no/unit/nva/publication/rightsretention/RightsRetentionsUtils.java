@@ -11,36 +11,40 @@ import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
+import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.commons.customer.Customer;
+import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.BadRequestException;
 
 public class RightsRetentionsUtils {
-    public static RightsRetentionStrategy getRightsRetentionStrategy(Customer customer, File file,
+    public static RightsRetentionStrategy getRightsRetentionStrategy(CustomerApiRightsRetention configuredRrsOnCustomer,
+                                                                     File file,
                                                                      String username)
         throws BadRequestException {
-        var configuredRightsRetention = getConfigFromCustomerDto(customer);
-        var overridedRightsRetention = file.getRightsRetentionStrategy();
+        var configuredRightsRetention = getConfigFromCustomerDto(configuredRrsOnCustomer);
+        var fileRightsRetention = file.getRightsRetentionStrategy();
 
+        return rrsIsIrrelevant(file)
+                   ? NullRightsRetentionStrategy.create(configuredRightsRetention)
+                   : getRrsForUnPublishedFile(configuredRightsRetention, fileRightsRetention, username);
+    }
+
+    private static boolean rrsIsIrrelevant(File file) {
         return file.isPublisherAuthority()
-                   ? getRrsForPublishedFile(configuredRightsRetention)
-                   : getRrsForUnPublishedFile(configuredRightsRetention, overridedRightsRetention, username);
+               || file instanceof AdministrativeAgreement;
     }
 
-    private static RightsRetentionStrategy getRrsForPublishedFile(RightsRetentionStrategyConfiguration config) {
-        return NullRightsRetentionStrategy.create(config);
-    }
-
-    private static RightsRetentionStrategy getRrsForUnPublishedFile(RightsRetentionStrategyConfiguration configuredRightsRetention,
-                                                                    RightsRetentionStrategy overridedRightsRetention,
+        private static RightsRetentionStrategy getRrsForUnPublishedFile(RightsRetentionStrategyConfiguration configuredRightsRetention,
+                                                                    RightsRetentionStrategy fileRightsRetention,
                                                                     String username) throws BadRequestException {
-        var rrs = switch (overridedRightsRetention) {
+        var rrs = switch (fileRightsRetention) {
             case OverriddenRightsRetentionStrategy strategy -> OverriddenRightsRetentionStrategy.create(configuredRightsRetention, username);
             case NullRightsRetentionStrategy strategy -> NullRightsRetentionStrategy.create(configuredRightsRetention);
             case CustomerRightsRetentionStrategy strategy -> CustomerRightsRetentionStrategy.create(configuredRightsRetention);
             case FunderRightsRetentionStrategy strategy -> FunderRightsRetentionStrategy.create(configuredRightsRetention);
-            default -> throw new IllegalArgumentException("Unknown RightsRetentionStrategy type "+ overridedRightsRetention);
+            default -> throw new IllegalArgumentException("Unknown RightsRetentionStrategy type "+ fileRightsRetention);
         };
         if (!isValid(rrs)) {
             throw new BadRequestException("Illegal RightsRetentionStrategy on file");
@@ -62,13 +66,12 @@ public class RightsRetentionsUtils {
         };
     }
 
-    private static RightsRetentionStrategyConfiguration getConfigFromCustomerDto(Customer customer) {
-        var rrs = customer.getRightsRetentionStrategy().getType();
-        return switch (rrs) {
+    private static RightsRetentionStrategyConfiguration getConfigFromCustomerDto(CustomerApiRightsRetention config) {
+        return switch (config.getType()) {
             case "NullRightsRetentionStrategy" -> NULL_RIGHTS_RETENTION_STRATEGY;
             case "RightsRetentionStrategy" -> RIGHTS_RETENTION_STRATEGY;
             case "OverridableRightsRetentionStrategy" -> OVERRIDABLE_RIGHTS_RETENTION_STRATEGY;
-            default -> throw new IllegalArgumentException("Unknown RightsRetentionStrategy type "+ rrs);
+            default -> throw new IllegalArgumentException("Unknown RightsRetentionStrategy type "+ config.getType());
         };
     }
 

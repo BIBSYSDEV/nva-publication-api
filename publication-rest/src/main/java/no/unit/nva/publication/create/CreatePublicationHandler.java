@@ -137,7 +137,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
 
     private void setRightsRetentionOnFile(Customer customer, File file, String username)
         throws BadRequestException {
-        file.setRightsRetentionStrategy(getRightsRetentionStrategy(customer, file, username));
+        file.setRightsRetentionStrategy(getRightsRetentionStrategy(customer.getRightsRetentionStrategy(), file, username));
     }
 
 

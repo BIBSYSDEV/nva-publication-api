@@ -7,11 +7,13 @@ import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.publication.RequestUtil.createUserInstanceFromRequest;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.defaultEventBridgeClient;
+import static no.unit.nva.publication.rightsretention.RightsRetentionsUtils.getRightsRetentionStrategy;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.validation.PublicationUriValidator.isValid;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
+import com.google.common.collect.Lists;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.time.Clock;
@@ -20,8 +22,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.api.PublicationResponseElevatedUser;
@@ -39,6 +43,7 @@ import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
+import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
 import no.unit.nva.publication.commons.customer.CustomerNotAvailableException;
 import no.unit.nva.publication.commons.customer.JavaHttpClientCustomerApiClient;
 import no.unit.nva.publication.delete.LambdaDestinationInvocationDetail;
@@ -177,7 +182,8 @@ public class UpdatePublicationHandler
         var requestUtils = RequestUtils.fromRequestInfo(requestInfo, uriRetriever);
         Publication updatedPublication = switch (input) {
             case UpdatePublicationRequest publicationMetadata ->
-                updateMetadata(publicationMetadata, identifierInPath, existingPublication, permissionStrategy, requestUtils);
+                updateMetadata(publicationMetadata, identifierInPath, existingPublication, permissionStrategy,
+                               requestUtils, userInstance);
 
             case UnpublishPublicationRequest unpublishPublicationRequest ->
                 unpublishPublication(unpublishPublicationRequest,
@@ -300,7 +306,8 @@ public class UpdatePublicationHandler
 
     private Publication updateMetadata(UpdatePublicationRequest input, SortableIdentifier identifierInPath,
                                        Publication existingPublication,
-                                       PublicationPermissionStrategy permissionStrategy, RequestUtils requestUtils)
+                                       PublicationPermissionStrategy permissionStrategy, RequestUtils requestUtils,
+                                       UserInstance userInstance)
         throws ApiGatewayException {
         validateRequest(identifierInPath, input);
         permissionStrategy.authorize(UPDATE);
@@ -310,9 +317,51 @@ public class UpdatePublicationHandler
         var customerApiClient = getCustomerApiClient();
         var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, publicationUpdate.getPublisher().getId());
         validatePublication(publicationUpdate, customer);
+        setRrsOnFiles(publicationUpdate, existingPublication, customer, userInstance.getUsername());
         upsertPublishingRequestIfNeeded(existingPublication, publicationUpdate, customer, requestUtils);
 
         return resourceService.updatePublication(publicationUpdate);
+    }
+
+    private void setRrsOnFiles(Publication publicationUpdate, Publication existingPublication, Customer customer,
+                               String actingUser) throws BadRequestException {
+        var filesOnUpdateRequest = getFilesFromPublication(publicationUpdate);
+        var filesOnExistingPublication = getFilesFromPublication(existingPublication);
+
+        var newFiles =
+            filesOnUpdateRequest.values().stream()
+                .filter(file -> !filesOnExistingPublication.containsKey(file.getIdentifier()))
+                .toList();
+
+        var modifiedFiles = filesOnUpdateRequest.values().stream()
+                                .filter(file -> filesOnExistingPublication.containsKey(file.getIdentifier()))
+                                .filter(file -> !file.equals(filesOnExistingPublication.get(file.getIdentifier())))
+                                .toList();
+
+        for (File newFile : newFiles) {
+            setRrsOnNewFile(newFile, customer.getRightsRetentionStrategy(), actingUser);
+        }
+        for (File newFile : modifiedFiles) {
+            var oldFile = filesOnExistingPublication.get(newFile.getIdentifier());
+            setRrsOnModifiedFile(newFile, oldFile, customer.getRightsRetentionStrategy(), actingUser);
+        }
+    }
+
+    private void setRrsOnModifiedFile(File file, File oldFile, CustomerApiRightsRetention rrs, String actingUser)
+        throws BadRequestException {
+        file.setRightsRetentionStrategy(getRightsRetentionStrategy(rrs, file, actingUser)); //TODO: Call another
+        // method. Perserve overridenBy if non-rrs-field changed
+    }
+
+    private void setRrsOnNewFile(File file, CustomerApiRightsRetention rrs, String actingUser)
+        throws BadRequestException {
+        file.setRightsRetentionStrategy(getRightsRetentionStrategy(rrs, file, actingUser));
+    }
+
+    private static Map<UUID, File> getFilesFromPublication(Publication publicationUpdate) {
+        return Lists.newArrayList(publicationUpdate.getAssociatedArtifacts()).stream()
+                   .filter(File.class::isInstance)
+                   .map(File.class::cast).collect(Collectors.toMap(File::getIdentifier, Function.identity()));
     }
 
     private JavaHttpClientCustomerApiClient getCustomerApiClient() {

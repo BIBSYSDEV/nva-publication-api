@@ -10,10 +10,12 @@ import static no.unit.nva.model.PublicationOperation.DELETE;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
+import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.OVERRIDABLE_RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublicationNonDegree;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypes;
+import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypesAndOverridableRrs;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseNotFound;
 import static no.unit.nva.publication.CustomerApiStubs.stubSuccessfulCustomerResponseAllowingFilesForNoTypes;
@@ -83,6 +85,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -113,6 +116,8 @@ import no.unit.nva.model.UnpublishingNote;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.License;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
@@ -126,6 +131,7 @@ import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
+import no.unit.nva.model.testing.associatedartifacts.util.RightsRetentionStrategyGenerator;
 import no.unit.nva.publication.delete.LambdaDestinationInvocationDetail;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.external.services.UriRetriever;
@@ -943,6 +949,62 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             expectedFilesForApprovalBeforePublicationUpdate, newUnpublishedFile);
 
         assertThat(filesForApproval, containsInAnyOrder(expectedFilesForApproval.toArray()));
+    }
+
+    @Test
+    void shouldSetCustomersConfiguredRrsWhenFileIsNew() throws BadRequestException, IOException, NotFoundException {
+        WireMock.reset();
+
+
+
+        var journalArticle = publication.copy()
+                              .withEntityDescription(randomEntityDescription(JournalArticle.class))
+                              .withAssociatedArtifacts(List.of())
+                              .build();
+
+        var persistedPublication = Resource.fromPublication(journalArticle)
+                                       .persistNew(publicationService, UserInstance.fromPublication(journalArticle));
+        var username = journalArticle.getResourceOwner().getOwner().getValue();
+
+
+        var file = new UnpublishedFile(UUID.randomUUID(),
+                                       RandomDataGenerator.randomString(),
+                                       RandomDataGenerator.randomString(),
+                                       RandomDataGenerator.randomInteger().longValue(),
+                                       RandomDataGenerator.randomUri(),
+                                       false,
+                                       false,
+                                       (Instant)null,
+                                       RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
+                                       RandomDataGenerator.randomString());
+        OverriddenRightsRetentionStrategy userSetRrs = OverriddenRightsRetentionStrategy.create(
+            OVERRIDABLE_RIGHTS_RETENTION_STRATEGY,
+            username);
+
+        file.setRightsRetentionStrategy(userSetRrs);
+
+        var update = persistedPublication.copy().withAssociatedArtifacts(List.of(file)).build();
+        var input = ownerUpdatesOwnPublication(persistedPublication.getIdentifier(), update);
+
+
+        stubSuccessfulTokenResponse();
+        stubCustomerResponseAcceptingFilesForAllTypesAndOverridableRrs(publication.getPublisher().getId());
+
+        updatePublicationHandler.handleRequest(input, output, context);
+        var response = GatewayResponse.fromOutputStream(output, Publication.class);
+        assertThat(response.getStatusCode(), is(equalTo(SC_OK)));
+
+        var updatedPublication = publicationService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+        var insertedFile = (File) updatedPublication.getAssociatedArtifacts().getFirst();
+
+        assertTrue(insertedFile.getRightsRetentionStrategy() instanceof OverriddenRightsRetentionStrategy);
+        assertThat(((OverriddenRightsRetentionStrategy) insertedFile.getRightsRetentionStrategy()).getOverriddenBy(),
+                   Is.is(IsEqual.equalTo(username)));
+    }
+
+    @Test
+    void shouldNotSetCustomersConfiguredRrsWhenFileIsUnchanged() {
+
     }
 
     @Test
