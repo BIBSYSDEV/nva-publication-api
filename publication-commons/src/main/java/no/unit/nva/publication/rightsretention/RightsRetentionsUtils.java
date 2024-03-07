@@ -18,11 +18,10 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 
 public class RightsRetentionsUtils {
     public static RightsRetentionStrategy getRightsRetentionStrategy(Customer customer, File file,
-                                                                     RequestInfo requestInfo)
+                                                                     String username)
         throws BadRequestException {
         var configuredRightsRetention = getConfigFromCustomerDto(customer);
         var overridedRightsRetention = file.getRightsRetentionStrategy();
-        var username = attempt(() -> requestInfo.getUserName()).orElseThrow();
 
         return file.isPublisherAuthority()
                    ? getRrsForPublishedFile(configuredRightsRetention)

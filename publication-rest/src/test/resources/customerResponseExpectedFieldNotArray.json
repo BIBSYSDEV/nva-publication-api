@@ -1,4 +1,7 @@
 {
   "allowFileUploadForTypes": {},
-  "rightsRetentionStrategy": "NullRightsRetentionStrategy"
+  "rightsRetentionStrategy": {
+    "type": "NullRightsRetentionStrategy",
+    "id": "1"
+  }
 }

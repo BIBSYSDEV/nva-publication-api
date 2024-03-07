@@ -63,7 +63,7 @@
   ],
   "publicationWorkflow": "RegistratorPublishesMetadataAndFiles",
   "rightsRetentionStrategy": {
-    "type": "NullRightsRetentionStrategy",
+    "type": "OverridableRightsRetentionStrategy",
     "id": "1"
   },
   "type": "Customer"
