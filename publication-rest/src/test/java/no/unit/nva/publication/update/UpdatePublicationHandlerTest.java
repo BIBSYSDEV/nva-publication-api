@@ -14,6 +14,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescrip
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublicationNonDegree;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypes;
+import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseNotFound;
 import static no.unit.nva.publication.CustomerApiStubs.stubSuccessfulCustomerResponseAllowingFilesForNoTypes;
 import static no.unit.nva.publication.CustomerApiStubs.stubSuccessfulTokenResponse;
@@ -320,11 +321,33 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void handlerCreatesPendingPublishingRequestTicketForPublishedPublicationWhenUpdatingFiles()
+    void handlerCreatesPendingPublishingRequestTicketForPublishedPublicationWhenUpdatingFilesAndUserIsNotAllowedToPublishFiles()
         throws ApiGatewayException, IOException {
         var publishedPublication = TicketTestUtils.createPersistedNonDegreePublication(customerId,
                                                                               PUBLISHED,
                                                                               publicationService);
+
+        var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
+
+        var inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
+        stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
+        updatePublicationHandler.handleRequest(inputStream, output, context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var ticket = ticketService.fetchTicketByResourceIdentifier(publicationUpdate.getPublisher().getId(),
+                                                                   publicationUpdate.getIdentifier(),
+                                                                   PublishingRequestCase.class);
+        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
+        assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertThat(ticket.map(PublishingRequestCase::getStatus).orElseThrow(), is(equalTo(PENDING)));
+    }
+
+    @Test
+    void handlerCreatesApprovedPublishingRequestTicketForPublishedPublicationWhenUpdatingFilesAndInstitutionAllowsUpdatingFiles()
+        throws ApiGatewayException, IOException {
+        var publishedPublication = TicketTestUtils.createPersistedNonDegreePublication(customerId,
+                                                                                       PUBLISHED,
+                                                                                       publicationService);
 
         var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
 
@@ -338,7 +361,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
-        assertThat(ticket.map(PublishingRequestCase::getStatus).orElseThrow(), is(equalTo(PENDING)));
+        assertThat(ticket.map(PublishingRequestCase::getStatus).orElseThrow(),
+                   is(equalTo(COMPLETED)));
     }
 
     @Test
@@ -374,7 +398,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
 
         var inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
-
+        stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
         updatePublicationHandler.handleRequest(inputStream, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
         var tickets = ticketService.fetchTicketsForUser(UserInstance.fromTicket(completedTicket))
