@@ -92,8 +92,10 @@ public class RightsRetentionsApplier {
     private void setRrsOnModifiedFile(File file, File oldFile, Publication publication, CustomerApiRightsRetention rrs,
                                       String actingUser)
         throws BadRequestException {
-        if (!file.getRightsRetentionStrategy().equals(oldFile.getRightsRetentionStrategy())) {
+        if (!file.getRightsRetentionStrategy().getClass().equals(oldFile.getRightsRetentionStrategy().getClass())) {
             file.setRightsRetentionStrategy(getRightsRetentionStrategy(rrs, publication, file, actingUser));
+        } else {
+            file.setRightsRetentionStrategy(oldFile.getRightsRetentionStrategy());
         }
     }
 

@@ -1,7 +1,10 @@
 package no.unit.nva.publication.rightsretention;
 
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.NULL_RIGHTS_RETENTION_STRATEGY;
+import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.OVERRIDABLE_RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.RIGHTS_RETENTION_STRATEGY;
+import static no.unit.nva.publication.rightsretention.RightsRetentionsApplier.rrsApplierForUpdatedPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
@@ -19,8 +22,10 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAbstracts;
@@ -49,15 +54,61 @@ class RightsRetentionsApplierTest {
     public void shouldForceNullRightsRetentionIfNotAcademicArticle(Class<? extends PublicationInstance> publicationType,
                                                                    boolean forceNull) throws BadRequestException {
 
-        var randomPublication = PublicationGenerator.randomPublication(
-            PublicationInstanceBuilder.randomPublicationInstance(publicationType).getClass());
+        var publication = PublicationGenerator.randomPublication(PublicationInstanceBuilder.randomPublicationInstance(publicationType).getClass());
         var file = createFileWithRrs(CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY));
-        addFileToPublication(randomPublication, file);
-        var applier = RightsRetentionsApplier.rrsApplierForNewPublication(randomPublication, getServerConfiguredRrs(RIGHTS_RETENTION_STRATEGY) ,
+        addFilesToPublication(publication, file);
+        var applier = RightsRetentionsApplier.rrsApplierForNewPublication(publication, getServerConfiguredRrs(RIGHTS_RETENTION_STRATEGY) ,
                                                                           randomString());
         applier.handle();
 
         assertThat(file.getRightsRetentionStrategy() instanceof NullRightsRetentionStrategy,is(equalTo(forceNull)));
+    }
+
+    @Test
+    public void shouldNotResetRrsWhenFilesMetadataIsChanged() throws BadRequestException {
+        var originalPublication = PublicationGenerator.randomPublication(AcademicArticle.class);
+        var overriddenBy = randomString();
+        var originalRrs = OverriddenRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY, overriddenBy);
+        var fileId = UUID.randomUUID();
+        var originalFile = createFileWithRrs(fileId, originalRrs);
+        var updatedFile = createFileWithRrs(fileId, originalRrs);
+
+        var updatedPublication = originalPublication.copy()
+            .withAssociatedArtifacts(new AssociatedArtifactList(updatedFile))
+            .build();
+
+        addFilesToPublication(originalPublication, originalFile);
+        var applier = rrsApplierForUpdatedPublication(originalPublication, updatedPublication,
+                                                                              getServerConfiguredRrs(
+                                                                                  NULL_RIGHTS_RETENTION_STRATEGY),
+                                                                              randomString());
+        applier.handle();
+
+        assertThat(updatedFile.getRightsRetentionStrategy(), is(equalTo(originalRrs)));
+    }
+
+    @Test
+    public void shouldNotChangeRrsIfClientSetsNewStrategy() throws BadRequestException {
+        var originalPublication = PublicationGenerator.randomPublication(AcademicArticle.class);
+        var overriddenBy = randomString();
+        var originalRrs = OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, overriddenBy);
+        var updatedRrs = OverriddenRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY, overriddenBy);
+        var fileId = UUID.randomUUID();
+        var originalFile = createFileWithRrs(fileId, originalRrs);
+        var updatedFile = createFileWithRrs(fileId, updatedRrs);
+
+        var updatedPublication = originalPublication.copy()
+                                     .withAssociatedArtifacts(new AssociatedArtifactList(updatedFile))
+                                     .build();
+
+        addFilesToPublication(originalPublication, originalFile);
+        var applier = rrsApplierForUpdatedPublication(originalPublication, updatedPublication,
+                                                      getServerConfiguredRrs(
+                                                          NULL_RIGHTS_RETENTION_STRATEGY),
+                                                      randomString());
+        applier.handle();
+
+        assertThat(updatedFile.getRightsRetentionStrategy(), is(equalTo(originalRrs)));
     }
 
     private CustomerApiRightsRetention getServerConfiguredRrs(
@@ -66,8 +117,8 @@ class RightsRetentionsApplierTest {
                                               randomString());
     }
 
-    private void addFileToPublication(Publication publication, UnpublishedFile file) {
-        publication.setAssociatedArtifacts(new AssociatedArtifactList(file));
+    private void addFilesToPublication(Publication publication, File... files) {
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(files));
     }
 
     public static Stream<Arguments> publicationTypeAndForceNull() {
