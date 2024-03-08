@@ -103,7 +103,7 @@ public enum TicketStatus {
         public static final String COMPLETED_STATUS = "Completed";
         public static final String CLOSED_STATUS = "Closed";
         public static final String REMOVED_STATUS = "Removed";
-        public static final String NOT_APPLICABLE = "Not Applicable";
+        public static final String NOT_APPLICABLE = "NotApplicable";
         public static final String READ_STATUS = "Read";
         public static final String UNREAD_STATUS = "Unread";
         
