@@ -74,6 +74,7 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.model.testing.associatedartifacts.PublishedFileGenerator;
 import no.unit.nva.model.testing.associatedartifacts.UnpublishedFileGenerator;
@@ -82,6 +83,7 @@ import no.unit.nva.publication.events.bodies.CreatePublicationRequest;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.update.PublicationRequest;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
 import no.unit.nva.stubs.WiremockHttpClient;
@@ -458,7 +460,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         var request = createEmptyPublicationRequest();
         request.setAssociatedArtifacts(associatedArtifactsInPublication);
-        request.setEntityDescription(randomPublishableEntityDescription());
+        request.setEntityDescription(randomPublishableEntityDescriptionForAcademicArticle());
 
         var inputStream = createPublicationRequest(request);
 
@@ -497,7 +499,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         var request = createEmptyPublicationRequest();
         request.setAssociatedArtifacts(associatedArtifactsInPublication);
-        request.setEntityDescription(randomPublishableEntityDescription());
+        request.setEntityDescription(randomPublishableEntityDescriptionForAcademicArticle());
 
         var inputStream = createPublicationRequest(request);
 
@@ -714,6 +716,18 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                        new Reference.Builder()
                            .withDoi(RandomDataGenerator.randomDoi())
                            .withPublicationInstance(PublicationInstanceBuilder.randomPublicationInstance())
+                           .build())
+                   .build();
+    }
+
+    private EntityDescription randomPublishableEntityDescriptionForAcademicArticle() {
+        return new EntityDescription.Builder()
+                   .withMainTitle(randomString())
+                   .withReference(
+                       new Reference.Builder()
+                           .withDoi(RandomDataGenerator.randomDoi())
+                           .withPublicationInstance(
+                               PublicationInstanceBuilder.randomPublicationInstance(AcademicArticle.class))
                            .build())
                    .build();
     }

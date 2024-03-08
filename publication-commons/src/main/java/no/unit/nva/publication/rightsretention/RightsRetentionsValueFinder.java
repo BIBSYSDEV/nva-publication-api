@@ -18,7 +18,10 @@ import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
 import nva.commons.apigateway.exceptions.BadRequestException;
 
-public class RightsRetentionsUtils {
+/**
+ * Finds out which RRS a given file should have when a new RRS is set
+ */
+public class RightsRetentionsValueFinder {
     public static RightsRetentionStrategy getRightsRetentionStrategy(CustomerApiRightsRetention configuredRrsOnCustomer,
                                                                      Publication publication, File file,
                                                                      String username)

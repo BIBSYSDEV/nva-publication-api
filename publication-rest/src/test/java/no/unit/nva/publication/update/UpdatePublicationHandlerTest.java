@@ -205,11 +205,11 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     public static final String COMMENT_ON_UNPUBLISHING_REQUEST = "comment";
 
     private final GetExternalClientResponse getExternalClientResponse = mock(GetExternalClientResponse.class);
-    private final Context context = new FakeContext();
-    private ResourceService publicationService;
-    private ByteArrayOutputStream output;
-    private UpdatePublicationHandler updatePublicationHandler;
-    private Publication publication;
+    final Context context = new FakeContext();
+    ResourceService publicationService;
+    ByteArrayOutputStream output;
+    protected UpdatePublicationHandler updatePublicationHandler;
+    Publication publication;
     private Environment environment;
     private IdentityServiceClient identityServiceClient;
     private TicketService ticketService;
@@ -952,121 +952,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             expectedFilesForApprovalBeforePublicationUpdate, newUnpublishedFile);
 
         assertThat(filesForApproval, containsInAnyOrder(expectedFilesForApproval.toArray()));
-    }
-
-    @Test
-    void shouldSetCustomersConfiguredRrsWithOverridenByWhenFileIsNew() throws BadRequestException, IOException,
-                                                                    NotFoundException {
-        WireMock.reset();
-        var academicArticle = publication.copy()
-                              .withEntityDescription(randomEntityDescription(AcademicArticle.class))
-                              .withAssociatedArtifacts(List.of())
-                              .build();
-
-        var persistedPublication = Resource.fromPublication(academicArticle)
-                                       .persistNew(publicationService, UserInstance.fromPublication(academicArticle));
-        var username = academicArticle.getResourceOwner().getOwner().getValue();
-
-
-        OverriddenRightsRetentionStrategy userSetRrs = OverriddenRightsRetentionStrategy.create(
-            OVERRIDABLE_RIGHTS_RETENTION_STRATEGY,
-            username);
-        var file = createFileWithRrs(userSetRrs);
-
-        var update = persistedPublication.copy().withAssociatedArtifacts(List.of(file)).build();
-        var input = ownerUpdatesOwnPublication(persistedPublication.getIdentifier(), update);
-
-
-        stubSuccessfulTokenResponse();
-        stubCustomerResponseAcceptingFilesForAllTypesAndOverridableRrs(publication.getPublisher().getId());
-
-        updatePublicationHandler.handleRequest(input, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Publication.class);
-        assertThat(response.getStatusCode(), is(equalTo(SC_OK)));
-
-        var updatedPublication = publicationService.getPublicationByIdentifier(persistedPublication.getIdentifier());
-        var insertedFile = (File) updatedPublication.getAssociatedArtifacts().getFirst();
-
-        assertTrue(insertedFile.getRightsRetentionStrategy() instanceof OverriddenRightsRetentionStrategy);
-        assertThat(((OverriddenRightsRetentionStrategy) insertedFile.getRightsRetentionStrategy()).getOverriddenBy(),
-                   Is.is(IsEqual.equalTo(username)));
-    }
-
-    @Test
-    void shouldSetNullRightsRetentionWhenChangingAcademicArticleToSomethingElse() throws BadRequestException,
-                                                                                         IOException,
-                                                                              NotFoundException {
-        WireMock.reset();
-
-        OverriddenRightsRetentionStrategy userSetRrs = OverriddenRightsRetentionStrategy.create(
-            OVERRIDABLE_RIGHTS_RETENTION_STRATEGY,
-            randomString());
-        var file = createFileWithRrs(userSetRrs);
-        var academicArticle = publication.copy()
-                                  .withEntityDescription(randomEntityDescription(AcademicArticle.class))
-                                  .withAssociatedArtifacts(List.of(file))
-                                  .build();
-
-        var persistedPublication = Resource.fromPublication(academicArticle)
-                                       .persistNew(publicationService, UserInstance.fromPublication(academicArticle));
-
-        var update = persistedPublication.copy().withEntityDescription(
-            randomEntityDescription(DegreeBachelor.class)
-        ).build();
-        var input = ownerUpdatesOwnPublication(persistedPublication.getIdentifier(), update);
-
-        stubSuccessfulTokenResponse();
-        stubCustomerResponseAcceptingFilesForAllTypesAndOverridableRrs(publication.getPublisher().getId());
-
-        updatePublicationHandler.handleRequest(input, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Publication.class);
-        assertThat(response.getStatusCode(), is(equalTo(SC_OK)));
-
-        var updatedPublication = publicationService.getPublicationByIdentifier(persistedPublication.getIdentifier());
-        var insertedFile = (File) updatedPublication.getAssociatedArtifacts().getFirst();
-
-        assertTrue(insertedFile.getRightsRetentionStrategy() instanceof NullRightsRetentionStrategy);
-    }
-
-    @Test
-    void shouldPreserveRrsOverridenByWhenChangingNonRrsFileMetadata() throws BadRequestException,
-                                                                                         IOException,
-                                                                                         NotFoundException {
-        WireMock.reset();
-        var rrsOverriddenBy = randomString();
-        OverriddenRightsRetentionStrategy userSetRrs = OverriddenRightsRetentionStrategy.create(
-            OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, rrsOverriddenBy
-            );
-        var fileId = UUID.randomUUID();
-        var file = createFileWithRrs(fileId, userSetRrs);
-        var updatedFile = createFileWithRrs(fileId, userSetRrs);
-        var academicArticle = publication.copy()
-                                  .withEntityDescription(randomEntityDescription(AcademicArticle.class))
-                                  .withAssociatedArtifacts(List.of(file))
-                                  .build();
-
-        var persistedPublication = Resource.fromPublication(academicArticle)
-                                       .persistNew(publicationService, UserInstance.fromPublication(academicArticle));
-
-        var update = persistedPublication.copy().withAssociatedArtifacts(
-            List.of(updatedFile)
-        ).build();
-        var input = ownerUpdatesOwnPublication(persistedPublication.getIdentifier(), update);
-
-        stubSuccessfulTokenResponse();
-        stubCustomerResponseAcceptingFilesForAllTypesAndOverridableRrs(publication.getPublisher().getId());
-
-        updatePublicationHandler.handleRequest(input, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Publication.class);
-        assertThat(response.getStatusCode(), is(equalTo(SC_OK)));
-
-        var updatedPublication = publicationService.getPublicationByIdentifier(persistedPublication.getIdentifier());
-        var insertedFile = (File) updatedPublication.getAssociatedArtifacts().getFirst();
-
-        assertTrue(insertedFile.getRightsRetentionStrategy() instanceof OverriddenRightsRetentionStrategy);
-        assertThat(insertedFile.getMimeType(),is(equalTo(updatedFile.getMimeType())));
-        assertThat(((OverriddenRightsRetentionStrategy) insertedFile.getRightsRetentionStrategy()).getOverriddenBy(),
-                   Is.is(IsEqual.equalTo(rrsOverriddenBy)));
     }
 
     private static UnpublishedFile createFileWithRrs(RightsRetentionStrategy rrs) {
@@ -1990,8 +1875,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private InputStream ownerUpdatesOwnPublication(SortableIdentifier publicationIdentifier,
-                                                   Publication publicationUpdate) throws JsonProcessingException {
+    protected InputStream ownerUpdatesOwnPublication(SortableIdentifier publicationIdentifier,
+                                                     Publication publicationUpdate) throws JsonProcessingException {
         return ownerUpdatesOwnPublication(publicationIdentifier, publicationUpdate, null);
     }
 
@@ -2080,7 +1965,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return headers;
     }
 
-    private Publication createNonDegreePublication() {
+    Publication createNonDegreePublication() {
         var publication = randomPublicationNonDegree();
         publication.setIdentifier(SortableIdentifier.next());
         return publication;

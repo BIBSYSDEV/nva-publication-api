@@ -7,13 +7,11 @@ import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.publication.RequestUtil.createUserInstanceFromRequest;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.defaultEventBridgeClient;
-import static no.unit.nva.publication.rightsretention.RightsRetentionsUtils.getRightsRetentionStrategy;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.validation.PublicationUriValidator.isValid;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.google.common.collect.Lists;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.time.Clock;
@@ -22,10 +20,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.api.PublicationResponseElevatedUser;
@@ -43,7 +39,6 @@ import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
-import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
 import no.unit.nva.publication.commons.customer.CustomerNotAvailableException;
 import no.unit.nva.publication.commons.customer.JavaHttpClientCustomerApiClient;
 import no.unit.nva.publication.delete.LambdaDestinationInvocationDetail;
@@ -57,6 +52,7 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
+import no.unit.nva.publication.rightsretention.RightsRetentionsApplier;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.utils.RequestUtils;
@@ -325,74 +321,10 @@ public class UpdatePublicationHandler
 
     private void setRrsOnFiles(Publication publicationUpdate, Publication existingPublication, Customer customer,
                                String actingUser) throws BadRequestException {
-        if (isChangedPublicaionType(publicationUpdate, existingPublication)) {
-            setRrsOnAllFiles(publicationUpdate, existingPublication, customer, actingUser);
-        } else {
-            setRrsOnFilesWhenPublicationTypeIsSame(publicationUpdate, existingPublication, customer,
-                                                   actingUser);
-        }
-    }
+        RightsRetentionsApplier.rrsApplierForUpdatedPublication(existingPublication, publicationUpdate,
+                                                                customer.getRightsRetentionStrategy(), actingUser ).handle();
 
-    private static boolean isChangedPublicaionType(Publication publicationUpdate, Publication existingPublication) {
-        return !publicationUpdate.getEntityDescription().getReference().getPublicationContext().getClass()
-                    .equals(
-                        existingPublication.getEntityDescription().getReference().getPublicationContext().getClass());
-    }
 
-    private void setRrsOnAllFiles(Publication publicationUpdate, Publication existingPublication, Customer customer,
-                     String actingUser) throws BadRequestException {
-        var files = Lists.newArrayList(publicationUpdate.getAssociatedArtifacts()).stream()
-            .filter(File.class::isInstance)
-            .map(File.class::cast)
-                        .toList();
-
-        for (var file : files) {
-            setRrsOnFile(file, publicationUpdate, customer.getRightsRetentionStrategy(), actingUser);
-        }
-    }
-
-    private void setRrsOnFilesWhenPublicationTypeIsSame(Publication publicationUpdate, Publication existingPublication, Customer customer,
-                                                        String actingUser) throws BadRequestException {
-        var filesOnUpdateRequest = getFilesFromPublication(publicationUpdate);
-        var filesOnExistingPublication = getFilesFromPublication(existingPublication);
-
-        var newFiles =
-            filesOnUpdateRequest.values().stream()
-                .filter(file -> !filesOnExistingPublication.containsKey(file.getIdentifier()))
-                .toList();
-
-        var modifiedFiles = filesOnUpdateRequest.values().stream()
-                                .filter(file -> filesOnExistingPublication.containsKey(file.getIdentifier()))
-                                .filter(file -> !file.equals(filesOnExistingPublication.get(file.getIdentifier())))
-                                .toList();
-
-        for (File newFile : newFiles) {
-            setRrsOnFile(newFile, publicationUpdate, customer.getRightsRetentionStrategy(), actingUser);
-        }
-        for (File newFile : modifiedFiles) {
-            var oldFile = filesOnExistingPublication.get(newFile.getIdentifier());
-            setRrsOnModifiedFile(newFile, oldFile, publicationUpdate, customer.getRightsRetentionStrategy(),
-                                 actingUser);
-        }
-    }
-
-    private void setRrsOnModifiedFile(File file, File oldFile, Publication publication, CustomerApiRightsRetention rrs,
-                                      String actingUser)
-        throws BadRequestException {
-        if (!file.getRightsRetentionStrategy().equals(oldFile.getRightsRetentionStrategy())) {
-            file.setRightsRetentionStrategy(getRightsRetentionStrategy(rrs, publication, file, actingUser));
-        }
-    }
-
-    private void setRrsOnFile(File file, Publication publication, CustomerApiRightsRetention rrs, String actingUser)
-        throws BadRequestException {
-        file.setRightsRetentionStrategy(getRightsRetentionStrategy(rrs, publication, file, actingUser));
-    }
-
-    private static Map<UUID, File> getFilesFromPublication(Publication publicationUpdate) {
-        return Lists.newArrayList(publicationUpdate.getAssociatedArtifacts()).stream()
-                   .filter(File.class::isInstance)
-                   .map(File.class::cast).collect(Collectors.toMap(File::getIdentifier, Function.identity()));
     }
 
     private JavaHttpClientCustomerApiClient getCustomerApiClient() {

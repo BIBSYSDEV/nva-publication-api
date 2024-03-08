@@ -1,6 +1,5 @@
 package no.unit.nva.publication.create;
 
-import static no.unit.nva.publication.rightsretention.RightsRetentionsUtils.getRightsRetentionStrategy;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -19,8 +18,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
-import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.commons.customer.CustomerNotAvailableException;
@@ -29,6 +26,7 @@ import no.unit.nva.publication.events.bodies.CreatePublicationRequest;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.rightsretention.RightsRetentionsApplier;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.validation.DefaultPublicationValidator;
 import no.unit.nva.publication.validation.PublicationValidationException;
@@ -102,7 +100,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     @Override
     protected PublicationResponse processInput(CreatePublicationRequest input, RequestInfo requestInfo,
                                                Context context) throws ApiGatewayException {
-        if (isThesisAndHasNoRightsToPublishThesAndIsNotExternalClient(input, requestInfo)) {
+        if (isThesisAndHasNoRightsToPublishThesisAndIsNotExternalClient(input, requestInfo)) {
             throw new ForbiddenException();
         }
         var newPublication = Optional.ofNullable(input)
@@ -116,7 +114,8 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
 
         validatePublication(newPublication, customer);
 
-        setRightsRetention(newPublication, customer, customerAwareUserContext.username());
+        RightsRetentionsApplier.rrsApplierForNewPublication(newPublication, customer.getRightsRetentionStrategy(),
+                                                            customerAwareUserContext.username()).handle();
 
         var createdPublication = Resource.fromPublication(newPublication)
                                      .persistNew(publicationService, customerAwareUserContext.userInstance());
@@ -124,23 +123,6 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
 
         return PublicationResponse.fromPublication(createdPublication);
     }
-
-    private void setRightsRetention(Publication newPublication, Customer customer, String username) throws BadRequestException {
-        for (AssociatedArtifact associatedArtifact : newPublication.getAssociatedArtifacts()) {
-            if (associatedArtifact instanceof File) {
-                File file = (File) associatedArtifact;
-                setRightsRetentionOnFile(customer, newPublication, file, username);
-            }
-        }
-    }
-
-    private void setRightsRetentionOnFile(Customer customer, Publication publication, File file, String username)
-        throws BadRequestException {
-        file.setRightsRetentionStrategy(getRightsRetentionStrategy(customer.getRightsRetentionStrategy(), publication
-            , file,
-                                                                   username));
-    }
-
 
     private JavaHttpClientCustomerApiClient getJavaHttpClientCustomerApiClient() {
         var backendClientCredentials = secretsReader.fetchClassSecret(
@@ -202,7 +184,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         );
     }
 
-    private boolean isThesisAndHasNoRightsToPublishThesAndIsNotExternalClient(CreatePublicationRequest request,
+    private boolean isThesisAndHasNoRightsToPublishThesisAndIsNotExternalClient(CreatePublicationRequest request,
                                                                               RequestInfo requestInfo) {
 
         return isThesis(request) && !requestInfo.userIsAuthorized(MANAGE_DEGREE) && !requestInfo.clientIsThirdParty();
