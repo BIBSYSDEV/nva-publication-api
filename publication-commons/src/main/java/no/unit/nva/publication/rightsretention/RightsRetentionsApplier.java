@@ -14,12 +14,12 @@ import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
 import nva.commons.apigateway.exceptions.BadRequestException;
 
-public class RightsRetentionsApplier {
+public final class RightsRetentionsApplier {
 
-    private Optional<Publication> existingPublication;
-    private Publication updatedPublication;
-    private CustomerApiRightsRetention configuredRrsOnCustomer;
-    private String actingUser;
+    private final Optional<Publication> existingPublication;
+    private final Publication updatedPublication;
+    private final CustomerApiRightsRetention configuredRrsOnCustomer;
+    private final String actingUser;
 
     private RightsRetentionsApplier(Optional<Publication> existingPublication,
                                     Publication updatedPublication,
