@@ -22,6 +22,9 @@ import nva.commons.apigateway.exceptions.BadRequestException;
  * Finds out which RRS a given file should have when a new RRS is set
  */
 public class RightsRetentionsValueFinder {
+
+    public static final String ILLEGAL_RIGHTS_RETENTION_STRATEGY_ON_FILE = "Illegal RightsRetentionStrategy on file ";
+
     public static RightsRetentionStrategy getRightsRetentionStrategy(CustomerApiRightsRetention configuredRrsOnCustomer,
                                                                      Publication publication, File file,
                                                                      String username)
@@ -31,7 +34,7 @@ public class RightsRetentionsValueFinder {
 
         return rrsIsIrrelevant(file, publication)
                    ? NullRightsRetentionStrategy.create(configuredRightsRetention)
-                   : getRrsForUnPublishedFile(configuredRightsRetention, fileRightsRetention, username);
+                   : getRrsForUnPublishedFile(file, configuredRightsRetention, fileRightsRetention, username);
     }
 
     private static boolean rrsIsIrrelevant(File file, Publication publication) {
@@ -44,18 +47,18 @@ public class RightsRetentionsValueFinder {
         return (publication.getEntityDescription().getReference().getPublicationInstance() instanceof AcademicArticle);
     }
 
-    private static RightsRetentionStrategy getRrsForUnPublishedFile(RightsRetentionStrategyConfiguration configuredRightsRetention,
+    private static RightsRetentionStrategy getRrsForUnPublishedFile(File file, RightsRetentionStrategyConfiguration rrsConfig,
                                                                     RightsRetentionStrategy fileRightsRetention,
                                                                     String username) throws BadRequestException {
         var rrs = switch (fileRightsRetention) {
-            case OverriddenRightsRetentionStrategy strategy -> OverriddenRightsRetentionStrategy.create(configuredRightsRetention, username);
-            case NullRightsRetentionStrategy strategy -> NullRightsRetentionStrategy.create(configuredRightsRetention);
-            case CustomerRightsRetentionStrategy strategy -> CustomerRightsRetentionStrategy.create(configuredRightsRetention);
-            case FunderRightsRetentionStrategy strategy -> FunderRightsRetentionStrategy.create(configuredRightsRetention);
+            case OverriddenRightsRetentionStrategy strategy -> OverriddenRightsRetentionStrategy.create(rrsConfig, username);
+            case NullRightsRetentionStrategy strategy -> NullRightsRetentionStrategy.create(rrsConfig);
+            case CustomerRightsRetentionStrategy strategy -> CustomerRightsRetentionStrategy.create(rrsConfig);
+            case FunderRightsRetentionStrategy strategy -> FunderRightsRetentionStrategy.create(rrsConfig);
             default -> throw new IllegalArgumentException("Unknown RightsRetentionStrategy type "+ fileRightsRetention);
         };
         if (!isValid(rrs)) {
-            throw new BadRequestException("Illegal RightsRetentionStrategy on file");
+            throw new BadRequestException(ILLEGAL_RIGHTS_RETENTION_STRATEGY_ON_FILE + file.getIdentifier());
         }
         return rrs;
     }

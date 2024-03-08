@@ -1,26 +1,23 @@
 package no.unit.nva.publication.rightsretention;
 
-import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.NULL_RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.OVERRIDABLE_RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.publication.rightsretention.RightsRetentionsApplier.rrsApplierForUpdatedPublication;
+import static no.unit.nva.publication.rightsretention.RightsRetentionsValueFinder.ILLEGAL_RIGHTS_RETENTION_STRATEGY_ON_FILE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
-import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
-import static nva.commons.apigateway.AccessRight.SUPPORT;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.*;
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.FunderRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
@@ -34,13 +31,7 @@ import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
-import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.GeneralSupportRequest;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.testutils.RandomDataGenerator;
-import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -62,6 +53,25 @@ class RightsRetentionsApplierTest {
         applier.handle();
 
         assertThat(file.getRightsRetentionStrategy() instanceof NullRightsRetentionStrategy,is(equalTo(forceNull)));
+    }
+
+    @ParameterizedTest
+    @MethodSource("rrsConfigIsValid")
+    public void shouldThrowBadRequestWhenFileHasInvalidRrs(RightsRetentionStrategy rrs, boolean isValid) {
+        var publication = PublicationGenerator.randomPublication(AcademicArticle.class);
+        var file = createFileWithRrs(rrs);
+        addFilesToPublication(publication, file);
+        var applier = RightsRetentionsApplier.rrsApplierForNewPublication(publication, getServerConfiguredRrs(rrs.getConfiguredType()) ,
+                                                                          randomString());
+
+        if (isValid) {
+            assertDoesNotThrow(applier::handle);
+        } else {
+            var e = assertThrows(BadRequestException.class, applier::handle);
+            assertThat(e.getMessage(), containsString(ILLEGAL_RIGHTS_RETENTION_STRATEGY_ON_FILE));
+            assertThat(e.getMessage(), containsString(file.getIdentifier().toString()));
+        }
+
     }
 
     @Test
@@ -125,6 +135,29 @@ class RightsRetentionsApplierTest {
         return Stream.of(Arguments.of(AcademicArticle.class, false),
                          Arguments.of(BookAbstracts.class, true),
                          Arguments.of(DegreeBachelor.class, true)
+        );
+    }
+
+    //            case OverriddenRightsRetentionStrategy strategy -> Set.of(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY);
+    //            case NullRightsRetentionStrategy strategy -> Set.of(NULL_RIGHTS_RETENTION_STRATEGY);
+    //            case CustomerRightsRetentionStrategy strategy -> Set.of(RIGHTS_RETENTION_STRATEGY, OVERRIDABLE_RIGHTS_RETENTION_STRATEGY);
+    //            case FunderRightsRetentionStrategy strategy -> Set.of(NULL_RIGHTS_RETENTION_STRATEGY, OVERRIDABLE_RIGHTS_RETENTION_STRATEGY);
+
+    public static Stream<Arguments> rrsConfigIsValid() {
+        return Stream.of(Arguments.of(OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY,
+                                                                               ""), true),
+                         Arguments.of(OverriddenRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY, ""), false),
+                         Arguments.of(OverriddenRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY, ""), false),
+                         Arguments.of(FunderRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY), true),
+                         Arguments.of(FunderRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY), false),
+                         Arguments.of(FunderRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY), true),
+                         Arguments.of(NullRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY), false),
+                         Arguments.of(NullRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY), false),
+                         Arguments.of(NullRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY), true),
+                         Arguments.of(CustomerRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY), true),
+                         Arguments.of(CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY), true),
+                         Arguments.of(CustomerRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY), false)
+
         );
     }
 

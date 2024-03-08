@@ -64,7 +64,7 @@
   "publicationWorkflow": "RegistratorPublishesMetadataAndFiles",
   "rightsRetentionStrategy": {
     "type": "OverridableRightsRetentionStrategy",
-    "id": "1"
+    "id": "https://example.org/1"
   },
   "type": "Customer"
 }

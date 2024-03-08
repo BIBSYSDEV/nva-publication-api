@@ -122,7 +122,8 @@ public class JavaHttpClientCustomerApiClientTest {
                 "allowFileUploadForTypes": ["someType"],
                 "publicationWorkflow": "myWorkflow",
                 "rightsRetentionStrategy": {
-                    "type": "NullRightsRetentionStrategy"
+                    "type": "NullRightsRetentionStrategy",
+                     "id": "https://example.org/1"
                     }
             }
             """;
