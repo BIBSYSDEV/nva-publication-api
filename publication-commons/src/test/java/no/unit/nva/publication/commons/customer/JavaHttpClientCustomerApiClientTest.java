@@ -51,6 +51,7 @@ public class JavaHttpClientCustomerApiClientTest {
         assertThat(customer.getPublicationWorkflow(), is(equalTo("myWorkflow")));
         assertThat(customer.getAllowFileUploadForTypes(), containsInAnyOrder("someType"));
         assertThat(customer.getRightsRetentionStrategy().getType(), is(equalTo("NullRightsRetentionStrategy")));
+        assertThat(customer.getRightsRetentionStrategy().getId(), is(equalTo("https://example.org/1")));
     }
 
     private static JavaHttpClientCustomerApiClient getJavaHttpClientCustomerApiClient(HttpClient httpClient) {

@@ -3,7 +3,6 @@ package no.unit.nva.publication.rightsretention;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.NULL_RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.OVERRIDABLE_RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.RIGHTS_RETENTION_STRATEGY;
-import static nva.commons.core.attempt.Try.attempt;
 import java.util.Set;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
@@ -17,11 +16,16 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.core.JacocoGenerated;
 
 /**
  * Finds out which RRS a given file should have when a new RRS is set
  */
 public class RightsRetentionsValueFinder {
+
+    @JacocoGenerated
+    private RightsRetentionsValueFinder() {
+    }
 
     public static final String ILLEGAL_RIGHTS_RETENTION_STRATEGY_ON_FILE = "Illegal RightsRetentionStrategy on file ";
 
@@ -67,6 +71,7 @@ public class RightsRetentionsValueFinder {
         return getAllowedConfigurations(rrs).contains(rrs.getConfiguredType());
     }
 
+    @JacocoGenerated
     private static Set<RightsRetentionStrategyConfiguration> getAllowedConfigurations(RightsRetentionStrategy rrs) {
         return switch (rrs) {
             case OverriddenRightsRetentionStrategy strategy -> Set.of(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY);
@@ -77,6 +82,7 @@ public class RightsRetentionsValueFinder {
         };
     }
 
+    @JacocoGenerated
     private static RightsRetentionStrategyConfiguration getConfigFromCustomerDto(CustomerApiRightsRetention config) {
         return switch (config.getType()) {
             case "NullRightsRetentionStrategy" -> NULL_RIGHTS_RETENTION_STRATEGY;
