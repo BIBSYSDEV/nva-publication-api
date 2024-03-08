@@ -83,6 +83,8 @@ public class Resource implements Entity {
     private List<PublicationNoteBase> publicationNotes;
     @JsonProperty
     private URI duplicateOf;
+    @JsonProperty
+    private Set<URI> curatingInstitutions;
 
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         return emptyResource(userInstance.getUser(), userInstance.getCustomerId(),
@@ -139,6 +141,7 @@ public class Resource implements Entity {
                    .withRightsHolder(publication.getRightsHolder())
                    .withPublicationNotes(publication.getPublicationNotes())
                    .withDuplicateOf(publication.getDuplicateOf())
+                   .withCuratingInstitutions(publication.getCuratingInstitutions())
                    .build();
     }
 
@@ -166,6 +169,7 @@ public class Resource implements Entity {
                 .withImportStatus(importCandidate.getImportStatus())
                 .withPublicationNotes(importCandidate.getPublicationNotes())
                 .withDuplicateOf(importCandidate.getDuplicateOf())
+                .withCuratingInstitutions(importCandidate.getCuratingInstitutions())
                 .build();
     }
 
@@ -237,6 +241,14 @@ public class Resource implements Entity {
         this.publicationNotes = publicationNotes;
     }
 
+    public Set<URI> getCuratingInstitutions() {
+        return nonNull(this.curatingInstitutions) ? this.curatingInstitutions : Collections.emptySet();
+    }
+
+    public void setCuratingInstitutions(Set<URI> curatingInstitutions) {
+        this.curatingInstitutions = curatingInstitutions;
+    }
+
     @Override
     public Publication toPublication(ResourceService resourceService) {
         return toPublication();
@@ -264,6 +276,7 @@ public class Resource implements Entity {
                    .withRightsHolder(getRightsHolder())
                    .withPublicationNotes(getPublicationNotes())
                    .withDuplicateOf(getDuplicateOf())
+                   .withCuratingInstitutions(getCuratingInstitutions())
                    .build();
     }
 
@@ -290,6 +303,7 @@ public class Resource implements Entity {
                 .withImportStatus(getImportStatus().orElse(null))
                 .withPublicationNotes(getPublicationNotes())
                 .withDuplicateOf(getDuplicateOf())
+                .withCuratingInstitutions(getCuratingInstitutions())
                 .build();
     }
 
@@ -445,7 +459,8 @@ public class Resource implements Entity {
                    .withFundings(getFundings())
                    .withPublicationNotes(getPublicationNotes())
                    .withDuplicateOf(getDuplicateOf())
-                   .withRightsHolder(getRightsHolder());
+                   .withRightsHolder(getRightsHolder())
+                   .withCuratingInstitutions(getCuratingInstitutions());
     }
 
     public List<URI> getSubjects() {
@@ -484,7 +499,7 @@ public class Resource implements Entity {
                             getModifiedDate(), getPublishedDate(), getIndexedDate(), getLink(),
                             getProjects(), getEntityDescription(), getDoi(), getHandle(), getAdditionalIdentifiers(),
                             getSubjects(), getFundings(), getAssociatedArtifacts(), getPublicationNotes(),
-                            getDuplicateOf());
+                            getDuplicateOf(), getCuratingInstitutions());
     }
 
     /**
@@ -521,7 +536,8 @@ public class Resource implements Entity {
                && Objects.equals(getFundings(), resource.getFundings())
                && Objects.equals(getPublicationNotes(), resource.getPublicationNotes())
                && Objects.equals(getDuplicateOf(), resource.getDuplicateOf())
-               && Objects.equals(getSubjects(), resource.getSubjects());
+               && Objects.equals(getSubjects(), resource.getSubjects())
+               && Objects.equals(getCuratingInstitutions(), resource.getCuratingInstitutions());
     }
 
     public Stream<TicketEntry> fetchAllTickets(ResourceService resourceService) {

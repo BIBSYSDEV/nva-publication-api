@@ -54,3 +54,4 @@ modifiedDate
 link
 additionalIdentifiers
 rightsHolder
+curatingInstitutions
