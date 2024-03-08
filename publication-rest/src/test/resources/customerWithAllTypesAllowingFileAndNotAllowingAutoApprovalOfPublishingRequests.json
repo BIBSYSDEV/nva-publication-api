@@ -62,5 +62,9 @@
     "ExhibitionProduction"
   ],
   "publicationWorkflow": "RegistratorPublishesMetadataOnly",
+  "rightsRetentionStrategy": {
+    "type": "OverridableRightsRetentionStrategy",
+    "id": "https://example.org/1"
+  },
   "type": "Customer"
 }
