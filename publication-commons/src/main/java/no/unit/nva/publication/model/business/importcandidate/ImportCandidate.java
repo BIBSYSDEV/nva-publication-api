@@ -58,7 +58,8 @@ public class ImportCandidate extends Publication implements JsonSerializable {
                    .withFundings(getFundings())
                    .withPublicationNotes(getPublicationNotes())
                    .withImportStatus(getImportStatus())
-                   .withRightsHolder(getRightsHolder());
+                   .withRightsHolder(getRightsHolder())
+                   .withCuratingInstitutions(getCuratingInstitutions());
     }
 
     @Override
@@ -136,6 +137,7 @@ public class ImportCandidate extends Publication implements JsonSerializable {
             importCandidate.setRightsHolder(publication.getRightsHolder());
             importCandidate.setPublicationNotes(publication.getPublicationNotes());
             importCandidate.setDuplicateOf(publication.getDuplicateOf());
+            importCandidate.setCuratingInstitutions(publication.getCuratingInstitutions());
             return this;
         }
 
@@ -241,6 +243,11 @@ public class ImportCandidate extends Publication implements JsonSerializable {
 
         public Builder withDuplicateOf(URI duplicateOf) {
             this.importCandidate.setDuplicateOf(duplicateOf);
+            return this;
+        }
+
+        public Builder withCuratingInstitutions(Set<URI> curatingInstitutions) {
+            this.importCandidate.setCuratingInstitutions(curatingInstitutions);
             return this;
         }
 

@@ -478,14 +478,21 @@ public class UpdatePublicationHandler
     private void persistPendingPublishingRequest(Publication publicationUpdate, Customer customer, RequestUtils requestUtils) {
         attempt(() -> TicketEntry.requestNewTicket(publicationUpdate, PublishingRequestCase.class))
             .map(publishingRequest -> injectPublishingWorkflow((PublishingRequestCase) publishingRequest, customer))
-            .map(publishingRequest -> persistPublishingRequest(publicationUpdate, requestUtils, publishingRequest));
+            .map(publishingRequest -> persistPublishingRequest(publicationUpdate, requestUtils, customer, publishingRequest));
     }
 
     private TicketEntry persistPublishingRequest(Publication publicationUpdate, RequestUtils requestUtils,
-                                       PublishingRequestCase publishingRequest) throws ApiGatewayException {
+                                                 Customer customer, PublishingRequestCase publishingRequest)
+        throws ApiGatewayException {
         return requestUtils.hasAccessRight(AccessRight.MANAGE_PUBLISHING_REQUESTS)
+               || useIsAllowedToPublishFiles(customer)
                    ? publishingRequest.persistAutoComplete(ticketService, publicationUpdate)
                    : publishingRequest.persistNewTicket(ticketService);
+    }
+
+    private static boolean useIsAllowedToPublishFiles(Customer customer) {
+        return PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES.getValue()
+                   .equals(customer.getPublicationWorkflow());
     }
 
     private PublishingRequestCase injectPublishingWorkflow(PublishingRequestCase ticket, Customer customer) {

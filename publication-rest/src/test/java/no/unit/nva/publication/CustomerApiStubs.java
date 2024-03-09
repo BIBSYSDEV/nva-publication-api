@@ -45,6 +45,10 @@ public class CustomerApiStubs {
         stubCustomSuccessfulCustomerResponse(customerId, customerAcceptingFilesForAllTypes());
     }
 
+    public static void stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(URI customerId) {
+        stubCustomSuccessfulCustomerResponse(customerId, customerAcceptingFilesForAllTypesNotAllowingAutoPublishingFiles());
+    }
+
     public static void stubSuccessfulCustomerResponseAllowingFilesForNoTypes(URI customerId) {
         stubCustomSuccessfulCustomerResponse(customerId, customerAcceptingFilesForNoTypes());
     }
@@ -60,6 +64,11 @@ public class CustomerApiStubs {
     private static String customerAcceptingFilesForAllTypes() {
         return IoUtils.stringFromResources(
             Path.of("customerWithAllTypesAllowingFileAndAllowingAutoApprovalOfPublishingRequests.json"));
+    }
+
+    private static String customerAcceptingFilesForAllTypesNotAllowingAutoPublishingFiles() {
+        return IoUtils.stringFromResources(
+            Path.of("customerWithAllTypesAllowingFileAndNotAllowingAutoApprovalOfPublishingRequests.json"));
     }
 
     private static String customerAcceptingFilesForNoTypes() {
