@@ -3,7 +3,6 @@ package no.unit.nva.publication.rightsretention;
 import static no.unit.nva.publication.rightsretention.RightsRetentionsValueFinder.getRightsRetentionStrategy;
 import com.google.common.collect.Lists;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
