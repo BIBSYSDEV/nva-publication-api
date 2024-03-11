@@ -3,8 +3,11 @@ package no.unit.nva.publication.rightsretention;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.NULL_RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.OVERRIDABLE_RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.RIGHTS_RETENTION_STRATEGY;
+import java.util.Optional;
 import java.util.Set;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.FunderRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
@@ -30,7 +33,8 @@ public class RightsRetentionsValueFinder {
     public static final String ILLEGAL_RIGHTS_RETENTION_STRATEGY_ON_FILE = "Illegal RightsRetentionStrategy on file ";
 
     public static RightsRetentionStrategy getRightsRetentionStrategy(CustomerApiRightsRetention configuredRrsOnCustomer,
-                                                                     Publication publication, File file,
+                                                                     Publication publication,
+                                                                     File file,
                                                                      String username)
         throws BadRequestException {
         var configuredRightsRetention = getConfigFromCustomerDto(configuredRrsOnCustomer);
@@ -48,7 +52,12 @@ public class RightsRetentionsValueFinder {
     }
 
     private static boolean isAcademicArticle(Publication publication) {
-        return (publication.getEntityDescription().getReference().getPublicationInstance() instanceof AcademicArticle);
+        return Optional.ofNullable(publication)
+                   .map(Publication::getEntityDescription)
+                   .map(EntityDescription::getReference)
+                   .map(Reference::getPublicationInstance)
+                   .map(instance -> instance instanceof AcademicArticle)
+                   .orElse(false);
     }
 
     private static RightsRetentionStrategy getRrsForUnPublishedFile(File file, RightsRetentionStrategyConfiguration rrsConfig,
