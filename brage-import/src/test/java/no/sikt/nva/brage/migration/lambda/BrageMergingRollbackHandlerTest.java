@@ -1,8 +1,9 @@
 package no.sikt.nva.brage.migration.lambda;
 
-import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.UPDATED_PUBLICATIONS_REPORTS_PATH;
+import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.UPDATE_REPORTS_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageMergingRollbackHandler.ERROR_MERGING_ROLLBACK;
 import static no.sikt.nva.brage.migration.lambda.BrageMergingRollbackHandler.NEWER_VERSION_OF_THE_PUBLICATION_EXISTS;
+import static no.sikt.nva.brage.migration.lambda.BrageMergingRollbackHandler.SUCCESS_MERGING_ROLLBACK;
 import static no.sikt.nva.brage.migration.lambda.BrageMergingRollbackHandler.TOPIC;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
@@ -11,8 +12,9 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -29,12 +31,12 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
-import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
@@ -127,6 +129,59 @@ public class BrageMergingRollbackHandlerTest extends ResourcesLocalTest {
         brageMergingRollbackHandler.processInput(eventReference, awsEventBridgeEvent, CONTEXT);
     }
 
+    @Test
+    void shouldRollbackPublicationInDatabaseWhenReportPassesChecks() throws IOException, NotFoundException {
+        var newImageInReport = resourceService.createPublicationFromImportedEntry(
+            PublicationGenerator.randomPublication());
+        var oldImageInReport = createFromNewImage(newImageInReport);
+        var mergeReport = new BrageMergingReport(oldImageInReport, newImageInReport);
+
+        var eventReference = createEventReference(mergeReport.toString());
+        var awsEventBridgeEvent = createAwsEventBridgeEvent(eventReference);
+        brageMergingRollbackHandler.processInput(eventReference, awsEventBridgeEvent, CONTEXT);
+
+        var actualPublicationAfterRollback =
+            resourceService.getPublicationByIdentifier(newImageInReport.getIdentifier());
+        oldImageInReport.setModifiedDate(actualPublicationAfterRollback.getModifiedDate());
+        oldImageInReport.setCreatedDate(actualPublicationAfterRollback.getCreatedDate());
+        oldImageInReport.setPublishedDate(actualPublicationAfterRollback.getPublishedDate());
+        assertThat(actualPublicationAfterRollback, is(samePropertyValuesAs(oldImageInReport)));
+    }
+
+    @Test
+    void shouldPersistRollbackReportWhenPublicationWasRolledBackInDatabase() throws IOException {
+        var newImageInReport = resourceService.createPublicationFromImportedEntry(
+            PublicationGenerator.randomPublication());
+        var oldImageInReport = createFromNewImage(newImageInReport);
+        var mergeReport = new BrageMergingReport(oldImageInReport, newImageInReport);
+
+        var eventReference = createEventReference(mergeReport.toString());
+        var awsEventBridgeEvent = createAwsEventBridgeEvent(eventReference);
+        brageMergingRollbackHandler.processInput(eventReference, awsEventBridgeEvent, CONTEXT);
+
+        var rollbackReport = extractSuccessReportFromS3(eventReference);
+        assertThat(rollbackReport, is(notNullValue()));
+    }
+
+    private String extractSuccessReportFromS3(EventReference eventReference) {
+        var expectedReportUri = createExpectedReportUriWrapper(eventReference);
+        return s3Driver.getFile(expectedReportUri.toS3bucketPath());
+    }
+
+    private UriWrapper createExpectedReportUriWrapper(EventReference eventReference) {
+        var successUri = eventReference.getUri().toString().replace(UPDATE_REPORTS_PATH, SUCCESS_MERGING_ROLLBACK);
+        return UriWrapper.fromUri(successUri);
+    }
+
+    private Publication createFromNewImage(Publication newImageInReport) {
+        var oldImage = PublicationGenerator.randomPublication();
+        oldImage.setIdentifier(newImageInReport.getIdentifier());
+        oldImage.setResourceOwner(newImageInReport.getResourceOwner());
+        oldImage.setStatus(newImageInReport.getStatus());
+        oldImage.setPublisher(newImageInReport.getPublisher());
+        return oldImage;
+    }
+
     private URI mergeReportUri() {
         var unixpath = getRandomMergeReportUnixPath();
         var uriwrapper = new UriWrapper("s3", INPUT_BUCKET_NAME);
@@ -144,7 +199,7 @@ public class BrageMergingRollbackHandlerTest extends ResourcesLocalTest {
 
     private UriWrapper constructErrorFileUri(EventReference event,
                                              String exceptionSimpleName) {
-        var errorReport = event.getUri().toString().replace(UPDATED_PUBLICATIONS_REPORTS_PATH,
+        var errorReport = event.getUri().toString().replace(UPDATE_REPORTS_PATH,
                                                             ERROR_MERGING_ROLLBACK + "/" + exceptionSimpleName);
         return UriWrapper.fromUri(errorReport);
     }
@@ -157,7 +212,7 @@ public class BrageMergingRollbackHandlerTest extends ResourcesLocalTest {
     }
 
     private UnixPath getRandomMergeReportUnixPath() {
-        return UnixPath.of(UPDATED_PUBLICATIONS_REPORTS_PATH +
+        return UnixPath.of(UPDATE_REPORTS_PATH +
                            "/" + randomInstitutionShortName() +
                            "/" + randomInstant().toString() +
                            "/" + randomHandlePart() +
