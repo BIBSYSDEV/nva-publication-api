@@ -42,19 +42,19 @@ public final class RightsRetentionsApplier {
     }
 
     private static boolean isChangedPublicationType(Publication publicationUpdate, Publication existingPublication) {
-        var newContext = Optional.ofNullable(publicationUpdate)
-                             .map(Publication::getEntityDescription)
-                             .map(EntityDescription::getReference)
-                             .map(Reference::getPublicationContext)
-                             .orElse(null);
-        var existingContext = Optional.ofNullable(existingPublication)
-                                  .map(Publication::getEntityDescription)
-                                  .map(EntityDescription::getReference)
-                                  .map(Reference::getPublicationContext)
-                                  .orElse(null);
-        return Objects.nonNull(newContext)
-               && Objects.nonNull(existingContext)
-               && !newContext.getClass().equals(existingContext.getClass());
+        var newInstance = Optional.ofNullable(publicationUpdate)
+                              .map(Publication::getEntityDescription)
+                              .map(EntityDescription::getReference)
+                              .map(Reference::getPublicationInstance);
+        var existingInstance = Optional.ofNullable(existingPublication)
+                                   .map(Publication::getEntityDescription)
+                                   .map(EntityDescription::getReference)
+                                   .map(Reference::getPublicationInstance);
+        var isUpdatingNewPublication = existingInstance.isEmpty() && newInstance.isPresent();
+        var isUpdatingExistingPublication = existingInstance.isPresent()
+                                            && newInstance.isPresent()
+                                            && !newInstance.get().getClass().equals(existingInstance.get().getClass());
+        return isUpdatingExistingPublication || isUpdatingNewPublication;
     }
 
     private void setRrsOnAllFiles(Publication publicationUpdate, CustomerApiRightsRetention rrsConfig,
