@@ -61,7 +61,7 @@
     "LiteraryArts",
     "ExhibitionProduction"
   ],
-  "publicationWorkflow": "RegistratorPublishesMetadataOnly",
+  "publicationWorkflow": "RegistratorPublishesMetadataAndFiles",
   "rightsRetentionStrategy": {
     "type": "OverridableRightsRetentionStrategy",
     "id": "https://example.org/1"
