@@ -565,8 +565,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     void shouldReturnAllTicketsForPublication() throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var originalTickets = createAllTypesOfTickets(publication);
-        var fetchedTickets = Resource.fromPublication(publication)
-                                 .fetchAllTickets(resourceService)
+        var fetchedTickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication))
                                  .collect(Collectors.toList());
         assertThat(fetchedTickets, containsInAnyOrder(originalTickets.toArray(TicketEntry[]::new)));
     }
@@ -605,8 +604,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     @Test
     void shouldReturnEmptyTicketListWhenPublicationHasNoTickets() throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
-        var fetchedTickets = Resource.fromPublication(publication)
-                                 .fetchAllTickets(resourceService)
+        var fetchedTickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication))
                                  .collect(Collectors.toList());
         assertThat(fetchedTickets, is(empty()));
     }

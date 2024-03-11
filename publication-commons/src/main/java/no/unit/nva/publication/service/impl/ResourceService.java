@@ -153,7 +153,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     @JacocoGenerated
-    public void setStatusOnNewPublication(UserInstance userInstance,
+    private void setStatusOnNewPublication(UserInstance userInstance,
                                           Publication fromPublication,
                                           Resource toResource) throws BadRequestException {
         var status = userInstance.isExternalClient()
@@ -165,13 +165,6 @@ public class ResourceService extends ServiceWithTransactions {
         }
 
         toResource.setStatus(status);
-    }
-
-    public Publication createPublicationWithPredefinedCreationDate(Publication inputData) {
-        Resource newResource = Resource.fromPublication(inputData);
-        newResource.setIdentifier(identifierSupplier.get());
-        newResource.setCreatedDate(inputData.getCreatedDate());
-        return insertResource(newResource);
     }
 
     public Publication createPublicationFromImportedEntry(Publication inputData) {
@@ -199,6 +192,10 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResourceFromImportCandidate(newResource);
     }
 
+    /**
+     * @deprecated Only here for existing tests
+     */
+    @Deprecated(forRemoval = true)
     public Publication insertPreexistingPublication(Publication publication) {
         Resource resource = Resource.fromPublication(publication);
         return insertResource(resource);
@@ -332,7 +329,7 @@ public class ResourceService extends ServiceWithTransactions {
         SortableIdentifier publicationIdentifier)
         throws ApiGatewayException {
         var resource = readResourceService.getResource(userInstance, publicationIdentifier);
-        return resource.fetchAllTickets(this).filter(ResourceService::isNotRemoved);
+        return fetchAllTicketsForResource(resource).filter(ResourceService::isNotRemoved);
     }
 
     private static boolean isNotRemoved(TicketEntry ticket) {
@@ -343,7 +340,7 @@ public class ResourceService extends ServiceWithTransactions {
                                                               SortableIdentifier publicationIdentifier)
         throws NotFoundException {
         var resource = fetchResourceForElevatedUser(userInstance.getCustomerId(), publicationIdentifier);
-        return resource.fetchAllTickets(this);
+        return fetchAllTicketsForResource(resource);
     }
 
     public ImportCandidate updateImportCandidate(ImportCandidate importCandidate) throws BadRequestException {

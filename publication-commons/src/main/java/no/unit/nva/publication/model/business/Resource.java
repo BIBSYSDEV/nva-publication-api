@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
@@ -538,10 +537,6 @@ public class Resource implements Entity {
                && Objects.equals(getDuplicateOf(), resource.getDuplicateOf())
                && Objects.equals(getSubjects(), resource.getSubjects())
                && Objects.equals(getCuratingInstitutions(), resource.getCuratingInstitutions());
-    }
-
-    public Stream<TicketEntry> fetchAllTickets(ResourceService resourceService) {
-        return resourceService.fetchAllTicketsForResource(this);
     }
 }
 

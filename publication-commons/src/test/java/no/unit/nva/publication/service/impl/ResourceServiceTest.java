@@ -182,7 +182,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var randomInstant = RandomDataGenerator.randomInstant();
         var inputPublication = randomPublication().copy().withCreatedDate(randomInstant).build();
 
-        var savedPublicationIdentifier = resourceService.createPublicationWithPredefinedCreationDate(inputPublication)
+        var savedPublicationIdentifier = resourceService.insertPreexistingPublication(inputPublication)
                                              .getIdentifier();
         var savedPublication = resourceService.getPublicationByIdentifier(savedPublicationIdentifier);
 
