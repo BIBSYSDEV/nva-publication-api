@@ -52,6 +52,7 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
+import no.unit.nva.publication.rightsretention.RightsRetentionsApplier;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.utils.RequestUtils;
@@ -177,7 +178,8 @@ public class UpdatePublicationHandler
         var requestUtils = RequestUtils.fromRequestInfo(requestInfo, uriRetriever);
         Publication updatedPublication = switch (input) {
             case UpdatePublicationRequest publicationMetadata ->
-                updateMetadata(publicationMetadata, identifierInPath, existingPublication, permissionStrategy, requestUtils);
+                updateMetadata(publicationMetadata, identifierInPath, existingPublication, permissionStrategy,
+                               requestUtils, userInstance);
 
             case UnpublishPublicationRequest unpublishPublicationRequest ->
                 unpublishPublication(unpublishPublicationRequest,
@@ -300,7 +302,8 @@ public class UpdatePublicationHandler
 
     private Publication updateMetadata(UpdatePublicationRequest input, SortableIdentifier identifierInPath,
                                        Publication existingPublication,
-                                       PublicationPermissionStrategy permissionStrategy, RequestUtils requestUtils)
+                                       PublicationPermissionStrategy permissionStrategy, RequestUtils requestUtils,
+                                       UserInstance userInstance)
         throws ApiGatewayException {
         validateRequest(identifierInPath, input);
         permissionStrategy.authorize(UPDATE);
@@ -310,9 +313,18 @@ public class UpdatePublicationHandler
         var customerApiClient = getCustomerApiClient();
         var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, publicationUpdate.getPublisher().getId());
         validatePublication(publicationUpdate, customer);
+        setRrsOnFiles(publicationUpdate, existingPublication, customer, userInstance.getUsername());
         upsertPublishingRequestIfNeeded(existingPublication, publicationUpdate, customer, requestUtils);
 
         return resourceService.updatePublication(publicationUpdate);
+    }
+
+    private void setRrsOnFiles(Publication publicationUpdate, Publication existingPublication, Customer customer,
+                               String actingUser) throws BadRequestException {
+        RightsRetentionsApplier.rrsApplierForUpdatedPublication(existingPublication, publicationUpdate,
+                                                                customer.getRightsRetentionStrategy(), actingUser ).handle();
+
+
     }
 
     private JavaHttpClientCustomerApiClient getCustomerApiClient() {

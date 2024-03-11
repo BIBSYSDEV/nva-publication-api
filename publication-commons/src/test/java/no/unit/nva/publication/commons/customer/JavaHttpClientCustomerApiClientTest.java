@@ -18,96 +18,82 @@ import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
 import no.unit.nva.auth.CognitoCredentials;
 import nva.commons.core.Environment;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class JavaHttpClientCustomerApiClientTest {
+
+    private HttpClient httpClient;
+
+    @BeforeEach
+    void setup() throws IOException, InterruptedException {
+        httpClient = mock(HttpClient.class);
+
+        doReturn(okTokenResponse())
+            .when(httpClient)
+            .send(argThat(request -> request.uri().getPath().equals("/oauth2/token")), any());
+    }
 
     public static final URI BACKEND_CLIENT_AUTH_URL = URI.create(
         new Environment().readEnv("BACKEND_CLIENT_AUTH_URL"));
 
     @Test
-    void shouldReturnCustomerIfEverythingIsOk() throws IOException, InterruptedException {
-        var httpClient = mock(HttpClient.class);
-
-        doReturn(okTokenResponse())
-            .when(httpClient)
-            .send(argThat(request -> request.uri().getPath().equals("/oauth2/token")), any());
-
+    void shouldReturnCustomerIfEverythingIsOk() throws InterruptedException, IOException {
         var customerUri = randomUri();
+
+        var customerApiClient = getJavaHttpClientCustomerApiClient(httpClient);
         doReturn(okCustomerResponse())
             .when(httpClient)
             .send(argThat(request -> request.uri().getPath().equals(customerUri.getPath())), any());
-
-        var cognitoCredentials = new CognitoCredentials(() -> "clientId",
-                                                        () -> "clientSecret",
-                                                        BACKEND_CLIENT_AUTH_URL);
-        var customerApiClient = new JavaHttpClientCustomerApiClient(httpClient, cognitoCredentials);
 
         var customer = customerApiClient.fetch(customerUri);
 
         assertThat(customer.getPublicationWorkflow(), is(equalTo("myWorkflow")));
         assertThat(customer.getAllowFileUploadForTypes(), containsInAnyOrder("someType"));
+        assertThat(customer.getRightsRetentionStrategy().getType(), is(equalTo("NullRightsRetentionStrategy")));
+        assertThat(customer.getRightsRetentionStrategy().getId(), is(equalTo("https://example.org/1")));
+    }
+
+    private static JavaHttpClientCustomerApiClient getJavaHttpClientCustomerApiClient(HttpClient httpClient) {
+        var cognitoCredentials = new CognitoCredentials(() -> "clientId",
+                                                        () -> "clientSecret",
+                                                        BACKEND_CLIENT_AUTH_URL);
+        var customerApiClient = new JavaHttpClientCustomerApiClient(httpClient, cognitoCredentials);
+        return customerApiClient;
     }
 
     @Test
     void shouldThrowExceptionIfNotSuccessFromCustomerApi() throws IOException, InterruptedException {
-        var httpClient = mock(HttpClient.class);
-
-        doReturn(okTokenResponse())
-            .when(httpClient)
-            .send(argThat(request -> request.uri().getPath().equals("/oauth2/token")), any());
-
         var customerUri = randomUri();
         doReturn(failedCustomerResponse())
             .when(httpClient)
             .send(argThat(request -> request.uri().getPath().equals(customerUri.getPath())), any());
 
-        var cognitoCredentials = new CognitoCredentials(() -> "clientId",
-                                                        () -> "clientSecret",
-                                                        BACKEND_CLIENT_AUTH_URL);
-        var customerApiClient = new JavaHttpClientCustomerApiClient(httpClient, cognitoCredentials);
+        var customerApiClient = getJavaHttpClientCustomerApiClient(httpClient);
 
         assertThrows(CustomerNotAvailableException.class, () -> customerApiClient.fetch(customerUri));
     }
 
     @Test
     void shouldThrowExceptionIfDeserializationOfResponseFails() throws IOException, InterruptedException {
-        var httpClient = mock(HttpClient.class);
-
-        doReturn(okTokenResponse())
-            .when(httpClient)
-            .send(argThat(request -> request.uri().getPath().equals("/oauth2/token")), any());
-
         var customerUri = randomUri();
         doReturn(customerResponseWithInvalidJsonFormat())
             .when(httpClient)
             .send(argThat(request -> request.uri().getPath().equals(customerUri.getPath())), any());
 
-        var cognitoCredentials = new CognitoCredentials(() -> "clientId",
-                                                        () -> "clientSecret",
-                                                        BACKEND_CLIENT_AUTH_URL);
-        var customerApiClient = new JavaHttpClientCustomerApiClient(httpClient, cognitoCredentials);
+        var customerApiClient = getJavaHttpClientCustomerApiClient(httpClient);
 
         assertThrows(CustomerNotAvailableException.class, () -> customerApiClient.fetch(customerUri));
     }
 
     @Test
     void shouldThrowExceptionIfIoFails() throws IOException, InterruptedException {
-        var httpClient = mock(HttpClient.class);
-
-        doReturn(okTokenResponse())
-            .when(httpClient)
-            .send(argThat(request -> request.uri().getPath().equals("/oauth2/token")), any());
-
         var customerUri = randomUri();
         doThrow(new ConnectException())
             .when(httpClient)
             .send(argThat(request -> request.uri().getPath().equals(customerUri.getPath())), any());
 
-        var cognitoCredentials = new CognitoCredentials(() -> "clientId",
-                                                        () -> "clientSecret",
-                                                        BACKEND_CLIENT_AUTH_URL);
-        var customerApiClient = new JavaHttpClientCustomerApiClient(httpClient, cognitoCredentials);
+        var customerApiClient = getJavaHttpClientCustomerApiClient(httpClient);
 
         assertThrows(CustomerNotAvailableException.class, () -> customerApiClient.fetch(customerUri));
     }
@@ -135,7 +121,11 @@ public class JavaHttpClientCustomerApiClientTest {
         var response = """
             {
                 "allowFileUploadForTypes": ["someType"],
-                "publicationWorkflow": "myWorkflow"
+                "publicationWorkflow": "myWorkflow",
+                "rightsRetentionStrategy": {
+                    "type": "NullRightsRetentionStrategy",
+                     "id": "https://example.org/1"
+                    }
             }
             """;
         doReturn(response).when(httpResponse).body();
