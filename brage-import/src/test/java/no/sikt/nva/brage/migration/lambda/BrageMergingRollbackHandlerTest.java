@@ -142,10 +142,8 @@ public class BrageMergingRollbackHandlerTest extends ResourcesLocalTest {
 
         var actualPublicationAfterRollback =
             resourceService.getPublicationByIdentifier(newImageInReport.getIdentifier());
-        oldImageInReport.setModifiedDate(actualPublicationAfterRollback.getModifiedDate());
-        oldImageInReport.setCreatedDate(actualPublicationAfterRollback.getCreatedDate());
-        oldImageInReport.setPublishedDate(actualPublicationAfterRollback.getPublishedDate());
-        assertThat(actualPublicationAfterRollback, is(samePropertyValuesAs(oldImageInReport)));
+        var ignoredFields = new String[]{"modifiedDate", "createdDate", "publishedDate"};
+        assertThat(actualPublicationAfterRollback, is(samePropertyValuesAs(oldImageInReport, ignoredFields)));
     }
 
     @Test

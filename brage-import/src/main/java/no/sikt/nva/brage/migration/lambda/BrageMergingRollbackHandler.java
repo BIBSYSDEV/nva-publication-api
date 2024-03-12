@@ -26,11 +26,12 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class BrageMergingRollbackHandler extends EventHandler<EventReference, Void> {
 
+    private static final Logger logger = LoggerFactory.getLogger(BrageMergingRollbackHandler.class);
+
     public final static String TOPIC = "BrageMerging.Rollback.Request";
     public final static String ERROR_MERGING_ROLLBACK = "ERROR_MERGING_ROLLBACK";
     public final static String SUCCESS_MERGING_ROLLBACK = "SUCCESS_MERGING_ROLLBACK";
     public final static String NEWER_VERSION_OF_THE_PUBLICATION_EXISTS = "Newer version of the publication exists";
-    private static final Logger logger = LoggerFactory.getLogger(BrageMergingRollbackHandler.class);
     private static final String INIT_VALUE = null;
     private final S3Client s3Client;
     private final ResourceService resourceService;
