@@ -3,6 +3,8 @@ package no.unit.nva.publication.rightsretention;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.NULL_RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.OVERRIDABLE_RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.RIGHTS_RETENTION_STRATEGY;
+import static no.unit.nva.model.associatedartifacts.file.PublisherVersion.ACCEPTED_VERSION;
+import static no.unit.nva.model.associatedartifacts.file.PublisherVersion.PUBLISHED_VERSION;
 import static no.unit.nva.publication.rightsretention.RightsRetentionsApplier.rrsApplierForUpdatedPublication;
 import static no.unit.nva.publication.rightsretention.RightsRetentionsValueFinder.ILLEGAL_RIGHTS_RETENTION_STRATEGY_ON_FILE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -23,6 +25,7 @@ import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAbstracts;
@@ -36,32 +39,38 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class RightsRetentionsApplierTest {
 
     @ParameterizedTest
     @MethodSource("publicationTypeAndForceNull")
-    public void shouldForceNullRightsRetentionIfNotAcademicArticle(Class<? extends PublicationInstance> publicationType,
-                                                                   boolean forceNull) throws BadRequestException {
+    public void shouldForceNullRightsRetentionIfNotAcademicArticle(
+        Class<? extends PublicationInstance<?>> publicationType,
+        boolean forceNull) throws BadRequestException {
 
-        var publication = PublicationGenerator.randomPublication(PublicationInstanceBuilder.randomPublicationInstance(publicationType).getClass());
-        var file = createFileWithRrs(CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY));
+        var publication = PublicationGenerator.randomPublication(
+            PublicationInstanceBuilder.randomPublicationInstance(publicationType).getClass());
+        var file = createAcceptedFileWithRrs(CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY));
         addFilesToPublication(publication, file);
-        var applier = RightsRetentionsApplier.rrsApplierForNewPublication(publication, getServerConfiguredRrs(RIGHTS_RETENTION_STRATEGY) ,
+        var applier = RightsRetentionsApplier.rrsApplierForNewPublication(publication, getServerConfiguredRrs(
+                                                                              RIGHTS_RETENTION_STRATEGY),
                                                                           randomString());
         applier.handle();
 
-        assertThat(file.getRightsRetentionStrategy() instanceof NullRightsRetentionStrategy,is(equalTo(forceNull)));
+        assertThat(file.getRightsRetentionStrategy() instanceof NullRightsRetentionStrategy, is(equalTo(forceNull)));
     }
 
     @ParameterizedTest
     @MethodSource("rrsConfigIsValid")
     public void shouldThrowBadRequestWhenFileHasInvalidRrs(RightsRetentionStrategy rrs, boolean isValid) {
         var publication = PublicationGenerator.randomPublication(AcademicArticle.class);
-        var file = createFileWithRrs(rrs);
+        var file = createAcceptedFileWithRrs(rrs);
         addFilesToPublication(publication, file);
-        var applier = RightsRetentionsApplier.rrsApplierForNewPublication(publication, getServerConfiguredRrs(rrs.getConfiguredType()) ,
+        var applier = RightsRetentionsApplier.rrsApplierForNewPublication(publication, getServerConfiguredRrs(
+                                                                              rrs.getConfiguredType()),
                                                                           randomString());
 
         if (isValid) {
@@ -71,7 +80,6 @@ class RightsRetentionsApplierTest {
             assertThat(e.getMessage(), containsString(ILLEGAL_RIGHTS_RETENTION_STRATEGY_ON_FILE));
             assertThat(e.getMessage(), containsString(file.getIdentifier().toString()));
         }
-
     }
 
     @Test
@@ -80,32 +88,8 @@ class RightsRetentionsApplierTest {
         var overriddenBy = randomString();
         var originalRrs = OverriddenRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY, overriddenBy);
         var fileId = UUID.randomUUID();
-        var originalFile = createFileWithRrs(fileId, originalRrs);
-        var updatedFile = createFileWithRrs(fileId, originalRrs);
-
-        var updatedPublication = originalPublication.copy()
-            .withAssociatedArtifacts(new AssociatedArtifactList(updatedFile))
-            .build();
-
-        addFilesToPublication(originalPublication, originalFile);
-        var applier = rrsApplierForUpdatedPublication(originalPublication, updatedPublication,
-                                                                              getServerConfiguredRrs(
-                                                                                  NULL_RIGHTS_RETENTION_STRATEGY),
-                                                                              randomString());
-        applier.handle();
-
-        assertThat(updatedFile.getRightsRetentionStrategy(), is(equalTo(originalRrs)));
-    }
-
-    @Test
-    public void shouldNotChangeRrsIfClientSetsNewStrategy() throws BadRequestException {
-        var originalPublication = PublicationGenerator.randomPublication(AcademicArticle.class);
-        var overriddenBy = randomString();
-        var originalRrs = OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, overriddenBy);
-        var updatedRrs = OverriddenRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY, overriddenBy);
-        var fileId = UUID.randomUUID();
-        var originalFile = createFileWithRrs(fileId, originalRrs);
-        var updatedFile = createFileWithRrs(fileId, updatedRrs);
+        var originalFile = createAcceptedFileWithRrs(fileId, originalRrs);
+        var updatedFile = createAcceptedFileWithRrs(fileId, originalRrs);
 
         var updatedPublication = originalPublication.copy()
                                      .withAssociatedArtifacts(new AssociatedArtifactList(updatedFile))
@@ -119,6 +103,76 @@ class RightsRetentionsApplierTest {
         applier.handle();
 
         assertThat(updatedFile.getRightsRetentionStrategy(), is(equalTo(originalRrs)));
+    }
+
+    @Test
+    public void shouldNotChangeRrsIfClientSetsNewStrategy() throws BadRequestException {
+        var originalPublication = PublicationGenerator.randomPublication(AcademicArticle.class);
+        var overriddenBy = randomString();
+        var originalRrs = OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, overriddenBy);
+        var updatedRrs = OverriddenRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY, overriddenBy);
+        var fileId = UUID.randomUUID();
+        var originalFile = createAcceptedFileWithRrs(fileId, originalRrs);
+        var updatedFile = createAcceptedFileWithRrs(fileId, updatedRrs);
+
+        var updatedPublication = originalPublication.copy()
+                                     .withAssociatedArtifacts(new AssociatedArtifactList(updatedFile))
+                                     .build();
+
+        addFilesToPublication(originalPublication, originalFile);
+        var applier = rrsApplierForUpdatedPublication(originalPublication, updatedPublication,
+                                                      getServerConfiguredRrs(
+                                                          NULL_RIGHTS_RETENTION_STRATEGY),
+                                                      randomString());
+        applier.handle();
+
+        assertThat(updatedFile.getRightsRetentionStrategy(), is(equalTo(originalRrs)));
+    }
+
+    @ParameterizedTest
+    @EnumSource(names = {
+        "NULL_RIGHTS_RETENTION_STRATEGY",
+        "RIGHTS_RETENTION_STRATEGY",
+        "OVERRIDABLE_RIGHTS_RETENTION_STRATEGY"
+    })
+    void shouldAlwaysAllowNullRssIfFileIsPublishedVersion(RightsRetentionStrategyConfiguration configuredType)
+        throws BadRequestException {
+        var originalPublication = PublicationGenerator.randomPublication(AcademicArticle.class);
+
+        var publishedFile = createFileWithRrs(UUID.randomUUID(), PUBLISHED_VERSION,
+                                              NullRightsRetentionStrategy.create(configuredType));
+        var updatedPublication = originalPublication.copy()
+                                     .withAssociatedArtifacts(new AssociatedArtifactList(publishedFile))
+                                     .build();
+
+        var applier = rrsApplierForUpdatedPublication(originalPublication, updatedPublication,
+                                                      getServerConfiguredRrs(
+                                                          configuredType),
+                                                      randomString());
+        assertDoesNotThrow(applier::handle);
+    }
+
+    @ParameterizedTest
+    @EnumSource(names = {
+        "NULL_RIGHTS_RETENTION_STRATEGY",
+        "RIGHTS_RETENTION_STRATEGY",
+        "OVERRIDABLE_RIGHTS_RETENTION_STRATEGY"
+    })
+    void shouldAlwaysAllowNullRssIfFileIsNotSet(RightsRetentionStrategyConfiguration configuredType)
+        throws BadRequestException {
+        var originalPublication = PublicationGenerator.randomPublication(AcademicArticle.class);
+
+        var fileWhereVersionIsNotNot = createFileWithRrs(UUID.randomUUID(), null,
+                                              NullRightsRetentionStrategy.create(configuredType));
+        var updatedPublication = originalPublication.copy()
+                                     .withAssociatedArtifacts(new AssociatedArtifactList(fileWhereVersionIsNotNot))
+                                     .build();
+
+        var applier = rrsApplierForUpdatedPublication(originalPublication, updatedPublication,
+                                                      getServerConfiguredRrs(
+                                                          configuredType),
+                                                      randomString());
+        assertDoesNotThrow(applier::handle);
     }
 
     private CustomerApiRightsRetention getServerConfiguredRrs(
@@ -140,42 +194,50 @@ class RightsRetentionsApplierTest {
 
     //            case OverriddenRightsRetentionStrategy strategy -> Set.of(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY);
     //            case NullRightsRetentionStrategy strategy -> Set.of(NULL_RIGHTS_RETENTION_STRATEGY);
-    //            case CustomerRightsRetentionStrategy strategy -> Set.of(RIGHTS_RETENTION_STRATEGY, OVERRIDABLE_RIGHTS_RETENTION_STRATEGY);
-    //            case FunderRightsRetentionStrategy strategy -> Set.of(NULL_RIGHTS_RETENTION_STRATEGY, OVERRIDABLE_RIGHTS_RETENTION_STRATEGY);
+    //            case CustomerRightsRetentionStrategy strategy -> Set.of(RIGHTS_RETENTION_STRATEGY,
+    //            OVERRIDABLE_RIGHTS_RETENTION_STRATEGY);
+    //            case FunderRightsRetentionStrategy strategy -> Set.of(NULL_RIGHTS_RETENTION_STRATEGY,
+    //            OVERRIDABLE_RIGHTS_RETENTION_STRATEGY);
 
     public static Stream<Arguments> rrsConfigIsValid() {
         return Stream.of(Arguments.of(OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY,
                                                                                ""), true),
                          Arguments.of(OverriddenRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY, ""), false),
-                         Arguments.of(OverriddenRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY, ""), false),
-                         Arguments.of(FunderRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY), true),
+                         Arguments.of(OverriddenRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY, ""),
+                                      false),
+                         Arguments.of(FunderRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY),
+                                      true),
                          Arguments.of(FunderRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY), false),
                          Arguments.of(FunderRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY), true),
                          Arguments.of(NullRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY), false),
                          Arguments.of(NullRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY), false),
                          Arguments.of(NullRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY), true),
-                         Arguments.of(CustomerRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY), true),
+                         Arguments.of(CustomerRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY),
+                                      true),
                          Arguments.of(CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY), true),
                          Arguments.of(CustomerRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY), false)
 
         );
     }
 
-    private static UnpublishedFile createFileWithRrs(RightsRetentionStrategy rrs) {
-        return createFileWithRrs(UUID.randomUUID(), rrs);
+    private static UnpublishedFile createAcceptedFileWithRrs(RightsRetentionStrategy rrs) {
+        return createFileWithRrs(UUID.randomUUID(), ACCEPTED_VERSION, rrs);
     }
 
-    private static UnpublishedFile createFileWithRrs(UUID uuid, RightsRetentionStrategy rrs) {
+    private static UnpublishedFile createAcceptedFileWithRrs(UUID uuid, RightsRetentionStrategy rrs) {
+        return createFileWithRrs(uuid, ACCEPTED_VERSION, rrs);
+    }
+
+    private static UnpublishedFile createFileWithRrs(UUID uuid, PublisherVersion publishedVersion, RightsRetentionStrategy rrs) {
         return new UnpublishedFile(uuid,
                                    randomString(),
                                    randomString(),
                                    RandomDataGenerator.randomInteger().longValue(),
                                    RandomDataGenerator.randomUri(),
                                    false,
-                                   false,
+                                   publishedVersion,
                                    (Instant) null,
                                    rrs,
                                    randomString());
     }
-
 }
