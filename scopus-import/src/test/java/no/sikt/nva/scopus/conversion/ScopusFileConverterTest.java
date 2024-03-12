@@ -38,6 +38,7 @@ import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;
 import no.sikt.nva.scopus.conversion.files.TikaUtils;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import nva.commons.core.ioutils.IoUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.junit.jupiter.api.BeforeEach;
@@ -104,7 +105,7 @@ public class ScopusFileConverterTest {
 
         var files = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
 
-        assertThat(files.isPublisherAuthority(), is(true));
+        assertThat(files.getPublisherVersion(), is(PublisherVersion.PUBLISHED_VERSION));
     }
 
     @Test

@@ -1,5 +1,6 @@
 package no.unit.nva.publication.rightsretention;
 
+import static java.util.Objects.isNull;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.NULL_RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.OVERRIDABLE_RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.RIGHTS_RETENTION_STRATEGY;
@@ -16,6 +17,7 @@ import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -46,7 +48,7 @@ public class RightsRetentionsValueFinder {
     }
 
     private static boolean rrsIsIrrelevant(File file, Publication publication) {
-        return file.isPublisherAuthority()
+        return (isNull(file.getPublisherVersion()) || PublisherVersion.PUBLISHED_VERSION == file.getPublisherVersion())
                || file instanceof AdministrativeAgreement
                || !isAcademicArticle(publication);
     }

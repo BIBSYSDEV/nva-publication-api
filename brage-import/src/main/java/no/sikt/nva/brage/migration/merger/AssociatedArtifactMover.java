@@ -70,7 +70,7 @@ public class AssociatedArtifactMover {
                    .withName(file.getName())
                    .withIdentifier(file.getIdentifier())
                    .withLicense(file.getLicense())
-                   .withPublisherAuthority(file.isPublisherAuthority())
+                   .withPublisherVersion(file.getPublisherVersion())
                    .withEmbargoDate(file.getEmbargoDate().orElse(null))
                    .withMimeType(mimeType)
                    .withSize(size)
