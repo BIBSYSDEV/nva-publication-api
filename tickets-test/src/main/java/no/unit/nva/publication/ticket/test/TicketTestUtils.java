@@ -330,6 +330,6 @@ public final class TicketTestUtils {
     private static AdministrativeAgreement administrativeAgreement() {
         var license = new License.Builder().withLink(randomUri()).withIdentifier("identifier").build();
         return new AdministrativeAgreement(UUID.randomUUID(), "name", "application/json",
-                                           123124124L, license, true, false, null, null);
+                                           123124124L, license, true, false, null);
     }
 }
