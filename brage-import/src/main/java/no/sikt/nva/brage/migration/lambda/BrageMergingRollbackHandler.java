@@ -1,6 +1,6 @@
 package no.sikt.nva.brage.migration.lambda;
 
-import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.UPDATED_PUBLICATIONS_REPORTS_PATH;
+import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.UPDATE_REPORTS_PATH;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -30,9 +30,8 @@ public class BrageMergingRollbackHandler extends EventHandler<EventReference, Vo
 
     public final static String TOPIC = "BrageMerging.Rollback.Request";
     public final static String ERROR_MERGING_ROLLBACK = "ERROR_MERGING_ROLLBACK";
-
+    public final static String SUCCESS_MERGING_ROLLBACK = "SUCCESS_MERGING_ROLLBACK";
     public final static String NEWER_VERSION_OF_THE_PUBLICATION_EXISTS = "Newer version of the publication exists";
-
     private static final String INIT_VALUE = null;
     private final S3Client s3Client;
     private final ResourceService resourceService;
@@ -56,14 +55,39 @@ public class BrageMergingRollbackHandler extends EventHandler<EventReference, Vo
                                 Context context) {
         resetLambda();
         attempt(() -> readMergeReportFromS3(eventReference))
-            .map(this::processReport)
+            .map(mergeReport -> processReport(mergeReport, eventReference))
             .orElse(fail -> handleSavingError(fail, eventReference));
         return null;
     }
 
-    private BrageMergingReport processReport(BrageMergingReport mergeReport) throws NotFoundException {
+    private static boolean publicationHasBeenModifiedAfterBrageMerging(BrageMergingReport mergeReport,
+                                                                       Publication currentVersionOfPublication) {
+        return !currentVersionOfPublication.equals(mergeReport.newImage());
+    }
+
+    private BrageMergingReport processReport(BrageMergingReport mergeReport,
+                                             EventReference eventReference) throws NotFoundException {
         validateCurrentVersion(mergeReport);
+        rollbackInDatabase(mergeReport);
+        persistSuccessReport(mergeReport, eventReference);
         return mergeReport;
+    }
+
+    private void persistSuccessReport(BrageMergingReport mergeReport, EventReference eventReference) {
+        var reportUri = craftSuccessUriFromEventReference(eventReference);
+        var s3Driver = new S3Driver(s3Client, eventReference.extractBucketName());
+        attempt(() -> s3Driver.insertFile(reportUri.toS3bucketPath(), mergeReport.toJsonString())).orElseThrow();
+    }
+
+    private UriWrapper craftSuccessUriFromEventReference(EventReference eventReference) {
+        var successReportUri = eventReference.getUri()
+                                   .toString()
+                                   .replace(UPDATE_REPORTS_PATH, SUCCESS_MERGING_ROLLBACK);
+        return UriWrapper.fromUri(successReportUri);
+    }
+
+    private void rollbackInDatabase(BrageMergingReport mergeReport) {
+        resourceService.updatePublication(mergeReport.oldImage());
     }
 
     private void validateCurrentVersion(BrageMergingReport mergeReport) throws NotFoundException {
@@ -71,10 +95,6 @@ public class BrageMergingRollbackHandler extends EventHandler<EventReference, Vo
         if (publicationHasBeenModifiedAfterBrageMerging(mergeReport, currentVersionOfPublication)) {
             throw new RollBackConflictException(NEWER_VERSION_OF_THE_PUBLICATION_EXISTS);
         }
-    }
-
-    private static boolean publicationHasBeenModifiedAfterBrageMerging(BrageMergingReport mergeReport, Publication currentVersionOfPublication) {
-        return !currentVersionOfPublication.equals(mergeReport.newImage());
     }
 
     private void resetLambda() {
@@ -103,7 +123,7 @@ public class BrageMergingRollbackHandler extends EventHandler<EventReference, Vo
 
     private UriWrapper constructErrorFileUri(EventReference event,
                                              Exception exception) {
-        var uriString = event.getUri().toString().replace(UPDATED_PUBLICATIONS_REPORTS_PATH,
+        var uriString = event.getUri().toString().replace(UPDATE_REPORTS_PATH,
                                                           ERROR_MERGING_ROLLBACK + "/" + exception.getClass()
                                                                                              .getSimpleName());
         return UriWrapper.fromUri(uriString);
