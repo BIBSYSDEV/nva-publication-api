@@ -3,14 +3,14 @@ package no.unit.nva.publication.rightsretention;
 import static no.unit.nva.publication.rightsretention.RightsRetentionsValueFinder.getRightsRetentionStrategy;
 import com.google.common.collect.Lists;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
 import nva.commons.apigateway.exceptions.BadRequestException;
 
@@ -41,15 +41,19 @@ public final class RightsRetentionsApplier {
     }
 
     private static boolean isChangedPublicationType(Publication publicationUpdate, Publication existingPublication) {
-        PublicationContext newContext = publicationUpdate.getEntityDescription()
-                                            .getReference()
-                                            .getPublicationContext();
-        PublicationContext existingContext = existingPublication.getEntityDescription()
-                                                 .getReference()
-                                                 .getPublicationContext();
-        return Objects.nonNull(newContext)
-             && Objects.nonNull(existingContext)
-             && !newContext.getClass().equals(existingContext.getClass());
+        var newInstance = Optional.ofNullable(publicationUpdate)
+                              .map(Publication::getEntityDescription)
+                              .map(EntityDescription::getReference)
+                              .map(Reference::getPublicationInstance);
+        var existingInstance = Optional.ofNullable(existingPublication)
+                                   .map(Publication::getEntityDescription)
+                                   .map(EntityDescription::getReference)
+                                   .map(Reference::getPublicationInstance);
+        var isUpdatingNewPublication = existingInstance.isEmpty() && newInstance.isPresent();
+        var isUpdatingExistingPublication = existingInstance.isPresent()
+                                            && newInstance.isPresent()
+                                            && !newInstance.get().getClass().equals(existingInstance.get().getClass());
+        return isUpdatingExistingPublication || isUpdatingNewPublication;
     }
 
     private void setRrsOnAllFiles(Publication publicationUpdate, CustomerApiRightsRetention rrsConfig,
