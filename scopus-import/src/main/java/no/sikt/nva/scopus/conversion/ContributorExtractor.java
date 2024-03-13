@@ -10,6 +10,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import no.scopus.generated.AuthorGroupTp;
@@ -17,6 +18,7 @@ import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.PersonalnameType;
+import no.sikt.nva.scopus.conversion.model.AuthorIdentifiers;
 import no.sikt.nva.scopus.conversion.model.CorporationWithContributors;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.exception.MissingNvaContributorException;
@@ -41,10 +43,9 @@ public class ContributorExtractor {
     private final List<CorrespondenceTp> correspondenceTps;
     private final List<AuthorGroupTp> authorGroupTps;
     private final List<Contributor> contributors;
-    private final PiaConnection piaConnection;
-    private final CristinConnection cristinConnection;
     private final NvaCustomerConnection nvaCustomerConnection;
     private final AffiliationGenerator affiliationGenerator;
+    private final CristinPersonRetriever cristinPersonRetriever;
 
     public ContributorExtractor(List<CorrespondenceTp> correspondenceTps, List<AuthorGroupTp> authorGroupTps,
                                 PiaConnection piaConnection, CristinConnection cristinConnection,
@@ -52,16 +53,17 @@ public class ContributorExtractor {
         this.correspondenceTps = correspondenceTps;
         this.authorGroupTps = authorGroupTps;
         this.contributors = new ArrayList<>();
-        this.piaConnection = piaConnection;
-        this.cristinConnection = cristinConnection;
         this.nvaCustomerConnection = nvaCustomerConnection;
         this.affiliationGenerator = new AffiliationGenerator(piaConnection, cristinConnection);
+        this.cristinPersonRetriever = new CristinPersonRetriever(cristinConnection, piaConnection);
     }
 
     public List<Contributor> generateContributors() {
         var cristinAffiliationsAuthorgroupsTps = affiliationGenerator.getCorporations(authorGroupTps);
+        var cristinPersons = cristinPersonRetriever.retrieveCristinPersons(authorGroupTps);
         var contributors = cristinAffiliationsAuthorgroupsTps.stream()
-                               .map(this::generateContributorsFromAuthorGroup)
+                               .map(cristinAffiliationsAuthorgroup -> generateContributorsFromAuthorGroup(
+                                   cristinAffiliationsAuthorgroup, cristinPersons))
                                .flatMap(List::stream)
                                .toList();
         if (noContributorsBelongingToNvaCustomer(cristinAffiliationsAuthorgroupsTps)) {
@@ -116,20 +118,24 @@ public class ContributorExtractor {
     }
 
     private List<Contributor> generateContributorsFromAuthorGroup(
-        CorporationWithContributors corporationWithContributors) {
+        CorporationWithContributors corporationWithContributors,
+        Map<AuthorIdentifiers, CristinPerson> cristinPersons) {
         corporationWithContributors.getScopusAuthors().getAuthorOrCollaboration()
             .forEach(authorOrCollaboration -> extractContributorFromAuthorOrCollaboration(authorOrCollaboration,
-                                                                                          corporationWithContributors));
+                                                                                          corporationWithContributors
+                , cristinPersons));
         return contributors;
     }
 
     private void extractContributorFromAuthorOrCollaboration(Object authorOrCollaboration,
-                                                             CorporationWithContributors corporationWithContributors) {
+                                                             CorporationWithContributors corporationWithContributors,
+                                                             Map<AuthorIdentifiers, CristinPerson> cristinPersons) {
         var existingContributor = getExistingContributor(authorOrCollaboration);
         if (existingContributor.isPresent()) {
             replaceExistingContributor(existingContributor.get(), corporationWithContributors);
         } else {
-            generateContributorFromAuthorOrCollaboration(authorOrCollaboration, corporationWithContributors);
+            generateContributorFromAuthorOrCollaboration(authorOrCollaboration, corporationWithContributors,
+                                                         cristinPersons);
         }
     }
 
@@ -204,9 +210,12 @@ public class ContributorExtractor {
     }
 
     private void generateContributorFromAuthorOrCollaboration(Object authorOrCollaboration,
-                                                              CorporationWithContributors corporationWithContributors) {
+                                                              CorporationWithContributors corporationWithContributors
+        ,
+                                                              Map<AuthorIdentifiers, CristinPerson> cristinPersons) {
         if (authorOrCollaboration instanceof AuthorTp authorTp) {
-            generateContributorFromAuthorTp(authorTp, corporationWithContributors);
+            generateContributorFromAuthorTp(authorTp, corporationWithContributors,
+                                            cristinPersons);
         } else {
             generateContributorFromCollaborationTp((CollaborationTp) authorOrCollaboration, corporationWithContributors,
                                                    getCorrespondencePerson());
@@ -214,16 +223,18 @@ public class ContributorExtractor {
     }
 
     private void generateContributorFromAuthorTp(AuthorTp author,
-                                                 CorporationWithContributors corporationWithContributors) {
+                                                 CorporationWithContributors corporationWithContributors,
+                                                 Map<AuthorIdentifiers, CristinPerson> cristinPersons) {
 
         var cristinOrganizations = corporationWithContributors.getCristinOrganizations();
-
-        var contributor = fetchCristinPerson(author).map(
-                cristinPerson -> generateContributorFromCristinPerson(cristinPerson, author, getCorrespondencePerson(),
-                                                                      cristinOrganizations))
-                              .orElseGet(
-                                  () -> generateContributorFromAuthorTp(corporationWithContributors, author,
-                                                                        getCorrespondencePerson()));
+        var authorIdentifiers = new AuthorIdentifiers(author.getAuid(), author.getOrcid());
+        var contributor =
+            Optional.ofNullable(cristinPersons.get(authorIdentifiers))
+                .map(cristinPerson -> generateContributorFromCristinPerson(cristinPerson, author,
+                                                                           getCorrespondencePerson(),
+                                                                           cristinOrganizations))
+                .orElseGet(() -> generateContributorFromAuthorTp(corporationWithContributors, author,
+                                                                 getCorrespondencePerson()));
 
         contributors.add(contributor);
     }
@@ -238,24 +249,6 @@ public class ContributorExtractor {
                    .withSequence(getSequenceNumber(author))
                    .withCorrespondingAuthor(isCorrespondingAuthor(author, correspondencePerson))
                    .build();
-    }
-
-    private Optional<CristinPerson> fetchCristinPerson(AuthorTp author) {
-        var cristinPerson = fetchCristinPersonByScopusId(author);
-        return cristinPerson.isPresent()
-                   ? cristinPerson
-                   : fetchCristinPersonByOrcId(author);
-    }
-
-    private Optional<CristinPerson> fetchCristinPersonByOrcId(AuthorTp author) {
-        return nonNull(author.getOrcid())
-                   ? cristinConnection.getCristinPersonByOrcId(author.getOrcid())
-                   : Optional.empty();
-    }
-
-    private Optional<CristinPerson> fetchCristinPersonByScopusId(AuthorTp author) {
-        return piaConnection.getCristinPersonIdentifier(author.getAuid())
-                   .flatMap(cristinConnection::getCristinPersonByCristinId);
     }
 
     private void generateContributorFromCollaborationTp(CollaborationTp collaboration,
