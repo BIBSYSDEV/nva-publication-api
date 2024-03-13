@@ -28,7 +28,6 @@ import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.DocTp;
-import no.scopus.generated.PersonalnameType;
 import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
@@ -55,7 +54,7 @@ public class ContributorExtractorTest {
         piaConnection = mock(PiaConnection.class);
         cristinConnection = mock(CristinConnection.class);
         nvaCustomerConnection = mock(NvaCustomerConnection.class);
-        when(nvaCustomerConnection.isNvaCustomer(any())).thenReturn(true);
+        when(nvaCustomerConnection.atLeastOneNvaCustomerPresent(any())).thenReturn(true);
     }
 
     @Test
@@ -165,7 +164,7 @@ public class ContributorExtractorTest {
         var orcId = getOrcidFromScopusDocument(document);
         mockCristinPersonByOrcIdResponse(orcId);
         mockRandomCristinOrgResponse();
-        when(nvaCustomerConnection.isNvaCustomer(any())).thenReturn(false);
+        when(nvaCustomerConnection.atLeastOneNvaCustomerPresent(any())).thenReturn(false);
 
         assertThrows(MissingNvaContributorException.class,
                      () -> contributorExtractorFromDocument(document).generateContributors(),

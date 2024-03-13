@@ -24,7 +24,7 @@ public class CristinContributorExtractorTest {
     void shouldCreateIdentityWithFullName() {
         var person = new CristinPerson(null, null, Set.of(FIRST_NAME, LAST_NAME), null, null, null);
         var contributor = CristinContributorExtractor.generateContributorFromCristinPerson(person, authorTp(), null,
-                                                                                           null, true);
+                                                                                           null);
         var expectedName = "First Last";
         assertThat(contributor.getIdentity().getName(), is(equalTo(expectedName)));
     }
@@ -33,7 +33,7 @@ public class CristinContributorExtractorTest {
     void shouldCreateEmptyNameWhenTypedValueIsNull() {
         var person = new CristinPerson(null, null, null, null, null, null);
         var contributor = CristinContributorExtractor.generateContributorFromCristinPerson(person, authorTp(), null,
-                                                                                           null, true);
+                                                                                           null);
         assertThat(contributor.getIdentity().getName(), is(equalTo(StringUtils.EMPTY_STRING)));
     }
 
@@ -41,7 +41,7 @@ public class CristinContributorExtractorTest {
     void shouldCreateNameWithFirstNameOnlyWhenLastNameValueIsEmpty() {
         var person = new CristinPerson(null, null, Set.of(FIRST_NAME), null, null, null);
         var contributor = CristinContributorExtractor.generateContributorFromCristinPerson(person, authorTp(), null,
-                                                                                           null, true);
+                                                                                           null);
         assertThat(contributor.getIdentity().getName(), is(equalTo(FIRST_NAME.getValue())));
     }
 
@@ -50,7 +50,7 @@ public class CristinContributorExtractorTest {
         var person = new CristinPerson(null, null, Set.of(FIRST_NAME, LAST_NAME), null, null, null);
         var contributor = CristinContributorExtractor.generateContributorFromCristinPerson(person, authorTp(),
                                                                                            correspondencePerson(),
-                                                                                           null, true);
+                                                                                           null);
         assertThat(contributor.isCorrespondingAuthor(), is(true));
     }
 
@@ -59,7 +59,7 @@ public class CristinContributorExtractorTest {
         var person = new CristinPerson(null, null, Set.of(FIRST_NAME, LAST_NAME), null, null, null);
         var contributor = CristinContributorExtractor.generateContributorFromCristinPerson(person, authorTp(),
                                                                                            correspondencePerson(),
-                                                                                           null, true);
+                                                                                           null);
         assertThat(contributor.isCorrespondingAuthor(), is(true));
     }
 
