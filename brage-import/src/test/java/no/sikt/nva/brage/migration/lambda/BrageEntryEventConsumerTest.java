@@ -42,6 +42,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -1051,6 +1052,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                    is(equalTo(nvaBrageMigrationDataGenerator.getBrageRecord().getId().toString())));
     }
 
+    //TODO: flaky test
     @Test
     void shouldPersistMergeReport()
         throws IOException, BadRequestException, nva.commons.apigateway.exceptions.NotFoundException {
