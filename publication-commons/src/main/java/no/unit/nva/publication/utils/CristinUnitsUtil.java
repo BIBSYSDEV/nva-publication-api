@@ -1,16 +1,23 @@
 package no.unit.nva.publication.utils;
 
+import static io.vavr.control.Try.of;
+import static io.vavr.control.Try.ofSupplier;
 import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.github.resilience4j.core.IntervalFunction;
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryConfig;
+import io.github.resilience4j.retry.RetryRegistry;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.publication.external.services.UriRetriever;
@@ -96,12 +103,24 @@ public class CristinUnitsUtil {
 
     private CristinUnit[] getApiData(int pageNum) {
         try {
-            String response =
-                uriRetriever.getRawContent(new URI(apiUri + API_ARGUMENTS + pageNum), APPLICATION_JSON).orElseThrow();
+            String response = fetchResponseWithRetry(new URI(apiUri + API_ARGUMENTS + pageNum));
             return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response, CristinUnit[].class)).orElseThrow();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private String fetchResponseWithRetry(URI requestUri) {
+        var retryRegistry = RetryRegistry.of(RetryConfig.custom().maxAttempts(5).intervalFunction(
+            IntervalFunction.ofExponentialRandomBackoff()).build());
+        var retryWithDefaultConfig = retryRegistry.retry("executeRequestAsync");
+        Supplier<String> supplier = () -> executeRequest(requestUri);
+
+        return ofSupplier(Retry.decorateSupplier(retryWithDefaultConfig, supplier)).get();
+    }
+
+    private String executeRequest(URI requestUri) {
+        return of(() -> uriRetriever.getRawContent(requestUri, APPLICATION_JSON).orElseThrow()).get();
     }
 }
 
@@ -116,6 +135,7 @@ record CristinUnit(@JsonProperty(CRISTIN_UNIT_ID) String id,
                    @JsonProperty(PARENT_UNIT) CristinParentUnit parentUnit
 )
     implements JsonSerializable {
+
     public static final String CRISTIN_UNIT_ID = "cristin_unit_id";
     public static final String PARENT_UNIT = "parent_unit";
 }
