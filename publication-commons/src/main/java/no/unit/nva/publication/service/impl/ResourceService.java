@@ -35,6 +35,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
@@ -55,7 +56,9 @@ import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.storage.UniqueDoiRequestEntry;
 import no.unit.nva.publication.model.storage.WithPrimaryKey;
+import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
+import no.unit.nva.publication.utils.RdfUtils;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -92,6 +95,7 @@ public class ResourceService extends ServiceWithTransactions {
     private final Supplier<SortableIdentifier> identifierSupplier;
     private final ReadResourceService readResourceService;
     private final UpdateResourceService updateResourceService;
+    private final UriRetriever uriRetriever;
     private DeleteResourceService deleteResourceService;
 
     public ResourceService(AmazonDynamoDB client,
@@ -104,6 +108,7 @@ public class ResourceService extends ServiceWithTransactions {
         this.readResourceService = new ReadResourceService(client, RESOURCES_TABLE_NAME);
         this.updateResourceService =
             new UpdateResourceService(client, RESOURCES_TABLE_NAME, clockForTimestamps, readResourceService);
+        this.uriRetriever = UriRetriever.defaultUriRetriever();
     }
 
     public ResourceService(AmazonDynamoDB client, String tableName) {
@@ -116,6 +121,7 @@ public class ResourceService extends ServiceWithTransactions {
             new UpdateResourceService(client, tableName, clockForTimestamps, readResourceService);
         this.deleteResourceService = new DeleteResourceService(client, tableName,
                                                                readResourceService);
+        this.uriRetriever = UriRetriever.defaultUriRetriever();
     }
 
     public ResourceService(AmazonDynamoDB client, Clock clock) {
@@ -392,6 +398,7 @@ public class ResourceService extends ServiceWithTransactions {
 
     // change this method depending on the current migration needs.
     private Resource migrateResource(Resource dataEntry) {
+        CuratingInstitutionMigration.migrate(dataEntry);
         return dataEntry;
     }
 
@@ -460,6 +467,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private Publication insertResource(Resource newResource) {
+        setCuratingInstitutions(newResource);
         TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(newResource);
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(putRequest);
@@ -467,7 +475,14 @@ public class ResourceService extends ServiceWithTransactions {
         return fetchSavedPublication(newResource);
     }
 
+    private void setCuratingInstitutions(Resource newResource) {
+        newResource.setCuratingInstitutions(new CuratingInstitutionsUtil(
+            (uriRetr, uri) -> RdfUtils.getTopLevelOrgUri(uri, uriRetr)).getCuratingInstitutions(newResource.toPublication(),
+                                                                                                               uriRetriever));
+    }
+
     private ImportCandidate insertResourceFromImportCandidate(Resource newResource) {
+        setCuratingInstitutions(newResource);
         TransactWriteItem[] transactionItems = transactionItemsForNewImportCandidateInsertion(newResource);
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(putRequest);
