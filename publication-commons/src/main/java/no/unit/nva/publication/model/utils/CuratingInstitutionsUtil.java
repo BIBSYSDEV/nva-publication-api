@@ -1,9 +1,9 @@
 package no.unit.nva.publication.model.utils;
 
-import static no.unit.nva.publication.utils.RdfUtils.getTopLevelOrgUri;
-import java.net.URI;
 import static java.util.Objects.nonNull;
+import java.net.URI;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.model.Contributor;
@@ -12,15 +12,17 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.external.services.UriRetriever;
 
 public final class CuratingInstitutionsUtil {
-    private CuratingInstitutionsUtil() {
+    private final BiFunction<URI, UriRetriever, URI> topLevelFunction;
+    public CuratingInstitutionsUtil(BiFunction<URI, UriRetriever, URI> topLevelSupplier) {
+        this.topLevelFunction = topLevelSupplier;
     }
 
-    public static Set<URI> getCuratingInstitutions(Publication publication, UriRetriever uriRetriever) {
+    public Set<URI> getCuratingInstitutions(Publication publication, UriRetriever uriRetriever) {
         return getVerifiedContributors(publication)
                    .flatMap(CuratingInstitutionsUtil::getOrganizationIds)
                    .collect(Collectors.toSet())
                    .parallelStream()
-                   .map(orgId -> getTopLevelOrgUri(uriRetriever, orgId))
+                   .map(orgId -> topLevelFunction.apply(orgId, uriRetriever))
                    .collect(Collectors.toSet());
     }
 
