@@ -1,0 +1,5320 @@
+[ {
+  "cristin_unit_id" : "20903.0.0.0",
+  "unit_name" : {
+    "en" : "Omtre AS"
+  },
+  "institution" : {
+    "acronym" : "OMT"
+  },
+  "url" : "https://api.cristin.no/v2/units/20903.0.0.0",
+  "acronym" : "OMT"
+}, {
+  "cristin_unit_id" : "20904.0.0.0",
+  "unit_name" : {
+    "en" : "Prostatakreftforeningen"
+  },
+  "institution" : {
+    "acronym" : "PRO"
+  },
+  "url" : "https://api.cristin.no/v2/units/20904.0.0.0",
+  "acronym" : "PRO"
+}, {
+  "cristin_unit_id" : "20905.0.0.0",
+  "unit_name" : {
+    "en" : "Vista Analyse AS"
+  },
+  "institution" : {
+    "acronym" : "VIS"
+  },
+  "url" : "https://api.cristin.no/v2/units/20905.0.0.0",
+  "acronym" : "VIS"
+}, {
+  "cristin_unit_id" : "20906.0.0.0",
+  "unit_name" : {
+    "en" : "Norwegian Energy Partners"
+  },
+  "institution" : {
+    "acronym" : "NOR"
+  },
+  "url" : "https://api.cristin.no/v2/units/20906.0.0.0",
+  "acronym" : "NOR"
+}, {
+  "cristin_unit_id" : "20907.0.0.0",
+  "unit_name" : {
+    "en" : "REN AS"
+  },
+  "institution" : {
+    "acronym" : "REN"
+  },
+  "url" : "https://api.cristin.no/v2/units/20907.0.0.0",
+  "acronym" : "REN"
+}, {
+  "cristin_unit_id" : "20908.0.0.0",
+  "unit_name" : {
+    "en" : "Aquastructures"
+  },
+  "institution" : {
+    "acronym" : "AQUASTRUCT"
+  },
+  "url" : "https://api.cristin.no/v2/units/20908.0.0.0",
+  "acronym" : "AQUASTRUCT"
+}, {
+  "cristin_unit_id" : "20916.0.0.0",
+  "unit_name" : {
+    "en" : "Yatek Solutions AS"
+  },
+  "institution" : {
+    "acronym" : "YAT"
+  },
+  "url" : "https://api.cristin.no/v2/units/20916.0.0.0",
+  "acronym" : "YAT"
+}, {
+  "cristin_unit_id" : "215.5.5.9",
+  "unit_name" : {
+    "en" : "Everyday Life under Different Situations"
+  },
+  "institution" : {
+    "acronym" : "OSLOMET"
+  },
+  "url" : "https://api.cristin.no/v2/units/215.5.5.9",
+  "acronym" : "sam-u-sf-h",
+  "parent_unit" : {
+    "cristin_unit_id" : "215.5.5.0"
+  }
+}, {
+  "cristin_unit_id" : "215.5.7.0",
+  "unit_name" : {
+    "en" : "Part-time lecturer/employee SAM"
+  },
+  "institution" : {
+    "acronym" : "OSLOMET"
+  },
+  "url" : "https://api.cristin.no/v2/units/215.5.7.0",
+  "acronym" : "sam-tl",
+  "parent_unit" : {
+    "cristin_unit_id" : "215.5.0.0"
+  }
+}, {
+  "cristin_unit_id" : "215.5.6.5",
+  "unit_name" : {
+    "en" : "Strategy, Innovation and Marketing"
+  },
+  "institution" : {
+    "acronym" : "OSLOMET"
+  },
+  "url" : "https://api.cristin.no/v2/units/215.5.6.5",
+  "acronym" : "sam-u-hhs-",
+  "parent_unit" : {
+    "cristin_unit_id" : "215.5.0.0"
+  }
+}, {
+  "cristin_unit_id" : "215.5.6.2",
+  "unit_name" : {
+    "en" : "Public administration and governance"
+  },
+  "institution" : {
+    "acronym" : "OSLOMET"
+  },
+  "url" : "https://api.cristin.no/v2/units/215.5.6.2",
+  "acronym" : "sam-u-hhs-",
+  "parent_unit" : {
+    "cristin_unit_id" : "215.5.0.0"
+  }
+}, {
+  "cristin_unit_id" : "215.5.6.3",
+  "unit_name" : {
+    "en" : "Organisation and Management"
+  },
+  "institution" : {
+    "acronym" : "OSLOMET"
+  },
+  "url" : "https://api.cristin.no/v2/units/215.5.6.3",
+  "acronym" : "sam-u-hhs-",
+  "parent_unit" : {
+    "cristin_unit_id" : "215.5.0.0"
+  }
+}, {
+  "cristin_unit_id" : "215.5.9.0",
+  "unit_name" : {
+    "en" : "Center for Work Inclusion"
+  },
+  "institution" : {
+    "acronym" : "OSLOMET"
+  },
+  "url" : "https://api.cristin.no/v2/units/215.5.9.0",
+  "acronym" : "sam-u-kai",
+  "parent_unit" : {
+    "cristin_unit_id" : "215.5.0.0"
+  }
+}, {
+  "cristin_unit_id" : "215.6.0.0",
+  "unit_name" : {
+    "en" : "Faculty of Technology, Art and Design"
+  },
+  "institution" : {
+    "acronym" : "OSLOMET"
+  },
+  "url" : "https://api.cristin.no/v2/units/215.6.0.0",
+  "acronym" : "tkd",
+  "parent_unit" : {
+    "cristin_unit_id" : "215.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "215.6.1.0",
+  "unit_name" : {
+    "en" : "Faculty Administration"
+  },
+  "institution" : {
+    "acronym" : "OSLOMET"
+  },
+  "url" : "https://api.cristin.no/v2/units/215.6.1.0",
+  "acronym" : "tkd-a",
+  "parent_unit" : {
+    "cristin_unit_id" : "215.6.0.0"
+  }
+}, {
+  "cristin_unit_id" : "215.6.3.0",
+  "unit_name" : {
+    "en" : "Department of Art, Design and Drama"
+  },
+  "institution" : {
+    "acronym" : "OSLOMET"
+  },
+  "url" : "https://api.cristin.no/v2/units/215.6.3.0",
+  "acronym" : "tkd-u-est",
+  "parent_unit" : {
+    "cristin_unit_id" : "215.6.0.0"
+  }
+}, {
+  "cristin_unit_id" : "215.6.5.0",
+  "unit_name" : {
+    "en" : "Department of Mechanical, Electrical and Chemical engineering"
+  },
+  "institution" : {
+    "acronym" : "OSLOMET"
+  },
+  "url" : "https://api.cristin.no/v2/units/215.6.5.0",
+  "acronym" : "tkd-u-mek",
+  "parent_unit" : {
+    "cristin_unit_id" : "215.6.0.0"
+  }
+}, {
+  "cristin_unit_id" : "215.6.4.0",
+  "unit_name" : {
+    "en" : "Department of Computer Science"
+  },
+  "institution" : {
+    "acronym" : "OSLOMET"
+  },
+  "url" : "https://api.cristin.no/v2/units/215.6.4.0",
+  "acronym" : "tkd-u-it",
+  "parent_unit" : {
+    "cristin_unit_id" : "215.6.0.0"
+  }
+}, {
+  "cristin_unit_id" : "215.6.2.0",
+  "unit_name" : {
+    "en" : "Department of Civil Engineering and Energy Technology"
+  },
+  "institution" : {
+    "acronym" : "OSLOMET"
+  },
+  "url" : "https://api.cristin.no/v2/units/215.6.2.0",
+  "acronym" : "tkd-u-be",
+  "parent_unit" : {
+    "cristin_unit_id" : "215.6.0.0"
+  }
+}, {
+  "cristin_unit_id" : "215.6.6.0",
+  "unit_name" : {
+    "en" : "Department of Product Design"
+  },
+  "institution" : {
+    "acronym" : "OSLOMET"
+  },
+  "url" : "https://api.cristin.no/v2/units/215.6.6.0",
+  "acronym" : "tkd-u-pd",
+  "parent_unit" : {
+    "cristin_unit_id" : "215.6.0.0"
+  }
+}, {
+  "cristin_unit_id" : "215.6.7.0",
+  "unit_name" : {
+    "en" : "Part-time Lecturer/Employee TKD"
+  },
+  "institution" : {
+    "acronym" : "OSLOMET"
+  },
+  "url" : "https://api.cristin.no/v2/units/215.6.7.0",
+  "acronym" : "tkd-tl",
+  "parent_unit" : {
+    "cristin_unit_id" : "215.6.0.0"
+  }
+}, {
+  "cristin_unit_id" : "215.16.0.0",
+  "unit_name" : {
+    "en" : "Centre for Welfare and Labour Research"
+  },
+  "institution" : {
+    "acronym" : "OSLOMET"
+  },
+  "url" : "https://api.cristin.no/v2/units/215.16.0.0",
+  "acronym" : "sva",
+  "parent_unit" : {
+    "cristin_unit_id" : "215.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "184.32.50.0",
+  "unit_name" : {
+    "nb" : "UB, Seksjon for utdannings- og forskningsstøtte"
+  },
+  "institution" : {
+    "acronym" : "UIB"
+  },
+  "url" : "https://api.cristin.no/v2/units/184.32.50.0",
+  "acronym" : " ",
+  "parent_unit" : {
+    "cristin_unit_id" : "184.32.0.0"
+  }
+}, {
+  "cristin_unit_id" : "184.32.50.10",
+  "unit_name" : {
+    "nb" : "UB, Seksjon for utdannings- og forskningsstøtte"
+  },
+  "institution" : {
+    "acronym" : "UIB"
+  },
+  "url" : "https://api.cristin.no/v2/units/184.32.50.10",
+  "acronym" : " ",
+  "parent_unit" : {
+    "cristin_unit_id" : "184.32.50.0"
+  }
+}, {
+  "cristin_unit_id" : "184.32.50.40",
+  "unit_name" : {
+    "nb" : "UB, Seksjon for utdannings- og forskningsstøtte"
+  },
+  "institution" : {
+    "acronym" : "UIB"
+  },
+  "url" : "https://api.cristin.no/v2/units/184.32.50.40",
+  "acronym" : " ",
+  "parent_unit" : {
+    "cristin_unit_id" : "184.32.50.0"
+  }
+}, {
+  "cristin_unit_id" : "184.32.50.30",
+  "unit_name" : {
+    "nb" : "UB, Seksjon for utdannings- og forskningsstøtte"
+  },
+  "institution" : {
+    "acronym" : "UIB"
+  },
+  "url" : "https://api.cristin.no/v2/units/184.32.50.30",
+  "acronym" : " ",
+  "parent_unit" : {
+    "cristin_unit_id" : "184.32.50.0"
+  }
+}, {
+  "cristin_unit_id" : "184.32.50.20",
+  "unit_name" : {
+    "nb" : "UB, Seksjon for utdannings- og forskningsstøtte"
+  },
+  "institution" : {
+    "acronym" : "UIB"
+  },
+  "url" : "https://api.cristin.no/v2/units/184.32.50.20",
+  "acronym" : " ",
+  "parent_unit" : {
+    "cristin_unit_id" : "184.32.50.0"
+  }
+}, {
+  "cristin_unit_id" : "184.32.50.50",
+  "unit_name" : {
+    "nb" : "UB, Seksjon for utdannings- og forskningsstøtte"
+  },
+  "institution" : {
+    "acronym" : "UIB"
+  },
+  "url" : "https://api.cristin.no/v2/units/184.32.50.50",
+  "acronym" : " ",
+  "parent_unit" : {
+    "cristin_unit_id" : "184.32.50.0"
+  }
+}, {
+  "cristin_unit_id" : "184.34.0.0",
+  "unit_name" : {
+    "en" : "University Museum of Bergen"
+  },
+  "institution" : {
+    "acronym" : "UIB"
+  },
+  "url" : "https://api.cristin.no/v2/units/184.34.0.0",
+  "acronym" : "UM",
+  "parent_unit" : {
+    "cristin_unit_id" : "184.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "184.32.50.60",
+  "unit_name" : {
+    "nb" : "UB, Seksjon for utdannings- og forskningsstøtte"
+  },
+  "institution" : {
+    "acronym" : "UIB"
+  },
+  "url" : "https://api.cristin.no/v2/units/184.32.50.60",
+  "acronym" : " ",
+  "parent_unit" : {
+    "cristin_unit_id" : "184.32.50.0"
+  }
+}, {
+  "cristin_unit_id" : "184.34.30.30",
+  "unit_name" : {
+    "nb" : "Universitetsmuseet i Bergen, Samlingsseksjonen"
+  },
+  "institution" : {
+    "acronym" : "UIB"
+  },
+  "url" : "https://api.cristin.no/v2/units/184.34.30.30",
+  "acronym" : " ",
+  "parent_unit" : {
+    "cristin_unit_id" : "184.34.30.0"
+  }
+}, {
+  "cristin_unit_id" : "184.34.30.0",
+  "unit_name" : {
+    "en" : "University Museum of Bergen, The Cultural History Collections"
+  },
+  "institution" : {
+    "acronym" : "UIB"
+  },
+  "url" : "https://api.cristin.no/v2/units/184.34.30.0",
+  "acronym" : "UM-KULTUR",
+  "parent_unit" : {
+    "cristin_unit_id" : "184.34.0.0"
+  }
+}, {
+  "cristin_unit_id" : "184.34.30.10",
+  "unit_name" : {
+    "nb" : "Universitetsmuseet i Bergen, Konserveringsseksjonen"
+  },
+  "institution" : {
+    "acronym" : "UIB"
+  },
+  "url" : "https://api.cristin.no/v2/units/184.34.30.10",
+  "acronym" : " ",
+  "parent_unit" : {
+    "cristin_unit_id" : "184.34.30.0"
+  }
+}, {
+  "cristin_unit_id" : "184.34.20.0",
+  "unit_name" : {
+    "en" : "University Museum of Bergen, Public Outreach Section"
+  },
+  "institution" : {
+    "acronym" : "UIB"
+  },
+  "url" : "https://api.cristin.no/v2/units/184.34.20.0",
+  "acronym" : "UM-FORM",
+  "parent_unit" : {
+    "cristin_unit_id" : "184.34.0.0"
+  }
+}, {
+  "cristin_unit_id" : "184.34.10.0",
+  "unit_name" : {
+    "en" : "University Museum of Bergen"
+  },
+  "institution" : {
+    "acronym" : "UIB"
+  },
+  "url" : "https://api.cristin.no/v2/units/184.34.10.0",
+  "acronym" : "UM-ADM",
+  "parent_unit" : {
+    "cristin_unit_id" : "184.34.0.0"
+  }
+}, {
+  "cristin_unit_id" : "184.34.30.20",
+  "unit_name" : {
+    "nb" : "Universitetsmuseet i Bergen, Fornminneseksjonen"
+  },
+  "institution" : {
+    "acronym" : "UIB"
+  },
+  "url" : "https://api.cristin.no/v2/units/184.34.30.20",
+  "acronym" : " ",
+  "parent_unit" : {
+    "cristin_unit_id" : "184.34.30.0"
+  }
+}, {
+  "cristin_unit_id" : "184.34.40.0",
+  "unit_name" : {
+    "en" : "University Museum of Bergen, The Natural History Collections"
+  },
+  "institution" : {
+    "acronym" : "UIB"
+  },
+  "url" : "https://api.cristin.no/v2/units/184.34.40.0",
+  "acronym" : "UM-NATUR",
+  "parent_unit" : {
+    "cristin_unit_id" : "184.34.0.0"
+  }
+}, {
+  "cristin_unit_id" : "184.35.0.0",
+  "unit_name" : {
+    "nb" : "Andre, fordelingssted"
+  },
+  "institution" : {
+    "acronym" : "UIB"
+  },
+  "url" : "https://api.cristin.no/v2/units/184.35.0.0",
+  "acronym" : " ",
+  "parent_unit" : {
+    "cristin_unit_id" : "184.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "184.34.40.10",
+  "unit_name" : {
+    "nb" : "Universitetsmuseet i Bergen, Avd. for naturhistorie, Arboretet og botaniske hager"
+  },
+  "institution" : {
+    "acronym" : "UIB"
+  },
+  "url" : "https://api.cristin.no/v2/units/184.34.40.10",
+  "acronym" : " ",
+  "parent_unit" : {
+    "cristin_unit_id" : "184.34.40.0"
+  }
+}, {
+  "cristin_unit_id" : "184.34.50.0",
+  "unit_name" : {
+    "nb" : "Avdeling for samlingsforvaltning"
+  },
+  "institution" : {
+    "acronym" : "UIB"
+  },
+  "url" : "https://api.cristin.no/v2/units/184.34.50.0",
+  "acronym" : "UM-SAM",
+  "parent_unit" : {
+    "cristin_unit_id" : "184.34.0.0"
+  }
+}, {
+  "cristin_unit_id" : "184.70.0.0",
+  "unit_name" : {
+    "nb" : "Eksterne med avtale"
+  },
+  "institution" : {
+    "acronym" : "UIB"
+  },
+  "url" : "https://api.cristin.no/v2/units/184.70.0.0",
+  "acronym" : "ANDRE-EKST",
+  "parent_unit" : {
+    "cristin_unit_id" : "184.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "184.70.50.0",
+  "unit_name" : {
+    "en" : "The Norwegian Institute at Athens"
+  },
+  "institution" : {
+    "acronym" : "UIB"
+  },
+  "url" : "https://api.cristin.no/v2/units/184.70.50.0",
+  "acronym" : "ANDRE-ATHE",
+  "parent_unit" : {
+    "cristin_unit_id" : "184.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "184.70.70.0",
+  "unit_name" : {
+    "en" : "NSD Norwegian Centre for Research Data"
+  },
+  "institution" : {
+    "acronym" : "UIB"
+  },
+  "url" : "https://api.cristin.no/v2/units/184.70.70.0",
+  "acronym" : "NSD",
+  "parent_unit" : {
+    "cristin_unit_id" : "184.70.0.0"
+  }
+}, {
+  "cristin_unit_id" : "184.99.90.12",
+  "unit_name" : {
+    "nb" : "Studentparlamentet"
+  },
+  "institution" : {
+    "acronym" : "UIB"
+  },
+  "url" : "https://api.cristin.no/v2/units/184.99.90.12",
+  "acronym" : "STUDPARLAM",
+  "parent_unit" : {
+    "cristin_unit_id" : "184.70.0.0"
+  }
+}, {
+  "cristin_unit_id" : "184.99.90.14",
+  "unit_name" : {
+    "nb" : "Det Akademiske Kvarter"
+  },
+  "institution" : {
+    "acronym" : "UIB"
+  },
+  "url" : "https://api.cristin.no/v2/units/184.99.90.14",
+  "acronym" : "KVARTERET",
+  "parent_unit" : {
+    "cristin_unit_id" : "184.70.0.0"
+  }
+}, {
+  "cristin_unit_id" : "184.99.90.16",
+  "unit_name" : {
+    "en" : "Oral health centre of expertise, Vestland, Norway"
+  },
+  "institution" : {
+    "acronym" : "UIB"
+  },
+  "url" : "https://api.cristin.no/v2/units/184.99.90.16",
+  "acronym" : "TKVESTLAND",
+  "parent_unit" : {
+    "cristin_unit_id" : "184.70.0.0"
+  }
+}, {
+  "cristin_unit_id" : "185.11.0.0",
+  "unit_name" : {
+    "en" : "Faculty of Theology"
+  },
+  "institution" : {
+    "acronym" : "UIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/185.11.0.0",
+  "acronym" : "TF",
+  "parent_unit" : {
+    "cristin_unit_id" : "185.90.0.0"
+  }
+}, {
+  "cristin_unit_id" : "185.11.0.10",
+  "unit_name" : {
+    "en" : "Det teologiske fakultetssekretariat"
+  },
+  "institution" : {
+    "acronym" : "UIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/185.11.0.10",
+  "acronym" : "TF-FAKSEKR",
+  "parent_unit" : {
+    "cristin_unit_id" : "185.11.0.0"
+  }
+}, {
+  "cristin_unit_id" : "185.11.0.20",
+  "unit_name" : {
+    "en" : "Fagseksjonen"
+  },
+  "institution" : {
+    "acronym" : "UIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/185.11.0.20",
+  "acronym" : "TF-FAGSEK",
+  "parent_unit" : {
+    "cristin_unit_id" : "185.11.0.0"
+  }
+}, {
+  "cristin_unit_id" : "185.11.0.21",
+  "unit_name" : {
+    "en" : "Gruppe A.T."
+  },
+  "institution" : {
+    "acronym" : "UIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/185.11.0.21",
+  "acronym" : "TF-GRUPPE-",
+  "parent_unit" : {
+    "cristin_unit_id" : "185.11.0.20"
+  }
+}, {
+  "cristin_unit_id" : "185.11.0.30",
+  "unit_name" : {
+    "en" : "Kompetansehevende studier"
+  },
+  "institution" : {
+    "acronym" : "UIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/185.11.0.30",
+  "acronym" : "TF-AKS",
+  "parent_unit" : {
+    "cristin_unit_id" : "185.11.0.20"
+  }
+}, {
+  "cristin_unit_id" : "185.12.0.14",
+  "unit_name" : {
+    "en" : "Educational Quality Section"
+  },
+  "institution" : {
+    "acronym" : "UIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/185.12.0.14",
+  "acronym" : "JF-STUDKVA",
+  "parent_unit" : {
+    "cristin_unit_id" : "185.12.0.10"
+  }
+}, {
+  "cristin_unit_id" : "185.12.0.15",
+  "unit_name" : {
+    "en" : "Communication Section"
+  },
+  "institution" : {
+    "acronym" : "UIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/185.12.0.15",
+  "acronym" : "JF-KSJUS",
+  "parent_unit" : {
+    "cristin_unit_id" : "185.12.0.10"
+  }
+}, {
+  "cristin_unit_id" : "185.12.0.12",
+  "unit_name" : {
+    "en" : "Information Technology Section"
+  },
+  "institution" : {
+    "acronym" : "UIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/185.12.0.12",
+  "acronym" : "JF-ITSEK",
+  "parent_unit" : {
+    "cristin_unit_id" : "185.12.0.10"
+  }
+}, {
+  "cristin_unit_id" : "185.12.0.17",
+  "unit_name" : {
+    "en" : "Faculty Administration"
+  },
+  "institution" : {
+    "acronym" : "UIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/185.12.0.17",
+  "acronym" : "JF-ADMØK",
+  "parent_unit" : {
+    "cristin_unit_id" : "185.12.0.10"
+  }
+}, {
+  "cristin_unit_id" : "185.12.0.46",
+  "unit_name" : {
+    "en" : "Infosenteret"
+  },
+  "institution" : {
+    "acronym" : "UIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/185.12.0.46",
+  "acronym" : "JF-INFOSEN",
+  "parent_unit" : {
+    "cristin_unit_id" : "185.12.0.40"
+  }
+}, {
+  "cristin_unit_id" : "185.12.1.1",
+  "unit_name" : {
+    "en" : "Technical and administrative group"
+  },
+  "institution" : {
+    "acronym" : "UIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/185.12.1.1",
+  "acronym" : "IKRS-TA",
+  "parent_unit" : {
+    "cristin_unit_id" : "185.12.1.0"
+  }
+}, {
+  "cristin_unit_id" : "185.12.1.10",
+  "unit_name" : {
+    "en" : "Law Student's Free Legal Aid Organization"
+  },
+  "institution" : {
+    "acronym" : "UIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/185.12.1.10",
+  "acronym" : "JUSSBUSS",
+  "parent_unit" : {
+    "cristin_unit_id" : "185.12.1.1"
+  }
+}, {
+  "cristin_unit_id" : "185.12.2.0",
+  "unit_name" : {
+    "en" : "Department of Private Law"
+  },
+  "institution" : {
+    "acronym" : "UIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/185.12.2.0",
+  "acronym" : "JF-IFP",
+  "parent_unit" : {
+    "cristin_unit_id" : "185.12.0.0"
+  }
+}, {
+  "cristin_unit_id" : "185.12.2.2",
+  "unit_name" : {
+    "en" : "Bilagslønnet"
+  },
+  "institution" : {
+    "acronym" : "UIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/185.12.2.2",
+  "acronym" : "IFP-BILAG",
+  "parent_unit" : {
+    "cristin_unit_id" : "185.12.2.1"
+  }
+}, {
+  "cristin_unit_id" : "185.12.2.1",
+  "unit_name" : {
+    "en" : "Technical and administrative"
+  },
+  "institution" : {
+    "acronym" : "UIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/185.12.2.1",
+  "acronym" : "IFP-TA",
+  "parent_unit" : {
+    "cristin_unit_id" : "185.12.2.0"
+  }
+}, {
+  "cristin_unit_id" : "185.12.4.1",
+  "unit_name" : {
+    "en" : "Technical and administrative"
+  },
+  "institution" : {
+    "acronym" : "UIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/185.12.4.1",
+  "acronym" : "NIFS-TA",
+  "parent_unit" : {
+    "cristin_unit_id" : "185.12.4.0"
+  }
+}, {
+  "cristin_unit_id" : "185.12.7.0",
+  "unit_name" : {
+    "en" : "Norwegian Centre for Human Rights"
+  },
+  "institution" : {
+    "acronym" : "UIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/185.12.7.0",
+  "acronym" : "JF-SMR",
+  "parent_unit" : {
+    "cristin_unit_id" : "185.12.0.0"
+  }
+}, {
+  "cristin_unit_id" : "185.12.7.3",
+  "unit_name" : {
+    "en" : "Prosjektadministrasjon"
+  },
+  "institution" : {
+    "acronym" : "UIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/185.12.7.3",
+  "acronym" : "SMR-PROSJE",
+  "parent_unit" : {
+    "cristin_unit_id" : "185.12.7.2"
+  }
+}, {
+  "cristin_unit_id" : "185.13.25.20",
+  "unit_name" : {
+    "en" : "Enhet for helsevitenskapelig pedagogikk - HELP"
+  },
+  "institution" : {
+    "acronym" : "UIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/185.13.25.20",
+  "acronym" : "MED-HELP",
+  "parent_unit" : {
+    "cristin_unit_id" : "185.50.0.0"
+  }
+}, {
+  "cristin_unit_id" : "185.14.0.10",
+  "unit_name" : {
+    "en" : "Faculty Administration"
+  },
+  "institution" : {
+    "acronym" : "UIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/185.14.0.10",
+  "acronym" : "HF-FAKSEKR",
+  "parent_unit" : {
+    "cristin_unit_id" : "185.14.0.0"
+  }
+}, {
+  "cristin_unit_id" : "185.14.0.11",
+  "unit_name" : {
+    "en" : "Research Section"
+  },
+  "institution" : {
+    "acronym" : "UIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/185.14.0.11",
+  "acronym" : "HF-FORSKN",
+  "parent_unit" : {
+    "cristin_unit_id" : "185.14.0.10"
+  }
+}, {
+  "cristin_unit_id" : "185.14.0.0",
+  "unit_name" : {
+    "en" : "Faculty of Humanities"
+  },
+  "institution" : {
+    "acronym" : "UIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/185.14.0.0",
+  "acronym" : "HF",
+  "parent_unit" : {
+    "cristin_unit_id" : "185.90.0.0"
+  }
+}, {
+  "cristin_unit_id" : "185.14.0.14",
+  "unit_name" : {
+    "en" : "Communications Section at The Faculty of Humanities"
+  },
+  "institution" : {
+    "acronym" : "UIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/185.14.0.14",
+  "acronym" : "HF-KOMMSEK",
+  "parent_unit" : {
+    "cristin_unit_id" : "185.14.0.10"
+  }
+}, {
+  "cristin_unit_id" : "185.14.0.17",
+  "unit_name" : {
+    "en" : "UiO:Democracy Administration"
+  },
+  "institution" : {
+    "acronym" : "UIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/185.14.0.17",
+  "acronym" : "HF-DEMOADM",
+  "parent_unit" : {
+    "cristin_unit_id" : "185.14.0.10"
+  }
+}, {
+  "cristin_unit_id" : "185.14.0.12",
+  "unit_name" : {
+    "en" : "IT-seksjonen"
+  },
+  "institution" : {
+    "acronym" : "UIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/185.14.0.12",
+  "acronym" : "HF-IT-SEK",
+  "parent_unit" : {
+    "cristin_unit_id" : "185.14.0.10"
+  }
+}, {
+  "cristin_unit_id" : "185.14.13.0",
+  "unit_name" : {
+    "en" : "Det norske institutt i Roma"
+  },
+  "institution" : {
+    "acronym" : "UIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/185.14.13.0",
+  "acronym" : "HF-DNIR",
+  "parent_unit" : {
+    "cristin_unit_id" : "185.14.0.0"
+  }
+}, {
+  "cristin_unit_id" : "1584.0.0.0",
+  "unit_name" : {
+    "nb" : "Luftforsvarets skolesenter Kjevik"
+  },
+  "institution" : {
+    "acronym" : "LSK"
+  },
+  "url" : "https://api.cristin.no/v2/units/1584.0.0.0",
+  "acronym" : "LSK"
+}, {
+  "cristin_unit_id" : "1585.0.0.0",
+  "unit_name" : {
+    "nb" : "Teleskolen"
+  },
+  "institution" : {
+    "acronym" : "TELESKOLEN"
+  },
+  "url" : "https://api.cristin.no/v2/units/1585.0.0.0",
+  "acronym" : "TELESKOLEN"
+}, {
+  "cristin_unit_id" : "1587.0.0.0",
+  "unit_name" : {
+    "nb" : "Den norske kirkes menighetshøgskole"
+  },
+  "institution" : {
+    "acronym" : "DNK"
+  },
+  "url" : "https://api.cristin.no/v2/units/1587.0.0.0",
+  "acronym" : "DNK"
+}, {
+  "cristin_unit_id" : "1588.0.0.0",
+  "unit_name" : {
+    "nb" : "Høgskolen for Kristendom-Metodistkirkens studiesenter"
+  },
+  "institution" : {
+    "acronym" : "HFKMETO"
+  },
+  "url" : "https://api.cristin.no/v2/units/1588.0.0.0",
+  "acronym" : "HFKMETO"
+}, {
+  "cristin_unit_id" : "1590.0.0.0",
+  "unit_name" : {
+    "nb" : "Norges sykepleierhøyskole"
+  },
+  "institution" : {
+    "acronym" : "SYKEPLEIE"
+  },
+  "url" : "https://api.cristin.no/v2/units/1590.0.0.0",
+  "acronym" : "SYKEPLEIE"
+}, {
+  "cristin_unit_id" : "1591.0.0.0",
+  "unit_name" : {
+    "nb" : "Næringsakademiet"
+  },
+  "institution" : {
+    "acronym" : "NA"
+  },
+  "url" : "https://api.cristin.no/v2/units/1591.0.0.0",
+  "acronym" : "NA"
+}, {
+  "cristin_unit_id" : "1101.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Alta"
+  },
+  "institution" : {
+    "acronym" : "FUALTA"
+  },
+  "url" : "https://api.cristin.no/v2/units/1101.0.0.0",
+  "acronym" : "FUALTA"
+}, {
+  "cristin_unit_id" : "1100.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Agder"
+  },
+  "institution" : {
+    "acronym" : "FUAGDER"
+  },
+  "url" : "https://api.cristin.no/v2/units/1100.0.0.0",
+  "acronym" : "FUAGDER"
+}, {
+  "cristin_unit_id" : "1102.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Asker"
+  },
+  "institution" : {
+    "acronym" : "FUASKER"
+  },
+  "url" : "https://api.cristin.no/v2/units/1102.0.0.0",
+  "acronym" : "FUASKER"
+}, {
+  "cristin_unit_id" : "1103.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Bardu/Målselv"
+  },
+  "institution" : {
+    "acronym" : "FUBARDMÅL"
+  },
+  "url" : "https://api.cristin.no/v2/units/1103.0.0.0",
+  "acronym" : "FUBARDMÅL"
+}, {
+  "cristin_unit_id" : "1105.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Brønnøy"
+  },
+  "institution" : {
+    "acronym" : "FUBRØNNØY"
+  },
+  "url" : "https://api.cristin.no/v2/units/1105.0.0.0",
+  "acronym" : "FUBRØNNØY"
+}, {
+  "cristin_unit_id" : "1121.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Mosjøen"
+  },
+  "institution" : {
+    "acronym" : "FUMOSJØEN"
+  },
+  "url" : "https://api.cristin.no/v2/units/1121.0.0.0",
+  "acronym" : "FUMOSJØEN"
+}, {
+  "cristin_unit_id" : "1123.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Namsos"
+  },
+  "institution" : {
+    "acronym" : "FUNAMSOS"
+  },
+  "url" : "https://api.cristin.no/v2/units/1123.0.0.0",
+  "acronym" : "FUNAMSOS"
+}, {
+  "cristin_unit_id" : "1125.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Oppegård"
+  },
+  "institution" : {
+    "acronym" : "FUOPPEGÅRD"
+  },
+  "url" : "https://api.cristin.no/v2/units/1125.0.0.0",
+  "acronym" : "FUOPPEGÅRD"
+}, {
+  "cristin_unit_id" : "1124.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Nedre Romerike"
+  },
+  "institution" : {
+    "acronym" : "FUNEDREROM"
+  },
+  "url" : "https://api.cristin.no/v2/units/1124.0.0.0",
+  "acronym" : "FUNEDREROM"
+}, {
+  "cristin_unit_id" : "1126.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Oslo"
+  },
+  "institution" : {
+    "acronym" : "FUOSLO"
+  },
+  "url" : "https://api.cristin.no/v2/units/1126.0.0.0",
+  "acronym" : "FUOSLO"
+}, {
+  "cristin_unit_id" : "1127.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Røros/Holtålen"
+  },
+  "institution" : {
+    "acronym" : "FURØROSHOL"
+  },
+  "url" : "https://api.cristin.no/v2/units/1127.0.0.0",
+  "acronym" : "FURØROSHOL"
+}, {
+  "cristin_unit_id" : "1128.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Sarpsborg"
+  },
+  "institution" : {
+    "acronym" : "FUSARPSB"
+  },
+  "url" : "https://api.cristin.no/v2/units/1128.0.0.0",
+  "acronym" : "FUSARPSB"
+}, {
+  "cristin_unit_id" : "1130.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Svolvær"
+  },
+  "institution" : {
+    "acronym" : "FUSVOLVÆR"
+  },
+  "url" : "https://api.cristin.no/v2/units/1130.0.0.0",
+  "acronym" : "FUSVOLVÆR"
+}, {
+  "cristin_unit_id" : "1129.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Sel"
+  },
+  "institution" : {
+    "acronym" : "FUSEL"
+  },
+  "url" : "https://api.cristin.no/v2/units/1129.0.0.0",
+  "acronym" : "FUSEL"
+}, {
+  "cristin_unit_id" : "1142.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Fosen"
+  },
+  "institution" : {
+    "acronym" : "FUFOSEN"
+  },
+  "url" : "https://api.cristin.no/v2/units/1142.0.0.0",
+  "acronym" : "FUFOSEN"
+}, {
+  "cristin_unit_id" : "1143.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Hitra/Frøya"
+  },
+  "institution" : {
+    "acronym" : "FUHITRFRØY"
+  },
+  "url" : "https://api.cristin.no/v2/units/1143.0.0.0",
+  "acronym" : "FUHITRFRØY"
+}, {
+  "cristin_unit_id" : "1144.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Hornindal"
+  },
+  "institution" : {
+    "acronym" : "FUHORNIND"
+  },
+  "url" : "https://api.cristin.no/v2/units/1144.0.0.0",
+  "acronym" : "FUHORNIND"
+}, {
+  "cristin_unit_id" : "1145.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Hysnes Fort"
+  },
+  "institution" : {
+    "acronym" : "FUHYSNES"
+  },
+  "url" : "https://api.cristin.no/v2/units/1145.0.0.0",
+  "acronym" : "FUHYSNES"
+}, {
+  "cristin_unit_id" : "1146.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Kongsberg"
+  },
+  "institution" : {
+    "acronym" : "FUKONGSB"
+  },
+  "url" : "https://api.cristin.no/v2/units/1146.0.0.0",
+  "acronym" : "FUKONGSB"
+}, {
+  "cristin_unit_id" : "1147.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Kristiansand"
+  },
+  "institution" : {
+    "acronym" : "FUKRSAND"
+  },
+  "url" : "https://api.cristin.no/v2/units/1147.0.0.0",
+  "acronym" : "FUKRSAND"
+}, {
+  "cristin_unit_id" : "1148.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Kristiansund"
+  },
+  "institution" : {
+    "acronym" : "FUKRSUND"
+  },
+  "url" : "https://api.cristin.no/v2/units/1148.0.0.0",
+  "acronym" : "FUKRSUND"
+}, {
+  "cristin_unit_id" : "1149.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Kvinnherad"
+  },
+  "institution" : {
+    "acronym" : "FUKVINNHER"
+  },
+  "url" : "https://api.cristin.no/v2/units/1149.0.0.0",
+  "acronym" : "FUKVINNHER"
+}, {
+  "cristin_unit_id" : "1150.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Levanger"
+  },
+  "institution" : {
+    "acronym" : "FULEVANGER"
+  },
+  "url" : "https://api.cristin.no/v2/units/1150.0.0.0",
+  "acronym" : "FULEVANGER"
+}, {
+  "cristin_unit_id" : "1172.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Fjell Sund og Øygarden"
+  },
+  "institution" : {
+    "acronym" : "FUFJELLSUN"
+  },
+  "url" : "https://api.cristin.no/v2/units/1172.0.0.0",
+  "acronym" : "FUFJELLSUN"
+}, {
+  "cristin_unit_id" : "1171.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Florø"
+  },
+  "institution" : {
+    "acronym" : "FUFLORØ"
+  },
+  "url" : "https://api.cristin.no/v2/units/1171.0.0.0",
+  "acronym" : "FUFLORØ"
+}, {
+  "cristin_unit_id" : "1182.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Arendal"
+  },
+  "institution" : {
+    "acronym" : "FUARENDAL"
+  },
+  "url" : "https://api.cristin.no/v2/units/1182.0.0.0",
+  "acronym" : "FUARENDAL"
+}, {
+  "cristin_unit_id" : "1184.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Luster-Sogndal"
+  },
+  "institution" : {
+    "acronym" : "FULUSTER"
+  },
+  "url" : "https://api.cristin.no/v2/units/1184.0.0.0",
+  "acronym" : "FULUSTER"
+}, {
+  "cristin_unit_id" : "1179.0.0.0",
+  "unit_name" : {
+    "nb" : "Kvam Friundervisning"
+  },
+  "institution" : {
+    "acronym" : "KVAMFRIUND"
+  },
+  "url" : "https://api.cristin.no/v2/units/1179.0.0.0",
+  "acronym" : "KVAMFRIUND"
+}, {
+  "cristin_unit_id" : "1183.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Tønsberg"
+  },
+  "institution" : {
+    "acronym" : "FUTØNSBERG"
+  },
+  "url" : "https://api.cristin.no/v2/units/1183.0.0.0",
+  "acronym" : "FUTØNSBERG"
+}, {
+  "cristin_unit_id" : "1185.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet i Oppland"
+  },
+  "institution" : {
+    "acronym" : "FUOPPLAND"
+  },
+  "url" : "https://api.cristin.no/v2/units/1185.0.0.0",
+  "acronym" : "FUOPPLAND"
+}, {
+  "cristin_unit_id" : "1305.0.0.0",
+  "unit_name" : {
+    "en" : "The National Museum of Art, Architecture and Design"
+  },
+  "institution" : {
+    "acronym" : "NMK"
+  },
+  "url" : "https://api.cristin.no/v2/units/1305.0.0.0",
+  "acronym" : "NMK"
+}, {
+  "cristin_unit_id" : "1305.12.0.0",
+  "unit_name" : {
+    "nb" : "Avdeling Forretning og marked"
+  },
+  "institution" : {
+    "acronym" : "NMK"
+  },
+  "url" : "https://api.cristin.no/v2/units/1305.12.0.0",
+  "acronym" : "NMK",
+  "parent_unit" : {
+    "cristin_unit_id" : "1305.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "1310.0.0.0",
+  "unit_name" : {
+    "en" : "Sørlandet Art Museum"
+  },
+  "institution" : {
+    "acronym" : "SKMU"
+  },
+  "url" : "https://api.cristin.no/v2/units/1310.0.0.0",
+  "acronym" : "SKMU"
+}, {
+  "cristin_unit_id" : "1104.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Bodø"
+  },
+  "institution" : {
+    "acronym" : "FUBODØ"
+  },
+  "url" : "https://api.cristin.no/v2/units/1104.0.0.0",
+  "acronym" : "FUBODØ"
+}, {
+  "cristin_unit_id" : "1106.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Buskerud/Vestfold"
+  },
+  "institution" : {
+    "acronym" : "FUBUSKERUD"
+  },
+  "url" : "https://api.cristin.no/v2/units/1106.0.0.0",
+  "acronym" : "FUBUSKERUD"
+}, {
+  "cristin_unit_id" : "1108.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Eidsvoll"
+  },
+  "institution" : {
+    "acronym" : "FUEIDSVOLL"
+  },
+  "url" : "https://api.cristin.no/v2/units/1108.0.0.0",
+  "acronym" : "FUEIDSVOLL"
+}, {
+  "cristin_unit_id" : "1107.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Bærum"
+  },
+  "institution" : {
+    "acronym" : "FUBÆRUM"
+  },
+  "url" : "https://api.cristin.no/v2/units/1107.0.0.0",
+  "acronym" : "FUBÆRUM"
+}, {
+  "cristin_unit_id" : "1109.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Elverum"
+  },
+  "institution" : {
+    "acronym" : "FUELVERUM"
+  },
+  "url" : "https://api.cristin.no/v2/units/1109.0.0.0",
+  "acronym" : "FUELVERUM"
+}, {
+  "cristin_unit_id" : "1110.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Fredrikstad"
+  },
+  "institution" : {
+    "acronym" : "FUFREDRIK"
+  },
+  "url" : "https://api.cristin.no/v2/units/1110.0.0.0",
+  "acronym" : "FUFREDRIK"
+}, {
+  "cristin_unit_id" : "1112.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Hadeland"
+  },
+  "institution" : {
+    "acronym" : "FUHADELAND"
+  },
+  "url" : "https://api.cristin.no/v2/units/1112.0.0.0",
+  "acronym" : "FUHADELAND"
+}, {
+  "cristin_unit_id" : "1111.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Gjøvik"
+  },
+  "institution" : {
+    "acronym" : "FUGJØVIK"
+  },
+  "url" : "https://api.cristin.no/v2/units/1111.0.0.0",
+  "acronym" : "FUGJØVIK"
+}, {
+  "cristin_unit_id" : "1113.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Halden"
+  },
+  "institution" : {
+    "acronym" : "FUHALDEN"
+  },
+  "url" : "https://api.cristin.no/v2/units/1113.0.0.0",
+  "acronym" : "FUHALDEN"
+}, {
+  "cristin_unit_id" : "1117.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Hedmark"
+  },
+  "institution" : {
+    "acronym" : "FUHEDMARK"
+  },
+  "url" : "https://api.cristin.no/v2/units/1117.0.0.0",
+  "acronym" : "FUHEDMARK"
+}, {
+  "cristin_unit_id" : "1118.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Indre Østfold"
+  },
+  "institution" : {
+    "acronym" : "FUINDREØST"
+  },
+  "url" : "https://api.cristin.no/v2/units/1118.0.0.0",
+  "acronym" : "FUINDREØST"
+}, {
+  "cristin_unit_id" : "1119.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Innherad"
+  },
+  "institution" : {
+    "acronym" : "FUINNHERAD"
+  },
+  "url" : "https://api.cristin.no/v2/units/1119.0.0.0",
+  "acronym" : "FUINNHERAD"
+}, {
+  "cristin_unit_id" : "1122.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Moss"
+  },
+  "institution" : {
+    "acronym" : "FUMOSS"
+  },
+  "url" : "https://api.cristin.no/v2/units/1122.0.0.0",
+  "acronym" : "FUMOSS"
+}, {
+  "cristin_unit_id" : "1132.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Telemark"
+  },
+  "institution" : {
+    "acronym" : "FUTELEMARK"
+  },
+  "url" : "https://api.cristin.no/v2/units/1132.0.0.0",
+  "acronym" : "FUTELEMARK"
+}, {
+  "cristin_unit_id" : "1131.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Sør Hedmark"
+  },
+  "institution" : {
+    "acronym" : "FUSØRHEDM"
+  },
+  "url" : "https://api.cristin.no/v2/units/1131.0.0.0",
+  "acronym" : "FUSØRHEDM"
+}, {
+  "cristin_unit_id" : "1133.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Tromsø"
+  },
+  "institution" : {
+    "acronym" : "FUTROMSØ"
+  },
+  "url" : "https://api.cristin.no/v2/units/1133.0.0.0",
+  "acronym" : "FUTROMSØ"
+}, {
+  "cristin_unit_id" : "1134.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Trondheim"
+  },
+  "institution" : {
+    "acronym" : "FUTRONDH"
+  },
+  "url" : "https://api.cristin.no/v2/units/1134.0.0.0",
+  "acronym" : "FUTRONDH"
+}, {
+  "cristin_unit_id" : "1135.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Vesterålen"
+  },
+  "institution" : {
+    "acronym" : "FUVESTERÅL"
+  },
+  "url" : "https://api.cristin.no/v2/units/1135.0.0.0",
+  "acronym" : "FUVESTERÅL"
+}, {
+  "cristin_unit_id" : "1136.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Øvre Romerike"
+  },
+  "institution" : {
+    "acronym" : "FUØVREROM"
+  },
+  "url" : "https://api.cristin.no/v2/units/1136.0.0.0",
+  "acronym" : "FUØVREROM"
+}, {
+  "cristin_unit_id" : "1137.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet i Hordaland"
+  },
+  "institution" : {
+    "acronym" : "FUHORDALAN"
+  },
+  "url" : "https://api.cristin.no/v2/units/1137.0.0.0",
+  "acronym" : "FUHORDALAN"
+}, {
+  "cristin_unit_id" : "1139.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet i Vadsø"
+  },
+  "institution" : {
+    "acronym" : "FUVADSØ"
+  },
+  "url" : "https://api.cristin.no/v2/units/1139.0.0.0",
+  "acronym" : "FUVADSØ"
+}, {
+  "cristin_unit_id" : "1138.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet i Narvik"
+  },
+  "institution" : {
+    "acronym" : "FUNARVIK"
+  },
+  "url" : "https://api.cristin.no/v2/units/1138.0.0.0",
+  "acronym" : "FUNARVIK"
+}, {
+  "cristin_unit_id" : "1140.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Bergen"
+  },
+  "institution" : {
+    "acronym" : "FUBERGEN"
+  },
+  "url" : "https://api.cristin.no/v2/units/1140.0.0.0",
+  "acronym" : "FUBERGEN"
+}, {
+  "cristin_unit_id" : "1141.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Fauske"
+  },
+  "institution" : {
+    "acronym" : "FUFAUSKE"
+  },
+  "url" : "https://api.cristin.no/v2/units/1141.0.0.0",
+  "acronym" : "FUFAUSKE"
+}, {
+  "cristin_unit_id" : "1159.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Sandnes"
+  },
+  "institution" : {
+    "acronym" : "FUSANDNES"
+  },
+  "url" : "https://api.cristin.no/v2/units/1159.0.0.0",
+  "acronym" : "FUSANDNES"
+}, {
+  "cristin_unit_id" : "1157.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Røros"
+  },
+  "institution" : {
+    "acronym" : "FURØROS"
+  },
+  "url" : "https://api.cristin.no/v2/units/1157.0.0.0",
+  "acronym" : "FURØROS"
+}, {
+  "cristin_unit_id" : "1160.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Sandnessjøen"
+  },
+  "institution" : {
+    "acronym" : "FUSANSJØEN"
+  },
+  "url" : "https://api.cristin.no/v2/units/1160.0.0.0",
+  "acronym" : "FUSANSJØEN"
+}, {
+  "cristin_unit_id" : "1161.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Sortland"
+  },
+  "institution" : {
+    "acronym" : "FUSORTLAND"
+  },
+  "url" : "https://api.cristin.no/v2/units/1161.0.0.0",
+  "acronym" : "FUSORTLAND"
+}, {
+  "cristin_unit_id" : "1162.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Stavanger"
+  },
+  "institution" : {
+    "acronym" : "FUSTAVANG"
+  },
+  "url" : "https://api.cristin.no/v2/units/1162.0.0.0",
+  "acronym" : "FUSTAVANG"
+}, {
+  "cristin_unit_id" : "1163.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Steinkjer"
+  },
+  "institution" : {
+    "acronym" : "FUSTEINKJ"
+  },
+  "url" : "https://api.cristin.no/v2/units/1163.0.0.0",
+  "acronym" : "FUSTEINKJ"
+}, {
+  "cristin_unit_id" : "1164.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Stjørdal/Meråker"
+  },
+  "institution" : {
+    "acronym" : "FUSTJØMERÅ"
+  },
+  "url" : "https://api.cristin.no/v2/units/1164.0.0.0",
+  "acronym" : "FUSTJØMERÅ"
+}, {
+  "cristin_unit_id" : "1165.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Sunndalsøra"
+  },
+  "institution" : {
+    "acronym" : "FUSUNNDAL"
+  },
+  "url" : "https://api.cristin.no/v2/units/1165.0.0.0",
+  "acronym" : "FUSUNNDAL"
+}, {
+  "cristin_unit_id" : "1166.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Uspesifisert"
+  },
+  "institution" : {
+    "acronym" : "FUUSPES"
+  },
+  "url" : "https://api.cristin.no/v2/units/1166.0.0.0",
+  "acronym" : "FUUSPES"
+}, {
+  "cristin_unit_id" : "1167.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Vestlofoten"
+  },
+  "institution" : {
+    "acronym" : "FUVLOFOTEN"
+  },
+  "url" : "https://api.cristin.no/v2/units/1167.0.0.0",
+  "acronym" : "FUVLOFOTEN"
+}, {
+  "cristin_unit_id" : "1173.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Førde"
+  },
+  "institution" : {
+    "acronym" : "FUFØRDE"
+  },
+  "url" : "https://api.cristin.no/v2/units/1173.0.0.0",
+  "acronym" : "FUFØRDE"
+}, {
+  "cristin_unit_id" : "1177.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Stord Fitjar og Bømle"
+  },
+  "institution" : {
+    "acronym" : "FUSTORD"
+  },
+  "url" : "https://api.cristin.no/v2/units/1177.0.0.0",
+  "acronym" : "FUSTORD"
+}, {
+  "cristin_unit_id" : "1176.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Sola"
+  },
+  "institution" : {
+    "acronym" : "FUSOLA"
+  },
+  "url" : "https://api.cristin.no/v2/units/1176.0.0.0",
+  "acronym" : "FUSOLA"
+}, {
+  "cristin_unit_id" : "1178.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Vågsøy"
+  },
+  "institution" : {
+    "acronym" : "FUVÅGSØY"
+  },
+  "url" : "https://api.cristin.no/v2/units/1178.0.0.0",
+  "acronym" : "FUVÅGSØY"
+}, {
+  "cristin_unit_id" : "1180.0.0.0",
+  "unit_name" : {
+    "nb" : "Friundervisningen"
+  },
+  "institution" : {
+    "acronym" : "FRIUNDV"
+  },
+  "url" : "https://api.cristin.no/v2/units/1180.0.0.0",
+  "acronym" : "FRIUNDV"
+}, {
+  "cristin_unit_id" : "1181.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet"
+  },
+  "institution" : {
+    "acronym" : "FOLKUNIV"
+  },
+  "url" : "https://api.cristin.no/v2/units/1181.0.0.0",
+  "acronym" : "FOLKUNIV"
+}, {
+  "cristin_unit_id" : "1300.0.0.0",
+  "unit_name" : {
+    "nb" : "Norsk Arkitekturmuseum"
+  },
+  "institution" : {
+    "acronym" : "ARKMUSEUM"
+  },
+  "url" : "https://api.cristin.no/v2/units/1300.0.0.0",
+  "acronym" : "ARKMUSEUM"
+}, {
+  "cristin_unit_id" : "1305.1.0.0",
+  "unit_name" : {
+    "nb" : "Direktør og stab"
+  },
+  "institution" : {
+    "acronym" : "NMK"
+  },
+  "url" : "https://api.cristin.no/v2/units/1305.1.0.0",
+  "acronym" : "NMK",
+  "parent_unit" : {
+    "cristin_unit_id" : "1305.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "1304.0.0.0",
+  "unit_name" : {
+    "nb" : "Tromsø museum"
+  },
+  "institution" : {
+    "acronym" : "TMU"
+  },
+  "url" : "https://api.cristin.no/v2/units/1304.0.0.0",
+  "acronym" : "TMU"
+}, {
+  "cristin_unit_id" : "1305.8.0.0",
+  "unit_name" : {
+    "en" : "Collection Management"
+  },
+  "institution" : {
+    "acronym" : "NMK"
+  },
+  "url" : "https://api.cristin.no/v2/units/1305.8.0.0",
+  "acronym" : "NMK",
+  "parent_unit" : {
+    "cristin_unit_id" : "1305.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "1305.9.0.0",
+  "unit_name" : {
+    "en" : "Administration"
+  },
+  "institution" : {
+    "acronym" : "NMK"
+  },
+  "url" : "https://api.cristin.no/v2/units/1305.9.0.0",
+  "acronym" : "NMK",
+  "parent_unit" : {
+    "cristin_unit_id" : "1305.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "1305.10.0.0",
+  "unit_name" : {
+    "nb" : "Avdeling Formidling og publikum"
+  },
+  "institution" : {
+    "acronym" : "NMK"
+  },
+  "url" : "https://api.cristin.no/v2/units/1305.10.0.0",
+  "acronym" : "NMK",
+  "parent_unit" : {
+    "cristin_unit_id" : "1305.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "1305.11.0.0",
+  "unit_name" : {
+    "nb" : "Avdeling Samling"
+  },
+  "institution" : {
+    "acronym" : "NMK"
+  },
+  "url" : "https://api.cristin.no/v2/units/1305.11.0.0",
+  "acronym" : "NMK",
+  "parent_unit" : {
+    "cristin_unit_id" : "1305.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "1308.0.0.0",
+  "unit_name" : {
+    "nb" : "Perspektivet Museum"
+  },
+  "institution" : {
+    "acronym" : "PM"
+  },
+  "url" : "https://api.cristin.no/v2/units/1308.0.0.0",
+  "acronym" : "PM"
+}, {
+  "cristin_unit_id" : "1309.0.0.0",
+  "unit_name" : {
+    "nb" : "Ryfylkemuseet"
+  },
+  "institution" : {
+    "acronym" : "RYFYLKEMUS"
+  },
+  "url" : "https://api.cristin.no/v2/units/1309.0.0.0",
+  "acronym" : "RYFYLKEMUS"
+}, {
+  "cristin_unit_id" : "1000.0.0.0",
+  "unit_name" : {
+    "nb" : "AOF Haugaland"
+  },
+  "institution" : {
+    "acronym" : "AOFHAUGALA"
+  },
+  "url" : "https://api.cristin.no/v2/units/1000.0.0.0",
+  "acronym" : "AOFHAUGALA"
+}, {
+  "cristin_unit_id" : "0.0.0.0",
+  "unit_name" : {
+    "en" : "Unknown"
+  },
+  "institution" : {
+    "acronym" : "UKJENT"
+  },
+  "url" : "https://api.cristin.no/v2/units/0.0.0.0",
+  "acronym" : "UNKNOWN"
+}, {
+  "cristin_unit_id" : "1001.0.0.0",
+  "unit_name" : {
+    "nb" : "AOF - Arbeidernes Opplysningsforbund"
+  },
+  "institution" : {
+    "acronym" : "AOF"
+  },
+  "url" : "https://api.cristin.no/v2/units/1001.0.0.0",
+  "acronym" : "AOF"
+}, {
+  "cristin_unit_id" : "1.0.0.0",
+  "unit_name" : {
+    "nb" : "Privatperson"
+  },
+  "institution" : {
+    "acronym" : "PRIVAT"
+  },
+  "url" : "https://api.cristin.no/v2/units/1.0.0.0",
+  "acronym" : "PRIVAT"
+}, {
+  "cristin_unit_id" : "1114.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Hamar"
+  },
+  "institution" : {
+    "acronym" : "FUHAMAR"
+  },
+  "url" : "https://api.cristin.no/v2/units/1114.0.0.0",
+  "acronym" : "FUHAMAR"
+}, {
+  "cristin_unit_id" : "1115.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Hammerfest"
+  },
+  "institution" : {
+    "acronym" : "FUHAMMERF"
+  },
+  "url" : "https://api.cristin.no/v2/units/1115.0.0.0",
+  "acronym" : "FUHAMMERF"
+}, {
+  "cristin_unit_id" : "1116.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Harstad"
+  },
+  "institution" : {
+    "acronym" : "FUHARSTAD"
+  },
+  "url" : "https://api.cristin.no/v2/units/1116.0.0.0",
+  "acronym" : "FUHARSTAD"
+}, {
+  "cristin_unit_id" : "1120.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Lillehammer"
+  },
+  "institution" : {
+    "acronym" : "FULILLEHAM"
+  },
+  "url" : "https://api.cristin.no/v2/units/1120.0.0.0",
+  "acronym" : "FULILLEHAM"
+}, {
+  "cristin_unit_id" : "1152.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Luftkrigsskolen"
+  },
+  "institution" : {
+    "acronym" : "FULUFTKRIG"
+  },
+  "url" : "https://api.cristin.no/v2/units/1152.0.0.0",
+  "acronym" : "FULUFTKRIG"
+}, {
+  "cristin_unit_id" : "1151.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Longyearbyen"
+  },
+  "institution" : {
+    "acronym" : "FULONGYEAR"
+  },
+  "url" : "https://api.cristin.no/v2/units/1151.0.0.0",
+  "acronym" : "FULONGYEAR"
+}, {
+  "cristin_unit_id" : "1153.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Mo i Rana"
+  },
+  "institution" : {
+    "acronym" : "FUMOIRANA"
+  },
+  "url" : "https://api.cristin.no/v2/units/1153.0.0.0",
+  "acronym" : "FUMOIRANA"
+}, {
+  "cristin_unit_id" : "1154.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Molde"
+  },
+  "institution" : {
+    "acronym" : "FUMOLDE"
+  },
+  "url" : "https://api.cristin.no/v2/units/1154.0.0.0",
+  "acronym" : "FUMOLDE"
+}, {
+  "cristin_unit_id" : "1155.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Orkdal/Meldal"
+  },
+  "institution" : {
+    "acronym" : "FUORKMEL"
+  },
+  "url" : "https://api.cristin.no/v2/units/1155.0.0.0",
+  "acronym" : "FUORKMEL"
+}, {
+  "cristin_unit_id" : "1156.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Rissa"
+  },
+  "institution" : {
+    "acronym" : "FURISSA"
+  },
+  "url" : "https://api.cristin.no/v2/units/1156.0.0.0",
+  "acronym" : "FURISSA"
+}, {
+  "cristin_unit_id" : "1158.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Innherred"
+  },
+  "institution" : {
+    "acronym" : "FUINNHERR"
+  },
+  "url" : "https://api.cristin.no/v2/units/1158.0.0.0",
+  "acronym" : "FUINNHERR"
+}, {
+  "cristin_unit_id" : "1168.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Volda"
+  },
+  "institution" : {
+    "acronym" : "FUVOLDA"
+  },
+  "url" : "https://api.cristin.no/v2/units/1168.0.0.0",
+  "acronym" : "FUVOLDA"
+}, {
+  "cristin_unit_id" : "1169.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Ørlandet"
+  },
+  "institution" : {
+    "acronym" : "FUØRLAND"
+  },
+  "url" : "https://api.cristin.no/v2/units/1169.0.0.0",
+  "acronym" : "FUØRLAND"
+}, {
+  "cristin_unit_id" : "1170.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Ålesund"
+  },
+  "institution" : {
+    "acronym" : "FUÅLESUND"
+  },
+  "url" : "https://api.cristin.no/v2/units/1170.0.0.0",
+  "acronym" : "FUÅLESUND"
+}, {
+  "cristin_unit_id" : "1174.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Haugesund og Karmøy"
+  },
+  "institution" : {
+    "acronym" : "FUHAUGKARM"
+  },
+  "url" : "https://api.cristin.no/v2/units/1174.0.0.0",
+  "acronym" : "FUHAUGKARM"
+}, {
+  "cristin_unit_id" : "1175.0.0.0",
+  "unit_name" : {
+    "nb" : "Folkeuniversitetet Nordhordaland"
+  },
+  "institution" : {
+    "acronym" : "FUNORDHORD"
+  },
+  "url" : "https://api.cristin.no/v2/units/1175.0.0.0",
+  "acronym" : "FUNORDHORD"
+}, {
+  "cristin_unit_id" : "1311.0.0.0",
+  "unit_name" : {
+    "nb" : "Agder naturmuseum og botanisk hage"
+  },
+  "institution" : {
+    "acronym" : "AGDERMUS"
+  },
+  "url" : "https://api.cristin.no/v2/units/1311.0.0.0",
+  "acronym" : "AGDERMUS"
+}, {
+  "cristin_unit_id" : "1312.0.0.0",
+  "unit_name" : {
+    "nb" : "Ishavsmuseet"
+  },
+  "institution" : {
+    "acronym" : "ISHAVSMUS"
+  },
+  "url" : "https://api.cristin.no/v2/units/1312.0.0.0",
+  "acronym" : "ISHAVSMUS"
+}, {
+  "cristin_unit_id" : "1313.0.0.0",
+  "unit_name" : {
+    "en" : "The Kon-Tiki museum"
+  },
+  "institution" : {
+    "acronym" : "KONTIKI"
+  },
+  "url" : "https://api.cristin.no/v2/units/1313.0.0.0",
+  "acronym" : "KONTIKI"
+}, {
+  "cristin_unit_id" : "1318.0.0.0",
+  "unit_name" : {
+    "en" : "Lillehammer Art Museum"
+  },
+  "institution" : {
+    "acronym" : "LILLEHART"
+  },
+  "url" : "https://api.cristin.no/v2/units/1318.0.0.0",
+  "acronym" : "LILLEHART"
+}, {
+  "cristin_unit_id" : "1319.0.0.0",
+  "unit_name" : {
+    "nb" : "Midt-Troms Museum"
+  },
+  "institution" : {
+    "acronym" : "MIDT-TROMS"
+  },
+  "url" : "https://api.cristin.no/v2/units/1319.0.0.0",
+  "acronym" : "MIDT-TROMS"
+}, {
+  "cristin_unit_id" : "1320.0.0.0",
+  "unit_name" : {
+    "en" : "The Art Museum of Nothern Norway"
+  },
+  "institution" : {
+    "acronym" : "NORDNORSK"
+  },
+  "url" : "https://api.cristin.no/v2/units/1320.0.0.0",
+  "acronym" : "NORDNORSK"
+}, {
+  "cristin_unit_id" : "1322.0.0.0",
+  "unit_name" : {
+    "nb" : "Stiftinga Sunnmøre Museum"
+  },
+  "institution" : {
+    "acronym" : "SUNNMØRMUS"
+  },
+  "url" : "https://api.cristin.no/v2/units/1322.0.0.0",
+  "acronym" : "SUNNMØRMUS"
+}, {
+  "cristin_unit_id" : "1327.0.0.0",
+  "unit_name" : {
+    "nb" : "Sandefjordmuseene"
+  },
+  "institution" : {
+    "acronym" : "SANDEFMUS"
+  },
+  "url" : "https://api.cristin.no/v2/units/1327.0.0.0",
+  "acronym" : "SANDEFMUS"
+}, {
+  "cristin_unit_id" : "1329.0.0.0",
+  "unit_name" : {
+    "nb" : "Vadsø museum - Ruija kvenmuseum"
+  },
+  "institution" : {
+    "acronym" : "VADSOMUS"
+  },
+  "url" : "https://api.cristin.no/v2/units/1329.0.0.0",
+  "acronym" : "VADSOMUS"
+}, {
+  "cristin_unit_id" : "1328.0.0.0",
+  "unit_name" : {
+    "nb" : "Aasentunet"
+  },
+  "institution" : {
+    "acronym" : "AASENTUNET"
+  },
+  "url" : "https://api.cristin.no/v2/units/1328.0.0.0",
+  "acronym" : "AASENTUNET"
+}, {
+  "cristin_unit_id" : "1330.0.0.0",
+  "unit_name" : {
+    "nb" : "Sør-Varanger museum"
+  },
+  "institution" : {
+    "acronym" : "SVARANGER"
+  },
+  "url" : "https://api.cristin.no/v2/units/1330.0.0.0",
+  "acronym" : "SVARANGER"
+}, {
+  "cristin_unit_id" : "1315.0.0.0",
+  "unit_name" : {
+    "nb" : "Arkeologisk museum i Stavanger"
+  },
+  "institution" : {
+    "acronym" : "ARKMUSEUM"
+  },
+  "url" : "https://api.cristin.no/v2/units/1315.0.0.0",
+  "acronym" : "ARKMUSEUM"
+}, {
+  "cristin_unit_id" : "1316.0.0.0",
+  "unit_name" : {
+    "en" : "The Heiberg Collections"
+  },
+  "institution" : {
+    "acronym" : "DHS"
+  },
+  "url" : "https://api.cristin.no/v2/units/1316.0.0.0",
+  "acronym" : "DHS"
+}, {
+  "cristin_unit_id" : "1317.0.0.0",
+  "unit_name" : {
+    "en" : "The Whaling Museum"
+  },
+  "institution" : {
+    "acronym" : "HVALFANGST"
+  },
+  "url" : "https://api.cristin.no/v2/units/1317.0.0.0",
+  "acronym" : "HVALFANGST"
+}, {
+  "cristin_unit_id" : "1332.0.0.0",
+  "unit_name" : {
+    "en" : "Henie Onstad Art Centre"
+  },
+  "institution" : {
+    "acronym" : "HOK"
+  },
+  "url" : "https://api.cristin.no/v2/units/1332.0.0.0",
+  "acronym" : "HOK"
+}, {
+  "cristin_unit_id" : "1334.0.0.0",
+  "unit_name" : {
+    "nb" : "Svalbard Museum"
+  },
+  "institution" : {
+    "acronym" : "SVALBARD"
+  },
+  "url" : "https://api.cristin.no/v2/units/1334.0.0.0",
+  "acronym" : "SVALBARD"
+}, {
+  "cristin_unit_id" : "1335.0.0.0",
+  "unit_name" : {
+    "en" : "The Munch Museum"
+  },
+  "institution" : {
+    "acronym" : "MUNCH"
+  },
+  "url" : "https://api.cristin.no/v2/units/1335.0.0.0",
+  "acronym" : "MUNCH"
+}, {
+  "cristin_unit_id" : "1336.0.0.0",
+  "unit_name" : {
+    "nb" : "Bergens Sjøfartsmuseum"
+  },
+  "institution" : {
+    "acronym" : "BSJ"
+  },
+  "url" : "https://api.cristin.no/v2/units/1336.0.0.0",
+  "acronym" : "BSJ"
+}, {
+  "cristin_unit_id" : "1338.0.0.0",
+  "unit_name" : {
+    "nb" : "Norsk Reiselivsmuseum"
+  },
+  "institution" : {
+    "acronym" : "NR"
+  },
+  "url" : "https://api.cristin.no/v2/units/1338.0.0.0",
+  "acronym" : "NR"
+}, {
+  "cristin_unit_id" : "1340.0.0.0",
+  "unit_name" : {
+    "nb" : "Mjøsmuseet"
+  },
+  "institution" : {
+    "acronym" : "MJØSMUSEET"
+  },
+  "url" : "https://api.cristin.no/v2/units/1340.0.0.0",
+  "acronym" : "MJØSMUSEET"
+}, {
+  "cristin_unit_id" : "1326.0.0.0",
+  "unit_name" : {
+    "nb" : "Museumssenteret i Vestfold AS"
+  },
+  "institution" : {
+    "acronym" : "MUVE"
+  },
+  "url" : "https://api.cristin.no/v2/units/1326.0.0.0",
+  "acronym" : "MUVE"
+}, {
+  "cristin_unit_id" : "1345.0.0.0",
+  "unit_name" : {
+    "en" : "The Museum of Reconstruction for Finnmark and Northern Troms"
+  },
+  "institution" : {
+    "acronym" : "KYSTMUSEEN"
+  },
+  "url" : "https://api.cristin.no/v2/units/1345.0.0.0",
+  "acronym" : "KYSTMUSEEN"
+}, {
+  "cristin_unit_id" : "1348.0.0.0",
+  "unit_name" : {
+    "en" : "Norwegian Mining Museum"
+  },
+  "institution" : {
+    "acronym" : "BERGVMU"
+  },
+  "url" : "https://api.cristin.no/v2/units/1348.0.0.0",
+  "acronym" : "BERGVMU"
+}, {
+  "cristin_unit_id" : "1333.0.0.0",
+  "unit_name" : {
+    "nb" : "Randsfjordmuseene AS"
+  },
+  "institution" : {
+    "acronym" : "RANDSFJORD"
+  },
+  "url" : "https://api.cristin.no/v2/units/1333.0.0.0",
+  "acronym" : "RANDSFJORD"
+}, {
+  "cristin_unit_id" : "1343.0.0.0",
+  "unit_name" : {
+    "nb" : "Vitenparken"
+  },
+  "institution" : {
+    "acronym" : "VITENPARK"
+  },
+  "url" : "https://api.cristin.no/v2/units/1343.0.0.0",
+  "acronym" : "VITENPARK"
+}, {
+  "cristin_unit_id" : "1502.0.0.0",
+  "unit_name" : {
+    "nb" : "Betanien sykepleierhøgskole Oslo"
+  },
+  "institution" : {
+    "acronym" : "BETANIEN"
+  },
+  "url" : "https://api.cristin.no/v2/units/1502.0.0.0",
+  "acronym" : "BETANIEN"
+}, {
+  "cristin_unit_id" : "1511.0.0.0",
+  "unit_name" : {
+    "nb" : "Lærerhøgskole"
+  },
+  "institution" : {
+    "acronym" : "LÆRERHSK"
+  },
+  "url" : "https://api.cristin.no/v2/units/1511.0.0.0",
+  "acronym" : "LÆRERHSK"
+}, {
+  "cristin_unit_id" : "1513.0.0.0",
+  "unit_name" : {
+    "nb" : "Statens bergskole"
+  },
+  "institution" : {
+    "acronym" : "BERGSKOLE"
+  },
+  "url" : "https://api.cristin.no/v2/units/1513.0.0.0",
+  "acronym" : "BERGSKOLE"
+}, {
+  "cristin_unit_id" : "1507.0.0.0",
+  "unit_name" : {
+    "nb" : "Ingeniørhøgskole"
+  },
+  "institution" : {
+    "acronym" : "INGHSK"
+  },
+  "url" : "https://api.cristin.no/v2/units/1507.0.0.0",
+  "acronym" : "INGHSK"
+}, {
+  "cristin_unit_id" : "1508.0.0.0",
+  "unit_name" : {
+    "nb" : "Pedagogisk høgskole"
+  },
+  "institution" : {
+    "acronym" : "PEDHSK"
+  },
+  "url" : "https://api.cristin.no/v2/units/1508.0.0.0",
+  "acronym" : "PEDHSK"
+}, {
+  "cristin_unit_id" : "1509.0.0.0",
+  "unit_name" : {
+    "nb" : "NKI Fjernundervisning"
+  },
+  "institution" : {
+    "acronym" : "NKI"
+  },
+  "url" : "https://api.cristin.no/v2/units/1509.0.0.0",
+  "acronym" : "NKI"
+}, {
+  "cristin_unit_id" : "1510.0.0.0",
+  "unit_name" : {
+    "nb" : "Maritim høgskole"
+  },
+  "institution" : {
+    "acronym" : "MARITIM"
+  },
+  "url" : "https://api.cristin.no/v2/units/1510.0.0.0",
+  "acronym" : "MARITIM"
+}, {
+  "cristin_unit_id" : "1520.0.0.0",
+  "unit_name" : {
+    "nb" : "Diakonissehusets sykepleierhøgskole"
+  },
+  "institution" : {
+    "acronym" : "DIAKONISSE"
+  },
+  "url" : "https://api.cristin.no/v2/units/1520.0.0.0",
+  "acronym" : "DIAKONISSE"
+}, {
+  "cristin_unit_id" : "1512.0.0.0",
+  "unit_name" : {
+    "nb" : "Økonomisk høgskole"
+  },
+  "institution" : {
+    "acronym" : "ØKONOMISK"
+  },
+  "url" : "https://api.cristin.no/v2/units/1512.0.0.0",
+  "acronym" : "ØKONOMISK"
+}, {
+  "cristin_unit_id" : "1515.0.0.0",
+  "unit_name" : {
+    "nb" : "Statens sikkerhetshøgskole"
+  },
+  "institution" : {
+    "acronym" : "SIKKERHET"
+  },
+  "url" : "https://api.cristin.no/v2/units/1515.0.0.0",
+  "acronym" : "SIKKERHET"
+}, {
+  "cristin_unit_id" : "1516.0.0.0",
+  "unit_name" : {
+    "nb" : "Statens yrkespedagogiske høgskole"
+  },
+  "institution" : {
+    "acronym" : "YRKESPED"
+  },
+  "url" : "https://api.cristin.no/v2/units/1516.0.0.0",
+  "acronym" : "YRKESPED"
+}, {
+  "cristin_unit_id" : "1514.0.0.0",
+  "unit_name" : {
+    "en" : "College of Eurythmics"
+  },
+  "institution" : {
+    "acronym" : "EURYTMI"
+  },
+  "url" : "https://api.cristin.no/v2/units/1514.0.0.0",
+  "acronym" : "EURYTMI"
+}, {
+  "cristin_unit_id" : "1523.0.0.0",
+  "unit_name" : {
+    "nb" : "Norsk diakonihøgskole"
+  },
+  "institution" : {
+    "acronym" : "DIAKONI"
+  },
+  "url" : "https://api.cristin.no/v2/units/1523.0.0.0",
+  "acronym" : "DIAKONI"
+}, {
+  "cristin_unit_id" : "1525.8.0.0",
+  "unit_name" : {
+    "nb" : "Etter- og videreutdanning"
+  },
+  "institution" : {
+    "acronym" : "STEINER"
+  },
+  "url" : "https://api.cristin.no/v2/units/1525.8.0.0",
+  "acronym" : "RSH",
+  "parent_unit" : {
+    "cristin_unit_id" : "1525.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "1525.6.0.0",
+  "unit_name" : {
+    "nb" : "Mastergrad"
+  },
+  "institution" : {
+    "acronym" : "STEINER"
+  },
+  "url" : "https://api.cristin.no/v2/units/1525.6.0.0",
+  "acronym" : "RSH",
+  "parent_unit" : {
+    "cristin_unit_id" : "1525.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "1525.9.0.0",
+  "unit_name" : {
+    "nb" : "Forskning og utvikling"
+  },
+  "institution" : {
+    "acronym" : "STEINER"
+  },
+  "url" : "https://api.cristin.no/v2/units/1525.9.0.0",
+  "acronym" : "RSH",
+  "parent_unit" : {
+    "cristin_unit_id" : "1525.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "1525.10.0.0",
+  "unit_name" : {
+    "nb" : "Internasjonalisering"
+  },
+  "institution" : {
+    "acronym" : "STEINER"
+  },
+  "url" : "https://api.cristin.no/v2/units/1525.10.0.0",
+  "acronym" : "RSH",
+  "parent_unit" : {
+    "cristin_unit_id" : "1525.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "1525.1.0.0",
+  "unit_name" : {
+    "nb" : "Bachelor"
+  },
+  "institution" : {
+    "acronym" : "STEINER"
+  },
+  "url" : "https://api.cristin.no/v2/units/1525.1.0.0",
+  "acronym" : "RSH",
+  "parent_unit" : {
+    "cristin_unit_id" : "1525.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "1527.0.0.0",
+  "unit_name" : {
+    "en" : "Norwegian School of Trade and Management"
+  },
+  "institution" : {
+    "acronym" : "VAREHANDEL"
+  },
+  "url" : "https://api.cristin.no/v2/units/1527.0.0.0",
+  "acronym" : "VAREHANDEL"
+}, {
+  "cristin_unit_id" : "1525.0.0.0",
+  "unit_name" : {
+    "en" : "Steiner College of Education"
+  },
+  "institution" : {
+    "acronym" : "STEINER"
+  },
+  "url" : "https://api.cristin.no/v2/units/1525.0.0.0",
+  "acronym" : "STEINER"
+}, {
+  "cristin_unit_id" : "1526.0.0.0",
+  "unit_name" : {
+    "en" : "Barratt Due Institute of Music"
+  },
+  "institution" : {
+    "acronym" : "BARRATDUE"
+  },
+  "url" : "https://api.cristin.no/v2/units/1526.0.0.0",
+  "acronym" : "BARRATDUE"
+}, {
+  "cristin_unit_id" : "1529.0.0.0",
+  "unit_name" : {
+    "nb" : "Agder distriktshøgskole"
+  },
+  "institution" : {
+    "acronym" : "ADH"
+  },
+  "url" : "https://api.cristin.no/v2/units/1529.0.0.0",
+  "acronym" : "ADH"
+}, {
+  "cristin_unit_id" : "1530.0.0.0",
+  "unit_name" : {
+    "nb" : "Alta lærerhøgskole"
+  },
+  "institution" : {
+    "acronym" : "ALTA"
+  },
+  "url" : "https://api.cristin.no/v2/units/1530.0.0.0",
+  "acronym" : "ALTA"
+}, {
+  "cristin_unit_id" : "1534.0.0.0",
+  "unit_name" : {
+    "nb" : "Barnevernsakademiet"
+  },
+  "institution" : {
+    "acronym" : "BVA"
+  },
+  "url" : "https://api.cristin.no/v2/units/1534.0.0.0",
+  "acronym" : "BVA"
+}, {
+  "cristin_unit_id" : "1544.0.0.0",
+  "unit_name" : {
+    "nb" : "Kristiansand lærerhøgskole"
+  },
+  "institution" : {
+    "acronym" : "KRSA"
+  },
+  "url" : "https://api.cristin.no/v2/units/1544.0.0.0",
+  "acronym" : "KRSA"
+}, {
+  "cristin_unit_id" : "1547.0.0.0",
+  "unit_name" : {
+    "nb" : "Møre og Romsdal distriktshøgskole Volda"
+  },
+  "institution" : {
+    "acronym" : "MRDV"
+  },
+  "url" : "https://api.cristin.no/v2/units/1547.0.0.0",
+  "acronym" : "MRDV"
+}, {
+  "cristin_unit_id" : "1545.0.0.0",
+  "unit_name" : {
+    "nb" : "Høgskolen i Levanger"
+  },
+  "institution" : {
+    "acronym" : "LEVA"
+  },
+  "url" : "https://api.cristin.no/v2/units/1545.0.0.0",
+  "acronym" : "LEVA"
+}, {
+  "cristin_unit_id" : "1551.0.0.0",
+  "unit_name" : {
+    "nb" : "Oppland distriktshøgskole"
+  },
+  "institution" : {
+    "acronym" : "ODH"
+  },
+  "url" : "https://api.cristin.no/v2/units/1551.0.0.0",
+  "acronym" : "ODH"
+}, {
+  "cristin_unit_id" : "1552.0.0.0",
+  "unit_name" : {
+    "nb" : "Oslo lærerhøgskole"
+  },
+  "institution" : {
+    "acronym" : "OLH"
+  },
+  "url" : "https://api.cristin.no/v2/units/1552.0.0.0",
+  "acronym" : "OLH"
+}, {
+  "cristin_unit_id" : "1553.0.0.0",
+  "unit_name" : {
+    "nb" : "Sogn og Fjordane distriktshøgskole"
+  },
+  "institution" : {
+    "acronym" : "SFDH"
+  },
+  "url" : "https://api.cristin.no/v2/units/1553.0.0.0",
+  "acronym" : "SFDH"
+}, {
+  "cristin_unit_id" : "1561.0.0.0",
+  "unit_name" : {
+    "nb" : "Stabekk høgskole"
+  },
+  "institution" : {
+    "acronym" : "STAB"
+  },
+  "url" : "https://api.cristin.no/v2/units/1561.0.0.0",
+  "acronym" : "STAB"
+}, {
+  "cristin_unit_id" : "1562.0.0.0",
+  "unit_name" : {
+    "nb" : "Stord lærerhøgskole"
+  },
+  "institution" : {
+    "acronym" : "STOR"
+  },
+  "url" : "https://api.cristin.no/v2/units/1562.0.0.0",
+  "acronym" : "STOR"
+}, {
+  "cristin_unit_id" : "1563.0.0.0",
+  "unit_name" : {
+    "nb" : "Stavanger lærerhøgskole"
+  },
+  "institution" : {
+    "acronym" : "STVG"
+  },
+  "url" : "https://api.cristin.no/v2/units/1563.0.0.0",
+  "acronym" : "STVG"
+}, {
+  "cristin_unit_id" : "1567.0.0.0",
+  "unit_name" : {
+    "nb" : "Tromsø lærerhøgskole"
+  },
+  "institution" : {
+    "acronym" : "TROM"
+  },
+  "url" : "https://api.cristin.no/v2/units/1567.0.0.0",
+  "acronym" : "TROM"
+}, {
+  "cristin_unit_id" : "158.15.0.0",
+  "unit_name" : {
+    "en" : "Department of Data Science and Analytics"
+  },
+  "institution" : {
+    "acronym" : "BI"
+  },
+  "url" : "https://api.cristin.no/v2/units/158.15.0.0",
+  "acronym" : " ",
+  "parent_unit" : {
+    "cristin_unit_id" : "158.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "158.13.0.0",
+  "unit_name" : {
+    "en" : "Department of Accounting and Operations Management"
+  },
+  "institution" : {
+    "acronym" : "BI"
+  },
+  "url" : "https://api.cristin.no/v2/units/158.13.0.0",
+  "acronym" : "IRRF",
+  "parent_unit" : {
+    "cristin_unit_id" : "158.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "158.20.0.0",
+  "unit_name" : {
+    "en" : "Research Administration Office"
+  },
+  "institution" : {
+    "acronym" : "BI"
+  },
+  "url" : "https://api.cristin.no/v2/units/158.20.0.0",
+  "acronym" : "FF",
+  "parent_unit" : {
+    "cristin_unit_id" : "158.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "158.21.0.0",
+  "unit_name" : {
+    "en" : "Library"
+  },
+  "institution" : {
+    "acronym" : "BI"
+  },
+  "url" : "https://api.cristin.no/v2/units/158.21.0.0",
+  "acronym" : "BIBL",
+  "parent_unit" : {
+    "cristin_unit_id" : "158.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "1573.0.0.0",
+  "unit_name" : {
+    "nb" : "Universitetet i Trondheim"
+  },
+  "institution" : {
+    "acronym" : "UNIT/DMF"
+  },
+  "url" : "https://api.cristin.no/v2/units/1573.0.0.0",
+  "acronym" : "UNIT/DMF"
+}, {
+  "cristin_unit_id" : "1579.0.0.0",
+  "unit_name" : {
+    "nb" : "NKS Fjernundervisning"
+  },
+  "institution" : {
+    "acronym" : "NKSFJERN"
+  },
+  "url" : "https://api.cristin.no/v2/units/1579.0.0.0",
+  "acronym" : "NKSFJERN"
+}, {
+  "cristin_unit_id" : "1581.0.0.0",
+  "unit_name" : {
+    "en" : "Royal Norwegian Navy Officer Candidate School"
+  },
+  "institution" : {
+    "acronym" : "BSMA"
+  },
+  "url" : "https://api.cristin.no/v2/units/1581.0.0.0",
+  "acronym" : "BSMA"
+}, {
+  "cristin_unit_id" : "1522.0.0.0",
+  "unit_name" : {
+    "nb" : "NHI Datahøgskolen"
+  },
+  "institution" : {
+    "acronym" : "NHI"
+  },
+  "url" : "https://api.cristin.no/v2/units/1522.0.0.0",
+  "acronym" : "NHI"
+}, {
+  "cristin_unit_id" : "1531.0.0.0",
+  "unit_name" : {
+    "nb" : "Agder Maritime Høgskole"
+  },
+  "institution" : {
+    "acronym" : "AMH"
+  },
+  "url" : "https://api.cristin.no/v2/units/1531.0.0.0",
+  "acronym" : "AMH"
+}, {
+  "cristin_unit_id" : "1532.0.0.0",
+  "unit_name" : {
+    "nb" : "Bergen lærerhøgskole"
+  },
+  "institution" : {
+    "acronym" : "BERG"
+  },
+  "url" : "https://api.cristin.no/v2/units/1532.0.0.0",
+  "acronym" : "BERG"
+}, {
+  "cristin_unit_id" : "1533.0.0.0",
+  "unit_name" : {
+    "nb" : "Bodø lærerhøgskole"
+  },
+  "institution" : {
+    "acronym" : "BODØ"
+  },
+  "url" : "https://api.cristin.no/v2/units/1533.0.0.0",
+  "acronym" : "BODØ"
+}, {
+  "cristin_unit_id" : "1537.0.0.0",
+  "unit_name" : {
+    "nb" : "Finnmark distriktshøgskole"
+  },
+  "institution" : {
+    "acronym" : "FDH"
+  },
+  "url" : "https://api.cristin.no/v2/units/1537.0.0.0",
+  "acronym" : "FDH"
+}, {
+  "cristin_unit_id" : "1539.0.0.0",
+  "unit_name" : {
+    "nb" : "Halden lærerhøgskole"
+  },
+  "institution" : {
+    "acronym" : "HALD"
+  },
+  "url" : "https://api.cristin.no/v2/units/1539.0.0.0",
+  "acronym" : "HALD"
+}, {
+  "cristin_unit_id" : "1535.0.0.0",
+  "unit_name" : {
+    "nb" : "Eik lærerhøgskole"
+  },
+  "institution" : {
+    "acronym" : "EIK"
+  },
+  "url" : "https://api.cristin.no/v2/units/1535.0.0.0",
+  "acronym" : "EIK"
+}, {
+  "cristin_unit_id" : "1540.0.0.0",
+  "unit_name" : {
+    "nb" : "Hamar lærerhøgskole"
+  },
+  "institution" : {
+    "acronym" : "HAMA"
+  },
+  "url" : "https://api.cristin.no/v2/units/1540.0.0.0",
+  "acronym" : "HAMA"
+}, {
+  "cristin_unit_id" : "1536.0.0.0",
+  "unit_name" : {
+    "nb" : "Elverum lærerhøgskole"
+  },
+  "institution" : {
+    "acronym" : "ELVE"
+  },
+  "url" : "https://api.cristin.no/v2/units/1536.0.0.0",
+  "acronym" : "ELVE"
+}, {
+  "cristin_unit_id" : "1542.0.0.0",
+  "unit_name" : {
+    "nb" : "Høgskolesenteret i Rogaland"
+  },
+  "institution" : {
+    "acronym" : "HSRR"
+  },
+  "url" : "https://api.cristin.no/v2/units/1542.0.0.0",
+  "acronym" : "HSRR"
+}, {
+  "cristin_unit_id" : "1543.0.0.0",
+  "unit_name" : {
+    "nb" : "Indremisjonsselskapets bibelskole"
+  },
+  "institution" : {
+    "acronym" : "IMI"
+  },
+  "url" : "https://api.cristin.no/v2/units/1543.0.0.0",
+  "acronym" : "IMI"
+}, {
+  "cristin_unit_id" : "1548.0.0.0",
+  "unit_name" : {
+    "nb" : "Nesna lærerhøgskole"
+  },
+  "institution" : {
+    "acronym" : "NESN"
+  },
+  "url" : "https://api.cristin.no/v2/units/1548.0.0.0",
+  "acronym" : "NESN"
+}, {
+  "cristin_unit_id" : "1546.0.0.0",
+  "unit_name" : {
+    "nb" : "Møre og Romsdal distriktshøgskole Molde"
+  },
+  "institution" : {
+    "acronym" : "MRDH"
+  },
+  "url" : "https://api.cristin.no/v2/units/1546.0.0.0",
+  "acronym" : "MRDH"
+}, {
+  "cristin_unit_id" : "1549.0.0.0",
+  "unit_name" : {
+    "nb" : "Norges Kommunal- og Sosialhøgskole"
+  },
+  "institution" : {
+    "acronym" : "NKSH"
+  },
+  "url" : "https://api.cristin.no/v2/units/1549.0.0.0",
+  "acronym" : "NKSH"
+}, {
+  "cristin_unit_id" : "1550.0.0.0",
+  "unit_name" : {
+    "nb" : "Nord-Trøndelag distriktshøgskole"
+  },
+  "institution" : {
+    "acronym" : "NTDH"
+  },
+  "url" : "https://api.cristin.no/v2/units/1550.0.0.0",
+  "acronym" : "NTDH"
+}, {
+  "cristin_unit_id" : "1555.0.0.0",
+  "unit_name" : {
+    "nb" : "Statens lærerhøgskole i forming Oslo"
+  },
+  "institution" : {
+    "acronym" : "SLFO"
+  },
+  "url" : "https://api.cristin.no/v2/units/1555.0.0.0",
+  "acronym" : "SLFO"
+}, {
+  "cristin_unit_id" : "1556.0.0.0",
+  "unit_name" : {
+    "nb" : "Sagene lærerhøgskole"
+  },
+  "institution" : {
+    "acronym" : "SLH"
+  },
+  "url" : "https://api.cristin.no/v2/units/1556.0.0.0",
+  "acronym" : "SLH"
+}, {
+  "cristin_unit_id" : "1554.0.0.0",
+  "unit_name" : {
+    "nb" : "Statens lærerhøgskole i forming Blaker"
+  },
+  "institution" : {
+    "acronym" : "SLFB"
+  },
+  "url" : "https://api.cristin.no/v2/units/1554.0.0.0",
+  "acronym" : "SLFB"
+}, {
+  "cristin_unit_id" : "1559.0.0.0",
+  "unit_name" : {
+    "nb" : "Sogndal lærerhøgskole"
+  },
+  "institution" : {
+    "acronym" : "SOGN"
+  },
+  "url" : "https://api.cristin.no/v2/units/1559.0.0.0",
+  "acronym" : "SOGN"
+}, {
+  "cristin_unit_id" : "1557.0.0.0",
+  "unit_name" : {
+    "nb" : "Statens lærerhøgskole i handels- og kontorfag"
+  },
+  "institution" : {
+    "acronym" : "SLHK"
+  },
+  "url" : "https://api.cristin.no/v2/units/1557.0.0.0",
+  "acronym" : "SLHK"
+}, {
+  "cristin_unit_id" : "1558.0.0.0",
+  "unit_name" : {
+    "nb" : "Sosialhøgskolen Bærum"
+  },
+  "institution" : {
+    "acronym" : "SOBÆ"
+  },
+  "url" : "https://api.cristin.no/v2/units/1558.0.0.0",
+  "acronym" : "SOBÆ"
+}, {
+  "cristin_unit_id" : "1560.0.0.0",
+  "unit_name" : {
+    "nb" : "Statens spesiallærerhøgskole"
+  },
+  "institution" : {
+    "acronym" : "SSLH"
+  },
+  "url" : "https://api.cristin.no/v2/units/1560.0.0.0",
+  "acronym" : "SSLH"
+}, {
+  "cristin_unit_id" : "1564.0.0.0",
+  "unit_name" : {
+    "nb" : "Telemark lærerhøgskole"
+  },
+  "institution" : {
+    "acronym" : "TELE"
+  },
+  "url" : "https://api.cristin.no/v2/units/1564.0.0.0",
+  "acronym" : "TELE"
+}, {
+  "cristin_unit_id" : "1565.0.0.0",
+  "unit_name" : {
+    "nb" : "Telemark distriktshøgskole"
+  },
+  "institution" : {
+    "acronym" : "TMDH"
+  },
+  "url" : "https://api.cristin.no/v2/units/1565.0.0.0",
+  "acronym" : "TMDH"
+}, {
+  "cristin_unit_id" : "1566.0.0.0",
+  "unit_name" : {
+    "nb" : "Trondheim lærerhøgskole"
+  },
+  "institution" : {
+    "acronym" : "TRHE"
+  },
+  "url" : "https://api.cristin.no/v2/units/1566.0.0.0",
+  "acronym" : "TRHE"
+}, {
+  "cristin_unit_id" : "1568.0.0.0",
+  "unit_name" : {
+    "nb" : "Trondheim Økonomiske Høgskole"
+  },
+  "institution" : {
+    "acronym" : "TØH"
+  },
+  "url" : "https://api.cristin.no/v2/units/1568.0.0.0",
+  "acronym" : "TØH"
+}, {
+  "cristin_unit_id" : "1569.0.0.0",
+  "unit_name" : {
+    "nb" : "Volda lærarhøgskule"
+  },
+  "institution" : {
+    "acronym" : "VOLD"
+  },
+  "url" : "https://api.cristin.no/v2/units/1569.0.0.0",
+  "acronym" : "VOLD"
+}, {
+  "cristin_unit_id" : "1570.0.0.0",
+  "unit_name" : {
+    "nb" : "Østfold distriktshøgskole"
+  },
+  "institution" : {
+    "acronym" : "ØDH"
+  },
+  "url" : "https://api.cristin.no/v2/units/1570.0.0.0",
+  "acronym" : "ØDH"
+}, {
+  "cristin_unit_id" : "1571.0.0.0",
+  "unit_name" : {
+    "nb" : "Universitetet i Trondheim"
+  },
+  "institution" : {
+    "acronym" : "UNIT/AVH"
+  },
+  "url" : "https://api.cristin.no/v2/units/1571.0.0.0",
+  "acronym" : "UNIT/AVH"
+}, {
+  "cristin_unit_id" : "1572.0.0.0",
+  "unit_name" : {
+    "nb" : "Universitetet i Trondheim"
+  },
+  "institution" : {
+    "acronym" : "UNIT/NTH"
+  },
+  "url" : "https://api.cristin.no/v2/units/1572.0.0.0",
+  "acronym" : "UNIT/NTH"
+}, {
+  "cristin_unit_id" : "1574.0.0.0",
+  "unit_name" : {
+    "nb" : "Bergen Musikk-konservatorium"
+  },
+  "institution" : {
+    "acronym" : "MUSIKKONS"
+  },
+  "url" : "https://api.cristin.no/v2/units/1574.0.0.0",
+  "acronym" : "MUSIKKONS"
+}, {
+  "cristin_unit_id" : "1577.0.0.0",
+  "unit_name" : {
+    "nb" : "Sjøforsvarets idretts- og treningssenter"
+  },
+  "institution" : {
+    "acronym" : "SITS"
+  },
+  "url" : "https://api.cristin.no/v2/units/1577.0.0.0",
+  "acronym" : "SITS"
+}, {
+  "cristin_unit_id" : "158.0.0.0",
+  "unit_name" : {
+    "en" : "BI Norwegian Business School"
+  },
+  "institution" : {
+    "acronym" : "BI"
+  },
+  "url" : "https://api.cristin.no/v2/units/158.0.0.0",
+  "acronym" : "BI"
+}, {
+  "cristin_unit_id" : "158.3.0.0",
+  "unit_name" : {
+    "en" : "Department of Economics"
+  },
+  "institution" : {
+    "acronym" : "BI"
+  },
+  "url" : "https://api.cristin.no/v2/units/158.3.0.0",
+  "acronym" : "IS",
+  "parent_unit" : {
+    "cristin_unit_id" : "158.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "158.4.0.0",
+  "unit_name" : {
+    "en" : "Department of Leadership and Organizational Behaviour"
+  },
+  "institution" : {
+    "acronym" : "BI"
+  },
+  "url" : "https://api.cristin.no/v2/units/158.4.0.0",
+  "acronym" : "ILA",
+  "parent_unit" : {
+    "cristin_unit_id" : "158.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "158.8.0.0",
+  "unit_name" : {
+    "en" : "Department of Strategy and Entrepreneurship"
+  },
+  "institution" : {
+    "acronym" : "BI"
+  },
+  "url" : "https://api.cristin.no/v2/units/158.8.0.0",
+  "acronym" : "ISL",
+  "parent_unit" : {
+    "cristin_unit_id" : "158.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "1575.0.0.0",
+  "unit_name" : {
+    "nb" : "Høgskolesenteret i Rogaland"
+  },
+  "institution" : {
+    "acronym" : "HSR"
+  },
+  "url" : "https://api.cristin.no/v2/units/1575.0.0.0",
+  "acronym" : "HSR"
+}, {
+  "cristin_unit_id" : "150.4.0.0",
+  "unit_name" : {
+    "en" : "Department for Research Management and Documentation"
+  },
+  "institution" : {
+    "acronym" : "NIH"
+  },
+  "url" : "https://api.cristin.no/v2/units/150.4.0.0",
+  "acronym" : "ADF",
+  "parent_unit" : {
+    "cristin_unit_id" : "150.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "150.31.0.0",
+  "unit_name" : {
+    "en" : "Department of Physical Performance"
+  },
+  "institution" : {
+    "acronym" : "NIH"
+  },
+  "url" : "https://api.cristin.no/v2/units/150.31.0.0",
+  "acronym" : "IFP",
+  "parent_unit" : {
+    "cristin_unit_id" : "150.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "150.4.1.0",
+  "unit_name" : {
+    "en" : "Library"
+  },
+  "institution" : {
+    "acronym" : "NIH"
+  },
+  "url" : "https://api.cristin.no/v2/units/150.4.1.0",
+  "acronym" : "Bibliotek",
+  "parent_unit" : {
+    "cristin_unit_id" : "150.4.0.0"
+  }
+}, {
+  "cristin_unit_id" : "150.0.0.0",
+  "unit_name" : {
+    "en" : "Norwegian School of Sport Sciences"
+  },
+  "institution" : {
+    "acronym" : "NIH"
+  },
+  "url" : "https://api.cristin.no/v2/units/150.0.0.0",
+  "acronym" : "NIH"
+}, {
+  "cristin_unit_id" : "150.34.0.0",
+  "unit_name" : {
+    "en" : "Department of Sport Medicine"
+  },
+  "institution" : {
+    "acronym" : "NIH"
+  },
+  "url" : "https://api.cristin.no/v2/units/150.34.0.0",
+  "acronym" : "IIM",
+  "parent_unit" : {
+    "cristin_unit_id" : "150.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "150.30.0.0",
+  "unit_name" : {
+    "en" : "Department of sport and social sciences"
+  },
+  "institution" : {
+    "acronym" : "NIH"
+  },
+  "url" : "https://api.cristin.no/v2/units/150.30.0.0",
+  "acronym" : "IIS",
+  "parent_unit" : {
+    "cristin_unit_id" : "150.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "150.35.0.0",
+  "unit_name" : {
+    "en" : "Department of teacher education and outdoor life studies"
+  },
+  "institution" : {
+    "acronym" : "NIH"
+  },
+  "url" : "https://api.cristin.no/v2/units/150.35.0.0",
+  "acronym" : "ILF",
+  "parent_unit" : {
+    "cristin_unit_id" : "150.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "1503.0.0.0",
+  "unit_name" : {
+    "nb" : "Merkantilt institutt"
+  },
+  "institution" : {
+    "acronym" : "MI"
+  },
+  "url" : "https://api.cristin.no/v2/units/1503.0.0.0",
+  "acronym" : "MI"
+}, {
+  "cristin_unit_id" : "1501.0.0.0",
+  "unit_name" : {
+    "nb" : "Christiania høgskole"
+  },
+  "institution" : {
+    "acronym" : "CHRIHØG"
+  },
+  "url" : "https://api.cristin.no/v2/units/1501.0.0.0",
+  "acronym" : "CHRIHØG"
+}, {
+  "cristin_unit_id" : "1580.0.0.0",
+  "unit_name" : {
+    "nb" : "Befalsskolen for Infanteriet i Trondheim (nedlagt)"
+  },
+  "institution" : {
+    "acronym" : "BSIT"
+  },
+  "url" : "https://api.cristin.no/v2/units/1580.0.0.0",
+  "acronym" : "BSIT"
+}, {
+  "cristin_unit_id" : "158.1.0.0",
+  "unit_name" : {
+    "en" : "Department of Finance"
+  },
+  "institution" : {
+    "acronym" : "BI"
+  },
+  "url" : "https://api.cristin.no/v2/units/158.1.0.0",
+  "acronym" : "IFF",
+  "parent_unit" : {
+    "cristin_unit_id" : "158.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "158.9.0.0",
+  "unit_name" : {
+    "en" : "Department of Communication and Culture"
+  },
+  "institution" : {
+    "acronym" : "BI"
+  },
+  "url" : "https://api.cristin.no/v2/units/158.9.0.0",
+  "acronym" : "IKK",
+  "parent_unit" : {
+    "cristin_unit_id" : "158.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "158.12.0.0",
+  "unit_name" : {
+    "en" : "Department of Law and Governance"
+  },
+  "institution" : {
+    "acronym" : "BI"
+  },
+  "url" : "https://api.cristin.no/v2/units/158.12.0.0",
+  "acronym" : "IR",
+  "parent_unit" : {
+    "cristin_unit_id" : "158.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "158.11.0.0",
+  "unit_name" : {
+    "en" : "Department of Marketing"
+  },
+  "institution" : {
+    "acronym" : "BI"
+  },
+  "url" : "https://api.cristin.no/v2/units/158.11.0.0",
+  "acronym" : "IM",
+  "parent_unit" : {
+    "cristin_unit_id" : "158.0.0.0"
+  }
+}, {
+  "cristin_unit_id" : "1582.0.0.0",
+  "unit_name" : {
+    "nb" : "Luftforsvarets befalsskole"
+  },
+  "institution" : {
+    "acronym" : "LBSK"
+  },
+  "url" : "https://api.cristin.no/v2/units/1582.0.0.0",
+  "acronym" : "LBSK"
+}, {
+  "cristin_unit_id" : "6121.0.0.0",
+  "unit_name" : {
+    "nb" : "NorChip AS"
+  },
+  "institution" : {
+    "acronym" : "NORCHIP"
+  },
+  "url" : "https://api.cristin.no/v2/units/6121.0.0.0",
+  "acronym" : "NORCHIP"
+}, {
+  "cristin_unit_id" : "6122.0.0.0",
+  "unit_name" : {
+    "nb" : "Nortura BA"
+  },
+  "institution" : {
+    "acronym" : "NORTURA"
+  },
+  "url" : "https://api.cristin.no/v2/units/6122.0.0.0",
+  "acronym" : "NORTURA"
+}, {
+  "cristin_unit_id" : "6132.0.0.0",
+  "unit_name" : {
+    "nb" : "CMR Prototech"
+  },
+  "institution" : {
+    "acronym" : "PROTOTECH"
+  },
+  "url" : "https://api.cristin.no/v2/units/6132.0.0.0",
+  "acronym" : "PROTOTECH"
+}, {
+  "cristin_unit_id" : "6128.0.0.0",
+  "unit_name" : {
+    "nb" : "Grieg Cod Farming"
+  },
+  "institution" : {
+    "acronym" : "GRIEGCOD"
+  },
+  "url" : "https://api.cristin.no/v2/units/6128.0.0.0",
+  "acronym" : "GRIEGCOD"
+}, {
+  "cristin_unit_id" : "6129.0.0.0",
+  "unit_name" : {
+    "nb" : "DIPS ASA"
+  },
+  "institution" : {
+    "acronym" : "DIPS"
+  },
+  "url" : "https://api.cristin.no/v2/units/6129.0.0.0",
+  "acronym" : "DIPS"
+}, {
+  "cristin_unit_id" : "6126.0.0.0",
+  "unit_name" : {
+    "nb" : "Jordan AS"
+  },
+  "institution" : {
+    "acronym" : "JORDAN"
+  },
+  "url" : "https://api.cristin.no/v2/units/6126.0.0.0",
+  "acronym" : "JORDAN"
+}, {
+  "cristin_unit_id" : "6127.0.0.0",
+  "unit_name" : {
+    "nb" : "Selvær Torsk AS"
+  },
+  "institution" : {
+    "acronym" : "SELVÆR"
+  },
+  "url" : "https://api.cristin.no/v2/units/6127.0.0.0",
+  "acronym" : "SELVÆR"
+}, {
+  "cristin_unit_id" : "6123.0.0.0",
+  "unit_name" : {
+    "nb" : "PlasmAcute AS"
+  },
+  "institution" : {
+    "acronym" : "PLASMACUTE"
+  },
+  "url" : "https://api.cristin.no/v2/units/6123.0.0.0",
+  "acronym" : "PLASMACUTE"
+}, {
+  "cristin_unit_id" : "6134.0.0.0",
+  "unit_name" : {
+    "nb" : "StormGeo"
+  },
+  "institution" : {
+    "acronym" : "STORMGEO"
+  },
+  "url" : "https://api.cristin.no/v2/units/6134.0.0.0",
+  "acronym" : "STORMGEO"
+}, {
+  "cristin_unit_id" : "6124.0.0.0",
+  "unit_name" : {
+    "nb" : "Kjeller Vindteknikk AS"
+  },
+  "institution" : {
+    "acronym" : "VINDTEK"
+  },
+  "url" : "https://api.cristin.no/v2/units/6124.0.0.0",
+  "acronym" : "VINDTEK"
+}, {
+  "cristin_unit_id" : "6135.0.0.0",
+  "unit_name" : {
+    "nb" : "Lytix Biopharma AS"
+  },
+  "institution" : {
+    "acronym" : "LYTIX"
+  },
+  "url" : "https://api.cristin.no/v2/units/6135.0.0.0",
+  "acronym" : "LYTIX"
+}, {
+  "cristin_unit_id" : "6130.0.0.0",
+  "unit_name" : {
+    "nb" : "Faster Imaging AS"
+  },
+  "institution" : {
+    "acronym" : "FASTERIMG"
+  },
+  "url" : "https://api.cristin.no/v2/units/6130.0.0.0",
+  "acronym" : "FASTERIMG"
+}, {
+  "cristin_unit_id" : "6125.0.0.0",
+  "unit_name" : {
+    "nb" : "Brekke & Strand akustikk as"
+  },
+  "institution" : {
+    "acronym" : "BSAKUSTIKK"
+  },
+  "url" : "https://api.cristin.no/v2/units/6125.0.0.0",
+  "acronym" : "BSAKUSTIKK"
+}, {
+  "cristin_unit_id" : "6131.0.0.0",
+  "unit_name" : {
+    "nb" : "Senso-Tek"
+  },
+  "institution" : {
+    "acronym" : "SENSO-TEK"
+  },
+  "url" : "https://api.cristin.no/v2/units/6131.0.0.0",
+  "acronym" : "SENSO-TEK"
+}, {
+  "cristin_unit_id" : "6138.0.0.0",
+  "unit_name" : {
+    "nb" : "iSentio AS"
+  },
+  "institution" : {
+    "acronym" : "ISENTIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/6138.0.0.0",
+  "acronym" : "ISENTIO"
+}, {
+  "cristin_unit_id" : "6141.0.0.0",
+  "unit_name" : {
+    "nb" : "Changetech AS"
+  },
+  "institution" : {
+    "acronym" : "CHANGETECH"
+  },
+  "url" : "https://api.cristin.no/v2/units/6141.0.0.0",
+  "acronym" : "CHANGETECH"
+}, {
+  "cristin_unit_id" : "6140.0.0.0",
+  "unit_name" : {
+    "nb" : "Det norske oljeselskap ASA"
+  },
+  "institution" : {
+    "acronym" : "DETNOR"
+  },
+  "url" : "https://api.cristin.no/v2/units/6140.0.0.0",
+  "acronym" : "DETNOR"
+}, {
+  "cristin_unit_id" : "6144.0.0.0",
+  "unit_name" : {
+    "nb" : "Norsk Elektro Optikk AS"
+  },
+  "institution" : {
+    "acronym" : "NEO"
+  },
+  "url" : "https://api.cristin.no/v2/units/6144.0.0.0",
+  "acronym" : "NEO"
+}, {
+  "cristin_unit_id" : "6139.0.0.0",
+  "unit_name" : {
+    "nb" : "Raufoss Technology and Industrial Management"
+  },
+  "institution" : {
+    "acronym" : "RTIM"
+  },
+  "url" : "https://api.cristin.no/v2/units/6139.0.0.0",
+  "acronym" : "RTIM"
+}, {
+  "cristin_unit_id" : "6133.0.0.0",
+  "unit_name" : {
+    "nb" : "Elliptic Laboratories AS"
+  },
+  "institution" : {
+    "acronym" : "ELLIPTIC"
+  },
+  "url" : "https://api.cristin.no/v2/units/6133.0.0.0",
+  "acronym" : "ELLIPTIC"
+}, {
+  "cristin_unit_id" : "6151.0.0.0",
+  "unit_name" : {
+    "nb" : "Pattern Solutions AS"
+  },
+  "institution" : {
+    "acronym" : "PATTERN"
+  },
+  "url" : "https://api.cristin.no/v2/units/6151.0.0.0",
+  "acronym" : "PATTERN"
+}, {
+  "cristin_unit_id" : "6142.0.0.0",
+  "unit_name" : {
+    "nb" : "Karevold Organisasjonspsykologi AS"
+  },
+  "institution" : {
+    "acronym" : "KAREVOLD"
+  },
+  "url" : "https://api.cristin.no/v2/units/6142.0.0.0",
+  "acronym" : "KAREVOLD"
+}, {
+  "cristin_unit_id" : "6136.0.0.0",
+  "unit_name" : {
+    "nb" : "Lifecare AS"
+  },
+  "institution" : {
+    "acronym" : "LIFECARE"
+  },
+  "url" : "https://api.cristin.no/v2/units/6136.0.0.0",
+  "acronym" : "LIFECARE"
+}, {
+  "cristin_unit_id" : "6145.0.0.0",
+  "unit_name" : {
+    "en" : "Hans and Olaf Physiotherapy Clinic"
+  },
+  "institution" : {
+    "acronym" : "HANSOGOLAF"
+  },
+  "url" : "https://api.cristin.no/v2/units/6145.0.0.0",
+  "acronym" : "HANSOGOLAF"
+}, {
+  "cristin_unit_id" : "6149.0.0.0",
+  "unit_name" : {
+    "nb" : "Fluens Synthesis AS"
+  },
+  "institution" : {
+    "acronym" : "FLUENS"
+  },
+  "url" : "https://api.cristin.no/v2/units/6149.0.0.0",
+  "acronym" : "FLUENS"
+}, {
+  "cristin_unit_id" : "6152.0.0.0",
+  "unit_name" : {
+    "nb" : "Centre for Medical Web Research"
+  },
+  "institution" : {
+    "acronym" : "CMWR"
+  },
+  "url" : "https://api.cristin.no/v2/units/6152.0.0.0",
+  "acronym" : "CMWR"
+}, {
+  "cristin_unit_id" : "6154.0.0.0",
+  "unit_name" : {
+    "nb" : "Alertis Medical AS"
+  },
+  "institution" : {
+    "acronym" : "ALERTIS"
+  },
+  "url" : "https://api.cristin.no/v2/units/6154.0.0.0",
+  "acronym" : "ALERTIS"
+}, {
+  "cristin_unit_id" : "6156.0.0.0",
+  "unit_name" : {
+    "nb" : "PatoGen Analyse AS"
+  },
+  "institution" : {
+    "acronym" : "PATOGEN"
+  },
+  "url" : "https://api.cristin.no/v2/units/6156.0.0.0",
+  "acronym" : "PATOGEN"
+}, {
+  "cristin_unit_id" : "6157.0.0.0",
+  "unit_name" : {
+    "nb" : "Schibsted"
+  },
+  "institution" : {
+    "acronym" : "SCHIBSTED"
+  },
+  "url" : "https://api.cristin.no/v2/units/6157.0.0.0",
+  "acronym" : "SCHIBSTED"
+}, {
+  "cristin_unit_id" : "6158.0.0.0",
+  "unit_name" : {
+    "nb" : "Tellus Software AS"
+  },
+  "institution" : {
+    "acronym" : "TELLUS"
+  },
+  "url" : "https://api.cristin.no/v2/units/6158.0.0.0",
+  "acronym" : "TELLUS"
+}, {
+  "cristin_unit_id" : "6147.0.0.0",
+  "unit_name" : {
+    "nb" : "Stix AS"
+  },
+  "institution" : {
+    "acronym" : "STIX"
+  },
+  "url" : "https://api.cristin.no/v2/units/6147.0.0.0",
+  "acronym" : "STIX"
+}, {
+  "cristin_unit_id" : "6159.0.0.0",
+  "unit_name" : {
+    "nb" : "Thelma AS"
+  },
+  "institution" : {
+    "acronym" : "THELMA"
+  },
+  "url" : "https://api.cristin.no/v2/units/6159.0.0.0",
+  "acronym" : "THELMA"
+}, {
+  "cristin_unit_id" : "6155.0.0.0",
+  "unit_name" : {
+    "nb" : "Sagafjord Sea Farm AS"
+  },
+  "institution" : {
+    "acronym" : "SAGAFJORD"
+  },
+  "url" : "https://api.cristin.no/v2/units/6155.0.0.0",
+  "acronym" : "SAGAFJORD"
+}, {
+  "cristin_unit_id" : "6201.0.0.0",
+  "unit_name" : {
+    "nb" : "Otivio AS"
+  },
+  "institution" : {
+    "acronym" : "OTIVIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/6201.0.0.0",
+  "acronym" : "OTIVIO"
+}, {
+  "cristin_unit_id" : "6202.0.0.0",
+  "unit_name" : {
+    "nb" : "Agrimarin Nutrition"
+  },
+  "institution" : {
+    "acronym" : "AGRIMARIN"
+  },
+  "url" : "https://api.cristin.no/v2/units/6202.0.0.0",
+  "acronym" : "AGRIMARIN"
+}, {
+  "cristin_unit_id" : "6203.0.0.0",
+  "unit_name" : {
+    "nb" : "NorSun AS"
+  },
+  "institution" : {
+    "acronym" : "NORSUN"
+  },
+  "url" : "https://api.cristin.no/v2/units/6203.0.0.0",
+  "acronym" : "NORSUN"
+}, {
+  "cristin_unit_id" : "6218.0.0.0",
+  "unit_name" : {
+    "nb" : "Store Norske Spitsbergen Kulkompani AS"
+  },
+  "institution" : {
+    "acronym" : "SNSK"
+  },
+  "url" : "https://api.cristin.no/v2/units/6218.0.0.0",
+  "acronym" : "SNSK"
+}, {
+  "cristin_unit_id" : "6219.0.0.0",
+  "unit_name" : {
+    "nb" : "Unil AS"
+  },
+  "institution" : {
+    "acronym" : "UNIL"
+  },
+  "url" : "https://api.cristin.no/v2/units/6219.0.0.0",
+  "acronym" : "UNIL"
+}, {
+  "cristin_unit_id" : "6220.0.0.0",
+  "unit_name" : {
+    "nb" : "SynsLaser Kirurgi AS"
+  },
+  "institution" : {
+    "acronym" : "SYNSLASER"
+  },
+  "url" : "https://api.cristin.no/v2/units/6220.0.0.0",
+  "acronym" : "SYNSLASER"
+}, {
+  "cristin_unit_id" : "6212.0.0.0",
+  "unit_name" : {
+    "nb" : "Evangeliehuset"
+  },
+  "institution" : {
+    "acronym" : "EHUSET"
+  },
+  "url" : "https://api.cristin.no/v2/units/6212.0.0.0",
+  "acronym" : "EHUSET"
+}, {
+  "cristin_unit_id" : "6211.0.0.0",
+  "unit_name" : {
+    "nb" : "Lom og Skjåk dyreklinikk AS"
+  },
+  "institution" : {
+    "acronym" : "LSDYR"
+  },
+  "url" : "https://api.cristin.no/v2/units/6211.0.0.0",
+  "acronym" : "LSDYR"
+}, {
+  "cristin_unit_id" : "6217.0.0.0",
+  "unit_name" : {
+    "nb" : "Zacout AS"
+  },
+  "institution" : {
+    "acronym" : "ZACOUT"
+  },
+  "url" : "https://api.cristin.no/v2/units/6217.0.0.0",
+  "acronym" : "ZACOUT"
+}, {
+  "cristin_unit_id" : "6221.0.0.0",
+  "unit_name" : {
+    "nb" : "CondAlign AS"
+  },
+  "institution" : {
+    "acronym" : "CONDA"
+  },
+  "url" : "https://api.cristin.no/v2/units/6221.0.0.0",
+  "acronym" : "CONDA"
+}, {
+  "cristin_unit_id" : "6214.0.0.0",
+  "unit_name" : {
+    "nb" : "Nordic Nanovector AS"
+  },
+  "institution" : {
+    "acronym" : "NORNAN"
+  },
+  "url" : "https://api.cristin.no/v2/units/6214.0.0.0",
+  "acronym" : "NORNAN"
+}, {
+  "cristin_unit_id" : "6222.0.0.0",
+  "unit_name" : {
+    "nb" : "KLP - Kommunal Landspensjonskasse"
+  },
+  "institution" : {
+    "acronym" : "KLP"
+  },
+  "url" : "https://api.cristin.no/v2/units/6222.0.0.0",
+  "acronym" : "KLP"
+}, {
+  "cristin_unit_id" : "6223.0.0.0",
+  "unit_name" : {
+    "nb" : "Safetec Nordic AS"
+  },
+  "institution" : {
+    "acronym" : "SAFETEC"
+  },
+  "url" : "https://api.cristin.no/v2/units/6223.0.0.0",
+  "acronym" : "SAFETEC"
+}, {
+  "cristin_unit_id" : "6225.0.0.0",
+  "unit_name" : {
+    "nb" : "TerraTec AS"
+  },
+  "institution" : {
+    "acronym" : "TT"
+  },
+  "url" : "https://api.cristin.no/v2/units/6225.0.0.0",
+  "acronym" : "TT"
+}, {
+  "cristin_unit_id" : "6227.0.0.0",
+  "unit_name" : {
+    "nb" : "Pharmaq AS"
+  },
+  "institution" : {
+    "acronym" : "PHARMAQ"
+  },
+  "url" : "https://api.cristin.no/v2/units/6227.0.0.0",
+  "acronym" : "PHARMAQ"
+}, {
+  "cristin_unit_id" : "6226.0.0.0",
+  "unit_name" : {
+    "nb" : "Lerøy Seafood Group"
+  },
+  "institution" : {
+    "acronym" : "LEROY"
+  },
+  "url" : "https://api.cristin.no/v2/units/6226.0.0.0",
+  "acronym" : "LEROY"
+}, {
+  "cristin_unit_id" : "6248.0.0.0",
+  "unit_name" : {
+    "nb" : "Lundin Norway AS"
+  },
+  "institution" : {
+    "acronym" : "LUNDIN"
+  },
+  "url" : "https://api.cristin.no/v2/units/6248.0.0.0",
+  "acronym" : "LUNDIN"
+}, {
+  "cristin_unit_id" : "6251.0.0.0",
+  "unit_name" : {
+    "nb" : "MT-Slakt AS"
+  },
+  "institution" : {
+    "acronym" : "MTSLAKT"
+  },
+  "url" : "https://api.cristin.no/v2/units/6251.0.0.0",
+  "acronym" : "MTSLAKT"
+}, {
+  "cristin_unit_id" : "6253.0.0.0",
+  "unit_name" : {
+    "nb" : "Nexans Norway AS"
+  },
+  "institution" : {
+    "acronym" : "NEXANS"
+  },
+  "url" : "https://api.cristin.no/v2/units/6253.0.0.0",
+  "acronym" : "NEXANS"
+}, {
+  "cristin_unit_id" : "6252.0.0.0",
+  "unit_name" : {
+    "nb" : "Scantrol AS"
+  },
+  "institution" : {
+    "acronym" : "SCANTROL"
+  },
+  "url" : "https://api.cristin.no/v2/units/6252.0.0.0",
+  "acronym" : "SCANTROL"
+}, {
+  "cristin_unit_id" : "6250.0.0.0",
+  "unit_name" : {
+    "en" : "Ecowat AS"
+  },
+  "institution" : {
+    "acronym" : "ECOWAT"
+  },
+  "url" : "https://api.cristin.no/v2/units/6250.0.0.0",
+  "acronym" : "ECOWAT"
+}, {
+  "cristin_unit_id" : "6258.0.0.0",
+  "unit_name" : {
+    "nb" : "Spesialistsenteret Pilestredet Park"
+  },
+  "institution" : {
+    "acronym" : "SSPP"
+  },
+  "url" : "https://api.cristin.no/v2/units/6258.0.0.0",
+  "acronym" : "SSPP"
+}, {
+  "cristin_unit_id" : "6256.0.0.0",
+  "unit_name" : {
+    "nb" : "GlycaNova Norway AS"
+  },
+  "institution" : {
+    "acronym" : "GLYCANOVA"
+  },
+  "url" : "https://api.cristin.no/v2/units/6256.0.0.0",
+  "acronym" : "GLYCANOVA"
+}, {
+  "cristin_unit_id" : "6254.0.0.0",
+  "unit_name" : {
+    "nb" : "VISMA"
+  },
+  "institution" : {
+    "acronym" : "VISMA"
+  },
+  "url" : "https://api.cristin.no/v2/units/6254.0.0.0",
+  "acronym" : "VISMA"
+}, {
+  "cristin_unit_id" : "6265.0.0.0",
+  "unit_name" : {
+    "nb" : "Breivoll Inspection Technologies"
+  },
+  "institution" : {
+    "acronym" : "BTI"
+  },
+  "url" : "https://api.cristin.no/v2/units/6265.0.0.0",
+  "acronym" : "BTI"
+}, {
+  "cristin_unit_id" : "6278.0.0.0",
+  "unit_name" : {
+    "nb" : "Privatsykehuset Haugesund"
+  },
+  "institution" : {
+    "acronym" : "PSH"
+  },
+  "url" : "https://api.cristin.no/v2/units/6278.0.0.0",
+  "acronym" : "PSH"
+}, {
+  "cristin_unit_id" : "6282.0.0.0",
+  "unit_name" : {
+    "nb" : "Kulturlandskapssenteret"
+  },
+  "institution" : {
+    "acronym" : "KLS"
+  },
+  "url" : "https://api.cristin.no/v2/units/6282.0.0.0",
+  "acronym" : "KLS"
+}, {
+  "cristin_unit_id" : "6273.0.0.0",
+  "unit_name" : {
+    "nb" : "Omegatri AS"
+  },
+  "institution" : {
+    "acronym" : "OMEGATRI"
+  },
+  "url" : "https://api.cristin.no/v2/units/6273.0.0.0",
+  "acronym" : "OMEGATRI"
+}, {
+  "cristin_unit_id" : "6269.0.0.0",
+  "unit_name" : {
+    "nb" : "Curato Røntgen"
+  },
+  "institution" : {
+    "acronym" : "CURATO"
+  },
+  "url" : "https://api.cristin.no/v2/units/6269.0.0.0",
+  "acronym" : "CURATO"
+}, {
+  "cristin_unit_id" : "6283.0.0.0",
+  "unit_name" : {
+    "nb" : "Ola Roald Arkitektur"
+  },
+  "institution" : {
+    "acronym" : "OLAROALD"
+  },
+  "url" : "https://api.cristin.no/v2/units/6283.0.0.0",
+  "acronym" : "OLAROALD"
+}, {
+  "cristin_unit_id" : "6281.0.0.0",
+  "unit_name" : {
+    "en" : "Valnesfjord Health Sport Center"
+  },
+  "institution" : {
+    "acronym" : "VHSS"
+  },
+  "url" : "https://api.cristin.no/v2/units/6281.0.0.0",
+  "acronym" : "VHSS"
+}, {
+  "cristin_unit_id" : "6280.0.0.0",
+  "unit_name" : {
+    "nb" : "Aneo"
+  },
+  "institution" : {
+    "acronym" : "ANEO"
+  },
+  "url" : "https://api.cristin.no/v2/units/6280.0.0.0",
+  "acronym" : "ANEO"
+}, {
+  "cristin_unit_id" : "6285.0.0.0",
+  "unit_name" : {
+    "nb" : "Genetic Analysis"
+  },
+  "institution" : {
+    "acronym" : "GA"
+  },
+  "url" : "https://api.cristin.no/v2/units/6285.0.0.0",
+  "acronym" : "GA"
+}, {
+  "cristin_unit_id" : "6284.0.0.0",
+  "unit_name" : {
+    "nb" : "Oxford Research"
+  },
+  "institution" : {
+    "acronym" : "OXFORD"
+  },
+  "url" : "https://api.cristin.no/v2/units/6284.0.0.0",
+  "acronym" : "OXFORD"
+}, {
+  "cristin_unit_id" : "6286.0.0.0",
+  "unit_name" : {
+    "nb" : "Tromsø idrettslag"
+  },
+  "institution" : {
+    "acronym" : "TIL"
+  },
+  "url" : "https://api.cristin.no/v2/units/6286.0.0.0",
+  "acronym" : "TIL"
+}, {
+  "cristin_unit_id" : "6291.0.0.0",
+  "unit_name" : {
+    "nb" : "Preventor"
+  },
+  "institution" : {
+    "acronym" : "PRE"
+  },
+  "url" : "https://api.cristin.no/v2/units/6291.0.0.0",
+  "acronym" : "PRE"
+}, {
+  "cristin_unit_id" : "6289.0.0.0",
+  "unit_name" : {
+    "nb" : "GeoKnowledge"
+  },
+  "institution" : {
+    "acronym" : "GEOKNOW"
+  },
+  "url" : "https://api.cristin.no/v2/units/6289.0.0.0",
+  "acronym" : "GEOKNOW"
+}, {
+  "cristin_unit_id" : "6288.0.0.0",
+  "unit_name" : {
+    "en" : "Norvegian biathlon association"
+  },
+  "institution" : {
+    "acronym" : "ODLO"
+  },
+  "url" : "https://api.cristin.no/v2/units/6288.0.0.0",
+  "acronym" : "ODLO"
+}, {
+  "cristin_unit_id" : "6299.0.0.0",
+  "unit_name" : {
+    "nb" : "Sigragroup"
+  },
+  "institution" : {
+    "acronym" : "SIGRA"
+  },
+  "url" : "https://api.cristin.no/v2/units/6299.0.0.0",
+  "acronym" : "SIGRA"
+}, {
+  "cristin_unit_id" : "6301.0.0.0",
+  "unit_name" : {
+    "nb" : "Unilab analyse AS"
+  },
+  "institution" : {
+    "acronym" : "UAAS"
+  },
+  "url" : "https://api.cristin.no/v2/units/6301.0.0.0",
+  "acronym" : "UAAS"
+}, {
+  "cristin_unit_id" : "6304.0.0.0",
+  "unit_name" : {
+    "nb" : "Woldmo Consulting AS"
+  },
+  "institution" : {
+    "acronym" : "WOLDMO"
+  },
+  "url" : "https://api.cristin.no/v2/units/6304.0.0.0",
+  "acronym" : "WOLDMO"
+}, {
+  "cristin_unit_id" : "6305.0.0.0",
+  "unit_name" : {
+    "nb" : "Nopro AS"
+  },
+  "institution" : {
+    "acronym" : "NOPRO"
+  },
+  "url" : "https://api.cristin.no/v2/units/6305.0.0.0",
+  "acronym" : "NOPRO"
+}, {
+  "cristin_unit_id" : "6308.0.0.0",
+  "unit_name" : {
+    "nb" : "INSPIRIA science center as"
+  },
+  "institution" : {
+    "acronym" : "INSPIRIA"
+  },
+  "url" : "https://api.cristin.no/v2/units/6308.0.0.0",
+  "acronym" : "INSPIRIA"
+}, {
+  "cristin_unit_id" : "6309.0.0.0",
+  "unit_name" : {
+    "nb" : "Senter for Sysselsetting AS"
+  },
+  "institution" : {
+    "acronym" : "SFS"
+  },
+  "url" : "https://api.cristin.no/v2/units/6309.0.0.0",
+  "acronym" : "SFS"
+}, {
+  "cristin_unit_id" : "6312.0.0.0",
+  "unit_name" : {
+    "nb" : "MSD Animal Health"
+  },
+  "institution" : {
+    "acronym" : "MSD"
+  },
+  "url" : "https://api.cristin.no/v2/units/6312.0.0.0",
+  "acronym" : "MSD"
+}, {
+  "cristin_unit_id" : "6314.0.0.0",
+  "unit_name" : {
+    "nb" : "Norgesfôr"
+  },
+  "institution" : {
+    "acronym" : "NORGESFOR"
+  },
+  "url" : "https://api.cristin.no/v2/units/6314.0.0.0",
+  "acronym" : "NORGESFOR"
+}, {
+  "cristin_unit_id" : "6320.0.0.0",
+  "unit_name" : {
+    "nb" : "Rogaland Eksportutvikling as"
+  },
+  "institution" : {
+    "acronym" : "REU"
+  },
+  "url" : "https://api.cristin.no/v2/units/6320.0.0.0",
+  "acronym" : "REU"
+}, {
+  "cristin_unit_id" : "6321.0.0.0",
+  "unit_name" : {
+    "nb" : "Lyse Energi AS"
+  },
+  "institution" : {
+    "acronym" : "LYSE"
+  },
+  "url" : "https://api.cristin.no/v2/units/6321.0.0.0",
+  "acronym" : "LYSE"
+}, {
+  "cristin_unit_id" : "6322.0.0.0",
+  "unit_name" : {
+    "nb" : "Actic Norge AS"
+  },
+  "institution" : {
+    "acronym" : "ACTIC"
+  },
+  "url" : "https://api.cristin.no/v2/units/6322.0.0.0",
+  "acronym" : "ACTIC"
+}, {
+  "cristin_unit_id" : "6325.0.0.0",
+  "unit_name" : {
+    "nb" : "Nebb"
+  },
+  "institution" : {
+    "acronym" : "NEBB"
+  },
+  "url" : "https://api.cristin.no/v2/units/6325.0.0.0",
+  "acronym" : "NEBB"
+}, {
+  "cristin_unit_id" : "6332.0.0.0",
+  "unit_name" : {
+    "nb" : "Bodø Jazz Open"
+  },
+  "institution" : {
+    "acronym" : "BJAZZ"
+  },
+  "url" : "https://api.cristin.no/v2/units/6332.0.0.0",
+  "acronym" : "BJAZZ"
+}, {
+  "cristin_unit_id" : "6329.0.0.0",
+  "unit_name" : {
+    "nb" : "Scene Finnmark"
+  },
+  "institution" : {
+    "acronym" : "SFINN"
+  },
+  "url" : "https://api.cristin.no/v2/units/6329.0.0.0",
+  "acronym" : "SFINN"
+}, {
+  "cristin_unit_id" : "6328.0.0.0",
+  "unit_name" : {
+    "nb" : "Noreco"
+  },
+  "institution" : {
+    "acronym" : "NORECO"
+  },
+  "url" : "https://api.cristin.no/v2/units/6328.0.0.0",
+  "acronym" : "NORECO"
+}, {
+  "cristin_unit_id" : "6334.0.0.0",
+  "unit_name" : {
+    "nb" : "Idrettsbarnehage AS"
+  },
+  "institution" : {
+    "acronym" : "IBAS"
+  },
+  "url" : "https://api.cristin.no/v2/units/6334.0.0.0",
+  "acronym" : "IBAS"
+}, {
+  "cristin_unit_id" : "6342.0.0.0",
+  "unit_name" : {
+    "en" : "Sparebank1 Alliance"
+  },
+  "institution" : {
+    "acronym" : "SPBANK1"
+  },
+  "url" : "https://api.cristin.no/v2/units/6342.0.0.0",
+  "acronym" : "SPBANK1"
+}, {
+  "cristin_unit_id" : "6335.0.0.0",
+  "unit_name" : {
+    "nb" : "Oslotech AS"
+  },
+  "institution" : {
+    "acronym" : "OSLOTECH"
+  },
+  "url" : "https://api.cristin.no/v2/units/6335.0.0.0",
+  "acronym" : "OSLOTECH"
+}, {
+  "cristin_unit_id" : "6336.0.0.0",
+  "unit_name" : {
+    "nb" : "TiZiR Limited"
+  },
+  "institution" : {
+    "acronym" : "TIZIR"
+  },
+  "url" : "https://api.cristin.no/v2/units/6336.0.0.0",
+  "acronym" : "TIZIR"
+}, {
+  "cristin_unit_id" : "6339.0.0.0",
+  "unit_name" : {
+    "nb" : "Nygon AS"
+  },
+  "institution" : {
+    "acronym" : "NYGON"
+  },
+  "url" : "https://api.cristin.no/v2/units/6339.0.0.0",
+  "acronym" : "NYGON"
+}, {
+  "cristin_unit_id" : "6343.0.0.0",
+  "unit_name" : {
+    "nb" : "Rehabiliteringssenteret Nord-Norges Kurbad"
+  },
+  "institution" : {
+    "acronym" : "RNNK"
+  },
+  "url" : "https://api.cristin.no/v2/units/6343.0.0.0",
+  "acronym" : "RNNK"
+}, {
+  "cristin_unit_id" : "6344.0.0.0",
+  "unit_name" : {
+    "nb" : "Regionale ressurssentre om vold, traumatisk stress og selvmordsforebygging"
+  },
+  "institution" : {
+    "acronym" : "RVTS"
+  },
+  "url" : "https://api.cristin.no/v2/units/6344.0.0.0",
+  "acronym" : "RVTS"
+}, {
+  "cristin_unit_id" : "6349.0.0.0",
+  "unit_name" : {
+    "nb" : "Oslo Jordmor og Kvinnesenter"
+  },
+  "institution" : {
+    "acronym" : "JORDMOR"
+  },
+  "url" : "https://api.cristin.no/v2/units/6349.0.0.0",
+  "acronym" : "JORDMOR"
+}, {
+  "cristin_unit_id" : "6356.0.0.0",
+  "unit_name" : {
+    "nb" : "Lean Business"
+  },
+  "institution" : {
+    "acronym" : "LB"
+  },
+  "url" : "https://api.cristin.no/v2/units/6356.0.0.0",
+  "acronym" : "LB"
+}, {
+  "cristin_unit_id" : "6354.0.0.0",
+  "unit_name" : {
+    "nb" : "Karde"
+  },
+  "institution" : {
+    "acronym" : "KARDE"
+  },
+  "url" : "https://api.cristin.no/v2/units/6354.0.0.0",
+  "acronym" : "KARDE"
+}, {
+  "cristin_unit_id" : "6360.0.0.0",
+  "unit_name" : {
+    "en" : "APIM Therapeutics"
+  },
+  "institution" : {
+    "acronym" : "APIM"
+  },
+  "url" : "https://api.cristin.no/v2/units/6360.0.0.0",
+  "acronym" : "APIM"
+}, {
+  "cristin_unit_id" : "6357.0.0.0",
+  "unit_name" : {
+    "nb" : "Activa humanistisk akademi"
+  },
+  "institution" : {
+    "acronym" : "ACTIVAHA"
+  },
+  "url" : "https://api.cristin.no/v2/units/6357.0.0.0",
+  "acronym" : "ACTIVAHA"
+}, {
+  "cristin_unit_id" : "6359.0.0.0",
+  "unit_name" : {
+    "en" : "Oncoinvent as"
+  },
+  "institution" : {
+    "acronym" : "ONCOINVENT"
+  },
+  "url" : "https://api.cristin.no/v2/units/6359.0.0.0",
+  "acronym" : "ONCOINVENT"
+}, {
+  "cristin_unit_id" : "6364.0.0.0",
+  "unit_name" : {
+    "nb" : "Narmo arkeologitjenester"
+  },
+  "institution" : {
+    "acronym" : "NARMO"
+  },
+  "url" : "https://api.cristin.no/v2/units/6364.0.0.0",
+  "acronym" : "NARMO"
+}, {
+  "cristin_unit_id" : "6365.0.0.0",
+  "unit_name" : {
+    "nb" : "IVF-Klinikken Oslo"
+  },
+  "institution" : {
+    "acronym" : "IVF"
+  },
+  "url" : "https://api.cristin.no/v2/units/6365.0.0.0",
+  "acronym" : "IVF"
+}, {
+  "cristin_unit_id" : "6363.0.0.0",
+  "unit_name" : {
+    "nb" : "Arctic Medical Nutrition As"
+  },
+  "institution" : {
+    "acronym" : "AMN"
+  },
+  "url" : "https://api.cristin.no/v2/units/6363.0.0.0",
+  "acronym" : "AMN"
+}, {
+  "cristin_unit_id" : "6361.0.0.0",
+  "unit_name" : {
+    "en" : "Vitas AS"
+  },
+  "institution" : {
+    "acronym" : "VITAS"
+  },
+  "url" : "https://api.cristin.no/v2/units/6361.0.0.0",
+  "acronym" : "VITAS"
+}, {
+  "cristin_unit_id" : "6366.0.0.0",
+  "unit_name" : {
+    "en" : "Medicus"
+  },
+  "institution" : {
+    "acronym" : "MEDICUS"
+  },
+  "url" : "https://api.cristin.no/v2/units/6366.0.0.0",
+  "acronym" : "MEDICUS"
+}, {
+  "cristin_unit_id" : "6367.0.0.0",
+  "unit_name" : {
+    "nb" : "eSmart Systems"
+  },
+  "institution" : {
+    "acronym" : "ESMART"
+  },
+  "url" : "https://api.cristin.no/v2/units/6367.0.0.0",
+  "acronym" : "ESMART"
+}, {
+  "cristin_unit_id" : "6368.0.0.0",
+  "unit_name" : {
+    "en" : "Ento Consulting"
+  },
+  "institution" : {
+    "acronym" : "ENTO"
+  },
+  "url" : "https://api.cristin.no/v2/units/6368.0.0.0",
+  "acronym" : "ENTO"
+}, {
+  "cristin_unit_id" : "6369.0.0.0",
+  "unit_name" : {
+    "en" : "Klinikk Hausken"
+  },
+  "institution" : {
+    "acronym" : "HAUSKEN"
+  },
+  "url" : "https://api.cristin.no/v2/units/6369.0.0.0",
+  "acronym" : "HAUSKEN"
+}, {
+  "cristin_unit_id" : "6373.0.0.0",
+  "unit_name" : {
+    "en" : "Psykolog Grete Schau"
+  },
+  "institution" : {
+    "acronym" : "GS"
+  },
+  "url" : "https://api.cristin.no/v2/units/6373.0.0.0",
+  "acronym" : "GS"
+}, {
+  "cristin_unit_id" : "6375.0.0.0",
+  "unit_name" : {
+    "en" : "Velde"
+  },
+  "institution" : {
+    "acronym" : "VP"
+  },
+  "url" : "https://api.cristin.no/v2/units/6375.0.0.0",
+  "acronym" : "VP"
+}, {
+  "cristin_unit_id" : "6376.0.0.0",
+  "unit_name" : {
+    "nb" : "Norsk Automatisering AS"
+  },
+  "institution" : {
+    "acronym" : "NAAS"
+  },
+  "url" : "https://api.cristin.no/v2/units/6376.0.0.0",
+  "acronym" : "NAAS"
+}, {
+  "cristin_unit_id" : "6372.0.0.0",
+  "unit_name" : {
+    "en" : "Ås fysioterapi og treningssenter"
+  },
+  "institution" : {
+    "acronym" : "ÅSFYSTREN"
+  },
+  "url" : "https://api.cristin.no/v2/units/6372.0.0.0",
+  "acronym" : "ÅSFYSTREN"
+}, {
+  "cristin_unit_id" : "6377.0.0.0",
+  "unit_name" : {
+    "nb" : "Corticalis AS"
+  },
+  "institution" : {
+    "acronym" : "CORTICALIS"
+  },
+  "url" : "https://api.cristin.no/v2/units/6377.0.0.0",
+  "acronym" : "CORTICALIS"
+}, {
+  "cristin_unit_id" : "6380.0.0.0",
+  "unit_name" : {
+    "nb" : "Techni AS"
+  },
+  "institution" : {
+    "acronym" : "TECHNI"
+  },
+  "url" : "https://api.cristin.no/v2/units/6380.0.0.0",
+  "acronym" : "TECHNI"
+}, {
+  "cristin_unit_id" : "6381.0.0.0",
+  "unit_name" : {
+    "en" : "DNV"
+  },
+  "institution" : {
+    "acronym" : "DNVGL"
+  },
+  "url" : "https://api.cristin.no/v2/units/6381.0.0.0",
+  "acronym" : "DNVGL"
+}, {
+  "cristin_unit_id" : "6378.0.0.0",
+  "unit_name" : {
+    "nb" : "Kelda Drilling Controls AS"
+  },
+  "institution" : {
+    "acronym" : "KELDA"
+  },
+  "url" : "https://api.cristin.no/v2/units/6378.0.0.0",
+  "acronym" : "KELDA"
+}, {
+  "cristin_unit_id" : "6398.0.0.0",
+  "unit_name" : {
+    "nb" : "Micromar AS"
+  },
+  "institution" : {
+    "acronym" : "MICROMAR"
+  },
+  "url" : "https://api.cristin.no/v2/units/6398.0.0.0",
+  "acronym" : "MICROMAR"
+}, {
+  "cristin_unit_id" : "6402.0.0.0",
+  "unit_name" : {
+    "en" : "Kontali Analyse"
+  },
+  "institution" : {
+    "acronym" : "KONTALI"
+  },
+  "url" : "https://api.cristin.no/v2/units/6402.0.0.0",
+  "acronym" : "KONTALI"
+}, {
+  "cristin_unit_id" : "6401.0.0.0",
+  "unit_name" : {
+    "nb" : "Naxys AS"
+  },
+  "institution" : {
+    "acronym" : "NAXYS"
+  },
+  "url" : "https://api.cristin.no/v2/units/6401.0.0.0",
+  "acronym" : "NAXYS"
+}, {
+  "cristin_unit_id" : "6403.0.0.0",
+  "unit_name" : {
+    "nb" : "Atea"
+  },
+  "institution" : {
+    "acronym" : "ATEA"
+  },
+  "url" : "https://api.cristin.no/v2/units/6403.0.0.0",
+  "acronym" : "ATEA"
+}, {
+  "cristin_unit_id" : "6405.0.0.0",
+  "unit_name" : {
+    "nb" : "DotNet Internals AS"
+  },
+  "institution" : {
+    "acronym" : "DOTNET"
+  },
+  "url" : "https://api.cristin.no/v2/units/6405.0.0.0",
+  "acronym" : "DOTNET"
+}, {
+  "cristin_unit_id" : "6406.0.0.0",
+  "unit_name" : {
+    "nb" : "Inspera AS"
+  },
+  "institution" : {
+    "acronym" : "INSPERA"
+  },
+  "url" : "https://api.cristin.no/v2/units/6406.0.0.0",
+  "acronym" : "INSPERA"
+}, {
+  "cristin_unit_id" : "6404.0.0.0",
+  "unit_name" : {
+    "nb" : "Computas"
+  },
+  "institution" : {
+    "acronym" : "COMPUTAS"
+  },
+  "url" : "https://api.cristin.no/v2/units/6404.0.0.0",
+  "acronym" : "COMPUTAS"
+}, {
+  "cristin_unit_id" : "6407.0.0.0",
+  "unit_name" : {
+    "nb" : "SolarSoft AS"
+  },
+  "institution" : {
+    "acronym" : "SOLARSOFT"
+  },
+  "url" : "https://api.cristin.no/v2/units/6407.0.0.0",
+  "acronym" : "SOLARSOFT"
+}, {
+  "cristin_unit_id" : "6411.0.0.0",
+  "unit_name" : {
+    "en" : "Abildsø Farm"
+  },
+  "institution" : {
+    "acronym" : "ABILG"
+  },
+  "url" : "https://api.cristin.no/v2/units/6411.0.0.0",
+  "acronym" : "ABILG"
+}, {
+  "cristin_unit_id" : "6408.0.0.0",
+  "unit_name" : {
+    "nb" : "SeaSide AS"
+  },
+  "institution" : {
+    "acronym" : "SEASIDE"
+  },
+  "url" : "https://api.cristin.no/v2/units/6408.0.0.0",
+  "acronym" : "SEASIDE"
+}, {
+  "cristin_unit_id" : "6412.0.0.0",
+  "unit_name" : {
+    "nb" : "SpermVital AS"
+  },
+  "institution" : {
+    "acronym" : "SPVIT"
+  },
+  "url" : "https://api.cristin.no/v2/units/6412.0.0.0",
+  "acronym" : "SPVIT"
+}, {
+  "cristin_unit_id" : "6415.0.0.0",
+  "unit_name" : {
+    "nb" : "Rainpower AS"
+  },
+  "institution" : {
+    "acronym" : "RAINPOWER"
+  },
+  "url" : "https://api.cristin.no/v2/units/6415.0.0.0",
+  "acronym" : "RAINPOWER"
+}, {
+  "cristin_unit_id" : "6409.0.0.0",
+  "unit_name" : {
+    "en" : "INAQ"
+  },
+  "institution" : {
+    "acronym" : "INAQ"
+  },
+  "url" : "https://api.cristin.no/v2/units/6409.0.0.0",
+  "acronym" : "INAQ"
+}, {
+  "cristin_unit_id" : "6417.0.0.0",
+  "unit_name" : {
+    "nb" : "NCE Smart Energy Markets"
+  },
+  "institution" : {
+    "acronym" : "NCE"
+  },
+  "url" : "https://api.cristin.no/v2/units/6417.0.0.0",
+  "acronym" : "NCE"
+}, {
+  "cristin_unit_id" : "6419.0.0.0",
+  "unit_name" : {
+    "nb" : "Snøhetta"
+  },
+  "institution" : {
+    "acronym" : "SNØHETTA"
+  },
+  "url" : "https://api.cristin.no/v2/units/6419.0.0.0",
+  "acronym" : "SNØHETTA"
+}, {
+  "cristin_unit_id" : "6424.0.0.0",
+  "unit_name" : {
+    "en" : "Scandinavian Ski Safety Institute"
+  },
+  "institution" : {
+    "acronym" : "SSSI"
+  },
+  "url" : "https://api.cristin.no/v2/units/6424.0.0.0",
+  "acronym" : "SSSI"
+}, {
+  "cristin_unit_id" : "6423.0.0.0",
+  "unit_name" : {
+    "en" : "DeOx"
+  },
+  "institution" : {
+    "acronym" : "DEOX"
+  },
+  "url" : "https://api.cristin.no/v2/units/6423.0.0.0",
+  "acronym" : "DEOX"
+}, {
+  "cristin_unit_id" : "6422.0.0.0",
+  "unit_name" : {
+    "en" : "NORCEM"
+  },
+  "institution" : {
+    "acronym" : "NORCEM"
+  },
+  "url" : "https://api.cristin.no/v2/units/6422.0.0.0",
+  "acronym" : "NORCEM"
+}, {
+  "cristin_unit_id" : "6425.0.0.0",
+  "unit_name" : {
+    "nb" : "Analysetjenester AS"
+  },
+  "institution" : {
+    "acronym" : "AT"
+  },
+  "url" : "https://api.cristin.no/v2/units/6425.0.0.0",
+  "acronym" : "AT"
+}, {
+  "cristin_unit_id" : "6426.0.0.0",
+  "unit_name" : {
+    "nb" : "Tectonor AS"
+  },
+  "institution" : {
+    "acronym" : "TECTONOR"
+  },
+  "url" : "https://api.cristin.no/v2/units/6426.0.0.0",
+  "acronym" : "TECTONOR"
+}, {
+  "cristin_unit_id" : "6432.0.0.0",
+  "unit_name" : {
+    "nb" : "BerGenBio AS"
+  },
+  "institution" : {
+    "acronym" : "BERGENBIO"
+  },
+  "url" : "https://api.cristin.no/v2/units/6432.0.0.0",
+  "acronym" : "BERGENBIO"
+}, {
+  "cristin_unit_id" : "6438.0.0.0",
+  "unit_name" : {
+    "nb" : "Subsea Chokes International"
+  },
+  "institution" : {
+    "acronym" : "SCI"
+  },
+  "url" : "https://api.cristin.no/v2/units/6438.0.0.0",
+  "acronym" : "SCI"
+}, {
+  "cristin_unit_id" : "6428.0.0.0",
+  "unit_name" : {
+    "nb" : "Norsk Virkesmåling"
+  },
+  "institution" : {
+    "acronym" : "NVM"
+  },
+  "url" : "https://api.cristin.no/v2/units/6428.0.0.0",
+  "acronym" : "NVM"
+}, {
+  "cristin_unit_id" : "6427.0.0.0",
+  "unit_name" : {
+    "nb" : "PDS Protek AS"
+  },
+  "institution" : {
+    "acronym" : "PDSPRO"
+  },
+  "url" : "https://api.cristin.no/v2/units/6427.0.0.0",
+  "acronym" : "PDSPRO"
+}, {
+  "cristin_unit_id" : "6430.0.0.0",
+  "unit_name" : {
+    "nb" : "Econ Management Consulting"
+  },
+  "institution" : {
+    "acronym" : "EMC"
+  },
+  "url" : "https://api.cristin.no/v2/units/6430.0.0.0",
+  "acronym" : "EMC"
+}, {
+  "cristin_unit_id" : "6429.0.0.0",
+  "unit_name" : {
+    "nb" : "Integrated Detector Electronics AS"
+  },
+  "institution" : {
+    "acronym" : "IDEAS"
+  },
+  "url" : "https://api.cristin.no/v2/units/6429.0.0.0",
+  "acronym" : "IDEAS"
+}, {
+  "cristin_unit_id" : "6439.0.0.0",
+  "unit_name" : {
+    "en" : "Senter for terapi og veiledning"
+  },
+  "institution" : {
+    "acronym" : "STV"
+  },
+  "url" : "https://api.cristin.no/v2/units/6439.0.0.0",
+  "acronym" : "STV"
+}, {
+  "cristin_unit_id" : "6435.0.0.0",
+  "unit_name" : {
+    "nb" : "Oslo Cancer Cluster Incubator"
+  },
+  "institution" : {
+    "acronym" : "OCCI"
+  },
+  "url" : "https://api.cristin.no/v2/units/6435.0.0.0",
+  "acronym" : "OCCI"
+}, {
+  "cristin_unit_id" : "6436.0.0.0",
+  "unit_name" : {
+    "nb" : "Oxy Solutions AS"
+  },
+  "institution" : {
+    "acronym" : "OXY"
+  },
+  "url" : "https://api.cristin.no/v2/units/6436.0.0.0",
+  "acronym" : "OXY"
+}, {
+  "cristin_unit_id" : "6431.0.0.0",
+  "unit_name" : {
+    "en" : "International Centre for Reindeer Husbandry"
+  },
+  "institution" : {
+    "acronym" : "ICR"
+  },
+  "url" : "https://api.cristin.no/v2/units/6431.0.0.0",
+  "acronym" : "ICR"
+}, {
+  "cristin_unit_id" : "6433.0.0.0",
+  "unit_name" : {
+    "nb" : "Vedde AS"
+  },
+  "institution" : {
+    "acronym" : "VEDDE"
+  },
+  "url" : "https://api.cristin.no/v2/units/6433.0.0.0",
+  "acronym" : "VEDDE"
+}, {
+  "cristin_unit_id" : "6434.0.0.0",
+  "unit_name" : {
+    "nb" : "Olympic Seafood AS"
+  },
+  "institution" : {
+    "acronym" : "OSF"
+  },
+  "url" : "https://api.cristin.no/v2/units/6434.0.0.0",
+  "acronym" : "OSF"
+}, {
+  "cristin_unit_id" : "6437.0.0.0",
+  "unit_name" : {
+    "nb" : "Vistin Pharma AS"
+  },
+  "institution" : {
+    "acronym" : "VISTIN"
+  },
+  "url" : "https://api.cristin.no/v2/units/6437.0.0.0",
+  "acronym" : "VISTIN"
+}, {
+  "cristin_unit_id" : "6462.0.0.0",
+  "unit_name" : {
+    "en" : "Fjordland AS"
+  },
+  "institution" : {
+    "acronym" : "FJORD"
+  },
+  "url" : "https://api.cristin.no/v2/units/6462.0.0.0",
+  "acronym" : "FJORD"
+}, {
+  "cristin_unit_id" : "6465.0.0.0",
+  "unit_name" : {
+    "en" : "Bayer AS"
+  },
+  "institution" : {
+    "acronym" : "BAY"
+  },
+  "url" : "https://api.cristin.no/v2/units/6465.0.0.0",
+  "acronym" : "BAY"
+}, {
+  "cristin_unit_id" : "6160.0.0.0",
+  "unit_name" : {
+    "nb" : "Verdande Technology AS"
+  },
+  "institution" : {
+    "acronym" : "VERDANDE"
+  },
+  "url" : "https://api.cristin.no/v2/units/6160.0.0.0",
+  "acronym" : "VERDANDE"
+}, {
+  "cristin_unit_id" : "6161.0.0.0",
+  "unit_name" : {
+    "nb" : "Lyderhorn Barnevern AS"
+  },
+  "institution" : {
+    "acronym" : "LYDERHORN"
+  },
+  "url" : "https://api.cristin.no/v2/units/6161.0.0.0",
+  "acronym" : "LYDERHORN"
+}, {
+  "cristin_unit_id" : "6164.0.0.0",
+  "unit_name" : {
+    "en" : "MENON Economics"
+  },
+  "institution" : {
+    "acronym" : "MENON"
+  },
+  "url" : "https://api.cristin.no/v2/units/6164.0.0.0",
+  "acronym" : "MENON"
+}, {
+  "cristin_unit_id" : "6165.0.0.0",
+  "unit_name" : {
+    "nb" : "Badger Explorer ASA"
+  },
+  "institution" : {
+    "acronym" : "BXPL"
+  },
+  "url" : "https://api.cristin.no/v2/units/6165.0.0.0",
+  "acronym" : "BXPL"
+}, {
+  "cristin_unit_id" : "6162.0.0.0",
+  "unit_name" : {
+    "nb" : "AlgiPharma AS"
+  },
+  "institution" : {
+    "acronym" : "ALGIPHARMA"
+  },
+  "url" : "https://api.cristin.no/v2/units/6162.0.0.0",
+  "acronym" : "ALGIPHARMA"
+}, {
+  "cristin_unit_id" : "6163.0.0.0",
+  "unit_name" : {
+    "nb" : "Firda Seafood AS"
+  },
+  "institution" : {
+    "acronym" : "FIRDASEA"
+  },
+  "url" : "https://api.cristin.no/v2/units/6163.0.0.0",
+  "acronym" : "FIRDASEA"
+}, {
+  "cristin_unit_id" : "6167.0.0.0",
+  "unit_name" : {
+    "nb" : "Conpart AS"
+  },
+  "institution" : {
+    "acronym" : "CONPART"
+  },
+  "url" : "https://api.cristin.no/v2/units/6167.0.0.0",
+  "acronym" : "CONPART"
+}, {
+  "cristin_unit_id" : "6170.0.0.0",
+  "unit_name" : {
+    "nb" : "Norwegian Hull Club"
+  },
+  "institution" : {
+    "acronym" : "NORCLUB"
+  },
+  "url" : "https://api.cristin.no/v2/units/6170.0.0.0",
+  "acronym" : "NORCLUB"
+}, {
+  "cristin_unit_id" : "6171.0.0.0",
+  "unit_name" : {
+    "nb" : "Laerdal Medical"
+  },
+  "institution" : {
+    "acronym" : "LAERDAL"
+  },
+  "url" : "https://api.cristin.no/v2/units/6171.0.0.0",
+  "acronym" : "LAERDAL"
+}, {
+  "cristin_unit_id" : "6179.0.0.0",
+  "unit_name" : {
+    "nb" : "PetroMarker AS"
+  },
+  "institution" : {
+    "acronym" : "PETROMARK"
+  },
+  "url" : "https://api.cristin.no/v2/units/6179.0.0.0",
+  "acronym" : "PETROMARK"
+}, {
+  "cristin_unit_id" : "6181.0.0.0",
+  "unit_name" : {
+    "en" : "Karasjok Heart Center"
+  },
+  "institution" : {
+    "acronym" : "KHS"
+  },
+  "url" : "https://api.cristin.no/v2/units/6181.0.0.0",
+  "acronym" : "KHS"
+}, {
+  "cristin_unit_id" : "6183.0.0.0",
+  "unit_name" : {
+    "nb" : "PCI Biotech"
+  },
+  "institution" : {
+    "acronym" : "BIOTECH"
+  },
+  "url" : "https://api.cristin.no/v2/units/6183.0.0.0",
+  "acronym" : "BIOTECH"
+}, {
+  "cristin_unit_id" : "6169.0.0.0",
+  "unit_name" : {
+    "nb" : "Gassco"
+  },
+  "institution" : {
+    "acronym" : "GASSCO"
+  },
+  "url" : "https://api.cristin.no/v2/units/6169.0.0.0",
+  "acronym" : "GASSCO"
+}, {
+  "cristin_unit_id" : "6168.0.0.0",
+  "unit_name" : {
+    "nb" : "Dong E&P Norge AS"
+  },
+  "institution" : {
+    "acronym" : "DONG"
+  },
+  "url" : "https://api.cristin.no/v2/units/6168.0.0.0",
+  "acronym" : "DONG"
+}, {
+  "cristin_unit_id" : "6166.0.0.0",
+  "unit_name" : {
+    "nb" : "Maharishi Ayurveda Helsesenter"
+  },
+  "institution" : {
+    "acronym" : "AYURVEDA"
+  },
+  "url" : "https://api.cristin.no/v2/units/6166.0.0.0",
+  "acronym" : "AYURVEDA"
+}, {
+  "cristin_unit_id" : "6185.0.0.0",
+  "unit_name" : {
+    "nb" : "Intelligent Agent AS"
+  },
+  "institution" : {
+    "acronym" : "INTAGENT"
+  },
+  "url" : "https://api.cristin.no/v2/units/6185.0.0.0",
+  "acronym" : "INTAGENT"
+}, {
+  "cristin_unit_id" : "6180.0.0.0",
+  "unit_name" : {
+    "nb" : "OxyMed AS"
+  },
+  "institution" : {
+    "acronym" : "OXYMED"
+  },
+  "url" : "https://api.cristin.no/v2/units/6180.0.0.0",
+  "acronym" : "OXYMED"
+}, {
+  "cristin_unit_id" : "6186.0.0.0",
+  "unit_name" : {
+    "nb" : "Calanus AS"
+  },
+  "institution" : {
+    "acronym" : "CALANUS"
+  },
+  "url" : "https://api.cristin.no/v2/units/6186.0.0.0",
+  "acronym" : "CALANUS"
+}, {
+  "cristin_unit_id" : "6200.0.0.0",
+  "unit_name" : {
+    "nb" : "GENA AS"
+  },
+  "institution" : {
+    "acronym" : "GENA"
+  },
+  "url" : "https://api.cristin.no/v2/units/6200.0.0.0",
+  "acronym" : "GENA"
+}, {
+  "cristin_unit_id" : "6199.0.0.0",
+  "unit_name" : {
+    "nb" : "Applied Petroleum Technology AS"
+  },
+  "institution" : {
+    "acronym" : "APT"
+  },
+  "url" : "https://api.cristin.no/v2/units/6199.0.0.0",
+  "acronym" : "APT"
+}, {
+  "cristin_unit_id" : "6228.0.0.0",
+  "unit_name" : {
+    "en" : "SINTEF Narvik"
+  },
+  "institution" : {
+    "acronym" : "SINTEF-NAR"
+  },
+  "url" : "https://api.cristin.no/v2/units/6228.0.0.0",
+  "acronym" : "SINTEF-NAR"
+}, {
+  "cristin_unit_id" : "6234.0.0.0",
+  "unit_name" : {
+    "en" : "The Eurofins Group"
+  },
+  "institution" : {
+    "acronym" : "EUROFINS"
+  },
+  "url" : "https://api.cristin.no/v2/units/6234.0.0.0",
+  "acronym" : "EUROFINS"
+}, {
+  "cristin_unit_id" : "6233.0.0.0",
+  "unit_name" : {
+    "nb" : "Meråker sanitetsforenings kurbad"
+  },
+  "institution" : {
+    "acronym" : "MSK"
+  },
+  "url" : "https://api.cristin.no/v2/units/6233.0.0.0",
+  "acronym" : "MSK"
+}, {
+  "cristin_unit_id" : "6235.0.0.0",
+  "unit_name" : {
+    "nb" : "Epitarget AS"
+  },
+  "institution" : {
+    "acronym" : "EPITARGET"
+  },
+  "url" : "https://api.cristin.no/v2/units/6235.0.0.0",
+  "acronym" : "EPITARGET"
+}, {
+  "cristin_unit_id" : "6237.0.0.0",
+  "unit_name" : {
+    "nb" : "Erichsen & Horgen A/S"
+  },
+  "institution" : {
+    "acronym" : "EH"
+  },
+  "url" : "https://api.cristin.no/v2/units/6237.0.0.0",
+  "acronym" : "EH"
+}, {
+  "cristin_unit_id" : "6239.0.0.0",
+  "unit_name" : {
+    "nb" : "ACONA AS"
+  },
+  "institution" : {
+    "acronym" : "ACONA"
+  },
+  "url" : "https://api.cristin.no/v2/units/6239.0.0.0",
+  "acronym" : "ACONA"
+}, {
+  "cristin_unit_id" : "6348.0.0.0",
+  "unit_name" : {
+    "nb" : "Gnist Trening og Helse AS"
+  },
+  "institution" : {
+    "acronym" : "GNIST"
+  },
+  "url" : "https://api.cristin.no/v2/units/6348.0.0.0",
+  "acronym" : "GNIST"
+}, {
+  "cristin_unit_id" : "6362.0.0.0",
+  "unit_name" : {
+    "en" : "Stabburet AS"
+  },
+  "institution" : {
+    "acronym" : "STABBURET"
+  },
+  "url" : "https://api.cristin.no/v2/units/6362.0.0.0",
+  "acronym" : "STABBURET"
+}, {
+  "cristin_unit_id" : "6371.0.0.0",
+  "unit_name" : {
+    "nb" : "Reinertsen AS"
+  },
+  "institution" : {
+    "acronym" : "REINERTSEN"
+  },
+  "url" : "https://api.cristin.no/v2/units/6371.0.0.0",
+  "acronym" : "REINERTSEN"
+}, {
+  "cristin_unit_id" : "6370.0.0.0",
+  "unit_name" : {
+    "nb" : "CognIT"
+  },
+  "institution" : {
+    "acronym" : "COGNIT"
+  },
+  "url" : "https://api.cristin.no/v2/units/6370.0.0.0",
+  "acronym" : "COGNIT"
+}, {
+  "cristin_unit_id" : "6374.0.0.0",
+  "unit_name" : {
+    "en" : "Norstone"
+  },
+  "institution" : {
+    "acronym" : "NORST"
+  },
+  "url" : "https://api.cristin.no/v2/units/6374.0.0.0",
+  "acronym" : "NORST"
+}, {
+  "cristin_unit_id" : "6383.0.0.0",
+  "unit_name" : {
+    "nb" : "MELLOMROM Arkitekturpsykologi AS"
+  },
+  "institution" : {
+    "acronym" : "MELLOMROM"
+  },
+  "url" : "https://api.cristin.no/v2/units/6383.0.0.0",
+  "acronym" : "MELLOMROM"
+}, {
+  "cristin_unit_id" : "6384.0.0.0",
+  "unit_name" : {
+    "en" : "Vivit AS"
+  },
+  "institution" : {
+    "acronym" : "VIVIT"
+  },
+  "url" : "https://api.cristin.no/v2/units/6384.0.0.0",
+  "acronym" : "VIVIT"
+}, {
+  "cristin_unit_id" : "6382.0.0.0",
+  "unit_name" : {
+    "nb" : "Texas Instruments Norway"
+  },
+  "institution" : {
+    "acronym" : "TINORWAY"
+  },
+  "url" : "https://api.cristin.no/v2/units/6382.0.0.0",
+  "acronym" : "TINORWAY"
+}, {
+  "cristin_unit_id" : "6379.0.0.0",
+  "unit_name" : {
+    "en" : "Sophies Minde"
+  },
+  "institution" : {
+    "acronym" : "SOPHIES"
+  },
+  "url" : "https://api.cristin.no/v2/units/6379.0.0.0",
+  "acronym" : "SOPHIES"
+}, {
+  "cristin_unit_id" : "6385.0.0.0",
+  "unit_name" : {
+    "en" : "Atbrox"
+  },
+  "institution" : {
+    "acronym" : "ATBROX"
+  },
+  "url" : "https://api.cristin.no/v2/units/6385.0.0.0",
+  "acronym" : "ATBROX"
+}, {
+  "cristin_unit_id" : "6387.0.0.0",
+  "unit_name" : {
+    "en" : "Apply Sørco AS"
+  },
+  "institution" : {
+    "acronym" : "APPLY"
+  },
+  "url" : "https://api.cristin.no/v2/units/6387.0.0.0",
+  "acronym" : "APPLY"
+}, {
+  "cristin_unit_id" : "6389.0.0.0",
+  "unit_name" : {
+    "en" : "Statnett"
+  },
+  "institution" : {
+    "acronym" : "STATNETT"
+  },
+  "url" : "https://api.cristin.no/v2/units/6389.0.0.0",
+  "acronym" : "STATNETT"
+}, {
+  "cristin_unit_id" : "6392.0.0.0",
+  "unit_name" : {
+    "nb" : "Atkins Norge AS"
+  },
+  "institution" : {
+    "acronym" : "ATKINS"
+  },
+  "url" : "https://api.cristin.no/v2/units/6392.0.0.0",
+  "acronym" : "ATKINS"
+}, {
+  "cristin_unit_id" : "6386.0.0.0",
+  "unit_name" : {
+    "nb" : "Combitech"
+  },
+  "institution" : {
+    "acronym" : "COMBITECH"
+  },
+  "url" : "https://api.cristin.no/v2/units/6386.0.0.0",
+  "acronym" : "COMBITECH"
+}, {
+  "cristin_unit_id" : "6388.0.0.0",
+  "unit_name" : {
+    "en" : "Xpro AS"
+  },
+  "institution" : {
+    "acronym" : "XPRO"
+  },
+  "url" : "https://api.cristin.no/v2/units/6388.0.0.0",
+  "acronym" : "XPRO"
+}, {
+  "cristin_unit_id" : "6394.0.0.0",
+  "unit_name" : {
+    "nb" : "North Energy"
+  },
+  "institution" : {
+    "acronym" : "ENERGY"
+  },
+  "url" : "https://api.cristin.no/v2/units/6394.0.0.0",
+  "acronym" : "ENERGY"
+}, {
+  "cristin_unit_id" : "6391.0.0.0",
+  "unit_name" : {
+    "nb" : "Yara Norge AS"
+  },
+  "institution" : {
+    "acronym" : "YARA"
+  },
+  "url" : "https://api.cristin.no/v2/units/6391.0.0.0",
+  "acronym" : "YARA"
+}, {
+  "cristin_unit_id" : "6393.0.0.0",
+  "unit_name" : {
+    "nb" : "RotoBoost AS"
+  },
+  "institution" : {
+    "acronym" : "ROTOBOOST"
+  },
+  "url" : "https://api.cristin.no/v2/units/6393.0.0.0",
+  "acronym" : "ROTOBOOST"
+}, {
+  "cristin_unit_id" : "6396.0.0.0",
+  "unit_name" : {
+    "nb" : "Metas"
+  },
+  "institution" : {
+    "acronym" : "METAS"
+  },
+  "url" : "https://api.cristin.no/v2/units/6396.0.0.0",
+  "acronym" : "METAS"
+}, {
+  "cristin_unit_id" : "6397.0.0.0",
+  "unit_name" : {
+    "nb" : "BKK - Bergenshalvøens Kommunale Kraftselskap"
+  },
+  "institution" : {
+    "acronym" : "BKK"
+  },
+  "url" : "https://api.cristin.no/v2/units/6397.0.0.0",
+  "acronym" : "BKK"
+}, {
+  "cristin_unit_id" : "6400.0.0.0",
+  "unit_name" : {
+    "nb" : "Epsis AS"
+  },
+  "institution" : {
+    "acronym" : "EPSIS"
+  },
+  "url" : "https://api.cristin.no/v2/units/6400.0.0.0",
+  "acronym" : "EPSIS"
+}, {
+  "cristin_unit_id" : "6390.0.0.0",
+  "unit_name" : {
+    "en" : "The Norwegian Mapping Authority"
+  },
+  "institution" : {
+    "acronym" : "KARTVERKET"
+  },
+  "url" : "https://api.cristin.no/v2/units/6390.0.0.0",
+  "acronym" : "KARTVERKET"
+}, {
+  "cristin_unit_id" : "6395.0.0.0",
+  "unit_name" : {
+    "en" : "Norwegian Medical Cyclotron Centre, Oslo, Norway"
+  },
+  "institution" : {
+    "acronym" : "PET-SENTER"
+  },
+  "url" : "https://api.cristin.no/v2/units/6395.0.0.0",
+  "acronym" : "PET-SENTER"
+}, {
+  "cristin_unit_id" : "6399.0.0.0",
+  "unit_name" : {
+    "nb" : "Anacon AS"
+  },
+  "institution" : {
+    "acronym" : "ANACON"
+  },
+  "url" : "https://api.cristin.no/v2/units/6399.0.0.0",
+  "acronym" : "ANACON"
+}, {
+  "cristin_unit_id" : "6410.0.0.0",
+  "unit_name" : {
+    "en" : "The Culinary Institute of Norway"
+  },
+  "institution" : {
+    "acronym" : "GI"
+  },
+  "url" : "https://api.cristin.no/v2/units/6410.0.0.0",
+  "acronym" : "GI"
+}, {
+  "cristin_unit_id" : "6413.0.0.0",
+  "unit_name" : {
+    "nb" : "Cryogenetics AS"
+  },
+  "institution" : {
+    "acronym" : "CRYO"
+  },
+  "url" : "https://api.cristin.no/v2/units/6413.0.0.0",
+  "acronym" : "CRYO"
+}, {
+  "cristin_unit_id" : "6414.0.0.0",
+  "unit_name" : {
+    "nb" : "Spermatech AS"
+  },
+  "institution" : {
+    "acronym" : "SPEMA"
+  },
+  "url" : "https://api.cristin.no/v2/units/6414.0.0.0",
+  "acronym" : "SPEMA"
+}, {
+  "cristin_unit_id" : "6416.0.0.0",
+  "unit_name" : {
+    "nb" : "OiW Process AS"
+  },
+  "institution" : {
+    "acronym" : "OIWP"
+  },
+  "url" : "https://api.cristin.no/v2/units/6416.0.0.0",
+  "acronym" : "OIWP"
+}, {
+  "cristin_unit_id" : "6418.0.0.0",
+  "unit_name" : {
+    "nb" : "Halogen AS"
+  },
+  "institution" : {
+    "acronym" : "HALOGEN"
+  },
+  "url" : "https://api.cristin.no/v2/units/6418.0.0.0",
+  "acronym" : "HALOGEN"
+}, {
+  "cristin_unit_id" : "6440.0.0.0",
+  "unit_name" : {
+    "nb" : "Norkart AS"
+  },
+  "institution" : {
+    "acronym" : "NORKART"
+  },
+  "url" : "https://api.cristin.no/v2/units/6440.0.0.0",
+  "acronym" : "NORKART"
+} ]
