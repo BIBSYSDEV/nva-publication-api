@@ -34,10 +34,10 @@ public class CristinPersonRetriever {
                    .map(AuthorGroupTp::getAuthorOrCollaboration)
                    .flatMap(List::stream)
                    .filter(authorOrCollaboration -> authorOrCollaboration instanceof AuthorTp)
-                   .map(authorOrCollaboration -> (AuthorTp) authorOrCollaboration)
+                   .map(AuthorTp.class::cast)
                    .map(authorTp -> new AuthorIdentifiers(authorTp.getAuid(), authorTp.getOrcid()))
-                   .collect(Collectors.toSet())
-                   .stream().toList();
+                   .distinct()
+                   .toList();
     }
 
     private Map<AuthorIdentifiers, CristinPerson> onlyCristinPersons(
