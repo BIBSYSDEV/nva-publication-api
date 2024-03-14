@@ -101,10 +101,8 @@ public final class ScopusGenerator {
     private final LanguagesWrapper languages;
     private int minimumSequenceNumber;
     private CitationtypeAtt citationtypeAtt;
-    private final boolean shouldReturnAuthorTyp;
 
     public ScopusGenerator() {
-        this.shouldReturnAuthorTyp = true;
         this.doi = randomDoi();
         this.languages = createRandomLanguages();
         this.minimumSequenceNumber = 1;
@@ -116,7 +114,6 @@ public final class ScopusGenerator {
     }
 
     private ScopusGenerator(AbstractsTp abstractsTp) {
-        this.shouldReturnAuthorTyp = true;
         this.languages = createRandomLanguages();
         this.doi = randomDoi();
         this.sourcetypeAtt = SourcetypeAtt.J;
@@ -128,7 +125,6 @@ public final class ScopusGenerator {
     }
 
     private ScopusGenerator(URI doi) {
-        this.shouldReturnAuthorTyp = true;
         this.languages = createRandomLanguages();
         this.doi = doi;
         this.minimumSequenceNumber = 1;
@@ -140,7 +136,6 @@ public final class ScopusGenerator {
     }
 
     private ScopusGenerator(SourcetypeAtt sourcetypeAtt) {
-        this.shouldReturnAuthorTyp = true;
         this.languages = createRandomLanguages();
         this.sourcetypeAtt = sourcetypeAtt;
         this.minimumSequenceNumber = 1;
@@ -152,7 +147,6 @@ public final class ScopusGenerator {
     }
 
     private ScopusGenerator(CitationtypeAtt citationtypeAtt) {
-        this.shouldReturnAuthorTyp = true;
         this.languages = createRandomLanguages();
         this.doi = randomDoi();
         this.citationtypeAtt = citationtypeAtt;
@@ -164,7 +158,6 @@ public final class ScopusGenerator {
     }
 
     private ScopusGenerator(List<AffiliationTp> affiliations) {
-        this.shouldReturnAuthorTyp = true;
         this.languages = createRandomLanguages();
         this.doi = randomDoi();
         this.sourcetypeAtt = SourcetypeAtt.J;
@@ -175,7 +168,6 @@ public final class ScopusGenerator {
     }
 
     private ScopusGenerator(ContentWrapper contentWithSupAndInf) {
-        this.shouldReturnAuthorTyp = true;
         this.languages = createRandomLanguages();
         this.contentWithSupAndInf = contentWithSupAndInf;
         this.doi = randomDoi();
@@ -186,7 +178,6 @@ public final class ScopusGenerator {
     }
 
     private ScopusGenerator(LanguagesWrapper languages) {
-        this.shouldReturnAuthorTyp = true;
         this.languages = languages;
         this.contentWithSupAndInf = packRandomSerializablesWithSupAndInf();
         this.doi = randomDoi();
@@ -197,7 +188,6 @@ public final class ScopusGenerator {
     }
 
     public ScopusGenerator(AuthorGroupTp authorGroup) {
-        this.shouldReturnAuthorTyp = true;
         this.languages = createRandomLanguages();
         this.contentWithSupAndInf = packRandomSerializablesWithSupAndInf();
         this.doi = randomDoi();
@@ -208,7 +198,6 @@ public final class ScopusGenerator {
     }
 
     public ScopusGenerator(int numberOfContributors) {
-        this.shouldReturnAuthorTyp = true;
         this.languages = createRandomLanguages();
         this.doi = randomDoi();
         this.sourcetypeAtt = SourcetypeAtt.J;
@@ -220,7 +209,6 @@ public final class ScopusGenerator {
     }
 
     public ScopusGenerator(AuthorTp authorTp) {
-        this.shouldReturnAuthorTyp = true;
         this.languages = createRandomLanguages();
         this.doi = randomDoi();
         this.sourcetypeAtt = SourcetypeAtt.J;
@@ -446,7 +434,7 @@ public final class ScopusGenerator {
             .getHead()
             .getSource()
             .getPublisher()
-            .get(0)
+            .getFirst()
             .setPublishername(publisherName);
     }
 
@@ -696,14 +684,11 @@ public final class ScopusGenerator {
     // Make sure string does not come after one another as it will be interpreted as a single string later in the
     // marshaller
     private static Serializable randomStringOrSupOrInfTag(int index) {
-        switch (index % 3) {
-            case 0:
-                return randomInf();
-            case 1:
-                return randomSup();
-            default:
-                return randomString();
-        }
+        return switch (index % 3) {
+            case 0 -> randomInf();
+            case 1 -> randomSup();
+            default -> randomString();
+        };
     }
 
     private static JAXBElement<InfTp> randomInf() {
@@ -891,6 +876,7 @@ public final class ScopusGenerator {
         authorTp.setIndexedName(indexedName);
         authorTp.setSurname(surname);
         authorTp.setGivenName(givenName);
+        authorTp.setAuid(randomString());
         authorTp.setSeq(String.valueOf(contributorSequence + 1));
         authorTp.setOrcid(randomPotentialOrcidUriString());
         authorGroup.setAffiliation(affiliationTp);
@@ -998,13 +984,6 @@ public final class ScopusGenerator {
                    .boxed()
                    .map(ignored -> randomAffiliation())
                    .collect(Collectors.toList());
-    }
-
-    private String generateSequenceNumber() {
-        final var maxGapInSequenceNumber = 200;
-        var sequenceNumber = getMinimumSequenceNumber() + randomInteger(maxGapInSequenceNumber) + 1;
-        setMinimumSequenceNumber(sequenceNumber);
-        return Integer.toString(sequenceNumber);
     }
 
     private CollaborationTp randomCollaborationTp(int sequence) {
