@@ -10,12 +10,10 @@ import static no.unit.nva.model.PublicationOperation.DELETE;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
-import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.OVERRIDABLE_RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublicationNonDegree;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypes;
-import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypesAndOverridableRrs;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseNotFound;
 import static no.unit.nva.publication.CustomerApiStubs.stubSuccessfulCustomerResponseAllowingFilesForNoTypes;
@@ -116,25 +114,21 @@ import no.unit.nva.model.UnpublishingNote;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
-import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
-import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.License;
+import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
-import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
-import no.unit.nva.model.testing.associatedartifacts.util.RightsRetentionStrategyGenerator;
 import no.unit.nva.publication.delete.LambdaDestinationInvocationDetail;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.external.services.UriRetriever;
@@ -965,7 +959,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                    RandomDataGenerator.randomInteger().longValue(),
                                    RandomDataGenerator.randomUri(),
                                    false,
-                                   false,
+                                   PublisherVersion.ACCEPTED_VERSION,
                                    (Instant) null,
                                    rrs,
                                    RandomDataGenerator.randomString());
@@ -1937,7 +1931,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return new UnpublishedFile(UUID.randomUUID(), randomString(), randomString(),
                                    Long.valueOf(randomInteger().toString()),
                                    new License.Builder().withIdentifier(randomString()).withLink(randomUri()).build(),
-                                   false, false, null, null, randomString());
+                                   false, PublisherVersion.ACCEPTED_VERSION, null, null, randomString());
     }
 
     private TestAppender createAppenderForLogMonitoring() {

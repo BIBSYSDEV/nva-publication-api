@@ -219,7 +219,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;
     private static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     private static final String INPUT_BUCKET_NAME = "some-input-bucket-name";
-    private static final Boolean IS_PUBLISHER_AUTHORITY = true;
     public static final int ALMOST_HUNDRED_YEARS = 36487;
     private final String persistedStorageBucket = new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME");
     private BrageEntryEventConsumer handler;
@@ -276,7 +275,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     @Test
     void shouldPrioritizeCristinImportedMetadataWhenMergingPublications() throws IOException {
         // The metadata fields are currently Description, Abstract and handle
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_REPORT_WORKING_PAPER)
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                 .withType(TYPE_REPORT_WORKING_PAPER)
                                  .withCristinIdentifier("123456")
                                  .withDescription(List.of("My description"))
                                  .withAbstracts(List.of("My abstract"))
@@ -300,7 +300,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     @Test
     void shouldCreateNewPublicationWhenPublicationHasCristinIdWhichIsNotPresentInNva()
         throws IOException, NotFoundException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_REPORT_WORKING_PAPER)
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                 .withType(TYPE_REPORT_WORKING_PAPER)
                                  .withCristinIdentifier("123456")
                                  .withResourceContent(createResourceContent())
                                  .withAssociatedArtifacts(createCorrespondingAssociatedArtifactWithLegalNote(null))
@@ -1203,7 +1204,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         assertThat(publishedFile.getName(), is(equalTo(contentFile.getFilename())));
         assertThat(publishedFile.getIdentifier(), is(equalTo(contentFile.getIdentifier())));
         assertThat(publishedFile.getLicense(), is(equalTo(contentFile.getLicense().getNvaLicense().getLicense())));
-        assertThat(publishedFile.isPublisherAuthority(), is(equalTo(minimalRecord.getPublisherAuthority().getNva())));
+        assertThat(publishedFile.getPublisherVersion(), is(equalTo(minimalRecord.getPublisherAuthority().getNva())));
 
         //assert that we are storing reports based on the dummy handles:
         var updateHandleReporstFolder = UnixPath.of(UPDATE_REPORTS_PATH);
@@ -1317,7 +1318,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                  + "/1").getUri();
         minimalRecord.setId(fakeDummyHandle);
         minimalRecord.setPublisherAuthority(new PublisherAuthority(List.of(),
-                                                                   IS_PUBLISHER_AUTHORITY));
+                                                                   PublisherVersion.PUBLISHED_VERSION));
         minimalRecord.setResourceOwner(new ResourceOwner("unis@186.0.0.0", randomUri()));
         minimalRecord.setCristinId(cristinIdentifier);
         minimalRecord.setEntityDescription(new EntityDescription());
@@ -1380,18 +1381,16 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     private void assertThatPublicationsMatch(Publication actualPublication, Publication expectedPublication) {
-        assertThat(actualPublication.getEntityDescription(), is(equalTo(expectedPublication.getEntityDescription())));
-        assertThat(actualPublication.getAssociatedArtifacts(),
-                   is(equalTo(expectedPublication.getAssociatedArtifacts())));
-        assertThat(actualPublication.getDoi(), is(equalTo(expectedPublication.getDoi())));
-        assertThat(actualPublication.getResourceOwner(), is(equalTo(expectedPublication.getResourceOwner())));
-        assertThat(actualPublication.getAdditionalIdentifiers(),
-                   is(equalTo(expectedPublication.getAdditionalIdentifiers())));
-        assertThat(actualPublication.getFundings(), is(equalTo(expectedPublication.getFundings())));
-        assertThat(actualPublication.getHandle(), is(equalTo(expectedPublication.getHandle())));
-        assertThat(actualPublication.getHandle(), is(equalTo(expectedPublication.getHandle())));
-        assertThat(actualPublication.getLink(), is(equalTo(expectedPublication.getLink())));
         assertThat(actualPublication.getSubjects(), containsInAnyOrder(expectedPublication.getSubjects().toArray()));
+        var ignoredFields = new String[]{"createdDate", "identifier", "modifiedDate", "publishedDate", "subjects",
+            "associatedArtifacts"};
+        assertThat(actualPublication, is(samePropertyValuesAs(expectedPublication, ignoredFields)));
+        assertThat(actualPublication.getAssociatedArtifacts(),
+                   hasSize(expectedPublication.getAssociatedArtifacts().size()));
+        if (!actualPublication.getAssociatedArtifacts().isEmpty()) {
+            assertThat(actualPublication.getAssociatedArtifacts(),
+                       samePropertyValuesAs(expectedPublication.getAssociatedArtifacts(), "publishedDate"));
+        }
     }
 
     private void persistMultiplePublicationWithSameCristinId() {
@@ -1590,7 +1589,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                            .withIdentifier(UUID)
                            .withLicense(LICENSE_URI)
                            .withName(FILENAME)
-                           .withPublisherVersion(PublisherVersion.ACCEPTED_VERSION)
+                           .withPublisherVersion(null)
                            .withSize(ExtendedFakeS3Client.SOME_CONTENT_LENGTH)
                            .withMimeType(ExtendedFakeS3Client.APPLICATION_PDF_MIMETYPE)
                            .withEmbargoDate(EMBARGO_DATE)

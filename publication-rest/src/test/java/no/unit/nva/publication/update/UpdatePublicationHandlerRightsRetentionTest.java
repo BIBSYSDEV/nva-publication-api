@@ -22,6 +22,7 @@ import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
@@ -170,7 +171,7 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
                                    RandomDataGenerator.randomInteger().longValue(),
                                    RandomDataGenerator.randomUri(),
                                    false,
-                                   false,
+                                   PublisherVersion.ACCEPTED_VERSION,
                                    (Instant) null,
                                    rrs,
                                    RandomDataGenerator.randomString());
