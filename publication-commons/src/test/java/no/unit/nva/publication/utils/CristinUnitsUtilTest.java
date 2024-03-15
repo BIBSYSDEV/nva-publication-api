@@ -1,39 +1,48 @@
 package no.unit.nva.publication.utils;
 
-import static nva.commons.core.attempt.Try.attempt;
-import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
-import static nva.commons.core.ioutils.IoUtils.streamToString;
+import static no.unit.nva.publication.utils.CristinUnitsUtil.API_HOST;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import java.io.IOException;
 import java.net.URI;
-import java.util.Optional;
-import no.unit.nva.publication.external.services.UriRetriever;
+import java.net.UnknownHostException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.file.Path;
+import nva.commons.core.Environment;
+import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.ArgumentMatchers;
 import org.mockito.stubbing.Answer;
 
 public class CristinUnitsUtilTest {
 
     public static final String CRISTIN_API_URI = "https://mock-api.cristin.no/v2/units";// prod: https://api.cristin.no/v2/units
-    private UriRetriever uriRetriever;
+    private HttpClient httpClient;
+    private Environment environment;
 
     @BeforeEach
-    public void setUp() {
-        this.uriRetriever = mock(UriRetriever.class);
+    public void setUp() throws IOException, InterruptedException {
+        this.httpClient = mock(HttpClient.class);
+        this.environment = mock(Environment.class);
+        when(this.environment.readEnv(API_HOST)).thenReturn("https://api.unittest.nva.aws.sikt.no");
 
-            when(uriRetriever.getRawContent(any(), any())).thenAnswer(
-                (Answer<Optional<String>>) invocationOnMock -> {
-                    URI uri = invocationOnMock.getArgument(0);
-                    int lastDigit = Character.getNumericValue(uri.toString().charAt(uri.toString().length() - 1));
-                    try (var stream = inputStreamFromResources("cristinUnits/units%d.json".formatted(lastDigit))) {
-                        var result = Optional.ofNullable(attempt(() -> streamToString(stream)).orElseThrow());
-                        stream.close();
-                        return result;
-                    }
-                });
+        when(httpClient.send(any(HttpRequest.class),
+                             ArgumentMatchers.<HttpResponse.BodyHandler<String>>any())).thenAnswer(
+            (Answer<HttpResponse<String>>) invocationOnMock -> {
+                HttpRequest request = invocationOnMock.getArgument(0);
+                int lastDigit =
+                    Character.getNumericValue(request.uri().toString().charAt(request.uri().toString().length() - 1));
+                var result = IoUtils.stringFromResources(Path.of("cristinUnits/units%d.json".formatted(lastDigit)));
+                HttpResponse<String> httpResponse = mock(HttpResponse.class);
+                when(httpResponse.body()).thenReturn(result);
+                return httpResponse;
+            });
     }
 
     @ParameterizedTest(name = "should return top level unit or null for {0} expecting {1}")
@@ -46,9 +55,9 @@ public class CristinUnitsUtilTest {
         + ".no/cristin/organization/217.0.0.0",
         "217.13.1.0, 217.0.0.0"
     })
-    void shouldReturnTopLevel(String inputUri, String expectedUri) {
+    void shouldReturnTopLevel(String inputUri, String expectedUri) throws UnknownHostException {
         var apiUri = URI.create(CRISTIN_API_URI);
-        var result = new CristinUnitsUtil(uriRetriever, apiUri).getTopLevel(
+        var result = new CristinUnitsUtil(httpClient, apiUri, environment, this.getClass(), "abc", "def").getTopLevel(
             URI.create(inputUri));
         Assertions.assertEquals(expectedUri != null ? URI.create(expectedUri) : null, result);
     }
