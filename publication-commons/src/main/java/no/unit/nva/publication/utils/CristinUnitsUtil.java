@@ -33,7 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Utility class for retrieving all norwegian cristin units where you want to do repeated lookups and keep a large
+ * Utility class for retrieving all Norwegian cristin units where you want to do repeated lookups and keep a large
  * cache like migrations and other bulk operations.
  */
 public class CristinUnitsUtil {
@@ -141,17 +141,21 @@ public class CristinUnitsUtil {
     }
 
     private String executeRequest(URI requestUri) {
-        return of(() -> attempt(() -> httpClient.send(HttpRequest.newBuilder()
-                                                          .uri(requestUri)
-                                                          .headers(ACCEPT, APPLICATION_JSON,
-                                                                   cristinBotFilterBypassHeaderName,
-                                                                   cristinBotFilterBypassHeaderValue,
-                                                                   USER_AGENT, getUserAgent())
-                                                          .GET()
-                                                          .build(),
+        return of(() -> attempt(() -> httpClient.send(buildHttpRequest(requestUri),
                                                       BodyHandlers.ofString(StandardCharsets.UTF_8)))
                             .map(HttpResponse::body)
                             .toOptional().orElseThrow()).get();
+    }
+
+    private HttpRequest buildHttpRequest(URI requestUri) {
+        return HttpRequest.newBuilder()
+                   .uri(requestUri)
+                   .headers(ACCEPT, APPLICATION_JSON,
+                            cristinBotFilterBypassHeaderName,
+                            cristinBotFilterBypassHeaderValue,
+                            USER_AGENT, getUserAgent())
+                   .GET()
+                   .build();
     }
 
     private String getUserAgent() {
