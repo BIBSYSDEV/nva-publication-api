@@ -2,6 +2,7 @@ package no.unit.nva.publication.utils;
 
 import static io.vavr.control.Try.of;
 import static io.vavr.control.Try.ofSupplier;
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -112,10 +113,10 @@ public class CristinUnitsUtil {
 
     private static Optional<CristinUnit> findTopLevelUnitOrSelf(String unitId) {
         var unit = CristinUnitsUtil.allUnits.get(unitId);
-        if (unit == null) {
+        if (isNull(unit)) {
             return Optional.empty();
         }
-        while (unit.parentUnit() != null) {
+        while (nonNull(unit.parentUnit())) {
             unit = CristinUnitsUtil.allUnits.get(unit.parentUnit().id());
         }
         return Optional.of(unit);
@@ -123,7 +124,7 @@ public class CristinUnitsUtil {
 
     private CristinUnit[] getApiData(int pageNum) {
         try {
-            String response = fetchResponseWithRetry(new URI(apiUri + API_ARGUMENTS + pageNum));
+            var response = fetchResponseWithRetry(new URI(apiUri + API_ARGUMENTS + pageNum));
             return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response, CristinUnit[].class)).orElseThrow();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
@@ -133,7 +134,7 @@ public class CristinUnitsUtil {
     private String fetchResponseWithRetry(URI requestUri) {
         var retryRegistry = RetryRegistry.of(RetryConfig.custom().maxAttempts(5).intervalFunction(
             IntervalFunction.ofExponentialRandomBackoff()).build());
-        var retryWithDefaultConfig = retryRegistry.retry("executeRequestAsync");
+        var retryWithDefaultConfig = retryRegistry.retry("executeRequest");
         Supplier<String> supplier = () -> executeRequest(requestUri);
 
         return ofSupplier(Retry.decorateSupplier(retryWithDefaultConfig, supplier)).get();

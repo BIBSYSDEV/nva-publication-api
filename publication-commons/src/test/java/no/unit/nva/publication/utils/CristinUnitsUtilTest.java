@@ -23,6 +23,8 @@ import org.mockito.stubbing.Answer;
 public class CristinUnitsUtilTest {
 
     public static final String CRISTIN_API_URI = "https://mock-api.cristin.no/v2/units";// prod: https://api.cristin.no/v2/units
+    public static final String CRISTIN_BOT_FILTER_BYPASS_HEADER_NAME = "cristinBotFilterBypassHeaderName";
+    public static final String CRISTIN_BOT_FILTER_BYPASS_HEADER_VALUE = "cristinBotFilterBypassHeaderValue";
     private HttpClient httpClient;
     private Environment environment;
 
@@ -57,7 +59,9 @@ public class CristinUnitsUtilTest {
     })
     void shouldReturnTopLevel(String inputUri, String expectedUri) throws UnknownHostException {
         var apiUri = URI.create(CRISTIN_API_URI);
-        var result = new CristinUnitsUtil(httpClient, apiUri, environment, this.getClass(), "abc", "def").getTopLevel(
+        var result = new CristinUnitsUtil(httpClient, apiUri, environment, this.getClass(),
+                                          CRISTIN_BOT_FILTER_BYPASS_HEADER_NAME,
+                                          CRISTIN_BOT_FILTER_BYPASS_HEADER_VALUE).getTopLevel(
             URI.create(inputUri));
         Assertions.assertEquals(expectedUri != null ? URI.create(expectedUri) : null, result);
     }
