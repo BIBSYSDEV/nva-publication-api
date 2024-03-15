@@ -57,7 +57,7 @@ public class CristinUnitsUtilTest {
         + ".no/cristin/organization/217.0.0.0",
         "217.13.1.0, 217.0.0.0"
     })
-    void shouldReturnTopLevel(String inputUri, String expectedUri) throws UnknownHostException {
+    void shouldReturnTopLevel(String inputUri, String expectedUri) {
         var apiUri = URI.create(CRISTIN_API_URI);
         var result = new CristinUnitsUtil(httpClient, apiUri, environment, this.getClass(),
                                           CRISTIN_BOT_FILTER_BYPASS_HEADER_NAME,

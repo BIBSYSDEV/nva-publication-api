@@ -33,8 +33,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Utility class for retrieving all cristin units where you want to do repeated lookups and keep a large cache like
- * migrations and other bulk operations.
+ * Utility class for retrieving all norwegian cristin units where you want to do repeated lookups and keep a large
+ * cache like migrations and other bulk operations.
  */
 public class CristinUnitsUtil {
 
