@@ -42,6 +42,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -99,6 +100,7 @@ import no.unit.nva.model.UnconfirmedCourse;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.artistic.music.InvalidIsmnException;
@@ -895,7 +897,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                           record);
         var exception = errorReport.get("exception").asText();
         assertThat(exception, containsString(NOT_SUPPORTED_TYPE));
-        assertThat(exception, containsString(TYPE_SOFTWARE.getBrage().get(0)));
+        assertThat(exception, containsString(TYPE_SOFTWARE.getBrage().getFirst()));
     }
 
     @Test
@@ -1050,6 +1052,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                    is(equalTo(nvaBrageMigrationDataGenerator.getBrageRecord().getId().toString())));
     }
 
+    //TODO: flaky test
     @Test
     void shouldPersistMergeReport()
         throws IOException, BadRequestException, nva.commons.apigateway.exceptions.NotFoundException {
@@ -1196,7 +1199,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
         // assert that  contentFile was copied
         assertThat(associatedArtifacts, hasSize(1));
-        var publishedFile = (PublishedFile) associatedArtifacts.get(0);
+        var publishedFile = (PublishedFile) associatedArtifacts.getFirst();
         assertThat(publishedFile.getName(), is(equalTo(contentFile.getFilename())));
         assertThat(publishedFile.getIdentifier(), is(equalTo(contentFile.getIdentifier())));
         assertThat(publishedFile.getLicense(), is(equalTo(contentFile.getLicense().getNvaLicense().getLicense())));
@@ -1356,7 +1359,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private String extractUpdateReportFromS3(S3Event s3Event,
                                              Publication publication,
                                              URI brageHandle) {
-        var timestamp = s3Event.getRecords().get(0).getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
+        var timestamp = s3Event.getRecords().getFirst().getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
         var uri = UriWrapper.fromUri(UPDATE_REPORTS_PATH)
                       .addChild("institution")
                       .addChild(timestamp)
@@ -1530,7 +1533,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private UriWrapper constructHandleReportFileUri(S3Event s3Event, Publication actualPublication,
                                                     String destinationFolder,
                                                     URI brageHandle) {
-        var timestamp = s3Event.getRecords().get(0).getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
+        var timestamp = s3Event.getRecords().getFirst().getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
         return UriWrapper.fromUri(destinationFolder)
                    .addChild("institution")
                    .addChild(timestamp)
@@ -1548,7 +1551,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     private UriWrapper constructErrorFileUri(S3Event event, String exceptionSimpleName, Record brageRecord) {
         var fileUri = UriWrapper.fromUri(extractFilename(event));
-        var timestamp = event.getRecords().get(0).getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
+        var timestamp = event.getRecords().getFirst().getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
         return UriWrapper.fromUri(ERROR_BUCKET_PATH)
                    .addChild(brageRecord.getResourceOwner().getOwner().split("@")[0])
                    .addChild(timestamp)
@@ -1558,7 +1561,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     private UriWrapper constructErrorFileUriForInvalidBrageRecord(S3Event event, String exceptionSimpleName) {
         var fileUri = UriWrapper.fromUri(extractFilename(event));
-        var timestamp = event.getRecords().get(0).getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
+        var timestamp = event.getRecords().getFirst().getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
         return UriWrapper.fromUri(ERROR_BUCKET_PATH)
                    .addChild(fileUri.getLastPathElement())
                    .addChild(timestamp)
@@ -1567,7 +1570,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     private String extractFilename(S3Event event) {
-        return event.getRecords().get(0).getS3().getObject().getKey();
+        return event.getRecords().getFirst().getS3().getObject().getKey();
     }
 
     private ResourceContent createResourceContent() {
@@ -1587,6 +1590,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                            .withIdentifier(UUID)
                            .withLicense(LICENSE_URI)
                            .withName(FILENAME)
+                           .withPublisherVersion(PublisherVersion.ACCEPTED_VERSION)
                            .withSize(ExtendedFakeS3Client.SOME_CONTENT_LENGTH)
                            .withMimeType(ExtendedFakeS3Client.APPLICATION_PDF_MIMETYPE)
                            .withEmbargoDate(EMBARGO_DATE)

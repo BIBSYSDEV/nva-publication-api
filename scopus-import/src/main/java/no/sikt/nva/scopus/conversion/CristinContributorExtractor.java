@@ -9,11 +9,11 @@ import java.util.Set;
 import java.util.stream.Stream;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.PersonalnameType;
-import no.sikt.nva.scopus.conversion.model.NvaCustomerContributor;
 import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Identity;
@@ -33,17 +33,16 @@ public final class CristinContributorExtractor {
     private CristinContributorExtractor() {
     }
 
-    public static NvaCustomerContributor generateContributorFromCristinPerson(
+    public static Contributor generateContributorFromCristinPerson(
         CristinPerson cristinPerson, AuthorTp authorTp, PersonalnameType correspondencePerson,
-        List<CristinOrganization> cristinOrganizations, boolean isNvaCustomer) {
+        List<CristinOrganization> cristinOrganizations) {
 
-        return new NvaCustomerContributor.Builder()
+        return new Contributor.Builder()
                    .withIdentity(generateContributorIdentityFromCristinPerson(cristinPerson, authorTp))
                    .withAffiliations(generateOrganizations(cristinPerson.getAffiliations(), cristinOrganizations))
                    .withRole(new RoleType(Role.CREATOR))
                    .withSequence(getSequenceNumber(authorTp))
                    .withCorrespondingAuthor(isCorrespondingAuthor(authorTp, correspondencePerson))
-                   .withBelongsToNvaCustomer(isNvaCustomer)
                    .build();
     }
 

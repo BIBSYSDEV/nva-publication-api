@@ -64,14 +64,16 @@ public class CristinConnection {
 
     public CristinOrganization fetchCristinOrganizationByCristinId(URI cristinOrgId) {
         return isNull(cristinOrgId) ? null
-                   : attempt(() -> createOrganizationRequest(cristinOrgId)).map(this::getCristinResponse)
+                   : attempt(() -> createOrganizationRequest(cristinOrgId))
+                         .map(this::getCristinResponse)
                          .map(this::getBodyFromOrganizationResponse)
                          .map(this::convertToOrganization)
                          .orElse(this::loggExceptionAndReturnNull);
     }
 
     public Optional<CristinPerson> getCristinPersonByOrcId(String orcid) {
-        return attempt(() -> createCristinPersonUri(orcid)).map(this::createRequest)
+        return attempt(() -> createCristinPersonUri(orcid))
+                   .map(this::createRequest)
                    .map(this::getCristinResponse)
                    .map(this::getBodyFromPersonResponse)
                    .map(this::getCristinPersonResponse)

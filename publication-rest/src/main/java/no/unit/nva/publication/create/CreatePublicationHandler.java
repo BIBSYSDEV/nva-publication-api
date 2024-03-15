@@ -26,6 +26,7 @@ import no.unit.nva.publication.events.bodies.CreatePublicationRequest;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.rightsretention.RightsRetentionsApplier;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.validation.DefaultPublicationValidator;
 import no.unit.nva.publication.validation.PublicationValidationException;
@@ -59,6 +60,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     private final IdentityServiceClient identityServiceClient;
     private final SecretsReader secretsReader;
     private final HttpClient httpClient;
+    private JavaHttpClientCustomerApiClient customerApiClient;
 
     /**
      * Default constructor for CreatePublicationHandler.
@@ -92,12 +94,13 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         this.secretsReader = new SecretsReader(secretsManagerClient);
         this.httpClient = httpClient;
         this.publicationValidator = new DefaultPublicationValidator();
+        this.customerApiClient = getJavaHttpClientCustomerApiClient();
     }
 
     @Override
     protected PublicationResponse processInput(CreatePublicationRequest input, RequestInfo requestInfo,
                                                Context context) throws ApiGatewayException {
-        if (isThesisAndHasNoRightsToPublishThesAndIsNotExternalClient(input, requestInfo)) {
+        if (isThesisAndHasNoRightsToPublishThesisAndIsNotExternalClient(input, requestInfo)) {
             throw new ForbiddenException();
         }
         var newPublication = Optional.ofNullable(input)
@@ -106,6 +109,22 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
 
         var customerAwareUserContext = getCustomerAwareUserContextFromLoginInformation(requestInfo);
 
+
+        var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, customerAwareUserContext.customerUri());
+
+        validatePublication(newPublication, customer);
+
+        RightsRetentionsApplier.rrsApplierForNewPublication(newPublication, customer.getRightsRetentionStrategy(),
+                                                            customerAwareUserContext.username()).handle();
+
+        var createdPublication = Resource.fromPublication(newPublication)
+                                     .persistNew(publicationService, customerAwareUserContext.userInstance());
+        setLocationHeader(createdPublication.getIdentifier());
+
+        return PublicationResponse.fromPublication(createdPublication);
+    }
+
+    private JavaHttpClientCustomerApiClient getJavaHttpClientCustomerApiClient() {
         var backendClientCredentials = secretsReader.fetchClassSecret(
             environment.readEnv("BACKEND_CLIENT_SECRET_NAME"),
             BackendClientCredentials.class);
@@ -114,15 +133,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
                                                         backendClientCredentials::getSecret,
                                                         cognitoServerUri);
         var customerApiClient = new JavaHttpClientCustomerApiClient(httpClient, cognitoCredentials);
-
-        var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, customerAwareUserContext.customerUri());
-
-        validatePublication(newPublication, customer);
-        var createdPublication = Resource.fromPublication(newPublication)
-                                     .persistNew(publicationService, customerAwareUserContext.userInstance());
-        setLocationHeader(createdPublication.getIdentifier());
-
-        return PublicationResponse.fromPublication(createdPublication);
+        return customerApiClient;
     }
 
     private static Customer fetchCustomerOrFailWithBadGateway(CustomerApiClient customerApiClient,
@@ -173,7 +184,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         );
     }
 
-    private boolean isThesisAndHasNoRightsToPublishThesAndIsNotExternalClient(CreatePublicationRequest request,
+    private boolean isThesisAndHasNoRightsToPublishThesisAndIsNotExternalClient(CreatePublicationRequest request,
                                                                               RequestInfo requestInfo) {
 
         return isThesis(request) && !requestInfo.userIsAuthorized(MANAGE_DEGREE) && !requestInfo.clientIsThirdParty();
@@ -203,7 +214,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
 
         final var userInstance = UserInstance.createExternalUser(resourceOwner, client.getCustomerUri());
 
-        return new CustomerAwareUserContext(userInstance, customerUri);
+        return new CustomerAwareUserContext(userInstance, customerUri, client.getActingUser());
     }
 
     private static CustomerAwareUserContext customerAwareUserContextFromInternalUser(RequestInfo requestInfo)
@@ -214,10 +225,10 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     }
 
     private static CustomerAwareUserContext fromUserInstance(UserInstance userInstance) {
-        return new CustomerAwareUserContext(userInstance, userInstance.getCustomerId());
+        return new CustomerAwareUserContext(userInstance, userInstance.getCustomerId(), userInstance.getUsername());
     }
 
-    private record CustomerAwareUserContext(UserInstance userInstance, URI customerUri) {
+    private record CustomerAwareUserContext(UserInstance userInstance, URI customerUri, String username) {
 
     }
 }

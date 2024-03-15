@@ -22,7 +22,7 @@ public class ScopusConverterTest {
                                             mock(CristinConnection.class), mock(PublicationChannelConnection.class),
                                             customerConnection,
                                             mock(ScopusFileConverter.class));
-        when(customerConnection.isNvaCustomer(any())).thenReturn(true);
+        when(customerConnection.atLeastOneNvaCustomerPresent(any())).thenReturn(true);
         var candidate = converter.generateImportCandidate();
 
         assertThat(candidate.getEntityDescription().getMainTitle(), is(nullValue()));
@@ -37,7 +37,7 @@ public class ScopusConverterTest {
                                             mock(CristinConnection.class), mock(PublicationChannelConnection.class),
                                             customerConnection,
                                             mock(ScopusFileConverter.class));
-        when(customerConnection.isNvaCustomer(any())).thenReturn(true);
+        when(customerConnection.atLeastOneNvaCustomerPresent(any())).thenReturn(true);
         var candidate = converter.generateImportCandidate();
 
         assertThat(candidate.getEntityDescription().getMainTitle(), is(nullValue()));

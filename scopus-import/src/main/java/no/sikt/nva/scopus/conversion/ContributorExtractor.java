@@ -8,15 +8,18 @@ import static no.sikt.nva.scopus.conversion.CristinContributorExtractor.generate
 import static nva.commons.core.StringUtils.isNotBlank;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.PersonalnameType;
+import no.sikt.nva.scopus.conversion.model.AuthorIdentifiers;
 import no.sikt.nva.scopus.conversion.model.CorporationWithContributors;
-import no.sikt.nva.scopus.conversion.model.NvaCustomerContributor;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.exception.MissingNvaContributorException;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -39,11 +42,10 @@ public class ContributorExtractor {
     public static final String SCOPUS_AUID = "scopus-auid";
     private final List<CorrespondenceTp> correspondenceTps;
     private final List<AuthorGroupTp> authorGroupTps;
-    private final List<NvaCustomerContributor> contributors;
-    private final PiaConnection piaConnection;
-    private final CristinConnection cristinConnection;
+    private final List<Contributor> contributors;
     private final NvaCustomerConnection nvaCustomerConnection;
     private final AffiliationGenerator affiliationGenerator;
+    private final CristinPersonRetriever cristinPersonRetriever;
 
     public ContributorExtractor(List<CorrespondenceTp> correspondenceTps, List<AuthorGroupTp> authorGroupTps,
                                 PiaConnection piaConnection, CristinConnection cristinConnection,
@@ -51,19 +53,20 @@ public class ContributorExtractor {
         this.correspondenceTps = correspondenceTps;
         this.authorGroupTps = authorGroupTps;
         this.contributors = new ArrayList<>();
-        this.piaConnection = piaConnection;
-        this.cristinConnection = cristinConnection;
         this.nvaCustomerConnection = nvaCustomerConnection;
         this.affiliationGenerator = new AffiliationGenerator(piaConnection, cristinConnection);
+        this.cristinPersonRetriever = new CristinPersonRetriever(cristinConnection, piaConnection);
     }
 
     public List<Contributor> generateContributors() {
         var cristinAffiliationsAuthorgroupsTps = affiliationGenerator.getCorporations(authorGroupTps);
+        var cristinPersons = cristinPersonRetriever.retrieveCristinPersons(authorGroupTps);
         var contributors = cristinAffiliationsAuthorgroupsTps.stream()
-                               .map(this::generateContributorsFromAuthorGroup)
+                               .map(cristinAffiliationsAuthorgroup -> generateContributorsFromAuthorGroup(
+                                   cristinAffiliationsAuthorgroup, cristinPersons))
                                .flatMap(List::stream)
                                .toList();
-        if (noContributorsBelongingToNvaCustomer(contributors)) {
+        if (noContributorsBelongingToNvaCustomer(cristinAffiliationsAuthorgroupsTps)) {
             var affiliationsIds = getAllAffiliationIds(contributors);
             throw new MissingNvaContributorException(MISSING_CONTRIBUTORS_OF_NVA_CUSTOMERS_MESSAGE + affiliationsIds);
         } else {
@@ -77,7 +80,7 @@ public class ContributorExtractor {
                    : emptyList();
     }
 
-    private static List<URI> getAllAffiliationIds(List<NvaCustomerContributor> contributors) {
+    private static List<URI> getAllAffiliationIds(List<Contributor> contributors) {
         return contributors.stream()
                    .map(Contributor::getAffiliations)
                    .map(ContributorExtractor::toAffiliationIdList)
@@ -101,29 +104,38 @@ public class ContributorExtractor {
         return contributors.stream().map(Contributor.class::cast).toList();
     }
 
-    private boolean noContributorsBelongingToNvaCustomer(List<NvaCustomerContributor> contributors) {
-        return contributors.stream().noneMatch(NvaCustomerContributor::belongsToNvaCustomer);
+    private boolean noContributorsBelongingToNvaCustomer(
+        List<CorporationWithContributors> corporationWithContributors) {
+        var cristinOrganizations =
+            corporationWithContributors.stream()
+                .map(CorporationWithContributors::getCristinOrganizations)
+                .flatMap(Collection::stream).collect(Collectors.toSet());
+        return !nvaCustomerConnection.atLeastOneNvaCustomerPresent(cristinOrganizations);
     }
 
     private Optional<PersonalnameType> extractPersonalNameType(CorrespondenceTp correspondenceTp) {
         return Optional.ofNullable(correspondenceTp.getPerson());
     }
 
-    private List<NvaCustomerContributor> generateContributorsFromAuthorGroup(
-        CorporationWithContributors corporationWithContributors) {
+    private List<Contributor> generateContributorsFromAuthorGroup(
+        CorporationWithContributors corporationWithContributors,
+        Map<AuthorIdentifiers, CristinPerson> cristinPersons) {
         corporationWithContributors.getScopusAuthors().getAuthorOrCollaboration()
             .forEach(authorOrCollaboration -> extractContributorFromAuthorOrCollaboration(authorOrCollaboration,
-                                                                                          corporationWithContributors));
+                                                                                          corporationWithContributors
+                , cristinPersons));
         return contributors;
     }
 
     private void extractContributorFromAuthorOrCollaboration(Object authorOrCollaboration,
-                                                             CorporationWithContributors corporationWithContributors) {
+                                                             CorporationWithContributors corporationWithContributors,
+                                                             Map<AuthorIdentifiers, CristinPerson> cristinPersons) {
         var existingContributor = getExistingContributor(authorOrCollaboration);
         if (existingContributor.isPresent()) {
             replaceExistingContributor(existingContributor.get(), corporationWithContributors);
         } else {
-            generateContributorFromAuthorOrCollaboration(authorOrCollaboration, corporationWithContributors);
+            generateContributorFromAuthorOrCollaboration(authorOrCollaboration, corporationWithContributors,
+                                                         cristinPersons);
         }
     }
 
@@ -136,13 +148,13 @@ public class ContributorExtractor {
                    .orElse(null);
     }
 
-    private Optional<NvaCustomerContributor> getExistingContributor(Object authorOrCollaboration) {
+    private Optional<Contributor> getExistingContributor(Object authorOrCollaboration) {
         return contributors.stream()
                    .filter(contributor -> compareContributorToAuthorOrCollaboration(contributor, authorOrCollaboration))
                    .findAny();
     }
 
-    private void replaceExistingContributor(NvaCustomerContributor existingContributor,
+    private void replaceExistingContributor(Contributor existingContributor,
                                             CorporationWithContributors corporationWithContributors) {
         if (isNull(existingContributor.getIdentity().getId())) {
             var newAffiliations = corporationWithContributors.toCorporations();
@@ -154,22 +166,22 @@ public class ContributorExtractor {
     }
 
     private void updateContributorWithAdditionalAffiliationsInContributorList(
-        List<Corporation> newAffiliations, NvaCustomerContributor matchingContributor) {
+        List<Corporation> newAffiliations, Contributor matchingContributor) {
         var newContributor = cloneContributorAddingAffiliations(matchingContributor, newAffiliations);
         replaceContributor(matchingContributor, newContributor);
     }
 
-    private void replaceContributor(NvaCustomerContributor oldContributor, NvaCustomerContributor newContributor) {
+    private void replaceContributor(Contributor oldContributor, Contributor newContributor) {
         contributors.remove(oldContributor);
         contributors.add(newContributor);
     }
 
-    private NvaCustomerContributor cloneContributorAddingAffiliations(NvaCustomerContributor existingContributor,
-                                                                      List<Corporation> newAffiliations) {
+    private Contributor cloneContributorAddingAffiliations(Contributor existingContributor,
+                                                           List<Corporation> newAffiliations) {
         var affiliations = new ArrayList<>(existingContributor.getAffiliations());
         affiliations.addAll(newAffiliations);
 
-        return new NvaCustomerContributor.Builder().withIdentity(existingContributor.getIdentity())
+        return new Contributor.Builder().withIdentity(existingContributor.getIdentity())
                    .withAffiliations(affiliations)
                    .withRole(existingContributor.getRole())
                    .withSequence(existingContributor.getSequence())
@@ -177,17 +189,17 @@ public class ContributorExtractor {
                    .build();
     }
 
-    private boolean compareContributorToAuthorOrCollaboration(NvaCustomerContributor contributor,
+    private boolean compareContributorToAuthorOrCollaboration(Contributor contributor,
                                                               Object authorOrCollaboration) {
         return authorOrCollaboration instanceof AuthorTp authorTp ? isSamePerson(authorTp, contributor)
                    : isSameSequenceElement((CollaborationTp) authorOrCollaboration, contributor);
     }
 
-    private boolean isSameSequenceElement(CollaborationTp collaboration, NvaCustomerContributor contributor) {
+    private boolean isSameSequenceElement(CollaborationTp collaboration, Contributor contributor) {
         return collaboration.getSeq().equals(contributor.getSequence().toString());
     }
 
-    private boolean isSamePerson(AuthorTp author, NvaCustomerContributor contributor) {
+    private boolean isSamePerson(AuthorTp author, Contributor contributor) {
         if (author.getSeq().equals(contributor.getSequence().toString())) {
             return true;
         } else if (nonNull(author.getOrcid()) && nonNull(contributor.getIdentity().getOrcId())) {
@@ -198,9 +210,12 @@ public class ContributorExtractor {
     }
 
     private void generateContributorFromAuthorOrCollaboration(Object authorOrCollaboration,
-                                                              CorporationWithContributors corporationWithContributors) {
+                                                              CorporationWithContributors corporationWithContributors
+        ,
+                                                              Map<AuthorIdentifiers, CristinPerson> cristinPersons) {
         if (authorOrCollaboration instanceof AuthorTp authorTp) {
-            generateContributorFromAuthorTp(authorTp, corporationWithContributors);
+            generateContributorFromAuthorTp(authorTp, corporationWithContributors,
+                                            cristinPersons);
         } else {
             generateContributorFromCollaborationTp((CollaborationTp) authorOrCollaboration, corporationWithContributors,
                                                    getCorrespondencePerson());
@@ -208,65 +223,43 @@ public class ContributorExtractor {
     }
 
     private void generateContributorFromAuthorTp(AuthorTp author,
-                                                 CorporationWithContributors corporationWithContributors) {
+                                                 CorporationWithContributors corporationWithContributors,
+                                                 Map<AuthorIdentifiers, CristinPerson> cristinPersons) {
 
         var cristinOrganizations = corporationWithContributors.getCristinOrganizations();
-        var isNvaCustomer = nvaCustomerConnection.isNvaCustomer(cristinOrganizations);
-
-        var contributor = fetchCristinPerson(author).map(
-                cristinPerson -> generateContributorFromCristinPerson(cristinPerson, author, getCorrespondencePerson(),
-                                                                      cristinOrganizations, isNvaCustomer))
-                              .orElseGet(
-                                  () -> generateContributorFromAuthorTp(corporationWithContributors, author,
-                                                                        getCorrespondencePerson(),
-                                                                        isNvaCustomer));
+        var authorIdentifiers = new AuthorIdentifiers(author.getAuid(), author.getOrcid());
+        var contributor =
+            Optional.ofNullable(cristinPersons.get(authorIdentifiers))
+                .map(cristinPerson -> generateContributorFromCristinPerson(cristinPerson, author,
+                                                                           getCorrespondencePerson(),
+                                                                           cristinOrganizations))
+                .orElseGet(() -> generateContributorFromAuthorTp(corporationWithContributors, author,
+                                                                 getCorrespondencePerson()));
 
         contributors.add(contributor);
     }
 
-    private NvaCustomerContributor generateContributorFromAuthorTp(
+    private Contributor generateContributorFromAuthorTp(
         CorporationWithContributors corporationWithContributors,
         AuthorTp author,
-        PersonalnameType correspondencePerson,
-        boolean isNvaCustomer) {
-        return new NvaCustomerContributor.Builder().withIdentity(generateContributorIdentityFromAuthorTp(author))
+        PersonalnameType correspondencePerson) {
+        return new Contributor.Builder().withIdentity(generateContributorIdentityFromAuthorTp(author))
                    .withAffiliations(corporationWithContributors.toCorporations())
                    .withRole(new RoleType(Role.CREATOR))
                    .withSequence(getSequenceNumber(author))
                    .withCorrespondingAuthor(isCorrespondingAuthor(author, correspondencePerson))
-                   .withBelongsToNvaCustomer(isNvaCustomer)
                    .build();
-    }
-
-    private Optional<CristinPerson> fetchCristinPerson(AuthorTp author) {
-        var cristinPerson = fetchCristinPersonByScopusId(author);
-        return cristinPerson.isPresent()
-                   ? cristinPerson
-                   : fetchCristinPersonByOrcId(author);
-    }
-
-    private Optional<CristinPerson> fetchCristinPersonByOrcId(AuthorTp author) {
-        return nonNull(author.getOrcid())
-                   ? cristinConnection.getCristinPersonByOrcId(author.getOrcid())
-                   : Optional.empty();
-    }
-
-    private Optional<CristinPerson> fetchCristinPersonByScopusId(AuthorTp author) {
-        return piaConnection.getCristinPersonIdentifier(author.getAuid())
-                   .flatMap(cristinConnection::getCristinPersonByCristinId);
     }
 
     private void generateContributorFromCollaborationTp(CollaborationTp collaboration,
                                                         CorporationWithContributors corporationWithContributors,
                                                         PersonalnameType correspondencePerson) {
-        var cristinOrganizations = corporationWithContributors.getCristinOrganizations();
 
-        var newContributor = new NvaCustomerContributor.Builder().withIdentity(generateIdentity(collaboration))
+        var newContributor = new Contributor.Builder().withIdentity(generateIdentity(collaboration))
                                  .withAffiliations(corporationWithContributors.toCorporations())
                                  .withRole(new RoleType(Role.OTHER))
                                  .withSequence(getSequenceNumber(collaboration))
                                  .withCorrespondingAuthor(isCorrespondingAuthor(collaboration, correspondencePerson))
-                                 .withBelongsToNvaCustomer(nvaCustomerConnection.isNvaCustomer(cristinOrganizations))
                                  .build();
         contributors.add(newContributor);
     }

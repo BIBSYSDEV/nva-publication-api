@@ -7,7 +7,7 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
+import java.util.Collection;
 import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import nva.commons.core.Environment;
@@ -30,8 +30,7 @@ public class NvaCustomerConnection {
     public NvaCustomerConnection(AuthorizedBackendUriRetriever uriRetriever) {
         this.uriRetriever = uriRetriever;
     }
-
-    public boolean isNvaCustomer(List<CristinOrganization> cristinOrganizations) {
+    public boolean atLeastOneNvaCustomerPresent(Collection<CristinOrganization> cristinOrganizations) {
         return cristinOrganizations
                    .stream()
                    .filter(NvaCustomerConnection::isPresentAndHasTopLevelOrg)

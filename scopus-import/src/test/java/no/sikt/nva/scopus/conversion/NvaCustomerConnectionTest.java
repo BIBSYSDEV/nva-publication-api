@@ -31,20 +31,20 @@ public class NvaCustomerConnectionTest {
     void shouldReturnTrueWhenFetchingCustomerByCristinIdReturnsOk() {
         mockResponseWithStatusCode(200);
 
-        assertTrue(nvaCustomerConnection.isNvaCustomer(List.of(cristinOrgWithId(randomUri()))));
+        assertTrue(nvaCustomerConnection.atLeastOneNvaCustomerPresent(List.of(cristinOrgWithId(randomUri()))));
     }
 
     @Test
     void shouldReturnFalseWhenFetchingCustomerByCristinIdReturnsNotOk() {
         mockResponseWithStatusCode(502);
 
-        assertFalse(nvaCustomerConnection.isNvaCustomer(List.of(cristinOrgWithId(randomUri()))));
+        assertFalse(nvaCustomerConnection.atLeastOneNvaCustomerPresent(List.of(cristinOrgWithId(randomUri()))));
     }
 
     @Test
     void shouldThrowExceptionWhenSomethingGoesWrongFetchingCustomer() {
         assertThrows(NullPointerException.class,
-                     () -> nvaCustomerConnection.isNvaCustomer(List.of(cristinOrgWithId(null))));
+                     () -> nvaCustomerConnection.atLeastOneNvaCustomerPresent(List.of(cristinOrgWithId(null))));
     }
 
     @Test
@@ -52,7 +52,7 @@ public class NvaCustomerConnectionTest {
         when(uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.empty());
 
         assertThrows(RuntimeException.class,
-                     () -> nvaCustomerConnection.isNvaCustomer(List.of(cristinOrgWithId(randomUri()))));
+                     () -> nvaCustomerConnection.atLeastOneNvaCustomerPresent(List.of(cristinOrgWithId(randomUri()))));
     }
 
     private static CristinOrganization cristinOrgWithId(URI id) {

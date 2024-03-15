@@ -1,8 +1,10 @@
 package no.unit.nva.publication.create;
 
+import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.NULL_RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomSuccessfulCustomerResponse;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypes;
+import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypesAndOverridableRrs;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseNotFound;
 import static no.unit.nva.publication.CustomerApiStubs.stubSuccessfulCustomerResponseAllowingFilesForNoTypes;
 import static no.unit.nva.publication.CustomerApiStubs.stubSuccessfulTokenResponse;
@@ -25,6 +27,7 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
@@ -38,6 +41,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import com.google.common.collect.Lists;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,6 +51,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.api.PublicationResponse;
@@ -58,13 +64,26 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
+import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
+import no.unit.nva.model.testing.associatedartifacts.PublishedFileGenerator;
+import no.unit.nva.model.testing.associatedartifacts.UnpublishedFileGenerator;
+import no.unit.nva.model.testing.associatedartifacts.util.RightsRetentionStrategyGenerator;
 import no.unit.nva.publication.events.bodies.CreatePublicationRequest;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.update.PublicationRequest;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
 import no.unit.nva.stubs.WiremockHttpClient;
@@ -268,28 +287,10 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnsResourceWithFilSetWhenRequestContainsFileSet() throws Exception {
-        var publication = randomPublication();
-        var associatedArtifactsInPublication = publication.getAssociatedArtifacts();
-        var request = createEmptyPublicationRequest();
-        request.setAssociatedArtifacts(associatedArtifactsInPublication);
-        request.setEntityDescription(randomPublishableEntityDescription());
-
-        var inputStream = createPublicationRequest(request);
-
-        handler.handleRequest(inputStream, outputStream, context);
-
-        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
-        assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
-        var publicationResponse = actual.getBodyObject(PublicationResponse.class);
-        assertThat(publicationResponse.getAssociatedArtifacts(), is(equalTo(associatedArtifactsInPublication)));
-        assertExistenceOfMinimumRequiredFields(publicationResponse);
-    }
-
-    @Test
     void shouldSaveAllSuppliedInformationOfPublicationRequestExceptForInternalInformationDecidedByService()
         throws Exception {
-        var request = CreatePublicationRequest.fromPublication(samplePublication);
+        var publicationWithoutFiles = samplePublication.copy().withAssociatedArtifacts(List.of()).build();
+        var request = CreatePublicationRequest.fromPublication(publicationWithoutFiles);
         var inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
 
@@ -298,7 +299,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var actualPublicationResponse = actual.getBodyObject(PublicationResponse.class);
 
         var expectedPublicationResponse =
-            constructResponseSettingFieldsThatAreNotCopiedByTheRequest(samplePublication, actualPublicationResponse);
+            constructResponseSettingFieldsThatAreNotCopiedByTheRequest(publicationWithoutFiles, actualPublicationResponse);
 
         var diff = JAVERS.compare(expectedPublicationResponse, actualPublicationResponse);
         assertThat(actualPublicationResponse.getIdentifier(), is(equalTo(expectedPublicationResponse.getIdentifier())));
@@ -430,6 +431,89 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         var body = response.getBodyObject(Problem.class);
         assertThat(body.getDetail(), containsString("Files not allowed for instance type"));
+    }
+
+    @Test
+    void shouldReturnBadRequestIfProvidedWithOneOrMoreFilesHasNullRightsRetentionSetButCustomerHasAOveridableConfig()
+        throws IOException {
+
+        WireMock.reset();
+        stubSuccessfulTokenResponse();
+        stubCustomerResponseAcceptingFilesForAllTypesAndOverridableRrs(customerId);
+
+        var file = new UnpublishedFile(UUID.randomUUID(),
+                                       RandomDataGenerator.randomString(),
+                                       RandomDataGenerator.randomString(),
+                                       RandomDataGenerator.randomInteger().longValue(),
+                                       RandomDataGenerator.randomUri(),
+                                       false,
+                                       false,
+                                       (Instant)null,
+                                       RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
+                                       RandomDataGenerator.randomString());
+        // Waiting for datamodel changes as
+        // Generator sets publisherAuth to true
+
+        file.setRightsRetentionStrategy(NullRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY));
+
+        var associatedArtifactsInPublication = new AssociatedArtifactList(file);
+
+        var request = createEmptyPublicationRequest();
+        request.setAssociatedArtifacts(associatedArtifactsInPublication);
+        request.setEntityDescription(randomPublishableEntityDescriptionForAcademicArticle());
+
+        var inputStream = createPublicationRequest(request);
+
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var actual = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+        assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
+    }
+
+    @Test
+    void shouldReturnFileWithOverridenByRRSIfConfiguredOnCustomerAndSetOnFile()
+        throws IOException {
+
+        WireMock.reset();
+        stubSuccessfulTokenResponse();
+        stubCustomerResponseAcceptingFilesForAllTypesAndOverridableRrs(customerId);
+
+        var file = new UnpublishedFile(UUID.randomUUID(),
+                                       RandomDataGenerator.randomString(),
+                                       RandomDataGenerator.randomString(),
+                                       RandomDataGenerator.randomInteger().longValue(),
+                                       RandomDataGenerator.randomUri(),
+                                       false,
+                                       false,
+                                       (Instant)null,
+                                       RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
+                                       RandomDataGenerator.randomString());
+        // Waiting for datamodel changes as
+        // Generator sets publisherAuth to true
+
+        file.setRightsRetentionStrategy(OverriddenRightsRetentionStrategy.create(null, testUserName)); //
+        // configuredType null as it
+        // should not be used
+
+        var associatedArtifactsInPublication = new AssociatedArtifactList(file);
+
+        var request = createEmptyPublicationRequest();
+        request.setAssociatedArtifacts(associatedArtifactsInPublication);
+        request.setEntityDescription(randomPublishableEntityDescriptionForAcademicArticle());
+
+        var inputStream = createPublicationRequest(request);
+
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
+
+        var publicationResponse = actual.getBodyObject(PublicationResponse.class);
+        var actualFile = (File)
+            Lists.newArrayList(publicationResponse.getAssociatedArtifacts().stream().iterator()).getFirst();
+        assertTrue(actualFile.getRightsRetentionStrategy() instanceof OverriddenRightsRetentionStrategy);
+        assertThat(((OverriddenRightsRetentionStrategy) actualFile.getRightsRetentionStrategy()).getOverriddenBy(),
+                   is(equalTo(testUserName)));
     }
 
     @Test
@@ -632,6 +716,18 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                        new Reference.Builder()
                            .withDoi(RandomDataGenerator.randomDoi())
                            .withPublicationInstance(PublicationInstanceBuilder.randomPublicationInstance())
+                           .build())
+                   .build();
+    }
+
+    private EntityDescription randomPublishableEntityDescriptionForAcademicArticle() {
+        return new EntityDescription.Builder()
+                   .withMainTitle(randomString())
+                   .withReference(
+                       new Reference.Builder()
+                           .withDoi(RandomDataGenerator.randomDoi())
+                           .withPublicationInstance(
+                               PublicationInstanceBuilder.randomPublicationInstance(AcademicArticle.class))
                            .build())
                    .build();
     }
