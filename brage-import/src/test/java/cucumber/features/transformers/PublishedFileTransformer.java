@@ -23,6 +23,7 @@ public class PublishedFileTransformer {
     private static final String WRONG_NUMBER_OF_FIELDS_FOR_CRISTIN_PRESENTATIONAL_WORKS =
         String.format("This transformer maps only %d number of fields. Update the transformer to map more fields",
                       CURRENTLY_MAX__NUMBER_OF_MAPPED_FIELDS);
+    public static final String NULL_AS_STRING = "null";
 
     @DataTableType
     public static PublishedFile toPublishedFile(Map<String, String> entry) {
@@ -30,7 +31,7 @@ public class PublishedFileTransformer {
             throw new UnsupportedOperationException(WRONG_NUMBER_OF_FIELDS_FOR_CRISTIN_PRESENTATIONAL_WORKS);
         }
         var publisherVersion =
-            "null".equalsIgnoreCase(entry.get("publisherVersion")) || isNull(entry.get("publisherVersion"))
+            NULL_AS_STRING.equalsIgnoreCase(entry.get("publisherVersion")) || isNull(entry.get("publisherVersion"))
                 ? null
                 : PublisherVersion.valueOf(entry.get("publisherVersion"));
         return new PublishedFile(
@@ -63,6 +64,6 @@ public class PublishedFileTransformer {
     }
 
     private static boolean isNullDate(String candidate) {
-        return StringUtils.isBlank(candidate) || "null".equalsIgnoreCase(candidate);
+        return StringUtils.isBlank(candidate) || NULL_AS_STRING.equalsIgnoreCase(candidate);
     }
 }
