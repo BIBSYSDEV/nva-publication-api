@@ -1,6 +1,5 @@
 package no.unit.nva.publication.events.handlers.batch;
 
-import static java.util.Objects.nonNull;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
@@ -14,15 +13,15 @@ import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.time.Clock;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -30,8 +29,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.events.bodies.ScanDatabaseRequest;
-import no.unit.nva.publication.model.ListingResult;
-import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -52,6 +49,7 @@ import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.mockito.ArgumentCaptor;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 
@@ -71,7 +69,6 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private TicketService ticketService;
     private AmazonDynamoDB dynamoDbClient;
-    private List<Map<String, AttributeValue>> scanningStartingPoints;
 
     @BeforeEach
     public void init() {
@@ -82,10 +79,9 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         this.context = mockContent();
         this.eventBridgeClient = new FakeEventBridgeClient();
         dynamoDbClient = super.client;
-        this.resourceService = mockResourceService(dynamoDbClient);
+        this.resourceService = spy(ResourceService.builder().withDynamoDbClient(dynamoDbClient).build());
         this.ticketService = new TicketService(dynamoDbClient);
         this.handler = new EventBasedBatchScanHandler(resourceService, eventBridgeClient);
-        this.scanningStartingPoints = Collections.synchronizedList(new ArrayList<>());
     }
 
     @Test
@@ -201,8 +197,9 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
                                     .build();
         handler.handleRequest(eventToInputStream(secondScanRequest), output, context);
 
-        var scanStartingPointSentToTheService =
-            scanningStartingPoints.get(scanningStartingPoints.size() - 1);
+        ArgumentCaptor<Map<String, AttributeValue>> startingPointsCapturer = ArgumentCaptor.forClass(Map.class);
+        verify(resourceService, atLeastOnce()).scanResources(anyInt(), startingPointsCapturer.capture(), any());
+        var scanStartingPointSentToTheService =startingPointsCapturer.getValue();
 
         assertThat(scanStartingPointSentToTheService, is(equalTo(expectedStaringPointForNextEvent)));
     }
@@ -226,7 +223,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     void shouldLogFailureWhenExceptionIsThrown() {
         final var logger = LogUtils.getTestingAppenderForRootLogger();
         var expectedExceptionMessage = randomString();
-        var spiedResourceService = spy(resourceService);
+        var spiedResourceService = resourceService;
         doThrow(new RuntimeException(expectedExceptionMessage)).when(spiedResourceService)
             .scanResources(anyInt(), any(), any());
 
@@ -251,19 +248,6 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     private Publication createPublication(Publication publication) throws ApiGatewayException {
         UserInstance userInstance = UserInstance.fromPublication(publication);
         return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
-    }
-
-    private ResourceService mockResourceService(AmazonDynamoDB dynamoDbClient) {
-        return new ResourceService(dynamoDbClient, clock) {
-            @Override
-            public ListingResult<Entity> scanResources(int pageSize, Map<String, AttributeValue> startMarker,
-                                                       List<KeyField> types) {
-                if (nonNull(startMarker)) {
-                    scanningStartingPoints.add(startMarker);
-                }
-                return super.scanResources(pageSize, startMarker, types);
-            }
-        };
     }
 
     private FakeContext mockContent() {

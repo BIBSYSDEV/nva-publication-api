@@ -60,7 +60,9 @@ public class UpdateImportStatusHandlerTest extends ResourcesLocalTest {
     public void setUp() {
         super.init(TABLE_NAME);
         output = new ByteArrayOutputStream();
-        importCandidateService = new ResourceService(client, TABLE_NAME);
+        importCandidateService = getResourceServiceBuilder(client)
+                                     .withTableName(TABLE_NAME)
+                                     .build();
         handler = new UpdateImportStatusHandler(importCandidateService);
     }
 

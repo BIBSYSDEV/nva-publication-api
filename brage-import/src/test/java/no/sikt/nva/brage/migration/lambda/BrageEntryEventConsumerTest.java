@@ -42,7 +42,6 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -61,7 +60,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
@@ -231,7 +229,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     @BeforeEach
     public void init() {
         super.init();
-        this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
+        this.resourceService = getResourceServiceBuilder(client).build();
         this.s3Client = new ExtendedFakeS3Client();
         this.s3Driver = new S3Driver(s3Client, INPUT_BUCKET_NAME);
         this.uriRetriever = mock(UriRetriever.class);

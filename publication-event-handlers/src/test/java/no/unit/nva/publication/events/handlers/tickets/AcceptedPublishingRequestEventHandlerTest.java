@@ -61,7 +61,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     @BeforeEach
     public void setup() {
         super.init();
-        resourceService = new ResourceService(client, Clock.systemDefaultZone());
+        resourceService = getResourceServiceBuilder().build();
         this.ticketService = new TicketService(client);
         var s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, randomString());

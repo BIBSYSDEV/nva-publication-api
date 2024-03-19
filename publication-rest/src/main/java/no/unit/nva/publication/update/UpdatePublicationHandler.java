@@ -114,9 +114,7 @@ public class UpdatePublicationHandler
      */
     @JacocoGenerated
     public UpdatePublicationHandler() {
-        this(new ResourceService(
-                 AmazonDynamoDBClientBuilder.defaultClient(),
-                 Clock.systemDefaultZone()),
+        this(ResourceService.defaultService(),
              TicketService.defaultService(),
              new Environment(),
              IdentityServiceClient.prepare(),

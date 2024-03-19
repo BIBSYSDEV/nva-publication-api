@@ -2,12 +2,10 @@ package no.unit.nva.publication.create;
 
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.core.attempt.Try.attempt;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.google.common.net.HttpHeaders;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -67,9 +65,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
      */
     @JacocoGenerated
     public CreatePublicationHandler() {
-        this(new ResourceService(
-                 AmazonDynamoDBClientBuilder.defaultClient(),
-                 Clock.systemDefaultZone()),
+        this(ResourceService.defaultService(),
              new Environment(),
              IdentityServiceClient.prepare(),
              SecretsReader.defaultSecretsManagerClient(),

@@ -1,5 +1,6 @@
 dependencies {
     implementation project(":publication-constants")
+    implementation project(":publication-commons")
     implementation(libs.nva.datamodel.core) {
         exclude group: 'com.github.bibsysdev', module: 'core'
     }
