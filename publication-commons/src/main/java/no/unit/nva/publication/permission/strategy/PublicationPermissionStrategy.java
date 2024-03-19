@@ -20,7 +20,7 @@ import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class PublicationPermissionStrategy {
+public class PublicationPermissionStrategy {
 
     private static final Logger logger = LoggerFactory.getLogger(PublicationPermissionStrategy.class);
     public static final String COMMA_DELIMITER = ", ";
@@ -29,7 +29,7 @@ public final class PublicationPermissionStrategy {
     private final UserInstance userInstance;
     private final Publication publication;
 
-    private PublicationPermissionStrategy(
+    public PublicationPermissionStrategy(
         Publication publication,
         UserInstance userInstance,
         UriRetriever uriRetriever
@@ -53,9 +53,31 @@ public final class PublicationPermissionStrategy {
         return new PublicationPermissionStrategy(publication, userInstance, uriRetriever);
     }
 
+    public boolean isCuratorOnPublication() {
+        return isCurator()
+               && findDenials(PublicationOperation.UPDATE).isEmpty();
+    }
+
+    private boolean isCurator() {
+        return findAllowances(PublicationOperation.UPDATE)
+                   .stream()
+                   .anyMatch(grant -> grant instanceof CuratorPermissionStrategy);
+    }
+
     public boolean allowsAction(PublicationOperation permission) {
         return !findAllowances(permission).isEmpty()
                && findDenials(permission).isEmpty();
+    }
+
+    public Set<PublicationOperation> getAllAllowedActions() {
+        return Arrays.stream(PublicationOperation.values())
+                   .filter(this::allowsAction)
+                   .collect(Collectors.toSet());
+    }
+
+    public void authorize(PublicationOperation requestedPermission) throws UnauthorizedException {
+        validateDenyStrategiesRestrictions(requestedPermission);
+        validateGrantStrategies(requestedPermission);
     }
 
     private List<GrantPermissionStrategy> findAllowances(PublicationOperation permission) {
@@ -70,18 +92,8 @@ public final class PublicationPermissionStrategy {
                    .toList();
     }
 
-    public Set<PublicationOperation> getAllAllowedActions() {
-        return Arrays.stream(PublicationOperation.values())
-                   .filter(this::allowsAction)
-                   .collect(Collectors.toSet());
-    }
-
-    public void authorize(PublicationOperation requestedPermission) throws UnauthorizedException {
-        validateDenyStrategiesRestrictions(requestedPermission);
-        validateGrantStrategies(requestedPermission);
-    }
-
-    private void validateDenyStrategiesRestrictions(PublicationOperation requestedPermission) throws UnauthorizedException {
+    private void validateDenyStrategiesRestrictions(PublicationOperation requestedPermission)
+        throws UnauthorizedException {
         var strategies = findDenials(requestedPermission).stream()
                                      .map(DenyPermissionStrategy::getClass)
                                      .map(Class::getSimpleName)

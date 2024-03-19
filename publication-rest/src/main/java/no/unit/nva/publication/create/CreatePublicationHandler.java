@@ -106,10 +106,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         var newPublication = Optional.ofNullable(input)
                                  .map(CreatePublicationRequest::toPublication)
                                  .orElseGet(Publication::new);
-
         var customerAwareUserContext = getCustomerAwareUserContextFromLoginInformation(requestInfo);
-
-
         var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, customerAwareUserContext.customerUri());
 
         validatePublication(newPublication, customer);

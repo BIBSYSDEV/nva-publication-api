@@ -958,7 +958,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void curratorShouldBeAbleToOverrideRrs() throws IOException, NotFoundException {
+    void curatorShouldBeAbleToOverrideRrs() throws IOException, NotFoundException {
         var publishedFileRrs = File.builder()
                                    .withIdentifier(UUID.randomUUID())
                                    .withName(randomString())
@@ -981,8 +981,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         publishedFileRrs.setRightsRetentionStrategy(OverriddenRightsRetentionStrategy.create(
             OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, null) );
+
         var publicationUpdate = publicationWithRrs.copy().withAssociatedArtifacts(List.of(publishedFileRrs)).build();
-        var request = userWithEditAllNonDegreePublicationsUpdatesPublication(customerId, publicationUpdate);
+        var request = curatorForPublicationUpdatesPublication(publicationUpdate);
         updatePublicationHandler.handleRequest(request, output, context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
@@ -2024,6 +2025,23 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .withBody(publication)
                    .withAccessRights(customerId, accessRights)
                    .withTopLevelCristinOrgId(topLevelCristinOrgId)
+                   .withPersonCristinId(randomUri())
+                   .build();
+    }
+
+    private InputStream curatorForPublicationUpdatesPublication(Publication publication)
+        throws JsonProcessingException {
+        var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString());
+        return new HandlerRequestBuilder<Publication>(restApiMapper)
+                   .withUserName(publication.getResourceOwner().getOwner().getValue())
+                   .withPathParameters(pathParameters)
+                   .withCurrentCustomer(publication.getPublisher().getId())
+                   .withBody(publication)
+                   .withAccessRights(customerId,
+                                     MANAGE_PUBLISHING_REQUESTS,
+                                     MANAGE_DOI, SUPPORT,
+                                     MANAGE_RESOURCES_STANDARD)
+                   .withTopLevelCristinOrgId(publication.getResourceOwner().getOwnerAffiliation())
                    .withPersonCristinId(randomUri())
                    .build();
     }

@@ -17,6 +17,7 @@ import static nva.commons.core.ioutils.IoUtils.streamToString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.ArgumentMatchers.any;
@@ -490,6 +491,22 @@ class PublicationPermissionStrategyTest {
                     requestInfo, identityServiceClient), uriRetriever)
                 .getAllAllowedActions(), is(empty()));
     }
+
+    @Test
+    void isCuratorOnPublicationShouldReturnTrueWhenCuratorIsAssociatedWithPublication()
+        throws JsonProcessingException, UnauthorizedException {
+        var username = randomString();
+        var institution = randomUri();
+        var cristinId = randomUri();
+        var requestInfo = createUserRequestInfo(username, institution, getCuratorAccessRights(), randomUri(), cristinId);
+        var publication = createPublication(username, institution, cristinId);
+        var permissionStrategy = PublicationPermissionStrategy.create(publication,
+                                                                      RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient),
+                                                                      uriRetriever);
+        assertThat(permissionStrategy.isCuratorOnPublication(), is(equalTo(true)));
+    }
+
+
 
     @Test
     void getAllAllowedOperationsShouldReturnUpdateUnpublishWhenUserHasAllAccessRights() throws JsonProcessingException,
