@@ -65,7 +65,6 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     private ByteArrayOutputStream output;
     private FakeContext context;
     private FakeEventBridgeClient eventBridgeClient;
-    private Clock clock;
     private ResourceService resourceService;
     private TicketService ticketService;
     private AmazonDynamoDB dynamoDbClient;
@@ -199,7 +198,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
 
         ArgumentCaptor<Map<String, AttributeValue>> startingPointsCapturer = ArgumentCaptor.forClass(Map.class);
         verify(resourceService, atLeastOnce()).scanResources(anyInt(), startingPointsCapturer.capture(), any());
-        var scanStartingPointSentToTheService =startingPointsCapturer.getValue();
+        var scanStartingPointSentToTheService = startingPointsCapturer.getValue();
 
         assertThat(scanStartingPointSentToTheService, is(equalTo(expectedStaringPointForNextEvent)));
     }
