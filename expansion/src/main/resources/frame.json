@@ -263,5 +263,8 @@
   },
   "curatingInstitutions": {
     "@embed": "@never"
+  },
+  "contributorOrganization": {
+    "@embed": "@never"
   }
 }

@@ -39,7 +39,7 @@ public class ServiceWithTransactions {
     public static final String ASSOCIATED_ARIFACTS_FIELD = "associatedArtifacts";
     private static final Integer MAX_FETCH_ATTEMPTS = 3;
 
-    private final AmazonDynamoDB client;
+    protected final AmazonDynamoDB client;
 
     protected ServiceWithTransactions(AmazonDynamoDB client) {
         this.client = client;

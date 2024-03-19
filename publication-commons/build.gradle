@@ -31,6 +31,9 @@ dependencies {
 
     }
 
+    implementation libs.vavr
+    implementation libs.resilience4j.retry
+
     implementation libs.bundles.logging
 
     testImplementation project(path: ':tickets-test')

@@ -8,10 +8,11 @@ import no.unit.nva.publication.service.impl.ResourceService;
 
 public class FakeResourceServiceThrowingException extends ResourceService {
 
+    public static final String FAKE_TABLE_NAME = "fake-table-name";
     private int numberOfAttempts = 0;
 
     public FakeResourceServiceThrowingException(AmazonDynamoDB client) {
-        super(client, Clock.systemDefaultZone());
+        super(client, FAKE_TABLE_NAME, Clock.systemDefaultZone(), DEFAULT_IDENTIFIER_SUPPLIER);
     }
 
     @Override

@@ -40,7 +40,6 @@ public class CristinPatchEventConsumer implements RequestHandler<SQSEvent, Void>
 
     public static final String INVALID_PARENT_MESSAGE = "Could not retrieve a single valid parent publciation";
     public static final String ERROR_PATCHING_CHILD_PUBLICATION = "Error patching child publication: ";
-    private static final Clock CLOCK = Clock.systemDefaultZone();
     private static final Logger logger = LoggerFactory.getLogger(CristinPatchEventConsumer.class);
     public static final String PATCH_ERRORS_PATH = "PATCH_ERRORS";
     public static final String JSON = ".json";
@@ -55,7 +54,7 @@ public class CristinPatchEventConsumer implements RequestHandler<SQSEvent, Void>
 
     @JacocoGenerated
     protected CristinPatchEventConsumer(AmazonDynamoDB dynamoDbClient, S3Client s3Client) {
-        this(new ResourceService(dynamoDbClient, CLOCK), s3Client);
+        this(ResourceService.builder().withDynamoDbClient(dynamoDbClient).build(), s3Client);
     }
 
     public CristinPatchEventConsumer(ResourceService resourceService, S3Client s3Client) {

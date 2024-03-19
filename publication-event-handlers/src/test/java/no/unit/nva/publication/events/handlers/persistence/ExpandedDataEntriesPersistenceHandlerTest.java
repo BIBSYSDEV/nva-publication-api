@@ -92,8 +92,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     @BeforeEach
     public void setup() {
         super.init();
-        Clock clock = Clock.systemDefaultZone();
-        resourceService = new ResourceService(client, clock);
+        resourceService = getResourceServiceBuilder().build();
         ticketService = new TicketService(client);
 
         var mockPersonRetriever = mock(UriRetriever.class);

@@ -56,7 +56,7 @@ public class BrageMergingRollbackHandlerTest extends ResourcesLocalTest {
     @BeforeEach
     public void init() {
         super.init();
-        this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
+        this.resourceService = getResourceServiceBuilder().build();
         this.s3Client = new ExtendedFakeS3Client();
         this.s3Driver = new S3Driver(s3Client, INPUT_BUCKET_NAME);
         brageMergingRollbackHandler = new BrageMergingRollbackHandler(s3Client, resourceService);

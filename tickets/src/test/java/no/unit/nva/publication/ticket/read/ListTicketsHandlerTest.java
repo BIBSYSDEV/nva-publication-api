@@ -50,7 +50,7 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
     @BeforeEach
     public void init() {
         super.init();
-        this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
+        this.resourceService = getResourceServiceBuilder().build();
         this.ticketService = new TicketService(client);
         this.messageService = new MessageService(client);
         this.handler = new ListTicketsHandler(ticketService);

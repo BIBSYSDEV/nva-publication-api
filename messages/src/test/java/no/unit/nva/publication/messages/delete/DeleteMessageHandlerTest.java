@@ -52,7 +52,7 @@ class DeleteMessageHandlerTest extends ResourcesLocalTest {
     @BeforeEach
     public void setup() {
         super.init();
-        this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
+        this.resourceService = getResourceServiceBuilder().build();
         this.ticketService = new TicketService(client);
         this.messageService = new MessageService(client);
         this.handler = new DeleteMessageHandler(messageService);

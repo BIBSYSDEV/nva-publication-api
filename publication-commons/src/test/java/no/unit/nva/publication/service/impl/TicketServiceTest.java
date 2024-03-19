@@ -129,8 +129,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         super.init();
         this.now = Instant.now();
         this.owner = randomUserInstance();
-        Clock clock = Clock.systemDefaultZone();
-        this.resourceService = new ResourceService(client, clock);
+        this.resourceService = getResourceServiceBuilder().build();
         this.ticketService = new TicketService(client);
         this.messageService = new MessageService(client);
     }

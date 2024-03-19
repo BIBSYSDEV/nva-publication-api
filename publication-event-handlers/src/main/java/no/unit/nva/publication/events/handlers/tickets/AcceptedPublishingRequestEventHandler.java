@@ -106,7 +106,8 @@ public class AcceptedPublishingRequestEventHandler
         var userInstance = UserInstance.create(latestUpdate.getOwner(), latestUpdate.getCustomerId());
         var publication = fetchPublication(userInstance, latestUpdate.getResourceIdentifier());
         var updatedPublication = toPublicationWithPublishedFiles(publication);
-        if (PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(latestUpdate.getWorkflow())) {
+        if (PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(latestUpdate.getWorkflow())
+            || PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(latestUpdate.getWorkflow())) {
             publishFiles(updatedPublication);
         }
         if (PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES.equals(

@@ -127,7 +127,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
         lenient().when(environment.readEnv(ENV_NAME_NVA_FRONTEND_DOMAIN)).thenReturn("localhost");
 
-        publicationService = new ResourceService(client, Clock.systemDefaultZone());
+        publicationService = getResourceServiceBuilder().build();
         output = new ByteArrayOutputStream();
         this.uriRetriever = new UriRetriever(WiremockHttpClient.create());
         fetchPublicationHandler = new FetchPublicationHandler(publicationService,

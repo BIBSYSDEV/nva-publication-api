@@ -26,9 +26,7 @@ public class DeleteDraftPublicationHandler
      */
     @JacocoGenerated
     public DeleteDraftPublicationHandler() {
-        this(new ResourceService(
-            AmazonDynamoDBClientBuilder.defaultClient(), Clock.systemDefaultZone())
-        );
+        this( ResourceService.defaultService() );
     }
     
     /**

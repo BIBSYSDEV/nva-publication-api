@@ -38,9 +38,7 @@ public class UpdateDoiStatusHandler extends DestinationsEventBridgeEventHandler<
     
     @JacocoGenerated
     private static ResourceService defaultResourceService() {
-        return new ResourceService(
-            AmazonDynamoDBClientBuilder.defaultClient(),
-            Clock.systemDefaultZone());
+        return ResourceService.defaultService();
     }
     
     private RuntimeException handleFailure(Failure<Void> fail) {

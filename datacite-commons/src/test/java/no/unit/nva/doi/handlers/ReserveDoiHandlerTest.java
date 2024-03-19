@@ -90,7 +90,7 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
         when(environment.readEnv("API_HOST")).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
         context = new FakeContext();
         output = new ByteArrayOutputStream();
-        resourceService = new ResourceService(client, Clock.systemDefaultZone());
+        resourceService = getResourceServiceBuilder().build();
         var reserveDoiClient = new DataCiteDoiClient(WiremockHttpClient.create(), secretsManagerClient,
                                                      wireMockRuntimeInfo.getHttpsBaseUrl());
         handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);

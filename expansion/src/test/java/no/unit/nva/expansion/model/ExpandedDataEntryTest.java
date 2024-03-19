@@ -111,8 +111,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     @BeforeEach
     public void setup() {
         super.init();
-        var clock = Clock.systemDefaultZone();
-        this.resourceService = new ResourceService(client, clock);
+        this.resourceService = getResourceServiceBuilder().build();
         this.messageService = new MessageService(client);
         this.ticketService = new TicketService(client);
         this.uriRetriever = mock(UriRetriever.class);

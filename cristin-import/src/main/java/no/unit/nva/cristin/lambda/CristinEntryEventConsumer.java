@@ -66,7 +66,6 @@ public class CristinEntryEventConsumer
     public static final UnixPath SUCCESS_FOLDER = UnixPath.of("SUCCESS");
     public static final UnixPath NVI_FOLDER = UnixPath.of("NVI");
     private static final Logger logger = LoggerFactory.getLogger(CristinEntryEventConsumer.class);
-    private static final Clock CLOCK = Clock.systemDefaultZone();
     private static final String PUBLICATIONS_THAT_ARE_PART_OF_OTHER_PUBLICATIONS_BUCKET_PATH =
         "PUBLICATIONS_THAT_ARE_PART_OF_OTHER_PUBLICATIONS";
 
@@ -84,7 +83,7 @@ public class CristinEntryEventConsumer
     protected CristinEntryEventConsumer(AmazonDynamoDB dynamoDbClient,
                                         S3Client s3Client,
                                         DoiDuplicateChecker doiDuplicateChecker) {
-        this(new ResourceService(dynamoDbClient, CLOCK), s3Client, doiDuplicateChecker);
+        this(ResourceService.builder().withDynamoDbClient(dynamoDbClient).build(), s3Client, doiDuplicateChecker);
     }
 
     protected CristinEntryEventConsumer(ResourceService resourceService,

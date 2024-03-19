@@ -34,7 +34,7 @@ public class DeletePublicationHandlerTest extends ResourcesLocalTest {
     public void init() {
         super.init();
         outputStream = new ByteArrayOutputStream();
-        resourceService = new ResourceService(client, Clock.systemDefaultZone());
+        resourceService = getResourceServiceBuilder().build();
         handler = new DeletePublicationHandler(resourceService);
     }
 

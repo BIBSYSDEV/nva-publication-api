@@ -26,9 +26,7 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
 
     @JacocoGenerated
     public PublicationsByOwnerHandler() {
-        this(new ResourceService(
-                AmazonDynamoDBClientBuilder.defaultClient(),
-                Clock.systemDefaultZone()),
+        this(ResourceService.defaultService(),
              new Environment(),
              IdentityServiceClient.prepare());
     }

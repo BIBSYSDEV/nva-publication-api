@@ -39,7 +39,7 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
     @BeforeEach
     public void setUp() {
         super.init();
-        resourceService = new ResourceService(client, Clock.systemDefaultZone());
+        resourceService = getResourceServiceBuilder().build();
         handler = new DeleteDraftPublicationHandler(resourceService);
         outputStream = new ByteArrayOutputStream();
         context = null;

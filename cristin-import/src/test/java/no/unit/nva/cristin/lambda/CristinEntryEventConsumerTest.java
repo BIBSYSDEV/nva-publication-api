@@ -29,7 +29,9 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
@@ -106,7 +108,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     @BeforeEach
     public void init() {
         super.init();
-        resourceService = new ResourceService(super.client, Clock.systemDefaultZone());
+        resourceService = ResourceService.builder().withDynamoDbClient(super.client).build();
         s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, "ignored");
         uriRetriever = mock(UriRetriever.class);
@@ -200,8 +202,8 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
         var expectedTimestamp = eventBody.getTimestamp();
         var expectedFileLocation = NVI_FOLDER
-                                            .addChild(timestampToString(expectedTimestamp))
-                                            .addChild(expectedFileNameStoredInS3);
+                                       .addChild(timestampToString(expectedTimestamp))
+                                       .addChild(expectedFileNameStoredInS3);
         var expectedNviReport = createExpectedNviReport(cristinObject, actualPublication);
 
         var file = s3Driver.getFile(expectedFileLocation);
@@ -218,7 +220,8 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                    .withPublicationIdentifier(publication.getIdentifier().toString())
                    .withYearReported(cristinObject.getScientificResources().getFirst().getReportedYear())
                    .withPublicationDate(publication.getEntityDescription().getPublicationDate())
-                   .withInstanceType(publication.getEntityDescription().getReference().getPublicationInstance().getInstanceType())
+                   .withInstanceType(
+                       publication.getEntityDescription().getReference().getPublicationInstance().getInstanceType())
                    .build();
     }
 
@@ -750,11 +753,8 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     private ResourceService resourceServiceThrowingExceptionWhenSavingResource() {
-        return new ResourceService(client, Clock.systemDefaultZone()) {
-            @Override
-            public Publication createPublicationFromImportedEntry(Publication publication) {
-                throw new RuntimeException(RESOURCE_EXCEPTION_MESSAGE);
-            }
-        };
+        var resourceService = spy(ResourceService.builder().withDynamoDbClient(client).build());
+        doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE)).when(resourceService).createPublicationFromImportedEntry(any());
+        return resourceService;
     }
 }

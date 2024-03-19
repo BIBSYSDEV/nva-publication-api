@@ -56,6 +56,6 @@ public class FetchImportCandidateHandler extends ApiGatewayHandler<Void, ImportC
 
     @JacocoGenerated
     private static ResourceService defaultResourceService() {
-        return new ResourceService(AmazonDynamoDBClientBuilder.defaultClient(), Clock.systemDefaultZone());
+        return ResourceService.defaultService();
     }
 }

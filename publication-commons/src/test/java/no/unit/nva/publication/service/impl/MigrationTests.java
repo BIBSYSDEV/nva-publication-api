@@ -39,13 +39,12 @@ import org.junit.jupiter.api.Test;
 class MigrationTests extends ResourcesLocalTest {
 
     public static final Map<String, AttributeValue> START_FROM_BEGINNING = null;
-    private static final Clock CLOCK = Clock.systemDefaultZone();
     private ResourceService resourceService;
 
     @BeforeEach
     public void init() {
         super.init();
-        this.resourceService = new ResourceService(client, CLOCK);
+        this.resourceService = getResourceServiceBuilder().build();
     }
 
     @Test

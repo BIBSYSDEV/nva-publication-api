@@ -5,7 +5,15 @@ PREFIX  nva: <https://nva.sikt.no/ontology/publication#>
 CONSTRUCT {
   ?publication nva:contributorOrganization ?parents, ?affiliation  .
   } WHERE {
-  ?publication a nva:Publication .
-  [] nva:affiliation ?affiliation .
-  [] nva:partOf ?parents .
-}
+    SELECT DISTINCT * WHERE {
+      ?publication a nva:Publication .
+      OPTIONAL {
+        [] nva:affiliation ?affiliation .
+        FILTER(!ISBLANK(?affiliation))
+      }
+      OPTIONAL {
+        [] nva:partOf ?parents .
+        FILTER(!ISBLANK(?parents))
+      }
+    }
+  }
