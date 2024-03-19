@@ -313,16 +313,18 @@ public class UpdatePublicationHandler
         var customerApiClient = getCustomerApiClient();
         var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, publicationUpdate.getPublisher().getId());
         validatePublication(publicationUpdate, customer);
-        setRrsOnFiles(publicationUpdate, existingPublication, customer, userInstance.getUsername());
+        setRrsOnFiles(publicationUpdate, existingPublication, customer, userInstance.getUsername(), permissionStrategy);
         upsertPublishingRequestIfNeeded(existingPublication, publicationUpdate, customer, requestUtils);
 
         return resourceService.updatePublication(publicationUpdate);
     }
 
     private void setRrsOnFiles(Publication publicationUpdate, Publication existingPublication, Customer customer,
-                               String actingUser) throws BadRequestException {
+                               String actingUser, PublicationPermissionStrategy permissionStrategy)
+        throws BadRequestException, UnauthorizedException {
         RightsRetentionsApplier.rrsApplierForUpdatedPublication(existingPublication, publicationUpdate,
-                                                                customer.getRightsRetentionStrategy(), actingUser ).handle();
+                                                                customer.getRightsRetentionStrategy(), actingUser,
+                                                                permissionStrategy).handle();
 
 
     }
