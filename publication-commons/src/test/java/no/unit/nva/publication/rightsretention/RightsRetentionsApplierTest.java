@@ -12,11 +12,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.jupiter.api.Assertions.*;
-import java.time.Instant;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.FunderRightsRetentionStrategy;
@@ -34,22 +37,51 @@ import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
+import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 class RightsRetentionsApplierTest {
+
+    public static Stream<Arguments> publicationTypeAndForceNull() {
+        return Stream.of(Arguments.of(AcademicArticle.class, false),
+                         Arguments.of(BookAbstracts.class, true),
+                         Arguments.of(DegreeBachelor.class, true)
+        );
+    }
+
+    public static Stream<Arguments> rrsConfigIsValid() {
+        return Stream.of(Arguments.of(OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY,
+                                                                               ""), true),
+                         Arguments.of(OverriddenRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY, ""), false),
+                         Arguments.of(OverriddenRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY, ""),
+                                      false),
+                         Arguments.of(FunderRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY),
+                                      true),
+                         Arguments.of(FunderRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY), false),
+                         Arguments.of(FunderRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY), true),
+                         Arguments.of(NullRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY), false),
+                         Arguments.of(NullRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY), false),
+                         Arguments.of(NullRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY), true),
+                         Arguments.of(CustomerRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY),
+                                      true),
+                         Arguments.of(CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY), true),
+                         Arguments.of(CustomerRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY), false)
+
+        );
+    }
 
     @ParameterizedTest
     @MethodSource("publicationTypeAndForceNull")
     public void shouldForceNullRightsRetentionIfNotAcademicArticle(
         Class<? extends PublicationInstance<?>> publicationType,
-        boolean forceNull) throws BadRequestException {
+        boolean forceNull) throws BadRequestException, UnauthorizedException {
 
         var publication = PublicationGenerator.randomPublication(
             PublicationInstanceBuilder.randomPublicationInstance(publicationType).getClass());
@@ -83,7 +115,7 @@ class RightsRetentionsApplierTest {
     }
 
     @Test
-    public void shouldNotResetRrsWhenFilesMetadataIsChanged() throws BadRequestException {
+    public void shouldNotResetRrsWhenFilesMetadataIsChanged() throws BadRequestException, UnauthorizedException {
         var originalPublication = PublicationGenerator.randomPublication(AcademicArticle.class);
         var overriddenBy = randomString();
         var originalRrs = OverriddenRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY, overriddenBy);
@@ -96,17 +128,19 @@ class RightsRetentionsApplierTest {
                                      .build();
 
         addFilesToPublication(originalPublication, originalFile);
+        var isCurator = false;
+        var permissionStrategy = new FakePublicationPermissionStrategy(isCurator);
         var applier = rrsApplierForUpdatedPublication(originalPublication, updatedPublication,
                                                       getServerConfiguredRrs(
                                                           NULL_RIGHTS_RETENTION_STRATEGY),
-                                                      randomString());
+                                                      randomString(), permissionStrategy);
         applier.handle();
 
         assertThat(updatedFile.getRightsRetentionStrategy(), is(equalTo(originalRrs)));
     }
 
     @Test
-    public void shouldNotChangeRrsIfClientSetsNewStrategy() throws BadRequestException {
+    public void shouldNotChangeRrsIfClientSetsNewStrategy() throws BadRequestException, UnauthorizedException {
         var originalPublication = PublicationGenerator.randomPublication(AcademicArticle.class);
         var overriddenBy = randomString();
         var originalRrs = OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, overriddenBy);
@@ -120,10 +154,13 @@ class RightsRetentionsApplierTest {
                                      .build();
 
         addFilesToPublication(originalPublication, originalFile);
+        var isCurator = false;
+        var permissionStrategy = new FakePublicationPermissionStrategy(isCurator);
         var applier = rrsApplierForUpdatedPublication(originalPublication, updatedPublication,
                                                       getServerConfiguredRrs(
                                                           NULL_RIGHTS_RETENTION_STRATEGY),
-                                                      randomString());
+                                                      randomString(),
+                                                      permissionStrategy);
         applier.handle();
 
         assertThat(updatedFile.getRightsRetentionStrategy(), is(equalTo(originalRrs)));
@@ -135,8 +172,7 @@ class RightsRetentionsApplierTest {
         "RIGHTS_RETENTION_STRATEGY",
         "OVERRIDABLE_RIGHTS_RETENTION_STRATEGY"
     })
-    void shouldAlwaysAllowNullRssIfFileIsPublishedVersion(RightsRetentionStrategyConfiguration configuredType)
-        throws BadRequestException {
+    void shouldAlwaysAllowNullRssIfFileIsPublishedVersion(RightsRetentionStrategyConfiguration configuredType) {
         var originalPublication = PublicationGenerator.randomPublication(AcademicArticle.class);
 
         var publishedFile = createFileWithRrs(UUID.randomUUID(), PUBLISHED_VERSION,
@@ -144,11 +180,13 @@ class RightsRetentionsApplierTest {
         var updatedPublication = originalPublication.copy()
                                      .withAssociatedArtifacts(new AssociatedArtifactList(publishedFile))
                                      .build();
-
+        var isCurator = false;
+        var permissionStrategy = new FakePublicationPermissionStrategy(isCurator);
         var applier = rrsApplierForUpdatedPublication(originalPublication, updatedPublication,
                                                       getServerConfiguredRrs(
                                                           configuredType),
-                                                      randomString());
+                                                      randomString(),
+                                                      permissionStrategy);
         assertDoesNotThrow(applier::handle);
     }
 
@@ -158,21 +196,83 @@ class RightsRetentionsApplierTest {
         "RIGHTS_RETENTION_STRATEGY",
         "OVERRIDABLE_RIGHTS_RETENTION_STRATEGY"
     })
-    void shouldAlwaysAllowNullRssIfFileIsNotSet(RightsRetentionStrategyConfiguration configuredType)
-        throws BadRequestException {
+    void shouldAlwaysAllowNullRssIfFileIsNotSet(RightsRetentionStrategyConfiguration configuredType) {
         var originalPublication = PublicationGenerator.randomPublication(AcademicArticle.class);
 
         var fileWhereVersionIsNotNot = createFileWithRrs(UUID.randomUUID(), null,
-                                              NullRightsRetentionStrategy.create(configuredType));
+                                                         NullRightsRetentionStrategy.create(configuredType));
         var updatedPublication = originalPublication.copy()
                                      .withAssociatedArtifacts(new AssociatedArtifactList(fileWhereVersionIsNotNot))
+                                     .build();
+
+        var isCurator = false;
+        var permissionStrategy = new FakePublicationPermissionStrategy(isCurator);
+        var applier = rrsApplierForUpdatedPublication(originalPublication, updatedPublication,
+                                                      getServerConfiguredRrs(
+                                                          configuredType),
+                                                      randomString(),
+                                                      permissionStrategy);
+        assertDoesNotThrow(applier::handle);
+    }
+
+    @ParameterizedTest
+    @EnumSource(names = {
+        "NULL_RIGHTS_RETENTION_STRATEGY",
+        "RIGHTS_RETENTION_STRATEGY",
+        "OVERRIDABLE_RIGHTS_RETENTION_STRATEGY"
+    })
+    void shouldAllowCuratorToOverrideRetentionStrategy(RightsRetentionStrategyConfiguration configuredType) {
+        var originalPublication =
+            PublicationGenerator.randomPublication(AcademicArticle.class)
+                .copy()
+                .withAssociatedArtifacts(List.of(createFileWithRrs(UUID.randomUUID(), null,
+                                                                   CustomerRightsRetentionStrategy.create(
+                                                                       RIGHTS_RETENTION_STRATEGY))))
+                .build();
+        var userName = randomString();
+        var isCurator = true;
+        var permissionStrategy = new FakePublicationPermissionStrategy(isCurator);
+        var fileWithOverridenRrs = createFileWithRrs(UUID.randomUUID(), ACCEPTED_VERSION,
+                                                     OverriddenRightsRetentionStrategy.create(
+                                                         OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, userName));
+        var updatedPublication = originalPublication.copy()
+                                     .withAssociatedArtifacts(new AssociatedArtifactList(fileWithOverridenRrs))
                                      .build();
 
         var applier = rrsApplierForUpdatedPublication(originalPublication, updatedPublication,
                                                       getServerConfiguredRrs(
                                                           configuredType),
-                                                      randomString());
+                                                      randomString(), permissionStrategy);
         assertDoesNotThrow(applier::handle);
+    }
+
+    private static UnpublishedFile createAcceptedFileWithRrs(RightsRetentionStrategy rrs) {
+        return createFileWithRrs(UUID.randomUUID(), ACCEPTED_VERSION, rrs);
+    }
+
+    //            case OverriddenRightsRetentionStrategy strategy -> Set.of(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY);
+    //            case NullRightsRetentionStrategy strategy -> Set.of(NULL_RIGHTS_RETENTION_STRATEGY);
+    //            case CustomerRightsRetentionStrategy strategy -> Set.of(RIGHTS_RETENTION_STRATEGY,
+    //            OVERRIDABLE_RIGHTS_RETENTION_STRATEGY);
+    //            case FunderRightsRetentionStrategy strategy -> Set.of(NULL_RIGHTS_RETENTION_STRATEGY,
+    //            OVERRIDABLE_RIGHTS_RETENTION_STRATEGY);
+
+    private static UnpublishedFile createAcceptedFileWithRrs(UUID uuid, RightsRetentionStrategy rrs) {
+        return createFileWithRrs(uuid, ACCEPTED_VERSION, rrs);
+    }
+
+    private static UnpublishedFile createFileWithRrs(UUID uuid, PublisherVersion publishedVersion,
+                                                     RightsRetentionStrategy rrs) {
+        return new UnpublishedFile(uuid,
+                                   randomString(),
+                                   randomString(),
+                                   RandomDataGenerator.randomInteger().longValue(),
+                                   RandomDataGenerator.randomUri(),
+                                   false,
+                                   publishedVersion,
+                                   null,
+                                   rrs,
+                                   randomString());
     }
 
     private CustomerApiRightsRetention getServerConfiguredRrs(
@@ -185,59 +285,35 @@ class RightsRetentionsApplierTest {
         publication.setAssociatedArtifacts(new AssociatedArtifactList(files));
     }
 
-    public static Stream<Arguments> publicationTypeAndForceNull() {
-        return Stream.of(Arguments.of(AcademicArticle.class, false),
-                         Arguments.of(BookAbstracts.class, true),
-                         Arguments.of(DegreeBachelor.class, true)
-        );
-    }
+    private static class FakePublicationPermissionStrategy extends PublicationPermissionStrategy {
 
-    //            case OverriddenRightsRetentionStrategy strategy -> Set.of(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY);
-    //            case NullRightsRetentionStrategy strategy -> Set.of(NULL_RIGHTS_RETENTION_STRATEGY);
-    //            case CustomerRightsRetentionStrategy strategy -> Set.of(RIGHTS_RETENTION_STRATEGY,
-    //            OVERRIDABLE_RIGHTS_RETENTION_STRATEGY);
-    //            case FunderRightsRetentionStrategy strategy -> Set.of(NULL_RIGHTS_RETENTION_STRATEGY,
-    //            OVERRIDABLE_RIGHTS_RETENTION_STRATEGY);
+        private final boolean isCurator;
 
-    public static Stream<Arguments> rrsConfigIsValid() {
-        return Stream.of(Arguments.of(OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY,
-                                                                               ""), true),
-                         Arguments.of(OverriddenRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY, ""), false),
-                         Arguments.of(OverriddenRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY, ""),
-                                      false),
-                         Arguments.of(FunderRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY),
-                                      true),
-                         Arguments.of(FunderRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY), false),
-                         Arguments.of(FunderRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY), true),
-                         Arguments.of(NullRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY), false),
-                         Arguments.of(NullRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY), false),
-                         Arguments.of(NullRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY), true),
-                         Arguments.of(CustomerRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY),
-                                      true),
-                         Arguments.of(CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY), true),
-                         Arguments.of(CustomerRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY), false)
+        public FakePublicationPermissionStrategy(boolean isCurator) {
+            super(null, null, null);
+            this.isCurator = isCurator;
+        }
 
-        );
-    }
+        @Override
+        public boolean allowsAction(PublicationOperation permission) {
+            return isCurator;
+        }
 
-    private static UnpublishedFile createAcceptedFileWithRrs(RightsRetentionStrategy rrs) {
-        return createFileWithRrs(UUID.randomUUID(), ACCEPTED_VERSION, rrs);
-    }
+        @Override
+        public boolean isCuratorOnPublication() {
+            return isCurator;
+        }
 
-    private static UnpublishedFile createAcceptedFileWithRrs(UUID uuid, RightsRetentionStrategy rrs) {
-        return createFileWithRrs(uuid, ACCEPTED_VERSION, rrs);
-    }
+        @Override
+        public Set<PublicationOperation> getAllAllowedActions() {
+            return isCurator ?  Set.of(PublicationOperation.UPDATE) : Set.of();
+        }
 
-    private static UnpublishedFile createFileWithRrs(UUID uuid, PublisherVersion publishedVersion, RightsRetentionStrategy rrs) {
-        return new UnpublishedFile(uuid,
-                                   randomString(),
-                                   randomString(),
-                                   RandomDataGenerator.randomInteger().longValue(),
-                                   RandomDataGenerator.randomUri(),
-                                   false,
-                                   publishedVersion,
-                                   (Instant) null,
-                                   rrs,
-                                   randomString());
+        @Override
+        public void authorize(PublicationOperation requestedPermission) throws UnauthorizedException {
+            if (!isCurator) {
+                throw new UnauthorizedException();
+            }
+        }
     }
 }

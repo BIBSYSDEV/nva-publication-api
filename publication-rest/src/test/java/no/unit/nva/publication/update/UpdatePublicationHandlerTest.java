@@ -84,7 +84,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -115,9 +114,13 @@ import no.unit.nva.model.UnpublishingNote;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.License;
+import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
@@ -948,26 +951,49 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(filesForApproval, containsInAnyOrder(expectedFilesForApproval.toArray()));
     }
 
-    private static UnpublishedFile createFileWithRrs(RightsRetentionStrategy rrs) {
-        return createFileWithRrs(UUID.randomUUID(), rrs);
-    }
-
-    private static UnpublishedFile createFileWithRrs(UUID uuid, RightsRetentionStrategy rrs) {
-        return new UnpublishedFile(uuid,
-                                   RandomDataGenerator.randomString(),
-                                   RandomDataGenerator.randomString(),
-                                   RandomDataGenerator.randomInteger().longValue(),
-                                   RandomDataGenerator.randomUri(),
-                                   false,
-                                   false,
-                                   (Instant) null,
-                                   rrs,
-                                   RandomDataGenerator.randomString());
-    }
-
     @Test
     void shouldNotSetCustomersConfiguredRrsWhenFileIsUnchanged() {
 
+    }
+
+    @Test
+    void curatorShouldBeAbleToOverrideRrs() throws IOException, NotFoundException {
+        var publishedFileRrs = File.builder()
+                                   .withIdentifier(UUID.randomUUID())
+                                   .withName(randomString())
+                                   .withSize(10L)
+                                   .withMimeType("application/pdf")
+                                   .withPublisherVersion(PublisherVersion.ACCEPTED_VERSION)
+                                   .withLicense(UriWrapper.fromUri("https://creativecommons.org/licenses/by/4.0").getUri())
+                                   .withRightsRetentionStrategy(CustomerRightsRetentionStrategy.create(RightsRetentionStrategyConfiguration.RIGHTS_RETENTION_STRATEGY))
+                                   .buildPublishedFile();
+        var publicationWithRrs = randomPublication(AcademicArticle.class)
+                                     .copy()
+                                     .withStatus(PUBLISHED)
+                                     .withAssociatedArtifacts(List.of(publishedFileRrs))
+                                     .withPublisher(new Organization.Builder()
+                                                        .withId(customerId)
+                                                        .build())
+                                     .build();
+        publicationWithRrs = publicationService.createPublicationFromImportedEntry(publicationWithRrs);
+
+
+        publishedFileRrs.setRightsRetentionStrategy(OverriddenRightsRetentionStrategy.create(
+            OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, null) );
+
+        var publicationUpdate = publicationWithRrs.copy().withAssociatedArtifacts(List.of(publishedFileRrs)).build();
+        var request = curatorForPublicationUpdatesPublication(publicationUpdate);
+        updatePublicationHandler.handleRequest(request, output, context);
+
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+
+        var updatedPublication = publicationService.getPublicationByIdentifier(publicationUpdate.getIdentifier());
+        assertThat(updatedPublication.getAssociatedArtifacts(), hasSize(1));
+        var actualPublishedFile = (PublishedFile) updatedPublication.getAssociatedArtifacts().getFirst();
+        assertThat(actualPublishedFile.getRightsRetentionStrategy(),
+                   allOf( instanceOf(OverriddenRightsRetentionStrategy.class),
+                          hasProperty("overriddenBy", is(notNullValue()))));
     }
 
     @Test
@@ -1995,6 +2021,23 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .withBody(publication)
                    .withAccessRights(customerId, accessRights)
                    .withTopLevelCristinOrgId(topLevelCristinOrgId)
+                   .withPersonCristinId(randomUri())
+                   .build();
+    }
+
+    private InputStream curatorForPublicationUpdatesPublication(Publication publication)
+        throws JsonProcessingException {
+        var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString());
+        return new HandlerRequestBuilder<Publication>(restApiMapper)
+                   .withUserName(publication.getResourceOwner().getOwner().getValue())
+                   .withPathParameters(pathParameters)
+                   .withCurrentCustomer(publication.getPublisher().getId())
+                   .withBody(publication)
+                   .withAccessRights(customerId,
+                                     MANAGE_PUBLISHING_REQUESTS,
+                                     MANAGE_DOI, SUPPORT,
+                                     MANAGE_RESOURCES_STANDARD)
+                   .withTopLevelCristinOrgId(publication.getResourceOwner().getOwnerAffiliation())
                    .withPersonCristinId(randomUri())
                    .build();
     }
