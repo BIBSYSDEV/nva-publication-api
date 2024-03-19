@@ -73,7 +73,6 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     public void init() {
         super.init();
 
-        this.clock = Clock.systemDefaultZone();
         this.output = new ByteArrayOutputStream();
         this.context = mockContent();
         this.eventBridgeClient = new FakeEventBridgeClient();
