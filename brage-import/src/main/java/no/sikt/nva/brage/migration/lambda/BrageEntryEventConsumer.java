@@ -18,12 +18,14 @@ import no.sikt.nva.brage.migration.mapper.BrageNvaMapper;
 import no.sikt.nva.brage.migration.merger.AssociatedArtifactMover;
 import no.sikt.nva.brage.migration.merger.BrageMergingReport;
 import no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger;
+import no.sikt.nva.brage.migration.merger.DiscardedFilesReport;
 import no.sikt.nva.brage.migration.merger.DuplicatePublicationException;
 import no.sikt.nva.brage.migration.merger.UnmappableCristinRecordException;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
@@ -225,14 +227,61 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                    .orElseThrow();
     }
 
-    private Publication persistMergeReports(BrageMergingReport mergingReport, S3Event s3Event,
+    private Publication persistMergeReports(BrageMergingReport mergingReport,
+                                            S3Event s3Event,
                                             Publication brageConversion) {
         persistUpdateReport(s3Event, mergingReport, brageConversion);
         persistHandleReport(mergingReport.newImage(),
                             brageConversion.getHandle(),
                             s3Event,
                             UPDATED_PUBLICATIONS_REPORTS_PATH);
+        persistDiscardedFilesReport(mergingReport, brageConversion, s3Event);
         return mergingReport.newImage();
+    }
+
+    private void persistDiscardedFilesReport(BrageMergingReport mergingReport,
+                                             Publication brageConversion,
+                                             S3Event s3Event) {
+        var discardedFilesReport = createDiscardedFilesReport(mergingReport, brageConversion);
+        var fileUri = discardedFilesReportUri(mergingReport.newImage(), s3Event,
+                                             brageConversion.getHandle().getPath());
+        var s3Driver = new S3Driver(s3Client, new Environment().readEnv(BRAGE_MIGRATION_REPORTS_BUCKET_NAME));
+        attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(), discardedFilesReport.toString())).orElseThrow();
+
+    }
+
+    private UriWrapper discardedFilesReportUri(Publication publication, S3Event s3Event, String brageHandle) {
+        return UriWrapper.fromUri("DISCARDED_CONTENT_FILES")
+                   .addChild(extractInstitutionName(s3Event))
+                   .addChild(timePath(s3Event))
+                   .addChild(brageHandle)
+                   .addChild(publication.getIdentifier().toString());
+    }
+
+    private DiscardedFilesReport createDiscardedFilesReport(BrageMergingReport mergingReport,
+                                                         Publication brageConversion) {
+        var discardedExistingFiles =
+            findDiscardedAsscociatedArtifacts(mergingReport.oldImage(), mergingReport.newImage());
+        var discardedBrageFiles = findDiscardedAsscociatedArtifacts(brageConversion,
+                                                                    mergingReport.newImage());
+        return new DiscardedFilesReport(discardedBrageFiles, discardedExistingFiles);
+    }
+
+    private List<File> findDiscardedAsscociatedArtifacts(Publication checkForMissing,
+                                                         Publication newPublication) {
+        return checkForMissing.getAssociatedArtifacts()
+                   .stream()
+                   .filter(associatedArtifact -> associatedArtifact instanceof File)
+                   .map(File.class::cast)
+                   .filter(file -> !isInNewPublication(file, newPublication))
+                   .toList();
+    }
+
+    private boolean isInNewPublication(File file, Publication newPublication) {
+        return newPublication.getAssociatedArtifacts().stream()
+                   .filter(associatedArtifact -> associatedArtifact instanceof File)
+                   .map(ass -> (File) ass)
+                   .anyMatch(some -> some.getIdentifier().equals(file.getIdentifier()));
     }
 
     private BrageMergingReport persistInDatabaseAndCreateMergeReport(Publication publicationForUpdate,
