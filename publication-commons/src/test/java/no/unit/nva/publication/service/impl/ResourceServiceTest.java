@@ -1311,7 +1311,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     private ResourceService resourceServiceProvidingDuplicateIdentifiers(SortableIdentifier identifier) {
         Supplier<SortableIdentifier> duplicateIdSupplier = () -> identifier;
-        return new ResourceService(client, clock, duplicateIdSupplier);
+        return new ResourceService(client, clock, duplicateIdSupplier, RESOURCES_TABLE_NAME);
     }
 
     private void assertThatJsonProcessingErrorIsPropagatedUp(Class<JsonProcessingException> expectedExceptionClass,

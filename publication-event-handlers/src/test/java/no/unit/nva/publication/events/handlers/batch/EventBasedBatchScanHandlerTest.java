@@ -15,11 +15,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.net.http.HttpClient;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -72,6 +74,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     private TicketService ticketService;
     private AmazonDynamoDB dynamoDbClient;
     private List<Map<String, AttributeValue>> scanningStartingPoints;
+    private HttpClient httpClient;
 
     @BeforeEach
     public void init() {
@@ -84,7 +87,8 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         dynamoDbClient = super.client;
         this.resourceService = mockResourceService(dynamoDbClient);
         this.ticketService = new TicketService(dynamoDbClient);
-        this.handler = new EventBasedBatchScanHandler(resourceService, eventBridgeClient);
+        this.httpClient = mock(HttpClient.class);
+        this.handler = new EventBasedBatchScanHandler(resourceService, eventBridgeClient, httpClient);
         this.scanningStartingPoints = Collections.synchronizedList(new ArrayList<>());
     }
 
@@ -230,7 +234,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         doThrow(new RuntimeException(expectedExceptionMessage)).when(spiedResourceService)
             .scanResources(anyInt(), any(), any());
 
-        handler = new EventBasedBatchScanHandler(spiedResourceService, eventBridgeClient);
+        handler = new EventBasedBatchScanHandler(spiedResourceService, eventBridgeClient, HttpClient.newHttpClient());
         Executable action = () -> handler.handleRequest(createInitialScanRequest(ONE_ENTRY_PER_EVENT), output, context);
         assertThrows(RuntimeException.class, action);
         assertThat(logger.getMessages(), containsString(expectedExceptionMessage));

@@ -52,8 +52,7 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
 
     private boolean userSharesTopLevelOrgWithAtLeastOneContributor() {
         var contributorTopLevelOrgs =
-            new CuratingInstitutionsUtil(
-                (uriRetriever, uri) -> RdfUtils.getTopLevelOrgUri(uri, uriRetriever)).getCuratingInstitutions(
+            CuratingInstitutionsUtil.defaultCuratingInstitutionsUtil().getCuratingInstitutions(
                 publication, uriRetriever);
         var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
 

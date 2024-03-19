@@ -9,6 +9,7 @@ import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeVa
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.environment;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -21,6 +22,7 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 import com.google.common.collect.Lists;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -58,7 +60,6 @@ import no.unit.nva.publication.model.storage.UniqueDoiRequestEntry;
 import no.unit.nva.publication.model.storage.WithPrimaryKey;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
-import no.unit.nva.publication.utils.RdfUtils;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -95,7 +96,6 @@ public class ResourceService extends ServiceWithTransactions {
     private final Supplier<SortableIdentifier> identifierSupplier;
     private final ReadResourceService readResourceService;
     private final UpdateResourceService updateResourceService;
-    private final UriRetriever uriRetriever;
     private DeleteResourceService deleteResourceService;
 
     public ResourceService(AmazonDynamoDB client,
@@ -108,7 +108,6 @@ public class ResourceService extends ServiceWithTransactions {
         this.readResourceService = new ReadResourceService(client, RESOURCES_TABLE_NAME);
         this.updateResourceService =
             new UpdateResourceService(client, RESOURCES_TABLE_NAME, clockForTimestamps, readResourceService);
-        this.uriRetriever = UriRetriever.defaultUriRetriever();
     }
 
     public ResourceService(AmazonDynamoDB client, String tableName) {
@@ -119,9 +118,7 @@ public class ResourceService extends ServiceWithTransactions {
         this.readResourceService = new ReadResourceService(client, tableName);
         this.updateResourceService =
             new UpdateResourceService(client, tableName, clockForTimestamps, readResourceService);
-        this.deleteResourceService = new DeleteResourceService(client, tableName,
-                                                               readResourceService);
-        this.uriRetriever = UriRetriever.defaultUriRetriever();
+        this.deleteResourceService = new DeleteResourceService(client, tableName, readResourceService);
     }
 
     public ResourceService(AmazonDynamoDB client, Clock clock) {
@@ -258,8 +255,8 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     @JacocoGenerated
-    public void refreshResources(List<Entity> dataEntries) {
-        final var refreshedEntries = refreshAndMigrate(dataEntries);
+    public void refreshResources(List<Entity> dataEntries, HttpClient httpClient) {
+        final var refreshedEntries = refreshAndMigrate(dataEntries, httpClient);
         var writeRequests = createWriteRequestsForBatchJob(refreshedEntries);
         writeToDynamoInBatches(writeRequests);
     }
@@ -315,9 +312,9 @@ public class ResourceService extends ServiceWithTransactions {
 
     // update this method according to current needs.
     //TODO: redesign migration process?
-    public Entity migrate(Entity dataEntry) {
+    public Entity migrate(Entity dataEntry, HttpClient httpClient) {
         return dataEntry instanceof Resource
-                   ? migrateResource((Resource) dataEntry)
+                   ? migrateResource((Resource) dataEntry, httpClient)
                    : dataEntry;
     }
 
@@ -376,10 +373,10 @@ public class ResourceService extends ServiceWithTransactions {
         return (Resource) queryDao.fetchForElevatedUser(getClient()).getData();
     }
 
-    private List<Entity> refreshAndMigrate(List<Entity> dataEntries) {
+    private List<Entity> refreshAndMigrate(List<Entity> dataEntries, HttpClient httpClient) {
         return dataEntries
                    .stream()
-                   .map(attempt(this::migrate))
+                   .map(entity -> attempt(() -> migrate(entity, httpClient)))
                    .map(Try::orElseThrow)
                    .collect(Collectors.toList());
     }
@@ -397,8 +394,8 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     // change this method depending on the current migration needs.
-    private Resource migrateResource(Resource dataEntry) {
-        CuratingInstitutionMigration.migrate(dataEntry);
+    private Resource migrateResource(Resource dataEntry, HttpClient httpClient) {
+        CuratingInstitutionMigration.migrate(dataEntry, httpClient, environment);
         return dataEntry;
     }
 
@@ -466,8 +463,8 @@ public class ResourceService extends ServiceWithTransactions {
                    .collect(Collectors.toList());
     }
 
-    private Publication insertResource(Resource newResource) {
-        setCuratingInstitutions(newResource);
+    private Publication insertResource(Resource newResource, UriRetriever uriRetriever) {
+        setCuratingInstitutions(newResource, uriRetriever);
         TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(newResource);
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(putRequest);
@@ -475,14 +472,12 @@ public class ResourceService extends ServiceWithTransactions {
         return fetchSavedPublication(newResource);
     }
 
-    private void setCuratingInstitutions(Resource newResource) {
-        newResource.setCuratingInstitutions(new CuratingInstitutionsUtil(
-            (uriRetr, uri) -> RdfUtils.getTopLevelOrgUri(uri, uriRetr)).getCuratingInstitutions(newResource.toPublication(),
-                                                                                                               uriRetriever));
+    private void setCuratingInstitutions(Resource newResource, UriRetriever uriRetriever) {
+        newResource.setCuratingInstitutions(CuratingInstitutionsUtil.defaultCuratingInstitutionsUtil().getCuratingInstitutions(newResource.toPublication(), uriRetriever));
     }
 
-    private ImportCandidate insertResourceFromImportCandidate(Resource newResource) {
-        setCuratingInstitutions(newResource);
+    private ImportCandidate insertResourceFromImportCandidate(Resource newResource, UriRetriever uriRetriever) {
+        setCuratingInstitutions(newResource, uriRetriever);
         TransactWriteItem[] transactionItems = transactionItemsForNewImportCandidateInsertion(newResource);
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(putRequest);

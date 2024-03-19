@@ -2,6 +2,7 @@ package no.unit.nva.publication.events.handlers.batch;
 
 import static no.unit.nva.publication.events.handlers.ConfigurationForPushingDirectlyToEventBridge.EVENT_BUS_NAME;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.net.http.HttpClient;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.events.bodies.ScanDatabaseRequest;
@@ -23,23 +24,26 @@ public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest
     private final ResourceService resourceService;
     private final EventBridgeClient eventBridgeClient;
     private final Logger logger = LoggerFactory.getLogger(EventBasedBatchScanHandler.class);
+    private final HttpClient httpClient;
 
     @JacocoGenerated
     public EventBasedBatchScanHandler() {
-        this(ResourceService.defaultService(), defaultEventBridgeClient());
+        this(ResourceService.defaultService(), defaultEventBridgeClient(), HttpClient.newHttpClient());
     }
 
-    public EventBasedBatchScanHandler(ResourceService resourceService, EventBridgeClient eventBridgeClient) {
+    public EventBasedBatchScanHandler(ResourceService resourceService, EventBridgeClient eventBridgeClient,
+                                      HttpClient httpClient) {
         super(ScanDatabaseRequest.class);
         this.resourceService = resourceService;
         this.eventBridgeClient = eventBridgeClient;
+        this.httpClient = httpClient;
     }
 
     @Override
     protected Void processInput(ScanDatabaseRequest input, AwsEventBridgeEvent<ScanDatabaseRequest> event,
                                 Context context) {
         var result = resourceService.scanResources(input.getPageSize(), input.getStartMarker(), input.getTypes());
-        resourceService.refreshResources(result.getDatabaseEntries());
+        resourceService.refreshResources(result.getDatabaseEntries(), httpClient);
         logger.info("Query starting point:" + input.getStartMarker());
         if (result.isTruncated()) {
             sendEventToInvokeNewRefreshRowVersionExecution(input, context, result);
