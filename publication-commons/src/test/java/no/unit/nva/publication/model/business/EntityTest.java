@@ -27,7 +27,7 @@ class EntityTest extends ResourcesLocalTest {
     @BeforeEach
     public void setup() {
         super.init();
-        this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
+        this.resourceService = getResourceServiceBuilder().build();
     }
     
     @ParameterizedTest

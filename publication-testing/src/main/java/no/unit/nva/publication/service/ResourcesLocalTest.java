@@ -31,6 +31,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import no.unit.nva.publication.TestDataSource;
+import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.ResourceServiceBuilder;
 import nva.commons.core.JacocoGenerated;
 import org.junit.jupiter.api.AfterEach;
 
@@ -151,5 +153,13 @@ public class ResourcesLocalTest extends TestDataSource {
         return new AttributeDefinition()
                    .withAttributeName(keyName)
                    .withAttributeType(STRING_TYPE);
+    }
+
+    public ResourceServiceBuilder getResourceServiceBuilder(AmazonDynamoDB dynamoDbClient) {
+        return ResourceService.builder().withDynamoDbClient(dynamoDbClient);
+    }
+
+    public ResourceServiceBuilder getResourceServiceBuilder() {
+        return getResourceServiceBuilder(client);
     }
 }

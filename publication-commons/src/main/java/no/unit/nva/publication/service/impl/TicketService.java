@@ -50,7 +50,10 @@ public class TicketService extends ServiceWithTransactions {
         super(client);
         this.identifierProvider = identifierProvider;
         tableName = RESOURCES_TABLE_NAME;
-        resourceService = new ResourceService(client, Clock.systemDefaultZone(), identifierProvider);
+        resourceService = ResourceService.builder()
+                              .withDynamoDbClient(client)
+                              .withIdentifierSupplier(identifierProvider)
+                              .build();
     }
 
     @JacocoGenerated
@@ -130,7 +133,7 @@ public class TicketService extends ServiceWithTransactions {
 
     public TicketEntry fetchTicketForElevatedUser(UserInstance user, SortableIdentifier ticketIdentifier)
         throws NotFoundException {
-         var queryObject = TicketEntry.createQueryObject(ticketIdentifier);
+        var queryObject = TicketEntry.createQueryObject(ticketIdentifier);
         return attempt(() -> queryObject.fetchByIdentifier(getClient(), tableName))
                    .map(Dao::getData)
                    .map(TicketEntry.class::cast)

@@ -63,7 +63,9 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
         super.init("import-candidates");
         this.output = new ByteArrayOutputStream();
         uriRetriever = mock(UriRetriever.class);
-        resourceService = new ResourceService(client, "import-candidates");
+        resourceService = getResourceServiceBuilder(client)
+                              .withTableName("import-candidates")
+                              .build();
         this.handler = new DeleteImportCandidateEventConsumer(resourceService, uriRetriever);
     }
 

@@ -97,7 +97,7 @@ public class ExpandDataEntriesHandler
 
     @JacocoGenerated
     private static ResourceService defaultResourceService() {
-        return new ResourceService(DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone());
+        return ResourceService.defaultService();
     }
 
     private Optional<EventReference> createEnrichedEventReference(Entity newData) {

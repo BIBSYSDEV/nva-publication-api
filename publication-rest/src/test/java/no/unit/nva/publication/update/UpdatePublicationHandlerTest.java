@@ -66,9 +66,11 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -83,7 +85,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -236,7 +237,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         lenient().when(environment.readEnv("BACKEND_CLIENT_AUTH_URL"))
             .thenReturn(baseUrl.toString());
 
-        publicationService = new ResourceService(client, Clock.systemDefaultZone());
+        publicationService = getResourceServiceBuilder().build();
         this.ticketService = new TicketService(client);
 
         this.eventBridgeClient = new FakeEventBridgeClient(EVENT_BUS_NAME);
@@ -1966,12 +1967,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private ResourceService serviceFailsOnModifyRequestWithRuntimeError() {
-        return new ResourceService(client, Clock.systemDefaultZone()) {
-            @Override
-            public Publication updatePublication(Publication publicationUpdate) {
-                throw new RuntimeException(SOME_MESSAGE);
-            }
-        };
+        var resourceService = spy(ResourceService.builder().withDynamoDbClient(client).build());
+        doThrow(new RuntimeException(SOME_MESSAGE)).when(resourceService).updatePublication(any());
+        return resourceService;
     }
 
     private HandlerRequestBuilder<Publication> generateInputStreamMissingPathParameters() throws IOException {

@@ -68,7 +68,6 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     public static final int FILENAME_WIHOUT_FILE_ENDING = 0;
     public static final String FILENAME_AND_FILE_ENDING_SEPRATOR = "\\.";
     public static final String JSONLD_CONTEXT = "@context";
-    public static final Clock CLOCK = Clock.systemDefaultZone();
     public static final ObjectMapper DTO_OBJECT_MAPPER = JsonUtils.dtoObjectMapper;
     private AnalyticsIntegrationHandler analyticsIntegration;
     private ByteArrayOutputStream outputStream;
@@ -94,7 +93,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         this.analyticsIntegration = new AnalyticsIntegrationHandler(s3Client);
         this.s3Driver = new S3Driver(s3Client, "notImportant");
 
-        resourceService = new ResourceService(dynamoClient, CLOCK);
+        resourceService = getResourceServiceBuilder().build();
         ticketService = new TicketService(dynamoClient);
 
         this.resourceExpansionService = setupResourceExpansionService();

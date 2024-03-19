@@ -65,7 +65,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         prepareEnvironment();
         prepareIdentityServiceClient();
         uriRetriever = mock(UriRetriever.class);
-        publicationService = new ResourceService(client, Clock.systemDefaultZone());
+        publicationService = getResourceServiceBuilder().build();
         handler = new DeletePublicationHandler(publicationService, environment, identityServiceClient, uriRetriever);
         outputStream = new ByteArrayOutputStream();
     }
