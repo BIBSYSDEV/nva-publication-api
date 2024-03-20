@@ -5,7 +5,7 @@ import static no.unit.nva.model.PublicationOperation.DELETE;
 import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublicationNonDegree;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.utils.RdfUtils.APPLICATION_JSON;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
@@ -52,7 +52,6 @@ import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
-import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.external.services.UriRetriever;
 import nva.commons.apigateway.AccessRight;
@@ -558,7 +557,7 @@ class PublicationPermissionStrategyTest {
     }
 
     private Publication createPublication(String resourceOwner, URI customer, URI cristinId) {
-        return randomPublication().copy()
+        return randomPublicationNonDegree().copy()
                    .withResourceOwner(new ResourceOwner(new Username(resourceOwner), cristinId))
                    .withPublisher(new Organization.Builder().withId(customer).build())
                    .withStatus(PUBLISHED)
@@ -566,7 +565,7 @@ class PublicationPermissionStrategyTest {
     }
 
     Publication createNonDegreePublication(String resourceOwner, URI customer) {
-        return PublicationGenerator.randomPublicationNonDegree().copy()
+        return randomPublicationNonDegree().copy()
                    .withResourceOwner(new ResourceOwner(new Username(resourceOwner), customer))
                    .withPublisher(new Organization.Builder().withId(customer).build())
                    .withStatus(PUBLISHED)
@@ -598,7 +597,7 @@ class PublicationPermissionStrategyTest {
     protected Publication createPublicationWithContributor(String contributorName, URI contributorId,
                                                          Role contributorRole, URI institutionId,
                                                            URI topLevelCristinOrgId) {
-        var publication = PublicationGenerator.randomPublicationNonDegree();
+        var publication = randomPublicationNonDegree();
         var identity = new Identity.Builder()
                            .withName(contributorName)
                            .withId(contributorId)
