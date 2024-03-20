@@ -61,7 +61,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
@@ -295,7 +297,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         authorizedBackendUriRetriever = mock(AuthorizedBackendUriRetriever.class);
         publicationChannelConnection = new PublicationChannelConnection(authorizedBackendUriRetriever);
         nvaCustomerConnection = mockCustomerConnection();
-        resourceService = new ResourceService(client, Clock.systemDefaultZone());
+        resourceService = getResourceServiceBuilder().build();
         uriRetriever = mock(UriRetriever.class);
         scopusUpdater = new ScopusUpdater(resourceService, uriRetriever);
         var environment = mock(Environment.class);
@@ -1434,16 +1436,10 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     private ResourceService resourceServiceThrowingExceptionWhenSavingResource() {
-        return new ResourceService(client, Clock.systemDefaultZone()) {
-            @Override
-            public Publication createPublicationFromImportedEntry(Publication publication) {
-                throw new RuntimeException(RESOURCE_EXCEPTION_MESSAGE);
-            }
-
-            public ImportCandidate persistImportCandidate(ImportCandidate importCandidate) {
-                throw new RuntimeException(RESOURCE_EXCEPTION_MESSAGE);
-            }
-        };
+        var resourceService = spy(ResourceService.builder().withDynamoDbClient(client).build());
+        doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE)).when(resourceService).createPublicationFromImportedEntry(any());
+        doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE)).when(resourceService).persistImportCandidate(any());
+        return resourceService;
     }
 
     @NotNull

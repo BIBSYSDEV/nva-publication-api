@@ -67,7 +67,6 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     public static final Context CONTEXT = null;
     public static final String EXPECTED_ERROR_MESSAGE = "expected error message";
     public static final String IDENTIFIER_IN_RESOURCE_FILE = "017ca2670694-37f2c1a7-0105-452c-b7b3-1d90a44a11c0";
-    public static final Clock CLOCK = Clock.systemDefaultZone();
     public static final Publication DELETED_RESOURCE = null;
     public static final Object EMPTY_IMAGE = null;
     private static final URI AFFILIATION_URI_FOUND_IN_FAKE_PERSON_API_RESPONSE =
@@ -83,7 +82,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         super.init();
         this.output = new ByteArrayOutputStream();
         s3Client = new FakeS3Client();
-        resourceService = new ResourceService(client, CLOCK);
+        resourceService = getResourceServiceBuilder().build();
         var ticketService = new TicketService(client);
 
         insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources();

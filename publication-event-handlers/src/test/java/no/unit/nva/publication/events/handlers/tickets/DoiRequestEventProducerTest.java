@@ -68,7 +68,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     @BeforeEach
     public void setUp() {
         super.init();
-        this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
+        this.resourceService = getResourceServiceBuilder().build();
         var response = FakeHttpResponse.create(randomString(), HttpURLConnection.HTTP_OK);
         this.httpClient = new FakeHttpClient<>(response);
         s3Client = new FakeS3Client();

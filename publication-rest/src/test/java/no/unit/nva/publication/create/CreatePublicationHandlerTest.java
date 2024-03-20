@@ -114,7 +114,6 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     public static final String NVA_UNIT_NO = "nva.unit.no";
     public static final String WILDCARD = "*";
     public static final Javers JAVERS = JaversBuilder.javers().build();
-    public static final Clock CLOCK = Clock.systemDefaultZone();
     public static final String ASSOCIATED_ARTIFACTS_FIELD = "associatedArtifacts";
     private static final String CUSTOMER_API_NOT_RESPONDING_OR_NOT_RESPONDING_AS_EXPECTED
         = "Customer API not responding or not responding as expected!";
@@ -155,7 +154,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         lenient().when(environmentMock.readEnv("BACKEND_CLIENT_AUTH_URL"))
             .thenReturn(baseUrl.toString());
 
-        resourceService = new ResourceService(client, CLOCK);
+        resourceService = getResourceServiceBuilder().build();
 
         secretsManagerClient = new FakeSecretsManagerClient();
         var credentials = new BackendClientCredentials("id", "secret");

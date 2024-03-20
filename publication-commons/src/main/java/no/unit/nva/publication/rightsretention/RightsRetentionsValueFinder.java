@@ -1,5 +1,6 @@
 package no.unit.nva.publication.rightsretention;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.NULL_RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.OVERRIDABLE_RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.RIGHTS_RETENTION_STRATEGY;
@@ -19,7 +20,9 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
+import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.JacocoGenerated;
 
 /**
@@ -27,26 +30,29 @@ import nva.commons.core.JacocoGenerated;
  */
 public class RightsRetentionsValueFinder {
 
-    @JacocoGenerated
-    private RightsRetentionsValueFinder() {
+    public static final String ILLEGAL_RIGHTS_RETENTION_STRATEGY_ON_FILE = "Illegal RightsRetentionStrategy on file ";
+    private final RightsRetentionStrategyConfiguration configuredRightsRetention;
+    private final PublicationPermissionStrategy permissionStrategy;
+    private final String username;
+
+    public RightsRetentionsValueFinder(CustomerApiRightsRetention configuredRrsOnCustomer,
+                                       PublicationPermissionStrategy permissionStrategy,
+                                       String username) {
+        this.configuredRightsRetention = getConfigFromCustomerDto(configuredRrsOnCustomer);
+        this.permissionStrategy = permissionStrategy;
+        this.username = username;
     }
 
-    public static final String ILLEGAL_RIGHTS_RETENTION_STRATEGY_ON_FILE = "Illegal RightsRetentionStrategy on file ";
-
-    public static RightsRetentionStrategy getRightsRetentionStrategy(CustomerApiRightsRetention configuredRrsOnCustomer,
-                                                                     Publication publication,
-                                                                     File file,
-                                                                     String username)
-        throws BadRequestException {
-        var configuredRightsRetention = getConfigFromCustomerDto(configuredRrsOnCustomer);
+    public RightsRetentionStrategy getRightsRetentionStrategy(File file, Publication publication)
+        throws BadRequestException, UnauthorizedException {
         var fileRightsRetention = file.getRightsRetentionStrategy();
 
         return rrsIsIrrelevant(file, publication)
                    ? NullRightsRetentionStrategy.create(configuredRightsRetention)
-                   : getRrsForUnPublishedFile(file, configuredRightsRetention, fileRightsRetention, username);
+                   : getRrsForUnPublishedFile(file, fileRightsRetention);
     }
 
-    private static boolean rrsIsIrrelevant(File file, Publication publication) {
+    private boolean rrsIsIrrelevant(File file, Publication publication) {
         return !PublisherVersion.ACCEPTED_VERSION.equals(file.getPublisherVersion())
                || file instanceof AdministrativeAgreement
                || !isAcademicArticle(publication);
@@ -59,29 +65,6 @@ public class RightsRetentionsValueFinder {
                    .map(Reference::getPublicationInstance)
                    .map(instance -> instance instanceof AcademicArticle)
                    .orElse(false);
-    }
-
-    private static RightsRetentionStrategy getRrsForUnPublishedFile(File file,
-                                                                    RightsRetentionStrategyConfiguration rrsConfig,
-                                                                    RightsRetentionStrategy fileRightsRetention,
-                                                                    String username) throws BadRequestException {
-        var rrs = switch (fileRightsRetention) {
-            case OverriddenRightsRetentionStrategy strategy ->
-                OverriddenRightsRetentionStrategy.create(rrsConfig, username);
-            case NullRightsRetentionStrategy strategy -> NullRightsRetentionStrategy.create(rrsConfig);
-            case CustomerRightsRetentionStrategy strategy -> CustomerRightsRetentionStrategy.create(rrsConfig);
-            case FunderRightsRetentionStrategy strategy -> FunderRightsRetentionStrategy.create(rrsConfig);
-            default ->
-                throw new IllegalArgumentException("Unknown RightsRetentionStrategy type " + fileRightsRetention);
-        };
-        if (!isValid(rrs)) {
-            throw new BadRequestException(ILLEGAL_RIGHTS_RETENTION_STRATEGY_ON_FILE + file.getIdentifier());
-        }
-        return rrs;
-    }
-
-    private static boolean isValid(RightsRetentionStrategy rrs) {
-        return getAllowedConfigurations(rrs).contains(rrs.getConfiguredType());
     }
 
     @JacocoGenerated
@@ -105,5 +88,39 @@ public class RightsRetentionsValueFinder {
             case "OverridableRightsRetentionStrategy" -> OVERRIDABLE_RIGHTS_RETENTION_STRATEGY;
             default -> throw new IllegalArgumentException("Unknown RightsRetentionStrategy type " + config.getType());
         };
+    }
+
+    private boolean isValid(RightsRetentionStrategy rrs) {
+        return getAllowedConfigurations(rrs).contains(rrs.getConfiguredType())
+               || isAllowedToOverrideRrs(rrs, permissionStrategy);
+    }
+
+    private boolean isAllowedToOverrideRrs(RightsRetentionStrategy rrs,
+                                           PublicationPermissionStrategy permissionStrategy) {
+        if (nonNull(permissionStrategy) && rrs instanceof OverriddenRightsRetentionStrategy){
+            return permissionStrategy.isCuratorOnPublication();
+        }
+        return false;
+    }
+
+
+    private RightsRetentionStrategy getRrsForUnPublishedFile(File file,
+                                                             RightsRetentionStrategy fileRightsRetention)
+        throws BadRequestException {
+        var rrs = switch (fileRightsRetention) {
+            case OverriddenRightsRetentionStrategy strategy ->
+                OverriddenRightsRetentionStrategy.create(configuredRightsRetention, username);
+            case NullRightsRetentionStrategy strategy -> NullRightsRetentionStrategy.create(configuredRightsRetention);
+            case CustomerRightsRetentionStrategy strategy ->
+                CustomerRightsRetentionStrategy.create(configuredRightsRetention);
+            case FunderRightsRetentionStrategy strategy ->
+                FunderRightsRetentionStrategy.create(configuredRightsRetention);
+            default ->
+                throw new IllegalArgumentException("Unknown RightsRetentionStrategy type " + fileRightsRetention);
+        };
+        if (!isValid(rrs)) {
+            throw new BadRequestException(ILLEGAL_RIGHTS_RETENTION_STRATEGY_ON_FILE + file.getIdentifier());
+        }
+        return rrs;
     }
 }
