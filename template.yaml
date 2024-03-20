@@ -324,6 +324,11 @@ Resources:
     Type: "AWS::SQS::Queue"
   BrageMergingRollbackHandlerDLQ:
     Type: "AWS::SQS::Queue"
+  RecoveryQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 1209600 #14 days
+
 
 
   #==============================ROLES=======================================================================
@@ -1189,6 +1194,7 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
           BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
+          RECOVERY_QUEUE: !Ref RecoveryQueue
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule

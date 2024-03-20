@@ -69,4 +69,5 @@ test {
     environment "OUTPUT_EVENT_TOPIC", "someEvent"
     environment "API_HOST", "api.test.nva.aws.unit.no"
     environment "ALLOWED_ORIGIN", "*"
+    environment "RECOVERY_QUEUE", "queue"
 }

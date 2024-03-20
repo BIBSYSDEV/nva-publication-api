@@ -24,7 +24,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -48,6 +47,7 @@ import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.service.FakeSqsClient;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -93,7 +93,8 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         ResourceExpansionService resourceExpansionService =
             new ResourceExpansionServiceImpl(resourceService, ticketService, mockUriRetriever, mockUriRetriever);
 
-        this.expandResourceHandler = new ExpandDataEntriesHandler(s3Client, resourceExpansionService);
+        this.expandResourceHandler = new ExpandDataEntriesHandler(new FakeSqsClient(), s3Client,
+                                                                  resourceExpansionService);
         this.s3Driver = new S3Driver(s3Client, "ignoredForFakeS3Client");
     }
 
@@ -144,11 +145,27 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
         var logger = LogUtils.getTestingAppenderForRootLogger();
 
-        expandResourceHandler = new ExpandDataEntriesHandler(s3Client, createFailingService());
+        expandResourceHandler = new ExpandDataEntriesHandler(new FakeSqsClient(), s3Client, createFailingService());
         expandResourceHandler.handleRequest(request, output, CONTEXT);
 
         assertThat(logger.getMessages(), containsString(EXPECTED_ERROR_MESSAGE));
         assertThat(logger.getMessages(), containsString(newImage.getIdentifier().toString()));
+    }
+
+    @Test
+    void shouldPersistRecoveryMessageWhenExpansionHasFailed() throws IOException {
+        var oldImage = createPublicationWithStatus(PUBLISHED);
+        var newImage = createUpdatedVersionOfPublication(oldImage);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
+
+
+        var sqsClient = new FakeSqsClient();
+        expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client, createFailingService());
+        expandResourceHandler.handleRequest(request, output, CONTEXT);
+
+        var persistedRecoveryMessage = sqsClient.getDeliveredMessages().getFirst();
+        var messageAttributes = persistedRecoveryMessage.messageAttributes();
+        assertThat(messageAttributes.get("id").stringValue(), is(equalTo(oldImage.getIdentifier().toString())));
     }
 
     @Test
@@ -204,15 +221,12 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
     private Entity crateDataEntry(Object image) {
 
-        if (image instanceof Publication) {
-            return Resource.fromPublication((Publication) image);
-        } else if (image instanceof DoiRequest) {
-            return (DoiRequest) image;
-        } else if (image instanceof Message) {
-            return (Message) image;
-        } else {
-            return null;
-        }
+        return switch (image) {
+            case Publication publication -> Resource.fromPublication(publication);
+            case DoiRequest doiRequest -> doiRequest;
+            case Message message -> message;
+            case null, default -> null;
+        };
     }
 
     private void insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources() {
