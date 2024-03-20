@@ -40,7 +40,7 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
     @BeforeEach
     public void setup() {
         super.init();
-        this.resourceService = new ResourceService(super.client, Clock.systemDefaultZone());
+        this.resourceService = getResourceServiceBuilder().build();
         this.ticketService = new TicketService(super.client);
     }
 

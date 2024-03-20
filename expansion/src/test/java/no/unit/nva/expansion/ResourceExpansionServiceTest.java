@@ -110,7 +110,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         URI.create("https://api.dev.nva.aws.unit.no/cristin/person/myCristinId/myOrganization");
     public static final UserInstance USER = UserInstance.create(new User("12345"), ORGANIZATION);
     public static final ObjectMapper objectMapper = JsonUtils.dtoObjectMapper;
-    private static final Clock CLOCK = Clock.systemDefaultZone();
     private static final String FINALIZED_DATE = "finalizedDate";
     private static final String WORKFLOW = "workflow";
     private static final String ASSIGNEE = "assignee";
@@ -575,7 +574,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         when(response.statusCode()).thenReturn(statusCode);
         when(response.body()).thenReturn(responseBody);
         when(mock.fetchResponse(fetchNviCandidateUri(publication), "application/json")).thenReturn(Optional.of(response));
-        return new ResourceExpansionServiceImpl(new ResourceService(client, CLOCK),
+        return new ResourceExpansionServiceImpl(getResourceServiceBuilder().build(),
                                                             new TicketService(client),
                                                             mock,
                                                             mock);
@@ -777,7 +776,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     private void initializeServices() {
-        resourceService = new ResourceService(client, CLOCK);
+        resourceService = getResourceServiceBuilder().build();
         messageService = new MessageService(client);
         ticketService = new TicketService(client);
         personRetriever = mock(UriRetriever.class);

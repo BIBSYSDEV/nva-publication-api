@@ -3,7 +3,6 @@ package no.unit.nva.publication.service.impl;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
-import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
 import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
@@ -96,38 +95,24 @@ public class ResourceService extends ServiceWithTransactions {
     private final Supplier<SortableIdentifier> identifierSupplier;
     private final ReadResourceService readResourceService;
     private final UpdateResourceService updateResourceService;
-    private DeleteResourceService deleteResourceService;
+    private final DeleteResourceService deleteResourceService;
 
-    public ResourceService(AmazonDynamoDB client,
-                           Clock clock,
-                           Supplier<SortableIdentifier> identifierSupplier) {
-        super(client);
-        tableName = RESOURCES_TABLE_NAME;
+    protected ResourceService(AmazonDynamoDB dynamoDBClient, String tableName, Clock clock,
+                              Supplier<SortableIdentifier> identifierSupplier) {
+        super(dynamoDBClient);
+        this.tableName = tableName;
         this.clockForTimestamps = clock;
         this.identifierSupplier = identifierSupplier;
-        this.readResourceService = new ReadResourceService(client, RESOURCES_TABLE_NAME);
+        this.readResourceService = new ReadResourceService(client, this.tableName);
         this.updateResourceService =
             new UpdateResourceService(client, RESOURCES_TABLE_NAME, clockForTimestamps, readResourceService);
+        this.deleteResourceService = new DeleteResourceService(client, this.tableName, readResourceService);
     }
 
-    public ResourceService(AmazonDynamoDB client, String tableName) {
-        super(client);
-        this.tableName = tableName;
-        this.clockForTimestamps = Clock.systemDefaultZone();
-        this.identifierSupplier = DEFAULT_IDENTIFIER_SUPPLIER;
-        this.readResourceService = new ReadResourceService(client, tableName);
-        this.updateResourceService =
-            new UpdateResourceService(client, tableName, clockForTimestamps, readResourceService);
-        this.deleteResourceService = new DeleteResourceService(client, tableName, readResourceService);
-    }
-
-    public ResourceService(AmazonDynamoDB client, Clock clock) {
-        this(client, clock, DEFAULT_IDENTIFIER_SUPPLIER);
-    }
 
     @JacocoGenerated
     public static ResourceService defaultService() {
-        return new ResourceService(DEFAULT_DYNAMODB_CLIENT, Clock.systemDefaultZone());
+        return builder().build();
     }
 
     /**
@@ -139,7 +124,7 @@ public class ResourceService extends ServiceWithTransactions {
 
     @JacocoGenerated
     public static ResourceService defaultService(String tableName) {
-        return new ResourceService(DEFAULT_DYNAMODB_CLIENT, tableName);
+        return builder().withTableName(tableName).build();
     }
 
     public Publication createPublication(UserInstance userInstance, Publication inputData)
@@ -240,6 +225,7 @@ public class ResourceService extends ServiceWithTransactions {
         TransactWriteItemsRequest transactWriteItemsRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(transactWriteItemsRequest);
     }
+
     public DeletePublicationStatusResponse updatePublishedStatusToDeleted(SortableIdentifier resourceIdentifier)
         throws NotFoundException {
         return updateResourceService.updatePublishedStatusToDeleted(resourceIdentifier);
@@ -602,5 +588,9 @@ public class ResourceService extends ServiceWithTransactions {
     private TransactWriteItem createNewTransactionPutEntryForEnsuringUniqueIdentifier(Resource resource,
                                                                                       String tableName) {
         return newPutTransactionItem(new IdentifierEntry(resource.getIdentifier().toString()), tableName);
+    }
+
+    public static ResourceServiceBuilder builder() {
+        return new ResourceServiceBuilder();
     }
 }

@@ -20,8 +20,8 @@ import nva.commons.core.JacocoGenerated;
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"arstall", "hendelsetype", "antall_deltakere",
-    "antall_internasjonale_deltakere", "antall_nasjonale_deltakere", "landkode",
-    "institusjonsnr_arrangor", "avdnr_arrangor", "undavdnr_arrangor", "gruppenr_arrangor", "stedangivelse",
+    "antall_internasjonale_deltakere", "antall_nasjonale_deltakere",
+    "institusjonsnr_arrangor", "avdnr_arrangor", "undavdnr_arrangor", "gruppenr_arrangor",
     "utbredelsesomrade", "url", "personlopenr_arrangor"})
 public class PresentationEvent {
 

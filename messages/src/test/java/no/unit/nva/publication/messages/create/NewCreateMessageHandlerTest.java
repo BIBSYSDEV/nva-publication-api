@@ -68,7 +68,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     @BeforeEach
     public void setup() {
         super.init();
-        this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
+        this.resourceService = getResourceServiceBuilder().build();
         this.ticketService = new TicketService(client);
         this.uriRetriever = mock(UriRetriever.class);
         MessageService messageService = new MessageService(client);

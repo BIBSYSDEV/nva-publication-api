@@ -54,7 +54,6 @@ import nva.commons.core.paths.UriWrapper;
 
 public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
-    public static final Clock CLOCK = Clock.systemDefaultZone();
     public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
     public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
     public static final String GONE_MESSAGE = "Publication has been removed";
@@ -69,18 +68,8 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     @JacocoGenerated
     public FetchPublicationHandler() {
-        this(
-            AmazonDynamoDBClientBuilder.defaultClient(),
-            new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME),
-            UriRetriever.defaultUriRetriever()
-        );
-    }
-
-    @JacocoGenerated
-    public FetchPublicationHandler(AmazonDynamoDB client, RawContentRetriever authorizedBackendUriRetriever,
-                                   UriRetriever uriRetriever) {
-        this(defaultResourceService(client), authorizedBackendUriRetriever, new Environment(),
-             IdentityServiceClient.prepare(), uriRetriever);
+        this(ResourceService.defaultService(), new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME), new Environment(),
+             IdentityServiceClient.prepare(), UriRetriever.defaultUriRetriever());
     }
 
     /**
@@ -126,11 +115,6 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     @Override
     protected Integer getSuccessStatusCode(Void input, String output) {
         return statusCode;
-    }
-
-    @JacocoGenerated
-    private static ResourceService defaultResourceService(AmazonDynamoDB client) {
-        return new ResourceService(client, CLOCK);
     }
 
     private String produceRemovedPublicationResponse(Publication publication, RequestInfo requestInfo)

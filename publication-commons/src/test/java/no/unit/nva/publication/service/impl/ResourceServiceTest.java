@@ -60,7 +60,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -151,14 +150,12 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private TicketService ticketService;
     private MessageService messageService;
     private Instant now;
-    private Clock clock;
 
     @BeforeEach
     public void init() {
         super.init();
-        clock = Clock.systemDefaultZone();
-        now = clock.instant();
-        resourceService = new ResourceService(client, clock);
+        now = Clock.systemDefaultZone().instant();
+        resourceService = getResourceServiceBuilder().build();
         ticketService = new TicketService(client);
         messageService = new MessageService(client);
     }
@@ -172,7 +169,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void shouldInstantiateResourceServiceForProvidedTable() {
         var customTable = "CustomTable";
         super.init(customTable);
-        var resourceService = new ResourceService(client, customTable);
+        var resourceService = getResourceServiceBuilder(client)
+                                  .withTableName(customTable)
+                                  .build();
         List<String> tableNames = resourceService.getClient().listTables().getTableNames();
         assertThat(tableNames, hasItem(customTable));
     }
@@ -248,7 +247,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                   .withResourceOwner(new ResourceOwner(new Username(SOME_OTHER_USER),
                                                                                        null))
                                                   .build();
-        ResourceService resourceService = resourceServiceProvidingDuplicateIdentifiers(sampleResource.getIdentifier());
+        ResourceService resourceService = getResourceServiceWithDuplicateIdentifier(sampleResource.getIdentifier());
 
         createPersistedPublicationWithDoi(resourceService, sampleResource);
         Executable action = () -> createPersistedPublicationWithDoi(resourceService, collidingResource);
@@ -258,6 +257,12 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(sampleResource.getResourceOwner().getOwner(),
                    is(not(equalTo(collidingResource.getResourceOwner().getOwner()))));
         assertThat(sampleResource.getPublisher().getId(), is(not(equalTo(collidingResource.getPublisher().getId()))));
+    }
+
+    private ResourceService getResourceServiceWithDuplicateIdentifier(SortableIdentifier identifier) {
+        return getResourceServiceBuilder(client)
+                   .withIdentifierSupplier(() -> identifier)
+                   .build();
     }
 
     @Test
@@ -388,7 +393,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         RuntimeException expectedCause = new RuntimeException(expectedMessage);
         when(client.transactWriteItems(any(TransactWriteItemsRequest.class))).thenThrow(expectedCause);
 
-        ResourceService failingService = new ResourceService(client, clock);
+        ResourceService failingService = ResourceService.builder().withDynamoDbClient(client).build();
 
         Publication resource = publicationWithIdentifier();
         Executable action = () -> createPersistedPublicationWithDoi(failingService, resource);
@@ -411,7 +416,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         when(client.getItem(any(GetItemRequest.class))).thenThrow(expectedMessage);
         var resource = publicationWithIdentifier();
 
-        var failingResourceService = new ResourceService(client, clock);
+        var failingResourceService = ResourceService.builder().withDynamoDbClient(client).build();
 
         Executable action = () -> failingResourceService.getPublication(resource);
         var exception = assertThrows(RuntimeException.class, action);
@@ -467,7 +472,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         RuntimeException expectedException = new RuntimeException(expectedMessage);
         when(client.query(any(QueryRequest.class))).thenThrow(expectedException);
 
-        ResourceService failingResourceService = new ResourceService(client, clock);
+        ResourceService failingResourceService = ResourceService.builder().withDynamoDbClient(client).build();
 
         RuntimeException exception = assertThrows(RuntimeException.class,
                                                   () -> failingResourceService.getPublicationsByOwner(SAMPLE_USER));
@@ -483,7 +488,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
             List.of(ItemUtils.toAttributeValues(invalidItem)));
         when(mockClient.query(any(QueryRequest.class))).thenReturn(responseWithInvalidItem);
 
-        ResourceService failingResourceService = new ResourceService(mockClient, clock);
+        ResourceService failingResourceService = ResourceService.builder().withDynamoDbClient(mockClient).build();
         Class<JsonProcessingException> expectedExceptionClass = JsonProcessingException.class;
 
         assertThatJsonProcessingErrorIsPropagatedUp(expectedExceptionClass,
@@ -498,7 +503,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         GetItemResult responseWithInvalidItem = new GetItemResult().withItem(ItemUtils.toAttributeValues(invalidItem));
         when(mockClient.getItem(any(GetItemRequest.class))).thenReturn(responseWithInvalidItem);
 
-        ResourceService failingResourceService = new ResourceService(mockClient, clock);
+        ResourceService failingResourceService = ResourceService.builder().withDynamoDbClient(mockClient).build();
         Class<JsonProcessingException> expectedExceptionClass = JsonProcessingException.class;
 
         SortableIdentifier someIdentifier = SortableIdentifier.next();
@@ -920,7 +925,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldLogIdentifiersOfRecordsWhenBatchScanWriteFails() {
         var failingClient = new FailingDynamoClient(this.client);
-        resourceService = new ResourceService(failingClient, clock);
+        resourceService = ResourceService.builder().withDynamoDbClient(failingClient).build();
 
         var userInstance = UserInstance.create(randomString(), randomUri());
         var userResources = createSamplePublicationsOfSingleOwner(userInstance);
@@ -1211,7 +1216,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         when(client.getItem(any(GetItemRequest.class))).thenReturn(
             new GetItemResult().withItem(Collections.emptyMap()));
 
-        return new ResourceService(client, clock);
+        return ResourceService.builder().withDynamoDbClient(client).build();
     }
 
     private void assertThatIdentifierEntryHasBeenCreated() {
@@ -1307,11 +1312,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         Publication resource = createPersistedPublicationWithoutDoi();
         publishResource(resource);
         return resourceService.getPublication(resource);
-    }
-
-    private ResourceService resourceServiceProvidingDuplicateIdentifiers(SortableIdentifier identifier) {
-        Supplier<SortableIdentifier> duplicateIdSupplier = () -> identifier;
-        return new ResourceService(client, clock, duplicateIdSupplier, RESOURCES_TABLE_NAME);
     }
 
     private void assertThatJsonProcessingErrorIsPropagatedUp(Class<JsonProcessingException> expectedExceptionClass,

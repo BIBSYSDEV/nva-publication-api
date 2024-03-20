@@ -34,7 +34,9 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
     @BeforeEach
     public void init() {
         super.init(IMPORT_CANDIDATES_TABLE_NAME);
-        resourceService = new ResourceService(client, IMPORT_CANDIDATES_TABLE_NAME);
+        resourceService = getResourceServiceBuilder(client)
+                             .withTableName(IMPORT_CANDIDATES_TABLE_NAME)
+                             .build();
     }
 
     @Test

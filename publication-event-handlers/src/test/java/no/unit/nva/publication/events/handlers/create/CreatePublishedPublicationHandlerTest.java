@@ -44,7 +44,7 @@ class CreatePublishedPublicationHandlerTest extends ResourcesLocalTest {
         this.outputStream = new ByteArrayOutputStream();
         var fakeS3Client = new FakeS3Client();
         this.s3Driver = new S3Driver(fakeS3Client, "notimportant");
-        this.publicationService = new ResourceService(super.client, Clock.systemDefaultZone());
+        this.publicationService = getResourceServiceBuilder().build();
         this.handler = new CreatePublishedPublicationHandler(fakeS3Client, publicationService);
     }
     

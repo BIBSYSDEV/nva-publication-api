@@ -45,7 +45,7 @@ class MessageDaoTest extends ResourcesLocalTest {
     @BeforeEach
     public void initialize() {
         super.init();
-        this.resourceService = new ResourceService(client, Clock.systemDefaultZone());
+        this.resourceService = getResourceServiceBuilder().build();
         this.messageService = new MessageService(client);
         this.ticketService = new TicketService(client);
     }
