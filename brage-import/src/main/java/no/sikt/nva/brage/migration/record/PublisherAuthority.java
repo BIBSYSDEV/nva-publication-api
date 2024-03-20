@@ -4,17 +4,18 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Objects;
+import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import nva.commons.core.JacocoGenerated;
 
 public class PublisherAuthority {
 
     private List<String> brage;
-    private Boolean nva;
+    private PublisherVersion nva;
 
     @JacocoGenerated
     @JsonCreator
     public PublisherAuthority(@JsonProperty("brage") List<String> brage,
-                              @JsonProperty("nva") Boolean nva) {
+                              @JsonProperty("nva") PublisherVersion nva) {
         this.nva = nva;
         this.brage = brage;
     }
@@ -51,12 +52,12 @@ public class PublisherAuthority {
 
     @JacocoGenerated
     @JsonProperty("nva")
-    public Boolean getNva() {
+    public PublisherVersion getNva() {
         return nva;
     }
 
     @JacocoGenerated
-    public void setNva(Boolean nva) {
+    public void setNva(PublisherVersion nva) {
         this.nva = nva;
     }
 }

@@ -85,6 +85,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -117,6 +118,7 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.License;
@@ -951,6 +953,23 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             expectedFilesForApprovalBeforePublicationUpdate, newUnpublishedFile);
 
         assertThat(filesForApproval, containsInAnyOrder(expectedFilesForApproval.toArray()));
+    }
+
+    private static UnpublishedFile createFileWithRrs(RightsRetentionStrategy rrs) {
+        return createFileWithRrs(UUID.randomUUID(), rrs);
+    }
+
+    private static UnpublishedFile createFileWithRrs(UUID uuid, RightsRetentionStrategy rrs) {
+        return new UnpublishedFile(uuid,
+                                   RandomDataGenerator.randomString(),
+                                   RandomDataGenerator.randomString(),
+                                   RandomDataGenerator.randomInteger().longValue(),
+                                   RandomDataGenerator.randomUri(),
+                                   false,
+                                   PublisherVersion.ACCEPTED_VERSION,
+                                   (Instant) null,
+                                   rrs,
+                                   RandomDataGenerator.randomString());
     }
 
     @Test
@@ -1959,7 +1978,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return new UnpublishedFile(UUID.randomUUID(), randomString(), randomString(),
                                    Long.valueOf(randomInteger().toString()),
                                    new License.Builder().withIdentifier(randomString()).withLink(randomUri()).build(),
-                                   false, false, null, null, randomString());
+                                   false, PublisherVersion.ACCEPTED_VERSION, null, null, randomString());
     }
 
     private TestAppender createAppenderForLogMonitoring() {

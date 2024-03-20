@@ -45,6 +45,7 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
@@ -186,7 +187,7 @@ public final class BrageNvaMapper {
                    .withName(file.getFilename())
                    .withIdentifier(file.getIdentifier())
                    .withLicense(getLicenseUri(file))
-                   .withPublisherAuthority(extractPublisherAuthority(brageRecord))
+                   .withPublisherVersion(extractPublisherAuthority(brageRecord))
                    .withEmbargoDate(embargoDate)
                    .withLegalNote(legalNote)
                    .buildPublishedFile();
@@ -208,8 +209,8 @@ public final class BrageNvaMapper {
         return Optional.ofNullable(file).map(ContentFile::getEmbargoDate).orElse(null);
     }
 
-    private static Boolean extractPublisherAuthority(Record brageRecord) {
-        return Optional.ofNullable(brageRecord.getPublisherAuthority()).map(PublisherAuthority::getNva).orElse(false);
+    private static PublisherVersion extractPublisherAuthority(Record brageRecord) {
+        return Optional.ofNullable(brageRecord.getPublisherAuthority()).map(PublisherAuthority::getNva).orElse(null);
     }
 
     private static URI getLicenseUri(ContentFile file) {
