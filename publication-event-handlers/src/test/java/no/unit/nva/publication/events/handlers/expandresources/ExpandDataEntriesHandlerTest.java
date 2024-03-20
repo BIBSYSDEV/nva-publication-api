@@ -169,6 +169,21 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldPersistRecoveryMessageWhenExpansionHasFailedAndOldImageIsNotPresent() throws IOException {
+        var newImage = createPublicationWithStatus(PUBLISHED);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(null, newImage);
+
+
+        var sqsClient = new FakeSqsClient();
+        expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client, createFailingService());
+        expandResourceHandler.handleRequest(request, output, CONTEXT);
+
+        var persistedRecoveryMessage = sqsClient.getDeliveredMessages().getFirst();
+        var messageAttributes = persistedRecoveryMessage.messageAttributes();
+        assertThat(messageAttributes.get("id").stringValue(), is(equalTo(newImage.getIdentifier().toString())));
+    }
+
+    @Test
     void shouldIgnoreAndNotCreateEnrichmentEventForDraftResources() throws IOException {
         var oldImage = createPublicationWithStatus(DRAFT);
         var newImage = createUpdatedVersionOfPublication(oldImage);

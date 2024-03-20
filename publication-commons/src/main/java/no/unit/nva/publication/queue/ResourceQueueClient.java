@@ -2,12 +2,14 @@ package no.unit.nva.publication.queue;
 
 import java.time.Duration;
 import nva.commons.core.Environment;
+import nva.commons.core.JacocoGenerated;
 import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
+@JacocoGenerated
 public class ResourceQueueClient implements QueueClient{
 
     public static final String AWS_REGION = "AWS_REGION";
