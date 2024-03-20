@@ -115,7 +115,6 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
 
     private EventReference persistRecoveryMessage(Failure<EventReference> failure, DataEntryUpdateEvent blobObject) {
         var identifier = getIdentifier(blobObject);
-        logger.info("sending entry to recovery queue: {}", identifier);
         RecoveryEntry.fromIdentifier(identifier)
             .resourceType(getType(blobObject))
             .withException(failure.getException())
