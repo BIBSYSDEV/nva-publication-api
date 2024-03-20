@@ -5,6 +5,7 @@ import static no.unit.nva.model.PublicationOperation.DELETE;
 import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublicationNonDegree;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.utils.RdfUtils.APPLICATION_JSON;
@@ -498,7 +499,7 @@ class PublicationPermissionStrategyTest {
         var institution = randomUri();
         var cristinId = randomUri();
         var requestInfo = createUserRequestInfo(username, institution, getCuratorAccessRights(), randomUri(), cristinId);
-        var publication = createPublication(username, institution, cristinId);
+        var publication = createNonDegreePublication(username, institution, cristinId);
         var permissionStrategy = PublicationPermissionStrategy.create(publication,
                                                                       RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient),
                                                                       uriRetriever);
@@ -557,6 +558,14 @@ class PublicationPermissionStrategyTest {
     }
 
     private Publication createPublication(String resourceOwner, URI customer, URI cristinId) {
+        return randomPublication().copy()
+                   .withResourceOwner(new ResourceOwner(new Username(resourceOwner), cristinId))
+                   .withPublisher(new Organization.Builder().withId(customer).build())
+                   .withStatus(PUBLISHED)
+                   .build();
+    }
+
+    private Publication createNonDegreePublication(String resourceOwner, URI customer, URI cristinId) {
         return randomPublicationNonDegree().copy()
                    .withResourceOwner(new ResourceOwner(new Username(resourceOwner), cristinId))
                    .withPublisher(new Organization.Builder().withId(customer).build())
