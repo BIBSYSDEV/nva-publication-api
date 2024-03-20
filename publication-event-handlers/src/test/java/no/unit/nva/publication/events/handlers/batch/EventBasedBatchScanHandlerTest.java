@@ -79,7 +79,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         this.context = mockContent();
         this.eventBridgeClient = new FakeEventBridgeClient();
         dynamoDbClient = super.client;
-        this.resourceService = spy(ResourceService.builder().withDynamoDbClient(dynamoDbClient).build());
+        this.resourceService = spy(getResourceServiceBuilder().build());
         this.ticketService = new TicketService(dynamoDbClient);
         this.httpClient = mock(HttpClient.class);
         this.handler = new EventBasedBatchScanHandler(resourceService, eventBridgeClient, httpClient);

@@ -108,10 +108,13 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     @BeforeEach
     public void init() {
         super.init();
-        resourceService = ResourceService.builder().withDynamoDbClient(super.client).build();
+        uriRetriever = mock(UriRetriever.class);
+        resourceService = ResourceService.builder()
+                              .withDynamoDbClient(super.client)
+                              .withUriRetriever(uriRetriever)
+                              .build();
         s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, "ignored");
-        uriRetriever = mock(UriRetriever.class);
         doiDuplicateChecker = new DoiDuplicateChecker(uriRetriever, "api.test.nva.aws.unit.no");
         handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker);
     }
@@ -753,8 +756,12 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     private ResourceService resourceServiceThrowingExceptionWhenSavingResource() {
-        var resourceService = spy(ResourceService.builder().withDynamoDbClient(client).build());
-        doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE)).when(resourceService).createPublicationFromImportedEntry(any());
+        var resourceService = spy(ResourceService.builder()
+                                      .withDynamoDbClient(client)
+                                      .withUriRetriever(mock(UriRetriever.class))
+                                      .build());
+        doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE)).when(resourceService)
+            .createPublicationFromImportedEntry(any());
         return resourceService;
     }
 }

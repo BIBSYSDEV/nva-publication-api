@@ -335,8 +335,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     void handlerCreatesPendingPublishingRequestTicketForPublishedPublicationWhenUpdatingFilesAndUserIsNotAllowedToAutoPublishFiles()
         throws ApiGatewayException, IOException {
         var publishedPublication = TicketTestUtils.createPersistedNonDegreePublication(customerId,
-                                                                              PUBLISHED,
-                                                                              publicationService);
+                                                                                       PUBLISHED,
+                                                                                       publicationService);
 
         var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
 
@@ -384,7 +384,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                                        publicationService);
 
         var existingTicket = TicketTestUtils.createCompletedTicket(publication, PublishingRequestCase.class,
-                                                                ticketService);
+                                                                   ticketService);
         var publicationUpdate = addAnotherUnpublishedFile(publication);
         var input = curatorPublicationOwnerUpdatesPublication(publicationUpdate);
         updatePublicationHandler.handleRequest(input, output, context);
@@ -392,10 +392,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
 
         var autoCompletedTicket = ticketService.fetchTicketsForUser(UserInstance.fromPublication(publicationUpdate))
-                          .filter(PublishingRequestCase.class::isInstance)
-                          .map(PublishingRequestCase.class::cast)
-                          .filter(ticket -> !ticket.equals(existingTicket))
-                          .toList().getFirst();
+                                      .filter(PublishingRequestCase.class::isInstance)
+                                      .map(PublishingRequestCase.class::cast)
+                                      .filter(ticket -> !ticket.equals(existingTicket))
+                                      .toList().getFirst();
         assertThat(autoCompletedTicket.getStatus(), is(equalTo(COMPLETED)));
     }
 
@@ -632,7 +632,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var problem = response.getBodyObject(Problem.class);
 
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
-        assertThat(problem.getDetail(), is(startsWith("Unauthorized: some@curator is not allowed to perform UPDATE on ")));
+        assertThat(problem.getDetail(),
+                   is(startsWith("Unauthorized: some@curator is not allowed to perform UPDATE on ")));
     }
 
     @Test
@@ -808,7 +809,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldUpdateNonDegreePublicationWhenUserHasAccessRightEditAllNonDegreePublications()
         throws ApiGatewayException, IOException {
-        var savedPublication =  persistPublication(createNonDegreePublication().copy()).build();
+        var savedPublication = persistPublication(createNonDegreePublication().copy()).build();
         var publicationUpdate = updateTitle(savedPublication);
         var event = userWithEditAllNonDegreePublicationsUpdatesPublication(customerId, publicationUpdate);
 
@@ -966,8 +967,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                    .withSize(10L)
                                    .withMimeType("application/pdf")
                                    .withPublisherVersion(PublisherVersion.ACCEPTED_VERSION)
-                                   .withLicense(UriWrapper.fromUri("https://creativecommons.org/licenses/by/4.0").getUri())
-                                   .withRightsRetentionStrategy(CustomerRightsRetentionStrategy.create(RightsRetentionStrategyConfiguration.RIGHTS_RETENTION_STRATEGY))
+                                   .withLicense(
+                                       UriWrapper.fromUri("https://creativecommons.org/licenses/by/4.0").getUri())
+                                   .withRightsRetentionStrategy(CustomerRightsRetentionStrategy.create(
+                                       RightsRetentionStrategyConfiguration.RIGHTS_RETENTION_STRATEGY))
                                    .buildPublishedFile();
         var publicationWithRrs = randomPublication(AcademicArticle.class)
                                      .copy()
@@ -979,9 +982,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                      .build();
         publicationWithRrs = publicationService.createPublicationFromImportedEntry(publicationWithRrs);
 
-
         publishedFileRrs.setRightsRetentionStrategy(OverriddenRightsRetentionStrategy.create(
-            OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, null) );
+            OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, null));
 
         var publicationUpdate = publicationWithRrs.copy().withAssociatedArtifacts(List.of(publishedFileRrs)).build();
         var request = curatorForPublicationUpdatesPublication(publicationUpdate);
@@ -994,8 +996,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(updatedPublication.getAssociatedArtifacts(), hasSize(1));
         var actualPublishedFile = (PublishedFile) updatedPublication.getAssociatedArtifacts().getFirst();
         assertThat(actualPublishedFile.getRightsRetentionStrategy(),
-                   allOf( instanceOf(OverriddenRightsRetentionStrategy.class),
-                          hasProperty("overriddenBy", is(notNullValue()))));
+                   allOf(instanceOf(OverriddenRightsRetentionStrategy.class),
+                         hasProperty("overriddenBy", is(notNullValue()))));
     }
 
     @Test
@@ -1189,7 +1191,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var userCristinId = RandomPersonServiceResponse.randomUri();
         var userName = randomString();
         var doi = RandomPersonServiceResponse.randomUri();
-        var duplicate = URI.create("https://badactor.org/publication/"+SortableIdentifier.next());
+        var duplicate = URI.create("https://badactor.org/publication/" + SortableIdentifier.next());
 
         var publication = createPublicationWithOwnerAndDoi(userCristinId, userName, doi);
 
@@ -1426,8 +1428,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         var inputStream = createUnpublishHandlerRequestForTopLevelCristinOrg(publication, curatorUsername,
-                                                        curatorInstitutionId, null, randomUri(),
-                                                        AccessRight.MANAGE_RESOURCES_STANDARD);
+                                                                             curatorInstitutionId, null, randomUri(),
+                                                                             AccessRight.MANAGE_RESOURCES_STANDARD);
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -1546,7 +1548,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private InputStream createUnpublishHandlerRequestForTopLevelCristinOrg(Publication publication, String username,
-                                                      URI institutionId, URI cristinId,
+                                                                           URI institutionId, URI cristinId,
                                                                            URI topLevelCristinOrg,
                                                                            AccessRight... accessRight)
         throws JsonProcessingException {
@@ -1967,7 +1969,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private ResourceService serviceFailsOnModifyRequestWithRuntimeError() {
-        var resourceService = spy(ResourceService.builder().withDynamoDbClient(client).build());
+        var resourceService = spy(ResourceService.builder()
+                    .withDynamoDbClient(client)
+                    .withUriRetriever(mock(UriRetriever.class))
+                    .build());
         doThrow(new RuntimeException(SOME_MESSAGE)).when(resourceService).updatePublication(any());
         return resourceService;
     }

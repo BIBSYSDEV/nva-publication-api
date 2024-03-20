@@ -96,13 +96,15 @@ public class ResourceService extends ServiceWithTransactions {
     private final ReadResourceService readResourceService;
     private final UpdateResourceService updateResourceService;
     private final DeleteResourceService deleteResourceService;
+    private final UriRetriever uriRetriever;
 
     protected ResourceService(AmazonDynamoDB dynamoDBClient, String tableName, Clock clock,
-                              Supplier<SortableIdentifier> identifierSupplier) {
+                              Supplier<SortableIdentifier> identifierSupplier, UriRetriever uriRetriever) {
         super(dynamoDBClient);
         this.tableName = tableName;
         this.clockForTimestamps = clock;
         this.identifierSupplier = identifierSupplier;
+        this.uriRetriever = uriRetriever;
         this.readResourceService = new ReadResourceService(client, this.tableName);
         this.updateResourceService =
             new UpdateResourceService(client, RESOURCES_TABLE_NAME, clockForTimestamps, readResourceService);
@@ -449,8 +451,8 @@ public class ResourceService extends ServiceWithTransactions {
                    .collect(Collectors.toList());
     }
 
-    private Publication insertResource(Resource newResource, UriRetriever uriRetriever) {
-        setCuratingInstitutions(newResource, uriRetriever);
+    private Publication insertResource(Resource newResource) {
+        setCuratingInstitutions(newResource);
         TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(newResource);
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(putRequest);
@@ -458,12 +460,12 @@ public class ResourceService extends ServiceWithTransactions {
         return fetchSavedPublication(newResource);
     }
 
-    private void setCuratingInstitutions(Resource newResource, UriRetriever uriRetriever) {
+    private void setCuratingInstitutions(Resource newResource) {
         newResource.setCuratingInstitutions(CuratingInstitutionsUtil.defaultCuratingInstitutionsUtil().getCuratingInstitutions(newResource.toPublication(), uriRetriever));
     }
 
-    private ImportCandidate insertResourceFromImportCandidate(Resource newResource, UriRetriever uriRetriever) {
-        setCuratingInstitutions(newResource, uriRetriever);
+    private ImportCandidate insertResourceFromImportCandidate(Resource newResource) {
+        setCuratingInstitutions(newResource);
         TransactWriteItem[] transactionItems = transactionItemsForNewImportCandidateInsertion(newResource);
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(putRequest);

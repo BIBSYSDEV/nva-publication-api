@@ -16,6 +16,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_BY_CRISTIN_ID_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_BY_CRISTIN_ID_INDEX_NAME;
+import static org.mockito.Mockito.mock;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.local.embedded.DynamoDBEmbedded;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
@@ -31,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import no.unit.nva.publication.TestDataSource;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.ResourceServiceBuilder;
 import nva.commons.core.JacocoGenerated;
@@ -156,7 +158,8 @@ public class ResourcesLocalTest extends TestDataSource {
     }
 
     public ResourceServiceBuilder getResourceServiceBuilder(AmazonDynamoDB dynamoDbClient) {
-        return ResourceService.builder().withDynamoDbClient(dynamoDbClient);
+        var uriRetriever = mock(UriRetriever.class);
+        return ResourceService.builder().withDynamoDbClient(dynamoDbClient).withUriRetriever(uriRetriever);
     }
 
     public ResourceServiceBuilder getResourceServiceBuilder() {
