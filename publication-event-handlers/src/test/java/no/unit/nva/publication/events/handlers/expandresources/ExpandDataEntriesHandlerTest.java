@@ -75,6 +75,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     private ExpandDataEntriesHandler expandResourceHandler;
     private S3Driver s3Driver;
     private FakeS3Client s3Client;
+    private FakeSqsClient sqsClient;
     private ResourceService resourceService;
 
     @BeforeEach
@@ -83,6 +84,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         this.output = new ByteArrayOutputStream();
         s3Client = new FakeS3Client();
         resourceService = getResourceServiceBuilder().build();
+        sqsClient = new FakeSqsClient();
         var ticketService = new TicketService(client);
 
         insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources();
@@ -93,7 +95,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         ResourceExpansionService resourceExpansionService =
             new ResourceExpansionServiceImpl(resourceService, ticketService, mockUriRetriever, mockUriRetriever);
 
-        this.expandResourceHandler = new ExpandDataEntriesHandler(new FakeSqsClient(), s3Client,
+        this.expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client,
                                                                   resourceExpansionService);
         this.s3Driver = new S3Driver(s3Client, "ignoredForFakeS3Client");
     }
@@ -145,7 +147,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
         var logger = LogUtils.getTestingAppenderForRootLogger();
 
-        expandResourceHandler = new ExpandDataEntriesHandler(new FakeSqsClient(), s3Client, createFailingService());
+        expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client, createFailingService());
         expandResourceHandler.handleRequest(request, output, CONTEXT);
 
         assertThat(logger.getMessages(), containsString(EXPECTED_ERROR_MESSAGE));
@@ -181,6 +183,29 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var persistedRecoveryMessage = sqsClient.getDeliveredMessages().getFirst();
         var messageAttributes = persistedRecoveryMessage.messageAttributes();
         assertThat(messageAttributes.get("id").stringValue(), is(equalTo(newImage.getIdentifier().toString())));
+    }
+
+    @Test
+    void shouldPersistRecoveryMessageWhenBadResponseFromExternalApi() throws IOException {
+        var newImage = createPublicationWithStatus(PUBLISHED);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(null, newImage);
+
+        var resourceExpansionService =
+            new ResourceExpansionServiceImpl(resourceService, new TicketService(client),
+                                             uriRetrieverThrowingException(), uriRetrieverThrowingException());
+        this.expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client,
+                                                                  resourceExpansionService);
+        expandResourceHandler.handleRequest(request, output, CONTEXT);
+
+        var persistedRecoveryMessage = sqsClient.getDeliveredMessages().getFirst();
+        var messageAttributes = persistedRecoveryMessage.messageAttributes();
+        assertThat(messageAttributes.get("id").stringValue(), is(equalTo(newImage.getIdentifier().toString())));
+    }
+
+    private static UriRetriever uriRetrieverThrowingException() {
+        var mockUriRetriever = mock(UriRetriever.class);
+        when(mockUriRetriever.getRawContent(any(), any())).thenThrow(new RuntimeException());
+        return mockUriRetriever;
     }
 
     @Test

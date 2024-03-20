@@ -53,6 +53,7 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
     public static final String BACKEND_CLIENT_AUTH_URL = "BACKEND_CLIENT_AUTH_URL";
     public static final String BACKEND_CLIENT_SECRET_NAME = "BACKEND_CLIENT_SECRET_NAME";
     private static final Logger logger = LoggerFactory.getLogger(ExpandDataEntriesHandler.class);
+    public static final String SENT_TO_RECOVERY_QUEUE_MESSAGE = "DateEntry has been sent to recovery queue: {}";
     private final QueueClient sqsClient;
     private final S3Driver s3Driver;
     private final ResourceExpansionService resourceExpansionService;
@@ -113,23 +114,27 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
     }
 
     private EventReference persistRecoveryMessage(Failure<EventReference> failure, DataEntryUpdateEvent blobObject) {
-        RecoveryEntry.fromIdentifier(getIdentifier(blobObject))
+        var identifier = getIdentifier(blobObject);
+        logger.info("sending entry to recovery queue: {}", identifier);
+        RecoveryEntry.fromIdentifier(identifier)
             .resourceType(getType(blobObject))
             .withException(failure.getException())
             .persist(sqsClient);
+        logger.error(SENT_TO_RECOVERY_QUEUE_MESSAGE, identifier);
         return null;
     }
 
     private EventReference processDataEntryUpdateEvent(DataEntryUpdateEvent blobObject) {
         return shouldBeEnriched(blobObject.getNewData())
-                   ? createEnrichedEventReference(blobObject.getNewData()).orElseThrow()
+                   ? createEnrichedEventReference(blobObject.getNewData())
                    : emptyEvent();
     }
 
-    private Optional<EventReference> createEnrichedEventReference(Entity newData) {
+    private EventReference createEnrichedEventReference(Entity newData) {
         return enrich(newData)
                    .map(this::insertEnrichEventBodyToS3)
-                   .map(uri -> new EventReference(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC, uri));
+                   .map(uri -> new EventReference(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC, uri))
+                   .orElseThrow();
     }
 
     private Optional<PublicationStatus> getPublicationStatus(Entity entity) {
