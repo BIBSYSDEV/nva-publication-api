@@ -9,7 +9,7 @@ import nva.commons.core.Environment;
 import software.amazon.awssdk.services.sqs.model.MessageAttributeValue;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
-public class RecoveryEntry {
+public final class RecoveryEntry {
 
     private static final String ID = "id";
     private static final String RECOVERY_QUEUE = "RECOVERY_QUEUE";

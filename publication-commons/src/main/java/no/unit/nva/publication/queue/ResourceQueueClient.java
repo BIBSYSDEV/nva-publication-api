@@ -10,10 +10,10 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 @JacocoGenerated
-public class ResourceQueueClient implements QueueClient{
+public final class ResourceQueueClient implements QueueClient{
 
     public static final String AWS_REGION = "AWS_REGION";
-    private static final int MAX_CONNECTIONS = 10000;
+    private static final int MAX_CONNECTIONS = 10_000;
     private static final long IDLE_TIME = 30;
     private static final long TIMEOUT_TIME = 30;
     private final SqsClient sqsClient;
