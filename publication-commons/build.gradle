@@ -17,7 +17,9 @@ dependencies {
     implementation libs.aws.sdk.dynamodb
     implementation libs.aws.sdk2.secrets
     implementation libs.aws.sdk2.urlconnectionclient
+    implementation libs.aws.apache.client
     implementation libs.aws.sdk2.s3
+    implementation libs.aws.sdk2.sqs
 
 
     implementation libs.guava
