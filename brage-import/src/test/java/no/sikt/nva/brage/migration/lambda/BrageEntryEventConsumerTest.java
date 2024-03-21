@@ -73,6 +73,7 @@ import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.mapper.InvalidIsmnRuntimeException;
 import no.sikt.nva.brage.migration.merger.AssociatedArtifactException;
 import no.sikt.nva.brage.migration.merger.BrageMergingReport;
+import no.sikt.nva.brage.migration.merger.DiscardedFilesReport;
 import no.sikt.nva.brage.migration.merger.DuplicatePublicationException;
 import no.sikt.nva.brage.migration.merger.UnmappableCristinRecordException;
 import no.sikt.nva.brage.migration.record.EntityDescription;
@@ -97,6 +98,9 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.UnconfirmedCourse;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
@@ -1276,6 +1280,62 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                            brageGenerator.getBrageRecord());
         var exception = actualReport.get("exception").asText();
         assertThat(exception, containsString(invalidIsmn));
+    }
+
+    @Test
+    void shouldPersistReportContainingInformationRegardingDiscardedFilesDuringMerging()
+        throws BadRequestException, IOException {
+        var cristinIdentifier = randomString();
+        var cristinPublication =
+            createCristinPublicationWithFilesAndRandomHandle(cristinIdentifier);
+        var brageMigrationDataGenerator = new NvaBrageMigrationDataGenerator
+                                                  .Builder()
+                                              .withType(TYPE_MUSIC)
+                                              .withResourceContent(new ResourceContent( List.of(createContentFile(),
+                                                                                                createContentFile())))
+                                              .withCristinIdentifier(cristinIdentifier)
+                                              .build();
+        var s3Event = createNewBrageRecordEvent(brageMigrationDataGenerator.getBrageRecord());
+        handler.handleRequest(s3Event, CONTEXT);
+
+        var discardedFilesReport = extractDiscardedFilesReportFromS3(brageMigrationDataGenerator.getBrageRecord(), s3Event, cristinPublication);
+        assertThat(discardedFilesReport.getDiscardedFromUpdatedRecord(), hasSize(0));
+        assertThat(discardedFilesReport.getDiscardedFromBrageRecord(),
+                   hasSize(brageMigrationDataGenerator.getBrageRecord().getContentBundle().getContentFiles().size()));
+    }
+
+    private DiscardedFilesReport extractDiscardedFilesReportFromS3(Record brageRecord, S3Event s3Event,
+                                                                   Publication cristinPublication)
+        throws JsonProcessingException {
+        var errorFileUri = constructDiscardedFileUri(s3Event, brageRecord, cristinPublication);
+        var s3Driver = new S3Driver(s3Client, new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
+        var content = s3Driver.getFile(errorFileUri.toS3bucketPath());
+        return JsonUtils.dtoObjectMapper.readValue(content, DiscardedFilesReport.class);
+    }
+
+    private UriWrapper constructDiscardedFileUri(S3Event s3Event, Record brageRecord, Publication cristinPublication) {
+
+        var timestamp = s3Event.getRecords().getFirst().getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
+        return UriWrapper.fromUri("DISCARDED_CONTENT_FILES")
+                   .addChild("institution")
+                   .addChild(timestamp)
+                   .addChild(brageRecord.getId().getPath())
+                   .addChild(String.valueOf(cristinPublication.getIdentifier()));
+    }
+
+    private Publication createCristinPublicationWithFilesAndRandomHandle(String cristinIdentifier)
+        throws BadRequestException {
+        var publication = createCristinPublication(cristinIdentifier);
+        publication.setHandle(randomUri());
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(randomPublishedFile())));
+        return resourceService.updatePublication(publication);
+    }
+
+    private AssociatedArtifact randomPublishedFile() {
+
+        return new PublishedFile(java.util.UUID.randomUUID(), randomString(), "application/pdf", 10L, null, false,
+                                 PublisherVersion.PUBLISHED_VERSION, null, NullRightsRetentionStrategy.create(
+            RightsRetentionStrategyConfiguration.UNKNOWN), null, Instant.now());
     }
 
     private static Publication copyPublication(NvaBrageMigrationDataGenerator brageGenerator)
