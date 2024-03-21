@@ -116,6 +116,9 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Description: SQS Queue Url for proceeding nvi data from cristin
     Default: /NVA/Queues/CristinImportNviQueueUrl
+  SlackSnsArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: '/NVA/Monitoring/SlackSnsArn'
 
 Conditions:
   WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ] ]
@@ -2204,3 +2207,23 @@ Resources:
     Properties:
       AccessControl: Private
       BucketName: !Sub "${ScopusImportReportBucketName}-${AWS::AccountId}"
+
+
+  #============================Alarms===============================================================
+
+  BatchScanDLQAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: AWS/SQS ApproximateNumberOfMessagesVisible QueueName=RecoveryQueue
+      MetricName: ApproximateNumberOfMessagesVisible
+      Namespace: AWS/SQS
+      Statistic: Sum
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt RecoveryQueue.QueueName
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Ref SlackSnsArn
