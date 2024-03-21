@@ -36,7 +36,7 @@ public class DataEntryUpdateHandler extends EventHandler<EventReference, EventRe
 
     public static final String SENT_TO_RECOVERY_QUEUE_MESSAGE = "DateEntry has been sent to recovery queue: {}";
     public static final Entity NO_VALUE = null;
-    public static final EventReference BLOB_IS_EMPTY = null;
+    public static final EventReference DO_NOT_EMIT_EVENT = null;
     private static final Logger logger = LoggerFactory.getLogger(DataEntryUpdateHandler.class);
     private final QueueClient sqsClient;
     private final S3Driver s3Driver;
@@ -61,7 +61,7 @@ public class DataEntryUpdateHandler extends EventHandler<EventReference, EventRe
         var s3Content = readBlobFromS3(input);
         var dynamoDbRecord = parseDynamoDbRecord(s3Content);
         var blob = convertToDataEntryUpdateEvent(dynamoDbRecord);
-        return blob.notEmpty() ? proceedBlob(blob) : BLOB_IS_EMPTY;
+        return blob.notEmpty() ? proceedBlob(blob) : DO_NOT_EMIT_EVENT;
     }
 
     private EventReference proceedBlob(DataEntryUpdateEvent blob) {
