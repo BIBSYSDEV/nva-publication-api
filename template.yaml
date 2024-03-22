@@ -331,6 +331,8 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       MessageRetentionPeriod: 1209600 #14 days
+  RecoveryBatchScanHandlerDLQ:
+    Type: "AWS::SQS::Queue"
 
 
 
@@ -1399,6 +1401,38 @@ Resources:
           OnFailure:
             Type: SQS
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
+
+  RecoveryBatchScanHandler:
+    DependsOn: EventsLambdaManagedPolicy
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.recovery.RecoveryBatchScanHandler::handleRequest
+      Role: !GetAtt LambdaRole.Arn
+      Timeout: 900
+      ReservedConcurrentExecutions: 1
+      Environment:
+        Variables:
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          TABLE_NAME: !Ref NvaResourcesTable
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                topic: [ "PublicationService.Recovery.Refresh" ]
+
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !GetAtt InternalBus.Arn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt RecoveryBatchScanHandlerDLQ.Arn
 
   EventBasedImportCandidateBatchScanHandlerTest:
     DependsOn: EventsLambdaManagedPolicy
