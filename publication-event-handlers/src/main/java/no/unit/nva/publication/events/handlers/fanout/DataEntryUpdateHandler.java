@@ -16,8 +16,12 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
+import no.unit.nva.publication.events.handlers.expandresources.RecoveryEntry;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.queue.QueueClient;
+import no.unit.nva.publication.queue.ResourceQueueClient;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
@@ -29,21 +33,23 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public class DataEntryUpdateHandler extends EventHandler<EventReference, EventReference> {
-    
+
+    public static final String SENT_TO_RECOVERY_QUEUE_MESSAGE = "DateEntry has been sent to recovery queue: {}";
     public static final Entity NO_VALUE = null;
-    public static final URI BLOB_IS_EMPTY = null;
     public static final EventReference DO_NOT_EMIT_EVENT = null;
     private static final Logger logger = LoggerFactory.getLogger(DataEntryUpdateHandler.class);
+    private final QueueClient sqsClient;
     private final S3Driver s3Driver;
     
     @JacocoGenerated
     public DataEntryUpdateHandler() {
-        this(S3Driver.defaultS3Client().build());
+        this(S3Driver.defaultS3Client().build(), ResourceQueueClient.defaultResourceQueueClient());
     }
     
-    public DataEntryUpdateHandler(S3Client s3Client) {
+    public DataEntryUpdateHandler(S3Client s3Client, QueueClient sqsClient) {
         super(EventReference.class);
         this.s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
+        this.sqsClient = sqsClient;
     }
     
     @Override
@@ -55,23 +61,45 @@ public class DataEntryUpdateHandler extends EventHandler<EventReference, EventRe
         var s3Content = readBlobFromS3(input);
         var dynamoDbRecord = parseDynamoDbRecord(s3Content);
         var blob = convertToDataEntryUpdateEvent(dynamoDbRecord);
+        return blob.notEmpty() ? proceedBlob(blob) : DO_NOT_EMIT_EVENT;
+    }
+
+    private EventReference proceedBlob(DataEntryUpdateEvent blob) {
         return attempt(() -> saveBlobToS3(blob))
-                   .toOptional()
                    .map(blobUri -> new EventReference(blob.getTopic(), blobUri))
                    .map(this::logEvent)
-                   .orElse(DO_NOT_EMIT_EVENT);
+                   .orElse(failure -> processRecoveryMessage(failure, blob));
     }
-    
+
+    private URI saveBlobToS3(DataEntryUpdateEvent blob) throws IOException {
+        return s3Driver.insertFile(UnixPath.of(UUID.randomUUID().toString()), blob.toJsonString());
+    }
+
+    private EventReference processRecoveryMessage(Failure<EventReference> failure, DataEntryUpdateEvent event) {
+        var identifier = getIdentifier(event);
+        RecoveryEntry.fromIdentifier(identifier)
+            .resourceType(getType(event))
+            .withException(failure.getException())
+            .persist(sqsClient);
+        logger.error(SENT_TO_RECOVERY_QUEUE_MESSAGE, identifier);
+        return null;
+    }
+
+    private static String getType(DataEntryUpdateEvent blobObject) {
+        return Optional.ofNullable(blobObject.getOldData())
+                   .map(Entity::getType)
+                   .orElseGet(() -> blobObject.getNewData().getType());
+    }
+
+    private static SortableIdentifier getIdentifier(DataEntryUpdateEvent blobObject) {
+        return Optional.ofNullable(blobObject.getOldData())
+                   .map(Entity::getIdentifier)
+                   .orElseGet(() -> blobObject.getNewData().getIdentifier());
+    }
+
     private EventReference logEvent(EventReference event) {
         logger.debug("Emitted Event:{}", event.toJsonString());
         return event;
-    }
-    
-    private URI saveBlobToS3(DataEntryUpdateEvent blob) throws IOException {
-        var filePath = UnixPath.of(UUID.randomUUID().toString());
-        return blob.notEmpty()
-                   ? s3Driver.insertFile(filePath, blob.toJsonString())
-                   : BLOB_IS_EMPTY;
     }
     
     private DataEntryUpdateEvent convertToDataEntryUpdateEvent(DynamodbStreamRecord dynamoDbRecord) {

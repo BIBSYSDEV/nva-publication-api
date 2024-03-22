@@ -14,7 +14,7 @@ public final class RecoveryEntry {
     private static final String ID = "id";
     private static final String RECOVERY_QUEUE = "RECOVERY_QUEUE";
     private static final String TYPE = "type";
-    public static final String DATA_TYPE_STRING = "String";
+    private static final String DATA_TYPE_STRING = "String";
     private final SortableIdentifier identifier;
     private final String type;
     private final String exception;
