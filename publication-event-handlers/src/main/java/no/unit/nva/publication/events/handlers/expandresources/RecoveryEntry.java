@@ -14,6 +14,7 @@ public final class RecoveryEntry {
     private static final String ID = "id";
     private static final String RECOVERY_QUEUE = "RECOVERY_QUEUE";
     private static final String TYPE = "type";
+    private static final String DATA_TYPE_STRING = "String";
     private final SortableIdentifier identifier;
     private final String type;
     private final String exception;
@@ -43,7 +44,7 @@ public final class RecoveryEntry {
     private MessageAttributeValue convertToMessageAttribute(String value) {
         return MessageAttributeValue.builder()
                    .stringValue(value)
-                   .dataType(String.class.getCanonicalName())
+                   .dataType(DATA_TYPE_STRING)
                    .build();
     }
 
