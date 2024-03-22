@@ -130,11 +130,10 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
     }
 
     private EventReference createEnrichedEventReference(Entity newData) {
-        throw new RuntimeException();
-//        return enrich(newData)
-//                   .map(this::insertEnrichEventBodyToS3)
-//                   .map(uri -> new EventReference(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC, uri))
-//                   .orElseThrow();
+        return enrich(newData)
+                   .map(this::insertEnrichEventBodyToS3)
+                   .map(uri -> new EventReference(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC, uri))
+                   .orElseThrow();
     }
 
     private Optional<PublicationStatus> getPublicationStatus(Entity entity) {
