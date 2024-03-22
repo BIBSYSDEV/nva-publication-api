@@ -1301,6 +1301,7 @@ Resources:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
           PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
+          RECOVERY_QUEUE: !Ref RecoveryQueue
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule

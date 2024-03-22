@@ -5,6 +5,7 @@ import static no.unit.nva.publication.events.handlers.persistence.PersistenceCon
 import static no.unit.nva.s3.S3Driver.GZIP_ENDING;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.io.IOException;
 import java.net.URI;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
@@ -12,8 +13,12 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
+import no.unit.nva.publication.events.handlers.expandresources.RecoveryEntry;
+import no.unit.nva.publication.queue.QueueClient;
+import no.unit.nva.publication.queue.ResourceQueueClient;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.attempt.Failure;
 import nva.commons.core.paths.UnixPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,20 +27,23 @@ public class ExpandedDataEntriesPersistenceHandler
     extends DestinationsEventBridgeEventHandler<EventReference, EventReference> {
 
     public static final String EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC = "PublicationService.ExpandedEntry.Persisted";
-    public static final EventReference EMPTY_EVENT = new EventReference("Empty event", null);
+    public static final String SENT_TO_RECOVERY_QUEUE_MESSAGE = "DateEntry has been sent to recovery queue: {}";
     private static final Logger logger = LoggerFactory.getLogger(ExpandedDataEntriesPersistenceHandler.class);
+    private final QueueClient queueClient;
     private final S3Driver s3Reader;
     private final S3Driver s3Writer;
 
     @JacocoGenerated
     public ExpandedDataEntriesPersistenceHandler() {
-        this(new S3Driver(PublicationEventsConfig.EVENTS_BUCKET), new S3Driver(PERSISTED_ENTRIES_BUCKET));
+        this(new S3Driver(PublicationEventsConfig.EVENTS_BUCKET), new S3Driver(PERSISTED_ENTRIES_BUCKET),
+             ResourceQueueClient.defaultResourceQueueClient());
     }
 
-    public ExpandedDataEntriesPersistenceHandler(S3Driver s3Reader, S3Driver s3Writer) {
+    public ExpandedDataEntriesPersistenceHandler(S3Driver s3Reader, S3Driver s3Writer, QueueClient queueClient) {
         super(EventReference.class);
         this.s3Reader = s3Reader;
         this.s3Writer = s3Writer;
+        this.queueClient = queueClient;
     }
 
     @Override
@@ -43,21 +51,25 @@ public class ExpandedDataEntriesPersistenceHandler
         EventReference input,
         AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
         Context context) {
-        ExpandedDataEntry expandedResourceUpdate = readEvent(input);
-        return createOutPutEventAndPersistDocument(expandedResourceUpdate);
-    }
-
-    private EventReference createOutPutEventAndPersistDocument(ExpandedDataEntry expandedResourceUpdate) {
+        var expandedResourceUpdate = readEvent(input);
         var indexDocument = createIndexDocument(expandedResourceUpdate);
-        var uri = writeEntryToS3(indexDocument);
-        var outputEvent = new EventReference(EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC, uri);
-        logger.info(outputEvent.toJsonString());
-        return outputEvent;
+        return attempt(() -> writeEntryToS3(indexDocument))
+                   .map(item -> new EventReference(EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC, item))
+                   .orElse(failure -> persistRecoveryMessage(failure, indexDocument));
     }
 
-    private URI writeEntryToS3(PersistedDocument indexDocument) {
+    private EventReference persistRecoveryMessage(Failure<EventReference> failure, PersistedDocument indexDocument) {
+        RecoveryEntry.fromIdentifier(indexDocument.getBody().identifyExpandedEntry())
+            .resourceType(indexDocument.getConsumptionAttributes().getIndex())
+            .withException(failure.getException())
+            .persist(queueClient);
+        logger.error(SENT_TO_RECOVERY_QUEUE_MESSAGE, indexDocument.getConsumptionAttributes().getIndex());
+        return null;
+    }
+
+    private URI writeEntryToS3(PersistedDocument indexDocument) throws IOException {
         var filePath = createFilePath(indexDocument);
-        return attempt(() -> s3Writer.insertFile(filePath, indexDocument.toJsonString())).orElseThrow();
+        return s3Writer.insertFile(filePath, indexDocument.toJsonString());
     }
 
     private ExpandedDataEntry readEvent(EventReference input) {
