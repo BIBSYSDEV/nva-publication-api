@@ -11,6 +11,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -38,15 +39,20 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.IdentifierEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
+import no.unit.nva.publication.service.FakeSqsClient;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
 public class DataEntryUpdateHandlerTest {
 
@@ -55,6 +61,8 @@ public class DataEntryUpdateHandlerTest {
     private Context context;
     private DataEntryUpdateHandler handler;
     private S3Driver s3Driver;
+    private FakeS3Client s3Client;
+    private FakeSqsClient fakeSqsClient;
     
     public static Stream<Arguments> dynamoDbEventProvider() throws JsonProcessingException {
         var samplePublication = PublicationGenerator.randomPublication();
@@ -72,8 +80,9 @@ public class DataEntryUpdateHandlerTest {
     public void setUp() {
         outputStream = new ByteArrayOutputStream();
         context = null;
-        var s3Client = new FakeS3Client();
-        handler = new DataEntryUpdateHandler(s3Client);
+        s3Client = new FakeS3Client();
+        fakeSqsClient = new FakeSqsClient();
+        handler = new DataEntryUpdateHandler(s3Client, fakeSqsClient);
         s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
     }
     
@@ -102,6 +111,34 @@ public class DataEntryUpdateHandlerTest {
         assertDoesNotThrow(() -> handler.handleRequest(event, outputStream, context));
         var response = parseResponse();
         assertThat(response, is(nullValue()));
+    }
+
+    @Test
+    void shouldDeliverMessageToRecoveryQueueWhenErrorOccursAndEntryIsDao() throws IOException {
+        var blob = sampleDynamoRecord(PublicationGenerator.randomPublication(),
+                                      PublicationGenerator.randomPublication());
+        s3Client = new FakeS3ClientThrowingExceptionOnPutObjectOnProvidedInvocation(2);
+        s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
+        var event = emulateEventSentByDynamoDbStreamToEventBridgeHandler(blob);
+        handler = new DataEntryUpdateHandler(s3Client, fakeSqsClient);
+        handler.handleRequest(event, outputStream, context);
+
+        var deliveredMessage = fakeSqsClient.getDeliveredMessages().getFirst();
+        assertThat(deliveredMessage.messageAttributes().get("id"), is(notNullValue()));
+    }
+
+    @Test
+    void shouldDeliverMessageToRecoveryQueueWhenErrorOccursAndEntryIsDaoAndOldDateIsNull() throws IOException {
+        var blob = sampleDynamoRecord(null,
+                                      PublicationGenerator.randomPublication());
+        s3Client = new FakeS3ClientThrowingExceptionOnPutObjectOnProvidedInvocation(2);
+        s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
+        var event = emulateEventSentByDynamoDbStreamToEventBridgeHandler(blob);
+        handler = new DataEntryUpdateHandler(s3Client, fakeSqsClient);
+        handler.handleRequest(event, outputStream, context);
+
+        var deliveredMessage = fakeSqsClient.getDeliveredMessages().getFirst();
+        assertThat(deliveredMessage.messageAttributes().get("id"), is(notNullValue()));
     }
     
     private static Map<String, AttributeValue> randomDynamoEntry() {
@@ -193,5 +230,26 @@ public class DataEntryUpdateHandlerTest {
     private EventReference parseResponse() {
         return attempt(() -> objectMapper.readValue(outputStream.toString(), EventReference.class))
                    .orElseThrow();
+    }
+
+    private static final class FakeS3ClientThrowingExceptionOnPutObjectOnProvidedInvocation extends FakeS3Client {
+
+        private int currentInvocation;
+        private int invocation;
+
+        public FakeS3ClientThrowingExceptionOnPutObjectOnProvidedInvocation(int invocation) {
+            this.invocation = invocation;
+            this.currentInvocation = 1;
+        }
+
+        @Override
+        public PutObjectResponse putObject(PutObjectRequest putObjectRequest, RequestBody requestBody) {
+            if (invocation != currentInvocation) {
+                currentInvocation++;
+             return super.putObject(putObjectRequest, requestBody);
+            } else {
+                throw new RuntimeException();
+            }
+        }
     }
 }
