@@ -2211,7 +2211,7 @@ Resources:
 
   #============================Alarms===============================================================
 
-  BatchScanDLQAlarm:
+  RecoveryQueueAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmName: AWS/SQS ApproximateNumberOfMessagesVisible QueueName=RecoveryQueue
