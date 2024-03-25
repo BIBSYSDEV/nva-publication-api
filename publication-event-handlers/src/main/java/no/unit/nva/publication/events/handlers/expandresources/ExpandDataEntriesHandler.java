@@ -48,7 +48,6 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
     public static final String EMPTY_EVENT_TOPIC = "Event.Empty";
     public static final Environment ENVIRONMENT = new Environment();
     public static final String RECOVERY_QUEUE = new Environment().readEnv("RECOVERY_QUEUE");
-
     public static final List<PublicationStatus> PUBLICATION_STATUS_TO_BE_ENRICHED = List.of(PUBLISHED,
                                                                                             PUBLISHED_METADATA,
                                                                                             UNPUBLISHED, DELETED);
