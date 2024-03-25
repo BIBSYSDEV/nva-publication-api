@@ -47,6 +47,7 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
     public static final String EXPANDED_ENTRY_UPDATED_EVENT_TOPIC = "PublicationService.ExpandedDataEntry.Update";
     public static final String EMPTY_EVENT_TOPIC = "Event.Empty";
     public static final Environment ENVIRONMENT = new Environment();
+    public static final String RECOVERY_QUEUE = new Environment().readEnv("RECOVERY_QUEUE");
     public static final List<PublicationStatus> PUBLICATION_STATUS_TO_BE_ENRICHED = List.of(PUBLISHED,
                                                                                             PUBLISHED_METADATA,
                                                                                             UNPUBLISHED, DELETED);
@@ -60,7 +61,7 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
 
     @JacocoGenerated
     public ExpandDataEntriesHandler() {
-        this(ResourceQueueClient.defaultResourceQueueClient(),
+        this(ResourceQueueClient.defaultResourceQueueClient(RECOVERY_QUEUE),
              new S3Driver(EVENTS_BUCKET),
              defaultResourceExpansionService());
     }

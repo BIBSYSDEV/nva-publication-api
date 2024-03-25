@@ -42,9 +42,6 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
-import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
-import com.amazonaws.services.dynamodbv2.model.BatchGetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.BatchWriteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
@@ -1055,6 +1052,25 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var deletedPublication = resourceService.getPublication(publication);
         assertThat(deletedPublication.getStatus(), is(equalTo(PublicationStatus.DELETED)));
+    }
+
+    @Test
+    void shouldUpdatePublicationVersionWhenRefreshingResource() throws ApiGatewayException {
+        var publication = createPublishedResource();
+        var version = Resource.fromPublication(publication).toDao().getVersion();
+        resourceService.refresh(publication.getIdentifier());
+        var updatedPublication = resourceService.getPublication(publication);
+        var updatesVersion = Resource.fromPublication(updatedPublication).toDao().getVersion();
+
+        assertThat(updatesVersion, is(not(equalTo(version))));
+    }
+
+    @Test
+    void shouldLogWhenPublicationToRefreshDoesNotExist() {
+        var publication = randomPublication();
+        var appender = LogUtils.getTestingAppender(ResourceService.class);
+        resourceService.refresh(publication.getIdentifier());
+        assertThat(appender.getMessages(), Matchers.containsString("Resource to refresh is not found"));
     }
 
     @Test

@@ -23,6 +23,7 @@ import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.queue.QueueClient;
 import no.unit.nva.publication.queue.ResourceQueueClient;
 import no.unit.nva.s3.S3Driver;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.exceptions.ExceptionUtils;
@@ -35,6 +36,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 public class DataEntryUpdateHandler extends EventHandler<EventReference, EventReference> {
 
     public static final String SENT_TO_RECOVERY_QUEUE_MESSAGE = "DateEntry has been sent to recovery queue: {}";
+    public static final String RECOVERY_QUEUE = new Environment().readEnv("RECOVERY_QUEUE");
     public static final Entity NO_VALUE = null;
     public static final EventReference DO_NOT_EMIT_EVENT = null;
     private static final Logger logger = LoggerFactory.getLogger(DataEntryUpdateHandler.class);
@@ -43,7 +45,7 @@ public class DataEntryUpdateHandler extends EventHandler<EventReference, EventRe
     
     @JacocoGenerated
     public DataEntryUpdateHandler() {
-        this(S3Driver.defaultS3Client().build(), ResourceQueueClient.defaultResourceQueueClient());
+        this(S3Driver.defaultS3Client().build(), ResourceQueueClient.defaultResourceQueueClient(RECOVERY_QUEUE));
     }
     
     public DataEntryUpdateHandler(S3Client s3Client, QueueClient sqsClient) {
