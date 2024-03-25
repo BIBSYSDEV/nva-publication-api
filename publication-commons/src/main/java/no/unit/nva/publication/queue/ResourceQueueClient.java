@@ -22,6 +22,7 @@ public final class ResourceQueueClient implements QueueClient {
     private static final int MAX_CONNECTIONS = 10_000;
     private static final long IDLE_TIME = 30;
     private static final long TIMEOUT_TIME = 30;
+    public static final String ALL_MESSAGE_ATTRIBUTES = "All";
     private final SqsClient sqsClient;
     private final String queueUrl;
 
@@ -44,6 +45,7 @@ public final class ResourceQueueClient implements QueueClient {
         var receiveMessageRequest = ReceiveMessageRequest.builder()
                                         .queueUrl(queueUrl)
                                         .maxNumberOfMessages(MAXIMUM_NUMBER_OF_MESSAGES)
+                                        .messageAttributeNames(ALL_MESSAGE_ATTRIBUTES)
                                         .build();
         return sqsClient.receiveMessage(receiveMessageRequest).messages();
     }
