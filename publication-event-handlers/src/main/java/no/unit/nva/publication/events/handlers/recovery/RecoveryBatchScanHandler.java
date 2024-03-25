@@ -22,6 +22,8 @@ public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest,
     public static final String RECOVERY_QUEUE = new Environment().readEnv("RECOVERY_QUEUE");
     public static final String ID = "id";
     public static final int MAX_NUMBER_OF_MESSAGES_PER_RECOVERY_REQUEST = 10;
+    public static final String ENTRIES_PROCEEDED_MESSAGE = "{} entries have been successfully proceeded";
+    public static final String EMITTING_NEW_EVENT = "Emitting new event";
     private final EventBridgeClient eventBridgeClient;
     private final QueueClient queueClient;
     private final ResourceService resourceService;
@@ -45,18 +47,16 @@ public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest,
                                 AwsEventBridgeEvent<RecoveryEventRequest> awsEventBridgeEvent, Context context) {
 
         var messages = queueClient.readMessages();
-        logger.info("Number of extracted messages: {}", messages.size());
-        logger.info("Number of extracted messages: {}", messages.getFirst().toString());
-        logger.info("Number of extracted messages: {}", messages.getFirst().messageAttributes().toString());
-        logger.info("Number of extracted messages: {}", messages.getFirst().messageAttributes());
+
         messages.stream()
             .map(RecoveryBatchScanHandler::extractResourceIdentifier)
             .forEach(resourceService::refresh);
 
         queueClient.deleteMessages(messages);
+        logger.info(ENTRIES_PROCEEDED_MESSAGE, messages.size());
 
         if (moreMessagesOnQueue(messages)) {
-            emitNewRecoveryEvent();
+            emitNewRecoveryEvent(context);
         }
 
         return null;
@@ -70,8 +70,10 @@ public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest,
         return new SortableIdentifier(message.messageAttributes().get(ID).stringValue());
     }
 
-    private void emitNewRecoveryEvent() {
-        var eventEntry = RecoveryEventRequest.createNewEntry();
+    private void emitNewRecoveryEvent(Context context) {
+        var eventEntry = RecoveryEventRequest.createNewEntry(context);
         eventBridgeClient.putEvents(PutEventsRequest.builder().entries(eventEntry).build());
+        logger.info(EMITTING_NEW_EVENT);
+
     }
 }
