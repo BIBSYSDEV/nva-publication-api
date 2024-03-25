@@ -21,8 +21,7 @@ public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest,
     private static final Logger logger = LoggerFactory.getLogger(RecoveryBatchScanHandler.class);
     public static final String RECOVERY_QUEUE = new Environment().readEnv("RECOVERY_QUEUE");
     public static final String ID = "id";
-    public static final int MAX_NUMBER_OF_MESSAGES_PER_RECOVERY_REQUEST = 10;
-    public static final String ENTRIES_PROCEEDED_MESSAGE = "{} entries have been successfully proceeded";
+    public static final String ENTRIES_PROCEEDED_MESSAGE = "{} entries have been successfully processed";
     public static final String EMITTING_NEW_EVENT = "Emitting new event";
     private final EventBridgeClient eventBridgeClient;
     private final QueueClient queueClient;
@@ -48,12 +47,7 @@ public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest,
 
         var messages = queueClient.readMessages();
 
-        messages.stream()
-            .map(RecoveryBatchScanHandler::extractResourceIdentifier)
-            .forEach(resourceService::refresh);
-
-        queueClient.deleteMessages(messages);
-        logger.info(ENTRIES_PROCEEDED_MESSAGE, messages.size());
+        processMessages(messages);
 
         if (moreMessagesOnQueue(messages)) {
             emitNewRecoveryEvent(context);
@@ -62,8 +56,14 @@ public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest,
         return null;
     }
 
+    private void processMessages(List<Message> messages) {
+        messages.stream().map(RecoveryBatchScanHandler::extractResourceIdentifier).forEach(resourceService::refresh);
+        queueClient.deleteMessages(messages);
+        logger.info(ENTRIES_PROCEEDED_MESSAGE, messages.size());
+    }
+
     private static boolean moreMessagesOnQueue(List<Message> messages) {
-        return messages.size() == MAX_NUMBER_OF_MESSAGES_PER_RECOVERY_REQUEST;
+        return !messages.isEmpty();
     }
 
     private static SortableIdentifier extractResourceIdentifier(Message message) {

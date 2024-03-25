@@ -79,7 +79,7 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldEmitNewEventWhenThereAreMoreEntriesOnRecoverQueue() throws JsonProcessingException {
-        persistPublicationsAndPutMessagesOnQueue(20);
+        persistPublicationsAndPutMessagesOnQueue(1);
 
         recoveryBatchScanHandler.handleRequest(createEvent(), outputStream, CONTEXT);
         var emittedEvents = eventBridgeClient.getRequestEntries();
@@ -88,9 +88,7 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldNotEmitNewEventWhenThereAreNoMoreEntriesOnRecoverQueue() throws JsonProcessingException {
-        persistPublicationsAndPutMessagesOnQueue(9);
-
+    void shouldNotEmitNewEventWhenNoMessagesOnQueue() throws JsonProcessingException {
         recoveryBatchScanHandler.handleRequest(createEvent(), outputStream, CONTEXT);
         var emittedEvents = eventBridgeClient.getRequestEntries();
 
