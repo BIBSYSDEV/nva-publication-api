@@ -48,6 +48,8 @@ public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest,
         var messages = queueClient.readMessages();
         logger.info("Number of extracted messages: {}", messages.size());
         logger.info("Number of extracted messages: {}", messages.getFirst().toString());
+        logger.info("Number of extracted messages: {}", messages.getFirst().messageAttributes().toString());
+
         messages.stream()
             .map(RecoveryBatchScanHandler::extractResourceIdentifier)
             .forEach(resourceService::refresh);
@@ -66,7 +68,7 @@ public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest,
     }
 
     private static SortableIdentifier extractResourceIdentifier(Message message) {
-        return new SortableIdentifier(message.messageAttributes().get(ID).stringValue());
+        return new SortableIdentifier(message.attributes().get(ID).stringValue());
     }
 
     private void emitNewRecoveryEvent() {
