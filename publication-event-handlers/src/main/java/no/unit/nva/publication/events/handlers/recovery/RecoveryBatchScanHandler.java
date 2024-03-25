@@ -25,7 +25,7 @@ public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest,
 
     @JacocoGenerated
     public RecoveryBatchScanHandler() {
-        this(ResourceService.defaultService(), ResourceQueueClient.defaultResourceQueueClient(),
+        this(ResourceService.defaultService(), ResourceQueueClient.defaultResourceQueueClient(RECOVERY_QUEUE),
              EventBridgeClient.create());
     }
 
@@ -41,13 +41,13 @@ public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest,
     protected Void processInput(RecoveryEventRequest recoveryRequest,
                                 AwsEventBridgeEvent<RecoveryEventRequest> awsEventBridgeEvent, Context context) {
 
-        var messages = queueClient.readMessages(RECOVERY_QUEUE);
+        var messages = queueClient.readMessages();
 
         messages.stream()
             .map(RecoveryBatchScanHandler::extractResourceIdentifier)
             .forEach(resourceService::refresh);
 
-        queueClient.deleteMessages(RECOVERY_QUEUE, messages);
+        queueClient.deleteMessages(messages);
 
         if (moreMessagesOnQueue(messages)) {
             emitNewRecoveryEvent();

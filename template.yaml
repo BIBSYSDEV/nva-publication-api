@@ -1416,6 +1416,7 @@ Resources:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
           TABLE_NAME: !Ref NvaResourcesTable
+          RECOVERY_QUEUE: !Ref RecoveryQueue
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -1427,9 +1428,6 @@ Resources:
 
       EventInvokeConfig:
         DestinationConfig:
-          OnSuccess:
-            Type: EventBridge
-            Destination: !GetAtt InternalBus.Arn
           OnFailure:
             Type: SQS
             Destination: !GetAtt RecoveryBatchScanHandlerDLQ.Arn

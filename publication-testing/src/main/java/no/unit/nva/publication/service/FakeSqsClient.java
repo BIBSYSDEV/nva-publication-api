@@ -27,13 +27,13 @@ public class FakeSqsClient implements QueueClient {
     }
 
     @Override
-    public List<Message> readMessages(String queue) {
+    public List<Message> readMessages() {
         int toIndex = Math.min(deliveredMessages.size(), 10);
         return new ArrayList<>(deliveredMessages.subList(0, toIndex));
     }
 
     @Override
-    public void deleteMessages(String queue, List<Message> messages) {
+    public void deleteMessages(List<Message> messages) {
         var messagesToRemove = messages.stream()
                                              .map(this::findMatchingMessageInDeliveredMessages)
                                              .filter(Optional::isPresent)

@@ -17,6 +17,7 @@ import no.unit.nva.publication.events.handlers.expandresources.RecoveryEntry;
 import no.unit.nva.publication.queue.QueueClient;
 import no.unit.nva.publication.queue.ResourceQueueClient;
 import no.unit.nva.s3.S3Driver;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.paths.UnixPath;
@@ -28,6 +29,7 @@ public class ExpandedDataEntriesPersistenceHandler
 
     public static final String EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC = "PublicationService.ExpandedEntry.Persisted";
     public static final String SENT_TO_RECOVERY_QUEUE_MESSAGE = "DateEntry has been sent to recovery queue: {}";
+    public static final String RECOVERY_QUEUE = new Environment().readEnv("RECOVERY_QUEUE");
     private static final Logger logger = LoggerFactory.getLogger(ExpandedDataEntriesPersistenceHandler.class);
     private final QueueClient queueClient;
     private final S3Driver s3Reader;
@@ -36,7 +38,7 @@ public class ExpandedDataEntriesPersistenceHandler
     @JacocoGenerated
     public ExpandedDataEntriesPersistenceHandler() {
         this(new S3Driver(PublicationEventsConfig.EVENTS_BUCKET), new S3Driver(PERSISTED_ENTRIES_BUCKET),
-             ResourceQueueClient.defaultResourceQueueClient());
+             ResourceQueueClient.defaultResourceQueueClient(RECOVERY_QUEUE));
     }
 
     public ExpandedDataEntriesPersistenceHandler(S3Driver s3Reader, S3Driver s3Writer, QueueClient queueClient) {

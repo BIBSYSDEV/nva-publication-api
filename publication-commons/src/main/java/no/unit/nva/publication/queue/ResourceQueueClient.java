@@ -23,13 +23,15 @@ public final class ResourceQueueClient implements QueueClient {
     private static final long IDLE_TIME = 30;
     private static final long TIMEOUT_TIME = 30;
     private final SqsClient sqsClient;
+    private final String queueUrl;
 
-    private ResourceQueueClient(SqsClient sqsClient) {
+    private ResourceQueueClient(SqsClient sqsClient, String queueUrl) {
+        this.queueUrl = queueUrl;
         this.sqsClient = sqsClient;
     }
 
-    public static ResourceQueueClient defaultResourceQueueClient() {
-        return new ResourceQueueClient(defaultClient());
+    public static ResourceQueueClient defaultResourceQueueClient(String queueUrl) {
+        return new ResourceQueueClient(defaultClient(), queueUrl);
     }
 
     @Override
@@ -38,22 +40,24 @@ public final class ResourceQueueClient implements QueueClient {
     }
 
     @Override
-    public List<Message> readMessages(String queue) {
+    public List<Message> readMessages() {
         var receiveMessageRequest = ReceiveMessageRequest.builder()
-                                        .queueUrl(queue)
+                                        .queueUrl(queueUrl)
                                         .maxNumberOfMessages(MAXIMUM_NUMBER_OF_MESSAGES)
                                         .build();
         return sqsClient.receiveMessage(receiveMessageRequest).messages();
     }
 
     @Override
-    public void deleteMessages(String queue, List<Message> messages) {
-        var entriesToDelete = messages.stream().map(ResourceQueueClient::toDeleteMessageRequest).toList();
-        var deleteMessagesBatchRequest = DeleteMessageBatchRequest.builder()
-                                             .queueUrl(queue)
-                                             .entries(entriesToDelete)
-                                             .build();
-        sqsClient.deleteMessageBatch(deleteMessagesBatchRequest);
+    public void deleteMessages(List<Message> messages) {
+        if (!messages.isEmpty()) {
+            var entriesToDelete = messages.stream().map(ResourceQueueClient::toDeleteMessageRequest).toList();
+            var deleteMessagesBatchRequest = DeleteMessageBatchRequest.builder()
+                                                 .queueUrl(queueUrl)
+                                                 .entries(entriesToDelete)
+                                                 .build();
+            sqsClient.deleteMessageBatch(deleteMessagesBatchRequest);
+        }
     }
 
     private static SqsClient defaultClient() {
@@ -61,7 +65,10 @@ public final class ResourceQueueClient implements QueueClient {
     }
 
     private static DeleteMessageBatchRequestEntry toDeleteMessageRequest(Message message) {
-        return DeleteMessageBatchRequestEntry.builder().id(message.messageId()).build();
+        return DeleteMessageBatchRequestEntry.builder()
+                   .id(message.messageId())
+                   .receiptHandle(message.receiptHandle())
+                   .build();
     }
 
     private static Region getRegion() {
