@@ -5,7 +5,6 @@ import java.util.List;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler;
 import no.unit.nva.publication.queue.QueueClient;
 import no.unit.nva.publication.queue.ResourceQueueClient;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -49,7 +48,7 @@ public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest,
         logger.info("Number of extracted messages: {}", messages.size());
         logger.info("Number of extracted messages: {}", messages.getFirst().toString());
         logger.info("Number of extracted messages: {}", messages.getFirst().messageAttributes().toString());
-
+        logger.info("Number of extracted messages: {}", messages.getFirst().messageAttributes());
         messages.stream()
             .map(RecoveryBatchScanHandler::extractResourceIdentifier)
             .forEach(resourceService::refresh);
@@ -68,7 +67,7 @@ public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest,
     }
 
     private static SortableIdentifier extractResourceIdentifier(Message message) {
-        return new SortableIdentifier(message.attributes().get(ID).stringValue());
+        return new SortableIdentifier(message.messageAttributes().get(ID).stringValue());
     }
 
     private void emitNewRecoveryEvent() {
