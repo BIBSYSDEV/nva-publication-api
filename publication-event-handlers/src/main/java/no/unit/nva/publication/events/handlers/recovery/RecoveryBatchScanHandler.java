@@ -47,7 +47,7 @@ public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest,
 
         var messages = queueClient.readMessages();
         logger.info("Number of extracted messages: {}", messages.size());
-        logger.info("Number of extracted messages: {}", messages.getFirst());
+        logger.info("Number of extracted messages: {}", messages.getFirst().toString());
         messages.stream()
             .map(RecoveryBatchScanHandler::extractResourceIdentifier)
             .forEach(resourceService::refresh);
