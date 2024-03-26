@@ -321,6 +321,21 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(partOf, is(equalTo(expectedPartOf)));
     }
 
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldGetOrganizationIdentifierForAffiliations(Class<? extends TicketEntry> ticketType,
+                                                     PublicationStatus status)
+        throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+
+        var publicationOwnerId = publication.getResourceOwner().getOwnerAffiliation();
+        var expectedIdentifier = UriWrapper.fromUri(publicationOwnerId).getLastPathElement();
+        var actualIdentifier = expansionService.getOrganization(ticket).identifier();
+
+        assertThat(actualIdentifier, is(equalTo(expectedIdentifier)));
+    }
+
     @Test
     void shouldReturnNullIfNotTicketEntry() throws NotFoundException {
         var message = Message.builder()

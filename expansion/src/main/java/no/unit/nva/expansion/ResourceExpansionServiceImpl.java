@@ -102,8 +102,12 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
                                       : resourceService.getResourceByIdentifier(ticketEntry.getResourceIdentifier())
                                           .getResourceOwner().getOwnerAffiliation();
 
+            var organizationIdentifier = Objects.nonNull(organizationId)
+                                             ? UriWrapper.fromUri(organizationId).getLastPathElement()
+                                             : "";
+
             var partOf = RdfUtils.getAllNestedPartOfs(uriRetriever, organizationId);
-            return new ExpandedOrganization(organizationId, partOf);
+            return new ExpandedOrganization(organizationId, organizationIdentifier, partOf);
         }
         return null;
     }
