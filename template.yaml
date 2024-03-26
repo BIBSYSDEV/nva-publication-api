@@ -1185,13 +1185,16 @@ Resources:
 
 
   ResourceExpansionHandler:
-    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler::handleRequest
       Timeout: 200
       Role: !GetAtt LambdaRole.Arn
+      Policies:
+        - !GetAtt EventsLambdaManagedPolicy.PolicyArn
+        - !GetAtt DatabaseAccessLambdaManagedPolicy.PolicyArn
+        - !GetAtt S3AccessManagedPolicy.PolicyArn
       ReservedConcurrentExecutions: 64
       Environment:
         Variables:
