@@ -57,15 +57,16 @@ public class ExpandedDataEntriesPersistenceHandler
         var indexDocument = createIndexDocument(expandedResourceUpdate);
         return attempt(() -> writeEntryToS3(indexDocument))
                    .map(item -> new EventReference(EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC, item))
-                   .orElse(failure -> persistRecoveryMessage(failure, indexDocument));
+                   .orElse(failure -> persistRecoveryMessage(failure, expandedResourceUpdate));
     }
 
-    private EventReference persistRecoveryMessage(Failure<EventReference> failure, PersistedDocument indexDocument) {
-        RecoveryEntry.fromIdentifier(indexDocument.getBody().identifyExpandedEntry())
-            .resourceType(indexDocument.getConsumptionAttributes().getIndex())
+    private EventReference persistRecoveryMessage(Failure<EventReference> failure, ExpandedDataEntry expandedDataEntry) {
+        var identifier = expandedDataEntry.identifyExpandedEntry();
+        RecoveryEntry.fromExpandedDataEntry(expandedDataEntry)
+            .withIdentifier(identifier)
             .withException(failure.getException())
             .persist(queueClient);
-        logger.error(SENT_TO_RECOVERY_QUEUE_MESSAGE, indexDocument.getConsumptionAttributes().getIndex());
+        logger.error(SENT_TO_RECOVERY_QUEUE_MESSAGE, identifier);
         return null;
     }
 

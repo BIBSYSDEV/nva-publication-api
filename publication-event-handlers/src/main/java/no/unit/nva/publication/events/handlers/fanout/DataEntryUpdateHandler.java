@@ -79,18 +79,12 @@ public class DataEntryUpdateHandler extends EventHandler<EventReference, EventRe
 
     private EventReference processRecoveryMessage(Failure<EventReference> failure, DataEntryUpdateEvent event) {
         var identifier = getIdentifier(event);
-        RecoveryEntry.fromIdentifier(identifier)
-            .resourceType(getType(event))
+        RecoveryEntry.fromDataEntryUpdateEvent(event)
+            .withIdentifier(identifier)
             .withException(failure.getException())
             .persist(sqsClient);
         logger.error(SENT_TO_RECOVERY_QUEUE_MESSAGE, identifier);
         return null;
-    }
-
-    private static String getType(DataEntryUpdateEvent blobObject) {
-        return Optional.ofNullable(blobObject.getOldData())
-                   .map(Entity::getType)
-                   .orElseGet(() -> blobObject.getNewData().getType());
     }
 
     private static SortableIdentifier getIdentifier(DataEntryUpdateEvent blobObject) {

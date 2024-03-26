@@ -5,6 +5,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -23,6 +24,7 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
+import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -84,6 +86,23 @@ class MessageServiceTest extends ResourcesLocalTest {
         var deletedMessage = messageService.getMessage(owner, persistedMessage.getIdentifier());
 
         assertThat(deletedMessage.getStatus(), is(equalTo(MessageStatus.DELETED)));
+    }
+
+    @Test
+    void shouldRefreshMessageByUpdatingVersion()
+        throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(
+            PublicationStatus.PUBLISHED, owner, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, DoiRequest.class, ticketService);
+        var persistedMessage = messageService.createMessage(ticket, owner, randomString());
+        var version = persistedMessage.toDao().getVersion();
+        messageService.refresh(persistedMessage.getIdentifier());
+
+        var updatedMessage = messageService.getMessageByIdentifier(persistedMessage.getIdentifier()).orElseThrow();
+        var updatedVersion = updatedMessage.toDao().getVersion();
+
+        assertThat(persistedMessage, is(equalTo(updatedMessage)));
+        assertThat(updatedVersion, is(not(equalTo(version))));
     }
 
     @Test

@@ -21,12 +21,16 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.events.handlers.recovery.RecoveryBatchScanHandler;
 import no.unit.nva.publication.events.handlers.recovery.RecoveryEventRequest;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.FakeSqsClient;
 import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.stubs.FakeEventBridgeClient;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +44,8 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
     private static final Context CONTEXT = Mockito.mock(Context.class);
     private ByteArrayOutputStream outputStream;
     private ResourceService resourceService;
+    private TicketService ticketService;
+    private MessageService messageService;
     private FakeSqsClient queueClient;
     private FakeEventBridgeClient eventBridgeClient;
     private RecoveryBatchScanHandler recoveryBatchScanHandler;
@@ -49,9 +55,12 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
         super.init();
         outputStream = new ByteArrayOutputStream();
         resourceService = getResourceServiceBuilder().build();
+        ticketService = new TicketService(client);
+        messageService = new MessageService(client);
         queueClient = new FakeSqsClient();
         eventBridgeClient = new FakeEventBridgeClient();
-        recoveryBatchScanHandler = new RecoveryBatchScanHandler(resourceService, queueClient, eventBridgeClient);
+        recoveryBatchScanHandler = new RecoveryBatchScanHandler(resourceService, ticketService, messageService,
+                                                                queueClient, eventBridgeClient);
     }
 
     @Test
@@ -59,7 +68,7 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
         throws JsonProcessingException, NotFoundException {
         var publication = persistedPublication();
         var resourceVersion = Resource.fromPublication(publication).toDao().getVersion();
-        putMessageOnRecoveryQueue(publication.getIdentifier());
+        putMessageOnRecoveryQueue(publication.getIdentifier(), "Resource");
         recoveryBatchScanHandler.handleRequest(createEvent(), outputStream, CONTEXT);
 
         var refreshedPublication = resourceService.getPublication(publication);
@@ -69,9 +78,44 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldUpdateResourceVersionByReadingQueueMessageContainingResourceIdentifierWhenResourceIsTicket()
+        throws JsonProcessingException, ApiGatewayException {
+        var publication = persistedPublication();
+        var ticket =
+            GeneralSupportRequest.requestNewTicket(publication, GeneralSupportRequest.class)
+                .persistNewTicket(ticketService);
+        var ticketVersion = ticket.toDao().getVersion();
+        putMessageOnRecoveryQueue(ticket.getIdentifier(), "Ticket");
+        recoveryBatchScanHandler.handleRequest(createEvent(), outputStream, CONTEXT);
+
+        var refreshedTicket = ticketService.fetchTicket(ticket);
+        var resourceVersionAfterRefresh = refreshedTicket.toDao().getVersion();
+
+        assertThat(resourceVersionAfterRefresh, is(not(equalTo(ticketVersion))));
+    }
+
+    @Test
+    void shouldUpdateResourceVersionByReadingQueueMessageContainingResourceIdentifierWhenResourceIsMessage()
+        throws JsonProcessingException, ApiGatewayException {
+        var publication = persistedPublication();
+        var ticket =
+            GeneralSupportRequest.requestNewTicket(publication, GeneralSupportRequest.class)
+                .persistNewTicket(ticketService);
+        var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
+        var messageVersion = message.toDao().getVersion();
+        putMessageOnRecoveryQueue(message.getIdentifier(), "Message");
+        recoveryBatchScanHandler.handleRequest(createEvent(), outputStream, CONTEXT);
+
+        var refreshedMessage = messageService.getMessageByIdentifier(message.getIdentifier()).orElseThrow();
+        var resourceVersionAfterRefresh = refreshedMessage.toDao().getVersion();
+
+        assertThat(resourceVersionAfterRefresh, is(not(equalTo(messageVersion))));
+    }
+
+    @Test
     void shouldRemoveMessageFromQueueAfterItHasBeenRefreshed() throws JsonProcessingException {
         var publication = persistedPublication();
-        putMessageOnRecoveryQueue(publication.getIdentifier());
+        putMessageOnRecoveryQueue(publication.getIdentifier(), "Resource");
         recoveryBatchScanHandler.handleRequest(createEvent(), outputStream, CONTEXT);
 
         assertTrue(queueClient.getDeliveredMessages().isEmpty());
@@ -112,11 +156,13 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
         IntStream.range(0, numberOfPublications)
             .boxed()
             .map(i -> persistedPublication())
-            .forEach(publication -> putMessageOnRecoveryQueue(publication.getIdentifier()));
+            .forEach(publication -> putMessageOnRecoveryQueue(publication.getIdentifier(), "Resource"));
     }
 
-    private void putMessageOnRecoveryQueue(SortableIdentifier identifier) {
-        var id = Map.of("id", messageAttribute(identifier.toString()), "type", messageAttribute(""));
+    private void putMessageOnRecoveryQueue(SortableIdentifier identifier, String type) {
+        var id = Map.of(
+            "id", messageAttribute(identifier.toString()),
+            "type", messageAttribute(type));
         queueClient.sendMessage(SendMessageRequest.builder().queueUrl(randomString()).messageAttributes(id).build());
     }
 
