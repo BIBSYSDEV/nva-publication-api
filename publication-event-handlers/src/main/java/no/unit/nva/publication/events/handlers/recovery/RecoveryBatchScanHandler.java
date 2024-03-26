@@ -5,9 +5,12 @@ import java.util.List;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.events.handlers.expandresources.RecoveryEntry;
 import no.unit.nva.publication.queue.QueueClient;
 import no.unit.nva.publication.queue.ResourceQueueClient;
+import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
@@ -23,20 +26,29 @@ public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest,
     public static final String ID = "id";
     public static final String ENTRIES_PROCEEDED_MESSAGE = "{} entries have been successfully processed";
     public static final String EMITTING_NEW_EVENT = "Emitting new event";
+    public static final String TYPE = "type";
     private final EventBridgeClient eventBridgeClient;
     private final QueueClient queueClient;
     private final ResourceService resourceService;
+    private final TicketService ticketService;
+    private final MessageService messageService;
 
     @JacocoGenerated
     public RecoveryBatchScanHandler() {
-        this(ResourceService.defaultService(), ResourceQueueClient.defaultResourceQueueClient(RECOVERY_QUEUE),
+        this(ResourceService.defaultService(), TicketService.defaultService(), MessageService.defaultService(),
+             ResourceQueueClient.defaultResourceQueueClient(RECOVERY_QUEUE),
              EventBridgeClient.create());
     }
 
-    public RecoveryBatchScanHandler(ResourceService resourceService, QueueClient queueClient,
+    public RecoveryBatchScanHandler(ResourceService resourceService,
+                                    TicketService ticketService,
+                                    MessageService messageService,
+                                    QueueClient queueClient,
                                     EventBridgeClient eventBridgeClient) {
         super(RecoveryEventRequest.class);
         this.resourceService = resourceService;
+        this.ticketService = ticketService;
+        this.messageService = messageService;
         this.queueClient = queueClient;
         this.eventBridgeClient = eventBridgeClient;
     }
@@ -57,9 +69,20 @@ public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest,
     }
 
     private void processMessages(List<Message> messages) {
-        messages.stream().map(RecoveryBatchScanHandler::extractResourceIdentifier).forEach(resourceService::refresh);
+        messages.forEach(this::refreshEntry);
         queueClient.deleteMessages(messages);
         logger.info(ENTRIES_PROCEEDED_MESSAGE, messages.size());
+    }
+
+    private void refreshEntry(Message message) {
+        var identifier = extractResourceIdentifier(message);
+        var type = extractType(message);
+
+        switch (type) {
+            case RecoveryEntry.RESOURCE: resourceService.refresh(identifier);
+            case RecoveryEntry.TICKET: ticketService.refresh(identifier);
+            case RecoveryEntry.MESSAGE: messageService.refresh(identifier);
+        }
     }
 
     private static boolean moreMessagesOnQueue(List<Message> messages) {
@@ -68,6 +91,10 @@ public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest,
 
     private static SortableIdentifier extractResourceIdentifier(Message message) {
         return new SortableIdentifier(message.messageAttributes().get(ID).stringValue());
+    }
+
+    private static String extractType(Message message) {
+        return message.messageAttributes().get(TYPE).stringValue();
     }
 
     private void emitNewRecoveryEvent(Context context) {

@@ -88,12 +88,6 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
             failure -> persistRecoveryMessage(failure, blobObject));
     }
 
-    private static String getType(DataEntryUpdateEvent blobObject) {
-        return Optional.ofNullable(blobObject.getOldData())
-                   .map(Entity::getType)
-                   .orElseGet(() -> blobObject.getNewData().getType());
-    }
-
     private static SortableIdentifier getIdentifier(DataEntryUpdateEvent blobObject) {
         return Optional.ofNullable(blobObject.getOldData())
                    .map(Entity::getIdentifier)
@@ -116,8 +110,8 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
 
     private EventReference persistRecoveryMessage(Failure<EventReference> failure, DataEntryUpdateEvent blobObject) {
         var identifier = getIdentifier(blobObject);
-        RecoveryEntry.fromIdentifier(identifier)
-            .resourceType(getType(blobObject))
+        RecoveryEntry.fromDataEntryUpdateEvent(blobObject)
+            .withIdentifier(identifier)
             .withException(failure.getException())
             .persist(sqsClient);
         logger.error(SENT_TO_RECOVERY_QUEUE_MESSAGE, identifier);

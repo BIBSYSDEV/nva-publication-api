@@ -7,7 +7,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import java.net.URI;
-import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -31,12 +30,16 @@ import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.FunctionWithException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TicketService extends ServiceWithTransactions {
 
+    private static final Logger logger = LoggerFactory.getLogger(TicketService.class);
     public static final String TICKET_NOT_FOUND = "Ticket not found";
     private static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_PROVIDER = SortableIdentifier::next;
-
+    private static final String TICKET_REFRESHED_MESSAGE = "Ticket has been refreshed successfully: {}";
+    public static final String TICKET_TO_REFRESH_NOT_FOUND_MESSAGE = "Ticket to refresh is not found: {}";
     private final Supplier<SortableIdentifier> identifierProvider;
     private final ResourceService resourceService;
     private final String tableName;
@@ -167,6 +170,16 @@ public class TicketService extends ServiceWithTransactions {
         var putItemRequest = dao.createPutItemRequest();
         getClient().putItem(putItemRequest);
         return updatedAssignee;
+    }
+
+    public void refresh(SortableIdentifier identifier) {
+        try {
+            var ticket = fetchTicketByIdentifier(identifier);
+            ticket.persistUpdate(this);
+            logger.info(TICKET_REFRESHED_MESSAGE, identifier);
+        } catch (NotFoundException e) {
+            logger.error(TICKET_TO_REFRESH_NOT_FOUND_MESSAGE, identifier);
+        }
     }
 
     protected TicketEntry completeTicket(TicketEntry ticketEntry, Username username) throws ApiGatewayException {

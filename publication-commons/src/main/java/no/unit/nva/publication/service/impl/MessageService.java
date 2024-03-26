@@ -22,12 +22,17 @@ import no.unit.nva.publication.model.storage.MessageDao;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.JacocoGenerated;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MessageService extends ServiceWithTransactions {
 
+    private static final Logger logger = LoggerFactory.getLogger(MessageService.class);
     public static final String OWNER_ONLY_MESSAGE = "Message owner only can perform this action!";
     public static final String MESSAGE_NOT_FOUND_ERROR = "Could not find message with identifier:";
-
+    private static final String MESSAGE_REFRESHED_MESSAGE =
+        "Message {} for ticket {} for publication {} has been refreshed successfully";
+    public static final String MESSAGE_TO_REFRESH_NOT_FOUND_MESSAGE = "Could not refresh message: {}";
     private final String tableName;
     
     private final TicketService ticketService;
@@ -77,6 +82,19 @@ public class MessageService extends ServiceWithTransactions {
         var dao = message.toDao();
         var transactionRequest = dao.createInsertionTransactionRequest();
         getClient().transactWriteItems(transactionRequest);
+    }
+
+    public void refresh(SortableIdentifier identifier) {
+        try {
+            var message = getMessageByIdentifier(identifier).orElseThrow();
+            message.toDao().updateExistingEntry(client);
+            logger.info(MESSAGE_REFRESHED_MESSAGE,
+                        message.getIdentifier(),
+                        message.getTicketIdentifier(),
+                        message.getResourceIdentifier());
+        } catch (Exception e) {
+            logger.info(MESSAGE_TO_REFRESH_NOT_FOUND_MESSAGE, identifier);
+        }
     }
 
     private Message getMessageByIdentifier(Message message) {

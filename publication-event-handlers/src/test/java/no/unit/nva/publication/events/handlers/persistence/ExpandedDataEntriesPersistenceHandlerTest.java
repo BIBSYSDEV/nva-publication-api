@@ -169,7 +169,24 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldPersistRecoveryMessageWhenSomethingGoesWrong() throws IOException, ApiGatewayException {
+    void shouldPersistRecoveryMessageForPublicationWhenSomethingGoesWrong() throws IOException, ApiGatewayException {
+        var expectedPersistedEntry = generateExpandedEntry(ExpandedResource.class);
+        s3Writer = mock(S3Driver.class);
+        when(s3Writer.insertFile(any(), (String) any())).thenThrow(new RuntimeException());
+        handler = new ExpandedDataEntriesPersistenceHandler(s3Reader, s3Writer, fakeSqsClient);
+        eventUriInEventsBucket = s3Reader.insertEvent(UnixPath.of(randomString()),
+                                                      expectedPersistedEntry.entry.toJsonString());
+        sendEvent();
+        var persistedRecoveryMessage = fakeSqsClient.getDeliveredMessages().getFirst();
+        var messageAttributes = persistedRecoveryMessage.messageAttributes();
+        assertThat(messageAttributes.get("id").stringValue(),
+                   is(equalTo(expectedPersistedEntry.entry.identifyExpandedEntry().toString())));
+        assertThat(messageAttributes.get("type").stringValue(),
+                   is(equalTo("Resource")));
+    }
+
+    @Test
+    void shouldPersistRecoveryMessageForTicketWhenSomethingGoesWrong() throws IOException, ApiGatewayException {
         var expectedPersistedEntry = generateExpandedPublishingRequestWithWorkflowSetToNull();
         s3Writer = mock(S3Driver.class);
         when(s3Writer.insertFile(any(), (String) any())).thenThrow(new RuntimeException());
@@ -181,6 +198,8 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         var messageAttributes = persistedRecoveryMessage.messageAttributes();
         assertThat(messageAttributes.get("id").stringValue(),
                    is(equalTo(expectedPersistedEntry.entry.identifyExpandedEntry().toString())));
+        assertThat(messageAttributes.get("type").stringValue(),
+                   is(equalTo("Ticket")));
     }
 
     private static Stream<Class<?>> expandedEntriesTypeProvider() {

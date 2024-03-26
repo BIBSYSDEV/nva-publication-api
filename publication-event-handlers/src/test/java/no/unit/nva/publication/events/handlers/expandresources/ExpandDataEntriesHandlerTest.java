@@ -44,16 +44,21 @@ import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.FakeSqsClient;
 import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -77,6 +82,8 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     private FakeS3Client s3Client;
     private FakeSqsClient sqsClient;
     private ResourceService resourceService;
+    private TicketService ticketService;
+    private MessageService messageService;
 
     @BeforeEach
     public void init() {
@@ -85,7 +92,8 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         s3Client = new FakeS3Client();
         resourceService = getResourceServiceBuilder().build();
         sqsClient = new FakeSqsClient();
-        var ticketService = new TicketService(client);
+        ticketService = new TicketService(client);
+        messageService = new MessageService(client);
 
         insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources();
 
@@ -186,7 +194,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldPersistRecoveryMessageWhenBadResponseFromExternalApi() throws IOException {
+    void shouldPersistRecoveryMessageForPublicationWhenBadResponseFromExternalApi() throws IOException {
         var newImage = createPublicationWithStatus(PUBLISHED);
         var request = emulateEventEmittedByDataEntryUpdateHandler(null, newImage);
 
@@ -199,7 +207,54 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
         var persistedRecoveryMessage = sqsClient.getDeliveredMessages().getFirst();
         var messageAttributes = persistedRecoveryMessage.messageAttributes();
+
         assertThat(messageAttributes.get("id").stringValue(), is(equalTo(newImage.getIdentifier().toString())));
+        assertThat(messageAttributes.get("type").stringValue(), is(equalTo("Resource")));
+    }
+
+    @Test
+    void shouldPersistRecoveryMessageForTicketWhenBadResponseFromExternalApi() throws IOException {
+        var publication = createPublicationWithStatus(PUBLISHED);
+        var ticket = TicketEntry.requestNewTicket(publication, DoiRequest.class);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(null, ticket);
+
+        var resourceExpansionService =
+            new ResourceExpansionServiceImpl(resourceService, new TicketService(client),
+                                             uriRetrieverThrowingException(), uriRetrieverThrowingException());
+        this.expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client,
+                                                                  resourceExpansionService);
+        expandResourceHandler.handleRequest(request, output, CONTEXT);
+
+        var persistedRecoveryMessage = sqsClient.getDeliveredMessages().getFirst();
+        var messageAttributes = persistedRecoveryMessage.messageAttributes();
+
+        assertThat(messageAttributes.get("id").stringValue(), is(equalTo(ticket.getIdentifier().toString())));
+        assertThat(messageAttributes.get("type").stringValue(), is(equalTo("Ticket")));
+    }
+
+    @Test
+    void shouldPersistRecoveryMessageForMessageWhenBadResponseFromExternalApi() throws IOException,
+                                                                                       ApiGatewayException {
+        var publication = createPublicationWithStatus(PUBLISHED);
+        var persistedPublication =
+            resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        var ticket = TicketEntry.requestNewTicket(persistedPublication, GeneralSupportRequest.class)
+                         .persistNewTicket(ticketService);
+        var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
+        var request = emulateEventEmittedByDataEntryUpdateHandler(null, message);
+
+        var resourceExpansionService =
+            new ResourceExpansionServiceImpl(resourceService, new TicketService(client),
+                                             uriRetrieverThrowingException(), uriRetrieverThrowingException());
+        this.expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client,
+                                                                  resourceExpansionService);
+        expandResourceHandler.handleRequest(request, output, CONTEXT);
+
+        var persistedRecoveryMessage = sqsClient.getDeliveredMessages().getFirst();
+        var messageAttributes = persistedRecoveryMessage.messageAttributes();
+
+        assertThat(messageAttributes.get("id").stringValue(), is(equalTo(message.getIdentifier().toString())));
+        assertThat(messageAttributes.get("type").stringValue(), is(equalTo("Message")));
     }
 
     private static UriRetriever uriRetrieverThrowingException() {
