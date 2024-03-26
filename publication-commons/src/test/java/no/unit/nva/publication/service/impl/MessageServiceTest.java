@@ -24,6 +24,7 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
+import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -100,6 +101,7 @@ class MessageServiceTest extends ResourcesLocalTest {
         var updatedMessage = messageService.getMessageByIdentifier(persistedMessage.getIdentifier()).orElseThrow();
         var updatedVersion = updatedMessage.toDao().getVersion();
 
+        assertThat(persistedMessage, is(equalTo(updatedMessage)));
         assertThat(updatedVersion, is(not(equalTo(version))));
     }
 

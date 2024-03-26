@@ -87,10 +87,8 @@ public class MessageDao extends Dao
     @JacocoGenerated
     @Override
     public void updateExistingEntry(AmazonDynamoDB client) {
-        this.getData().setModifiedDate(Instant.now());
-        var putItem = this.createPutItemRequest();
         try {
-            client.putItem(putItem);
+            client.putItem(this.createPutItemRequest());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
