@@ -74,8 +74,7 @@ public class DataEntryUpdateHandler extends EventHandler<EventReference, EventRe
     }
 
     private URI saveBlobToS3(DataEntryUpdateEvent blob) throws IOException {
-        throw new RuntimeException();
-//        return s3Driver.insertFile(UnixPath.of(UUID.randomUUID().toString()), blob.toJsonString());
+        return s3Driver.insertFile(UnixPath.of(UUID.randomUUID().toString()), blob.toJsonString());
     }
 
     private EventReference processRecoveryMessage(Failure<EventReference> failure, DataEntryUpdateEvent event) {
