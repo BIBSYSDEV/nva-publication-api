@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.net.URI;
 import java.util.Objects;
+import java.util.Optional;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedOrganization;
@@ -102,9 +103,10 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
                                       : resourceService.getResourceByIdentifier(ticketEntry.getResourceIdentifier())
                                           .getResourceOwner().getOwnerAffiliation();
 
-            var organizationIdentifier = Objects.nonNull(organizationId)
-                                             ? UriWrapper.fromUri(organizationId).getLastPathElement()
-                                             : "";
+            var organizationIdentifier = Optional.ofNullable(organizationId)
+                                             .map(UriWrapper::fromUri)
+                                             .map(UriWrapper::getLastPathElement)
+                                             .orElse(null);
 
             var partOf = RdfUtils.getAllNestedPartOfs(uriRetriever, organizationId);
             return new ExpandedOrganization(organizationId, organizationIdentifier, partOf);
