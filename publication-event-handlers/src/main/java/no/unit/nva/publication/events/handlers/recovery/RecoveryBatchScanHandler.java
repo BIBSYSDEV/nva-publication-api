@@ -21,12 +21,12 @@ import software.amazon.awssdk.services.sqs.model.Message;
 
 public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest, Void> {
 
-    private static final Logger logger = LoggerFactory.getLogger(RecoveryBatchScanHandler.class);
     public static final String RECOVERY_QUEUE = new Environment().readEnv("RECOVERY_QUEUE");
     public static final String ID = "id";
     public static final String ENTRIES_PROCEEDED_MESSAGE = "{} entries have been successfully processed";
     public static final String EMITTING_NEW_EVENT = "Emitting new event";
     public static final String TYPE = "type";
+    private static final Logger logger = LoggerFactory.getLogger(RecoveryBatchScanHandler.class);
     private final EventBridgeClient eventBridgeClient;
     private final QueueClient queueClient;
     private final ResourceService resourceService;
@@ -36,14 +36,11 @@ public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest,
     @JacocoGenerated
     public RecoveryBatchScanHandler() {
         this(ResourceService.defaultService(), TicketService.defaultService(), MessageService.defaultService(),
-             ResourceQueueClient.defaultResourceQueueClient(RECOVERY_QUEUE),
-             EventBridgeClient.create());
+             ResourceQueueClient.defaultResourceQueueClient(RECOVERY_QUEUE), EventBridgeClient.create());
     }
 
-    public RecoveryBatchScanHandler(ResourceService resourceService,
-                                    TicketService ticketService,
-                                    MessageService messageService,
-                                    QueueClient queueClient,
+    public RecoveryBatchScanHandler(ResourceService resourceService, TicketService ticketService,
+                                    MessageService messageService, QueueClient queueClient,
                                     EventBridgeClient eventBridgeClient) {
         super(RecoveryEventRequest.class);
         this.resourceService = resourceService;
@@ -68,23 +65,6 @@ public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest,
         return null;
     }
 
-    private void processMessages(List<Message> messages) {
-        messages.forEach(this::refreshEntry);
-        queueClient.deleteMessages(messages);
-        logger.info(ENTRIES_PROCEEDED_MESSAGE, messages.size());
-    }
-
-    private void refreshEntry(Message message) {
-        var identifier = extractResourceIdentifier(message);
-        var type = extractType(message);
-
-        switch (type) {
-            case RecoveryEntry.RESOURCE: resourceService.refresh(identifier);
-            case RecoveryEntry.TICKET: ticketService.refresh(identifier);
-            case RecoveryEntry.MESSAGE: messageService.refresh(identifier);
-        }
-    }
-
     private static boolean moreMessagesOnQueue(List<Message> messages) {
         return !messages.isEmpty();
     }
@@ -97,10 +77,34 @@ public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest,
         return message.messageAttributes().get(TYPE).stringValue();
     }
 
+    private void processMessages(List<Message> messages) {
+        messages.forEach(this::refreshEntry);
+        queueClient.deleteMessages(messages);
+        logger.info(ENTRIES_PROCEEDED_MESSAGE, messages.size());
+    }
+
+    private void refreshEntry(Message message) {
+        var identifier = extractResourceIdentifier(message);
+        var type = extractType(message);
+
+        switch (type) {
+            case RecoveryEntry.RESOURCE:
+                resourceService.refresh(identifier);
+                break;
+            case RecoveryEntry.TICKET:
+                ticketService.refresh(identifier);
+                break;
+            case RecoveryEntry.MESSAGE:
+                messageService.refresh(identifier);
+                break;
+            default:
+                break;
+        }
+    }
+
     private void emitNewRecoveryEvent(Context context) {
         var eventEntry = RecoveryEventRequest.createNewEntry(context);
         eventBridgeClient.putEvents(PutEventsRequest.builder().entries(eventEntry).build());
         logger.info(EMITTING_NEW_EVENT);
-
     }
 }

@@ -12,7 +12,6 @@ import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.events.handlers.expandresources.RecoveryEntry;
 import no.unit.nva.publication.queue.QueueClient;

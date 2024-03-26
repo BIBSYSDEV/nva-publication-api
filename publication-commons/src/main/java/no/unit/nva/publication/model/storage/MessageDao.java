@@ -12,7 +12,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
-import java.time.Instant;
 import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Message;
