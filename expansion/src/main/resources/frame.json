@@ -209,6 +209,7 @@
   },
   "@type": "Publication",
   "entityDescription": {
+    "@type": "EntityDescription",
     "contributors": {
       "@default": "@null",
       "identity": {
@@ -232,6 +233,13 @@
           "@embed": "@always",
           "@default": "@null"
         }
+      }
+    },
+    "reference":  {
+      "@type": "Reference",
+      "doi": {
+        "@embed": "@never",
+        "@default": "@null"
       }
     },
     "metadataSource": {
