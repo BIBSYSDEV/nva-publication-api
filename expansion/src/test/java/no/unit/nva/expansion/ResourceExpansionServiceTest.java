@@ -329,8 +329,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
 
-        var publicationOwnerId = publication.getResourceOwner().getOwnerAffiliation();
-        var expectedIdentifier = UriWrapper.fromUri(publicationOwnerId).getLastPathElement();
+        var publicationOwnerAffiliationId = publication.getResourceOwner().getOwnerAffiliation();
+        var expectedIdentifier = UriWrapper.fromUri(publicationOwnerAffiliationId).getLastPathElement();
         var actualIdentifier = expansionService.getOrganization(ticket).identifier();
 
         assertThat(actualIdentifier, is(equalTo(expectedIdentifier)));
