@@ -18,7 +18,7 @@ import nva.commons.core.JacocoGenerated;
 @Data
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"rekkefolgenr", "fornavn", "etternavn", "institusjonsnavn", "avdnavn", "undavdnavn",
-    "gruppenavn", "kjonn", "forfattere_sted", "faktortall_samarbeid", "forfatterandel",
+    "gruppenavn", "kjonn", "forfattere_sted", "forfatterandel",
     "forfattere_int", "faktortall_samarbeid_2003", "forfatterandel_2003", "forfattervekt_2003", "nsdstedkode",
     "institusjonskode", "eierkode", "status_rbo", "forfattere_totalt", "sektorkode", "status_int_samarbeid", "landkode",
     "landnavn", "landnavn_engelsk", "fodt_aar"})
