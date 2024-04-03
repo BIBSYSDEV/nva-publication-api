@@ -40,6 +40,8 @@ public class ScientificPerson {
     private String authorWeight;
     @JsonProperty("vektingstall")
     private String weightNumber;
+    @JsonProperty("faktortall_samarbeid")
+    private String cooperationNumber;
 
     @JacocoGenerated
     @JsonCreator
