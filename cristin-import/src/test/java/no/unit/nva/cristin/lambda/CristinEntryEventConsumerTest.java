@@ -42,7 +42,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -222,6 +221,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                    .withPublicationDate(publication.getEntityDescription().getPublicationDate())
                    .withInstanceType(
                        publication.getEntityDescription().getReference().getPublicationInstance().getInstanceType())
+                   .withReference(publication.getEntityDescription().getReference())
                    .build();
     }
 
