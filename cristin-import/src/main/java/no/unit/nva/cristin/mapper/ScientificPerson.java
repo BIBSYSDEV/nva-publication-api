@@ -37,11 +37,11 @@ public class ScientificPerson {
     @JsonProperty("gruppenr")
     private String groupIdentifier;
     @JsonProperty("forfattervekt")
-    private String authorWeight;
+    private String authorPoints;
     @JsonProperty("vektingstall")
-    private String weightNumber;
+    private String publicationPoints;
     @JsonProperty("faktortall_samarbeid")
-    private String cooperationNumber;
+    private String cooperationPoints;
 
     @JacocoGenerated
     @JsonCreator
