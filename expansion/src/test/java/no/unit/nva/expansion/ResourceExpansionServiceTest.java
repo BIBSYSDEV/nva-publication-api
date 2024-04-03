@@ -47,6 +47,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedGeneralSupportRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
+import no.unit.nva.expansion.model.ExpandedOrganization;
 import no.unit.nva.expansion.model.ExpandedPerson;
 import no.unit.nva.expansion.model.ExpandedPublishingRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
@@ -60,6 +61,7 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
@@ -314,7 +316,10 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
 
         var expectedPartOf = List.of(
-            URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0")
+            new ExpandedOrganization(
+                URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0"),
+                "20754.0.0.0",
+                null)
         );
         var partOf = expansionService.getOrganization(ticket).partOf();
 

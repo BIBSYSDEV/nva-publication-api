@@ -108,7 +108,11 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
                                              .map(UriWrapper::getLastPathElement)
                                              .orElse(null);
 
-            var partOf = RdfUtils.getAllNestedPartOfs(uriRetriever, organizationId);
+            var partOf = RdfUtils.getAllNestedPartOfs(uriRetriever, organizationId)
+                             .stream()
+                             .map(uri -> new ExpandedOrganization(uri, UriWrapper.fromUri(uri).getLastPathElement(), null))
+                             .toList();
+
             return new ExpandedOrganization(organizationId, organizationIdentifier, partOf);
         }
         return null;
