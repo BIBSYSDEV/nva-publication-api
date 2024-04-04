@@ -9,12 +9,11 @@ import static no.unit.nva.publication.RequestUtil.createUserInstanceFromRequest;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.defaultEventBridgeClient;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.validation.PublicationUriValidator.isValid;
+import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.core.attempt.Try.attempt;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -55,7 +54,6 @@ import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy
 import no.unit.nva.publication.rightsretention.RightsRetentionsApplier;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
-import no.unit.nva.publication.utils.RequestUtils;
 import no.unit.nva.publication.validation.DefaultPublicationValidator;
 import no.unit.nva.publication.validation.PublicationValidationException;
 import no.unit.nva.publication.validation.PublicationValidator;
@@ -173,11 +171,10 @@ public class UpdatePublicationHandler
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         var permissionStrategy = PublicationPermissionStrategy.create(existingPublication, userInstance, uriRetriever);
-        var requestUtils = RequestUtils.fromRequestInfo(requestInfo, uriRetriever);
         Publication updatedPublication = switch (input) {
             case UpdatePublicationRequest publicationMetadata ->
                 updateMetadata(publicationMetadata, identifierInPath, existingPublication, permissionStrategy,
-                               requestUtils, userInstance);
+                               requestInfo, userInstance);
 
             case UnpublishPublicationRequest unpublishPublicationRequest ->
                 unpublishPublication(unpublishPublicationRequest,
@@ -300,7 +297,7 @@ public class UpdatePublicationHandler
 
     private Publication updateMetadata(UpdatePublicationRequest input, SortableIdentifier identifierInPath,
                                        Publication existingPublication,
-                                       PublicationPermissionStrategy permissionStrategy, RequestUtils requestUtils,
+                                       PublicationPermissionStrategy permissionStrategy, RequestInfo requestInfo,
                                        UserInstance userInstance)
         throws ApiGatewayException {
         validateRequest(identifierInPath, input);
@@ -312,7 +309,7 @@ public class UpdatePublicationHandler
         var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, publicationUpdate.getPublisher().getId());
         validatePublication(publicationUpdate, customer);
         setRrsOnFiles(publicationUpdate, existingPublication, customer, userInstance.getUsername(), permissionStrategy);
-        upsertPublishingRequestIfNeeded(existingPublication, publicationUpdate, customer, requestUtils);
+        upsertPublishingRequestIfNeeded(existingPublication, publicationUpdate, customer, requestInfo);
 
         return resourceService.updatePublication(publicationUpdate);
     }
@@ -342,9 +339,9 @@ public class UpdatePublicationHandler
     private void upsertPublishingRequestIfNeeded(Publication existingPublication,
                                                  Publication publicationUpdate,
                                                  Customer customer,
-                                                 RequestUtils requestUtils) {
+                                                 RequestInfo requestInfo) {
         if (isAlreadyPublished(existingPublication) && !thereIsRelatedPendingPublishingRequest(publicationUpdate)) {
-            createPublishingRequestOnFileUpdate(publicationUpdate, customer, requestUtils);
+            createPublishingRequestOnFileUpdate(publicationUpdate, customer, requestInfo);
         }
         if (isAlreadyPublished(existingPublication) && thereAreNoFiles(publicationUpdate)) {
             autoCompletePendingPublishingRequestsIfNeeded(publicationUpdate);
@@ -481,22 +478,22 @@ public class UpdatePublicationHandler
     }
 
     private void createPublishingRequestOnFileUpdate(Publication publicationUpdate, Customer customer,
-                                                     RequestUtils requestUtils) {
+                                                     RequestInfo requestInfo) {
         if (containsNewPublishableFiles(publicationUpdate)) {
-            persistPendingPublishingRequest(publicationUpdate, customer, requestUtils);
+            persistPendingPublishingRequest(publicationUpdate, customer, requestInfo);
         }
     }
 
-    private void persistPendingPublishingRequest(Publication publicationUpdate, Customer customer, RequestUtils requestUtils) {
+    private void persistPendingPublishingRequest(Publication publicationUpdate, Customer customer, RequestInfo requestInfo) {
         attempt(() -> TicketEntry.requestNewTicket(publicationUpdate, PublishingRequestCase.class))
             .map(publishingRequest -> injectPublishingWorkflow((PublishingRequestCase) publishingRequest, customer))
-            .map(publishingRequest -> persistPublishingRequest(publicationUpdate, requestUtils, customer, publishingRequest));
+            .map(publishingRequest -> persistPublishingRequest(publicationUpdate, requestInfo, customer, publishingRequest));
     }
 
-    private TicketEntry persistPublishingRequest(Publication publicationUpdate, RequestUtils requestUtils,
+    private TicketEntry persistPublishingRequest(Publication publicationUpdate, RequestInfo requestInfo,
                                                  Customer customer, PublishingRequestCase publishingRequest)
         throws ApiGatewayException {
-        return requestUtils.hasAccessRight(AccessRight.MANAGE_PUBLISHING_REQUESTS)
+        return requestInfo.userIsAuthorized(MANAGE_PUBLISHING_REQUESTS)
                || useIsAllowedToPublishFiles(customer)
                    ? publishingRequest.persistAutoComplete(ticketService, publicationUpdate)
                    : publishingRequest.persistNewTicket(ticketService);
