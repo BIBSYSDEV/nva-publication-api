@@ -618,7 +618,7 @@ public final class CristinDataGenerator {
                    .withPublicationYear(randomYear())
                    .withPublicationOwner(randomString())
                    .withContributors(randomContributors())
-                   .withJournalPublication(randomJournalPublictaion())
+                   .withJournalPublication(randomJournalPublication())
                    .build();
     }
 
@@ -780,7 +780,7 @@ public final class CristinDataGenerator {
         return CristinSubjectField.builder().withSubjectFieldCode(smallRandomNumber()).build();
     }
 
-    private static CristinJournalPublication randomJournalPublictaion() {
+    private static CristinJournalPublication randomJournalPublication() {
         int pagesBegin = smallRandomNumber();
         return CristinJournalPublication.builder()
                    .withJournal(randomCristinJournalPublicationJournal())
