@@ -115,7 +115,10 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
     }
 
     private String extractPagesEnd() {
-        return getCristinObject().getJournalPublication().getPagesEnd();
+        return Optional.ofNullable(getCristinObject())
+                   .map(CristinObject::getJournalPublication)
+                   .map(CristinJournalPublication::getPagesEnd)
+                   .orElse(null);
     }
 
     private String extractVolume() {

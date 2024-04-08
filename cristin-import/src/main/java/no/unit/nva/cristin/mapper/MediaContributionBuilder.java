@@ -3,6 +3,7 @@ package no.unit.nva.cristin.mapper;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isInterview;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isMediaFeatureArticle;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isProgramParticipation;
+import java.util.Optional;
 import java.util.Set;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.media.MediaFeatureArticle;
@@ -49,11 +50,17 @@ public class MediaContributionBuilder extends AbstractPublicationInstanceBuilder
     }
 
     private String extractPagesBegin() {
-        return getCristinObject().getJournalPublication().getPagesBegin();
+        return Optional.ofNullable(getCristinObject())
+                   .map(CristinObject::getJournalPublication)
+                   .map(CristinJournalPublication::getPagesBegin)
+                   .orElse(null);
     }
 
     private String extractPagesEnd() {
-        return getCristinObject().getJournalPublication().getPagesEnd();
+        return Optional.ofNullable(getCristinObject())
+                   .map(CristinObject::getJournalPublication)
+                   .map(CristinJournalPublication::getPagesEnd)
+                   .orElse(null);
     }
 
     private String extractVolume() {
