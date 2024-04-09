@@ -7,20 +7,30 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.utils.CristinUnitsUtil;
 
 public final class CuratingInstitutionsUtil {
     private CuratingInstitutionsUtil() {
     }
 
-    public static Set<URI> getCuratingInstitutions(Publication publication, UriRetriever uriRetriever) {
-        return getVerifiedContributors(publication)
+    public static Set<URI> getCuratingInstitutionsOnline(Publication publication, UriRetriever uriRetriever) {
+        return getVerifiedContributors(publication.getEntityDescription())
                    .flatMap(CuratingInstitutionsUtil::getOrganizationIds)
                    .collect(Collectors.toSet())
                    .parallelStream()
                    .map(orgId -> getTopLevelOrgUri(uriRetriever, orgId))
+                   .collect(Collectors.toSet());
+    }
+
+    public static Set<URI> getCuratingInstitutionsCached(EntityDescription entityDescription,
+                                                         CristinUnitsUtil cristinUnitsUtil) {
+        return getVerifiedContributors(entityDescription)
+                   .flatMap(CuratingInstitutionsUtil::getOrganizationIds)
+                   .map(cristinUnitsUtil::getTopLevel)
                    .collect(Collectors.toSet());
     }
 
@@ -31,8 +41,8 @@ public final class CuratingInstitutionsUtil {
                    .map(Organization::getId);
     }
 
-    private static Stream<Contributor> getVerifiedContributors(Publication publication) {
-        return publication.getEntityDescription().getContributors()
+    private static Stream<Contributor> getVerifiedContributors(EntityDescription entityDescription) {
+        return entityDescription.getContributors()
                    .stream()
                    .filter(CuratingInstitutionsUtil::isVerifiedContributor);
     }

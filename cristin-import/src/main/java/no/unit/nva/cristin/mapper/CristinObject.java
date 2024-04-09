@@ -146,10 +146,6 @@ public class CristinObject implements JsonSerializable {
         return this.toBuilder();
     }
 
-    public Publication toPublication() {
-        return new CristinMapper(this).generatePublication();
-    }
-
     public void hardcodePublicationOwner(String publicationsOwner) {
         this.setPublicationOwner(publicationsOwner);
     }

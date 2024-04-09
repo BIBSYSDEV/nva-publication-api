@@ -119,6 +119,9 @@ Parameters:
   SlackSnsArn:
     Type: AWS::SSM::Parameter::Value<String>
     Default: '/NVA/Monitoring/SlackSnsArn'
+  CristinUnitsS3ObjectUri:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/NVA/S3/CristinIntermediateStorage/Units'
 
 Conditions:
   WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ] ]
@@ -1864,6 +1867,7 @@ Resources:
           BATCH_EMISSION_INTERVAL_MILLIS: 0
           DOMAIN_NAME: !Ref ApiDomain
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          CRISTIN_UNITS_S3_OBJECT_URI: !Ref CristinUnitsS3ObjectUri
       Events:
         SqsEvent:
           Type: SQS
