@@ -172,9 +172,11 @@ public class UpdateResourceService extends ServiceWithTransactions {
         var resource = Resource.fromPublication(publication);
 
         var removeResourceTransactionItem = permanentlyRemove(resource);
-        var s = newDeleteTransactionItem(new IdentifierEntry(resource.getIdentifier().toString()));
+        var removeIdEntryTransactionItem = newDeleteTransactionItem(
+            new IdentifierEntry(resource.getIdentifier().toString()));
 
-        var request = new TransactWriteItemsRequest().withTransactItems(removeResourceTransactionItem, s);
+        var request = new TransactWriteItemsRequest().withTransactItems(
+            removeResourceTransactionItem, removeIdEntryTransactionItem);
         sendTransactionWriteRequest(request);
     }
 
