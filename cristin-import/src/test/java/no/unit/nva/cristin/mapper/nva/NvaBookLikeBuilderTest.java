@@ -8,7 +8,6 @@ import no.unit.nva.cristin.mapper.CristinMapper;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Book;
-import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.publication.utils.CristinUnitsUtil;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
@@ -25,7 +24,7 @@ public class NvaBookLikeBuilderTest {
         String issueNumber) {
         CristinObject randomBook = CristinDataGenerator.randomBook();
         randomBook.getBookOrReportMetadata().setIssue(issueNumber);
-        PublicationContext context = mapToPublication(randomBook)
+        var context = mapToPublication(randomBook)
                                          .getEntityDescription()
                                          .getReference()
                                          .getPublicationContext();
@@ -45,7 +44,7 @@ public class NvaBookLikeBuilderTest {
         String volumeNumber) {
         CristinObject randomBook = CristinDataGenerator.randomBook();
         randomBook.getBookOrReportMetadata().setVolume(volumeNumber);
-        PublicationContext context = mapToPublication(randomBook)
+        var context = mapToPublication(randomBook)
                                          .getEntityDescription()
                                          .getReference()
                                          .getPublicationContext();

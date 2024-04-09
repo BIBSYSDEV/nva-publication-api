@@ -28,12 +28,12 @@ public class CristinUnitsUtil {
     private static final Logger logger = LoggerFactory.getLogger(CristinUnitsUtil.class);
     private static final Map<String, CristinUnit> allUnits = new HashMap<>();
     private final S3Client s3Client;
-    private final URI OBJECT_URI;
+    private final URI objectUri;
 
     public CristinUnitsUtil(S3Client s3Client,
                             String unitsS3ObjectUri) {
         this.s3Client = s3Client;
-        this.OBJECT_URI = URI.create(unitsS3ObjectUri);
+        this.objectUri = URI.create(unitsS3ObjectUri);
     }
 
     /***
@@ -87,7 +87,7 @@ public class CristinUnitsUtil {
     }
 
     private String fetchUnitsFromS3() {
-        var s3uri = s3Client.utilities().parseUri(OBJECT_URI);
+        var s3uri = s3Client.utilities().parseUri(objectUri);
         return s3Client.getObjectAsBytes(
                 GetObjectRequest.builder()
                     .bucket(s3uri.bucket().orElseThrow())
