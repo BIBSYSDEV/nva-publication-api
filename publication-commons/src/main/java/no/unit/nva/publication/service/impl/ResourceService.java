@@ -20,7 +20,6 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 import com.google.common.collect.Lists;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -68,6 +67,7 @@ import nva.commons.core.attempt.Try;
 import nva.commons.core.exceptions.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.s3.S3Client;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.AvoidDuplicateLiterals"})
 public class ResourceService extends ServiceWithTransactions {
@@ -246,8 +246,8 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     @JacocoGenerated
-    public void refreshResources(List<Entity> dataEntries, HttpClient httpClient) {
-        final var refreshedEntries = refreshAndMigrate(dataEntries, httpClient);
+    public void refreshResources(List<Entity> dataEntries, S3Client s3Client) {
+        final var refreshedEntries = refreshAndMigrate(dataEntries, s3Client);
         var writeRequests = createWriteRequestsForBatchJob(refreshedEntries);
         writeToDynamoInBatches(writeRequests);
     }
@@ -303,9 +303,9 @@ public class ResourceService extends ServiceWithTransactions {
 
     // update this method according to current needs.
     //TODO: redesign migration process?
-    public Entity migrate(Entity dataEntry, HttpClient httpClient) {
+    public Entity migrate(Entity dataEntry, S3Client s3Client) {
         return dataEntry instanceof Resource
-                   ? migrateResource((Resource) dataEntry, httpClient)
+                   ? migrateResource((Resource) dataEntry, s3Client)
                    : dataEntry;
     }
 
@@ -372,10 +372,10 @@ public class ResourceService extends ServiceWithTransactions {
         return (Resource) queryDao.fetchForElevatedUser(getClient()).getData();
     }
 
-    private List<Entity> refreshAndMigrate(List<Entity> dataEntries, HttpClient httpClient) {
+    private List<Entity> refreshAndMigrate(List<Entity> dataEntries, S3Client s3Client) {
         return dataEntries
                    .stream()
-                   .map(entity -> attempt(() -> migrate(entity, httpClient)))
+                   .map(entity -> attempt(() -> migrate(entity, s3Client)))
                    .map(Try::orElseThrow)
                    .collect(Collectors.toList());
     }
@@ -393,8 +393,8 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     // change this method depending on the current migration needs.
-    private Resource migrateResource(Resource dataEntry, HttpClient httpClient) {
-        CuratingInstitutionMigration.migrate(dataEntry, httpClient, environment);
+    private Resource migrateResource(Resource dataEntry, S3Client s3Client) {
+        CuratingInstitutionMigration.migrate(dataEntry, s3Client, environment);
         return dataEntry;
     }
 

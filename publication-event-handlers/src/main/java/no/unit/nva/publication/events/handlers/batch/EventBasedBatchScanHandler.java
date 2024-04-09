@@ -2,7 +2,6 @@ package no.unit.nva.publication.events.handlers.batch;
 
 import static no.unit.nva.publication.events.handlers.ConfigurationForPushingDirectlyToEventBridge.EVENT_BUS_NAME;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.net.http.HttpClient;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.events.bodies.ScanDatabaseRequest;
@@ -16,6 +15,7 @@ import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
+import software.amazon.awssdk.services.s3.S3Client;
 
 public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest, Void> {
 
@@ -24,26 +24,26 @@ public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest
     private final ResourceService resourceService;
     private final EventBridgeClient eventBridgeClient;
     private final Logger logger = LoggerFactory.getLogger(EventBasedBatchScanHandler.class);
-    private final HttpClient httpClient;
+    private final S3Client s3client;
 
     @JacocoGenerated
     public EventBasedBatchScanHandler() {
-        this(ResourceService.defaultService(), defaultEventBridgeClient(), HttpClient.newHttpClient());
+        this(ResourceService.defaultService(), defaultEventBridgeClient(), S3Client.create());
     }
 
     public EventBasedBatchScanHandler(ResourceService resourceService, EventBridgeClient eventBridgeClient,
-                                      HttpClient httpClient) {
+                                      S3Client s3Client) {
         super(ScanDatabaseRequest.class);
         this.resourceService = resourceService;
         this.eventBridgeClient = eventBridgeClient;
-        this.httpClient = httpClient;
+        this.s3client = s3Client;
     }
 
     @Override
     protected Void processInput(ScanDatabaseRequest input, AwsEventBridgeEvent<ScanDatabaseRequest> event,
                                 Context context) {
         var result = resourceService.scanResources(input.getPageSize(), input.getStartMarker(), input.getTypes());
-        resourceService.refreshResources(result.getDatabaseEntries(), httpClient);
+        resourceService.refreshResources(result.getDatabaseEntries(), s3client);
         logger.info("Query starting point:" + input.getStartMarker());
         if (result.isTruncated()) {
             sendEventToInvokeNewRefreshRowVersionExecution(input, context, result);

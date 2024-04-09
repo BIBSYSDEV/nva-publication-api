@@ -42,6 +42,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
@@ -87,6 +88,8 @@ import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
@@ -124,7 +127,21 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         doReturn(getMockUnitsResponseBytes()).when(s3Client).getObjectAsBytes(any(GetObjectRequest.class));
         s3Driver = new S3Driver(s3Client, "ignored");
         doiDuplicateChecker = new DoiDuplicateChecker(uriRetriever, "api.test.nva.aws.unit.no");
-        cristinUnitsUtil = new CristinUnitsUtil(s3Client, "s3://some-bucket/some-key");
+        cristinUnitsUtil = mock(CristinUnitsUtil.class);
+        //cristinUnitsUtil = new CristinUnitsUtil(s3Client, "s3://some-bucket/some-key");
+        when(cristinUnitsUtil.getTopLevel(any())).thenAnswer((Answer<URI>) invocation -> {
+            Object[] args = invocation.getArguments();
+            URI inputUri = (URI) args[0];
+
+            String uriString = inputUri.toString();
+            String[] uriParts = uriString.split("/");
+            String[] numberParts = uriParts[uriParts.length - 1].split("\\.");
+
+            String baseUri = uriString.substring(0, uriString.indexOf(numberParts[0]) + numberParts[0].length());
+            String uriEnding = ".0.0.0";
+
+            return URI.create(baseUri + uriEnding);
+        });
         handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker, cristinUnitsUtil);
     }
 

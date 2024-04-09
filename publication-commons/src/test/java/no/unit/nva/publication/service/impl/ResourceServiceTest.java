@@ -52,7 +52,6 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -122,6 +121,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
+import software.amazon.awssdk.services.s3.S3Client;
 
 class ResourceServiceTest extends ResourcesLocalTest {
 
@@ -945,7 +945,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var testAppender = LogUtils.getTestingAppenderForRootLogger();
 
-        resourceService.refreshResources(resources, mock(HttpClient.class));
+        resourceService.refreshResources(resources, mock(S3Client.class));
 
         assertThatFailedBatchScanLogsProperly(testAppender, userResources);
     }
