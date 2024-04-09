@@ -268,8 +268,9 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
             return new BrageMergingReport(existingPublication, newImage);
         } else {
             resourceService.permanentlyRemovePublication(existingPublication);
-            resourceService.createEmptyPublicationForCustomer(resourceOwner, publisher, existingPublication.getIdentifier());
-            var newImage = resourceService.updatePublication(publicationForUpdate);
+            var newImage = resourceService.createPublicationFromImportedEntryWitProvidedIdentifier(
+                    publicationForUpdate, publicationForUpdate.getIdentifier());
+
             return new BrageMergingReport(existingPublication, newImage);
         }
     }

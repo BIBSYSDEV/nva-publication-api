@@ -33,7 +33,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
@@ -72,8 +71,6 @@ public class ResourceService extends ServiceWithTransactions {
     public static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_SUPPLIER = SortableIdentifier::next;
     public static final int AWAIT_TIME_BEFORE_FETCH_RETRY = 50;
     public static final String RESOURCE_REFRESHED_MESSAGE = "Resource has been refreshed successfully: {}";
-    public static final String INVALID_PATH_ERROR = "The document path provided in the update expression is invalid "
-                                                    + "for update";
     public static final String EMPTY_RESOURCE_IDENTIFIER_ERROR = "Empty resource identifier";
     public static final String DOI_FIELD_IN_RESOURCE = "doi";
     public static final String RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE = "Resource cannot be deleted: ";
@@ -163,6 +160,17 @@ public class ResourceService extends ServiceWithTransactions {
     public Publication createPublicationFromImportedEntry(Publication inputData) {
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
+        newResource.setPublishedDate(inputData.getPublishedDate());
+        newResource.setCreatedDate(inputData.getCreatedDate());
+        newResource.setModifiedDate(inputData.getModifiedDate());
+        newResource.setStatus(PUBLISHED);
+        return insertResource(newResource);
+    }
+
+    public Publication createPublicationFromImportedEntryWitProvidedIdentifier(Publication inputData,
+                                                                               SortableIdentifier sortableIdentifier) {
+        Resource newResource = Resource.fromPublication(inputData);
+        newResource.setIdentifier(sortableIdentifier);
         newResource.setPublishedDate(inputData.getPublishedDate());
         newResource.setCreatedDate(inputData.getCreatedDate());
         newResource.setModifiedDate(inputData.getModifiedDate());
@@ -356,19 +364,6 @@ public class ResourceService extends ServiceWithTransactions {
 
     public void permanentlyRemovePublication(Publication publication) {
         updateResourceService.permanentlyRemove(publication);
-    }
-
-    public void createEmptyPublicationForCustomer(ResourceOwner resourceOwner, Organization publisher,
-                                                  SortableIdentifier identifier) {
-        var publication = new Publication.Builder()
-                              .withResourceOwner(resourceOwner)
-                              .withPublisher(publisher)
-                              .withIdentifier(identifier)
-                              .withStatus(PUBLISHED)
-                              .build();
-        var newResource = Resource.fromPublication(publication);
-        newResource.setCreatedDate(publication.getCreatedDate());
-        insertResource(newResource);
     }
 
     private static boolean isNotRemoved(TicketEntry ticket) {

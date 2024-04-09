@@ -1092,14 +1092,12 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldCreateEmptyPublicationForCustomer() throws ApiGatewayException {
-        var publisher = new Organization.Builder().withId(randomUri()).build();
-        var resourceOwner = new ResourceOwner(new Username(randomString()), randomUri());
+    void shouldCreatePublicationWithProvidedIdentifier() {
+        var publication = randomPublication();
         var identifier = SortableIdentifier.next();
-        resourceService.createEmptyPublicationForCustomer(resourceOwner, publisher, identifier);
-        var persistedPublication = resourceService.getPublicationByIdentifier(identifier);
+        resourceService.createPublicationFromImportedEntryWitProvidedIdentifier(publication, identifier);
 
-        assertThat(persistedPublication, is(not(nullValue())));
+        assertDoesNotThrow(() -> resourceService.getPublicationByIdentifier(identifier));
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {
