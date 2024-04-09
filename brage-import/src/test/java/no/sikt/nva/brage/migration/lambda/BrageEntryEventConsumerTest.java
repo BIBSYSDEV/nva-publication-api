@@ -77,6 +77,7 @@ import no.sikt.nva.brage.migration.merger.BrageMergingReport;
 import no.sikt.nva.brage.migration.merger.DiscardedFilesReport;
 import no.sikt.nva.brage.migration.merger.DuplicatePublicationException;
 import no.sikt.nva.brage.migration.merger.UnmappableCristinRecordException;
+import no.sikt.nva.brage.migration.record.Customer;
 import no.sikt.nva.brage.migration.record.EntityDescription;
 import no.sikt.nva.brage.migration.record.PublicationDate;
 import no.sikt.nva.brage.migration.record.PublicationDateNva;
@@ -1235,13 +1236,15 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                  .withResourceContent(createResourceContent())
                                  .withAssociatedArtifacts(createCorrespondingAssociatedArtifactWithLegalNote(null))
                                  .build();
-        var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
         var expectedResourceOwner = new no.unit.nva.model.ResourceOwner(new Username(newResourceOwner.getOwner()),
                                                                         newResourceOwner.getOwnerAffiliation());
+        var expectedPublisher =
+            new Organization.Builder().withId(brageGenerator.getBrageRecord().getCustomer().getId()).build();
 
         assertThat(actualPublication.getResourceOwner(), is(equalTo(expectedResourceOwner)));
+        assertThat(actualPublication.getPublisher(), is(equalTo(expectedPublisher)));
     }
 
     @Test
@@ -1411,6 +1414,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         minimalRecord.setCristinId(cristinIdentifier);
         minimalRecord.setEntityDescription(new EntityDescription());
         minimalRecord.setType(new Type(List.of(), CRISTIN_RECORD.getValue()));
+        minimalRecord.setCustomer(new Customer(randomString(), randomUri()));
         return minimalRecord;
     }
 

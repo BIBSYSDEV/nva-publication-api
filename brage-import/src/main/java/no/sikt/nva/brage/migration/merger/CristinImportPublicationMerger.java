@@ -158,7 +158,7 @@ public class CristinImportPublicationMerger {
 
     private void updatePublicationResourceOwnerAndPublisher(Publication publication) {
         publication.setResourceOwner(bragePublication.getResourceOwner());
-//        publication.setPublisher(bragePublication.getPublisher());
+        publication.setPublisher(bragePublication.getPublisher());
     }
 
     private boolean hasBeenUpdated(AssociatedArtifactList associatedArtifacts, Publication publication) {
