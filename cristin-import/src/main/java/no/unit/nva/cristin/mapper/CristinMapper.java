@@ -51,6 +51,8 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.funding.Funding;
+import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
+import no.unit.nva.publication.utils.CristinUnitsUtil;
 import nva.commons.core.Environment;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;
@@ -82,9 +84,11 @@ public class CristinMapper extends CristinMappingModule {
                                                                    "bb3d0c0c-5065-4623-9b98-5810983c2478",
                                                                    "api.nva.unit.no",
                                                                    "22139870-8d31-4df9-bc45-14eb68287c4a");
+    private final CristinUnitsUtil cristinUnitsUtil;
 
-    public CristinMapper(CristinObject cristinObject) {
+    public CristinMapper(CristinObject cristinObject, CristinUnitsUtil cristinUnitsUtil) {
         super(cristinObject, ChannelRegistryMapper.getInstance());
+        this.cristinUnitsUtil = cristinUnitsUtil;
     }
 
     public static ZoneOffset zoneOffset() {
@@ -92,11 +96,12 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     public Publication generatePublication() {
+        var entityDescription = generateEntityDescription();
         Publication publication =
             new Builder()
                 .withHandle(extractHandle())
                 .withAdditionalIdentifiers(extractAdditionalIdentifiers())
-                .withEntityDescription(generateEntityDescription())
+                .withEntityDescription(entityDescription)
                 .withCreatedDate(extractDate())
                 .withModifiedDate(extractEntryLastModifiedDate())
                 .withPublishedDate(extractDate())
@@ -107,9 +112,14 @@ public class CristinMapper extends CristinMappingModule {
                 .withSubjects(generateNvaHrcsCategoriesAndActivities())
                 .withFundings(extractFundings())
                 .withPublicationNotes(extractPublicationNotes())
+                .withCuratingInstitutions(extractCuratingInstitutions(entityDescription))
                 .build();
         assertPublicationDoesNotHaveEmptyFields(publication);
         return publication;
+    }
+
+    protected Set<URI> extractCuratingInstitutions(EntityDescription entityDescription) {
+        return CuratingInstitutionsUtil.getCuratingInstitutionsCached(entityDescription, cristinUnitsUtil);
     }
 
     private static Optional<URI> extractArchiveUri(List<CristinAssociatedUri> associatedUris) {

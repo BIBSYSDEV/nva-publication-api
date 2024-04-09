@@ -13,7 +13,6 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.fasterxml.jackson.databind.JsonNode;
-import java.time.Clock;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -22,6 +21,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.cristin.mapper.CristinMapper;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.Identifiable;
 import no.unit.nva.cristin.mapper.nva.NviReport;
@@ -35,6 +35,7 @@ import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.FileEntriesEventEmitter;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.utils.CristinUnitsUtil;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -68,30 +69,29 @@ public class CristinEntryEventConsumer
     private static final Logger logger = LoggerFactory.getLogger(CristinEntryEventConsumer.class);
     private static final String PUBLICATIONS_THAT_ARE_PART_OF_OTHER_PUBLICATIONS_BUCKET_PATH =
         "PUBLICATIONS_THAT_ARE_PART_OF_OTHER_PUBLICATIONS";
-
+    public static final String UNITS_S3_OBJECT_URI_ENV = "CRISTIN_UNITS_S3_OBJECT_URI";
 
     private final ResourceService resourceService;
     private final S3Client s3Client;
     private final DoiDuplicateChecker doiDuplicateChecker;
+    private final CristinUnitsUtil cristinUnitsUtil;
 
     @JacocoGenerated
     public CristinEntryEventConsumer() {
-        this(defaultDynamoDbClient(), defaultS3Client(), defaultDoiDuplicateChecker());
-    }
-
-    @JacocoGenerated
-    protected CristinEntryEventConsumer(AmazonDynamoDB dynamoDbClient,
-                                        S3Client s3Client,
-                                        DoiDuplicateChecker doiDuplicateChecker) {
-        this(ResourceService.builder().withDynamoDbClient(dynamoDbClient).build(), s3Client, doiDuplicateChecker);
+        this(ResourceService.builder().withDynamoDbClient(defaultDynamoDbClient()).build(),
+             defaultS3Client(),
+             defaultDoiDuplicateChecker(),
+             new CristinUnitsUtil(S3Client.create(), new Environment().readEnv(UNITS_S3_OBJECT_URI_ENV)));
     }
 
     protected CristinEntryEventConsumer(ResourceService resourceService,
                                         S3Client s3Client,
-                                        DoiDuplicateChecker doiDuplicateChecker) {
+                                        DoiDuplicateChecker doiDuplicateChecker,
+                                        CristinUnitsUtil cristinUnitsUtil) {
         this.resourceService = resourceService;
         this.s3Client = s3Client;
         this.doiDuplicateChecker = doiDuplicateChecker;
+        this.cristinUnitsUtil = cristinUnitsUtil;
     }
 
     @Override
@@ -202,7 +202,7 @@ public class CristinEntryEventConsumer
     private PublicationRepresentations generatePublicationRepresentations(
         CristinObject cristinObject,
         FileContentsEvent<JsonNode> eventBody) {
-        var publication = cristinObject.toPublication();
+        var publication = new CristinMapper(cristinObject, cristinUnitsUtil).generatePublication();
         return new PublicationRepresentations(cristinObject, publication, eventBody);
     }
 
