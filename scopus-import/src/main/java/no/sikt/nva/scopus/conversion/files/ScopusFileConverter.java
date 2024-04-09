@@ -7,6 +7,7 @@ import static java.util.Objects.nonNull;
 import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toCollection;
+import static no.sikt.nva.scopus.conversion.files.model.ContentVersion.AM;
 import static no.sikt.nva.scopus.conversion.files.model.ContentVersion.VOR;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.s3.Headers;
@@ -46,6 +47,7 @@ import no.sikt.nva.scopus.conversion.files.model.ScopusFile;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
@@ -290,10 +292,20 @@ public class ScopusFileConverter {
         return ScopusFile.builder()
                    .withIdentifier(randomUUID())
                    .withDownloadFileUrl(crossrefLink.getUri())
-                   .withPublisherAuthority(VOR.equals(crossrefLink.getContentVersion()))
+                   .withPublisherVersion(determinePublisherVersion(crossrefLink))
                    .withLicense(extractLicenseForLink(crossrefLink, licenses))
                    .withEmbargo(calculateEmbargo(crossrefLink, licenses))
                    .build();
+    }
+
+    private PublisherVersion determinePublisherVersion(CrossrefLink crossrefLink) {
+        if (VOR.equals(crossrefLink.getContentVersion())) {
+            return PublisherVersion.PUBLISHED_VERSION;
+        } else if (AM.equals(crossrefLink.getContentVersion())) {
+            return PublisherVersion.ACCEPTED_VERSION;
+        } else {
+            return null;
+        }
     }
 
     private Instant calculateEmbargo(CrossrefLink crossrefLink, List<License> licenses) {

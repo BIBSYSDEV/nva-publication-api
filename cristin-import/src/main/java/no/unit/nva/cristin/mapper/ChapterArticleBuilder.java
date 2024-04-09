@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
+import java.util.Optional;
 import java.util.Set;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
@@ -46,10 +47,16 @@ public class ChapterArticleBuilder extends AbstractPublicationInstanceBuilder {
     }
 
     private String extractPagesStart() {
-        return getCristinObject().getBookOrReportPartMetadata().getPagesStart();
+        return Optional.ofNullable(getCristinObject())
+                   .map(CristinObject::getBookOrReportPartMetadata)
+                   .map(CristinBookOrReportPartMetadata::getPagesStart)
+                   .orElse(null);
     }
 
     private String extractPagesEnd() {
-        return getCristinObject().getBookOrReportPartMetadata().getPagesEnd();
+        return Optional.ofNullable(getCristinObject())
+                   .map(CristinObject::getBookOrReportPartMetadata)
+                   .map(CristinBookOrReportPartMetadata::getPagesEnd)
+                   .orElse(null);
     }
 }

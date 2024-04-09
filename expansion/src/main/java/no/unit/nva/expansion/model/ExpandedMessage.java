@@ -5,6 +5,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.net.URI;
+import java.time.Instant;
+import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -13,13 +16,9 @@ import no.unit.nva.publication.model.business.MessageStatus;
 import no.unit.nva.publication.model.business.User;
 import nva.commons.core.JacocoGenerated;
 
-import java.net.URI;
-import java.time.Instant;
-import java.util.Objects;
-
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(ExpandedMessage.TYPE)
-public class ExpandedMessage implements JsonSerializable {
+public class ExpandedMessage implements JsonSerializable, ExpandedDataEntry {
 
     public static final String TYPE = "Message";
     public static final String TEXT_JSON_NAME = "text";
@@ -107,6 +106,12 @@ public class ExpandedMessage implements JsonSerializable {
 
     public MessageStatus getStatus() {
         return status;
+    }
+
+    @JacocoGenerated
+    @Override
+    public SortableIdentifier identifyExpandedEntry() {
+        return identifier;
     }
 
     private void setStatus(MessageStatus status) {

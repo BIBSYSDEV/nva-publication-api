@@ -20,7 +20,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -61,6 +60,7 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
+import no.unit.nva.publication.service.FakeSqsClient;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -88,13 +88,14 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     private TicketService ticketService;
     private ResourceExpansionService resourceExpansionService;
     private UriRetriever uriRetriever;
+    private FakeSqsClient fakeSqsClient;
 
     @BeforeEach
     public void setup() {
         super.init();
         resourceService = getResourceServiceBuilder().build();
         ticketService = new TicketService(client);
-
+        fakeSqsClient = new FakeSqsClient();
         var mockPersonRetriever = mock(UriRetriever.class);
         uriRetriever = mock(UriRetriever.class);
         when(mockPersonRetriever.getRawContent(any(), any())).thenReturn(Optional.empty());
@@ -111,7 +112,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         var indexBucket = new FakeS3Client();
         s3Reader = new S3Driver(eventsBucket, "eventsBucket");
         s3Writer = new S3Driver(indexBucket, "indexBucket");
-        handler = new ExpandedDataEntriesPersistenceHandler(s3Reader, s3Writer);
+        handler = new ExpandedDataEntriesPersistenceHandler(s3Reader, s3Writer, fakeSqsClient);
 
         output = new ByteArrayOutputStream();
     }
@@ -119,7 +120,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldEmitEventContainingS3UriToPersistedExpandedResourceWhenItCannotRetrieveCustomerPublishingWorkflow()
         throws ApiGatewayException, IOException {
-        handler = new ExpandedDataEntriesPersistenceHandler(s3Reader, s3Writer);
+        handler = new ExpandedDataEntriesPersistenceHandler(s3Reader, s3Writer, fakeSqsClient);
         var entryUpdate = generateExpandedPublishingRequestWithWorkflowSetToNull();
         eventUriInEventsBucket = s3Reader.insertEvent(UnixPath.of(randomString()), entryUpdate.entry.toJsonString());
         EventReference outputEvent = sendEvent();
@@ -165,6 +166,40 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         String indexingEventPayload = s3Writer.readEvent(outputEvent.getUri());
         PersistedDocument indexDocument = PersistedDocument.fromJsonString(indexingEventPayload);
         assertThat(indexDocument.getConsumptionAttributes().getIndex(), is(equalTo(expectedPersistedEntry.index)));
+    }
+
+    @Test
+    void shouldPersistRecoveryMessageForPublicationWhenSomethingGoesWrong() throws IOException, ApiGatewayException {
+        var expectedPersistedEntry = generateExpandedEntry(ExpandedResource.class);
+        s3Writer = mock(S3Driver.class);
+        when(s3Writer.insertFile(any(), (String) any())).thenThrow(new RuntimeException());
+        handler = new ExpandedDataEntriesPersistenceHandler(s3Reader, s3Writer, fakeSqsClient);
+        eventUriInEventsBucket = s3Reader.insertEvent(UnixPath.of(randomString()),
+                                                      expectedPersistedEntry.entry.toJsonString());
+        sendEvent();
+        var persistedRecoveryMessage = fakeSqsClient.getDeliveredMessages().getFirst();
+        var messageAttributes = persistedRecoveryMessage.messageAttributes();
+        assertThat(messageAttributes.get("id").stringValue(),
+                   is(equalTo(expectedPersistedEntry.entry.identifyExpandedEntry().toString())));
+        assertThat(messageAttributes.get("type").stringValue(),
+                   is(equalTo("Resource")));
+    }
+
+    @Test
+    void shouldPersistRecoveryMessageForTicketWhenSomethingGoesWrong() throws IOException, ApiGatewayException {
+        var expectedPersistedEntry = generateExpandedPublishingRequestWithWorkflowSetToNull();
+        s3Writer = mock(S3Driver.class);
+        when(s3Writer.insertFile(any(), (String) any())).thenThrow(new RuntimeException());
+        handler = new ExpandedDataEntriesPersistenceHandler(s3Reader, s3Writer, fakeSqsClient);
+        eventUriInEventsBucket = s3Reader.insertEvent(UnixPath.of(randomString()),
+                                                      expectedPersistedEntry.entry.toJsonString());
+        sendEvent();
+        var persistedRecoveryMessage = fakeSqsClient.getDeliveredMessages().getFirst();
+        var messageAttributes = persistedRecoveryMessage.messageAttributes();
+        assertThat(messageAttributes.get("id").stringValue(),
+                   is(equalTo(expectedPersistedEntry.entry.identifyExpandedEntry().toString())));
+        assertThat(messageAttributes.get("type").stringValue(),
+                   is(equalTo("Ticket")));
     }
 
     private static Stream<Class<?>> expandedEntriesTypeProvider() {
@@ -230,11 +265,6 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         return ExpandedImportCandidate.fromImportCandidate(randomImportCandidate(), uriRetriever);
     }
 
-    private PersistedEntryWithExpectedType generateExpandedPublishingRequestEntryWithAutocompletion()
-        throws ApiGatewayException, JsonProcessingException {
-        return new PersistedEntryWithExpectedType(publishingRequestWithAutomaticCompletion(), TICKETS_INDEX);
-    }
-
     private PersistedEntryWithExpectedType generateExpandedPublishingRequestWithWorkflowSetToNull()
         throws ApiGatewayException, JsonProcessingException {
         return new PersistedEntryWithExpectedType(publishingRequestWithoutWorkflow(), TICKETS_INDEX);
@@ -253,17 +283,6 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
                                                             .createOpeningCaseObject(publication);
         publishingRequest.setWorkflow(PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
         publishingRequest.persistNewTicket(ticketService);
-        return (ExpandedPublishingRequest) resourceExpansionService.expandEntry(publishingRequest);
-    }
-
-    private ExpandedPublishingRequest publishingRequestWithAutomaticCompletion()
-        throws ApiGatewayException, JsonProcessingException {
-        var publication = createPublicationWithoutDoi();
-        var publishingRequest = (PublishingRequestCase) PublishingRequestCase
-                                                            .createOpeningCaseObject(publication);
-        publishingRequest.setWorkflow(PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
-        publishingRequest.persistNewTicket(ticketService);
-
         return (ExpandedPublishingRequest) resourceExpansionService.expandEntry(publishingRequest);
     }
 

@@ -63,6 +63,7 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -534,7 +535,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                  12312L,
                                  null,
                                  false,
-                                 false,
+                                 PublisherVersion.ACCEPTED_VERSION,
                                  null,
                                  null,
                                  null,
@@ -629,7 +630,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                         .withSize(123L)
                                                         .withIdentifier(UUID.randomUUID())
                                                         .withLicense(URI.create("https://hei"))
-                                                        .withPublisherAuthority(true)
+                                                        .withPublisherVersion(PublisherVersion.PUBLISHED_VERSION)
                                                         .buildPublishedFile()))
                    .build();
     }

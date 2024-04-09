@@ -29,6 +29,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -42,7 +43,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -50,6 +50,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.cristin.mapper.CristinBookOrReportPartMetadata;
+import no.unit.nva.cristin.mapper.CristinMapper;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOf;
@@ -73,6 +74,7 @@ import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.utils.CristinUnitsUtil;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.SingletonCollector;
@@ -85,6 +87,9 @@ import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 
 class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
@@ -100,10 +105,11 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
     private CristinEntryEventConsumer handler;
     private ResourceService resourceService;
-    private FakeS3Client s3Client;
+    private S3Client s3Client;
     private S3Driver s3Driver;
     private UriRetriever uriRetriever;
     private DoiDuplicateChecker doiDuplicateChecker;
+    private CristinUnitsUtil cristinUnitsUtil;
 
     @BeforeEach
     public void init() {
@@ -113,10 +119,20 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                               .withDynamoDbClient(super.client)
                               .withUriRetriever(uriRetriever)
                               .build();
-        s3Client = new FakeS3Client();
+        s3Client = spy(new FakeS3Client());
+        doReturn(S3Client.create().utilities()).when(s3Client).utilities();
+        doReturn(getMockUnitsResponseBytes()).when(s3Client).getObjectAsBytes(any(GetObjectRequest.class));
         s3Driver = new S3Driver(s3Client, "ignored");
         doiDuplicateChecker = new DoiDuplicateChecker(uriRetriever, "api.test.nva.aws.unit.no");
-        handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker);
+        cristinUnitsUtil = new CristinUnitsUtil(s3Client, "s3://some-bucket/some-key");
+        handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker, cristinUnitsUtil);
+    }
+
+    private static ResponseBytes getMockUnitsResponseBytes() {
+        var result = IoUtils.stringFromResources(Path.of("cristinUnits/units-norway.json"));
+        var httpResponse = mock(ResponseBytes.class);
+        when(httpResponse.asUtf8String()).thenReturn(result);
+        return httpResponse;
     }
 
     @Test
@@ -132,7 +148,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     void shouldSaveErrorReportInS3OutsideTheInputFolderAndWithFilenameTheObjectId()
         throws IOException {
         resourceService = resourceServiceThrowingExceptionWhenSavingResource();
-        handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker);
+        handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker, cristinUnitsUtil);
         var cristinObject = CristinDataGenerator.randomObject();
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
@@ -150,7 +166,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
         final TestAppender appender = LogUtils.getTestingAppenderForRootLogger();
         resourceService = resourceServiceThrowingExceptionWhenSavingResource();
-        handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker);
+        handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker, cristinUnitsUtil);
 
         var cristinObject = CristinDataGenerator.randomObject();
         var eventBody = createEventBody(cristinObject);
@@ -170,7 +186,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var actualPublications = handler.handleRequest(sqsEvent, CONTEXT);
         var actualPublication = actualPublications.get(0);
 
-        var expectedPublication = cristinObject.toPublication();
+        var expectedPublication = mapToPublication(cristinObject);
         injectValuesThatAreCreatedWhenSavingInDynamo(actualPublication, expectedPublication);
 
         assertThat(actualPublication, is(equalTo(expectedPublication)));
@@ -225,6 +241,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                    .withPublicationDate(publication.getEntityDescription().getPublicationDate())
                    .withInstanceType(
                        publication.getEntityDescription().getReference().getPublicationInstance().getInstanceType())
+                   .withReference(publication.getEntityDescription().getReference())
                    .build();
     }
 
@@ -237,17 +254,21 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         handler.handleRequest(sqsEvent, CONTEXT);
 
         var actualPublication = fetchPublicationDirectlyFromDatabase(cristinObject.getId().toString());
-        var expectedPublication = cristinObject.toPublication();
+        var expectedPublication = mapToPublication(cristinObject);
         injectValuesThatAreCreatedWhenSavingInDynamo(actualPublication, expectedPublication);
 
         var diff = JAVERS.compare(expectedPublication, actualPublication);
         assertThat(diff.prettyPrint(), actualPublication, is(equalTo(expectedPublication)));
     }
 
+    private Publication mapToPublication(CristinObject cristinObject) {
+        return new CristinMapper(cristinObject, cristinUnitsUtil).generatePublication();
+    }
+
     @Test
     void shouldStoreErrorReportWhenFailingToStorePublicationToDynamo() throws IOException {
         resourceService = resourceServiceThrowingExceptionWhenSavingResource();
-        handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker);
+        handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker, cristinUnitsUtil);
 
         var cristinObject = CristinDataGenerator.randomObject();
         var eventBody = createEventBody(cristinObject);
@@ -263,7 +284,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     @Test
     void shouldStoreErrorReportContainingS3eventUri() throws IOException {
         resourceService = resourceServiceThrowingExceptionWhenSavingResource();
-        handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker);
+        handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker, cristinUnitsUtil);
         var cristinObject = CristinDataGenerator.randomObject();
         var eventBody = createEventBody(cristinObject);
         var eventReference = createEventReference(eventBody);
@@ -295,7 +316,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
 
-        handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker);
+        handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker, cristinUnitsUtil);
         handler.handleRequest(sqsEvent, CONTEXT);
         var expectedExceptionName = RuntimeException.class.getSimpleName();
         var expectedFilePath = constructExpectedErrorFilePaths(eventBody,

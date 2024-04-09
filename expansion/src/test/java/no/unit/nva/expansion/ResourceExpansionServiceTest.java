@@ -25,9 +25,11 @@ import static org.hamcrest.collection.IsIn.in;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -47,6 +49,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedGeneralSupportRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
+import no.unit.nva.expansion.model.ExpandedOrganization;
 import no.unit.nva.expansion.model.ExpandedPerson;
 import no.unit.nva.expansion.model.ExpandedPublishingRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
@@ -60,10 +63,13 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
@@ -314,11 +320,29 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
 
         var expectedPartOf = List.of(
-            URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0")
+            new ExpandedOrganization(
+                URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0"),
+                "20754.0.0.0",
+                null)
         );
         var partOf = expansionService.getOrganization(ticket).partOf();
 
         assertThat(partOf, is(equalTo(expectedPartOf)));
+    }
+
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldGetOrganizationIdentifierForAffiliations(Class<? extends TicketEntry> ticketType,
+                                                     PublicationStatus status)
+        throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+
+        var publicationOwnerAffiliationId = publication.getResourceOwner().getOwnerAffiliation();
+        var expectedIdentifier = UriWrapper.fromUri(publicationOwnerAffiliationId).getLastPathElement();
+        var actualIdentifier = expansionService.getOrganization(ticket).identifier();
+
+        assertThat(actualIdentifier, is(equalTo(expectedIdentifier)));
     }
 
     @Test
@@ -555,6 +579,22 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var json = JsonUtils.dtoObjectMapper.readTree(expandedResourceAsJson);
 
         assertThat(json.get("nviStatus"), is(nullValue()));
+    }
+
+    @Test
+    void doiShouldBeExpandedAsUriWhenMultipleDoiOccurrencesInPublication()
+        throws ApiGatewayException, JsonProcessingException {
+        var publication = TicketTestUtils.createPersistedPublicationWithDoi(PUBLISHED, resourceService);
+        var doi = publication.getEntityDescription().getReference().getDoi();
+        publication.getAssociatedArtifacts().add(new AssociatedLink(doi, randomString(), randomString()));
+        var publicationWithIdenticalDoiValues = resourceService.updatePublication(publication);
+        var resourceUpdate = Resource.fromPublication(publicationWithIdenticalDoiValues);
+        var expansionService = expansionServiceReturningNviCandidate(publication, nviCandidateResponse(), 404);
+        var expandedResourceAsJson = expansionService.expandEntry(resourceUpdate).toJsonString();
+        var json = JsonUtils.dtoObjectMapper.readTree(expandedResourceAsJson);
+
+        var expandedDoi = json.at("/entityDescription/reference/doi");
+        assertThat(expandedDoi.asText(), is(equalTo(doi.toString())));
     }
 
     @Test

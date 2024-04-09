@@ -6,6 +6,7 @@ import no.unit.nva.cristin.lambda.PublicationRepresentations;
 import no.unit.nva.cristin.mapper.CristinLocale;
 import no.unit.nva.cristin.mapper.ScientificResource;
 import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.Reference;
 
 public record NviReport(String publicationIdentifier,
                         String cristinIdentifier,
@@ -13,7 +14,7 @@ public record NviReport(String publicationIdentifier,
                         List<CristinLocale> cristinLocales,
                         String yearReported,
                         PublicationDate publicationDate,
-                        String instanceType) implements JsonSerializable {
+                        String instanceType, Reference reference) implements JsonSerializable {
 
     public static Builder builder() {
         return new Builder();
@@ -31,6 +32,7 @@ public record NviReport(String publicationIdentifier,
                                          .getReference()
                                          .getPublicationInstance()
                                          .getInstanceType())
+                   .withReference(publicationRepresentations.getPublication().getEntityDescription().getReference())
                    .build();
     }
 
@@ -43,6 +45,7 @@ public record NviReport(String publicationIdentifier,
         private PublicationDate publicationDate;
         private List<CristinLocale> cristinLocales;
         private String instanceType;
+        private Reference reference;
 
         private Builder() {
         }
@@ -82,10 +85,14 @@ public record NviReport(String publicationIdentifier,
             return this;
         }
 
-        public NviReport build() {
-            return new NviReport(publicationIdentifier, cristinIdentifier, scientificResources, cristinLocales,
-                                 yearReported, publicationDate, instanceType);
+        public Builder withReference(Reference reference) {
+            this.reference = reference;
+            return this;
         }
 
+        public NviReport build() {
+            return new NviReport(publicationIdentifier, cristinIdentifier, scientificResources, cristinLocales,
+                                 yearReported, publicationDate, instanceType, reference);
+        }
     }
 }

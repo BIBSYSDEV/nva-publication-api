@@ -7,10 +7,11 @@ import java.util.Optional;
 import java.util.UUID;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import org.apache.tika.io.TikaInputStream;
 
 public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, TikaInputStream content, long size,
-                         String mimeType, URI license, boolean publisherAuthority, Instant embargo) {
+                         String mimeType, URI license, PublisherVersion publisherVersion, Instant embargo) {
 
     private static final List<String> UNSUPPORTED_MIME_TYPES = List.of("text/html", "application/octet-stream");
     public static Builder builder() {
@@ -19,7 +20,7 @@ public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, Tika
 
     public Builder copy() {
         return new Builder()
-                   .withPublisherAuthority(this.publisherAuthority)
+                   .withPublisherVersion(this.publisherVersion)
                    .withEmbargo(this.embargo)
                    .withLicense(this.license)
                    .withName(this.name)
@@ -37,7 +38,7 @@ public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, Tika
                    .withMimeType(mimeType)
                    .withSize(size)
                    .withLicense(license)
-                   .withPublisherAuthority(publisherAuthority)
+                   .withPublisherVersion(publisherVersion)
                    .withEmbargoDate(embargo)
                    .buildPublishedFile();
     }
@@ -57,8 +58,8 @@ public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, Tika
         private long size;
         private String contentType;
         private URI license;
-        private boolean publisherAuthority;
         private Instant embargo;
+        private PublisherVersion publisherVersion;
 
         private Builder() {
         }
@@ -98,8 +99,9 @@ public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, Tika
             return this;
         }
 
-        public Builder withPublisherAuthority(boolean publisherAuthority) {
-            this.publisherAuthority = publisherAuthority;
+
+        public Builder withPublisherVersion(PublisherVersion publisherVersion) {
+            this.publisherVersion = publisherVersion;
             return this;
         }
 
@@ -110,7 +112,7 @@ public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, Tika
 
         public ScopusFile build() {
             return new ScopusFile(identifier, name, downloadFileUrl, content, size, contentType, license,
-                                  publisherAuthority, embargo);
+                                  publisherVersion, embargo);
         }
     }
 }

@@ -1062,6 +1062,25 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldUpdatePublicationVersionWhenRefreshingResource() throws ApiGatewayException {
+        var publication = createPublishedResource();
+        var version = Resource.fromPublication(publication).toDao().getVersion();
+        resourceService.refresh(publication.getIdentifier());
+        var updatedPublication = resourceService.getPublication(publication);
+        var updatesVersion = Resource.fromPublication(updatedPublication).toDao().getVersion();
+
+        assertThat(updatesVersion, is(not(equalTo(version))));
+    }
+
+    @Test
+    void shouldLogWhenPublicationToRefreshDoesNotExist() {
+        var publication = randomPublication();
+        var appender = LogUtils.getTestingAppender(ResourceService.class);
+        resourceService.refresh(publication.getIdentifier());
+        assertThat(appender.getMessages(), Matchers.containsString("Resource to refresh is not found"));
+    }
+
+    @Test
     void shouldThrowBadRequestWhenAttemptingToDeletePublishedPublication() throws ApiGatewayException {
         var publication = createPersistedPublicationWithDoi();
         resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());

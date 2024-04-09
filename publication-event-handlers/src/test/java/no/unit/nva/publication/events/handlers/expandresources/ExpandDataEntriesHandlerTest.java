@@ -24,7 +24,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -45,15 +44,21 @@ import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.FakeSqsClient;
 import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -75,7 +80,10 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     private ExpandDataEntriesHandler expandResourceHandler;
     private S3Driver s3Driver;
     private FakeS3Client s3Client;
+    private FakeSqsClient sqsClient;
     private ResourceService resourceService;
+    private TicketService ticketService;
+    private MessageService messageService;
 
     @BeforeEach
     public void init() {
@@ -83,7 +91,9 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         this.output = new ByteArrayOutputStream();
         s3Client = new FakeS3Client();
         resourceService = getResourceServiceBuilder().build();
-        var ticketService = new TicketService(client);
+        sqsClient = new FakeSqsClient();
+        ticketService = new TicketService(client);
+        messageService = new MessageService(client);
 
         insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources();
 
@@ -93,7 +103,8 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         ResourceExpansionService resourceExpansionService =
             new ResourceExpansionServiceImpl(resourceService, ticketService, mockUriRetriever, mockUriRetriever);
 
-        this.expandResourceHandler = new ExpandDataEntriesHandler(s3Client, resourceExpansionService);
+        this.expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client,
+                                                                  resourceExpansionService);
         this.s3Driver = new S3Driver(s3Client, "ignoredForFakeS3Client");
     }
 
@@ -144,11 +155,112 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
         var logger = LogUtils.getTestingAppenderForRootLogger();
 
-        expandResourceHandler = new ExpandDataEntriesHandler(s3Client, createFailingService());
+        expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client, createFailingService());
         expandResourceHandler.handleRequest(request, output, CONTEXT);
 
         assertThat(logger.getMessages(), containsString(EXPECTED_ERROR_MESSAGE));
         assertThat(logger.getMessages(), containsString(newImage.getIdentifier().toString()));
+    }
+
+    @Test
+    void shouldPersistRecoveryMessageWhenExpansionHasFailed() throws IOException {
+        var oldImage = createPublicationWithStatus(PUBLISHED);
+        var newImage = createUpdatedVersionOfPublication(oldImage);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
+
+
+        var sqsClient = new FakeSqsClient();
+        expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client, createFailingService());
+        expandResourceHandler.handleRequest(request, output, CONTEXT);
+
+        var persistedRecoveryMessage = sqsClient.getDeliveredMessages().getFirst();
+        var messageAttributes = persistedRecoveryMessage.messageAttributes();
+        assertThat(messageAttributes.get("id").stringValue(), is(equalTo(oldImage.getIdentifier().toString())));
+    }
+
+    @Test
+    void shouldPersistRecoveryMessageWhenExpansionHasFailedAndOldImageIsNotPresent() throws IOException {
+        var newImage = createPublicationWithStatus(PUBLISHED);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(null, newImage);
+
+
+        var sqsClient = new FakeSqsClient();
+        expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client, createFailingService());
+        expandResourceHandler.handleRequest(request, output, CONTEXT);
+
+        var persistedRecoveryMessage = sqsClient.getDeliveredMessages().getFirst();
+        var messageAttributes = persistedRecoveryMessage.messageAttributes();
+        assertThat(messageAttributes.get("id").stringValue(), is(equalTo(newImage.getIdentifier().toString())));
+    }
+
+    @Test
+    void shouldPersistRecoveryMessageForPublicationWhenBadResponseFromExternalApi() throws IOException {
+        var newImage = createPublicationWithStatus(PUBLISHED);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(null, newImage);
+
+        var resourceExpansionService =
+            new ResourceExpansionServiceImpl(resourceService, new TicketService(client),
+                                             uriRetrieverThrowingException(), uriRetrieverThrowingException());
+        this.expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client,
+                                                                  resourceExpansionService);
+        expandResourceHandler.handleRequest(request, output, CONTEXT);
+
+        var persistedRecoveryMessage = sqsClient.getDeliveredMessages().getFirst();
+        var messageAttributes = persistedRecoveryMessage.messageAttributes();
+
+        assertThat(messageAttributes.get("id").stringValue(), is(equalTo(newImage.getIdentifier().toString())));
+        assertThat(messageAttributes.get("type").stringValue(), is(equalTo("Resource")));
+    }
+
+    @Test
+    void shouldPersistRecoveryMessageForTicketWhenBadResponseFromExternalApi() throws IOException {
+        var publication = createPublicationWithStatus(PUBLISHED);
+        var ticket = TicketEntry.requestNewTicket(publication, DoiRequest.class);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(null, ticket);
+
+        var resourceExpansionService =
+            new ResourceExpansionServiceImpl(resourceService, new TicketService(client),
+                                             uriRetrieverThrowingException(), uriRetrieverThrowingException());
+        this.expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client,
+                                                                  resourceExpansionService);
+        expandResourceHandler.handleRequest(request, output, CONTEXT);
+
+        var persistedRecoveryMessage = sqsClient.getDeliveredMessages().getFirst();
+        var messageAttributes = persistedRecoveryMessage.messageAttributes();
+
+        assertThat(messageAttributes.get("id").stringValue(), is(equalTo(ticket.getIdentifier().toString())));
+        assertThat(messageAttributes.get("type").stringValue(), is(equalTo("Ticket")));
+    }
+
+    @Test
+    void shouldPersistRecoveryMessageForMessageWhenBadResponseFromExternalApi() throws IOException,
+                                                                                       ApiGatewayException {
+        var publication = createPublicationWithStatus(PUBLISHED);
+        var persistedPublication =
+            resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        var ticket = TicketEntry.requestNewTicket(persistedPublication, GeneralSupportRequest.class)
+                         .persistNewTicket(ticketService);
+        var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
+        var request = emulateEventEmittedByDataEntryUpdateHandler(null, message);
+
+        var resourceExpansionService =
+            new ResourceExpansionServiceImpl(resourceService, new TicketService(client),
+                                             uriRetrieverThrowingException(), uriRetrieverThrowingException());
+        this.expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client,
+                                                                  resourceExpansionService);
+        expandResourceHandler.handleRequest(request, output, CONTEXT);
+
+        var persistedRecoveryMessage = sqsClient.getDeliveredMessages().getFirst();
+        var messageAttributes = persistedRecoveryMessage.messageAttributes();
+
+        assertThat(messageAttributes.get("id").stringValue(), is(equalTo(message.getIdentifier().toString())));
+        assertThat(messageAttributes.get("type").stringValue(), is(equalTo("Message")));
+    }
+
+    private static UriRetriever uriRetrieverThrowingException() {
+        var mockUriRetriever = mock(UriRetriever.class);
+        when(mockUriRetriever.getRawContent(any(), any())).thenThrow(new RuntimeException());
+        return mockUriRetriever;
     }
 
     @Test
@@ -204,15 +316,12 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
     private Entity crateDataEntry(Object image) {
 
-        if (image instanceof Publication) {
-            return Resource.fromPublication((Publication) image);
-        } else if (image instanceof DoiRequest) {
-            return (DoiRequest) image;
-        } else if (image instanceof Message) {
-            return (Message) image;
-        } else {
-            return null;
-        }
+        return switch (image) {
+            case Publication publication -> Resource.fromPublication(publication);
+            case DoiRequest doiRequest -> doiRequest;
+            case Message message -> message;
+            case null, default -> null;
+        };
     }
 
     private void insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources() {

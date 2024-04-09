@@ -116,6 +116,12 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Description: SQS Queue Url for proceeding nvi data from cristin
     Default: /NVA/Queues/CristinImportNviQueueUrl
+  SlackSnsArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: '/NVA/Monitoring/SlackSnsArn'
+  CristinUnitsS3ObjectUri:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/NVA/S3/CristinIntermediateStorage/Units'
 
 Conditions:
   WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ] ]
@@ -324,6 +330,13 @@ Resources:
     Type: "AWS::SQS::Queue"
   BrageMergingRollbackHandlerDLQ:
     Type: "AWS::SQS::Queue"
+  RecoveryQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 1209600 #14 days
+  RecoveryBatchScanHandlerDLQ:
+    Type: "AWS::SQS::Queue"
+
 
 
   #==============================ROLES=======================================================================
@@ -1189,6 +1202,7 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
           BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
+          RECOVERY_QUEUE: !Ref RecoveryQueue
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -1292,6 +1306,7 @@ Resources:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
           PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
+          RECOVERY_QUEUE: !Ref RecoveryQueue
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -1390,6 +1405,36 @@ Resources:
             Type: SQS
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
 
+  RecoveryBatchScanHandler:
+    DependsOn: EventsLambdaManagedPolicy
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.recovery.RecoveryBatchScanHandler::handleRequest
+      Role: !GetAtt LambdaRole.Arn
+      Timeout: 900
+      ReservedConcurrentExecutions: 1
+      Environment:
+        Variables:
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          TABLE_NAME: !Ref NvaResourcesTable
+          RECOVERY_QUEUE: !Ref RecoveryQueue
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                topic: [ "PublicationService.Recovery.Refresh" ]
+
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt RecoveryBatchScanHandlerDLQ.Arn
+
   EventBasedImportCandidateBatchScanHandlerTest:
     DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
@@ -1436,6 +1481,7 @@ Resources:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           HANDLER_EVENTS_FOLDER: "not used"
+          RECOVERY_QUEUE: !Ref RecoveryQueue
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -1821,6 +1867,7 @@ Resources:
           BATCH_EMISSION_INTERVAL_MILLIS: 0
           DOMAIN_NAME: !Ref ApiDomain
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          CRISTIN_UNITS_S3_OBJECT_URI: !Ref CristinUnitsS3ObjectUri
       Events:
         SqsEvent:
           Type: SQS
@@ -2198,3 +2245,23 @@ Resources:
     Properties:
       AccessControl: Private
       BucketName: !Sub "${ScopusImportReportBucketName}-${AWS::AccountId}"
+
+
+  #============================Alarms===============================================================
+
+  RecoveryQueueAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: AWS/SQS ApproximateNumberOfMessagesVisible QueueName=RecoveryQueue
+      MetricName: ApproximateNumberOfMessagesVisible
+      Namespace: AWS/SQS
+      Statistic: Sum
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt RecoveryQueue.QueueName
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Ref SlackSnsArn

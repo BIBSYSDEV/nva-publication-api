@@ -4,6 +4,7 @@ import nva.commons.core.JacocoGenerated;
 
 public enum ContentVersion {
 
+    //Documentation for the enums used: https://www.crossref.org/community/preprints/
     VOR("vor"), AM("am"), TDM("tdm"), UNSPECIFIED("unspecified");
 
     private final String value;

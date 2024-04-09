@@ -72,6 +72,7 @@ import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
@@ -446,7 +447,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                                        RandomDataGenerator.randomInteger().longValue(),
                                        RandomDataGenerator.randomUri(),
                                        false,
-                                       false,
+                                       PublisherVersion.ACCEPTED_VERSION,
                                        (Instant)null,
                                        RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
                                        RandomDataGenerator.randomString());
@@ -483,7 +484,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                                        RandomDataGenerator.randomInteger().longValue(),
                                        RandomDataGenerator.randomUri(),
                                        false,
-                                       false,
+                                       PublisherVersion.ACCEPTED_VERSION,
                                        (Instant)null,
                                        RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
                                        RandomDataGenerator.randomString());

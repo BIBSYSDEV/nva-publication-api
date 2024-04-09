@@ -4,6 +4,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.Put;
+import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -85,9 +86,19 @@ public class MessageDao extends Dao
     @JacocoGenerated
     @Override
     public void updateExistingEntry(AmazonDynamoDB client) {
-        throw new UnsupportedOperationException("Not supported yet. Not sure if a message can be updated");
+        try {
+            client.putItem(this.createPutItemRequest());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
-    
+
+    private PutItemRequest createPutItemRequest() {
+        return new PutItemRequest()
+                   .withTableName(RESOURCES_TABLE_NAME)
+                   .withItem(toDynamoFormat());
+    }
+
     @JacocoGenerated
     @Override
     public int hashCode() {

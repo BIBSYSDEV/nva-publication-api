@@ -47,7 +47,6 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
-import java.time.Clock;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -752,6 +751,21 @@ public class TicketServiceTest extends ResourcesLocalTest {
 
         assertThat(((PublishingRequestCase) ticket).getFilesForApproval(),
                    containsInAnyOrder(expectedFilesForApproval));
+    }
+
+    @Test
+    void shouldRefreshTicketByUpdatingVersion()
+        throws ApiGatewayException {
+        var ticketType = PublishingRequestCase.class;
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
+        var ticket = PublishingRequestCase.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                         .persistNewTicket(ticketService);
+        var version = ticket.toDao().getVersion();
+        ticketService.refresh(ticket.getIdentifier());
+        var updatedTicket = ticketService.fetchTicket(ticket);
+        var updatedVersion = updatedTicket.toDao().getVersion();
+
+        assertThat(updatedVersion, is(not(equalTo(version))));
     }
 
     private static Username getUsername(Publication publication) {
