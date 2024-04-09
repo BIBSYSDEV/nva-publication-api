@@ -7,14 +7,15 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import java.time.Clock;
 import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.external.services.UriRetriever;
 
 public final class ResourceServiceBuilder {
 
     private String tableName = RESOURCES_TABLE_NAME;
     private AmazonDynamoDB dynamoDbClient = DEFAULT_DYNAMODB_CLIENT;
     private Clock clock = Clock.systemDefaultZone();
-
     Supplier<SortableIdentifier> identifierSupplier = DEFAULT_IDENTIFIER_SUPPLIER;
+    private UriRetriever uriRetriever = UriRetriever.defaultUriRetriever();
 
     ResourceServiceBuilder() {
     }
@@ -39,7 +40,12 @@ public final class ResourceServiceBuilder {
         return this;
     }
 
+    public ResourceServiceBuilder withUriRetriever(UriRetriever uriRetriever) {
+        this.uriRetriever = uriRetriever;
+        return this;
+    }
+
     public ResourceService build() {
-        return new ResourceService(dynamoDbClient, tableName, clock, identifierSupplier);
+        return new ResourceService(dynamoDbClient, tableName, clock, identifierSupplier, uriRetriever);
     }
 }
