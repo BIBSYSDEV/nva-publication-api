@@ -97,6 +97,7 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.UnconfirmedCourse;
+import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
@@ -1217,6 +1218,27 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                            cristinPublication,
                                                            minimalRecord.getId());
         assertThat(storedHandleString, is(not(nullValue())));
+    }
+
+    @Test
+    void shouldUpdateResourceOwnerAndPublisherWhenUpdatingAssociatedArtifactsOfExistingPublication()
+        throws BadRequestException, IOException, nva.commons.apigateway.exceptions.NotFoundException {
+        var cristinIdentifier = randomString();
+        var cristinPublication = createCristinPublication(cristinIdentifier);
+        var newResourceOwner = new ResourceOwner(randomString(), randomUri());
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                 .withType(TYPE_REPORT_WORKING_PAPER)
+                                 .withResourceOwner(newResourceOwner)
+                                 .withCristinIdentifier(cristinIdentifier)
+                                 .withResourceContent(createResourceContent())
+                                 .withAssociatedArtifacts(createCorrespondingAssociatedArtifactWithLegalNote(null))
+                                 .build();
+        var expectedPublication = brageGenerator.getNvaPublication();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        var expectedResourceOwner = new no.unit.nva.model.ResourceOwner(new Username(newResourceOwner.getOwner()),
+                                                                        newResourceOwner.getOwnerAffiliation());
+        assertThat(actualPublication.getResourceOwner(), is(equalTo(expectedResourceOwner)));
     }
 
     @Test

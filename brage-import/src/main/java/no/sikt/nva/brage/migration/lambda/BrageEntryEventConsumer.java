@@ -258,9 +258,18 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private BrageMergingReport persistInDatabaseAndCreateMergeReport(Publication publicationForUpdate,
-                                                                     Publication existinPublication) {
-        var newImage = resourceService.updatePublication(publicationForUpdate);
-        return new BrageMergingReport(existinPublication, newImage);
+                                                                     Publication existingPublication) {
+        if (resouseOwnerIsNotOverriden(publicationForUpdate, existingPublication)) {
+            var newImage = resourceService.updatePublication(publicationForUpdate);
+            return new BrageMergingReport(existingPublication, newImage);
+        } else {
+            var newImage = resourceService.recreateWith(publicationForUpdate);
+            return new BrageMergingReport(existingPublication, newImage);
+        }
+    }
+
+    private static boolean resouseOwnerIsNotOverriden(Publication publicationForUpdate, Publication existingPublication) {
+        return existingPublication.getResourceOwner().equals(publicationForUpdate.getResourceOwner());
     }
 
     private Publication updatedPublication(Publication publication, Publication existingPublication)

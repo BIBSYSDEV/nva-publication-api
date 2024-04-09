@@ -143,11 +143,26 @@ public class CristinImportPublicationMerger {
                    : Optional.of(bragePublication.getHandle());
     }
 
-    private Publication fillNewPublicationWithMetadataFromBrage(Publication publicationForUpdating) {
-        publicationForUpdating.getEntityDescription().setDescription(getCorrectDescription());
-        publicationForUpdating.getEntityDescription().setAbstract(getCorrectAbstract());
-        publicationForUpdating.setAssociatedArtifacts(determineAssociatedArtifacts());
-        return publicationForUpdating;
+    private Publication fillNewPublicationWithMetadataFromBrage(Publication publication) {
+        var associatedArtifacts = determineAssociatedArtifacts();
+        publication.getEntityDescription().setDescription(getCorrectDescription());
+        publication.getEntityDescription().setAbstract(getCorrectAbstract());
+
+        if (hasBeenUpdated(associatedArtifacts, publication)) {
+            updatePublicationResourceOwnerAndPublisher(publication);
+        }
+
+        publication.setAssociatedArtifacts(associatedArtifacts);
+        return publication;
+    }
+
+    private void updatePublicationResourceOwnerAndPublisher(Publication publication) {
+        publication.setResourceOwner(bragePublication.getResourceOwner());
+//        publication.setPublisher(bragePublication.getPublisher());
+    }
+
+    private boolean hasBeenUpdated(AssociatedArtifactList associatedArtifacts, Publication publication) {
+        return !associatedArtifacts.equals(publication.getAssociatedArtifacts());
     }
 
     private AssociatedArtifactList determineAssociatedArtifacts() {

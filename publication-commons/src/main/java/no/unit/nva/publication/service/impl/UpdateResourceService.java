@@ -165,6 +165,29 @@ public class UpdateResourceService extends ServiceWithTransactions {
         sendTransactionWriteRequest(request);
     }
 
+    public Publication updatePublicationAndOwner(Publication publication) {
+        var originalPublication = fetchPublicationByIdentifier(publication.getIdentifier());
+        if (originalPublication.getStatus().equals(publication.getStatus())) {
+            publication.setCreatedDate(publication.getCreatedDate());
+            publication.setModifiedDate(clockForTimestamps.instant());
+            var resource = Resource.fromPublication(publication);
+
+            var updateResourceTransactionItem = updateResource(resource);
+            var transactionItems = new ArrayList<TransactWriteItem>();
+            transactionItems.add(updateResourceTransactionItem);
+
+            var request = new TransactWriteItemsRequest().withTransactItems(transactionItems);
+            sendTransactionWriteRequest(request);
+
+            return publication;
+        }
+        throw new IllegalStateException("Attempting to update publication status when it is not allowed");
+    }
+
+    private Publication updatePublicationAndResourceOwner(Publication publication) {
+        return null;
+    }
+
     private static List<TransactWriteItem> createPendingUnpublishingRequestTicket(UnpublishRequest unpublishRequest) {
         return new UnpublishRequestDao(unpublishRequest).createInsertionTransactionRequest().getTransactItems();
     }
@@ -311,6 +334,11 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     private Publication fetchExistingPublication(Publication publication) {
         return attempt(() -> readResourceService.getPublication(publication))
+                   .orElseThrow(fail -> new TransactionFailedException(fail.getException()));
+    }
+
+    private Resource fetchPublicationByIdentifier(SortableIdentifier identifier) {
+        return attempt(() -> readResourceService.getResourceByIdentifier(identifier))
                    .orElseThrow(fail -> new TransactionFailedException(fail.getException()));
     }
 

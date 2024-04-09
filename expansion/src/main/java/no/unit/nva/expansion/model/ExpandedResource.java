@@ -1,5 +1,6 @@
 package no.unit.nva.expansion.model;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.AFFILIATIONS_POINTER;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.CONTEXT_TYPE_JSON_PTR;
@@ -37,6 +38,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import nva.commons.core.JacocoGenerated;
@@ -56,6 +58,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     private static final String INSTANCE_TYPE_ACADEMIC_CHAPTER = "AcademicChapter";
     public static final JsonPointer CONTRIBUTORS_PTR = JsonPointer.compile("/entityDescription/contributors");
     public static final String CONTRIBUTOR_SEQUENCE = "sequence";
+    public static final int MAX_CONTRIBUTOR_SIZE = 100;
     @JsonAnySetter
     private final Map<String, Object> allFields;
 
@@ -65,10 +68,30 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
 
     public static ExpandedResource fromPublication(RawContentRetriever uriRetriever, Publication publication)
         throws JsonProcessingException {
+        var updatedPublication = reduceContributorsIfNeeded(publication);
         var documentWithId = transformToJsonLd(publication);
         var enrichedJson = enrichJson(uriRetriever, documentWithId);
         var sortedJson = addFields(enrichedJson, publication);
         return attempt(() -> objectMapper.treeToValue(sortedJson, ExpandedResource.class)).orElseThrow();
+    }
+
+    private static Publication reduceContributorsIfNeeded(Publication publication) {
+        var sortedAndLimitedContributors = reduceNumberOfContributorsIfNeeded(publication);
+        var entityDescription = publication.getEntityDescription().copy().withContributors(sortedAndLimitedContributors).build();
+        return publication.copy().withEntityDescription(entityDescription).build();
+    }
+
+    private static List<Contributor> reduceNumberOfContributorsIfNeeded(Publication publication) {
+        return publication.getEntityDescription().getContributors().stream()
+                   .filter(contributor -> nonNull(contributor.getIdentity()))
+                   .sorted(prioritizeContributorsWithId())
+                   .limit(MAX_CONTRIBUTOR_SIZE)
+                   .toList();
+    }
+
+    private static Comparator<Contributor> prioritizeContributorsWithId() {
+        return Comparator.comparing(contributor -> contributor.getIdentity().getId(),
+                                    Comparator.nullsLast(Comparator.naturalOrder()));
     }
 
     private static JsonNode addFields(String json, Publication publication) {

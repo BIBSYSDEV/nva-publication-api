@@ -353,6 +353,10 @@ public class ResourceService extends ServiceWithTransactions {
         updateResourceService.deletePublication(publication);
     }
 
+    public Publication updateCristinPublicationAndOwner(Publication publication) {
+        return updateResourceService.updatePublicationAndOwner(publication);
+    }
+
     private static boolean isNotRemoved(TicketEntry ticket) {
         return !TicketStatus.REMOVED.equals(ticket.getStatus());
     }
