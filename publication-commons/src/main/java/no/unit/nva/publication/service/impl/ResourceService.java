@@ -33,6 +33,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
@@ -353,8 +354,21 @@ public class ResourceService extends ServiceWithTransactions {
         updateResourceService.deletePublication(publication);
     }
 
-    public Publication updateCristinPublicationAndOwner(Publication publication) {
-        return updateResourceService.updatePublicationAndOwner(publication);
+    public void permanentlyRemovePublication(Publication publication) {
+        updateResourceService.permanentlyRemove(publication);
+    }
+
+    public void createEmptyPublicationForCustomer(ResourceOwner resourceOwner, Organization publisher,
+                                                  SortableIdentifier identifier) {
+        var publication = new Publication.Builder()
+                              .withResourceOwner(resourceOwner)
+                              .withPublisher(publisher)
+                              .withIdentifier(identifier)
+                              .withStatus(PUBLISHED)
+                              .build();
+        var newResource = Resource.fromPublication(publication);
+        newResource.setCreatedDate(publication.getCreatedDate());
+        insertResource(newResource);
     }
 
     private static boolean isNotRemoved(TicketEntry ticket) {

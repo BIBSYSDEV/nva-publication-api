@@ -39,6 +39,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationDate.Builder;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
@@ -92,6 +93,7 @@ public final class BrageNvaMapper {
                               .withAdditionalIdentifiers(extractCristinIdentifier(brageRecord))
                               .withRightsHolder(brageRecord.getRightsholder())
                               .withSubjects(extractSubjects(brageRecord))
+                              .withStatus(PublicationStatus.PUBLISHED)
                               .build();
         if (!isCristinRecord(brageRecord)) {
             assertPublicationDoesNotHaveEmptyFields(publication);

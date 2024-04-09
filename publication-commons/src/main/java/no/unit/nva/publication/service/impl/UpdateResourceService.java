@@ -14,6 +14,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
@@ -22,6 +23,7 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -49,6 +51,7 @@ import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DynamoEntry;
+import no.unit.nva.publication.model.storage.IdentifierEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.storage.UnpublishRequestDao;
@@ -165,27 +168,14 @@ public class UpdateResourceService extends ServiceWithTransactions {
         sendTransactionWriteRequest(request);
     }
 
-    public Publication updatePublicationAndOwner(Publication publication) {
-        var originalPublication = fetchPublicationByIdentifier(publication.getIdentifier());
-        if (originalPublication.getStatus().equals(publication.getStatus())) {
-            publication.setCreatedDate(publication.getCreatedDate());
-            publication.setModifiedDate(clockForTimestamps.instant());
-            var resource = Resource.fromPublication(publication);
+    public void permanentlyRemove(Publication publication) {
+        var resource = Resource.fromPublication(publication);
 
-            var updateResourceTransactionItem = updateResource(resource);
-            var transactionItems = new ArrayList<TransactWriteItem>();
-            transactionItems.add(updateResourceTransactionItem);
+        var removeResourceTransactionItem = permanentlyRemove(resource);
+        var s = newDeleteTransactionItem(new IdentifierEntry(resource.getIdentifier().toString()));
 
-            var request = new TransactWriteItemsRequest().withTransactItems(transactionItems);
-            sendTransactionWriteRequest(request);
-
-            return publication;
-        }
-        throw new IllegalStateException("Attempting to update publication status when it is not allowed");
-    }
-
-    private Publication updatePublicationAndResourceOwner(Publication publication) {
-        return null;
+        var request = new TransactWriteItemsRequest().withTransactItems(removeResourceTransactionItem, s);
+        sendTransactionWriteRequest(request);
     }
 
     private static List<TransactWriteItem> createPendingUnpublishingRequestTicket(UnpublishRequest unpublishRequest) {
@@ -337,11 +327,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
                    .orElseThrow(fail -> new TransactionFailedException(fail.getException()));
     }
 
-    private Resource fetchPublicationByIdentifier(SortableIdentifier identifier) {
-        return attempt(() -> readResourceService.getResourceByIdentifier(identifier))
-                   .orElseThrow(fail -> new TransactionFailedException(fail.getException()));
-    }
-
     private Resource updateResourceOwner(UserInstance newOwner, Resource existingResource) {
         return existingResource
                    .copy()
@@ -383,6 +368,25 @@ public class UpdateResourceService extends ServiceWithTransactions {
                       .withExpressionAttributeValues(primaryKeyConditionAttributeValues);
 
         return new TransactWriteItem().withPut(put);
+    }
+
+    private TransactWriteItem permanentlyRemove(Resource resourceUpdate) {
+
+        var resourceDao = new ResourceDao(resourceUpdate);
+
+        var primaryKeyConditionAttributeValues = primaryKeyEqualityConditionAttributeValues(resourceDao);
+
+        var keyToDelete = new HashMap<String, AttributeValue>();
+        keyToDelete.put("PK0", new AttributeValue(resourceDao.getPrimaryKeyPartitionKey()));
+        keyToDelete.put("SK0", new AttributeValue(resourceDao.getPrimaryKeySortKey()));
+        Delete delete = new Delete()
+                            .withTableName(tableName)
+                            .withKey(keyToDelete)
+                            .withConditionExpression(PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION)
+                            .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES)
+                            .withExpressionAttributeValues(primaryKeyConditionAttributeValues);
+
+        return new TransactWriteItem().withDelete(delete);
     }
 
     private PublishPublicationStatusResponse publishingInProgressStatus() {

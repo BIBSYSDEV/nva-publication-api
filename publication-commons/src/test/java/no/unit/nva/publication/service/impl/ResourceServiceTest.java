@@ -1082,6 +1082,26 @@ class ResourceServiceTest extends ResourcesLocalTest {
                      () -> resourceService.deletePublication(resourceService.getPublication(publication)));
     }
 
+    @Test
+    void shouldPermanentlyDeletePublication() throws ApiGatewayException {
+        var publication = createPersistedPublicationWithDoi();
+        resourceService.permanentlyRemovePublication(publication);
+
+        assertThrows(NotFoundException.class,
+                     () -> resourceService.getPublication(publication));
+    }
+
+    @Test
+    void shouldCreateEmptyPublicationForCustomer() throws ApiGatewayException {
+        var publisher = new Organization.Builder().withId(randomUri()).build();
+        var resourceOwner = new ResourceOwner(new Username(randomString()), randomUri());
+        var identifier = SortableIdentifier.next();
+        resourceService.createEmptyPublicationForCustomer(resourceOwner, publisher, identifier);
+        var persistedPublication = resourceService.getPublicationByIdentifier(identifier);
+
+        assertThat(persistedPublication, is(not(nullValue())));
+    }
+
     private static AssociatedArtifactList createEmptyArtifactList() {
         return new AssociatedArtifactList(emptyList());
     }

@@ -30,6 +30,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -120,6 +121,7 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UnixPath;
@@ -1193,7 +1195,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         minimalRecord.setContentBundle(new ResourceContent(List.of(contentFile)));
         var s3Event = createNewBrageRecordEvent(minimalRecord);
         handler.handleRequest(s3Event, CONTEXT);
-        var updatedPublication = resourceService.getPublication(cristinPublication);
+        var updatedPublication = resourceService.getPublicationByIdentifier(cristinPublication.getIdentifier());
 
         //assert that dummy handles has not been stored in the updated publication
         assertThat(updatedPublication.getHandle(), not(equalTo(minimalRecord.getId())));
@@ -1238,6 +1240,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
         var expectedResourceOwner = new no.unit.nva.model.ResourceOwner(new Username(newResourceOwner.getOwner()),
                                                                         newResourceOwner.getOwnerAffiliation());
+
         assertThat(actualPublication.getResourceOwner(), is(equalTo(expectedResourceOwner)));
     }
 
@@ -1306,7 +1309,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldPersistReportContainingInformationRegardingDiscardedFilesDuringMerging()
-        throws BadRequestException, IOException {
+        throws ApiGatewayException, IOException {
         var cristinIdentifier = randomString();
         var cristinPublication =
             createCristinPublicationWithFilesAndRandomHandle(cristinIdentifier);
@@ -1346,7 +1349,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     private Publication createCristinPublicationWithFilesAndRandomHandle(String cristinIdentifier)
-        throws BadRequestException {
+        throws ApiGatewayException {
         var publication = createCristinPublication(cristinIdentifier);
         publication.setHandle(randomUri());
         publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(randomPublishedFile())));
@@ -1383,14 +1386,18 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
             });
     }
 
-    private Publication createCristinPublication(String cristinIdentifier) throws BadRequestException {
+    private Publication createCristinPublication(String cristinIdentifier)
+        throws BadRequestException, nva.commons.apigateway.exceptions.NotFoundException {
         var publication = randomPublication().copy()
                               .withAdditionalIdentifiers(
                                   Set.of(cristinAdditionalIdentifier(cristinIdentifier)))
                               .withAssociatedArtifacts(List.of())
                               .build();
-        return Resource.fromPublication(publication)
+        var persistedPublication = Resource.fromPublication(publication)
                    .persistNew(resourceService, UserInstance.fromPublication(publication));
+        attempt(() -> resourceService.publishPublication(UserInstance.fromPublication(publication),
+                                           persistedPublication.getIdentifier()));
+        return resourceService.getPublication(persistedPublication);
     }
 
     private Record createMinimalRecord(String cristinIdentifier) {
