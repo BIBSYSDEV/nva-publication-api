@@ -2001,8 +2001,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private ResourceService serviceFailsOnModifyRequestWithRuntimeError() {
-        var resourceService = spy(
-            ResourceService.builder().withDynamoDbClient(client).withUriRetriever(uriRetriever).build());
+        var resourceService = spy(getResourceServiceBuilder().build());
         doThrow(new RuntimeException(SOME_MESSAGE)).when(resourceService).updatePublication(any());
         return resourceService;
     }

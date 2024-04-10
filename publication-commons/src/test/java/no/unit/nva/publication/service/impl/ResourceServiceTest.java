@@ -420,10 +420,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         when(client.getItem(any(GetItemRequest.class))).thenThrow(expectedMessage);
         var resource = publicationWithIdentifier();
 
-        var failingResourceService = ResourceService.builder()
-                                         .withDynamoDbClient(client)
-                                         .withUriRetriever(uriRetriever)
-                                         .build();
+        var failingResourceService = getResourceServiceBuilder(client).build();
 
         Executable action = () -> failingResourceService.getPublication(resource);
         var exception = assertThrows(RuntimeException.class, action);
@@ -479,8 +476,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         RuntimeException expectedException = new RuntimeException(expectedMessage);
         when(client.query(any(QueryRequest.class))).thenThrow(expectedException);
 
-        ResourceService failingResourceService =
-            ResourceService.builder().withDynamoDbClient(client).withUriRetriever(uriRetriever).build();
+        var failingResourceService = getResourceServiceBuilder(client).build();
 
         RuntimeException exception = assertThrows(RuntimeException.class,
                                                   () -> failingResourceService.getPublicationsByOwner(SAMPLE_USER));
@@ -496,8 +492,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
             List.of(ItemUtils.toAttributeValues(invalidItem)));
         when(mockClient.query(any(QueryRequest.class))).thenReturn(responseWithInvalidItem);
 
-        ResourceService failingResourceService =
-            ResourceService.builder().withDynamoDbClient(mockClient).withUriRetriever(uriRetriever).build();
+        ResourceService failingResourceService = getResourceServiceBuilder(mockClient).build();
         Class<JsonProcessingException> expectedExceptionClass = JsonProcessingException.class;
 
         assertThatJsonProcessingErrorIsPropagatedUp(expectedExceptionClass,
@@ -512,8 +507,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         GetItemResult responseWithInvalidItem = new GetItemResult().withItem(ItemUtils.toAttributeValues(invalidItem));
         when(mockClient.getItem(any(GetItemRequest.class))).thenReturn(responseWithInvalidItem);
 
-        ResourceService failingResourceService =
-            ResourceService.builder().withDynamoDbClient(mockClient).withUriRetriever(uriRetriever).build();
+        ResourceService failingResourceService = getResourceServiceBuilder(mockClient).build();
         Class<JsonProcessingException> expectedExceptionClass = JsonProcessingException.class;
 
         SortableIdentifier someIdentifier = SortableIdentifier.next();
@@ -935,10 +929,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldLogIdentifiersOfRecordsWhenBatchScanWriteFails() {
         var failingClient = new FailingDynamoClient(this.client);
-        resourceService = ResourceService.builder()
-                              .withDynamoDbClient(failingClient)
-                              .withUriRetriever(uriRetriever)
-                              .build();
+        resourceService = getResourceServiceBuilder(failingClient).build();
 
         var userInstance = UserInstance.create(randomString(), randomUri());
         var userResources = createSamplePublicationsOfSingleOwner(userInstance);
@@ -1248,7 +1239,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         when(client.getItem(any(GetItemRequest.class))).thenReturn(
             new GetItemResult().withItem(Collections.emptyMap()));
 
-        return ResourceService.builder().withDynamoDbClient(client).withUriRetriever(uriRetriever).build();
+        return getResourceServiceBuilder(client).build();
     }
 
     private void assertThatIdentifierEntryHasBeenCreated() {

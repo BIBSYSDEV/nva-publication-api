@@ -817,8 +817,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     private void initializeServices() {
         resourceService = getResourceServiceBuilder().build();
-        messageService = new MessageService(client, uriRetriever);
-        ticketService = new TicketService(client, uriRetriever);
+        messageService = getMessageService();
+        ticketService = getTicketService();
         personRetriever = mock(UriRetriever.class);
         orgRetriever = mock(UriRetriever.class);
         var response = mock(HttpResponse.class);

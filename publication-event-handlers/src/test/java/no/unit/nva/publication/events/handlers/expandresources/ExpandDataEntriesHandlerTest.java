@@ -199,7 +199,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var request = emulateEventEmittedByDataEntryUpdateHandler(null, newImage);
 
         var resourceExpansionService =
-            new ResourceExpansionServiceImpl(resourceService, new TicketService(client, uriRetriever),
+            new ResourceExpansionServiceImpl(resourceService, getTicketService(),
                                              uriRetrieverThrowingException(), uriRetrieverThrowingException());
         this.expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client,
                                                                   resourceExpansionService);
@@ -219,7 +219,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var request = emulateEventEmittedByDataEntryUpdateHandler(null, ticket);
 
         var resourceExpansionService =
-            new ResourceExpansionServiceImpl(resourceService, new TicketService(client, uriRetriever),
+            new ResourceExpansionServiceImpl(resourceService, getTicketService(),
                                              uriRetrieverThrowingException(), uriRetrieverThrowingException());
         this.expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client,
                                                                   resourceExpansionService);
@@ -244,7 +244,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var request = emulateEventEmittedByDataEntryUpdateHandler(null, message);
 
         var resourceExpansionService =
-            new ResourceExpansionServiceImpl(resourceService, new TicketService(client, uriRetriever),
+            new ResourceExpansionServiceImpl(resourceService, getTicketService(),
                                              uriRetrieverThrowingException(), uriRetrieverThrowingException());
         this.expandResourceHandler = new ExpandDataEntriesHandler(sqsClient, s3Client,
                                                                   resourceExpansionService);

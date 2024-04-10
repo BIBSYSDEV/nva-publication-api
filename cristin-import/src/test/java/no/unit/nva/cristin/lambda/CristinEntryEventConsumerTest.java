@@ -774,11 +774,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     private ResourceService resourceServiceThrowingExceptionWhenSavingResource() {
-        var resourceService =
-            spy(ResourceService.builder()
-                    .withDynamoDbClient(client)
-                    .withUriRetriever(mock(UriRetriever.class))
-                    .build());
+        var resourceService = spy(getResourceServiceBuilder().build());
         doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE)).when(resourceService)
             .createPublicationFromImportedEntry(any());
         return resourceService;
