@@ -25,13 +25,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -63,15 +61,13 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     private NewCreateMessageHandler handler;
     private ByteArrayOutputStream output;
     private FakeContext context;
-    private UriRetriever uriRetriever;
 
     @BeforeEach
     public void setup() {
         super.init();
         this.resourceService = getResourceServiceBuilder().build();
-        this.ticketService = new TicketService(client);
-        this.uriRetriever = mock(UriRetriever.class);
-        MessageService messageService = new MessageService(client);
+        this.ticketService = getTicketService();
+        MessageService messageService = getMessageService();
         this.handler = new NewCreateMessageHandler(messageService, ticketService, uriRetriever);
         this.output = new ByteArrayOutputStream();
         this.context = new FakeContext();

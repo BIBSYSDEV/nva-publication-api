@@ -54,7 +54,7 @@ class DeleteTicketHandlerTest extends ResourcesLocalTest {
     public void setup() {
         super.init();
         this.output = new ByteArrayOutputStream();
-        this.ticketService = new TicketService(client);
+        this.ticketService = getTicketService();
         this.resourceService = getResourceServiceBuilder().build();
         this.handler = new DeleteTicketHandler(ticketService);
     }

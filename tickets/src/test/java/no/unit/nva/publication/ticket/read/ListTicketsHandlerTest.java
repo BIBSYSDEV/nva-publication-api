@@ -43,7 +43,6 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
     private static final int SMALL_PUBLICATIONS_NUMBER = 2;
     private ResourceService resourceService;
     private TicketService ticketService;
-    private MessageService messageService;
     private ListTicketsHandler handler;
     private ByteArrayOutputStream outputStream;
     
@@ -51,8 +50,7 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
     public void init() {
         super.init();
         this.resourceService = getResourceServiceBuilder().build();
-        this.ticketService = new TicketService(client);
-        this.messageService = new MessageService(client);
+        this.ticketService = getTicketService();
         this.handler = new ListTicketsHandler(ticketService);
         this.outputStream = new ByteArrayOutputStream();
     }

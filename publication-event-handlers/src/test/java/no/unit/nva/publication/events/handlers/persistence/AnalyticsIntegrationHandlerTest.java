@@ -94,7 +94,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         this.s3Driver = new S3Driver(s3Client, "notImportant");
 
         resourceService = getResourceServiceBuilder().build();
-        ticketService = new TicketService(dynamoClient);
+        ticketService = getTicketService();
 
         this.resourceExpansionService = setupResourceExpansionService();
     }

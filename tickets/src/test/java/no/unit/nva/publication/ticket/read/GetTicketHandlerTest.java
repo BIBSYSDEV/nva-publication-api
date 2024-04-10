@@ -58,7 +58,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
     public void setup() {
         super.init();
         this.handler = new GetTicketHandler(ticketService);
-        this.messageService = new MessageService(client);
+        this.messageService = getMessageService();
     }
 
     @ParameterizedTest

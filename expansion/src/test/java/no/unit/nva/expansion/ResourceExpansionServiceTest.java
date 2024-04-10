@@ -615,7 +615,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         when(response.body()).thenReturn(responseBody);
         when(mock.fetchResponse(fetchNviCandidateUri(publication), "application/json")).thenReturn(Optional.of(response));
         return new ResourceExpansionServiceImpl(getResourceServiceBuilder().build(),
-                                                            new TicketService(client),
+                                                            new TicketService(client, mock),
                                                             mock,
                                                             mock);
     }
@@ -817,8 +817,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     private void initializeServices() {
         resourceService = getResourceServiceBuilder().build();
-        messageService = new MessageService(client);
-        ticketService = new TicketService(client);
+        messageService = new MessageService(client, uriRetriever);
+        ticketService = new TicketService(client, uriRetriever);
         personRetriever = mock(UriRetriever.class);
         orgRetriever = mock(UriRetriever.class);
         var response = mock(HttpResponse.class);

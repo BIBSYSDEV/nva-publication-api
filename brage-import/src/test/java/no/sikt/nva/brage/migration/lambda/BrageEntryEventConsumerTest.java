@@ -228,7 +228,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private S3Driver s3Driver;
     private FakeS3Client s3Client;
     private ResourceService resourceService;
-    private UriRetriever uriRetriever;
 
     @BeforeEach
     public void init() {
@@ -236,7 +235,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         this.resourceService = getResourceServiceBuilder(client).build();
         this.s3Client = new ExtendedFakeS3Client();
         this.s3Driver = new S3Driver(s3Client, INPUT_BUCKET_NAME);
-        this.uriRetriever = mock(UriRetriever.class);
         this.handler = new BrageEntryEventConsumer(s3Client, resourceService, uriRetriever);
     }
 

@@ -30,7 +30,7 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
     public void init() {
         super.init();
         this.resourceService = getResourceServiceBuilder().build();
-        this.ticketService = new TicketService(client);
+        this.ticketService = getTicketService();
         this.output = new ByteArrayOutputStream();
     }
     

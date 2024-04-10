@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageStatus;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -37,15 +38,15 @@ public class MessageService extends ServiceWithTransactions {
     
     private final TicketService ticketService;
     
-    public MessageService(AmazonDynamoDB client) {
+    public MessageService(AmazonDynamoDB client, UriRetriever uriRetriever) {
         super(client);
-        this.ticketService = new TicketService(client);
+        this.ticketService = new TicketService(client, uriRetriever);
         tableName = RESOURCES_TABLE_NAME;
     }
     
     @JacocoGenerated
     public static MessageService defaultService() {
-        return new MessageService(DEFAULT_DYNAMODB_CLIENT);
+        return new MessageService(DEFAULT_DYNAMODB_CLIENT, UriRetriever.defaultUriRetriever());
     }
     
     public Message createMessage(TicketEntry ticketEntry, UserInstance sender, String messageText) {

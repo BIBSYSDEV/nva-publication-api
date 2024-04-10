@@ -47,7 +47,6 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
 
     private ListTicketsForPublicationHandler handler;
     private MessageService messageService;
-    private UriRetriever uriRetriever;
 
     public static Stream<Arguments> accessRightAndTicketTypeProvider() {
         return Stream.of(Arguments.of(DoiRequest.class, AccessRight.MANAGE_DOI),
@@ -62,9 +61,8 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     @BeforeEach
     public void setup() {
         super.init();
-        this.uriRetriever = mock(UriRetriever.class);
         this.handler = new ListTicketsForPublicationHandler(resourceService, ticketService, uriRetriever);
-        this.messageService = new MessageService(client);
+        this.messageService = getMessageService();
     }
 
     @ParameterizedTest

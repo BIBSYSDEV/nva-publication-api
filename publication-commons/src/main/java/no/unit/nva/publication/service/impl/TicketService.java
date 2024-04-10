@@ -15,6 +15,7 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -44,24 +45,26 @@ public class TicketService extends ServiceWithTransactions {
     private final ResourceService resourceService;
     private final String tableName;
 
-    public TicketService(AmazonDynamoDB client) {
-        this(client, DEFAULT_IDENTIFIER_PROVIDER);
+    public TicketService(AmazonDynamoDB client, UriRetriever uriRetriever) {
+        this(client, DEFAULT_IDENTIFIER_PROVIDER, uriRetriever);
     }
 
     protected TicketService(AmazonDynamoDB client,
-                            Supplier<SortableIdentifier> identifierProvider) {
+                            Supplier<SortableIdentifier> identifierProvider,
+                            UriRetriever uriRetriever) {
         super(client);
         this.identifierProvider = identifierProvider;
         tableName = RESOURCES_TABLE_NAME;
         resourceService = ResourceService.builder()
                               .withDynamoDbClient(client)
                               .withIdentifierSupplier(identifierProvider)
+                              .withUriRetriever(uriRetriever)
                               .build();
     }
 
     @JacocoGenerated
     public static TicketService defaultService() {
-        return new TicketService(DEFAULT_DYNAMODB_CLIENT);
+        return new TicketService(DEFAULT_DYNAMODB_CLIENT, UriRetriever.defaultUriRetriever());
     }
 
     //TODO make the method protected or package private and use TicketEntry#persist instead.

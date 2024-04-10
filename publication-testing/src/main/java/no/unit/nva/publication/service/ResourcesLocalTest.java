@@ -16,6 +16,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_BY_CRISTIN_ID_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_BY_CRISTIN_ID_INDEX_NAME;
+import static org.mockito.Mockito.mock;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.local.embedded.DynamoDBEmbedded;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
@@ -31,8 +32,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import no.unit.nva.publication.TestDataSource;
+import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.ResourceServiceBuilder;
+import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.core.JacocoGenerated;
 import org.junit.jupiter.api.AfterEach;
 
@@ -42,24 +46,28 @@ public class ResourcesLocalTest extends TestDataSource {
 
     public static final ScalarAttributeType STRING_TYPE = ScalarAttributeType.S;
     protected AmazonDynamoDB client;
+    protected UriRetriever uriRetriever;
 
     public ResourcesLocalTest() {
         super();
     }
 
     public void init() {
+        uriRetriever = mock(UriRetriever.class);
         client = DynamoDBEmbedded.create().amazonDynamoDB();
         CreateTableRequest request = createTableRequest(RESOURCES_TABLE_NAME);
         client.createTable(request);
     }
 
     public void init(String tableName) {
+        uriRetriever = mock(UriRetriever.class);
         client = DynamoDBEmbedded.create().amazonDynamoDB();
         CreateTableRequest request = createTableRequest(tableName);
         client.createTable(request);
     }
 
     public void init(String firstTable, String secondTable) {
+        uriRetriever = mock(UriRetriever.class);
         client = DynamoDBEmbedded.create().amazonDynamoDB();
         var firstTableRequest = createTableRequest(firstTable);
         var secondTableRequest = createTableRequest(secondTable);
@@ -156,10 +164,18 @@ public class ResourcesLocalTest extends TestDataSource {
     }
 
     public ResourceServiceBuilder getResourceServiceBuilder(AmazonDynamoDB dynamoDbClient) {
-        return ResourceService.builder().withDynamoDbClient(dynamoDbClient);
+        return ResourceService.builder().withDynamoDbClient(dynamoDbClient).withUriRetriever(uriRetriever);
     }
 
     public ResourceServiceBuilder getResourceServiceBuilder() {
         return getResourceServiceBuilder(client);
+    }
+
+    public TicketService getTicketService() {
+        return new TicketService(client, uriRetriever);
+    }
+
+    public MessageService getMessageService() {
+        return new MessageService(client, uriRetriever);
     }
 }

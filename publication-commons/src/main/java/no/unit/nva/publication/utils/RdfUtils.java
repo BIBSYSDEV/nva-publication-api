@@ -41,7 +41,7 @@ public class RdfUtils {
         var data = attempt(() -> uriRetriever.getRawContent(id, APPLICATION_JSON)).orElseThrow();
 
         if (data.isEmpty()) {
-            return id;
+            return null;
         }
 
         var model = createModel(stringToStream(data.get()));

@@ -30,13 +30,11 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Clock;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
@@ -68,7 +66,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     public void setup() {
         super.init();
         resourceService = getResourceServiceBuilder().build();
-        this.ticketService = new TicketService(client);
+        this.ticketService = getTicketService();
         var s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, randomString());
         handler = new AcceptedPublishingRequestEventHandler(resourceService, ticketService, s3Client);
