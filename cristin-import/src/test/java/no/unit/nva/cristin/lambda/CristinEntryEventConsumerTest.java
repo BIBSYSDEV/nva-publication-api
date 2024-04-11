@@ -114,7 +114,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     @BeforeEach
     public void init() {
         super.init();
-        resourceService =getResourceServiceBuilder().build();
+        resourceService = getResourceServiceBuilder().build();
         s3Client = spy(new FakeS3Client());
         doReturn(S3Client.create().utilities()).when(s3Client).utilities();
         doReturn(getMockUnitsResponseBytes()).when(s3Client).getObjectAsBytes(any(GetObjectRequest.class));

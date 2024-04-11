@@ -97,8 +97,11 @@ public class ResourceService extends ServiceWithTransactions {
     private final DeleteResourceService deleteResourceService;
     private final UriRetriever uriRetriever;
 
-    protected ResourceService(AmazonDynamoDB dynamoDBClient, String tableName, Clock clock,
-                              Supplier<SortableIdentifier> identifierSupplier, UriRetriever uriRetriever) {
+    protected ResourceService(AmazonDynamoDB dynamoDBClient,
+                              String tableName,
+                              Clock clock,
+                              Supplier<SortableIdentifier> identifierSupplier,
+                              UriRetriever uriRetriever) {
         super(dynamoDBClient);
         this.tableName = tableName;
         this.clockForTimestamps = clock;
