@@ -109,7 +109,7 @@ public class ResourceService extends ServiceWithTransactions {
         this.uriRetriever = uriRetriever;
         this.readResourceService = new ReadResourceService(client, this.tableName);
         this.updateResourceService = new UpdateResourceService(client, this.tableName, clockForTimestamps,
-                                                               readResourceService);
+                                                               readResourceService, uriRetriever);
         this.deleteResourceService = new DeleteResourceService(client, this.tableName, readResourceService);
     }
 
@@ -460,7 +460,9 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private Publication insertResource(Resource newResource) {
-        setCuratingInstitutions(newResource);
+        if (newResource.getCuratingInstitutions().isEmpty()) {
+            setCuratingInstitutions(newResource);
+        }
         TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(newResource);
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(putRequest);

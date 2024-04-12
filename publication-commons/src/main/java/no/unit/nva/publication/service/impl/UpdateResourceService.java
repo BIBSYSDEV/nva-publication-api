@@ -1,5 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.DELETED;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
@@ -34,6 +35,7 @@ import no.unit.nva.model.Username;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.exception.UnsupportedPublicationStatusTransition;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -52,6 +54,7 @@ import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.storage.UnpublishRequestDao;
+import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -77,15 +80,18 @@ public class UpdateResourceService extends ServiceWithTransactions {
         UNPUBLISHED,
         DELETED
     );
+    private final UriRetriever uriRetriever;
 
     public UpdateResourceService(AmazonDynamoDB client,
                                  String tableName,
                                  Clock clockForTimestamps,
-                                 ReadResourceService readResourceService) {
+                                 ReadResourceService readResourceService,
+                                 UriRetriever uriRetriever) {
         super(client);
         this.tableName = tableName;
         this.clockForTimestamps = clockForTimestamps;
         this.readResourceService = readResourceService;
+        this.uriRetriever = uriRetriever;
     }
 
     public Publication updatePublicationButDoNotChangeStatus(Publication publication) {
@@ -111,6 +117,12 @@ public class UpdateResourceService extends ServiceWithTransactions {
         var persistedPublication = fetchExistingPublication(publicationUpdate);
         publicationUpdate.setCreatedDate(persistedPublication.getCreatedDate());
         publicationUpdate.setModifiedDate(clockForTimestamps.instant());
+
+        if (isContributorsChanged(publicationUpdate, persistedPublication)) {
+            publicationUpdate.setCuratingInstitutions(
+                CuratingInstitutionsUtil.getCuratingInstitutionsOnline(publicationUpdate, uriRetriever));
+        }
+
         var resource = Resource.fromPublication(publicationUpdate);
 
         var updateResourceTransactionItem = updateResource(resource);
@@ -123,6 +135,13 @@ public class UpdateResourceService extends ServiceWithTransactions {
         sendTransactionWriteRequest(request);
 
         return publicationUpdate;
+    }
+
+    private static boolean isContributorsChanged(Publication publicationUpdate, Publication persistedPublication) {
+        return nonNull(publicationUpdate.getEntityDescription()) &&
+               !publicationUpdate.getEntityDescription()
+                    .getContributors()
+                    .equals(persistedPublication.getEntityDescription().getContributors());
     }
 
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
@@ -140,6 +159,12 @@ public class UpdateResourceService extends ServiceWithTransactions {
         if (isNotImported(existingImportCandidate)) {
             importCandidate.setCreatedDate(existingImportCandidate.getCreatedDate());
             importCandidate.setModifiedDate(clockForTimestamps.instant());
+
+            if (isContributorsChanged(importCandidate, existingImportCandidate)) {
+                importCandidate.setCuratingInstitutions(
+                    CuratingInstitutionsUtil.getCuratingInstitutionsOnline(importCandidate, uriRetriever));
+            }
+
             var resource = Resource.fromImportCandidate(importCandidate);
             var updateResourceTransactionItem = updateResource(resource);
             var request = new TransactWriteItemsRequest().withTransactItems(List.of(updateResourceTransactionItem));
@@ -169,7 +194,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
         return new UnpublishRequestDao(unpublishRequest).createInsertionTransactionRequest().getTransactItems();
     }
 
-    private List<TransactWriteItem> updateExistingPendingTicketsToNotApplicable(Stream<TicketEntry> existingTicketStream) {
+    private List<TransactWriteItem> updateExistingPendingTicketsToNotApplicable(
+        Stream<TicketEntry> existingTicketStream) {
         return existingTicketStream
                    .filter(this::isPendingTicket)
                    .map(this::updateToNotApplicable)
