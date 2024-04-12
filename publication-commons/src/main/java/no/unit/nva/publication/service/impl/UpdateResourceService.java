@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
@@ -138,11 +139,13 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     private static boolean isContributorsChanged(Publication publicationUpdate, Publication persistedPublication) {
-        return nonNull(publicationUpdate.getEntityDescription())  &&
-               !publicationUpdate.getEntityDescription()
-                    .getContributors()
-                    .equals(nonNull(persistedPublication.getEntityDescription()) ?
-                                persistedPublication.getEntityDescription().getContributors() : List.of());
+        return nonNull(publicationUpdate.getEntityDescription()) &&
+               !getContributors(publicationUpdate).equals(getContributors(persistedPublication));
+    }
+
+    private static List<Contributor> getContributors(Publication persistedPublication) {
+        return nonNull(persistedPublication.getEntityDescription()) ?
+                   persistedPublication.getEntityDescription().getContributors() : List.of();
     }
 
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
