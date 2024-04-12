@@ -977,6 +977,30 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldSetCuratingInstitutionsWhenUpdatingNewPublicationWithoutEntityDescription() throws ApiGatewayException {
+        var template = randomPublication().copy();
+        var entityDescription = template.build().getEntityDescription();
+        var publication = template.withDoi(null).withEntityDescription(null).build();
+        publication = Resource.fromPublication(publication).persistNew(resourceService,
+                                                                UserInstance.fromPublication(publication));
+        var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
+        var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
+        when(uriRetriever.getRawContent(eq(orgId), any())).thenReturn(
+            Optional.of(IoUtils.stringFromResources(Path.of("cristin-orgs/20754.6.0.0.json"))));
+
+        var affiliation = (new Organization.Builder())
+                              .withId(orgId)
+                              .build();
+        entityDescription.setContributors(List.of(randomContributor(List.of(affiliation))));
+        publication.setEntityDescription(entityDescription);
+
+        var updatedResource = resourceService.updatePublication(publication);
+
+        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+                   is(equalTo(topLevelId)));
+    }
+
+    @Test
     void shouldCreateResourceFromImportCandidate() throws NotFoundException {
         var importCandidate = randomImportCandidate();
         var persistedImportCandidate = resourceService.persistImportCandidate(importCandidate);

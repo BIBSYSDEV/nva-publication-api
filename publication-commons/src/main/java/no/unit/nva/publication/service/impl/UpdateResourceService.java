@@ -138,10 +138,11 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     private static boolean isContributorsChanged(Publication publicationUpdate, Publication persistedPublication) {
-        return nonNull(publicationUpdate.getEntityDescription()) &&
+        return nonNull(publicationUpdate.getEntityDescription())  &&
                !publicationUpdate.getEntityDescription()
                     .getContributors()
-                    .equals(persistedPublication.getEntityDescription().getContributors());
+                    .equals(nonNull(persistedPublication.getEntityDescription()) ?
+                                persistedPublication.getEntityDescription().getContributors() : List.of());
     }
 
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
