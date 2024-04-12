@@ -114,7 +114,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     @BeforeEach
     public void init() {
         super.init();
-        resourceService = ResourceService.builder().withDynamoDbClient(super.client).build();
+        resourceService = getResourceServiceBuilder().build();
         s3Client = spy(new FakeS3Client());
         doReturn(S3Client.create().utilities()).when(s3Client).utilities();
         doReturn(getMockUnitsResponseBytes()).when(s3Client).getObjectAsBytes(any(GetObjectRequest.class));
@@ -774,8 +774,9 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     private ResourceService resourceServiceThrowingExceptionWhenSavingResource() {
-        var resourceService = spy(ResourceService.builder().withDynamoDbClient(client).build());
-        doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE)).when(resourceService).createPublicationFromImportedEntry(any());
+        var resourceService = spy(getResourceServiceBuilder().build());
+        doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE)).when(resourceService)
+            .createPublicationFromImportedEntry(any());
         return resourceService;
     }
 }

@@ -3,6 +3,9 @@ package no.unit.nva.publication.model.utils;
 import static no.unit.nva.publication.utils.RdfUtils.getTopLevelOrgUri;
 import java.net.URI;
 import static java.util.Objects.nonNull;
+import java.util.Collections;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -23,6 +26,7 @@ public final class CuratingInstitutionsUtil {
                    .collect(Collectors.toSet())
                    .parallelStream()
                    .map(orgId -> getTopLevelOrgUri(uriRetriever, orgId))
+                   .filter(Objects::nonNull)
                    .collect(Collectors.toSet());
     }
 
@@ -31,6 +35,7 @@ public final class CuratingInstitutionsUtil {
         return getVerifiedContributors(entityDescription)
                    .flatMap(CuratingInstitutionsUtil::getOrganizationIds)
                    .map(cristinUnitsUtil::getTopLevel)
+                   .filter(Objects::nonNull)
                    .collect(Collectors.toSet());
     }
 
@@ -42,7 +47,9 @@ public final class CuratingInstitutionsUtil {
     }
 
     private static Stream<Contributor> getVerifiedContributors(EntityDescription entityDescription) {
-        return entityDescription.getContributors()
+        return Optional.ofNullable(entityDescription)
+                   .map(EntityDescription::getContributors)
+                   .orElse(Collections.emptyList())
                    .stream()
                    .filter(CuratingInstitutionsUtil::isVerifiedContributor);
     }

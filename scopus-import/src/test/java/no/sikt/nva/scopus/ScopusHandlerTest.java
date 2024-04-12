@@ -154,7 +154,6 @@ import no.sikt.nva.scopus.utils.LanguagesWrapper;
 import no.sikt.nva.scopus.utils.PiaResponseGenerator;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
 import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
-import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.models.Doi;
 import no.unit.nva.expansion.model.ExpandedImportCandidate;
@@ -191,6 +190,7 @@ import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
@@ -1436,8 +1436,9 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     private ResourceService resourceServiceThrowingExceptionWhenSavingResource() {
-        var resourceService = spy(ResourceService.builder().withDynamoDbClient(client).build());
-        doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE)).when(resourceService).createPublicationFromImportedEntry(any());
+        var resourceService = spy(getResourceServiceBuilder().build());
+        doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE)).when(resourceService)
+            .createPublicationFromImportedEntry(any());
         doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE)).when(resourceService).persistImportCandidate(any());
         return resourceService;
     }

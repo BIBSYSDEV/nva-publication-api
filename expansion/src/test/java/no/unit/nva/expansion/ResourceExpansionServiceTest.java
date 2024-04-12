@@ -25,18 +25,15 @@ import static org.hamcrest.collection.IsIn.in;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -63,12 +60,10 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
@@ -609,15 +604,15 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     private ResourceExpansionServiceImpl expansionServiceReturningNviCandidate(Publication publication,
                                                                                String responseBody, int statusCode) {
-        var mock = mock(UriRetriever.class);
+        var mockUriRetriver = mock(UriRetriever.class);
         var response = mock(HttpResponse.class);
         when(response.statusCode()).thenReturn(statusCode);
         when(response.body()).thenReturn(responseBody);
-        when(mock.fetchResponse(fetchNviCandidateUri(publication), "application/json")).thenReturn(Optional.of(response));
+        when(mockUriRetriver.fetchResponse(fetchNviCandidateUri(publication), "application/json")).thenReturn(Optional.of(response));
         return new ResourceExpansionServiceImpl(getResourceServiceBuilder().build(),
-                                                            new TicketService(client),
-                                                            mock,
-                                                            mock);
+                                                            new TicketService(client, mockUriRetriver),
+                                                            mockUriRetriver,
+                                                            mockUriRetriver);
     }
 
     private String nviCandidateResponse() {
@@ -817,8 +812,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     private void initializeServices() {
         resourceService = getResourceServiceBuilder().build();
-        messageService = new MessageService(client);
-        ticketService = new TicketService(client);
+        messageService = getMessageService();
+        ticketService = getTicketService();
         personRetriever = mock(UriRetriever.class);
         orgRetriever = mock(UriRetriever.class);
         var response = mock(HttpResponse.class);

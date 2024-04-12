@@ -14,7 +14,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -53,8 +52,8 @@ class DeleteMessageHandlerTest extends ResourcesLocalTest {
     public void setup() {
         super.init();
         this.resourceService = getResourceServiceBuilder().build();
-        this.ticketService = new TicketService(client);
-        this.messageService = new MessageService(client);
+        this.ticketService = getTicketService();
+        this.messageService = getMessageService();
         this.handler = new DeleteMessageHandler(messageService);
         this.output = new ByteArrayOutputStream();
     }

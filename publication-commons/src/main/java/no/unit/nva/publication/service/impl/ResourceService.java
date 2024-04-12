@@ -33,6 +33,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
@@ -53,6 +54,7 @@ import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.storage.UniqueDoiRequestEntry;
 import no.unit.nva.publication.model.storage.WithPrimaryKey;
+import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadMethodException;
@@ -93,13 +95,18 @@ public class ResourceService extends ServiceWithTransactions {
     private final ReadResourceService readResourceService;
     private final UpdateResourceService updateResourceService;
     private final DeleteResourceService deleteResourceService;
+    private final UriRetriever uriRetriever;
 
-    protected ResourceService(AmazonDynamoDB dynamoDBClient, String tableName, Clock clock,
-                              Supplier<SortableIdentifier> identifierSupplier) {
+    protected ResourceService(AmazonDynamoDB dynamoDBClient,
+                              String tableName,
+                              Clock clock,
+                              Supplier<SortableIdentifier> identifierSupplier,
+                              UriRetriever uriRetriever) {
         super(dynamoDBClient);
         this.tableName = tableName;
         this.clockForTimestamps = clock;
         this.identifierSupplier = identifierSupplier;
+        this.uriRetriever = uriRetriever;
         this.readResourceService = new ReadResourceService(client, this.tableName);
         this.updateResourceService = new UpdateResourceService(client, this.tableName, clockForTimestamps,
                                                                readResourceService);
@@ -184,6 +191,10 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResourceFromImportCandidate(newResource);
     }
 
+    /**
+     * @deprecated Only here for existing tests
+     */
+    @Deprecated(forRemoval = true)
     public Publication insertPreexistingPublication(Publication publication) {
         Resource resource = Resource.fromPublication(publication);
         return insertResource(resource);
@@ -449,11 +460,17 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private Publication insertResource(Resource newResource) {
+        setCuratingInstitutions(newResource);
         TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(newResource);
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(putRequest);
 
         return fetchSavedPublication(newResource);
+    }
+
+    private void setCuratingInstitutions(Resource newResource) {
+        newResource.setCuratingInstitutions(
+            CuratingInstitutionsUtil.getCuratingInstitutionsOnline(newResource.toPublication(), uriRetriever));
     }
 
     private ImportCandidate insertResourceFromImportCandidate(Resource newResource) {

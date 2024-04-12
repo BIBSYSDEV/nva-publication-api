@@ -19,6 +19,7 @@ import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
@@ -46,7 +47,8 @@ public class AcceptedPublishingRequestEventHandler
 
     @JacocoGenerated
     public AcceptedPublishingRequestEventHandler() {
-        this(ResourceService.defaultService(), new TicketService(PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT),
+        this(ResourceService.defaultService(),
+             new TicketService(PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT, UriRetriever.defaultUriRetriever()),
              S3Driver.defaultS3Client().build());
     }
 

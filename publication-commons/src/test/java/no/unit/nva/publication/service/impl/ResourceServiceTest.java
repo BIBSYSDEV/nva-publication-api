@@ -83,6 +83,7 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.exception.UnsupportedPublicationStatusTransition;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -156,8 +157,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         super.init();
         now = Clock.systemDefaultZone().instant();
         resourceService = getResourceServiceBuilder().build();
-        ticketService = new TicketService(client);
-        messageService = new MessageService(client);
+        ticketService = new TicketService(client, uriRetriever);
+        messageService = new MessageService(client, uriRetriever);
     }
 
     public Optional<ResourceDao> searchForResource(ResourceDao resourceDaoWithStatusDraft) {
@@ -179,7 +180,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldKeepImportedDataCreationDates() throws NotFoundException {
         var randomInstant = RandomDataGenerator.randomInstant();
-        var inputPublication = randomPublication().copy().withCreatedDate(randomInstant).build();
+        var inputPublication =
+            randomPublication().copy().withCreatedDate(randomInstant).withCuratingInstitutions(null).build();
 
         var savedPublicationIdentifier = resourceService.createPublicationWithPredefinedCreationDate(inputPublication)
                                              .getIdentifier();
@@ -199,6 +201,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var inputPublication = randomPublication().copy()
                                    .withCreatedDate(createdDate)
                                    .withModifiedDate(modifiedDate)
+                                   .withCuratingInstitutions(null)
                                    .withStatus(PUBLISHED)
                                    .build();
         var savedPublicationIdentifier = resourceService.createPublicationFromImportedEntry(inputPublication)
@@ -262,6 +265,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private ResourceService getResourceServiceWithDuplicateIdentifier(SortableIdentifier identifier) {
         return getResourceServiceBuilder(client)
                    .withIdentifierSupplier(() -> identifier)
+                   .withUriRetriever(mock(UriRetriever.class))
                    .build();
     }
 
@@ -393,7 +397,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         RuntimeException expectedCause = new RuntimeException(expectedMessage);
         when(client.transactWriteItems(any(TransactWriteItemsRequest.class))).thenThrow(expectedCause);
 
-        ResourceService failingService = ResourceService.builder().withDynamoDbClient(client).build();
+        ResourceService failingService = getResourceServiceBuilder(client).build();
 
         Publication resource = publicationWithIdentifier();
         Executable action = () -> createPersistedPublicationWithDoi(failingService, resource);
@@ -416,7 +420,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         when(client.getItem(any(GetItemRequest.class))).thenThrow(expectedMessage);
         var resource = publicationWithIdentifier();
 
-        var failingResourceService = ResourceService.builder().withDynamoDbClient(client).build();
+        var failingResourceService = getResourceServiceBuilder(client).build();
 
         Executable action = () -> failingResourceService.getPublication(resource);
         var exception = assertThrows(RuntimeException.class, action);
@@ -472,7 +476,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         RuntimeException expectedException = new RuntimeException(expectedMessage);
         when(client.query(any(QueryRequest.class))).thenThrow(expectedException);
 
-        ResourceService failingResourceService = ResourceService.builder().withDynamoDbClient(client).build();
+        var failingResourceService = getResourceServiceBuilder(client).build();
 
         RuntimeException exception = assertThrows(RuntimeException.class,
                                                   () -> failingResourceService.getPublicationsByOwner(SAMPLE_USER));
@@ -488,7 +492,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
             List.of(ItemUtils.toAttributeValues(invalidItem)));
         when(mockClient.query(any(QueryRequest.class))).thenReturn(responseWithInvalidItem);
 
-        ResourceService failingResourceService = ResourceService.builder().withDynamoDbClient(mockClient).build();
+        ResourceService failingResourceService = getResourceServiceBuilder(mockClient).build();
         Class<JsonProcessingException> expectedExceptionClass = JsonProcessingException.class;
 
         assertThatJsonProcessingErrorIsPropagatedUp(expectedExceptionClass,
@@ -503,7 +507,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         GetItemResult responseWithInvalidItem = new GetItemResult().withItem(ItemUtils.toAttributeValues(invalidItem));
         when(mockClient.getItem(any(GetItemRequest.class))).thenReturn(responseWithInvalidItem);
 
-        ResourceService failingResourceService = ResourceService.builder().withDynamoDbClient(mockClient).build();
+        ResourceService failingResourceService = getResourceServiceBuilder(mockClient).build();
         Class<JsonProcessingException> expectedExceptionClass = JsonProcessingException.class;
 
         SortableIdentifier someIdentifier = SortableIdentifier.next();
@@ -925,7 +929,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldLogIdentifiersOfRecordsWhenBatchScanWriteFails() {
         var failingClient = new FailingDynamoClient(this.client);
-        resourceService = ResourceService.builder().withDynamoDbClient(failingClient).build();
+        resourceService = getResourceServiceBuilder(failingClient).build();
 
         var userInstance = UserInstance.create(randomString(), randomUri());
         var userResources = createSamplePublicationsOfSingleOwner(userInstance);
@@ -1207,7 +1211,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private Publication generatePublication() {
-        return PublicationGenerator.publicationWithoutIdentifier();
+        return PublicationGenerator.publicationWithoutIdentifier().copy().withCuratingInstitutions(null).build();
     }
 
     private ListingResult<Entity> fetchRestOfDatabaseEntries(ListingResult<Entity> listingResult) {
@@ -1235,7 +1239,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         when(client.getItem(any(GetItemRequest.class))).thenReturn(
             new GetItemResult().withItem(Collections.emptyMap()));
 
-        return ResourceService.builder().withDynamoDbClient(client).build();
+        return getResourceServiceBuilder(client).build();
     }
 
     private void assertThatIdentifierEntryHasBeenCreated() {

@@ -15,7 +15,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
-import java.time.Clock;
 
 import static no.unit.nva.publication.model.business.StorageModelTestUtils.randomPublishingRequest;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
@@ -41,7 +40,7 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
     public void setup() {
         super.init();
         this.resourceService = getResourceServiceBuilder().build();
-        this.ticketService = new TicketService(super.client);
+        this.ticketService = getTicketService();
     }
 
     @Test

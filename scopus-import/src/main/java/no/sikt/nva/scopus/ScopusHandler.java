@@ -22,9 +22,9 @@ import no.sikt.nva.scopus.conversion.files.TikaUtils;
 import no.sikt.nva.scopus.exception.ExceptionMapper;
 import no.sikt.nva.scopus.update.ScopusUpdater;
 import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
-import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -75,7 +75,7 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
                  new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME)),
              new NvaCustomerConnection(new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL,
                                                                          BACKEND_CLIENT_SECRET_NAME)),
-             ResourceService.defaultService(), new ScopusUpdater(ResourceService.defaultService(), new UriRetriever()),
+             ResourceService.defaultService(), new ScopusUpdater(ResourceService.defaultService(), UriRetriever.defaultUriRetriever()),
              new ScopusFileConverter(defaultHttpClientWithRedirect(), S3Driver.defaultS3Client().build(), new TikaUtils()));
     }
 

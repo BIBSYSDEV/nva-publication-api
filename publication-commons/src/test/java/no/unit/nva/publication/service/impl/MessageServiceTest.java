@@ -46,9 +46,9 @@ class MessageServiceTest extends ResourcesLocalTest {
     public void initialize() {
         super.init();
         var clock = mockClock();
-        messageService = new MessageService(client);
+        messageService = getMessageService();
         resourceService = getResourceServiceBuilder().withClock(clock).build();
-        ticketService = new TicketService(client);
+        ticketService = getTicketService();
         owner = TestingUtils.randomUserInstance();
     }
 

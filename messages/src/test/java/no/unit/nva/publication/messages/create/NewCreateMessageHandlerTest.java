@@ -18,20 +18,17 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.mockito.Mockito.mock;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -39,7 +36,6 @@ import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
@@ -63,15 +59,13 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
     private NewCreateMessageHandler handler;
     private ByteArrayOutputStream output;
     private FakeContext context;
-    private UriRetriever uriRetriever;
 
     @BeforeEach
     public void setup() {
         super.init();
         this.resourceService = getResourceServiceBuilder().build();
-        this.ticketService = new TicketService(client);
-        this.uriRetriever = mock(UriRetriever.class);
-        MessageService messageService = new MessageService(client);
+        this.ticketService = getTicketService();
+        var messageService = getMessageService();
         this.handler = new NewCreateMessageHandler(messageService, ticketService, uriRetriever);
         this.output = new ByteArrayOutputStream();
         this.context = new FakeContext();

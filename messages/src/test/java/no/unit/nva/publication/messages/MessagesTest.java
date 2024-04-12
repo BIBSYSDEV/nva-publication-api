@@ -23,7 +23,7 @@ public class MessagesTest extends ResourcesLocalTest {
     public void setup() {
         super.init();
         this.resourceService = getResourceServiceBuilder().build();
-        this.messageService = new MessageService(client);
+        this.messageService = getMessageService();
         this.output = new ByteArrayOutputStream();
         this.context = new FakeContext();
     }

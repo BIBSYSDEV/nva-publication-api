@@ -94,7 +94,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     public void setup() {
         super.init();
         resourceService = getResourceServiceBuilder().build();
-        ticketService = new TicketService(client);
+        ticketService = getTicketService();
         fakeSqsClient = new FakeSqsClient();
         var mockPersonRetriever = mock(UriRetriever.class);
         uriRetriever = mock(UriRetriever.class);
