@@ -913,7 +913,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldNotUpdatePublicationCuratingInstitutionsWhenContributorsAreUnchanged() throws ApiGatewayException {
-        Publication resource = createPersistedPublicationWithoutDoi();
+        var resource = createPersistedPublicationWithoutDoi();
         var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
         var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
 
