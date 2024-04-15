@@ -50,7 +50,6 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.nio.file.Path;
-import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -64,27 +63,21 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
-import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
-import no.unit.nva.model.testing.associatedartifacts.PublishedFileGenerator;
-import no.unit.nva.model.testing.associatedartifacts.UnpublishedFileGenerator;
 import no.unit.nva.model.testing.associatedartifacts.util.RightsRetentionStrategyGenerator;
 import no.unit.nva.publication.events.bodies.CreatePublicationRequest;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.update.PublicationRequest;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
 import no.unit.nva.stubs.WiremockHttpClient;
@@ -450,7 +443,8 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                                        PublisherVersion.ACCEPTED_VERSION,
                                        (Instant)null,
                                        RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
-                                       RandomDataGenerator.randomString());
+                                       RandomDataGenerator.randomString(),
+                                       null);
         // Waiting for datamodel changes as
         // Generator sets publisherAuth to true
 
@@ -487,7 +481,8 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                                        PublisherVersion.ACCEPTED_VERSION,
                                        (Instant)null,
                                        RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
-                                       RandomDataGenerator.randomString());
+                                       RandomDataGenerator.randomString(),
+                                       null);
         // Waiting for datamodel changes as
         // Generator sets publisherAuth to true
 

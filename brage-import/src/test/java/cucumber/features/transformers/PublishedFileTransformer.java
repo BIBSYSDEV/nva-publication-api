@@ -45,7 +45,8 @@ public class PublishedFileTransformer {
             parseDate(entry.get("embargoDate")),
             parseRightsRetentionStrategy(entry),
             entry.getOrDefault("legalNote", null),
-            parseDate(entry.get("publishedDate"))
+            parseDate(entry.get("publishedDate")),
+            null
         );
     }
 

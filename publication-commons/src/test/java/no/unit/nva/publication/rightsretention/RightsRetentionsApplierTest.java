@@ -272,7 +272,8 @@ class RightsRetentionsApplierTest {
                                    publishedVersion,
                                    null,
                                    rrs,
-                                   randomString());
+                                   randomString(),
+                                   null);
     }
 
     private CustomerApiRightsRetention getServerConfiguredRrs(
