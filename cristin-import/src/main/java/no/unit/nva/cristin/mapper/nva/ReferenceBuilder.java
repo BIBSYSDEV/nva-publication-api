@@ -58,14 +58,16 @@ import no.unit.nva.model.time.Time;
 import nva.commons.core.SingletonCollector;
 import nva.commons.doi.DoiConverter;
 import nva.commons.doi.DoiValidator;
+import software.amazon.awssdk.services.s3.S3Client;
 
 public class ReferenceBuilder extends CristinMappingModule {
 
     private final DoiConverter doiConverter;
 
-    public ReferenceBuilder(CristinObject cristinObject, ChannelRegistryMapper channelRegistryMapper) {
-        super(cristinObject, channelRegistryMapper);
+    public ReferenceBuilder(CristinObject cristinObject, ChannelRegistryMapper channelRegistryMapper, S3Client s3Client) {
+        super(cristinObject, channelRegistryMapper, s3Client);
         doiConverter = new DoiConverter(DoiValidator::validateOffline);
+
     }
 
     public Reference buildReference() {
@@ -84,14 +86,14 @@ public class ReferenceBuilder extends CristinMappingModule {
     private PublicationContext buildPublicationContext()
         throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
         if (isBook(cristinObject)) {
-            return new NvaBookBuilder(cristinObject, channelRegistryMapper).buildBookForPublicationContext();
+            return new NvaBookBuilder(cristinObject, channelRegistryMapper, s3Client).buildBookForPublicationContext();
         }
         if (isJournal(cristinObject)) {
-            return new PeriodicalBuilder(cristinObject, channelRegistryMapper).buildPeriodicalForPublicationContext();
+            return new PeriodicalBuilder(cristinObject, channelRegistryMapper, s3Client).buildPeriodicalForPublicationContext();
         }
         if (isMediaFeatureArticle(cristinObject)) {
             return new MediaPeriodicalBuilder(cristinObject,
-                                              channelRegistryMapper)
+                                              channelRegistryMapper, s3Client)
                        .buildMediaPeriodicalForPublicationContext();
         }
         if (isReport(cristinObject)) {
@@ -141,9 +143,9 @@ public class ReferenceBuilder extends CristinMappingModule {
     private PublicationContext buildPublicationContextWhenMainCategoryIsReport()
         throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
         if (isDegreePhd(cristinObject) || isDegreeMaster(cristinObject) || isDegreeLicentiate(cristinObject)) {
-            return new NvaDegreeBuilder(cristinObject, channelRegistryMapper).buildDegree();
+            return new NvaDegreeBuilder(cristinObject, channelRegistryMapper, s3Client).buildDegree();
         }
-        return new NvaReportBuilder(cristinObject, channelRegistryMapper).buildNvaReport();
+        return new NvaReportBuilder(cristinObject, channelRegistryMapper, s3Client).buildNvaReport();
     }
 
     private Anthology buildChapterForPublicationContext() {

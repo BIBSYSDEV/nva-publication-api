@@ -7,6 +7,7 @@ import no.unit.nva.cristin.mapper.CristinBookOrReportPartMetadata;
 import no.unit.nva.cristin.mapper.CristinJournalPublication;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
+import software.amazon.awssdk.services.s3.S3Client;
 
 /**
  * Class containing common functionality for the different modules implementing the mapping logic of Cristin entries to
@@ -20,10 +21,12 @@ public class CristinMappingModule {
     protected final CristinObject cristinObject;
 
     protected final ChannelRegistryMapper channelRegistryMapper;
+    protected final S3Client s3Client;
 
-    public CristinMappingModule(CristinObject cristinObject, ChannelRegistryMapper channelRegistryMapper) {
+    public CristinMappingModule(CristinObject cristinObject, ChannelRegistryMapper channelRegistryMapper, S3Client s3Client) {
         this.cristinObject = cristinObject;
         this.channelRegistryMapper = channelRegistryMapper;
+        this.s3Client = s3Client;
     }
 
     protected CristinJournalPublication extractCristinJournalPublication() {

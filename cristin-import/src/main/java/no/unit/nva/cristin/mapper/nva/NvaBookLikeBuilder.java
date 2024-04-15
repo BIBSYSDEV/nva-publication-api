@@ -18,14 +18,16 @@ import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import nva.commons.core.StringUtils;
+import software.amazon.awssdk.services.s3.S3Client;
 
 public class NvaBookLikeBuilder extends CristinMappingModule {
 
     public static final String CUSTOM_VOLUME_SERIES_DELIMITER = ";";
     private static final String EMPTY_STRING = null;
 
-    public NvaBookLikeBuilder(CristinObject cristinObject, ChannelRegistryMapper channelRegistryMapper) {
-        super(cristinObject, channelRegistryMapper);
+    public NvaBookLikeBuilder(CristinObject cristinObject, ChannelRegistryMapper channelRegistryMapper,
+                              S3Client s3Client) {
+        super(cristinObject, channelRegistryMapper, s3Client);
     }
 
     protected String constructSeriesNumber() {
@@ -45,7 +47,7 @@ public class NvaBookLikeBuilder extends CristinMappingModule {
     }
 
     protected BookSeries buildSeries() {
-        return new NvaBookSeriesBuilder(cristinObject, channelRegistryMapper)
+        return new NvaBookSeriesBuilder(cristinObject, channelRegistryMapper, s3Client)
                    .createBookSeries();
     }
 
@@ -65,7 +67,8 @@ public class NvaBookLikeBuilder extends CristinMappingModule {
 
     private Optional<PublishingHouse> createConfirmedPublisherIfPublisherReferenceHasNsdCode() {
         return extractPublishersNsdCode()
-                   .map(nsdCode -> new Nsd(nsdCode, extractYearReportedInNvi(), channelRegistryMapper))
+                   .map(nsdCode -> new Nsd(nsdCode, extractYearReportedInNvi(), channelRegistryMapper, s3Client,
+                                           cristinObject.getId()))
                    .map(Nsd::getPublisherUri)
                    .map(this::createConfirmedPublisher);
     }

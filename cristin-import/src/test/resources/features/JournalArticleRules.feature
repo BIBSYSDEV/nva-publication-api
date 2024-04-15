@@ -93,12 +93,3 @@ Feature: Mapping of "Article in business/trade/industry journal", "Academic arti
     Given the Journal Publication has a reference to an NSD journal with identifier 12345
     When the Cristin Result is converted to an NVA Resource
     Then an error is reported.
-
-
-  Scenario: When the cristin entry is mapped to Journal, but NSD code from channel-registry file is of type series,
-  then an exception is thrown
-    Given the Journal Publication has a reference to an NSD journal with identifier 339741
-    When the Cristin Result is converted to an NVA Resource
-    Then an error is reported.
-
-

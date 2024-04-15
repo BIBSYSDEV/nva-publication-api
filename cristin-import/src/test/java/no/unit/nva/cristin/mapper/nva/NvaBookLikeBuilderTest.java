@@ -11,6 +11,7 @@ import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.publication.utils.CristinUnitsUtil;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
+import software.amazon.awssdk.services.s3.S3Client;
 
 public class NvaBookLikeBuilderTest {
 
@@ -34,7 +35,7 @@ public class NvaBookLikeBuilderTest {
 
     private static Publication mapToPublication(CristinObject randomBook) {
         var cristinUnitsUtil = mock(CristinUnitsUtil.class);
-        return new CristinMapper(randomBook, cristinUnitsUtil).generatePublication();
+        return new CristinMapper(randomBook, cristinUnitsUtil, mock(S3Client.class)).generatePublication();
     }
 
     @ParameterizedTest(name = "nvaBookLikeBuilder returns Series that does contain blank String represetations"
