@@ -173,6 +173,7 @@ public class BrageMergingRollbackHandlerTest extends ResourcesLocalTest {
 
     private Publication createFromNewImage(Publication newImageInReport) {
         var oldImage = PublicationGenerator.randomPublication();
+        oldImage.setCuratingInstitutions(null);
         oldImage.setIdentifier(newImageInReport.getIdentifier());
         oldImage.setResourceOwner(newImageInReport.getResourceOwner());
         oldImage.setStatus(newImageInReport.getStatus());

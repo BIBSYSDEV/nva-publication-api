@@ -6,6 +6,7 @@ import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
+import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedLink;
@@ -37,7 +38,10 @@ import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
@@ -52,6 +56,7 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -66,6 +71,7 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
@@ -77,6 +83,7 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -101,6 +108,7 @@ import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactor
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
+import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -108,6 +116,7 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Try;
+import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import org.hamcrest.Matchers;
@@ -157,8 +166,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         super.init();
         now = Clock.systemDefaultZone().instant();
         resourceService = getResourceServiceBuilder().build();
-        ticketService = new TicketService(client, uriRetriever);
-        messageService = new MessageService(client, uriRetriever);
+        ticketService = getTicketService();
+        messageService = getMessageService();
     }
 
     public Optional<ResourceDao> searchForResource(ResourceDao resourceDaoWithStatusDraft) {
@@ -885,6 +894,113 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldSetCuratingInstitutionsWhenUpdatingPublication() throws ApiGatewayException {
+        var publishedResource = createPublishedResource();
+        var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
+        var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
+        when(uriRetriever.getRawContent(eq(orgId), any())).thenReturn(
+            Optional.of(IoUtils.stringFromResources(Path.of("cristin-orgs/20754.6.0.0.json"))));
+        var affiliation = (new Organization.Builder())
+                              .withId(orgId)
+                              .build();
+        publishedResource.getEntityDescription().setContributors(List.of(randomContributor(List.of(affiliation))));
+
+        var updatedResource = resourceService.updatePublication(publishedResource);
+
+        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+                   is(equalTo(topLevelId)));
+    }
+
+    @Test
+    void shouldNotUpdatePublicationCuratingInstitutionsWhenContributorsAreUnchanged() throws ApiGatewayException {
+        var resource = createPersistedPublicationWithoutDoi();
+        var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
+        var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
+
+        var affiliation = (new Organization.Builder())
+                              .withId(orgId)
+                              .build();
+
+        resource.getEntityDescription().setContributors(List.of(randomContributor(List.of(affiliation))));
+        resource.setCuratingInstitutions(Set.of(topLevelId));
+        var publishedResource = publishResource(createPersistedPublicationWithoutDoi(resource));
+
+
+        var updatedResource = resourceService.updatePublication(publishedResource);
+
+        verify(uriRetriever, never()).getRawContent(eq(orgId), any());
+        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+                   is(equalTo(topLevelId)));
+    }
+
+    @Test
+    void shouldSetCuratingInstitutionsWhenUpdatingImportCandidate() throws ApiGatewayException {
+        var importCandidate = randomImportCandidate();
+        var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
+        var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
+        when(uriRetriever.getRawContent(eq(orgId), any())).thenReturn(
+            Optional.of(IoUtils.stringFromResources(Path.of("cristin-orgs/20754.6.0.0.json"))));
+
+        var persistedImportCandidate = resourceService.persistImportCandidate(importCandidate);
+
+        var affiliation = (new Organization.Builder())
+                              .withId(orgId)
+                              .build();
+        persistedImportCandidate.getEntityDescription().setContributors(List.of(randomContributor(List.of(affiliation))));
+
+        var updatedImportCandidate = resourceService.updateImportCandidate(persistedImportCandidate);
+
+        assertThat(updatedImportCandidate.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+                   is(equalTo(topLevelId)));
+    }
+
+    @Test
+    void shouldNotSetCuratingInstitutionsWhenUpdatingImportCandidateWhenContributorsAreUnchanged() throws ApiGatewayException {
+        var importCandidate = randomImportCandidate();
+        var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
+        var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
+
+        var affiliation = (new Organization.Builder())
+                              .withId(orgId)
+                              .build();
+
+        importCandidate.getEntityDescription().setContributors(List.of(randomContributor(List.of(affiliation))));
+        importCandidate.setCuratingInstitutions(Set.of(topLevelId));
+
+        var persistedImportCandidate = resourceService.persistImportCandidate(importCandidate);
+
+        var updatedImportCandidate = resourceService.updateImportCandidate(persistedImportCandidate);
+
+        verify(uriRetriever, never()).getRawContent(eq(orgId), any());
+        assertThat(updatedImportCandidate.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+                   is(equalTo(topLevelId)));
+    }
+
+    @Test
+    void shouldSetCuratingInstitutionsWhenUpdatingNewPublicationWithoutEntityDescription() throws ApiGatewayException {
+        var template = randomPublication().copy();
+        var entityDescription = template.build().getEntityDescription();
+        var publication = template.withDoi(null).withEntityDescription(null).build();
+        publication = Resource.fromPublication(publication).persistNew(resourceService,
+                                                                UserInstance.fromPublication(publication));
+        var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
+        var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
+        when(uriRetriever.getRawContent(eq(orgId), any())).thenReturn(
+            Optional.of(IoUtils.stringFromResources(Path.of("cristin-orgs/20754.6.0.0.json"))));
+
+        var affiliation = (new Organization.Builder())
+                              .withId(orgId)
+                              .build();
+        entityDescription.setContributors(List.of(randomContributor(List.of(affiliation))));
+        publication.setEntityDescription(entityDescription);
+
+        var updatedResource = resourceService.updatePublication(publication);
+
+        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+                   is(equalTo(topLevelId)));
+    }
+
+    @Test
     void shouldCreateResourceFromImportCandidate() throws NotFoundException {
         var importCandidate = randomImportCandidate();
         var persistedImportCandidate = resourceService.persistImportCandidate(importCandidate);
@@ -1128,6 +1244,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of())
+                   .withEntityDescription(randomEntityDescription(JournalArticle.class))
                    .build();
     }
 
@@ -1147,7 +1264,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var publication = randomPublication().copy().withDoi(null).build();
         var contributions = IntStream
                                 .rangeClosed(1, amount)
-                                .mapToObj(i -> randomContributorWithoutAffiliation())
+                                .mapToObj(i -> randomContributor(List.of()))
                                 .collect(Collectors.toList());
         publication.getEntityDescription().setContributors(contributions);
         return Resource.fromPublication(publication)
@@ -1155,21 +1272,22 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private Contributor randomContributor() {
+        return randomContributor(List.of(randomOrganization()));
+    }
+
+    private Contributor randomContributor(List<Corporation> affiliations) {
         return new Contributor.Builder()
                    .withIdentity(new Identity.Builder().withName(randomString()).build())
                    .withRole(new RoleType(Role.ACTOR))
                    .withSequence(randomInteger(10000))
-                   .withAffiliations(List.of(randomOrganization()))
+                   .withAffiliations(affiliations)
+                   .withIdentity(randomIdentity())
                    .build();
     }
 
-    private Contributor randomContributorWithoutAffiliation() {
-        return new Contributor.Builder()
-                   .withIdentity(new Identity.Builder().withName(randomString()).build())
-                   .withRole(new RoleType(Role.ACTOR))
-                   .withSequence(randomInteger(10000))
-                   .withAffiliations(List.of())
-                   .build();
+    private Identity randomIdentity() {
+        return new Identity.Builder().withName(randomString()).withOrcId(randomString()).withId(
+            RandomPersonServiceResponse.randomUri()).build();
     }
 
     private Publication draftPublicationWithoutDoiAndAssociatedLink() {
