@@ -1,10 +1,8 @@
 package no.unit.nva.cristin.mapper.nva;
 
 import static java.util.Objects.nonNull;
-import static no.unit.nva.cristin.mapper.nva.exceptions.ExceptionHandling.handlePublicationContextFailure;
-import static nva.commons.core.attempt.Try.attempt;
-import java.net.URI;
 import java.util.Optional;
+import no.unit.nva.cristin.lambda.ErrorReport;
 import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinJournalPublicationJournal;
 import no.unit.nva.cristin.mapper.CristinObject;
@@ -13,6 +11,7 @@ import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
 import no.unit.nva.model.contexttypes.BookSeries;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedSeries;
+import no.unit.nva.model.exceptions.InvalidIssnException;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public class NvaBookSeriesBuilder extends CristinMappingModule {
@@ -38,16 +37,24 @@ public class NvaBookSeriesBuilder extends CristinMappingModule {
     }
 
     private BookSeries createUnconfirmedBookSeries(CristinJournalPublicationJournal bookSeries) {
-        return attempt(
-            () -> new UnconfirmedSeries(bookSeries.getJournalTitle(), bookSeries.getIssn(), bookSeries.getIssnOnline()))
-                   .orElseThrow(failure -> handlePublicationContextFailure(failure.getException()));
+        var issn = bookSeries.getIssn();
+        var issnOnline = bookSeries.getIssnOnline();
+        try {
+            return new UnconfirmedSeries(bookSeries.getJournalTitle(), issn, issnOnline);
+        } catch (InvalidIssnException e) {
+            ErrorReport.exceptionName(e.getClass().getSimpleName())
+                .withCristinId(cristinObject.getId())
+                .withBody(String.join(":","ISSN", issn))
+                .persist(s3Client);
+            return null;
+        }
     }
 
     private BookSeries createConfirmedBookSeries(CristinJournalPublicationJournal b) {
         int nsdCode = b.getNsdCode();
         int publicationYear = cristinObject.getPublicationYear();
-        URI seriesUri = new Nsd(nsdCode, publicationYear, channelRegistryMapper, s3Client, cristinObject.getId())
+        var seriesUri = new Nsd(nsdCode, publicationYear, channelRegistryMapper, s3Client, cristinObject.getId())
                             .createSeries();
-        return new Series(seriesUri);
+        return nonNull(seriesUri) ? new Series(seriesUri) : null;
     }
 }
