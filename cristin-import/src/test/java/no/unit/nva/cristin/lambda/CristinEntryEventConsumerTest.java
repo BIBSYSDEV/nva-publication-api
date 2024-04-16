@@ -375,6 +375,9 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
             UnixPath.of(ERROR_REPORT).addChild("InvalidIssnException").addChild(cristinId);
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
         var file = s3Driver.getFile(errorReportLocation);
+
+        var importedPublication = resourceService.getPublicationsByCristinIdentifier(cristinId);
+        assertThat(importedPublication, hasSize(1));
         assertThat(file, notNullValue());
     }
 
@@ -606,10 +609,14 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
         handler.handleRequest(sqsEvent, CONTEXT);
-        var expectedErrorFileLocation = UnixPath.of(ERROR_REPORT).addChild("WrongChannelTypeException").addChild(String.valueOf(cristinObject.getId()));
+        var cristinId = String.valueOf(cristinObject.getId());
+        var expectedErrorFileLocation = UnixPath.of(ERROR_REPORT).addChild("WrongChannelTypeException").addChild(
+            cristinId);
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
         var file = s3Driver.getFile(expectedErrorFileLocation);
+        var importedPublication = resourceService.getPublicationsByCristinIdentifier(cristinId);
 
+        assertThat(importedPublication, hasSize(1));
         assertThat(file, is(not(emptyString())));
     }
 
@@ -659,10 +666,13 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
         handler.handleRequest(sqsEvent, CONTEXT);
+        var cristinId = String.valueOf(cristinObject.getId());
         var expectedReportFileLocation =
-            UnixPath.of(ERROR_REPORT).addChild("ChannelRegistryException").addChild(String.valueOf(cristinObject.getId()));
+            UnixPath.of(ERROR_REPORT).addChild("ChannelRegistryException").addChild(cristinId);
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
         var file = s3Driver.getFile(expectedReportFileLocation);
+        var importedPublication = resourceService.getPublicationsByCristinIdentifier(cristinId);
+        assertThat(importedPublication, hasSize(1));
         assertThat(file, is(not(emptyString())));
     }
 
