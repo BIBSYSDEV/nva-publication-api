@@ -1,8 +1,12 @@
 package no.unit.nva.cristin.mapper.nva.exceptions;
 
-public class InvalidIsrcException extends RuntimeException {
+public final class InvalidIsrcException extends RuntimeException {
 
-    public InvalidIsrcException(Exception e) {
-        super(e);
+    private InvalidIsrcException() {
+        super();
+    }
+
+    public static String name() {
+        return InvalidIsrcException.class.getSimpleName();
     }
 }

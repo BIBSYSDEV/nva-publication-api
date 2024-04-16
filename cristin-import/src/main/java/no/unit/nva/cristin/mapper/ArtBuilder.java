@@ -9,6 +9,7 @@ import no.unit.nva.model.instancetypes.artistic.architecture.Architecture;
 import no.unit.nva.model.pages.Pages;
 
 import java.util.Set;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import static java.util.Objects.nonNull;
 
@@ -18,8 +19,8 @@ public class ArtBuilder extends AbstractPublicationInstanceBuilder {
         Set.of(CristinSecondaryCategory.MUSICAL_PERFORMANCE,
             CristinSecondaryCategory.MUSICAL_PIECE);
 
-    public ArtBuilder(CristinObject cristinObject) {
-        super(cristinObject);
+    public ArtBuilder(CristinObject cristinObject, S3Client s3Client) {
+        super(cristinObject, s3Client);
     }
 
     @Override
@@ -57,7 +58,8 @@ public class ArtBuilder extends AbstractPublicationInstanceBuilder {
     }
 
     private MusicPerformance createMusicPerformance() {
-        return getCristinObject().getCristinArtisticProduction().toMusicPerformance();
+        var cristinObject = getCristinObject();
+        return cristinObject.getCristinArtisticProduction().toMusicPerformance(cristinObject.getId(), super.getS3Client());
     }
 
     private MovingPicture createMovingPicture() {

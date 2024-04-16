@@ -116,25 +116,12 @@ Feature: Rules that apply for Artistic results
       | Lydfil            | DigitalFile  |
 
 
-  Scenario: Cristin musical performance that contains an invalid ISRC should throw an exception
-    Given a valid Cristin Result with secondary category "MUSIKK_FRAMFORIN"
-    And the performance has a ISRC equal to "not a valid isrc"
-    When the Cristin Result is converted to an NVA Resource
-    Then an error is reported.
-
-
   Scenario: A cristin result with valid ISMN preserved the ISMN when converting it to NVA resource
     Given a valid Cristin Result with secondary category "MUSIKK_FRAMFORIN"
     And the performance has a ISMN equal to "M-2306-7118-7"
     When the Cristin Result is converted to an NVA Resource
     Then the NVA resource has a MusicScore
     And the MusicScore has a ISMN equal to "M-2306-7118-7"
-
-  Scenario: A cristin result with invalid ISMN should throw an exception
-    Given a valid Cristin Result with secondary category "MUSIKK_FRAMFORIN"
-    And the performance has a ISMN equal to "not a valid ismn"
-    When the Cristin Result is converted to an NVA Resource
-    Then an error is reported.
 
   Scenario: A cristin result with ensemble name should be mapped to musicScore
     Given a valid Cristin Result with secondary category "MUSIKK_FRAMFORIN"
