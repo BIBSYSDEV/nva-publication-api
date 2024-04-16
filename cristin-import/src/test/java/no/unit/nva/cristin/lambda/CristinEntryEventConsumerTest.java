@@ -49,9 +49,12 @@ import java.util.Optional;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
+import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinBookOrReportPartMetadata;
+import no.unit.nva.cristin.mapper.CristinJournalPublicationJournal;
 import no.unit.nva.cristin.mapper.CristinMapper;
 import no.unit.nva.cristin.mapper.CristinObject;
+import no.unit.nva.cristin.mapper.CristinPublisher;
 import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOf;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
@@ -87,6 +90,9 @@ import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.EnumSource.Mode;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
@@ -102,6 +108,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     public static final int SINGLE_HIT = 1;
     public static final int SERIES_NSD_CODE = 339741;
     public static final int JOURNAL_NSD_CODE = 339717;
+    public static final String ERROR_REPORT = "ERROR_REPORT";
 
     private CristinEntryEventConsumer handler;
     private ResourceService resourceService;
@@ -355,7 +362,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldStoreIssnRuntimeExceptionWhenTheBookIssnIsInvalid() throws
+    void shouldStoreIssnReportWhenTheBookIssnIsInvalid() throws
                                                                    IOException {
         var cristinObjectWithInvalidIssn = CristinDataGenerator.bookObjectWithInvalidIssn();
         var eventBody = createEventBody(cristinObjectWithInvalidIssn);
@@ -363,9 +370,12 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
         handler.handleRequest(sqsEvent, CONTEXT);
 
-        var actualReport = extractActualReportFromS3Client(eventBody,
-                                                           InvalidIssnRuntimeException.class.getSimpleName());
-        assertThat(actualReport.getException(), notNullValue());
+        var cristinId = cristinObjectWithInvalidIssn.at("/id").asText();
+        var errorReportLocation =
+            UnixPath.of(ERROR_REPORT).addChild("InvalidIssnException").addChild(cristinId);
+        var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
+        var file = s3Driver.getFile(errorReportLocation);
+        assertThat(file, notNullValue());
     }
 
     @Test
@@ -596,7 +606,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
         handler.handleRequest(sqsEvent, CONTEXT);
-        var expectedErrorFileLocation =  UnixPath.of("ERROR_REPORT").addChild("WrongChannelTypeException").addChild(String.valueOf(cristinObject.getId()));
+        var expectedErrorFileLocation = UnixPath.of(ERROR_REPORT).addChild("WrongChannelTypeException").addChild(String.valueOf(cristinObject.getId()));
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
         var file = s3Driver.getFile(expectedErrorFileLocation);
 
@@ -610,23 +620,49 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
         handler.handleRequest(sqsEvent, CONTEXT);
-        var expectedErrorFileLocation =  UnixPath.of("ERROR_REPORT").addChild("WrongChannelTypeException").addChild(String.valueOf(cristinObject.getId()));
+        var expectedErrorFileLocation =  UnixPath.of(ERROR_REPORT).addChild("WrongChannelTypeException").addChild(String.valueOf(cristinObject.getId()));
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
         var file = s3Driver.getFile(expectedErrorFileLocation);
 
         assertThat(file, is(not(emptyString())));
     }
 
-    @Test
-    void shouldPersistChannelRegistryExceptionWhenNoPidfForNsdSeries() throws IOException {
-        var cristinObject = CristinDataGenerator.randomBook();
+    @ParameterizedTest(name = "Cristin entry with secondary category {arguments}")
+    @EnumSource(value = CristinSecondaryCategory.class, mode = Mode.INCLUDE,
+        names = {"ANTHOLOGY", "MONOGRAPH", "NON_FICTION_BOOK", "TEXTBOOK", "ENCYCLOPEDIA",
+            "POPULAR_BOOK", "REFERENCE_MATERIAL", "RESEARCH_REPORT", "DEGREE_PHD",
+            "DEGREE_MASTER", "SECOND_DEGREE_THESIS", "MEDICAL_THESIS"})
+    void shouldPersistNoPublisherReportWhenCristinObjectMissesPublisherName(CristinSecondaryCategory category) throws IOException {
+        var cristinObject = CristinDataGenerator.randomObject(category.getValue());
+        cristinObject.setSecondaryCategory(category);
+        cristinObject.getBookOrReportMetadata().getCristinPublisher().setNsdCode(null);
+        cristinObject.getBookOrReportMetadata().getCristinPublisher().setPublisherName(null);
         cristinObject.getBookOrReportMetadata().getBookSeries().setNsdCode(randomInteger());
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
         handler.handleRequest(sqsEvent, CONTEXT);
-        var expectedErrorFileLocation = constructExpectedErrorFilePaths(eventBody, "ChannelRegistryException");
+        var expectedReportFileLocation =
+            UnixPath.of(ERROR_REPORT).addChild("NoPublisherException").addChild(String.valueOf(cristinObject.getId()));
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
-        var file = s3Driver.getFile(expectedErrorFileLocation);
+        var file = s3Driver.getFile(expectedReportFileLocation);
+        assertThat(file, is(not(emptyString())));
+    }
+
+    @ParameterizedTest(name = "Cristin entry with secondary category {arguments}")
+    @EnumSource(value = CristinSecondaryCategory.class, mode = Mode.INCLUDE,
+        names = {"ANTHOLOGY", "MONOGRAPH"})
+    void shouldPersistChannelRegistryExceptionReportWhenNsdCodeIsNotInChannelRegistry(CristinSecondaryCategory category) throws IOException {
+        var cristinObject = CristinDataGenerator.randomObject(category.getValue());
+        cristinObject.setSecondaryCategory(category);
+        cristinObject.getBookOrReportMetadata().getCristinPublisher().setPublisherName(randomString());
+        cristinObject.getBookOrReportMetadata().getBookSeries().setNsdCode(randomInteger());
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        handler.handleRequest(sqsEvent, CONTEXT);
+        var expectedReportFileLocation =
+            UnixPath.of(ERROR_REPORT).addChild("ChannelRegistryException").addChild(String.valueOf(cristinObject.getId()));
+        var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
+        var file = s3Driver.getFile(expectedReportFileLocation);
         assertThat(file, is(not(emptyString())));
     }
 
@@ -640,7 +676,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var sqsEvent = createSqsEvent(eventBody);
         var publications = handler.handleRequest(sqsEvent, CONTEXT);
 
-        var concert = ((MusicPerformance) publications.get(0).getEntityDescription().getReference()
+        var concert = ((MusicPerformance) publications.getFirst().getEntityDescription().getReference()
                                               .getPublicationInstance()).getManifestations().stream()
                           .filter(Concert.class::isInstance)
                           .map(Concert.class::cast)

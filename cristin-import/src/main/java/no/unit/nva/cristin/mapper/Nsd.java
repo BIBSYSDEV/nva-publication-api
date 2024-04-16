@@ -33,15 +33,23 @@ public class Nsd {
     public URI getPublisherUri() {
         return lookupNsdPublisherProxyUri()
                    .orElseGet(() -> lookupNsdJournalOrSeriesProxyUri()
-                                        .orElseThrow(() -> new ChannelRegistryException(nsdCode)));
+                                        .orElse(persistChannelRegistryExceptionReport("Publisher")));
     }
 
     public URI createJournal() {
-        return lookUpNsdJournal().orElseThrow(() -> new ChannelRegistryException(nsdCode));
+        return lookUpNsdJournal().orElse(persistChannelRegistryExceptionReport("Journal"));
+    }
+
+    private URI persistChannelRegistryExceptionReport(String channelType) {
+        ErrorReport.exceptionName(ChannelRegistryException.name())
+            .withCristinId(cristinId)
+            .withBody(String.join(":",channelType, String.valueOf(nsdCode)))
+            .persist(s3Client);
+        return null;
     }
 
     public URI createSeries() {
-        return lookUpNsdSeries().orElseThrow(() -> new ChannelRegistryException(nsdCode));
+        return lookUpNsdSeries().orElse(persistChannelRegistryExceptionReport("Series"));
     }
 
     private Optional<URI> lookUpNsdSeries() {

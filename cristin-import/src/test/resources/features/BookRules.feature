@@ -194,9 +194,3 @@ Feature: Book conversion rules
     And the cristin Book Report has revision status equal to "J"
     When the Cristin Result is converted to an NVA Resource
     And the NVA Resource has a publication context Book with a revision equal to "Revised"
-
-  Scenario: Should persist channel registry exception when missing channel for book
-    Given a random book
-    And the book has series which has NSD code which does not exist in channel registry lookup file
-    When the Cristin Result is converted to an NVA Resource
-    Then an error is reported.
