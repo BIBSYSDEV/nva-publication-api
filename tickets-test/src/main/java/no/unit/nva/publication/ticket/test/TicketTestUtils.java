@@ -28,6 +28,7 @@ import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.License;
+import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
@@ -330,6 +331,6 @@ public final class TicketTestUtils {
     private static AdministrativeAgreement administrativeAgreement() {
         var license = new License.Builder().withLink(randomUri()).withIdentifier("identifier").build();
         return new AdministrativeAgreement(UUID.randomUUID(), "name", "application/json",
-                                           123124124L, license, true, null, null);
+                                           123124124L, license, true, null, null, new UploadDetails(null, null));
     }
 }

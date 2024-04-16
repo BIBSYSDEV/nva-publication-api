@@ -44,7 +44,6 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.kms.model.NotFoundException;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -104,13 +103,13 @@ import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguratio
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
+import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.artistic.music.InvalidIsmnException;
 import no.unit.nva.model.instancetypes.artistic.music.Ismn;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.artistic.music.MusicScore;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.model.business.Resource;
@@ -1333,7 +1332,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
         return new PublishedFile(java.util.UUID.randomUUID(), randomString(), "application/pdf", 10L, null, false,
                                  PublisherVersion.PUBLISHED_VERSION, null, NullRightsRetentionStrategy.create(
-            RightsRetentionStrategyConfiguration.UNKNOWN), null, Instant.now());
+            RightsRetentionStrategyConfiguration.UNKNOWN), null, Instant.now(), new UploadDetails(null, null));
     }
 
     private static Publication copyPublication(NvaBrageMigrationDataGenerator brageGenerator)

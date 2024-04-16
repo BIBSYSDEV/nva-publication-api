@@ -127,6 +127,7 @@ import no.unit.nva.model.associatedartifacts.file.License;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
+import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
@@ -983,7 +984,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                    PublisherVersion.ACCEPTED_VERSION,
                                    (Instant) null,
                                    rrs,
-                                   RandomDataGenerator.randomString());
+                                   RandomDataGenerator.randomString(),
+                                   new UploadDetails(null, null));
     }
 
     @Test
@@ -1993,7 +1995,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return new UnpublishedFile(UUID.randomUUID(), randomString(), randomString(),
                                    Long.valueOf(randomInteger().toString()),
                                    new License.Builder().withIdentifier(randomString()).withLink(randomUri()).build(),
-                                   false, PublisherVersion.ACCEPTED_VERSION, null, null, randomString());
+                                   false, PublisherVersion.ACCEPTED_VERSION, null, null, randomString(),
+                                   new UploadDetails(null, null));
     }
 
     private TestAppender createAppenderForLogMonitoring() {
