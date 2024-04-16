@@ -11,6 +11,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import no.unit.nva.cristin.lambda.ErrorReport;
 import no.unit.nva.cristin.mapper.DescriptionExtractor;
 import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIsrcException;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
@@ -43,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.instancetypes.artistic.music.MusicMediaType.COMPACT_DISC;
@@ -147,8 +149,8 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     }
 
     @JsonIgnore
-    public MusicPerformance toMusicPerformance() {
-        return new MusicPerformance(extractMusicPerformanceManifestations());
+    public MusicPerformance toMusicPerformance(Integer cristinId, S3Client s3Client) {
+        return new MusicPerformance(extractMusicPerformanceManifestations(cristinId, s3Client));
     }
 
     @JsonIgnore
@@ -193,38 +195,51 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
         return performingArtsOutputs;
     }
 
-    private List<MusicPerformanceManifestation> extractMusicPerformanceManifestations() {
+    private List<MusicPerformanceManifestation> extractMusicPerformanceManifestations(Integer cristinId,
+                                                                                      S3Client s3Client) {
         var manifestations = new ArrayList<MusicPerformanceManifestation>();
         manifestations.add(extractMusicPerformanceManifestation());
-        var audioVisualPublication = extractAudioVisualPublication();
+        var audioVisualPublication = extractAudioVisualPublication(cristinId, s3Client);
         audioVisualPublication.ifPresent(manifestations::add);
-        var musicScore = extractMusicScore();
+        var musicScore = extractMusicScore(cristinId, s3Client);
         musicScore.ifPresent(manifestations::add);
         return manifestations;
     }
 
-    private Optional<MusicScore> extractMusicScore() {
+    private Optional<MusicScore> extractMusicScore(Integer cristinId, S3Client s3Client) {
         if (StringUtils.isNotBlank(ismn) || StringUtils.isNotBlank(ensembleName)) {
-            return Optional.of(createMusicScore());
+            return Optional.of(createMusicScore(cristinId, s3Client));
         }
         return Optional.empty();
     }
 
-    private MusicScore createMusicScore() {
+    private MusicScore createMusicScore(Integer cristinId, S3Client s3Client) {
         return attempt(() -> new MusicScore(ensembleName,
                                             null, extractExtent(),
                                             new UnconfirmedPublisher(publisherName),
-                                            extractIsmn()))
+                                            extractIsmn(cristinId, s3Client)))
                    .orElseThrow();
     }
 
-    private Ismn extractIsmn() throws InvalidIsmnException {
-        return StringUtils.isNotBlank(ismn) ? new Ismn(ismn) : null;
+    private Ismn extractIsmn(Integer cristinId, S3Client s3Client) {
+        return StringUtils.isNotBlank(ismn) ? createIsmn(cristinId, s3Client) : null;
     }
 
-    private Optional<AudioVisualPublication> extractAudioVisualPublication() {
+    private Ismn createIsmn(Integer cristinId, S3Client s3Client) {
+        try {
+            return new Ismn(ismn);
+        } catch (Exception e) {
+            ErrorReport.exceptionName(InvalidIsmnException.class.getSimpleName())
+                .withBody(ismn)
+                .withCristinId(cristinId)
+                .persist(s3Client);
+            return null;
+        }
+    }
+
+    private Optional<AudioVisualPublication> extractAudioVisualPublication(Integer cristinId, S3Client s3Client) {
         if (StringUtils.isNotEmpty(isrc) || hasAudioVisualMedium()) {
-            return Optional.of(createAudioVisualPublication());
+            return Optional.of(createAudioVisualPublication(cristinId, s3Client));
         }
         return Optional.empty();
     }
@@ -233,21 +248,29 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
         return nonNull(medium);
     }
 
-    private AudioVisualPublication createAudioVisualPublication() {
+    private AudioVisualPublication createAudioVisualPublication(Integer cristinId, S3Client s3Client) {
         return attempt(() -> new AudioVisualPublication(extractMediumType(),
                                                         new UnconfirmedPublisher(publisherName),
                                                         null,
                                                         List.of(),
-                                                        constructIsrc())).orElseThrow();
+                                                        constructIsrc(cristinId, s3Client))).orElseThrow();
     }
 
-    private Isrc constructIsrc() {
-        return Optional.ofNullable(isrc).map(this::extractIsrc).orElse(null);
+    private Isrc constructIsrc(Integer cristinId, S3Client s3Client) {
+        return Optional.ofNullable(isrc).map(value -> extractIsrc(value, cristinId, s3Client)).orElse(null);
     }
 
-    private Isrc extractIsrc(String isrc) {
+    private Isrc extractIsrc(String isrc, Integer cristinId, S3Client s3Client) {
         return attempt(() -> new Isrc(isrc))
-                   .orElseThrow(fail -> new InvalidIsrcException(fail.getException()));
+                   .orElse(failure -> persistInvalidIsrcReport(isrc, cristinId, s3Client));
+    }
+
+    private Isrc persistInvalidIsrcReport(String isrc, Integer cristinId, S3Client s3Client) {
+        ErrorReport.exceptionName(InvalidIsrcException.name())
+            .withBody(isrc)
+            .withCristinId(cristinId)
+            .persist(s3Client);
+        return null;
     }
 
     private MusicMediaSubtype extractMediumType() {
