@@ -8,8 +8,8 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public final class ErrorReport {
 
-    public static final String CRISTIN_IMPORT_BUCKET = new Environment().readEnv("CRISTIN_IMPORT_BUCKET");
-    public static final String ERROR_REPORT = "ERROR_REPORT";
+    private static final String CRISTIN_IMPORT_BUCKET = new Environment().readEnv("CRISTIN_IMPORT_BUCKET");
+    private static final String ERROR_REPORT = "ERROR_REPORT";
     private String exception;
     private String body;
     private String cristinId;
@@ -45,10 +45,10 @@ public final class ErrorReport {
     }
 
     private Builder copy() {
-        return builder().withBody(this.body).withCristinId(this.cristinId).withException(this.exception);
+        return builder().withBody(this.body).withException(this.exception).withCristinId(this.cristinId);
     }
 
-    public static final class Builder {
+    private static final class Builder {
 
         private String exceptionName;
         private String body;

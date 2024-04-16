@@ -1868,6 +1868,7 @@ Resources:
           DOMAIN_NAME: !Ref ApiDomain
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           CRISTIN_UNITS_S3_OBJECT_URI: !Ref CristinUnitsS3ObjectUri
+          CRISTIN_IMPORT_BUCKET: !Sub 's3://cristin-import-${AWS::AccountId}'
       Events:
         SqsEvent:
           Type: SQS

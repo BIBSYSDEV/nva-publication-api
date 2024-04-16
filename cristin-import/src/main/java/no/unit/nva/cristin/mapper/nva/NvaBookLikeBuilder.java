@@ -1,11 +1,13 @@
 package no.unit.nva.cristin.mapper.nva;
 
+import static java.util.Objects.nonNull;
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import no.unit.nva.cristin.lambda.ErrorReport;
 import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinPublisher;
@@ -14,6 +16,7 @@ import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
 import no.unit.nva.cristin.mapper.nva.exceptions.NoPublisherException;
 import no.unit.nva.model.Revision;
 import no.unit.nva.model.contexttypes.BookSeries;
+import no.unit.nva.model.contexttypes.NullPublisher;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
@@ -24,6 +27,7 @@ public class NvaBookLikeBuilder extends CristinMappingModule {
 
     public static final String CUSTOM_VOLUME_SERIES_DELIMITER = ";";
     private static final String EMPTY_STRING = null;
+    public static final String MISSING_PUBLISHER = "Missing publisher";
 
     public NvaBookLikeBuilder(CristinObject cristinObject, ChannelRegistryMapper channelRegistryMapper,
                               S3Client s3Client) {
@@ -80,22 +84,27 @@ public class NvaBookLikeBuilder extends CristinMappingModule {
     }
 
     private PublishingHouse createUnconfirmedPublisher() {
-        return new UnconfirmedPublisher(extractUnconfirmedPublisherName());
+        var publisherName = extractUnconfirmedPublisherName();
+        return nonNull(publisherName) ? new UnconfirmedPublisher(publisherName) : new NullPublisher();
     }
 
     private PublishingHouse createConfirmedPublisher(URI uri) {
-        return new Publisher(uri);
+        return nonNull(uri) ? new Publisher(uri) : new NullPublisher();
     }
 
     private String extractUnconfirmedPublisherName() {
-        String publisherName = extractPublisherNameFromPrimaryField()
+        var publisherName = extractPublisherNameFromPrimaryField()
                                    .orElseGet(this::lookForPublisherNameInAlternativeField);
         return Optional.ofNullable(publisherName)
-                   .orElseThrow(this::publicationWithoutPublisherIsNotAllowed);
+                   .orElse(persistReportForNoPublisherException());
     }
 
-    private NoPublisherException publicationWithoutPublisherIsNotAllowed() {
-        return new NoPublisherException(cristinObject.getId());
+    private String persistReportForNoPublisherException() {
+        ErrorReport.exceptionName(NoPublisherException.name())
+            .withBody(MISSING_PUBLISHER)
+            .withCristinId(cristinObject.getId())
+            .persist(s3Client);
+        return null;
     }
 
     private Optional<String> extractPublisherNameFromPrimaryField() {
