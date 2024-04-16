@@ -13,11 +13,12 @@ import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
 import no.unit.nva.model.contexttypes.BookSeries;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedSeries;
+import software.amazon.awssdk.services.s3.S3Client;
 
 public class NvaBookSeriesBuilder extends CristinMappingModule {
 
-    public NvaBookSeriesBuilder(CristinObject cristinObject, ChannelRegistryMapper channelRegistryMapper) {
-        super(cristinObject, channelRegistryMapper);
+    public NvaBookSeriesBuilder(CristinObject cristinObject, ChannelRegistryMapper channelRegistryMapper, S3Client s3Client) {
+        super(cristinObject, channelRegistryMapper, s3Client);
     }
 
     public BookSeries createBookSeries() {
@@ -45,7 +46,7 @@ public class NvaBookSeriesBuilder extends CristinMappingModule {
     private BookSeries createConfirmedBookSeries(CristinJournalPublicationJournal b) {
         int nsdCode = b.getNsdCode();
         int publicationYear = cristinObject.getPublicationYear();
-        URI seriesUri = new Nsd(nsdCode, publicationYear, channelRegistryMapper)
+        URI seriesUri = new Nsd(nsdCode, publicationYear, channelRegistryMapper, s3Client, cristinObject.getId())
                             .createSeries();
         return new Series(seriesUri);
     }

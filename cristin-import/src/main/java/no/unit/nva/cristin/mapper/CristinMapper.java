@@ -59,6 +59,7 @@ import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.language.LanguageMapper;
 import nva.commons.core.paths.UriWrapper;
+import software.amazon.awssdk.services.s3.S3Client;
 
 @SuppressWarnings({"PMD.GodClass",
     "PMD.CouplingBetweenObjects",
@@ -85,10 +86,12 @@ public class CristinMapper extends CristinMappingModule {
                                                                    "api.nva.unit.no",
                                                                    "22139870-8d31-4df9-bc45-14eb68287c4a");
     private final CristinUnitsUtil cristinUnitsUtil;
+    private final S3Client s3Client;
 
-    public CristinMapper(CristinObject cristinObject, CristinUnitsUtil cristinUnitsUtil) {
-        super(cristinObject, ChannelRegistryMapper.getInstance());
+    public CristinMapper(CristinObject cristinObject, CristinUnitsUtil cristinUnitsUtil, S3Client s3Client) {
+        super(cristinObject, ChannelRegistryMapper.getInstance(), s3Client);
         this.cristinUnitsUtil = cristinUnitsUtil;
+        this.s3Client = s3Client;
     }
 
     public static ZoneOffset zoneOffset() {
@@ -335,7 +338,7 @@ public class CristinMapper extends CristinMappingModule {
                    .withLanguage(extractLanguage())
                    .withMainTitle(extractMainTitle())
                    .withPublicationDate(extractPublicationDate())
-                   .withReference(new ReferenceBuilder(cristinObject, channelRegistryMapper).buildReference())
+                   .withReference(new ReferenceBuilder(cristinObject, channelRegistryMapper, s3Client).buildReference())
                    .withContributors(extractContributors())
                    .withNpiSubjectHeading(extractNpiSubjectHeading())
                    .withAbstract(extractAbstract())

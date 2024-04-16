@@ -9,11 +9,13 @@ import no.unit.nva.model.contexttypes.MediaContributionPeriodical;
 import no.unit.nva.model.contexttypes.Periodical;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.UnconfirmedMediaContributionPeriodical;
+import software.amazon.awssdk.services.s3.S3Client;
 
 public class MediaPeriodicalBuilder extends CristinMappingModule {
 
-    public MediaPeriodicalBuilder(CristinObject cristinObject, ChannelRegistryMapper channelRegistryMapper) {
-        super(cristinObject, channelRegistryMapper);
+    public MediaPeriodicalBuilder(CristinObject cristinObject, ChannelRegistryMapper channelRegistryMapper,
+                                  S3Client s3Client) {
+        super(cristinObject, channelRegistryMapper, s3Client);
     }
 
     public PublicationContext buildMediaPeriodicalForPublicationContext() {
@@ -28,7 +30,8 @@ public class MediaPeriodicalBuilder extends CristinMappingModule {
     private Periodical createMediaContributionPeriodical() {
         Integer nsdCode = cristinObject.getJournalPublication().getJournal().getNsdCode();
         int publicationYear = extractYearReportedInNvi();
-        var journalUri = new Nsd(nsdCode, publicationYear, channelRegistryMapper).createJournal();
+        var journalUri =
+            new Nsd(nsdCode, publicationYear, channelRegistryMapper, s3Client, cristinObject.getId()).createJournal();
         return new MediaContributionPeriodical(journalUri);
     }
 

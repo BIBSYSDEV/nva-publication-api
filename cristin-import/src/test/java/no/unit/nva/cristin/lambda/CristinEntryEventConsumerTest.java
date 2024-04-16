@@ -259,7 +259,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     private Publication mapToPublication(CristinObject cristinObject) {
-        return new CristinMapper(cristinObject, cristinUnitsUtil).generatePublication();
+        return new CristinMapper(cristinObject, cristinUnitsUtil, s3Client).generatePublication();
     }
 
     @Test
@@ -590,28 +590,30 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldPersistWrongChannelTypeExceptionWhenCreatingJournalForNonJournal() throws IOException {
+    void shouldPersistWrongChannelTypeErrorReportWhenCreatingJournalForNonJournal() throws IOException {
         var cristinObject = CristinDataGenerator.randomObject(FEATURE_ARTICLE.getValue());
         cristinObject.getJournalPublication().getJournal().setNsdCode(SERIES_NSD_CODE);
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
         handler.handleRequest(sqsEvent, CONTEXT);
-        var expectedErrorFileLocation = constructExpectedErrorFilePaths(eventBody, "WrongChannelTypeException");
+        var expectedErrorFileLocation =  UnixPath.of("ERROR_REPORT").addChild("WrongChannelTypeException").addChild(String.valueOf(cristinObject.getId()));
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
         var file = s3Driver.getFile(expectedErrorFileLocation);
+
         assertThat(file, is(not(emptyString())));
     }
 
     @Test
-    void shouldPersistWrongChannelTypeExceptionWhenCreatingSeriesForNonSeries() throws IOException {
+    void shouldPersistWrongChannelTypeReportWhenCreatingSeriesForNonSeries() throws IOException {
         var cristinObject = CristinDataGenerator.randomBook();
         cristinObject.getBookOrReportMetadata().getBookSeries().setNsdCode(JOURNAL_NSD_CODE);
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
         handler.handleRequest(sqsEvent, CONTEXT);
-        var expectedErrorFileLocation = constructExpectedErrorFilePaths(eventBody, "WrongChannelTypeException");
+        var expectedErrorFileLocation =  UnixPath.of("ERROR_REPORT").addChild("WrongChannelTypeException").addChild(String.valueOf(cristinObject.getId()));
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
         var file = s3Driver.getFile(expectedErrorFileLocation);
+
         assertThat(file, is(not(emptyString())));
     }
 

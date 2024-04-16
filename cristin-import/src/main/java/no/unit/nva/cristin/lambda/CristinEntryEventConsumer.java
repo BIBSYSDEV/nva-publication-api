@@ -202,7 +202,7 @@ public class CristinEntryEventConsumer
     private PublicationRepresentations generatePublicationRepresentations(
         CristinObject cristinObject,
         FileContentsEvent<JsonNode> eventBody) {
-        var publication = new CristinMapper(cristinObject, cristinUnitsUtil).generatePublication();
+        var publication = new CristinMapper(cristinObject, cristinUnitsUtil, s3Client).generatePublication();
         return new PublicationRepresentations(cristinObject, publication, eventBody);
     }
 

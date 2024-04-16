@@ -60,6 +60,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import software.amazon.awssdk.services.s3.S3Client;
 
 class CristinMapperTest extends AbstractCristinImportTest {
 
@@ -91,7 +92,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     private Publication mapToPublication(CristinObject cristinObject) {
-        return new CristinMapper(cristinObject, cristinUnitsUtil).generatePublication();
+        return new CristinMapper(cristinObject, cristinUnitsUtil, mock(S3Client.class)).generatePublication();
     }
 
     @Test
