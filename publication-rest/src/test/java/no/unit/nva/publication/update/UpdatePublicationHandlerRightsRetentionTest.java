@@ -174,7 +174,8 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
                                    PublisherVersion.ACCEPTED_VERSION,
                                    (Instant) null,
                                    rrs,
-                                   RandomDataGenerator.randomString());
+                                   RandomDataGenerator.randomString(),
+                                   null);
     }
 
 }

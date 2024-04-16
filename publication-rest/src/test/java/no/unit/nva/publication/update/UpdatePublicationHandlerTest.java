@@ -983,7 +983,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                    PublisherVersion.ACCEPTED_VERSION,
                                    (Instant) null,
                                    rrs,
-                                   RandomDataGenerator.randomString());
+                                   RandomDataGenerator.randomString(),
+                                   null);
     }
 
     @Test
@@ -1993,7 +1994,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return new UnpublishedFile(UUID.randomUUID(), randomString(), randomString(),
                                    Long.valueOf(randomInteger().toString()),
                                    new License.Builder().withIdentifier(randomString()).withLink(randomUri()).build(),
-                                   false, PublisherVersion.ACCEPTED_VERSION, null, null, randomString());
+                                   false, PublisherVersion.ACCEPTED_VERSION, null, null, randomString(), null);
     }
 
     private TestAppender createAppenderForLogMonitoring() {

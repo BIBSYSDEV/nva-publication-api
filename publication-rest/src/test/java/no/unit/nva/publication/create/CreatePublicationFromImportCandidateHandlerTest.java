@@ -42,7 +42,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -536,6 +535,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                  null,
                                  false,
                                  PublisherVersion.ACCEPTED_VERSION,
+                                 null,
                                  null,
                                  null,
                                  null,
