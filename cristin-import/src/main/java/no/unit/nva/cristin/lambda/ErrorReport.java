@@ -10,7 +10,7 @@ public final class ErrorReport {
 
     public static final String CRISTIN_IMPORT_BUCKET = new Environment().readEnv("CRISTIN_IMPORT_BUCKET");
     public static final String ERROR_REPORT = "ERROR_REPORT";
-    private String exceptionName;
+    private String exception;
     private String body;
     private String cristinId;
 
@@ -36,7 +36,7 @@ public final class ErrorReport {
 
     private UnixPath createLocation() {
         return UnixPath.fromString(ERROR_REPORT)
-                   .addChild(exceptionName)
+                   .addChild(exception)
                    .addChild(cristinId);
     }
 
@@ -45,7 +45,7 @@ public final class ErrorReport {
     }
 
     private Builder copy() {
-        return builder().withBody(this.body).withException(this.exceptionName);
+        return builder().withBody(this.body).withException(this.exception);
     }
 
     public static final class Builder {
@@ -74,7 +74,7 @@ public final class ErrorReport {
 
         public ErrorReport build() {
             ErrorReport errorReport = new ErrorReport();
-            errorReport.exceptionName = this.exceptionName;
+            errorReport.exception = this.exceptionName;
             errorReport.body = this.body;
             errorReport.cristinId = this.cristinId;
             return errorReport;

@@ -52,7 +52,7 @@ public class Nsd {
     private URI toSeriesUri(ChannelRegistryEntry channelRegistryEntry) {
         var uri = getNsdProxyUri(channelRegistryEntry.getEntryPath(), channelRegistryEntry.id());
         if (!ChannelType.SERIES.equals(channelRegistryEntry.type())) {
-            ErrorReport.exceptionName(WrongChannelTypeException.class.getSimpleName())
+            ErrorReport.exceptionName(WrongChannelTypeException.name())
                 .withBody(uri.toString())
                 .withCristinId(cristinId)
                 .persist(s3Client);
