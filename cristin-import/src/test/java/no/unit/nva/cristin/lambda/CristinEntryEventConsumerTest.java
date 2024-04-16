@@ -577,15 +577,37 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldPersistIsrcExceptionWhenImportingCristinObjectWithInvalidIsrc() throws IOException {
+    void shouldPersistInvalidIsrcErrorReportWhenImportingCristinObjectWithInvalidIsrc() throws IOException {
         var cristinObject = CristinDataGenerator.randomObject(MUSICAL_PERFORMANCE.getValue());
         cristinObject.getCristinArtisticProduction().setIsrc("i_am_an_invalid_isrc");
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
         handler.handleRequest(sqsEvent, CONTEXT);
-        var expectedErrorFileLocation = constructExpectedErrorFilePaths(eventBody, "InvalidIsrcException");
+        var cristinIdentifier = String.valueOf(cristinObject.getId());
+        var reportLocation =  UnixPath.of("ERROR_REPORT").addChild("InvalidIsrcException").addChild(cristinIdentifier);
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
-        var file = s3Driver.getFile(expectedErrorFileLocation);
+        var file = s3Driver.getFile(reportLocation);
+        var importedPublication = resourceService.getPublicationsByCristinIdentifier(cristinIdentifier);
+
+        assertThat(importedPublication, hasSize(1));
+        assertThat(file, is(not(emptyString())));
+    }
+
+    @Test
+    void shouldPersistInvalidIsmnErrorReportWhenImportingCristinObjectWithInvalidIsmn() throws IOException {
+        var cristinObject = CristinDataGenerator.randomObject(MUSICAL_PERFORMANCE.getValue());
+        cristinObject.getCristinArtisticProduction().setIsmn("i_am_an_invalid_ismn");
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        handler.handleRequest(sqsEvent, CONTEXT);
+        var cristinIdentifier = String.valueOf(cristinObject.getId());
+        var reportLocation =
+            UnixPath.of("ERROR_REPORT").addChild("InvalidIsmnException").addChild(cristinIdentifier);
+        var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
+        var file = s3Driver.getFile(reportLocation);
+        var importedPublication = resourceService.getPublicationsByCristinIdentifier(cristinIdentifier);
+
+        assertThat(importedPublication, hasSize(1));
         assertThat(file, is(not(emptyString())));
     }
 
@@ -627,6 +649,24 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var expectedErrorFileLocation = constructExpectedErrorFilePaths(eventBody, "ChannelRegistryException");
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
         var file = s3Driver.getFile(expectedErrorFileLocation);
+        assertThat(file, is(not(emptyString())));
+    }
+
+    @Test
+    void shouldPersistInvalidDoiExceptionReportWhenInvalidDoi() throws IOException {
+        var cristinObject = CristinDataGenerator.randomObject();
+        cristinObject.getBookOrReportMetadata().setDoi(randomString());
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        handler.handleRequest(sqsEvent, CONTEXT);
+        var cristinIdentifier = String.valueOf(cristinObject.getId());
+        var expectedErrorFileLocation =
+            UnixPath.of("ERROR_REPORT").addChild("InvalidDoiException").addChild(cristinIdentifier);
+        var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
+        var file = s3Driver.getFile(expectedErrorFileLocation);
+        var importedPublication = resourceService.getPublicationsByCristinIdentifier(cristinIdentifier);
+
+        assertThat(importedPublication, hasSize(1));
         assertThat(file, is(not(emptyString())));
     }
 

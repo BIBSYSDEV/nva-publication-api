@@ -19,11 +19,12 @@ import no.unit.nva.model.instancetypes.journal.PopularScienceArticle;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
+import software.amazon.awssdk.services.s3.S3Client;
 
 public class JournalBuilder extends AbstractPublicationInstanceBuilder {
 
-    public JournalBuilder(CristinObject cristinObject) {
-        super(cristinObject);
+    public JournalBuilder(CristinObject cristinObject, S3Client s3Client) {
+        super(cristinObject, s3Client);
     }
 
     @Override

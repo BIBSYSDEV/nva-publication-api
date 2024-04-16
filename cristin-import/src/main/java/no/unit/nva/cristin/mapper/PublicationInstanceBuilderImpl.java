@@ -13,6 +13,7 @@ import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryExceptio
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
+import software.amazon.awssdk.services.s3.S3Client;
 
 public class PublicationInstanceBuilderImpl {
 
@@ -22,10 +23,12 @@ public class PublicationInstanceBuilderImpl {
                                                                             + "categories";
 
     private final CristinObject cristinObject;
+    private final S3Client s3Client;
 
-    public PublicationInstanceBuilderImpl(CristinObject cristinObject) {
+    public PublicationInstanceBuilderImpl(CristinObject cristinObject, S3Client s3Client) {
         Objects.requireNonNull(cristinObject, ERROR_CRISTIN_OBJECT_IS_NULL);
         this.cristinObject = cristinObject;
+        this.s3Client = s3Client;
     }
 
     public PublicationInstance<? extends Pages> build() {
@@ -34,7 +37,7 @@ public class PublicationInstanceBuilderImpl {
         } else if (isReport(cristinObject)) {
             return new ReportBuilder(cristinObject).build();
         } else if (isJournal(cristinObject)) {
-            return new JournalBuilder(cristinObject).build();
+            return new JournalBuilder(cristinObject, s3Client).build();
         } else if (isChapter(cristinObject)) {
             return new ChapterArticleBuilder(cristinObject).build();
         } else if (isEvent(cristinObject)) {
@@ -42,7 +45,7 @@ public class PublicationInstanceBuilderImpl {
         } else if (isMediaContribution(cristinObject)) {
             return new MediaContributionBuilder(cristinObject).build();
         } else if (isArt(cristinObject)) {
-            return new ArtBuilder(cristinObject).build();
+            return new ArtBuilder(cristinObject, s3Client).build();
         } else if (isExhibition(cristinObject)) {
             return new ExhibitionProductionBuilder(cristinObject).build();
         } else if (cristinObject.getMainCategory().isUnknownCategory()) {

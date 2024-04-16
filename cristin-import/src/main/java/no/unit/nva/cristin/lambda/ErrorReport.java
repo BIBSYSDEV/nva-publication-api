@@ -45,7 +45,7 @@ public final class ErrorReport {
     }
 
     private Builder copy() {
-        return builder().withBody(this.body).withException(this.exception);
+        return builder().withBody(this.body).withCristinId(this.cristinId).withException(this.exception);
     }
 
     public static final class Builder {

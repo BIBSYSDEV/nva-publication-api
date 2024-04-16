@@ -20,8 +20,10 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
+import no.unit.nva.cristin.lambda.ErrorReport;
 import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinBookOrReportPartMetadata;
 import no.unit.nva.cristin.mapper.CristinJournalPublication;
@@ -58,6 +60,7 @@ import no.unit.nva.model.time.Time;
 import nva.commons.core.SingletonCollector;
 import nva.commons.doi.DoiConverter;
 import nva.commons.doi.DoiValidator;
+import nva.commons.doi.InvalidDoiException;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public class ReferenceBuilder extends CristinMappingModule {
@@ -72,13 +75,14 @@ public class ReferenceBuilder extends CristinMappingModule {
 
     public Reference buildReference() {
         PublicationInstanceBuilderImpl publicationInstanceBuilderImpl = new PublicationInstanceBuilderImpl(
-            cristinObject);
+            cristinObject, s3Client);
         PublicationInstance<? extends Pages> publicationInstance = publicationInstanceBuilderImpl.build();
         PublicationContext publicationContext = attempt(this::buildPublicationContext).orElseThrow(
             failure -> castToCorrectRuntimeException(failure.getException()));
+        var doi = extractDoi();
         return new Reference.Builder().withPublicationInstance(publicationInstance)
                    .withPublishingContext(publicationContext)
-                   .withDoi(extractDoi())
+                   .withDoi(doi)
                    .build();
     }
 
@@ -223,27 +227,36 @@ public class ReferenceBuilder extends CristinMappingModule {
     }
 
     private URI extractDoi() {
-        return Stream.of(getBookOrReportPart(), getBookOrReportDoi(), getJournalDOi())
-                   .flatMap(Optional::stream)
+        var doi = Stream.of(getBookOrReportPart(), getBookOrReportDoi(), getJournalDOi())
+                   .filter(Objects::nonNull)
                    .distinct()
                    .collect(SingletonCollector.collectOrElse(null));
+        try {
+            return doiConverter.toUri(doi);
+        } catch (Exception e) {
+            ErrorReport.exceptionName(InvalidDoiException.class.getSimpleName())
+                .withCristinId(cristinObject.getId())
+                .withBody(doi)
+                .persist(s3Client);
+            return null;
+        }
     }
 
-    private Optional<URI> getBookOrReportPart() {
+    private String getBookOrReportPart() {
         return Optional.ofNullable(extractCristinBookReportPart())
                    .map(CristinBookOrReportPartMetadata::getDoi)
-                   .map(doiConverter::toUri);
+                   .orElse(null);
     }
 
-    private Optional<URI> getBookOrReportDoi() {
+    private String getBookOrReportDoi() {
         return Optional.ofNullable(extractCristinBookReport())
                    .map(CristinBookOrReportMetadata::getDoi)
-                   .map(doiConverter::toUri);
+                   .orElse(null);
     }
 
-    private Optional<URI> getJournalDOi() {
+    private String getJournalDOi() {
         return Optional.ofNullable(extractCristinJournalPublication())
                    .map(CristinJournalPublication::getDoi)
-                   .map(doiConverter::toUri);
+                   .orElse(null);
     }
 }
