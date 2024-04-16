@@ -1,7 +1,6 @@
 package no.unit.nva.cristin.mapper.nva;
 
 import static java.util.Objects.nonNull;
-import static nva.commons.core.attempt.Try.attempt;
 import java.util.Optional;
 import no.unit.nva.cristin.lambda.ErrorReport;
 import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
@@ -13,7 +12,6 @@ import no.unit.nva.model.contexttypes.BookSeries;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import no.unit.nva.model.exceptions.InvalidIssnException;
-import nva.commons.core.attempt.Failure;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public class NvaBookSeriesBuilder extends CristinMappingModule {
