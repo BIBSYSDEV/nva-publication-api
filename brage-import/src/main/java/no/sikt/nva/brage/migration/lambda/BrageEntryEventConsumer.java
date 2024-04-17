@@ -1,5 +1,6 @@
 package no.sikt.nva.brage.migration.lambda;
 
+import static java.net.HttpURLConnection.HTTP_OK;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
@@ -9,6 +10,7 @@ import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Iterables;
 import java.net.URI;
+import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -23,6 +25,7 @@ import no.sikt.nva.brage.migration.merger.DuplicatePublicationException;
 import no.sikt.nva.brage.migration.merger.UnmappableCristinRecordException;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
@@ -66,14 +69,17 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private static final String S3_URI_TEMPLATE = "s3://%s/%s";
     private static final String ERROR_SAVING_BRAGE_IMPORT = "Error saving brage import for record with object key: ";
     private static final Logger logger = LoggerFactory.getLogger(BrageEntryEventConsumer.class);
-    private static final String RESOURCES_2 = "resources2";
+    private static final String RESOURCES = "resources";
     private static final String SEARCH = "search";
     private static final String DOI = "doi";
     private static final String APPLICATION_JSON = "application/json";
+    public static final String TITLE = "title";
+    public static final String INSTANCE_TYPE = "instanceType";
     private final S3Client s3Client;
     private final ResourceService resourceService;
     private String brageRecordFile;
     private List<Publication> publicationsToMerge;
+    private MergeSource source;
     private final UriRetriever uriRetriever;
     private final String apiHost = new Environment().readEnv("API_HOST");
 
@@ -109,10 +115,76 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         var cristinIdentifier = getCristinIdentifier(publication);
         if (nonNull(cristinIdentifier)) {
             publicationsToMerge = getPublicationsByCristinIdentifier(cristinIdentifier);
-            return !publicationsToMerge.isEmpty();
+            boolean shouldMerge = !publicationsToMerge.isEmpty();
+            source = shouldMerge ? MergeSource.CRISTIN : null;
+            return shouldMerge;
         }
+        if (hasDoi(publication)) {
+            var shouldMerge= existingPublicationHasSameDoi(publication);
+            source = shouldMerge ? MergeSource.DOI : null;
+            return shouldMerge;
+        } else {
+            var shouldMerge = existingPublicationHasSamePublicationContent(publication);
+            source = shouldMerge ? MergeSource.SEARCH : null;
+            return shouldMerge;
+        }
+    }
 
-        return existingPublicationHasSameDoi(publication);
+    private boolean existingPublicationHasSamePublicationContent(Publication publication) {
+        publicationsToMerge = searchForPublicationsByTypeAndTitle(publication);
+        return !publicationsToMerge.isEmpty();
+
+    }
+
+    private List<Publication> searchForPublicationsByTypeAndTitle(Publication publication) {
+        var response = fetchResponse(searchByTypeAndTitleUri(publication));
+        return response.map(this::toResponse)
+                   .filter(SearchResourceApiResponse::containsSingleHit)
+                   .map(SearchResourceApiResponse::hits)
+                   .orElse(List.of())
+                   .stream()
+                   .map(ResourceWithId::getIdentifier)
+                   .map(this::getPublicationByIdentifier)
+                   .collect(Collectors.toList()).reversed();
+    }
+
+    private Publication getPublicationByIdentifier(SortableIdentifier identifier) {
+        return attempt(() -> resourceService.getPublicationByIdentifier(identifier)).orElseThrow();
+    }
+
+    private Optional<String> fetchResponse(URI uri) {
+        var response = uriRetriever.fetchResponse(uri);
+        if (!isHttpOk(response)) {
+            logger.info("Search-api responded with statusCode: {} for request: {}", response.statusCode(), uri);
+            return Optional.empty();
+        } else {
+            return Optional.ofNullable(response.body());
+        }
+    }
+
+    private boolean isHttpOk(HttpResponse<String> response) {
+        return response.statusCode() == HTTP_OK;
+    }
+
+    private URI searchByTypeAndTitleUri(Publication publication) {
+        return UriWrapper.fromHost(apiHost)
+                   .addChild(SEARCH)
+                   .addChild(RESOURCES)
+                   .addQueryParameter(TITLE, getMainTitle(publication))
+                   .addQueryParameter(INSTANCE_TYPE, getInstanceType(publication))
+                   .getUri();
+    }
+
+    private static String getMainTitle(Publication publication) {
+        return publication.getEntityDescription().getMainTitle();
+    }
+
+    private static String getInstanceType(Publication publication) {
+        return publication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
+    }
+
+    private static boolean hasDoi(Publication publication) {
+        return nonNull(publication.getEntityDescription().getReference().getDoi());
     }
 
     private boolean existingPublicationHasSameDoi(Publication publication)
@@ -139,15 +211,15 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private List<ResourceWithId> searchForPublicationsByDoi(URI doi) {
         var searchUri = constructSearchUri(doi);
         return getResponseBody(searchUri)
-                .map(this::toResponse)
-                .map(SearchResourceApiResponse::hits)
+                       .map(this::toResponse)
+                       .map(SearchResourceApiResponse::hits)
                 .orElse(List.of());
     }
 
     private URI constructSearchUri(URI doi) {
         return UriWrapper.fromHost(apiHost)
                    .addChild(SEARCH)
-                   .addChild(RESOURCES_2)
+                   .addChild(RESOURCES)
                    .addQueryParameter(DOI, doi.toString())
                    .getUri();
     }
@@ -211,6 +283,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
     private UriWrapper updateResourceFilePath(Publication publication, S3Event s3Event, String brageHandle) {
         return UriWrapper.fromUri(UPDATE_REPORTS_PATH)
+                   .addChild(source.name())
                    .addChild(extractInstitutionName(s3Event))
                    .addChild(timePath(s3Event))
                    .addChild(brageHandle)

@@ -25,6 +25,7 @@ import static no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger.
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.TEST_DESCRIPTION;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
@@ -41,9 +42,11 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.kms.model.NotFoundException;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -60,6 +63,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
@@ -92,6 +96,7 @@ import no.sikt.nva.brage.migration.testutils.FakeResourceServiceThrowingExceptio
 import no.sikt.nva.brage.migration.testutils.FakeS3ClientThrowingExceptionWhenCopying;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -111,6 +116,7 @@ import no.unit.nva.model.instancetypes.artistic.music.InvalidIsmnException;
 import no.unit.nva.model.instancetypes.artistic.music.Ismn;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.artistic.music.MusicScore;
+import no.unit.nva.model.instancetypes.event.ConferencePoster;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.model.business.Resource;
@@ -236,6 +242,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         this.resourceService = getResourceServiceBuilder(client).build();
         this.s3Client = new ExtendedFakeS3Client();
         this.s3Driver = new S3Driver(s3Client, INPUT_BUCKET_NAME);
+        mockSearchPublicationByTitleAndTypeResponse(SortableIdentifier.next(), 502);
         this.handler = new BrageEntryEventConsumer(s3Client, resourceService, uriRetriever);
     }
 
@@ -1071,9 +1078,9 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         handler.handleRequest(s3Event, CONTEXT);
         var storedMergeReportString =
-            extractUpdateReportFromS3(s3Event,
-                                      existingPublication,
-                                      nvaBrageMigrationDataGenerator.getBrageRecord().getId());
+            extractUpdateReportFromS3ByUpdateSource(s3Event,
+                                                    existingPublication,
+                                                    nvaBrageMigrationDataGenerator.getBrageRecord().getId(), "CRISTIN");
         var storedMergeReport = JsonUtils.dtoObjectMapper.readValue(storedMergeReportString, BrageMergingReport.class);
         var updatedPublication = resourceService.getPublication(existingPublication);
         assertThat(storedMergeReport.oldImage(), is(equalTo(existingPublication)));
@@ -1213,9 +1220,9 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var updateHandleReporstFolder = UnixPath.of(UPDATE_REPORTS_PATH);
         var filesInUpdatedHandleReportsFolder = s3Driver.getFiles(updateHandleReporstFolder);
         assertThat(filesInUpdatedHandleReportsFolder, is(not(empty())));
-        var storedHandleString = extractUpdateReportFromS3(s3Event,
-                                                           cristinPublication,
-                                                           minimalRecord.getId());
+        var storedHandleString = extractUpdateReportFromS3ByUpdateSource(s3Event,
+                                                                         cristinPublication,
+                                                                         minimalRecord.getId(), "CRISTIN");
         assertThat(storedHandleString, is(not(nullValue())));
     }
 
@@ -1302,6 +1309,43 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         assertThat(discardedFilesReport.getDiscardedFromUpdatedRecord(), hasSize(0));
         assertThat(discardedFilesReport.getDiscardedFromBrageRecord(),
                    hasSize(brageMigrationDataGenerator.getBrageRecord().getContentBundle().getContentFiles().size()));
+    }
+
+    @Test
+    void shouldMergeIncomingPublicationWithExistingOneWhenSearchByTitleAndTypeReturnsSingleHit() throws IOException {
+        var publication = randomPublication(ConferencePoster.class);
+        publication.setAdditionalIdentifiers(Set.of());
+        publication.getEntityDescription().getReference().setDoi(null);
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication);
+        var title = existingPublication.getEntityDescription().getMainTitle();
+        var instanceType = existingPublication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
+
+        mockSearchPublicationByTitleAndTypeResponse(existingPublication.getIdentifier(), 200);
+
+        var generator = new NvaBrageMigrationDataGenerator.Builder()
+                            .withMainTitle(title)
+                            .withType(new Type(List.of(), instanceType)).build();
+
+        var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
+        var publicationFromBrage = handler.handleRequest(s3Event, CONTEXT);
+        var storedMergeReportString =
+            extractUpdateReportFromS3ByUpdateSource(s3Event, existingPublication, generator.getBrageRecord().getId(), "SEARCH");
+
+        assertThat(storedMergeReportString, is(notNullValue()));
+        assertThat(publicationFromBrage.getIdentifier().toString(),
+                   is(equalTo(existingPublication.getIdentifier().toString())));
+    }
+
+    private void mockSearchPublicationByTitleAndTypeResponse(SortableIdentifier identifier, int statusCode) {
+        var publicationId = UriWrapper.fromHost(API_HOST)
+                              .addChild("publication")
+                              .addChild(identifier.toString())
+                              .getUri();
+        var searchResourceApiResponse = new SearchResourceApiResponse(1, List.of(new ResourceWithId(publicationId)));
+        var response = mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(statusCode);
+        when(response.body()).thenReturn(searchResourceApiResponse.toString());
+        when(this.uriRetriever.fetchResponse(any())).thenReturn(response);
     }
 
     private DiscardedFilesReport extractDiscardedFilesReportFromS3(Record brageRecord, S3Event s3Event,
@@ -1416,11 +1460,12 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                    .persistNew(resourceService, UserInstance.fromPublication(publication));
     }
 
-    private String extractUpdateReportFromS3(S3Event s3Event,
-                                             Publication publication,
-                                             URI brageHandle) {
+    private String extractUpdateReportFromS3ByUpdateSource(S3Event s3Event,
+                                                           Publication publication,
+                                                           URI brageHandle, String updateSource) {
         var timestamp = s3Event.getRecords().getFirst().getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
         var uri = UriWrapper.fromUri(UPDATE_REPORTS_PATH)
+                      .addChild(updateSource)
                       .addChild("institution")
                       .addChild(timestamp)
                       .addChild(brageHandle.getPath())

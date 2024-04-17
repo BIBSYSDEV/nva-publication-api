@@ -639,9 +639,6 @@ public class NvaBrageMigrationDataGenerator {
             if (isNull(alternativeTitlesMap)) {
                 alternativeTitlesMap = createCorrespondingMap();
             }
-            if (isNull(doi) && randomBoolean()) {
-                doi = randomDoi();
-            }
             if (isNull(language)) {
                 language = randomLanguage1();
             }

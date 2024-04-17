@@ -14,6 +14,7 @@ import nva.commons.core.JacocoGenerated;
 public class UriRetriever implements RawContentRetriever {
 
     public static final String ACCEPT = "Accept";
+    private static final String APPLICATION_JSON = "application/json";
     private final HttpClient httpClient;
 
     public UriRetriever() {
@@ -55,5 +56,9 @@ public class UriRetriever implements RawContentRetriever {
                    .toOptional();
     }
 
-
+    public HttpResponse<String> fetchResponse(URI uri) {
+        return attempt(() -> httpClient.send(createHttpRequest(uri, APPLICATION_JSON),
+                                             BodyHandlers.ofString(StandardCharsets.UTF_8)))
+                   .orElseThrow();
+    }
 }
