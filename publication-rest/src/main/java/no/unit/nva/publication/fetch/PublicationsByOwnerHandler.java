@@ -1,10 +1,7 @@
 package no.unit.nva.publication.fetch;
 
 import static no.unit.nva.publication.RequestUtil.createUserInstanceFromRequest;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.time.Clock;
-import java.util.List;
 import java.util.stream.Collectors;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.publication.model.PublicationSummary;
@@ -15,12 +12,9 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, PublicationsByOwnerResponse> {
     
-    private static final Logger logger = LoggerFactory.getLogger(PublicationsByOwnerHandler.class);
     private final ResourceService resourceService;
     private final IdentityServiceClient identityServiceClient;
 
@@ -50,19 +44,10 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
 
         var userInstance = createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-        logger.info(String.format("Requested publications for owner with username/feideId=%s and publisher with "
-                                  + "customerId=%s",
-            userInstance.getUsername(),
-            userInstance.getCustomerId())
-        );
-        
-        List<PublicationSummary> publicationsByOwner;
-        publicationsByOwner = resourceService.getPublicationsByOwner(userInstance)
-                                  .stream()
-                                  .map(PublicationSummary::create)
-                                  .collect(Collectors.toList());
-        
-        return new PublicationsByOwnerResponse(publicationsByOwner);
+        return resourceService.getPublicationsByOwner(userInstance)
+                   .stream()
+                   .map(PublicationSummary::create)
+                   .collect(Collectors.collectingAndThen(Collectors.toList(), PublicationsByOwnerResponse::new));
     }
     
     @Override

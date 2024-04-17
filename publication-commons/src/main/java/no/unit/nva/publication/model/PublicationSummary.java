@@ -45,6 +45,8 @@ public class PublicationSummary {
     private Instant publishedDate;
     @JsonProperty
     private List<Contributor> contributors;
+    @JsonProperty("abstract")
+    private String mainLanguageAbstract;
 
     public static PublicationSummary create(Publication publication) {
         var publicationSummary = new PublicationSummary();
@@ -56,6 +58,7 @@ public class PublicationSummary {
         publicationSummary.setTitle(extractTitle(publication.getEntityDescription()));
         publicationSummary.setPublicationInstance(extractPublicationInstance(publication.getEntityDescription()));
         publicationSummary.setContributors(extractContributors(publication.getEntityDescription()));
+        publicationSummary.setAbstract(publication.getEntityDescription().getAbstract());
         return publicationSummary;
     }
 
@@ -65,6 +68,15 @@ public class PublicationSummary {
         publicationSummary.setPublicationId(publicationId);
         publicationSummary.setTitle(publicationTitle);
         return publicationSummary;
+    }
+
+    @JsonProperty("abstract")
+    public String getAbstract() {
+        return mainLanguageAbstract;
+    }
+
+    public void setAbstract(String mainLanguageAbstract) {
+        this.mainLanguageAbstract = mainLanguageAbstract;
     }
 
     public Instant getPublishedDate() {
@@ -139,8 +151,7 @@ public class PublicationSummary {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getPublicationId(), getIdentifier(), getTitle(), getOwner(), getStatus(),
-                            getPublicationInstance(), getPublishedDate(),
-                            getContributors());
+                            getPublicationInstance(), getPublishedDate(), getContributors(), getAbstract());
     }
 
     @Override
@@ -149,10 +160,9 @@ public class PublicationSummary {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof PublicationSummary)) {
+        if (!(o instanceof PublicationSummary that)) {
             return false;
         }
-        PublicationSummary that = (PublicationSummary) o;
         return Objects.equals(getPublicationId(), that.getPublicationId())
                && Objects.equals(getIdentifier(), that.getIdentifier())
                && Objects.equals(getTitle(), that.getTitle())
@@ -160,13 +170,12 @@ public class PublicationSummary {
                && getStatus() == that.getStatus()
                && Objects.equals(getPublicationInstance(), that.getPublicationInstance())
                && Objects.equals(getPublishedDate(), that.getPublishedDate())
-               && Objects.equals(getContributors(), that.getContributors());
+               && Objects.equals(getContributors(), that.getContributors())
+               && Objects.equals(getAbstract(), that.getAbstract());
     }
 
     private static String extractTitle(EntityDescription entityDescription) {
-        return Optional.ofNullable(entityDescription)
-                   .map(EntityDescription::getMainTitle)
-                   .orElse(null);
+        return Optional.ofNullable(entityDescription).map(EntityDescription::getMainTitle).orElse(null);
     }
 
     private static List<Contributor> extractContributors(EntityDescription entityDescription) {
