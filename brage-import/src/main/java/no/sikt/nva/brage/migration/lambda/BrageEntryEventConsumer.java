@@ -116,16 +116,16 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         if (nonNull(cristinIdentifier)) {
             publicationsToMerge = getPublicationsByCristinIdentifier(cristinIdentifier);
             boolean shouldMerge = !publicationsToMerge.isEmpty();
-            source = shouldMerge ? MergeSource.CRISTIN : null;
+            source = shouldMerge ? MergeSource.CRISTIN : MergeSource.NOT_RELEVANT;
             return shouldMerge;
         }
         if (hasDoi(publication)) {
             var shouldMerge= existingPublicationHasSameDoi(publication);
-            source = shouldMerge ? MergeSource.DOI : null;
+            source = shouldMerge ? MergeSource.DOI : MergeSource.NOT_RELEVANT;
             return shouldMerge;
         } else {
             var shouldMerge = existingPublicationHasSamePublicationContent(publication);
-            source = shouldMerge ? MergeSource.SEARCH : null;
+            source = shouldMerge ? MergeSource.SEARCH : MergeSource.NOT_RELEVANT;
             return shouldMerge;
         }
     }
