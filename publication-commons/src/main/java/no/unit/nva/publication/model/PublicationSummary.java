@@ -1,7 +1,6 @@
 package no.unit.nva.publication.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
@@ -152,7 +151,7 @@ public class PublicationSummary {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getPublicationId(), getIdentifier(), getTitle(), getOwner(), getStatus(),
-                            getPublicationInstance(), getPublishedDate(), getContributors());
+                            getPublicationInstance(), getPublishedDate(), getContributors(), getAbstract());
     }
 
     @Override
@@ -171,7 +170,8 @@ public class PublicationSummary {
                && getStatus() == that.getStatus()
                && Objects.equals(getPublicationInstance(), that.getPublicationInstance())
                && Objects.equals(getPublishedDate(), that.getPublishedDate())
-               && Objects.equals(getContributors(), that.getContributors());
+               && Objects.equals(getContributors(), that.getContributors())
+               && Objects.equals(getAbstract(), that.getAbstract());
     }
 
     private static String extractTitle(EntityDescription entityDescription) {
