@@ -540,7 +540,6 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                  null,
                                  null,
                                  null,
-                                 null,
                                  new UploadDetails(null, null));
     }
 

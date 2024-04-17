@@ -75,6 +75,7 @@ public class AssociatedArtifactMover {
                    .withMimeType(mimeType)
                    .withSize(size)
                    .withLegalNote(file.getLegalNote())
+                   .withUploadDetails(file.getUploadDetails())
                    .buildPublishedFile();
     }
 
