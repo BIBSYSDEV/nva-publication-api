@@ -58,8 +58,14 @@ public class PublicationSummary {
         publicationSummary.setTitle(extractTitle(publication.getEntityDescription()));
         publicationSummary.setPublicationInstance(extractPublicationInstance(publication.getEntityDescription()));
         publicationSummary.setContributors(extractContributors(publication.getEntityDescription()));
-        publicationSummary.setAbstract(publication.getEntityDescription().getAbstract());
+        publicationSummary.setAbstract(extractAbstract(publication));
         return publicationSummary;
+    }
+
+    private static String extractAbstract(Publication publication) {
+        return Optional.ofNullable(publication.getEntityDescription())
+                   .map(EntityDescription::getAbstract)
+                   .orElse(null);
     }
 
     public static PublicationSummary create(URI publicationId, String publicationTitle) {
