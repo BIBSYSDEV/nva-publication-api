@@ -96,6 +96,7 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.UnconfirmedCourse;
+import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
@@ -103,6 +104,7 @@ import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguratio
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
+import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.artistic.music.InvalidIsmnException;
@@ -221,6 +223,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     private static final String INPUT_BUCKET_NAME = "some-input-bucket-name";
     public static final int ALMOST_HUNDRED_YEARS = 36487;
+    public static final ResourceOwner RESOURCE_OWNER = new ResourceOwner("someOwner", randomUri());
     private final String persistedStorageBucket = new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME");
     private BrageEntryEventConsumer handler;
     private S3Driver s3Driver;
@@ -303,6 +306,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                  .withType(TYPE_REPORT_WORKING_PAPER)
                                  .withCristinIdentifier("123456")
                                  .withResourceContent(createResourceContent())
+                                 .withResourceOwner(RESOURCE_OWNER)
                                  .withAssociatedArtifacts(createCorrespondingAssociatedArtifactWithLegalNote(null))
                                  .build();
         var expectedPublication = brageGenerator.getNvaPublication();
@@ -1331,7 +1335,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
         return new PublishedFile(java.util.UUID.randomUUID(), randomString(), "application/pdf", 10L, null, false,
                                  PublisherVersion.PUBLISHED_VERSION, null, NullRightsRetentionStrategy.create(
-            RightsRetentionStrategyConfiguration.UNKNOWN), null, Instant.now(), null);
+            RightsRetentionStrategyConfiguration.UNKNOWN), null, Instant.now(), new UploadDetails(null, null));
     }
 
     private static Publication copyPublication(NvaBrageMigrationDataGenerator brageGenerator)
@@ -1442,10 +1446,12 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         assertThat(actualPublication, is(samePropertyValuesAs(expectedPublication, ignoredFields)));
         assertThat(actualPublication.getAssociatedArtifacts(),
                    hasSize(expectedPublication.getAssociatedArtifacts().size()));
-        if (!actualPublication.getAssociatedArtifacts().isEmpty()) {
-            assertThat(actualPublication.getAssociatedArtifacts(),
-                       samePropertyValuesAs(expectedPublication.getAssociatedArtifacts(), "publishedDate"));
-        }
+        actualPublication.getAssociatedArtifacts().stream().filter(File.class::isInstance)
+            .forEach(associatedArtifact -> {
+                var file = (File) associatedArtifact;
+                assertThat(file.getUploadDetails().getUploadedBy().getValue(),
+                           is(equalTo(expectedPublication.getResourceOwner().getOwner().getValue())));
+            });
     }
 
     private void persistMultiplePublicationWithSameCristinId() {
@@ -1649,6 +1655,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                            .withMimeType(ExtendedFakeS3Client.APPLICATION_PDF_MIMETYPE)
                            .withEmbargoDate(EMBARGO_DATE)
                            .withLegalNote(legalNote)
+                           .withUploadDetails(new UploadDetails(new Username(RESOURCE_OWNER.getOwner()), null))
                            .buildPublishedFile());
     }
 

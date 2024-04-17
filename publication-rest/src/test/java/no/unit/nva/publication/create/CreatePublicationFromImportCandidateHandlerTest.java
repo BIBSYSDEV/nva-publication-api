@@ -63,6 +63,7 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
+import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -539,7 +540,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                  null,
                                  null,
                                  null,
-                                 null);
+                                 new UploadDetails(null, null));
     }
 
     private ImportCandidate createImportCandidateWithoutScopusId() throws NotFoundException {

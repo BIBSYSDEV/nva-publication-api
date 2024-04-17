@@ -24,6 +24,7 @@ import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
+import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.publication.model.business.Resource;
@@ -175,7 +176,7 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
                                    (Instant) null,
                                    rrs,
                                    RandomDataGenerator.randomString(),
-                                   null);
+                                   new UploadDetails(null, null));
     }
 
 }

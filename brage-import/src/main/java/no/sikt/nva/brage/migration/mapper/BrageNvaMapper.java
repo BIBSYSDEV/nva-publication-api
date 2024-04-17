@@ -46,6 +46,7 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
+import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
@@ -190,6 +191,7 @@ public final class BrageNvaMapper {
                    .withPublisherVersion(extractPublisherAuthority(brageRecord))
                    .withEmbargoDate(embargoDate)
                    .withLegalNote(legalNote)
+                   .withUploadDetails(new UploadDetails(new Username(brageRecord.getResourceOwner().getOwner()), Instant.now()))
                    .buildPublishedFile();
     }
 

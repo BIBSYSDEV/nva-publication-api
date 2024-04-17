@@ -11,6 +11,7 @@ import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
+import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import org.junit.platform.commons.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +47,7 @@ public class PublishedFileTransformer {
             parseRightsRetentionStrategy(entry),
             entry.getOrDefault("legalNote", null),
             parseDate(entry.get("publishedDate")),
-            null
+            new UploadDetails(null, null)
         );
     }
 

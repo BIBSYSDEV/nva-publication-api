@@ -70,6 +70,7 @@ import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
+import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
@@ -444,7 +445,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                                        (Instant)null,
                                        RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
                                        RandomDataGenerator.randomString(),
-                                       null);
+                                       new UploadDetails(null, null));
         // Waiting for datamodel changes as
         // Generator sets publisherAuth to true
 
@@ -482,7 +483,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                                        (Instant)null,
                                        RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
                                        RandomDataGenerator.randomString(),
-                                       null);
+                                       new UploadDetails(null, null));
         // Waiting for datamodel changes as
         // Generator sets publisherAuth to true
 

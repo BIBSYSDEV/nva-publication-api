@@ -30,6 +30,7 @@ import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguratio
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
+import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAbstracts;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
@@ -272,8 +273,7 @@ class RightsRetentionsApplierTest {
                                    publishedVersion,
                                    null,
                                    rrs,
-                                   randomString(),
-                                   null);
+                                   randomString(), new UploadDetails(null, null));
     }
 
     private CustomerApiRightsRetention getServerConfiguredRrs(
