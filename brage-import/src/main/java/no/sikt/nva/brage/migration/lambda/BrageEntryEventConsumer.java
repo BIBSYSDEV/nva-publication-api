@@ -154,7 +154,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
     private Optional<String> fetchResponse(URI uri) {
         var response = uriRetriever.fetchResponse(uri);
-        if (!isHttpOk(response)) {
+        if (isNotHttpOk(response)) {
             logger.info("Search-api responded with statusCode: {} for request: {}", response.statusCode(), uri);
             return Optional.empty();
         } else {
@@ -162,8 +162,8 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         }
     }
 
-    private boolean isHttpOk(HttpResponse<String> response) {
-        return response.statusCode() == HTTP_OK;
+    private static boolean isNotHttpOk(HttpResponse<String> response) {
+        return response.statusCode() != HTTP_OK;
     }
 
     private URI searchByTypeAndTitleUri(Publication publication) {
