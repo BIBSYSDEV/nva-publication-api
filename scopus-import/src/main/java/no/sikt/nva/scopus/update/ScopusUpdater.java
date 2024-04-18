@@ -26,6 +26,8 @@ public class ScopusUpdater {
     private static final String SEARCH = "search";
     private static final String IMPORT_CANDIDATES_2 = "import-candidates2";
     private static final String SCOPUS_IDENTIFIER = "scopusIdentifier";
+    private static final String AGGREGATION = "aggregation";
+    private static final String NONE = "none";
     private final ResourceService resourceService;
     private final UriRetriever uriRetriever;
     private static final String APPLICATION_JSON = "application/json";
@@ -79,6 +81,7 @@ public class ScopusUpdater {
                    .addChild(SEARCH)
                    .addChild(IMPORT_CANDIDATES_2)
                    .addQueryParameter(SCOPUS_IDENTIFIER, scopusIdentifier)
+                   .addQueryParameter(AGGREGATION, NONE)
                    .getUri();
     }
 
