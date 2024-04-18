@@ -5,6 +5,7 @@ info:
 paths:
   /:
     post:
+      operationId: createPublication
       summary: Create Publication
       tags:
         - external
@@ -48,6 +49,7 @@ paths:
                 $ref: '#/components/schemas/Problem'
   /{publicationIdentifier}:
     get:
+      operationId: fetchPublicationByIdentifier
       summary: Fetch Publication by Identifier
       tags:
         - external
@@ -109,6 +111,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
     put:
+      operationId: updatePublication
       summary: Update Publication for Identifier
       tags:
         - external
@@ -174,6 +177,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
     delete:
+      operationId: deletePublication
       summary: Delete Publication for Identifier
       tags:
         - external
@@ -206,6 +210,7 @@ paths:
                 $ref: '#/components/schemas/Publication'
   /by-owner:
     get:
+      operationId: listPublicationsByOwner
       summary: Get Publications by Owner
       tags:
         - external
@@ -234,6 +239,7 @@ paths:
 
   /{publicationIdentifier}/doi:
     post:
+      operationId: reserveDoiForDraftPublication
       summary: Reserves doi for draft publication
       parameters:
         - in: path
@@ -300,6 +306,7 @@ paths:
           type: string
         required: true
     post:
+      operationId: createTicketForPublication
       description: Create a new ticket
       requestBody:
         content:
@@ -341,6 +348,7 @@ paths:
           type: string
         required: true
     put:
+      operationId: updateTicketForPublication
       description: Update existing ticket
       requestBody:
         description: A Ticket Object containing the status, assignee and viewedStatus
@@ -388,6 +396,7 @@ paths:
         httpMethod: POST
         type: AWS_PROXY
     delete:
+      operationId: deleteTicketForPublication
       description: Delete existing ticket
       responses:
         200:
@@ -425,6 +434,7 @@ paths:
         httpMethod: POST
         type: AWS_PROXY
     get:
+      operationId: fetchTicketForPublication
       description: Get an existing ticket
       responses:
         200:
@@ -460,6 +470,7 @@ paths:
           type: string
         required: true
     post:
+      operationId: addMessageToTicket
       description: Add message to ticket
       requestBody:
         content:
@@ -506,6 +517,7 @@ paths:
           type: string
         required: true
     delete:
+      operationId: deleteMessageForTicket
       description: Deleting message
       responses:
         '200':
@@ -544,6 +556,7 @@ paths:
 
   /tickets:
     get:
+      operationId: listTicketsForUser
       description: List tickets for user
       responses:
         200:
@@ -569,6 +582,7 @@ paths:
           type: string
         required: true
     get:
+      operationId: listTicketsForPublication
       description: List tickets for publication
       responses:
         200:
@@ -601,6 +615,7 @@ paths:
 
   /context:
     get:
+      operationId: fetchPublicationContext
       summary: Fetch Publication context
       tags:
         - external
@@ -629,6 +644,7 @@ paths:
 
   /import-candidate/{importCandidateIdentifier}:
     get:
+      operationId: fetchImportCandidateByIdentifier
       summary: Fetch Import candidate by Identifier
       parameters:
         - in: path
@@ -664,6 +680,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
     post:
+      operationId: createPublicationFromImportCandidate
       summary: Create Publication from Import candidate
       parameters:
         - in: path
@@ -711,6 +728,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
     put:
+      operationId: updateImportCandidate
       summary: Update import status
       parameters:
         - in: path
@@ -759,6 +777,7 @@ paths:
                 $ref: '#/components/schemas/Problem'
   /import-candidate/{importCandidateIdentifier}/file/{fileIdentifier}:
     get:
+      operationId: fetchPreSignedUrlForImportCandidateFile
       summary: Fetch pre-signed url for import candidate file
       parameters:
         - in: path
