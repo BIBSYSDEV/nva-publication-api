@@ -1202,6 +1202,24 @@ class ResourceServiceTest extends ResourcesLocalTest {
                      () -> resourceService.deletePublication(resourceService.getPublication(publication)));
     }
 
+    @Test
+    void shouldPermanentlyDeletePublication() throws ApiGatewayException {
+        var publication = createPersistedPublicationWithDoi();
+        resourceService.permanentlyRemovePublication(publication);
+
+        assertThrows(NotFoundException.class,
+                     () -> resourceService.getPublication(publication));
+    }
+
+    @Test
+    void shouldCreatePublicationWithProvidedIdentifier() {
+        var publication = randomPublication();
+        var identifier = SortableIdentifier.next();
+        resourceService.createPublicationFromImportedEntryWitProvidedIdentifier(publication, identifier);
+
+        assertDoesNotThrow(() -> resourceService.getPublicationByIdentifier(identifier));
+    }
+
     private static AssociatedArtifactList createEmptyArtifactList() {
         return new AssociatedArtifactList(emptyList());
     }

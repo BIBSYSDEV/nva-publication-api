@@ -24,7 +24,9 @@ import no.sikt.nva.brage.migration.merger.UnmappableCristinRecordException;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
@@ -258,9 +260,24 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private BrageMergingReport persistInDatabaseAndCreateMergeReport(Publication publicationForUpdate,
-                                                                     Publication existinPublication) {
-        var newImage = resourceService.updatePublication(publicationForUpdate);
-        return new BrageMergingReport(existinPublication, newImage);
+                                                                     Publication existingPublication) {
+        var resourceOwner = publicationForUpdate.getResourceOwner();
+        var publisher = publicationForUpdate.getPublisher();
+        if (customerIsNotOverridden(existingPublication, resourceOwner, publisher)) {
+            var newImage = resourceService.updatePublication(publicationForUpdate);
+            return new BrageMergingReport(existingPublication, newImage);
+        } else {
+            resourceService.permanentlyRemovePublication(existingPublication);
+            var newImage = resourceService.createPublicationFromImportedEntryWitProvidedIdentifier(
+                    publicationForUpdate, publicationForUpdate.getIdentifier());
+
+            return new BrageMergingReport(existingPublication, newImage);
+        }
+    }
+
+    private static boolean customerIsNotOverridden(Publication publication, ResourceOwner resourceOwner,
+                                                   Organization publisher) {
+        return publication.getResourceOwner().equals(resourceOwner) && publication.getPublisher().equals(publisher);
     }
 
     private Publication updatedPublication(Publication publication, Publication existingPublication)

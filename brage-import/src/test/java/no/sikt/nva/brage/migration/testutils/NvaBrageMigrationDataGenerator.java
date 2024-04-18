@@ -205,7 +205,7 @@ public class NvaBrageMigrationDataGenerator {
 
     public static class Builder {
 
-        public static final URI CUSTOMER_URi = URI.create(
+        public static final URI CUSTOMER_URI = URI.create(
             "https://dev.nva.sikt.no/registration/0184ebf2c2ad" + "-0b4cd833-2f8c-4bd6-b11b-7b9cb15e9c05/edit");
         public static final URI RESOURCE_OWNER_URI = URI.create("https://api.nva.unit.no/customer/test");
         public ResourceOwner resourceOwner;
@@ -631,7 +631,7 @@ public class NvaBrageMigrationDataGenerator {
                 abstracts = List.of(randomString());
             }
             if (isNull(customer)) {
-                customer = new Customer("institution", CUSTOMER_URi);
+                customer = new Customer("institution", CUSTOMER_URI);
             }
             if (isNull(resourceOwner)) {
                 resourceOwner = new ResourceOwner("institution@someOwner", RESOURCE_OWNER_URI);
