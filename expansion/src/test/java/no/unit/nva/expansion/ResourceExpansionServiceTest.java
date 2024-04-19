@@ -54,6 +54,8 @@ import no.unit.nva.expansion.model.ExpandedTicket;
 import no.unit.nva.expansion.model.ExpandedTicketStatus;
 import no.unit.nva.expansion.model.ExpandedUnpublishRequest;
 import no.unit.nva.expansion.model.ExpansionException;
+import no.unit.nva.expansion.model.License;
+import no.unit.nva.expansion.model.License.LicenseType;
 import no.unit.nva.expansion.model.nvi.ScientificIndex;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
@@ -102,6 +104,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -212,6 +215,32 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         Resource resourceUpdate = Resource.fromPublication(publication);
         ExpandedResource indexDoc = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
         assertThat(indexDoc.fetchId(), is(not(nullValue())));
+    }
+
+    @ParameterizedTest(name = "should return framed index document containing license:{0}")
+    @MethodSource("licenseProvider")
+    void shouldReturnIndexDocumentContainingLicense(String licenseUri, LicenseType expectedLicense)
+        throws JsonProcessingException, NotFoundException {
+        var fileWithLicense = randomPublishedFile(licenseUri);
+        var publication = PublicationGenerator.randomPublication()
+                                      .copy()
+                                      .withAssociatedArtifacts(List.of(fileWithLicense))
+                                      .build();
+
+        var resourceUpdate = Resource.fromPublication(publication);
+        var indexDoc = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
+        var licensesAsString = indexDoc.asJsonNode().get("licenses").toString();
+        var license = JsonUtils.dtoObjectMapper.readValue(licensesAsString, License[].class)[0];
+
+        assertThat(license.type(), is(equalTo(expectedLicense.toLicense().type())));
+    }
+
+    private File randomPublishedFile(String license) {
+        return File.builder()
+                   .withName(randomString())
+                   .withLicense(URI.create(license))
+                   .withIdentifier(UUID.randomUUID())
+                   .buildPublishedFile();
     }
 
     @Test
@@ -695,6 +724,17 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     private static List<Class<?>> listPublicationInstanceTypes() {
         return PublicationInstanceBuilder.listPublicationInstanceTypes();
+    }
+
+    private static List<Arguments> licenseProvider() {
+        return List.of(Arguments.of("https://creativecommons.org/licenses/by-nc-nd/2.5", LicenseType.CC_NC_ND),
+                       Arguments.of("https://creativecommons.org/licenses/by-nc-sa/2.0", LicenseType.CC_NC_SA),
+                       Arguments.of("https://creativecommons.org/licenses/by-nc/3.0", LicenseType.CC_NC),
+                       Arguments.of("https://creativecommons.org/licenses/by-nd/4.0", LicenseType.CC_ND),
+                       Arguments.of("https://creativecommons.org/licenses/by-sa/4.0", LicenseType.CC_SA),
+                       Arguments.of("https://creativecommons.org/licenses/by/4.0", LicenseType.CC_BY),
+                       Arguments.of("https://creativecommons.org/unknown/license", LicenseType.OTHER)
+        );
     }
 
     @SuppressWarnings("unchecked")

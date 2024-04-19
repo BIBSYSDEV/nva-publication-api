@@ -36,8 +36,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import no.unit.nva.commons.json.JsonSerializable;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -56,6 +58,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     private static final String INSTANCE_TYPE_ACADEMIC_CHAPTER = "AcademicChapter";
     public static final JsonPointer CONTRIBUTORS_PTR = JsonPointer.compile("/entityDescription/contributors");
     public static final String CONTRIBUTOR_SEQUENCE = "sequence";
+    public static final String LICENSES_FIELD = "licenses";
     @JsonAnySetter
     private final Map<String, Object> allFields;
 
@@ -74,7 +77,30 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     private static JsonNode addFields(String json, Publication publication) {
         var sortedJson = strToJsonWithSortedContributors(json);
         injectHasFileEnum(publication, (ObjectNode) sortedJson);
+        injectLicenses(publication, (ObjectNode) sortedJson);
         return sortedJson;
+    }
+
+    private static void injectLicenses(Publication publication, ObjectNode sortedJson) {
+        sortedJson.set(LICENSES_FIELD, extractLicenses(publication));
+    }
+
+    private static JsonNode extractLicenses(Publication publication) {
+        return attempt(() -> getLicenses(publication))
+                   .map(Set::toString)
+                   .map(JsonUtils.dtoObjectMapper::readTree)
+                   .orElseThrow();
+
+    }
+
+    private static Set<String> getLicenses(Publication publication) {
+        return publication.getAssociatedArtifacts().stream()
+                   .filter(File.class::isInstance)
+                   .map(File.class::cast)
+                   .map(File::getLicense)
+                   .map(License::fromUri)
+                   .map(License::toJsonString)
+                   .collect(Collectors.toSet());
     }
 
     private static void injectHasFileEnum(Publication publication, ObjectNode sortedJson) {
