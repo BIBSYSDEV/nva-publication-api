@@ -232,7 +232,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var licensesAsString = indexDoc.asJsonNode().get("licenses").toString();
         var license = JsonUtils.dtoObjectMapper.readValue(licensesAsString, License[].class)[0];
 
-        assertThat(license.type(), is(equalTo(expectedLicense.toLicense().type())));
+        assertThat(license.name(), is(equalTo(expectedLicense.toLicense().name())));
     }
 
     private File randomPublishedFile(String license) {
@@ -733,7 +733,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                        Arguments.of("https://creativecommons.org/licenses/by-nd/4.0", LicenseType.CC_ND),
                        Arguments.of("https://creativecommons.org/licenses/by-sa/4.0", LicenseType.CC_SA),
                        Arguments.of("https://creativecommons.org/licenses/by/4.0", LicenseType.CC_BY),
-                       Arguments.of("https://creativecommons.org/unknown/license", LicenseType.OTHER)
+                       Arguments.of("https://something.else.com", LicenseType.OTHER)
         );
     }
 
