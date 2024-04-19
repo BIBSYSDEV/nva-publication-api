@@ -6,9 +6,15 @@ import nva.commons.core.JacocoGenerated;
 
 public record SearchResourceApiResponse(int totalHits, List<ResourceWithId> hits) implements JsonSerializable {
 
+    public static final int SINGLE_HIT = 1;
+
     @JacocoGenerated
     @Override
     public String toString() {
         return toJsonString();
+    }
+
+    public boolean containsSingleHit() {
+        return this.totalHits == SINGLE_HIT;
     }
 }
