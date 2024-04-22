@@ -23,6 +23,7 @@ public record License(String name, Map<String, String> labels) implements JsonSe
         CC_SA("CC-SA", "by-sa", Constants.CC_SA_LABELS),
         CC_BY("CC-BY", "by", Constants.CC_BY_LABELS),
         CC_ZERO("CC0", "zero", Constants.CC_ZERO_LABELS),
+        RS_INC("RS-INC", "InC", Constants.RS_INC_LABELS),
         OTHER("Other", "ignored", Constants.OTHER_LABELS);
 
         private final String value;
@@ -84,6 +85,10 @@ public record License(String name, Map<String, String> labels) implements JsonSe
             public static final Map<String, String> CC_ZERO_LABELS = Map.of(
                 ENGLISH_LABEL, "Creative Commons - No Rights Reserved",
                 NORWEGIAN_LABEL, "Creative Commons - Ingen opphavsrett");
+
+            public static final Map<String, String> RS_INC_LABELS = Map.of(
+                ENGLISH_LABEL, "Rights Statements - In copyright",
+                NORWEGIAN_LABEL, "Rights Statements - Utgivers betingelser");
 
             public static final Map<String, String> OTHER_LABELS = Map.of(
                 ENGLISH_LABEL, "Other license",
