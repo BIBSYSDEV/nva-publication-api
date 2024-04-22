@@ -1,12 +1,23 @@
 package cucumber;
 
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import io.cucumber.java.en.And;
+import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
+import java.net.URI;
+import java.util.List;
+import no.unit.nva.cristin.CristinDataGenerator;
+import no.unit.nva.cristin.mapper.CristinAssociatedUri;
+import no.unit.nva.cristin.mapper.CristinMainCategory;
 import no.unit.nva.cristin.mapper.CristinMediumTypeCode;
+import no.unit.nva.cristin.mapper.CristinObject;
+import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
+import no.unit.nva.cristin.mapper.MediaContributionBuilder;
+import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.contexttypes.MediaContribution;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.media.MediaFormat;
@@ -77,5 +88,30 @@ public class MediaContributionFeatures {
         var mediaContribution = (MediaContribution) context;
         assertThat(mediaContribution.getDisseminationChannel(),
                    is(equalTo(dissemintaionChannel)));
+    }
+
+    @And("varbeid_url has url {string} of type {string}")
+    public void varbeid_urlHasUrlOfType(String url, String type) {
+        var associatedUri = CristinAssociatedUri.builder().withUrl(url).withUrlType(type).build();
+        scenarioContext.getCristinEntry().setCristinAssociatedUris(List.of(associatedUri));
+    }
+
+    @Then("the NVA publication should contain associatedArtifacts containing associatedLink with {string}")
+    public void theNVAPublicationShouldContainAssociatedArtifactsContainingAssociatedLinkWith(String string) {
+        var associatedLink = scenarioContext.getNvaEntry().getAssociatedArtifacts()
+                                 .stream().filter(AssociatedLink.class::isInstance)
+                                 .map(AssociatedLink.class::cast)
+                                 .findFirst()
+                                 .orElseThrow();
+
+        assertThat(associatedLink.getId(), is(equalTo(URI.create(string))));
+    }
+
+    @Given("the Cristin Result has main category MEDIEBIDRAG")
+    public void theCristinResultHasMainCategory() {
+        this.scenarioContext.newCristinEntry(
+            () -> CristinDataGenerator.randomObject(CristinSecondaryCategory.INTERVIEW.getValue()));
+        assertThat(scenarioContext.getCristinEntry().getMainCategory(),
+                   is(equalTo(CristinMainCategory.MEDIA_CONTRIBUTION)));
     }
 }
