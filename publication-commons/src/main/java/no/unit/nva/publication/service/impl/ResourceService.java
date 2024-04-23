@@ -18,7 +18,6 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 import com.google.common.collect.Lists;
-import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -32,6 +31,7 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
@@ -55,6 +55,7 @@ import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.storage.UniqueDoiRequestEntry;
 import no.unit.nva.publication.model.storage.WithPrimaryKey;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
+import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadMethodException;
@@ -340,7 +341,15 @@ public class ResourceService extends ServiceWithTransactions {
     public Stream<TicketEntry> fetchAllTicketsForElevatedUser(UserInstance userInstance,
                                                               SortableIdentifier publicationIdentifier)
         throws NotFoundException {
-        var resource = fetchResourceForElevatedUser(userInstance.getCustomerId(), publicationIdentifier);
+        var resource = getResourceByIdentifier(publicationIdentifier);
+
+        var permissionStrategy = PublicationPermissionStrategy.create(resource.toPublication(), userInstance,
+                                                                      uriRetriever);
+
+        if (!permissionStrategy.allowsAction(PublicationOperation.UPDATE)) {
+            throw new NotFoundException("Resource not found");
+        }
+
         return resource.fetchAllTickets(this);
     }
 
@@ -366,13 +375,6 @@ public class ResourceService extends ServiceWithTransactions {
 
     private static boolean isNotRemoved(TicketEntry ticket) {
         return !TicketStatus.REMOVED.equals(ticket.getStatus());
-    }
-
-    private Resource fetchResourceForElevatedUser(URI customerId, SortableIdentifier publicationIdentifier)
-        throws NotFoundException {
-        var queryDao = (ResourceDao) Resource.fetchForElevatedUserQueryObject(customerId, publicationIdentifier)
-                                         .toDao();
-        return (Resource) queryDao.fetchForElevatedUser(getClient()).getData();
     }
 
     private List<Entity> refreshAndMigrate(List<Entity> dataEntries) {

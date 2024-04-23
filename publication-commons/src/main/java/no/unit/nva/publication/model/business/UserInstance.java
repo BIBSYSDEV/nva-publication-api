@@ -44,8 +44,9 @@ public class UserInstance implements JsonSerializable {
         return new UserInstance(userIdentifier, customerId, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, null, null);
     }
 
-    public static UserInstance create(String userIdentifier, URI customerId, URI personCristinId, List<AccessRight> accessRights) {
-        return new UserInstance(userIdentifier, customerId, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, personCristinId, accessRights);
+    public static UserInstance create(String userIdentifier, URI customerId, URI personCristinId,
+                                      List<AccessRight> accessRights, URI topLevelOrgCristinId) {
+        return new UserInstance(userIdentifier, customerId, topLevelOrgCristinId, personCristinId, accessRights);
     }
 
     public static UserInstance create(ResourceOwner resourceOwner, URI customerId) {
@@ -68,7 +69,8 @@ public class UserInstance implements JsonSerializable {
         var customerId = requestInfo.getCurrentCustomer();
         var personCristinId = attempt(requestInfo::getPersonCristinId).toOptional().orElse(null);
         var accessRights = requestInfo.getAccessRights();
-        return UserInstance.create(userName, customerId, personCristinId, accessRights);
+        var topLevelOrgCristinId = requestInfo.getTopLevelOrgCristinId().orElse(null);
+        return UserInstance.create(userName, customerId, personCristinId, accessRights, topLevelOrgCristinId);
     }
 
     public static UserInstance fromDoiRequest(DoiRequest doiRequest) {
