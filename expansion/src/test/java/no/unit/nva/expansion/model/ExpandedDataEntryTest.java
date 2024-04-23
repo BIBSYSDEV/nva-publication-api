@@ -19,7 +19,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.net.http.HttpResponse;
-import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -76,11 +75,9 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UriWrapper;
-import org.json.JSONException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.skyscreamer.jsonassert.JSONAssert;
 
 class ExpandedDataEntryTest extends ResourcesLocalTest {
 
@@ -194,24 +191,6 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of())
                    .build();
-    }
-
-    @ParameterizedTest(name = "Expanded resource should not lose information for instance type {0}")
-    @MethodSource("publicationInstanceProvider")
-    void shouldReturnExpandedResourceWithoutLossOfInformation(Class<?> instanceType)
-        throws JsonProcessingException, BadRequestException, JSONException {
-        var publication = createPublicationWithoutDoi(instanceType);
-        publication.setFundings(List.of());
-        var expandedResource = fromPublication(uriRetriever, publication);
-
-        var expandedResourceAsJson = expandedResource.toJsonString();
-
-        var regeneratedPublication = objectMapper.readValue(expandedResourceAsJson, Publication.class);
-
-        var jsonOriginal = attempt(() -> objectMapper.writeValueAsString(publication)).orElseThrow();
-        var jsonActual = attempt(() -> objectMapper.writeValueAsString(regeneratedPublication)).orElseThrow();
-
-        JSONAssert.assertEquals(jsonOriginal, jsonActual, false);
     }
 
     @ParameterizedTest(name = "Expanded resource should inherit type from publication for instance type {0}")

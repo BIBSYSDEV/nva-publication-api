@@ -1,5 +1,6 @@
 package no.unit.nva.expansion.model;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.AFFILIATIONS_POINTER;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.CONTEXT_TYPE_JSON_PTR;
@@ -57,6 +58,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     public static final JsonPointer CONTRIBUTORS_PTR = JsonPointer.compile("/entityDescription/contributors");
     public static final String CONTRIBUTOR_SEQUENCE = "sequence";
     public static final String LICENSE_FIELD = "license";
+    public static final String ASSOCIATED_ARTIFACTS_FIELD = "associatedArtifacts";
     @JsonAnySetter
     private final Map<String, Object> allFields;
 
@@ -80,14 +82,21 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     }
 
     private static void expandLicenses(JsonNode node) {
-        var associatedArtifacts = node.get("associatedArtifacts");
-        if (associatedArtifacts.isArray()) {
+        var associatedArtifacts = node.get(ASSOCIATED_ARTIFACTS_FIELD);
+        if (nonNull(associatedArtifacts) && associatedArtifacts.isArray()) {
             for (JsonNode artifact : associatedArtifacts) {
                 var artifactNode = (ObjectNode) artifact;
-                var licenseUri = URI.create(artifact.get("license").asText());
+                var licenseUri = extractLicenseFromAssociatedArtifactNode(artifact);
                 artifactNode.set(LICENSE_FIELD, License.fromUri(licenseUri).toJsonNode());
             }
         }
+    }
+
+    private static URI extractLicenseFromAssociatedArtifactNode(JsonNode node) {
+        return Optional.ofNullable(node.get(ExpandedResource.LICENSE_FIELD))
+                   .map(JsonNode::asText)
+                   .map(URI::create)
+                   .orElse(null);
     }
 
     private static void injectHasFileEnum(Publication publication, ObjectNode sortedJson) {
