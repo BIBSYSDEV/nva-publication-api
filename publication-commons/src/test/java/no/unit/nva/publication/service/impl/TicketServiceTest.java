@@ -38,7 +38,6 @@ import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -48,12 +47,11 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
-import java.nio.file.Path;
+import java.net.URI;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.Collection;
@@ -88,13 +86,13 @@ import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.testing.TypeProvider;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
-import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -587,28 +585,27 @@ public class TicketServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnAllTicketsForPublicationWhenRequesterIsElevatedUser() throws ApiGatewayException {
+    void shouldReturnAllTicketsForPublicationWhenRequesterIsEditor() throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var originalTickets = createAllTypesOfTickets(publication);
-        var customer = publication.getCuratingInstitutions().stream().findFirst().orElseThrow();
-        var elevatedUser = UserInstance.create(publication.getResourceOwner(), customer);
-        when(uriRetriever.getRawContent(eq(customer), any())).thenReturn(
-            Optional.of(IoUtils.stringFromResources(Path.of("cristin-orgs/20754.6.0.0.json"))));
+        var elevatedUser = UserInstance.create(randomString(), randomUri(), randomUri(),
+                                               List.of(AccessRight.MANAGE_RESOURCES_ALL),
+                                               randomUri());
 
-        var fetchedTickets = resourceService.fetchAllTicketsForElevatedUser(elevatedUser, publication.getIdentifier())
+        var fetchedTickets = resourceService.fetchAllTicketsForUser(elevatedUser, publication.getIdentifier())
                                  .collect(Collectors.toList());
         assertThat(fetchedTickets, containsInAnyOrder(originalTickets.toArray(TicketEntry[]::new)));
     }
 
     @Test
-    void shouldThrowNotFoundExceptionWhenAlienElevatedUserAttemptsToFetchPublicationTickets()
+    void shouldThrowNotForbiddenWhenAlienElevatedUserAttemptsToFetchPublicationTickets()
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         createAllTypesOfTickets(publication);
         var elevatedUser = UserInstance.create(randomString(), randomUri());
-        Executable action = () -> resourceService.fetchAllTicketsForElevatedUser(elevatedUser,
-                                                                                 publication.getIdentifier());
-        assertThrows(NotFoundException.class, action);
+        Executable action = () -> resourceService.fetchAllTicketsForUser(elevatedUser,
+                                                                         publication.getIdentifier());
+        assertThrows(ForbiddenException.class, action);
     }
 
     @Test
@@ -627,7 +624,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
                                      .boxed()
                                      .map(ticketType -> createPersistedTicket(publication, PublishingRequestCase.class))
                                      .collect(Collectors.toList()));
-        var ticketsFromDatabase = resourceService.fetchAllTicketsForElevatedUser(owner, publication.getIdentifier())
+        var ticketsFromDatabase = resourceService.fetchAllTicketsForUser(owner, publication.getIdentifier())
                                       .collect(Collectors.toList());
         assertThat(ticketsFromDatabase, allOf(hasSize(2), everyItem(instanceOf(PublishingRequestCase.class))));
     }
@@ -927,15 +924,19 @@ public class TicketServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var publication = createUnpersistedPublication(owner);
         publication.setStatus(publicationStatus);
-        publication.setCuratingInstitutions(publication.getEntityDescription().getContributors().stream()
-                                                .map(Contributor::getAffiliations)
-                                                .flatMap(Collection::stream)
-                                                .filter(Organization.class::isInstance)
-                                                .map(Organization.class::cast)
-                                                .map(Organization::getId)
-                                                .collect(Collectors.toSet()));
+        publication.setCuratingInstitutions(getCuratingInstitutions(publication));
         var persistedPublication = resourceService.insertPreexistingPublication(publication);
 
         return resourceService.getPublication(persistedPublication);
+    }
+
+    private static Set<URI> getCuratingInstitutions(Publication publication) {
+        return publication.getEntityDescription().getContributors().stream()
+                   .map(Contributor::getAffiliations)
+                   .flatMap(Collection::stream)
+                   .filter(Organization.class::isInstance)
+                   .map(Organization.class::cast)
+                   .map(Organization::getId)
+                   .collect(Collectors.toSet());
     }
 }

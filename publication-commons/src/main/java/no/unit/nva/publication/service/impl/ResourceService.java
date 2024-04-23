@@ -60,6 +60,7 @@ import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
@@ -338,16 +339,16 @@ public class ResourceService extends ServiceWithTransactions {
         }
     }
 
-    public Stream<TicketEntry> fetchAllTicketsForElevatedUser(UserInstance userInstance,
-                                                              SortableIdentifier publicationIdentifier)
-        throws NotFoundException {
+    public Stream<TicketEntry> fetchAllTicketsForUser(UserInstance userInstance,
+                                                      SortableIdentifier publicationIdentifier)
+        throws NotFoundException, ForbiddenException {
         var resource = getResourceByIdentifier(publicationIdentifier);
 
         var permissionStrategy = PublicationPermissionStrategy.create(resource.toPublication(), userInstance,
                                                                       uriRetriever);
 
         if (!permissionStrategy.allowsAction(PublicationOperation.UPDATE)) {
-            throw new NotFoundException("Resource not found");
+            throw new ForbiddenException();
         }
 
         return resource.fetchAllTickets(this);

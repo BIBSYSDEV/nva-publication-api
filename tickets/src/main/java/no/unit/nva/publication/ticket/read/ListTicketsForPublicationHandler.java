@@ -93,7 +93,7 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
                                                             SortableIdentifier publicationIdentifier)
         throws ApiGatewayException {
 
-        return attempt(() -> resourceService.fetchAllTicketsForElevatedUser(userInstance, publicationIdentifier))
+        return attempt(() -> resourceService.fetchAllTicketsForUser(userInstance, publicationIdentifier))
                    .orElseThrow(fail -> handleFetchingError(fail.getException()));
     }
 
