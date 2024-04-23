@@ -116,6 +116,7 @@ public class CristinMapper extends CristinMappingModule {
                 .withFundings(extractFundings())
                 .withPublicationNotes(extractPublicationNotes())
                 .withCuratingInstitutions(extractCuratingInstitutions(entityDescription))
+                .withAssociatedArtifacts(AssociatedLinkExtractor.extractAssociatedLinks(cristinObject))
                 .build();
         assertPublicationDoesNotHaveEmptyFields(publication);
         return publication;

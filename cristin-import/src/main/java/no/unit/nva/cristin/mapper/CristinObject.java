@@ -118,6 +118,10 @@ public class CristinObject implements JsonSerializable {
     @JsonProperty("finansiering_varbeid")
     private List<CristinGrant> cristinGrants;
 
+    public List<CristinAssociatedUri> getCristinAssociatedUris() {
+        return nonNull(cristinAssociatedUris) ? cristinAssociatedUris : List.of();
+    }
+
     @JsonProperty("varbeid_url")
     private List<CristinAssociatedUri> cristinAssociatedUris;
 

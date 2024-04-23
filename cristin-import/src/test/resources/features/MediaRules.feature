@@ -49,3 +49,15 @@ Feature: Rules that apply for Media
     Then the NVA resource has a MediaContribution with medium "TV"
     And the NVA resource has a MediaContribution with format "VIDEO"
 
+
+  Scenario Outline: Cristin result with main category "MEDIEBIDRAG" is converted to NVA entry
+    Given the Cristin Result has main category MEDIEBIDRAG
+    And varbeid_url has url "<url>" of type "<urltypekode>"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA publication should contain associatedArtifacts containing associatedLink with "<url>"
+    Examples:
+      | urltypekode | url              |
+      | FULLTEKST   | www.example.com  |
+      | DATA        | www.example.com  |
+      | OMTALE      | www.example.com  |
+
