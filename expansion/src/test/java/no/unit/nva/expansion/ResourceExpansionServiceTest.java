@@ -229,10 +229,10 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
         var resourceUpdate = Resource.fromPublication(publication);
         var indexDoc = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
-        var licensesAsString = indexDoc.asJsonNode().get("licenses").toString();
-        var license = JsonUtils.dtoObjectMapper.readValue(licensesAsString, License[].class)[0];
+        var licensesAsString = indexDoc.asJsonNode().get("associatedArtifacts").get(0).get("license").toString();
+        var license = JsonUtils.dtoObjectMapper.readValue(licensesAsString, License.class);
 
-        assertThat(license.name(), is(equalTo(expectedLicense.toLicense().name())));
+        assertThat(license.name(), is(equalTo(expectedLicense.toLicense(URI.create(licenseUri)).name())));
     }
 
     private File randomPublishedFile(String license) {

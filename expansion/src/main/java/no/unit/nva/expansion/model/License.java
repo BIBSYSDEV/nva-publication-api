@@ -1,17 +1,24 @@
 package no.unit.nva.expansion.model;
 
+import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.commons.json.JsonSerializable;
+import no.unit.nva.commons.json.JsonUtils;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public record License(String name, Map<String, String> labels) implements JsonSerializable {
+public record License(URI value, String name, Map<String, String> labels) implements JsonSerializable {
 
     public static License fromUri(URI uri) {
-        return LicenseType.fromUri(uri).toLicense();
+        return LicenseType.fromUri(uri).toLicense(uri);
+    }
+
+    public JsonNode toJsonNode() {
+        return attempt(() -> JsonUtils.dtoObjectMapper.readTree(this.toJsonString())).orElseThrow();
     }
 
     public enum LicenseType{
@@ -47,8 +54,8 @@ public record License(String name, Map<String, String> labels) implements JsonSe
             return Optional.ofNullable(uri).map(URI::getPath).map(this::containsPathParameter).orElse(false);
         }
 
-        public License toLicense() {
-            return new License(this.value, this.labels);
+        public License toLicense(URI uri) {
+            return new License(uri, this.value, this.labels);
         }
 
         private boolean containsPathParameter(String value) {
