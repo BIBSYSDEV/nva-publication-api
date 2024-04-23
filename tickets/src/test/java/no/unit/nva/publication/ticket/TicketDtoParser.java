@@ -36,6 +36,7 @@ public final class TicketDtoParser {
         request.setModifiedDate(generalSupportRequest.getModifiedDate());
         request.setViewedBy(generalSupportRequest.getViewedBy());
         request.setAssignee(generalSupportRequest.getAssignee());
+        request.setOwner(generalSupportRequest.getOwner());
         request.setOwnerAffiliation(generalSupportRequest.getOwnerAffiliation());
         return request;
     }
@@ -49,6 +50,7 @@ public final class TicketDtoParser {
         ticket.setResourceIdentifier(publishingRequestDto.getPublicationIdentifier());
         ticket.setViewedBy(publishingRequestDto.getViewedBy());
         ticket.setAssignee(publishingRequestDto.getAssignee());
+        ticket.setOwner(publishingRequestDto.getOwner());
         ticket.setOwnerAffiliation(publishingRequestDto.getOwnerAffiliation());
         return ticket;
     }
@@ -62,6 +64,7 @@ public final class TicketDtoParser {
         ticket.setResourceIdentifier(doiRequestDto.getPublicationIdentifier());
         ticket.setViewedBy(doiRequestDto.getViewedBy());
         ticket.setAssignee(doiRequestDto.getAssignee());
+        ticket.setOwner(doiRequestDto.getOwner());
         ticket.setOwnerAffiliation(doiRequestDto.getOwnerAffiliation());
         return ticket;
     }
@@ -75,6 +78,7 @@ public final class TicketDtoParser {
         request.setModifiedDate(unpublishRequest.getModifiedDate());
         request.setViewedBy(unpublishRequest.getViewedBy());
         request.setAssignee(unpublishRequest.getAssignee());
+        request.setOwner(unpublishRequest.getOwner());
         request.setOwnerAffiliation(unpublishRequest.getOwnerAffiliation());
         return request;
     }
