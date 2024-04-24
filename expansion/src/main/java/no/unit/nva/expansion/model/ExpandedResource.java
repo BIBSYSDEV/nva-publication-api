@@ -39,6 +39,7 @@ import java.util.stream.StreamSupport;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -85,11 +86,17 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         var associatedArtifacts = node.get(ASSOCIATED_ARTIFACTS_FIELD);
         if (nonNull(associatedArtifacts) && associatedArtifacts.isArray()) {
             for (JsonNode artifact : associatedArtifacts) {
-                var artifactNode = (ObjectNode) artifact;
-                var licenseUri = extractLicenseFromAssociatedArtifactNode(artifact);
-                artifactNode.set(LICENSE_FIELD, License.fromUri(licenseUri).toJsonNode());
+                if (isNotALink(artifact)){
+                    var artifactNode = (ObjectNode) artifact;
+                    var licenseUri = extractLicenseFromAssociatedArtifactNode(artifact);
+                    artifactNode.set(LICENSE_FIELD, License.fromUri(licenseUri).toJsonNode());
+                }
             }
         }
+    }
+
+    private static boolean isNotALink(JsonNode artifact) {
+        return !artifact.get("type").asText().equals(AssociatedLink.class.getSimpleName());
     }
 
     private static URI extractLicenseFromAssociatedArtifactNode(JsonNode node) {

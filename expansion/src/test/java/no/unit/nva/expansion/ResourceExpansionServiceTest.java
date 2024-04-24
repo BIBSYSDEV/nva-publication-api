@@ -28,6 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -222,17 +223,29 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldReturnIndexDocumentContainingLicense(String licenseUri, LicenseType expectedLicense)
         throws JsonProcessingException, NotFoundException {
         var fileWithLicense = randomPublishedFile(licenseUri);
+        var associatedLink = new AssociatedLink(randomUri(), null, null);
         var publication = PublicationGenerator.randomPublication()
                                       .copy()
-                                      .withAssociatedArtifacts(List.of(fileWithLicense))
+                                      .withAssociatedArtifacts(List.of(fileWithLicense, associatedLink))
                                       .build();
 
         var resourceUpdate = Resource.fromPublication(publication);
         var indexDoc = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
-        var licensesAsString = indexDoc.asJsonNode().get("associatedArtifacts").get(0).get("license").toString();
+        var licensesAsString = getLicenseForFile(indexDoc);
         var license = JsonUtils.dtoObjectMapper.readValue(licensesAsString, License.class);
 
         assertThat(license.name(), is(equalTo(expectedLicense.toLicense(URI.create(licenseUri)).name())));
+    }
+
+    private static String getLicenseForFile(ExpandedResource indexDoc) {
+        var associatedArtifacts = indexDoc.asJsonNode().get("associatedArtifacts");
+        String string = null;
+        for (JsonNode artifact : associatedArtifacts) {
+            if (!artifact.get("type").asText().equals("AssociatedLink")) {
+                string = artifact.get("license").toString();
+            }
+        }
+        return string;
     }
 
     private File randomPublishedFile(String license) {
