@@ -1761,7 +1761,7 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           CRISTIN_IMPORT_BUCKET: !Sub 'cristin-import-${AWS::AccountId}'
-          CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL: !GetAtt CristinImportDataEntryQueue.Arn
+          CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL: !Ref CristinImportDataEntryQueue
 
   LogicallyDeleteImportedPublicationsButton:
     Type: AWS::Serverless::Function
