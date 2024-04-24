@@ -1181,12 +1181,32 @@ components:
       description: Message
       type: object
       properties:
+        createdDate:
+          type: string
+          format: date
+        id:
+          type: string
+          format: uri
+          example: "https://api.<environment>.nva.aws.unit.no/publication/14d3030c-3b61-4070-b902-342f80e99364/ticket/8758ec62-5772-48ff-8856-38d3f3038383/message/a228ecf2-5442-49fd-2256-3d43f3f383ff"
+        identifier:
+          type: string
+          format: uuid
+          example: "a228ecf2-5442-49fd-2256-3d43f3f383ff"
+        owner:
+          description: "Ticket owner"
+          type: string
+          example: "123@123.0.0.0"
         sender:
           type: string
-        owner:
+          example: "123@123.0.0.0"
+        status:
           type: string
-        date:
+          enum:
+            - Active
+            - Deleted
+        text:
           type: string
+          example: "Message value"
     NewTicketRequest:
       type: object
       properties:
@@ -1222,6 +1242,38 @@ components:
     Ticket:
       type: object
       properties:
+        assignee:
+          type: string
+          example: "123@123.0.0.0"
+        createdDate:
+          type: string
+          format: date
+        identifier:
+          type: string
+          format: uuid
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+        modifiedDate:
+          type: string
+          format: date
+        owner:
+          type: string
+          example: "123@123.0.0.0"
+        ownerAffiliation:
+          type: string
+          format: uri
+          example: "https://api.<environment>.nva.aws.unit.no/cristin/organization/123.0.0.0"
+        publicationIdentifier:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - Pending
+            - Completed
+            - Closed
         type:
           type: string
           enum:
@@ -1232,12 +1284,7 @@ components:
           type: array
           items:
             type: string
-        status:
-          type: string
-          enum:
-            - Pending
-            - Completed
-            - Closed
+            example: "123@123.0.0.0"
     TicketCollection:
       type: object
       properties:
