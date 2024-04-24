@@ -1759,7 +1759,7 @@ Resources:
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
-          AWS_REGION: '*'
+          ALLOWED_ORIGIN: '*'
           CRISTIN_IMPORT_BUCKET: !Sub 'cristin-import-${AWS::AccountId}'
           CRISTIN_IMPORT_DATA_ENTRY_QUEUE: !GetAtt CristinImportDataEntryQueue.Arn
 
