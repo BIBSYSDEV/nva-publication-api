@@ -1751,7 +1751,7 @@ Resources:
   CristinRerunErrorsEventEmitter:
     Type: AWS::Serverless::Function
     Properties:
-      Description: 'Reruns cristin-import entries that have failed under import. Takes uri with s3 errors locations as input'
+      Description: 'Reruns cristin-import entries that have failed under import. Takes uri with s3 errors location as input'
       CodeUri: cristin-import
       Handler: no.unit.nva.cristin.lambda.CristinRerunErrorsEventEmitter::handleRequest
       Timeout: 900 # 15 min timeout
