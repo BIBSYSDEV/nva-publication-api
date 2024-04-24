@@ -237,12 +237,27 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(license.name(), is(equalTo(expectedLicense.toLicense(URI.create(licenseUri)).name())));
     }
 
+    @Test
+    void shouldReturnIndexDocumentWithoutLicenseWhenNoLicense() throws JsonProcessingException, NotFoundException {
+            var fileWithLicense = File.builder().buildPublishedFile();
+            var publication = PublicationGenerator.randomPublication()
+                                  .copy()
+                                  .withAssociatedArtifacts(List.of(fileWithLicense))
+                                  .build();
+
+            var resourceUpdate = Resource.fromPublication(publication);
+            var indexDoc = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
+            var license = indexDoc.asJsonNode().get("associatedArtifacts").get(0).get("license");
+            assertThat(license, is(nullValue()));
+    }
+
     private static String getLicenseForFile(ExpandedResource indexDoc) {
         var associatedArtifacts = indexDoc.asJsonNode().get("associatedArtifacts");
         String string = null;
         for (JsonNode artifact : associatedArtifacts) {
             if (!artifact.get("type").asText().equals("AssociatedLink")) {
-                string = artifact.get("license").toString();
+                var license = artifact.get("license");
+                string = nonNull(license) ? license.toString() : null;
             }
         }
         return string;
