@@ -97,10 +97,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                                                                PublicationStatus status)
         throws IOException, ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        when(uriRetriever.getRawContent(
-            eq(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0")),
-            any())).thenReturn(
-            Optional.of(IoUtils.stringFromResources(Path.of("cristin-orgs/20754.6.0.0.json"))));
+        mockSiktOrg();
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var request = curatorRquestsTicketsForPublication(publication);
         handler.handleRequest(request, output, CONTEXT);
@@ -169,10 +166,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         Class<? extends TicketEntry> ticketType, AccessRight[] accessRight)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
-        when(uriRetriever.getRawContent(
-            eq(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0")),
-            any())).thenReturn(
-            Optional.of(IoUtils.stringFromResources(Path.of("cristin-orgs/20754.6.0.0.json"))));
+        mockSiktOrg();
 
         TicketTestUtils.createPersistedTicket(publication, DoiRequest.class, ticketService);
         TicketTestUtils.createPersistedTicket(publication, GeneralSupportRequest.class, ticketService);
@@ -188,16 +182,20 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         assertThat(body.getTickets().getFirst().ticketType(), is(equalTo(ticketType)));
     }
 
+    private void mockSiktOrg() {
+        when(uriRetriever.getRawContent(
+            eq(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0")),
+            any())).thenReturn(
+            Optional.of(IoUtils.stringFromResources(Path.of("cristin-orgs/20754.6.0.0.json"))));
+    }
+
     @ParameterizedTest
     @MethodSource("accessRightAndTicketTypeProviderDraft")
     void shouldListTicketsOfTypeCuratorHasAccessRightToOperateOnDraft(
         Class<? extends TicketEntry> ticketType, AccessRight[] accessRight)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.DRAFT, resourceService);
-        when(uriRetriever.getRawContent(
-            eq(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0")),
-            any())).thenReturn(
-            Optional.of(IoUtils.stringFromResources(Path.of("cristin-orgs/20754.6.0.0.json"))));
+        mockSiktOrg();
 
         TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
 
@@ -277,12 +275,6 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .build();
     }
 
-    private static InputStream noUserRequest(Publication publication)
-        throws JsonProcessingException {
-        return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
-                   .withPathParameters(constructPathParameters(publication))
-                   .build();
-    }
 
     private static Map<String, String> constructPathParameters(Publication publication) {
         return Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
