@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.commons.json.JsonSerializable;
@@ -59,7 +60,7 @@ public record License(URI value, String name, Map<String, String> labels) implem
         }
 
         private boolean containsPathParameter(String value) {
-            return value.toLowerCase().contains(this.pathParameter.toLowerCase());
+            return value.toLowerCase(Locale.getDefault()).contains(this.pathParameter.toLowerCase(Locale.getDefault()));
         }
 
         private static class Constants {
