@@ -44,7 +44,7 @@ public class CristinRerunErrorsEventEmitter implements RequestStreamHandler {
     @Override
     public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) {
         var event = getRerunFailedEntriesEvent(inputStream);
-        s3Driver.getFiles(event.unixPath()).stream()
+        s3Driver.getFiles(event.s3Path()).stream()
             .map(this::getFileLocation)
             .map(CristinRerunErrorsEventEmitter::toEventReference)
             .collect(Collectors.collectingAndThen(Collectors.toList(), batchMessenger::sendMessages));

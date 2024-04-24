@@ -45,7 +45,7 @@ class CristinRerunEventEmitterTest {
                                  .addChild("errors")
                                  .addChild("nullpointer");
         s3Driver.insertFile(errorsLocation.addChild("12345"), getFailure(CRISTIN_ENTRY_LOCATION));
-        var input = IoUtils.stringToStream(new RerunFailedEntriesEvent(errorsLocation).toJsonString());
+        var input = IoUtils.stringToStream(new RerunFailedEntriesEvent(URI.create(errorsLocation.toString())).toJsonString());
         handler.handleRequest(input, output, CONTEXT);
         var expectedMessageBody = new EventReference("PublicationService.DataImport.DataEntry",
                                                      "PublicationService.CristinData.DataEntry",
