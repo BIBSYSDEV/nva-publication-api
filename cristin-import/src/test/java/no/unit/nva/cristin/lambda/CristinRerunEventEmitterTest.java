@@ -3,6 +3,7 @@ package no.unit.nva.cristin.lambda;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -20,6 +21,7 @@ import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 class CristinRerunEventEmitterTest {
 
@@ -48,8 +50,6 @@ class CristinRerunEventEmitterTest {
             .addChild("nullpointer");
 
         s3Driver.insertFile(errorsLocation.addChild("12345").toS3bucketPath(), getFailure(CRISTIN_ENTRY_LOCATION));
-        UnixPath folder = UnixPath.of( "errors", "nullpointer");
-        var s = s3Driver.getFiles(folder);
         var input = IoUtils.stringToStream(new RerunFailedEntriesEvent(URI.create(errorsLocation.toString())).toJsonString());
         handler.handleRequest(input, output, CONTEXT);
         var expectedMessageBody = new EventReference("PublicationService.DataImport.DataEntry",
@@ -69,6 +69,22 @@ class CristinRerunEventEmitterTest {
         handler.handleRequest(input, output, CONTEXT);
 
         assertTrue(sqsClient.getMessageBodies().isEmpty());
+    }
+
+    @Test
+    void shouldDeleteErrorReportAfterRelatedResourceHasBeenSentToQueue() throws IOException {
+        var errorsLocation = UriWrapper.fromHost(new Environment().readEnv("CRISTIN_IMPORT_BUCKET"))
+                                 .addChild("errors")
+                                 .addChild("nullpointer");
+
+        var errorReport = errorsLocation.addChild("12345").toS3bucketPath();
+        s3Driver.insertFile(errorReport, getFailure(CRISTIN_ENTRY_LOCATION));
+        UnixPath folder = UnixPath.of( "errors", "nullpointer");
+        var s = s3Driver.getFiles(folder);
+        var input = IoUtils.stringToStream(new RerunFailedEntriesEvent(URI.create(errorsLocation.toString())).toJsonString());
+        handler.handleRequest(input, output, CONTEXT);
+
+        assertThrows(NoSuchKeyException.class, () -> s3Driver.getFile(errorReport));
     }
 
     private String getFailure(String cristinEntryLocation) {
