@@ -748,6 +748,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                        Arguments.of("https://creativecommons.org/licenses/by/4.0", LicenseType.CC_BY),
                        Arguments.of("https://creativecommons.org/publicdomain/zero/1.0/", LicenseType.CC_ZERO),
                        Arguments.of("http://rightsstatements.org/vocab/InC/1.0/", LicenseType.RS_INC),
+                       Arguments.of("http://rightsstatements.org/vocab/inc/1.0/", LicenseType.RS_INC),
                        Arguments.of("https://something.else.com", LicenseType.OTHER)
         );
     }

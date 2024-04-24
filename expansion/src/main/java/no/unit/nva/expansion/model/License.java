@@ -59,7 +59,7 @@ public record License(URI value, String name, Map<String, String> labels) implem
         }
 
         private boolean containsPathParameter(String value) {
-            return value.contains(this.pathParameter);
+            return value.toLowerCase().contains(this.pathParameter.toLowerCase());
         }
 
         private static class Constants {
