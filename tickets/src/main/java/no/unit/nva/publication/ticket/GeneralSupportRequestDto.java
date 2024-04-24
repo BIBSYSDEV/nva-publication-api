@@ -45,8 +45,9 @@ public class GeneralSupportRequestDto extends TicketDto {
                                     @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
                                     @JsonProperty(VIEWED_BY) Set<User> viewedBy,
                                     @JsonProperty(ASSIGNEE_FIELD) Username assignee,
+                                    @JsonProperty(OWNER_FIELD) User owner,
                                     @JsonProperty(OWNER_AFFILIATION_FIELD) URI ownerAffiliation) {
-        super(status, messages, viewedBy, assignee, publicationIdentifier, ownerAffiliation);
+        super(status, messages, viewedBy, assignee, publicationIdentifier, owner, ownerAffiliation);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
@@ -54,7 +55,7 @@ public class GeneralSupportRequestDto extends TicketDto {
     }
 
     public static GeneralSupportRequestDto empty() {
-        return new GeneralSupportRequestDto(null, null, null, null, null, null, null, null, null, null);
+        return new GeneralSupportRequestDto(null, null, null, null, null, null, null, null, null, null, null);
     }
 
     public URI getId() {
@@ -83,7 +84,8 @@ public class GeneralSupportRequestDto extends TicketDto {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getId(), getStatus(), getCreatedDate(), getModifiedDate(), getIdentifier(),
-                            getPublicationIdentifier(), getMessages(), getAssignee(), getOwnerAffiliation());
+                            getPublicationIdentifier(), getMessages(), getAssignee(), getOwner(),
+                            getOwnerAffiliation());
     }
 
     @Override
@@ -104,6 +106,7 @@ public class GeneralSupportRequestDto extends TicketDto {
                && Objects.equals(getPublicationIdentifier(), that.getPublicationIdentifier())
                && Objects.equals(getMessages(), that.getMessages())
                && Objects.equals(getAssignee(), that.getAssignee())
+               && Objects.equals(getOwner(), that.getOwner())
                && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation());
     }
 }

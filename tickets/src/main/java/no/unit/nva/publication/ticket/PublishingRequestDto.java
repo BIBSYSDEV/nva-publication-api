@@ -57,10 +57,11 @@ public class PublishingRequestDto extends TicketDto {
                                 @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
                                 @JsonProperty(VIEWED_BY) Set<User> viewedBy,
                                 @JsonProperty(ASSIGNEE_FIELD) Username assignee,
+                                @JsonProperty(OWNER_FIELD) User owner,
                                 @JsonProperty(OWNER_AFFILIATION_FIELD) URI ownerAffiliation,
                                 @JsonProperty(WORKFLOW_FIELD) PublishingWorkflow workflow,
                                 @JsonProperty(APPROVED_FILES_FIELD) Set<UUID> approvedFiles) {
-        super(status, messages, viewedBy, assignee, publicationIdentifier, ownerAffiliation);
+        super(status, messages, viewedBy, assignee, publicationIdentifier, owner, ownerAffiliation);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
@@ -70,7 +71,8 @@ public class PublishingRequestDto extends TicketDto {
     }
 
     public static TicketDto empty() {
-        return new PublishingRequestDto(null, null, null, null, null, null, null, null, null, null, null, Set.of());
+        return new PublishingRequestDto(null, null, null, null, null, null, null, null, null, null, null, null,
+                                                                                                             Set.of());
     }
 
     public Instant getCreatedDate() {
@@ -102,8 +104,8 @@ public class PublishingRequestDto extends TicketDto {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getStatus(), getCreatedDate(), getModifiedDate(), getIdentifier(),
-                            getPublicationIdentifier(), id, getMessages(), getAssignee(), getOwnerAffiliation(),
-                            getWorkflow(), getApprovedFiles());
+                            getPublicationIdentifier(), id, getMessages(), getAssignee(), getOwner(),
+                            getOwnerAffiliation(), getWorkflow(), getApprovedFiles());
     }
 
     @Override
@@ -124,6 +126,7 @@ public class PublishingRequestDto extends TicketDto {
                && Objects.equals(id, that.id)
                && Objects.equals(getMessages(), that.getMessages())
                && Objects.equals(getAssignee(), that.getAssignee())
+               && Objects.equals(getOwner(), that.getOwner())
                && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation())
                && Objects.equals(getWorkflow(), that.getWorkflow())
                && Objects.equals(getApprovedFiles(), that.getApprovedFiles());
