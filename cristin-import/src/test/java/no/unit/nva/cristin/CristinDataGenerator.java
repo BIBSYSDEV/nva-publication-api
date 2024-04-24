@@ -290,10 +290,11 @@ public final class CristinDataGenerator {
     }
 
     public static JsonNode objectWithTags() throws JsonProcessingException {
+        var tag = randomString();
         var cristingTagsList = List.of(CristinTags.builder()
-                                           .withBokmal(randomString())
-                                           .withEnglish(randomString())
-                                           .withNynorsk(randomString())
+                                           .withBokmal(tag)
+                                           .withEnglish(tag)
+                                           .withNynorsk(tag)
                                            .build());
         var cristinObject = randomObject();
         cristinObject.setTags(cristingTagsList);
