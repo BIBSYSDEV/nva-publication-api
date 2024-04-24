@@ -28,7 +28,7 @@ public class CristinRerunErrorsEventEmitter implements RequestStreamHandler {
     public static final String CRISTIN_DATA_ENTRY_SUBTOPIC = "PublicationService.CristinData.DataEntry";
     public static final Environment ENVIRONMENT = new Environment();
     private static final String CRISTIN_IMPORT_BUCKET = ENVIRONMENT.readEnv("CRISTIN_IMPORT_BUCKET");
-    private static final String CRISTIN_ENTRY_QUEUE = ENVIRONMENT.readEnv("CRISTIN_IMPORT_DATA_ENTRY_QUEUE");
+    private static final String CRISTIN_ENTRY_QUEUE = ENVIRONMENT.readEnv("CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL");
     private final S3Driver s3Driver;
     private final SqsBatchMessenger batchMessenger;
 
