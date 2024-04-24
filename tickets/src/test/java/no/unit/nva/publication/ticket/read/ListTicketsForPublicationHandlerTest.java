@@ -3,7 +3,10 @@ package no.unit.nva.publication.ticket.read;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
+import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
+import static nva.commons.apigateway.AccessRight.SUPPORT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasSize;
@@ -19,15 +22,11 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.file.Path;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationServiceConfig;
@@ -94,6 +93,22 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+    void shouldReturnAllTicketsForPublicationWhenUserIsCurator(Class<? extends TicketEntry> ticketType,
+                                                               PublicationStatus status)
+        throws IOException, ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        when(uriRetriever.getRawContent(
+            eq(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0")),
+            any())).thenReturn(
+            Optional.of(IoUtils.stringFromResources(Path.of("cristin-orgs/20754.6.0.0.json"))));
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        var request = curatorRquestsTicketsForPublication(publication);
+        handler.handleRequest(request, output, CONTEXT);
+        assertThatResponseContainsExpectedTickets(ticket);
+    }
+
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldNotReturnRemovedTicket(Class<? extends TicketEntry> ticketType,
                                       PublicationStatus status)
         throws IOException, ApiGatewayException {
@@ -154,9 +169,9 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         Class<? extends TicketEntry> ticketType, AccessRight[] accessRight)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
-        publication.setCuratingInstitutions(getCuratingInstitutions(publication));
-        when(uriRetriever.getRawContent(eq(publication.getCuratingInstitutions().stream().findFirst().orElseThrow()),
-                                        any())).thenReturn(
+        when(uriRetriever.getRawContent(
+            eq(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0")),
+            any())).thenReturn(
             Optional.of(IoUtils.stringFromResources(Path.of("cristin-orgs/20754.6.0.0.json"))));
 
         TicketTestUtils.createPersistedTicket(publication, DoiRequest.class, ticketService);
@@ -173,25 +188,15 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         assertThat(body.getTickets().getFirst().ticketType(), is(equalTo(ticketType)));
     }
 
-    private static Set<URI> getCuratingInstitutions(Publication publication) {
-        return publication.getEntityDescription().getContributors().stream()
-                   .map(Contributor::getAffiliations)
-                   .flatMap(Collection::stream)
-                   .filter(Organization.class::isInstance)
-                   .map(Organization.class::cast)
-                   .map(Organization::getId)
-                   .collect(Collectors.toSet());
-    }
-
     @ParameterizedTest
     @MethodSource("accessRightAndTicketTypeProviderDraft")
     void shouldListTicketsOfTypeCuratorHasAccessRightToOperateOnDraft(
         Class<? extends TicketEntry> ticketType, AccessRight[] accessRight)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.DRAFT, resourceService);
-        publication.setCuratingInstitutions(getCuratingInstitutions(publication));
-        when(uriRetriever.getRawContent(eq(publication.getCuratingInstitutions().stream().findFirst().orElseThrow()),
-                                        any())).thenReturn(
+        when(uriRetriever.getRawContent(
+            eq(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0")),
+            any())).thenReturn(
             Optional.of(IoUtils.stringFromResources(Path.of("cristin-orgs/20754.6.0.0.json"))));
 
         TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
@@ -217,7 +222,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
         TicketTestUtils.createPersistedTicket(publication, GeneralSupportRequest.class, ticketService);
 
-        var request = curatorWithAccessRightRequestTicketsForPublicationAsPublicationOwner(publication, accessRight);
+        var request = curatorWithAccessRightForPublication(publication, accessRight);
         handler.handleRequest(request, output, CONTEXT);
 
         var response = GatewayResponse.fromOutputStream(output, TicketCollection.class);
@@ -248,6 +253,20 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .build();
     }
 
+    private static InputStream curatorRquestsTicketsForPublication(Publication publication)
+        throws JsonProcessingException {
+        return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
+                   .withPathParameters(constructPathParameters(publication))
+                   .withCurrentCustomer(publication.getPublisher().getId())
+                   .withUserName(randomString())
+                   .withPersonCristinId(randomUri())
+                   .withAccessRights(publication.getPublisher().getId(), MANAGE_PUBLISHING_REQUESTS, MANAGE_DOI,
+                                     SUPPORT, MANAGE_RESOURCES_STANDARD)
+                   .withTopLevelCristinOrgId(
+                       URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0"))
+                   .build();
+    }
+
     private static InputStream nonOwnerRequestsTicketsForPublication(Publication publication)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
@@ -255,6 +274,13 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .withCurrentCustomer(publication.getPublisher().getId())
                    .withUserName(randomString())
                    .withPersonCristinId(randomUri())
+                   .build();
+    }
+
+    private static InputStream noUserRequest(Publication publication)
+        throws JsonProcessingException {
+        return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
+                   .withPathParameters(constructPathParameters(publication))
                    .build();
     }
 
@@ -290,8 +316,8 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .build();
     }
 
-    private InputStream curatorWithAccessRightRequestTicketsForPublicationAsPublicationOwner(Publication publication,
-                                                                                             AccessRight[] accessRight)
+    private InputStream curatorWithAccessRightForPublication(Publication publication,
+                                                             AccessRight[] accessRight)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
                    .withPathParameters(constructPathParameters(publication))

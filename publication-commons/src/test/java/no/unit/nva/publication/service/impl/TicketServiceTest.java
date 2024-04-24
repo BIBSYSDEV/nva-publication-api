@@ -86,7 +86,6 @@ import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.testing.TypeProvider;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
-import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
@@ -585,30 +584,6 @@ public class TicketServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnAllTicketsForPublicationWhenRequesterIsEditor() throws ApiGatewayException {
-        var publication = persistPublication(owner, DRAFT);
-        var originalTickets = createAllTypesOfTickets(publication);
-        var elevatedUser = UserInstance.create(randomString(), randomUri(), randomUri(),
-                                               List.of(AccessRight.MANAGE_RESOURCES_ALL),
-                                               randomUri());
-
-        var fetchedTickets = resourceService.fetchAllTicketsForUser(elevatedUser, publication.getIdentifier())
-                                 .collect(Collectors.toList());
-        assertThat(fetchedTickets, containsInAnyOrder(originalTickets.toArray(TicketEntry[]::new)));
-    }
-
-    @Test
-    void shouldThrowNotForbiddenWhenAlienElevatedUserAttemptsToFetchPublicationTickets()
-        throws ApiGatewayException {
-        var publication = persistPublication(owner, DRAFT);
-        createAllTypesOfTickets(publication);
-        var elevatedUser = UserInstance.create(randomString(), randomUri());
-        Executable action = () -> resourceService.fetchAllTicketsForUser(elevatedUser,
-                                                                         publication.getIdentifier());
-        assertThrows(ForbiddenException.class, action);
-    }
-
-    @Test
     void shouldReturnEmptyTicketListWhenPublicationHasNoTickets() throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var fetchedTickets = Resource.fromPublication(publication)
@@ -624,7 +599,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
                                      .boxed()
                                      .map(ticketType -> createPersistedTicket(publication, PublishingRequestCase.class))
                                      .collect(Collectors.toList()));
-        var ticketsFromDatabase = resourceService.fetchAllTicketsForUser(owner, publication.getIdentifier())
+        var ticketsFromDatabase = resourceService.fetchAllTicketsForPublication(owner, publication.getIdentifier())
                                       .collect(Collectors.toList());
         assertThat(ticketsFromDatabase, allOf(hasSize(2), everyItem(instanceOf(PublishingRequestCase.class))));
     }

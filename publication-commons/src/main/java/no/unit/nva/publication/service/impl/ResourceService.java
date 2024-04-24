@@ -31,7 +31,6 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
@@ -55,12 +54,10 @@ import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.storage.UniqueDoiRequestEntry;
 import no.unit.nva.publication.model.storage.WithPrimaryKey;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
-import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.BadRequestException;
-import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
@@ -337,21 +334,6 @@ public class ResourceService extends ServiceWithTransactions {
         } catch (NotFoundException e) {
             logger.error(RESOURCE_TO_REFRESH_NOT_FOUND_MESSAGE, identifier);
         }
-    }
-
-    public Stream<TicketEntry> fetchAllTicketsForUser(UserInstance userInstance,
-                                                      SortableIdentifier publicationIdentifier)
-        throws NotFoundException, ForbiddenException {
-        var resource = getResourceByIdentifier(publicationIdentifier);
-
-        var permissionStrategy = PublicationPermissionStrategy.create(resource.toPublication(), userInstance,
-                                                                      uriRetriever);
-
-        if (!permissionStrategy.allowsAction(PublicationOperation.UPDATE)) {
-            throw new ForbiddenException();
-        }
-
-        return resource.fetchAllTickets(this);
     }
 
     public ImportCandidate updateImportCandidate(ImportCandidate importCandidate) throws BadRequestException {
