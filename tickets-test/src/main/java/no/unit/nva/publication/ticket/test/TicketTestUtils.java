@@ -102,6 +102,13 @@ public final class TicketTestUtils {
     public static Publication createPersistedPublication(PublicationStatus status, ResourceService resourceService)
         throws ApiGatewayException {
         var publication = randomNonDegreePublication(status);
+        publication.getEntityDescription().getContributors().forEach(contributor ->
+            contributor.getAffiliations()
+                .forEach(affiliation -> ((Organization) affiliation).setId(
+                    URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0")))
+        );
+        publication.setCuratingInstitutions(
+            Set.of(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0")));
         return persistPublication(resourceService, publication);
     }
 
@@ -156,7 +163,7 @@ public final class TicketTestUtils {
     }
 
     public static Publication createPersistedPublicationWithPublishedFiles(URI customerId, PublicationStatus status,
-                                                                             ResourceService resourceService)
+                                                                           ResourceService resourceService)
         throws ApiGatewayException {
         var publisher = new Builder().withId(customerId).build();
         var publication = randomPublicationWithPublishedFiles(status).copy().withPublisher(publisher).build();
@@ -213,7 +220,7 @@ public final class TicketTestUtils {
         return persistedPublication;
     }
 
-    public static TicketEntry   createPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType,
+    public static TicketEntry createPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType,
                                                     TicketService ticketService)
         throws ApiGatewayException {
         return TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
@@ -252,7 +259,8 @@ public final class TicketTestUtils {
 
     private static Publication randomPublicationWithStatusAndOwner(PublicationStatus status, UserInstance owner) {
         return randomPublicationWithStatus(status).copy()
-                   .withResourceOwner(new ResourceOwner(new Username(owner.getUsername()), owner.getTopLevelOrgCristinId()))
+                   .withResourceOwner(
+                       new ResourceOwner(new Username(owner.getUsername()), owner.getTopLevelOrgCristinId()))
                    .build();
     }
 

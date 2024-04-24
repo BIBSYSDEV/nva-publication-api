@@ -47,16 +47,20 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
+import java.net.URI;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Collection;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
@@ -580,27 +584,6 @@ public class TicketServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnAllTicketsForPublicationWhenRequesterIsElevatedUser() throws ApiGatewayException {
-        var publication = persistPublication(owner, DRAFT);
-        var originalTickets = createAllTypesOfTickets(publication);
-        var elevatedUser = UserInstance.create(randomString(), publication.getPublisher().getId());
-        var fetchedTickets = resourceService.fetchAllTicketsForElevatedUser(elevatedUser, publication.getIdentifier())
-                                 .collect(Collectors.toList());
-        assertThat(fetchedTickets, containsInAnyOrder(originalTickets.toArray(TicketEntry[]::new)));
-    }
-
-    @Test
-    void shouldThrowNotFoundExceptionWhenAlienElevatedUserAttemptsToFetchPublicationTickets()
-        throws ApiGatewayException {
-        var publication = persistPublication(owner, DRAFT);
-        createAllTypesOfTickets(publication);
-        var elevatedUser = UserInstance.create(randomString(), randomUri());
-        Executable action = () -> resourceService.fetchAllTicketsForElevatedUser(elevatedUser,
-                                                                                 publication.getIdentifier());
-        assertThrows(NotFoundException.class, action);
-    }
-
-    @Test
     void shouldReturnEmptyTicketListWhenPublicationHasNoTickets() throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
         var fetchedTickets = Resource.fromPublication(publication)
@@ -616,7 +599,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
                                      .boxed()
                                      .map(ticketType -> createPersistedTicket(publication, PublishingRequestCase.class))
                                      .collect(Collectors.toList()));
-        var ticketsFromDatabase = resourceService.fetchAllTicketsForElevatedUser(owner, publication.getIdentifier())
+        var ticketsFromDatabase = resourceService.fetchAllTicketsForPublication(owner, publication.getIdentifier())
                                       .collect(Collectors.toList());
         assertThat(ticketsFromDatabase, allOf(hasSize(2), everyItem(instanceOf(PublishingRequestCase.class))));
     }
@@ -916,8 +899,19 @@ public class TicketServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var publication = createUnpersistedPublication(owner);
         publication.setStatus(publicationStatus);
+        publication.setCuratingInstitutions(getCuratingInstitutions(publication));
         var persistedPublication = resourceService.insertPreexistingPublication(publication);
 
         return resourceService.getPublication(persistedPublication);
+    }
+
+    private static Set<URI> getCuratingInstitutions(Publication publication) {
+        return publication.getEntityDescription().getContributors().stream()
+                   .map(Contributor::getAffiliations)
+                   .flatMap(Collection::stream)
+                   .filter(Organization.class::isInstance)
+                   .map(Organization.class::cast)
+                   .map(Organization::getId)
+                   .collect(Collectors.toSet());
     }
 }

@@ -18,7 +18,6 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 import com.google.common.collect.Lists;
-import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -337,13 +336,6 @@ public class ResourceService extends ServiceWithTransactions {
         }
     }
 
-    public Stream<TicketEntry> fetchAllTicketsForElevatedUser(UserInstance userInstance,
-                                                              SortableIdentifier publicationIdentifier)
-        throws NotFoundException {
-        var resource = fetchResourceForElevatedUser(userInstance.getCustomerId(), publicationIdentifier);
-        return resource.fetchAllTickets(this);
-    }
-
     public ImportCandidate updateImportCandidate(ImportCandidate importCandidate) throws BadRequestException {
         return updateResourceService.updateImportCandidate(importCandidate);
     }
@@ -366,13 +358,6 @@ public class ResourceService extends ServiceWithTransactions {
 
     private static boolean isNotRemoved(TicketEntry ticket) {
         return !TicketStatus.REMOVED.equals(ticket.getStatus());
-    }
-
-    private Resource fetchResourceForElevatedUser(URI customerId, SortableIdentifier publicationIdentifier)
-        throws NotFoundException {
-        var queryDao = (ResourceDao) Resource.fetchForElevatedUserQueryObject(customerId, publicationIdentifier)
-                                         .toDao();
-        return (Resource) queryDao.fetchForElevatedUser(getClient()).getData();
     }
 
     private List<Entity> refreshAndMigrate(List<Entity> dataEntries) {

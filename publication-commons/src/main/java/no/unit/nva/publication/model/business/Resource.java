@@ -97,12 +97,6 @@ public class Resource implements Entity {
         return resource;
     }
 
-    public static Resource fetchForElevatedUserQueryObject(URI customerId, SortableIdentifier resourceIdentifier) {
-        return Resource.builder().withIdentifier(resourceIdentifier)
-                   .withPublisher(new Organization.Builder().withId(customerId).build())
-                   .build();
-    }
-
     public static Resource emptyResource(User username,
                                          URI organizationId,
                                          SortableIdentifier resourceIdentifier) {
