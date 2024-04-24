@@ -178,8 +178,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, TicketCollection.class);
         var body = response.getBodyObject(TicketCollection.class);
 
-        assertThat(body.getTickets(), hasSize(1));
-        assertThat(body.getTickets().getFirst().ticketType(), is(equalTo(ticketType)));
+        assertThat(body.getTickets(), hasSize(3));
     }
 
     private void mockSiktOrg() {

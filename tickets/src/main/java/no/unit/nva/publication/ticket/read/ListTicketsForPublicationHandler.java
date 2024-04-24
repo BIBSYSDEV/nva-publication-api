@@ -16,7 +16,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketDto;
 import no.unit.nva.publication.ticket.TicketHandler;
-import no.unit.nva.publication.utils.RequestUtils;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
@@ -47,8 +46,7 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
         throws ApiGatewayException {
         var publicationIdentifier = extractPublicationIdentifierFromPath(requestInfo);
         var userInstance = UserInstance.fromRequestInfo(requestInfo);
-        var requestUtils = RequestUtils.fromRequestInfo(requestInfo, uriRetriever);
-        var ticketDtos = fetchTickets(requestUtils, publicationIdentifier, userInstance);
+        var ticketDtos = fetchTickets(publicationIdentifier, userInstance);
         return TicketCollection.fromTickets(ticketDtos);
     }
 
@@ -57,16 +55,11 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
         return HttpURLConnection.HTTP_OK;
     }
 
-    private List<TicketDto> fetchTickets(RequestUtils requestUtils, SortableIdentifier publicationIdentifier,
+    private List<TicketDto> fetchTickets(SortableIdentifier publicationIdentifier,
                                          UserInstance userInstance) throws ApiGatewayException {
-        var tickets = fetchTickets(userInstance, publicationIdentifier)
-                          .filter(ticket -> isOwner(userInstance, ticket) || requestUtils.isAuthorizedToManage(ticket));
+        var tickets = fetchTickets(userInstance, publicationIdentifier);
 
         return tickets.map(this::createDto).toList();
-    }
-
-    private static Boolean isOwner(UserInstance userInstance, TicketEntry ticket) {
-        return UserInstance.fromTicket(ticket).getUsername().equals(userInstance.getUsername());
     }
 
     private Stream<TicketEntry> fetchTickets(UserInstance userInstance, SortableIdentifier publicationIdentifier)
