@@ -3,6 +3,7 @@ package no.unit.nva.cristin.lambda;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -15,6 +16,7 @@ import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
+import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -41,10 +43,13 @@ class CristinRerunEventEmitterTest {
 
     @Test
     void shouldReadErrorReportFromCristinErrorLocationAndEmitNewSqsEventForFailedCristinEntry() throws IOException {
-        var errorsLocation = UnixPath.of(new Environment().readEnv("CRISTIN_IMPORT_BUCKET"))
-                                 .addChild("errors")
-                                 .addChild("nullpointer");
-        s3Driver.insertFile(errorsLocation.addChild("12345"), getFailure(CRISTIN_ENTRY_LOCATION));
+        var errorsLocation = UriWrapper.fromHost(new Environment().readEnv("CRISTIN_IMPORT_BUCKET"))
+            .addChild("errors")
+            .addChild("nullpointer");
+
+        s3Driver.insertFile(errorsLocation.addChild("12345").toS3bucketPath(), getFailure(CRISTIN_ENTRY_LOCATION));
+        UnixPath folder = UnixPath.of( "errors", "nullpointer");
+        var s = s3Driver.getFiles(folder);
         var input = IoUtils.stringToStream(new RerunFailedEntriesEvent(URI.create(errorsLocation.toString())).toJsonString());
         handler.handleRequest(input, output, CONTEXT);
         var expectedMessageBody = new EventReference("PublicationService.DataImport.DataEntry",
@@ -53,6 +58,17 @@ class CristinRerunEventEmitterTest {
         var deliveredSqsMessage = JsonUtils.dtoObjectMapper.readValue(sqsClient.getMessageBodies().getFirst(),
                                                                       EventReference.class);
         assertThat(deliveredSqsMessage.getUri(), is(equalTo(expectedMessageBody.getUri())));
+    }
+
+    @Test
+    void shouldReadErrorReportFromCristinErrorLocationAndDoNotEmitEventWhenNoErrors() throws IOException {
+        var errorsLocation = UnixPath.of(new Environment().readEnv("CRISTIN_IMPORT_BUCKET"))
+                                 .addChild("errors")
+                                 .addChild("nullpointer");
+        var input = IoUtils.stringToStream(new RerunFailedEntriesEvent(URI.create(errorsLocation.toString())).toJsonString());
+        handler.handleRequest(input, output, CONTEXT);
+
+        assertTrue(sqsClient.getMessageBodies().isEmpty());
     }
 
     private String getFailure(String cristinEntryLocation) {

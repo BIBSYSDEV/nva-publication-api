@@ -49,7 +49,8 @@ public class CristinRerunErrorsEventEmitter implements RequestStreamHandler {
         s3Driver.getFiles(event.s3Path()).stream()
             .map(this::getFileLocation)
             .map(CristinRerunErrorsEventEmitter::toEventReference)
-            .collect(Collectors.collectingAndThen(Collectors.toList(), batchMessenger::sendMessages));
+            .collect(Collectors.collectingAndThen(Collectors.toList(),
+                                                  list -> (list.isEmpty() ? null : batchMessenger.sendMessages(list))));
     }
 
     @JacocoGenerated
