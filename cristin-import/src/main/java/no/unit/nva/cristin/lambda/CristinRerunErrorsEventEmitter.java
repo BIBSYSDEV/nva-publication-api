@@ -15,6 +15,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.publication.s3imports.SqsBatchMessenger;
 import no.unit.nva.s3.S3Driver;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.ioutils.IoUtils;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -25,20 +26,21 @@ public class CristinRerunErrorsEventEmitter implements RequestStreamHandler {
     public static final String FILE_URI_FIELD = "fileUri";
     public static final String DATA_IMPORT_TOPIC = "PublicationService.DataImport.DataEntry";
     public static final String CRISTIN_DATA_ENTRY_SUBTOPIC = "PublicationService.CristinData.DataEntry";
-    private static final String CRISTIN_IMPORT_BUCKET = "CRISTIN_IMPORT_BUCKET";
-    private static final String CRISTIN_IMPORT_DATA_ENTRY_QUEUE = "CRISTIN_IMPORT_DATA_ENTRY_QUEUE";
+    public static final Environment ENVIRONMENT = new Environment();
+    private static final String CRISTIN_IMPORT_BUCKET = ENVIRONMENT.readEnv("CRISTIN_IMPORT_BUCKET");
+    private static final String CRISTIN_ENTRY_QUEUE = ENVIRONMENT.readEnv("CRISTIN_IMPORT_DATA_ENTRY_QUEUE");
     private final S3Driver s3Driver;
     private final SqsBatchMessenger batchMessenger;
 
     @JacocoGenerated
     public CristinRerunErrorsEventEmitter() {
         this.s3Driver = new S3Driver(S3Driver.defaultS3Client().build(), CRISTIN_IMPORT_BUCKET);
-        this.batchMessenger = new SqsBatchMessenger(defaultAmazonSQS(), CRISTIN_IMPORT_DATA_ENTRY_QUEUE);
+        this.batchMessenger = new SqsBatchMessenger(defaultAmazonSQS(), CRISTIN_ENTRY_QUEUE);
     }
 
     public CristinRerunErrorsEventEmitter(S3Client s3Client, AmazonSQS sqsClient) {
         this.s3Driver = new S3Driver(s3Client, CRISTIN_IMPORT_BUCKET);
-        this.batchMessenger = new SqsBatchMessenger(sqsClient, CRISTIN_IMPORT_DATA_ENTRY_QUEUE);
+        this.batchMessenger = new SqsBatchMessenger(sqsClient, CRISTIN_ENTRY_QUEUE);
     }
 
     @Override
