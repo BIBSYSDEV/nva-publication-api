@@ -49,12 +49,9 @@ import java.util.Optional;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
-import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinBookOrReportPartMetadata;
-import no.unit.nva.cristin.mapper.CristinJournalPublicationJournal;
 import no.unit.nva.cristin.mapper.CristinMapper;
 import no.unit.nva.cristin.mapper.CristinObject;
-import no.unit.nva.cristin.mapper.CristinPublisher;
 import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOf;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
@@ -545,20 +542,34 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                    is(equalTo(expectedPartOFCristinPublication)));
     }
 
+    //TODO: Update test when we actually update publication, for now updates modified date only.
     @Test
-    void shouldPersistExceptionWhenImportingSameCristinPostTwice() throws IOException {
+    void shouldUpdateExistingPublicationWhenImportingCristinPostTwice() throws IOException {
         var cristinObject = CristinDataGenerator.randomObject();
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
-        var publications = handler.handleRequest(sqsEvent, CONTEXT);
-        assertThat(publications, hasSize(1));
-        var duplicatePublication = handler.handleRequest(sqsEvent, CONTEXT);
-        assertThat(duplicatePublication, hasSize(0));
-        var expectedErrorFileLocation = constructExpectedErrorFilePaths(eventBody, "CristinIdAlreadyExistException");
+        var publication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+        var updatedPublication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+
+        assertThat(publication.getModifiedDate(), is(not(equalTo(updatedPublication.getModifiedDate()))));
+
+        assertThat(publication.copy().withModifiedDate(null).build(),
+                   is(equalTo(updatedPublication.copy().withModifiedDate(null).build())));
+    }
+
+    @Test
+    void shouldPersistUpdateReportWhenUpdatingExistingPublication() throws IOException {
+        var cristinObject = CristinDataGenerator.randomObject();
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var publication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+        handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+
+        var reportLocation =  UnixPath.of("UPDATE").addChild(publication.getIdentifier().toString());
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
-        var file = s3Driver.getFile(expectedErrorFileLocation);
-        assertThat(file, is(not(emptyString())));
-        assertThat(file, containsString("CristinIdAlreadyExistException"));
+        var file = s3Driver.getFile(reportLocation);
+
+        assertThat(file, is(not(nullValue())));
     }
 
     @Test

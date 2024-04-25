@@ -27,12 +27,12 @@ public record NviReport(String publicationIdentifier,
                    .withCristinLocales(publicationRepresentations.getCristinObject().getCristinLocales())
                    .withScientificResource(publicationRepresentations.getCristinObject().getScientificResources())
                    .withYearReported(publicationRepresentations.getCristinObject().getScientificResources().getFirst().getReportedYear())
-                   .withPublicationDate(publicationRepresentations.getPublication().getEntityDescription().getPublicationDate())
-                   .withInstanceType(publicationRepresentations.getPublication().getEntityDescription()
+                   .withPublicationDate(publicationRepresentations.getIncomingPublication().getEntityDescription().getPublicationDate())
+                   .withInstanceType(publicationRepresentations.getIncomingPublication().getEntityDescription()
                                          .getReference()
                                          .getPublicationInstance()
                                          .getInstanceType())
-                   .withReference(publicationRepresentations.getPublication().getEntityDescription().getReference())
+                   .withReference(publicationRepresentations.getIncomingPublication().getEntityDescription().getReference())
                    .build();
     }
 

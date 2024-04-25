@@ -4,6 +4,7 @@ import static java.util.Objects.nonNull;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
+import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOf;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
@@ -16,12 +17,13 @@ public class PublicationRepresentations {
 
     private final CristinObject cristinObject;
     private final FileContentsEvent<JsonNode> eventBody;
-    private Publication publication;
+    private Publication incomingPublication;
+    private Publication existingPublication;
 
     public PublicationRepresentations(CristinObject cristinObject, Publication publication,
                                       FileContentsEvent<JsonNode> eventBody) {
         this.cristinObject = cristinObject;
-        this.publication = publication;
+        this.incomingPublication = publication;
         this.eventBody = eventBody;
     }
 
@@ -30,12 +32,21 @@ public class PublicationRepresentations {
         return cristinObject;
     }
 
-    public Publication getPublication() {
-        return publication;
+    public Publication getIncomingPublication() {
+        return incomingPublication;
     }
 
-    public void setPublication(Publication publication) {
-        this.publication = publication;
+    public void setIncomingPublication(Publication incomingPublication) {
+        this.incomingPublication = incomingPublication;
+    }
+
+    public Publication getExistingPublication() {
+        return existingPublication;
+    }
+
+    public PublicationRepresentations withExistingPublication(Publication publication) {
+        this.existingPublication = publication;
+        return this;
     }
 
     @JacocoGenerated
@@ -44,7 +55,7 @@ public class PublicationRepresentations {
     }
 
     public String getNvaPublicationIdentifier() {
-        return publication.getIdentifier().toString();
+        return incomingPublication.getIdentifier().toString();
     }
 
     public URI getOriginalEventFileUri() {
@@ -84,7 +95,7 @@ public class PublicationRepresentations {
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getCristinObject(), getPublication(), getEventBody());
+        return Objects.hash(getCristinObject(), getIncomingPublication(), getEventBody(), getIncomingPublication());
     }
 
     @JacocoGenerated
@@ -99,6 +110,17 @@ public class PublicationRepresentations {
         PublicationRepresentations that = (PublicationRepresentations) o;
         return Objects.equals(getCristinObject(), that.getCristinObject())
                && Objects.equals(getEventBody(), that.getEventBody())
-               && Objects.equals(getPublication(), that.getPublication());
+               && Objects.equals(getIncomingPublication(), that.getIncomingPublication())
+               && Objects.equals(getExistingPublication(), that.getExistingPublication());
+    }
+
+    @Override
+    public String toString() {
+        return "PublicationRepresentations{" +
+               "cristinObject=" + cristinObject +
+               ", eventBody=" + eventBody +
+               ", incomingPublication=" + incomingPublication +
+               ", existingPublication=" + existingPublication +
+               '}';
     }
 }

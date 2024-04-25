@@ -19,14 +19,12 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.mapper.CristinMapper;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.Identifiable;
 import no.unit.nva.cristin.mapper.nva.NviReport;
 import no.unit.nva.events.models.EventReference;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.s3imports.ApplicationConstants;
@@ -64,6 +62,7 @@ public class CristinEntryEventConsumer
     public static final String DO_NOT_WRITE_ID_IN_EXCEPTION_MESSAGE = null;
     public static final UnixPath ERRORS_FOLDER = UnixPath.of("errors");
     public static final UnixPath SUCCESS_FOLDER = UnixPath.of("SUCCESS");
+    public static final UnixPath UPDATE_FOLDER = UnixPath.of("UPDATE");
     public static final UnixPath NVI_FOLDER = UnixPath.of("NVI");
     private static final Logger logger = LoggerFactory.getLogger(CristinEntryEventConsumer.class);
     private static final String PUBLICATIONS_THAT_ARE_PART_OF_OTHER_PUBLICATIONS_BUCKET_PATH =
@@ -102,14 +101,6 @@ public class CristinEntryEventConsumer
                    .collect(Collectors.toList());
     }
 
-    private static Stream<String> getDuplicatePublicationIdentifiers(
-        List<Publication> duplicateCristinPublicationsInNva) {
-        return duplicateCristinPublicationsInNva
-                   .stream()
-                   .map(Publication::getIdentifier)
-                   .map(SortableIdentifier::toString);
-    }
-
     @JacocoGenerated
     private static S3Client defaultS3Client() {
         return S3Client.builder()
@@ -145,25 +136,52 @@ public class CristinEntryEventConsumer
         var eventBody = readEventBody(eventReference);
         return attempt(() -> parseCristinObject(eventBody))
                    .map(cristinObject -> generatePublicationRepresentations(cristinObject, eventBody))
-                   .map(publicationRepresentation -> publicationAlreadyExists(publicationRepresentation)
-                                                         ? performUpdate(publicationRepresentation, eventBody, eventReference)
-                                                         : createNew(publicationRepresentation, eventBody, eventReference))
-                   .orElseThrow();
+                   .map(this::upsertPublication)
+                   .orElseThrow(fail -> handleSavingError(fail, eventBody, eventReference));
 
     }
 
-    private Publication createNew(PublicationRepresentations publicationRepresentation,
-                                  FileContentsEvent<JsonNode> eventBody, EventReference eventReference) {
+    private Publication upsertPublication(PublicationRepresentations publicationRepresentation) {
+        return publicationAlreadyExists(publicationRepresentation)
+                   ? performUpdate(publicationRepresentation)
+                   : createNew(publicationRepresentation);
+    }
+
+    private Publication createNew(PublicationRepresentations publicationRepresentation) {
         return attempt(() -> publicationRepresentation)
             .map(doiDuplicateChecker::throwIfDoiExists)
              .map(this::persistNvaPublicationInDatabaseAndGetUpdatedPublicationIdentifier)
              .map(this::persistConversionReports)
-             .orElseThrow(fail -> handleSavingError(fail, eventBody, eventReference));
+             .orElseThrow();
     }
 
-    private Publication performUpdate(PublicationRepresentations publicationRepresentation,
-                                      FileContentsEvent<JsonNode> eventBody, EventReference eventReference) {
-        return null;
+    private Publication performUpdate(PublicationRepresentations publicationRepresentation) {
+        return attempt(() -> getExistingPublication(publicationRepresentation))
+                   .map(publicationRepresentation::withExistingPublication)
+                   .map(PublicationUpdater::update)
+                   .map(this::persistUpdatedPublication)
+                   .map(this::persistUpdateReport)
+                   .orElseThrow();
+    }
+
+    private PublicationRepresentations persistUpdatedPublication(
+        PublicationRepresentations publicationRepresentations) {
+        resourceService.updatePublication(publicationRepresentations.getExistingPublication());
+        return publicationRepresentations;
+    }
+
+    private Publication persistUpdateReport(PublicationRepresentations publicationRepresentations) {
+        var fileUri = constructUpdateFileUri(publicationRepresentations);
+        var s3Driver = new S3Driver(s3Client, fileUri.getUri().getHost());
+        var content = publicationRepresentations.toString();
+        attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(),
+                                          content)).orElseThrow();
+        return publicationRepresentations.getExistingPublication();
+    }
+
+    private Publication getExistingPublication(PublicationRepresentations publicationRepresentation) {
+        var cristinIdentifier = publicationRepresentation.getCristinObject().getId().toString();
+        return resourceService.getPublicationsByCristinIdentifier(cristinIdentifier).getFirst();
     }
 
     private boolean publicationAlreadyExists(PublicationRepresentations publicationRepresentations) {
@@ -180,7 +198,7 @@ public class CristinEntryEventConsumer
         persistCristinIdentifierInFileNamedWithPublicationIdentifier(publicationRepresentations);
         persistPartOfCristinIdentifierIfPartOfExists(publicationRepresentations);
         persistNviReportIfNeeded(publicationRepresentations);
-        return publicationRepresentations.getPublication();
+        return publicationRepresentations.getIncomingPublication();
     }
 
     private void persistNviReportIfNeeded(PublicationRepresentations publicationRepresentations) {
@@ -258,6 +276,15 @@ public class CristinEntryEventConsumer
                    .addChild(publicationIdentifier);
     }
 
+    private UriWrapper constructUpdateFileUri(PublicationRepresentations publicationRepresentations) {
+        var publicationIdentifier = publicationRepresentations.getExistingPublication().getIdentifier().toString();
+        var eventBodyFileUri = publicationRepresentations.getOriginalEventFileUri();
+        var timestamp = publicationRepresentations.getOriginalTimeStamp();
+        var fileUri = UriWrapper.fromUri(eventBodyFileUri);
+        var bucket = fileUri.getHost();
+        return bucket.addChild(UPDATE_FOLDER).addChild(publicationIdentifier);
+    }
+
     private UriWrapper constructNviReportUri(PublicationRepresentations publicationRepresentations) {
         var publicationIdentifier = publicationRepresentations.getNvaPublicationIdentifier();
         var eventBodyFileUri = publicationRepresentations.getOriginalEventFileUri();
@@ -297,8 +324,8 @@ public class CristinEntryEventConsumer
     private PublicationRepresentations persistNvaPublicationInDatabaseAndGetUpdatedPublicationIdentifier(
         PublicationRepresentations publicationRepresentations) {
         var publicationWithIdentifier =
-            persistInDatabase(publicationRepresentations.getPublication()).orElseThrow();
-        publicationRepresentations.setPublication(publicationWithIdentifier);
+            persistInDatabase(publicationRepresentations.getIncomingPublication()).orElseThrow();
+        publicationRepresentations.setIncomingPublication(publicationWithIdentifier);
         return publicationRepresentations;
     }
 
