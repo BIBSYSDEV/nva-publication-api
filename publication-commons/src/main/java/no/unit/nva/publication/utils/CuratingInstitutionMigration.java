@@ -8,7 +8,7 @@ import no.unit.nva.model.EntityDescription;
 import nva.commons.core.Environment;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class CuratingInstitutionMigration {
+public final class CuratingInstitutionMigration {
     private static final String CRISTIN_UNITS_S3_URI_ENV = "CRISTIN_UNITS_S3_URI";
 
     private CuratingInstitutionMigration() {
