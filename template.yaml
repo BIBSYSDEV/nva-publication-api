@@ -1759,7 +1759,7 @@ Resources:
       ReservedConcurrentExecutions: 1
       Policies:
         - !GetAtt EventsLambdaManagedPolicy.PolicyArn
-        - !GetAtt S3DeleteAccessManagedPolicy.PolicyA
+        - !GetAtt S3DeleteAccessManagedPolicy.PolicyArn
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
