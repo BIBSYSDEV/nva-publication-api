@@ -507,6 +507,7 @@ Resources:
             Action:
               - events:*
               - sqs:SendMessage
+              - sqs:SendMessageBatch
               - sqs:ReceiveMessage
               - sqs:DeleteMessage
               - sqs:GetQueueAttributes
@@ -1756,9 +1757,9 @@ Resources:
       Handler: no.unit.nva.cristin.lambda.CristinRerunErrorsEventEmitter::handleRequest
       Timeout: 900 # 15 min timeout
       ReservedConcurrentExecutions: 1
-      Role: !GetAtt LambdaRole.Arn
       Policies:
-        - !GetAtt S3DeleteAccessManagedPolicy.PolicyArn
+        - !GetAtt EventsLambdaManagedPolicy.PolicyArn
+        - !GetAtt S3DeleteAccessManagedPolicy.PolicyA
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
