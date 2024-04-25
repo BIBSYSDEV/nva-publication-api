@@ -1062,7 +1062,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var testAppender = LogUtils.getTestingAppenderForRootLogger();
 
-        resourceService.refreshResources(resources, s3client, mock(Environment.class));
+        resourceService.refreshResources(resources, s3client, "s3://cristin-cache/units.json");
 
         assertThatFailedBatchScanLogsProperly(testAppender, userResources);
     }

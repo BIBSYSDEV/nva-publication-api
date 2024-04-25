@@ -21,6 +21,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest, Void> {
 
     public static final String DETAIL_TYPE = "NO_DETAIL_TYPE";
+    private static final String CRISTIN_UNITS_S3_URI_ENV = "CRISTIN_UNITS_S3_URI";
 
     private final ResourceService resourceService;
     private final EventBridgeClient eventBridgeClient;
@@ -46,7 +47,7 @@ public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest
     protected Void processInput(ScanDatabaseRequest input, AwsEventBridgeEvent<ScanDatabaseRequest> event,
                                 Context context) {
         var result = resourceService.scanResources(input.getPageSize(), input.getStartMarker(), input.getTypes());
-        resourceService.refreshResources(result.getDatabaseEntries(), s3Client, environment);
+        resourceService.refreshResources(result.getDatabaseEntries(), s3Client, environment.readEnv(CRISTIN_UNITS_S3_URI_ENV));
         logger.info("Query starting point:" + input.getStartMarker());
         if (result.isTruncated()) {
             sendEventToInvokeNewRefreshRowVersionExecution(input, context, result);

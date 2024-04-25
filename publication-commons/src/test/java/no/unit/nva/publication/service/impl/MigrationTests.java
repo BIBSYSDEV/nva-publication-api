@@ -55,9 +55,9 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 class MigrationTests extends ResourcesLocalTest {
 
     public static final Map<String, AttributeValue> START_FROM_BEGINNING = null;
+    public static final String CRISTIN_UNITS_S3_URI = "s3://some-bucket/some-key";
     private ResourceService resourceService;
     private S3Client s3Client;
-    private Environment environment;
 
     @BeforeEach
     public void init() {
@@ -67,8 +67,6 @@ class MigrationTests extends ResourcesLocalTest {
         when(s3Client.getObjectAsBytes(any(GetObjectRequest.class))).thenAnswer(
             (Answer<ResponseBytes<GetObjectResponse>>) invocationOnMock -> getUnitsResponseBytes());
         this.resourceService = getResourceServiceBuilder().build();
-        this.environment = mock(Environment.class);
-        when(environment.readEnv("CRISTIN_UNITS_S3_URI")).thenReturn("s3://some-bucket/some-key");
     }
 
     @Test
@@ -205,7 +203,7 @@ class MigrationTests extends ResourcesLocalTest {
 
     private void migrateResources() {
         var scanResources = resourceService.scanResources(1000, START_FROM_BEGINNING, Collections.emptyList());
-        resourceService.refreshResources(scanResources.getDatabaseEntries(), s3Client, environment);
+        resourceService.refreshResources(scanResources.getDatabaseEntries(), s3Client, CRISTIN_UNITS_S3_URI);
     }
 
     private static ResponseBytes getUnitsResponseBytes() {

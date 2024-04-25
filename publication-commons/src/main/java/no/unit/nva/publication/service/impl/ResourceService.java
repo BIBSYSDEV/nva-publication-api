@@ -60,7 +60,6 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
@@ -253,8 +252,8 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     @JacocoGenerated
-    public void refreshResources(List<Entity> dataEntries, S3Client s3Client, Environment environment) {
-        final var refreshedEntries = refreshAndMigrate(dataEntries, s3Client, environment);
+    public void refreshResources(List<Entity> dataEntries, S3Client s3Client, String cristinUnitsS3Uri) {
+        final var refreshedEntries = refreshAndMigrate(dataEntries, s3Client, cristinUnitsS3Uri);
         var writeRequests = createWriteRequestsForBatchJob(refreshedEntries);
         writeToDynamoInBatches(writeRequests);
     }
@@ -310,8 +309,8 @@ public class ResourceService extends ServiceWithTransactions {
 
     // update this method according to current needs.
     //TODO: redesign migration process?
-    public Entity migrate(Entity dataEntry, S3Client s3Client, Environment environment) {
-        return dataEntry instanceof Resource ? migrateResource((Resource) dataEntry, s3Client, environment) : dataEntry;
+    public Entity migrate(Entity dataEntry, S3Client s3Client, String cristinUnitsS3Uri) {
+        return dataEntry instanceof Resource ? migrateResource((Resource) dataEntry, s3Client, cristinUnitsS3Uri) : dataEntry;
     }
 
     public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {
@@ -363,8 +362,8 @@ public class ResourceService extends ServiceWithTransactions {
         return !TicketStatus.REMOVED.equals(ticket.getStatus());
     }
 
-    private List<Entity> refreshAndMigrate(List<Entity> dataEntries, S3Client s3Client, Environment environment) {
-        return dataEntries.stream().map(attempt(entity -> migrate(entity, s3Client, environment))).map(Try::orElseThrow).collect(Collectors.toList());
+    private List<Entity> refreshAndMigrate(List<Entity> dataEntries, S3Client s3Client, String cristinUnitsS3Uri) {
+        return dataEntries.stream().map(attempt(entity -> migrate(entity, s3Client, cristinUnitsS3Uri))).map(Try::orElseThrow).collect(Collectors.toList());
     }
 
     private Organization createOrganization(UserInstance userInstance) {
@@ -380,9 +379,9 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     // change this method depending on the current migration needs.
-    private Resource migrateResource(Resource dataEntry, S3Client s3Client, Environment environment) {
+    private Resource migrateResource(Resource dataEntry, S3Client s3Client, String cristinUnitsS3Uri) {
 
-        CuratingInstitutionMigration.migrate(dataEntry, s3Client, environment);
+        CuratingInstitutionMigration.migrate(dataEntry, s3Client, cristinUnitsS3Uri);
         return dataEntry;
     }
 
