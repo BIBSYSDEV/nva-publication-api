@@ -1647,7 +1647,7 @@ Resources:
             Destination: !GetAtt UpdateDoiStatusDLQ.Arn
 
 
-  _IEntriesEventEmitter:
+  CristinEntriesEventEmitter:
     Type: AWS::Serverless::Function
     DependsOn:
       - CristinImportDataEntryQueue
