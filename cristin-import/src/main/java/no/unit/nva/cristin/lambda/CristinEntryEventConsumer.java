@@ -25,7 +25,6 @@ import no.unit.nva.cristin.mapper.CristinMapper;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.Identifiable;
 import no.unit.nva.cristin.mapper.nva.NviReport;
-import no.unit.nva.cristin.mapper.nva.exceptions.CristinIdAlreadyExistException;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -146,21 +145,31 @@ public class CristinEntryEventConsumer
         var eventBody = readEventBody(eventReference);
         return attempt(() -> parseCristinObject(eventBody))
                    .map(cristinObject -> generatePublicationRepresentations(cristinObject, eventBody))
-                   .map(this::doSomethingIfExists)
-                   .map(doiDuplicateChecker::throwIfDoiExists)
-                   .map(this::persistNvaPublicationInDatabaseAndGetUpdatedPublicationIdentifier)
-                   .map(this::persistConversionReports)
-                   .orElseThrow(fail -> handleSavingError(fail, eventBody, eventReference));
+                   .map(publicationRepresentation -> publicationAlreadyExists(publicationRepresentation)
+                                                         ? performUpdate(publicationRepresentation, eventBody, eventReference)
+                                                         : createNew(publicationRepresentation, eventBody, eventReference))
+                   .orElseThrow();
+
     }
 
-    private PublicationRepresentations doSomethingIfExists(PublicationRepresentations publicationRepresentations) {
-        publicationRepresentations.getCristinObject().getId().toString()
-        var existingPublication = resourceService.getPublicationsByCristinIdentifier(
-            publicationRepresentations.getCristinObject().getId().toString());
-        if (!existingPublication.isEmpty()) {
-            var nvaPublicationIdentifiers = getDuplicatePublicationIdentifiers(existingPublication);
-            throw new CristinIdAlreadyExistException(cristinObject.getId().toString(), nvaPublicationIdentifiers);
-        }
+    private Publication createNew(PublicationRepresentations publicationRepresentation,
+                                  FileContentsEvent<JsonNode> eventBody, EventReference eventReference) {
+        return attempt(() -> publicationRepresentation)
+            .map(doiDuplicateChecker::throwIfDoiExists)
+             .map(this::persistNvaPublicationInDatabaseAndGetUpdatedPublicationIdentifier)
+             .map(this::persistConversionReports)
+             .orElseThrow(fail -> handleSavingError(fail, eventBody, eventReference));
+    }
+
+    private Publication performUpdate(PublicationRepresentations publicationRepresentation,
+                                      FileContentsEvent<JsonNode> eventBody, EventReference eventReference) {
+        return null;
+    }
+
+    private boolean publicationAlreadyExists(PublicationRepresentations publicationRepresentations) {
+        var cristinIdentifier = publicationRepresentations.getCristinObject().getId().toString();
+        var publicationByCristinIdentifier = resourceService.getPublicationsByCristinIdentifier(cristinIdentifier);
+        return !publicationByCristinIdentifier.isEmpty();
     }
 
     private EventReference getEventReferenceFromBody(String body) {
