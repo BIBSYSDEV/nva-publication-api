@@ -1,6 +1,5 @@
 package no.unit.nva.expansion.model;
 
-import static java.util.Objects.nonNull;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.AFFILIATIONS_POINTER;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.CONTEXT_TYPE_JSON_PTR;
@@ -39,6 +38,7 @@ import java.util.stream.StreamSupport;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -59,6 +59,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     public static final String CONTRIBUTOR_SEQUENCE = "sequence";
     public static final String LICENSE_FIELD = "license";
     public static final String ASSOCIATED_ARTIFACTS_FIELD = "associatedArtifacts";
+    public static final String TYPE_FIELD = "type";
     @JsonAnySetter
     private final Map<String, Object> allFields;
 
@@ -82,14 +83,29 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     }
 
     private static void expandLicenses(JsonNode node) {
-        var associatedArtifacts = node.get(ASSOCIATED_ARTIFACTS_FIELD);
-        if (nonNull(associatedArtifacts) && associatedArtifacts.isArray()) {
-            for (JsonNode artifact : associatedArtifacts) {
-                var artifactNode = (ObjectNode) artifact;
-                var licenseUri = extractLicenseFromAssociatedArtifactNode(artifact);
-                artifactNode.set(LICENSE_FIELD, License.fromUri(licenseUri).toJsonNode());
-            }
+        var optionalAssociatedArtifacts = Optional.ofNullable(node.get(ASSOCIATED_ARTIFACTS_FIELD));
+        optionalAssociatedArtifacts.ifPresent(ExpandedResource::handleAssociatedArtifacts);
+    }
+
+    private static void handleAssociatedArtifacts(JsonNode associatedArtifacts) {
+        if (associatedArtifacts.isArray()) {
+            associatedArtifacts.forEach(ExpandedResource::processArtifact);
         }
+    }
+
+    private static void processArtifact(JsonNode artifact) {
+        if (isNotALink(artifact)) {
+            var artifactNode = (ObjectNode) artifact;
+            var licenseUri = extractLicenseFromAssociatedArtifactNode(artifact);
+            Optional.ofNullable(licenseUri)
+                .map(License::fromUri)
+                .map(License::toJsonNode)
+                .ifPresent(jsonNode -> artifactNode.set(LICENSE_FIELD, jsonNode));
+        }
+    }
+
+    private static boolean isNotALink(JsonNode artifact) {
+        return !artifact.get(TYPE_FIELD).asText().equals(AssociatedLink.class.getSimpleName());
     }
 
     private static URI extractLicenseFromAssociatedArtifactNode(JsonNode node) {

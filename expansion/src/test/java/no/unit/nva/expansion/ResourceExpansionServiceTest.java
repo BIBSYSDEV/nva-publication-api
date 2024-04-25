@@ -28,6 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -222,17 +223,44 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldReturnIndexDocumentContainingLicense(String licenseUri, LicenseType expectedLicense)
         throws JsonProcessingException, NotFoundException {
         var fileWithLicense = randomPublishedFile(licenseUri);
+        var associatedLink = new AssociatedLink(randomUri(), null, null);
         var publication = PublicationGenerator.randomPublication()
                                       .copy()
-                                      .withAssociatedArtifacts(List.of(fileWithLicense))
+                                      .withAssociatedArtifacts(List.of(fileWithLicense, associatedLink))
                                       .build();
 
         var resourceUpdate = Resource.fromPublication(publication);
         var indexDoc = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
-        var licensesAsString = indexDoc.asJsonNode().get("associatedArtifacts").get(0).get("license").toString();
+        var licensesAsString = getLicenseForFile(indexDoc);
         var license = JsonUtils.dtoObjectMapper.readValue(licensesAsString, License.class);
 
         assertThat(license.name(), is(equalTo(expectedLicense.toLicense(URI.create(licenseUri)).name())));
+    }
+
+    @Test
+    void shouldReturnIndexDocumentWithoutLicenseWhenNoLicense() throws JsonProcessingException, NotFoundException {
+            var fileWithLicense = File.builder().buildPublishedFile();
+            var publication = PublicationGenerator.randomPublication()
+                                  .copy()
+                                  .withAssociatedArtifacts(List.of(fileWithLicense))
+                                  .build();
+
+            var resourceUpdate = Resource.fromPublication(publication);
+            var indexDoc = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
+            var license = indexDoc.asJsonNode().get("associatedArtifacts").get(0).get("license");
+            assertThat(license, is(nullValue()));
+    }
+
+    private static String getLicenseForFile(ExpandedResource indexDoc) {
+        var associatedArtifacts = indexDoc.asJsonNode().get("associatedArtifacts");
+        String string = null;
+        for (JsonNode artifact : associatedArtifacts) {
+            if (!artifact.get("type").asText().equals("AssociatedLink")) {
+                var license = artifact.get("license");
+                string = nonNull(license) ? license.toString() : null;
+            }
+        }
+        return string;
     }
 
     private File randomPublishedFile(String license) {
@@ -735,6 +763,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                        Arguments.of("https://creativecommons.org/licenses/by/4.0", LicenseType.CC_BY),
                        Arguments.of("https://creativecommons.org/publicdomain/zero/1.0/", LicenseType.CC_ZERO),
                        Arguments.of("http://rightsstatements.org/vocab/InC/1.0/", LicenseType.RS_INC),
+                       Arguments.of("http://rightsstatements.org/vocab/inc/1.0/", LicenseType.RS_INC),
                        Arguments.of("https://something.else.com", LicenseType.OTHER)
         );
     }
