@@ -1757,6 +1757,8 @@ Resources:
       Timeout: 900 # 15 min timeout
       ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
+      Policies:
+        - !GetAtt S3DeleteAccessManagedPolicy.PolicyArn
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
