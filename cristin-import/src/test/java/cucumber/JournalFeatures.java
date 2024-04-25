@@ -2,8 +2,10 @@ package cucumber;
 
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_CHANNEL_REGISTRY_V2;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.in;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
@@ -12,6 +14,7 @@ import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import java.net.URI;
+import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
@@ -19,6 +22,7 @@ import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.model.instancetypes.journal.JournalReview;
+import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.instancetypes.media.MediaFeatureArticle;
 import nva.commons.core.paths.UriWrapper;
 
@@ -476,6 +480,18 @@ public class JournalFeatures {
         assertThat(uriString, containsString(pid));
         assertThat(uriString, containsString("publisher"));
         assertThat(uriString, containsString(year.toString()));
+    }
+
+    @Given("article has an article number {int}")
+    public void articleHasAnArticleNumber(int articleNumber) {
+        scenarioContext.newCristinEntry(() -> CristinDataGenerator.randomObject("ARTIKKEL_FAG"));
+        scenarioContext.getCristinEntry().getJournalPublication().setArticleNumber(String.valueOf(articleNumber));
+    }
+
+    @Then("NVA resource has article number {int}.")
+    public void nvaResourceHasArticleNumber(int articleNumber) {
+        var instance= scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
+        assertThat(((ProfessionalArticle) instance).getArticleNumber(), is(equalTo(String.valueOf(articleNumber))));
     }
 
     private Journal extractJournal() {

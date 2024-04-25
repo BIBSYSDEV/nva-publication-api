@@ -93,3 +93,8 @@ Feature: Mapping of "Article in business/trade/industry journal", "Academic arti
     Given the Journal Publication has a reference to an NSD journal with identifier 12345
     When the Cristin Result is converted to an NVA Resource
     Then an error is reported.
+
+  Scenario: When the cristin entry is an article
+    Given article has an article number 55
+    When the Cristin Result is converted to an NVA Resource
+    Then NVA resource has article number 55.
