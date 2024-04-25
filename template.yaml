@@ -472,7 +472,7 @@ Resources:
             Action:
               - s3:DeleteObject
             Resource:
-              - !Sub 'cristin-import-${AWS::AccountId}'
+              - !Sub 'arn:aws:s3:::cristin-import-${AWS::AccountId}'
               - !Sub '${ExpandedEntriesPersistenceBucketArn}/*'
               - !Sub 'arn:aws:s3:::${ResourceStorageBucketName}/*'
 
