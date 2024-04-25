@@ -472,6 +472,7 @@ Resources:
             Action:
               - s3:DeleteObject
             Resource:
+              - !Sub 'cristin-import-${AWS::AccountId}'
               - !Sub '${ExpandedEntriesPersistenceBucketArn}/*'
               - !Sub 'arn:aws:s3:::${ResourceStorageBucketName}/*'
 
@@ -1646,7 +1647,7 @@ Resources:
             Destination: !GetAtt UpdateDoiStatusDLQ.Arn
 
 
-  CristinEntriesEventEmitter:
+  _IEntriesEventEmitter:
     Type: AWS::Serverless::Function
     DependsOn:
       - CristinImportDataEntryQueue
@@ -1760,6 +1761,7 @@ Resources:
       Policies:
         - !GetAtt EventsLambdaManagedPolicy.PolicyArn
         - !GetAtt S3DeleteAccessManagedPolicy.PolicyArn
+        - !GetAtt S3AccessManagedPolicy.PolicyArn
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
