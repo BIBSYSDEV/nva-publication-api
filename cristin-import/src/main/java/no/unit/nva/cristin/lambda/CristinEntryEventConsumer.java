@@ -144,26 +144,21 @@ public class CristinEntryEventConsumer
 
     private Publication processEvent(EventReference eventReference) {
         var eventBody = readEventBody(eventReference);
-        return attempt(() -> getCristinObject(eventBody))
+        return attempt(() -> parseCristinObject(eventBody))
                    .map(cristinObject -> generatePublicationRepresentations(cristinObject, eventBody))
+                   .map(this::doSomethingIfExists)
                    .map(doiDuplicateChecker::throwIfDoiExists)
                    .map(this::persistNvaPublicationInDatabaseAndGetUpdatedPublicationIdentifier)
                    .map(this::persistConversionReports)
                    .orElseThrow(fail -> handleSavingError(fail, eventBody, eventReference));
     }
 
-    private CristinObject getCristinObject(FileContentsEvent<JsonNode> eventBody) {
-        var cristinObject = parseCristinObject(eventBody);
-        validateCristinObject(cristinObject);
-        return cristinObject;
-    }
-
-    private void validateCristinObject(CristinObject cristinObject) {
-        var duplicateCristinPublicationsInNva = resourceService
-                                                    .getPublicationsByCristinIdentifier(
-                                                        cristinObject.getId().toString());
-        if (!duplicateCristinPublicationsInNva.isEmpty()) {
-            var nvaPublicationIdentifiers = getDuplicatePublicationIdentifiers(duplicateCristinPublicationsInNva);
+    private PublicationRepresentations doSomethingIfExists(PublicationRepresentations publicationRepresentations) {
+        publicationRepresentations.getCristinObject().getId().toString()
+        var existingPublication = resourceService.getPublicationsByCristinIdentifier(
+            publicationRepresentations.getCristinObject().getId().toString());
+        if (!existingPublication.isEmpty()) {
+            var nvaPublicationIdentifiers = getDuplicatePublicationIdentifiers(existingPublication);
             throw new CristinIdAlreadyExistException(cristinObject.getId().toString(), nvaPublicationIdentifiers);
         }
     }
