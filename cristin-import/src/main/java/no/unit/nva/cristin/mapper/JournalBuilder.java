@@ -94,15 +94,15 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
 
         var secondaryCategory = getCristinObject().getSecondaryCategory();
         if (CristinSecondaryCategory.JOURNAL_ARTICLE.equals(secondaryCategory)) {
-            return new ProfessionalArticle(numberOfPages, extractVolume(), extractIssue(), null);
+            return new ProfessionalArticle(numberOfPages, extractVolume(), extractIssue(), extractArticleNumber());
         } else if (CristinSecondaryCategory.POPULAR_ARTICLE.equals(secondaryCategory)) {
-            return new PopularScienceArticle(numberOfPages, extractVolume(), extractIssue(), null);
+            return new PopularScienceArticle(numberOfPages, extractVolume(), extractIssue(), extractArticleNumber());
         } else if (CristinSecondaryCategory.ARTICLE.equals(secondaryCategory)) {
-            return new AcademicArticle(numberOfPages, extractVolume(), extractIssue(), null);
+            return new AcademicArticle(numberOfPages, extractVolume(), extractIssue(), extractArticleNumber());
         } else if (CristinSecondaryCategory.ACADEMIC_REVIEW.equals(secondaryCategory)) {
-            return new AcademicLiteratureReview(numberOfPages, extractVolume(), extractIssue(), null);
+            return new AcademicLiteratureReview(numberOfPages, extractVolume(), extractIssue(), extractArticleNumber());
         } else if (CristinSecondaryCategory.SHORT_COMMUNICATION.equals(secondaryCategory)) {
-            return new AcademicArticle(numberOfPages, extractVolume(), extractIssue(), null);
+            return new AcademicArticle(numberOfPages, extractVolume(), extractIssue(), extractArticleNumber());
         } else {
             throw new UnsupportedSecondaryCategoryException();
         }
@@ -131,6 +131,9 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
     }
 
     private String extractArticleNumber() {
-        return getCristinObject().getJournalPublication().getArticleNumber();
+        return Optional.ofNullable(getCristinObject())
+                   .map(CristinObject::getJournalPublication)
+                   .map(CristinJournalPublication::getArticleNumber)
+                   .orElse(null);
     }
 }
