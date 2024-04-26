@@ -38,6 +38,8 @@ public class CristinRerunErrorsEventEmitter implements RequestStreamHandler {
     public static final String SQS_FAILED_RESULTS = "Failed to send to sqs: {}";
     public static final String REPORTS_DELETED_MESSAGE = "Successfully proceeded reports have been deleted!";
     private static final Logger logger = LoggerFactory.getLogger(CristinRerunErrorsEventEmitter.class);
+    public static final int RESPONSE_SIZE = 5000;
+    public static final String START_POINT = null;
     private final S3Driver s3Driver;
     private final SqsBatchMessenger batchMessenger;
 
@@ -58,7 +60,7 @@ public class CristinRerunErrorsEventEmitter implements RequestStreamHandler {
     @Override
     public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) {
         var event = getRerunFailedEntriesEvent(inputStream);
-        var errorReports = s3Driver.listAllFiles(event.s3Path());
+        var errorReports = listErrorReport(event);
         var failedEntries = putMessagesOnQueue(errorReports);
 
         logger.info(SQS_FAILED_RESULTS, failedEntries.values());
@@ -66,6 +68,10 @@ public class CristinRerunErrorsEventEmitter implements RequestStreamHandler {
         getSuccessfullyProceededReports(failedEntries, errorReports).forEach(s3Driver::deleteFile);
 
         logger.info(REPORTS_DELETED_MESSAGE);
+    }
+
+    private List<UnixPath> listErrorReport(RerunFailedEntriesEvent event) {
+        return s3Driver.listFiles(event.s3Path(), START_POINT, RESPONSE_SIZE).getFiles();
     }
 
     private List<UnixPath> getSuccessfullyProceededReports(Map<UnixPath, EventReference> failedEntries,
