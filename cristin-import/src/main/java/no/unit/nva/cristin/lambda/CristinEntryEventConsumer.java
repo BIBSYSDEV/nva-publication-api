@@ -279,7 +279,6 @@ public class CristinEntryEventConsumer
     private UriWrapper constructUpdateFileUri(PublicationRepresentations publicationRepresentations) {
         var publicationIdentifier = publicationRepresentations.getExistingPublication().getIdentifier().toString();
         var eventBodyFileUri = publicationRepresentations.getOriginalEventFileUri();
-        var timestamp = publicationRepresentations.getOriginalTimeStamp();
         var fileUri = UriWrapper.fromUri(eventBodyFileUri);
         var bucket = fileUri.getHost();
         return bucket.addChild(UPDATE_FOLDER).addChild(publicationIdentifier);

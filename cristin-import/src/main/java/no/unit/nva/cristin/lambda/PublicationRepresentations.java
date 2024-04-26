@@ -1,17 +1,16 @@
 package no.unit.nva.cristin.lambda;
 
 import static java.util.Objects.nonNull;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
-import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOf;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import nva.commons.core.JacocoGenerated;
-import com.fasterxml.jackson.databind.JsonNode;
 
 public class PublicationRepresentations {
 
