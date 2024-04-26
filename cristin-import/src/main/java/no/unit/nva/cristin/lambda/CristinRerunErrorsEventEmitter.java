@@ -10,11 +10,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.publication.s3imports.PutSqsMessageResult;
+import no.unit.nva.publication.s3imports.PutSqsMessageResultFailureEntry;
 import no.unit.nva.publication.s3imports.SqsBatchMessenger;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
@@ -31,37 +35,45 @@ public class CristinRerunErrorsEventEmitter implements RequestStreamHandler {
     public static final String FILE_URI_FIELD = "fileUri";
     public static final String DATA_IMPORT_TOPIC = "PublicationService.DataImport.DataEntry";
     public static final String CRISTIN_DATA_ENTRY_SUBTOPIC = "PublicationService.CristinData.DataEntry";
-    public static final Environment ENVIRONMENT = new Environment();
-    public static final String SQS_BATCH_RESULT_MESSAGE = "Sqs batch result: {}";
-    public static final String REPORTS_DELETED_MESSAGE = "Old reports have been deleted!";
+    public static final String SQS_BATCH_RESULT_MESSAGE = "Failed to send to sqs: {}";
+    public static final String REPORTS_DELETED_MESSAGE = "Successfully proceeded reports have been deleted!";
     private static final Logger logger = LoggerFactory.getLogger(CristinRerunErrorsEventEmitter.class);
-    private static final String CRISTIN_IMPORT_BUCKET = ENVIRONMENT.readEnv("CRISTIN_IMPORT_BUCKET");
-    private static final String CRISTIN_ENTRY_QUEUE = ENVIRONMENT.readEnv("CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL");
     private final S3Driver s3Driver;
     private final SqsBatchMessenger batchMessenger;
 
     @JacocoGenerated
     public CristinRerunErrorsEventEmitter() {
-        this.s3Driver = new S3Driver(S3Driver.defaultS3Client().build(), CRISTIN_IMPORT_BUCKET);
-        this.batchMessenger = new SqsBatchMessenger(defaultAmazonSQS(), CRISTIN_ENTRY_QUEUE);
+        this.s3Driver = new S3Driver(S3Driver.defaultS3Client().build(),
+                                     new Environment().readEnv("CRISTIN_IMPORT_BUCKET"));
+        this.batchMessenger = new SqsBatchMessenger(defaultAmazonSQS(),
+                                                    new Environment().readEnv("CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL"));
     }
 
     public CristinRerunErrorsEventEmitter(S3Client s3Client, AmazonSQS sqsClient) {
-        this.s3Driver = new S3Driver(s3Client, CRISTIN_IMPORT_BUCKET);
-        this.batchMessenger = new SqsBatchMessenger(sqsClient, CRISTIN_ENTRY_QUEUE);
+        this.s3Driver = new S3Driver(s3Client, new Environment().readEnv("CRISTIN_IMPORT_BUCKET"));
+        this.batchMessenger = new SqsBatchMessenger(sqsClient,
+                                                    new Environment().readEnv("CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL"));
     }
 
     @Override
     public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) {
         var event = getRerunFailedEntriesEvent(inputStream);
         var errorReports = s3Driver.listAllFiles(event.s3Path());
-        var batchResult = putMessagesOnQueue(errorReports);
+        var failedEntries = putMessagesOnQueue(errorReports);
 
-        logger.info(SQS_BATCH_RESULT_MESSAGE, batchResult.toJsonString());
+        logger.info(SQS_BATCH_RESULT_MESSAGE, failedEntries.values());
 
-        errorReports.forEach(s3Driver::deleteFile);
+        var successfullyProceededErrorReports = getSuccessfullyProceededReports(failedEntries, errorReports);
+        successfullyProceededErrorReports.forEach(s3Driver::deleteFile);
 
         logger.info(REPORTS_DELETED_MESSAGE);
+    }
+
+    private List<UnixPath> getSuccessfullyProceededReports(Map<UnixPath, EventReference> failedEntries,
+                                                           List<UnixPath> errorReports) {
+        var failedReports = new ArrayList<>(failedEntries.keySet());
+        errorReports.removeAll(failedReports);
+        return errorReports;
     }
 
     @JacocoGenerated
@@ -90,14 +102,45 @@ public class CristinRerunErrorsEventEmitter implements RequestStreamHandler {
         return JsonUtils.dtoObjectMapper.readValue(value, RerunFailedEntriesEvent.class);
     }
 
-    private PutSqsMessageResult putMessagesOnQueue(List<UnixPath> reportLocationList) {
+    private Map<UnixPath, EventReference> putMessagesOnQueue(List<UnixPath> reportLocationList) {
+        var errorReportLocationToCristinEntryEventReferenceMap = collectEventReferences(reportLocationList);
+
+        var batchResult = sendMessagesToQueue(errorReportLocationToCristinEntryEventReferenceMap);
+        var failedEntries = getFailedEntries(batchResult);
+        return getErrorReportsForFailedEntries(errorReportLocationToCristinEntryEventReferenceMap, failedEntries);
+    }
+
+    private PutSqsMessageResult sendMessagesToQueue(
+        Map<UnixPath, EventReference> errorReportLocationToCristinEntryEventReferenceMap) {
+        return errorReportLocationToCristinEntryEventReferenceMap.isEmpty()
+                   ? new PutSqsMessageResult()
+                   : batchMessenger.sendMessages(
+                       errorReportLocationToCristinEntryEventReferenceMap.values().stream().toList());
+    }
+
+    private static Map<UnixPath, EventReference> getErrorReportsForFailedEntries(
+        Map<UnixPath, EventReference> errorReportLocationToCristinEntryEventReferenceMap,
+        List<EventReference> failedEntries) {
+        return errorReportLocationToCristinEntryEventReferenceMap.entrySet().stream()
+                   .filter(entry -> failedEntries.contains(entry.getValue()))
+                   .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    private static List<EventReference> getFailedEntries(PutSqsMessageResult result) {
+        return result.getFailures().stream()
+                   .map(PutSqsMessageResultFailureEntry::getEvent)
+                   .toList();
+    }
+
+    private Map<UnixPath, EventReference> collectEventReferences(List<UnixPath> reportLocationList) {
         return reportLocationList.stream()
-                   .map(s3Driver::getFile)
-                   .map(this::getFileLocation)
-                   .map(CristinRerunErrorsEventEmitter::toEventReference)
-                   .collect(Collectors.collectingAndThen(Collectors.toList(),
-                                                         list -> list.isEmpty() ? new PutSqsMessageResult()
-                                                                      : batchMessenger.sendMessages(list)));
+                   .collect(Collectors.toMap(Function.identity(), this::createEventReferenceForLocation));
+    }
+
+    private EventReference createEventReferenceForLocation(UnixPath reportLocation) {
+        String fileContent = s3Driver.getFile(reportLocation);
+        URI fileLocation = getFileLocation(fileContent);
+        return CristinRerunErrorsEventEmitter.toEventReference(fileLocation);
     }
 
     private URI getFileLocation(String content) {

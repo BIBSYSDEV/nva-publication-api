@@ -5,9 +5,15 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import com.amazonaws.services.sqs.model.BatchResultErrorEntry;
+import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
+import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
+import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.util.List;
+import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.FakeAmazonSQS;
 import no.unit.nva.events.models.EventReference;
@@ -20,7 +26,6 @@ import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 class CristinRerunEventEmitterTest {
@@ -30,13 +35,14 @@ class CristinRerunEventEmitterTest {
                                                         + "-19T12:08:24.244309343Z/19843994-c259-4ca8-9143"
                                                         + "-786739318a97.gz";
     private FakeAmazonSQS sqsClient;
+    private FakeS3Client s3Client;
     private CristinRerunErrorsEventEmitter handler;
     private S3Driver s3Driver;
     private ByteArrayOutputStream output;
 
     @BeforeEach
     void init() {
-        S3Client s3Client = new FakeS3Client();
+        this.s3Client = new FakeS3Client();
         this.s3Driver = new S3Driver(s3Client, "ignored");
         this.sqsClient = new FakeAmazonSQS();
         this.output = new ByteArrayOutputStream();
@@ -79,12 +85,26 @@ class CristinRerunEventEmitterTest {
 
         var errorReport = errorsLocation.addChild("12345").toS3bucketPath();
         s3Driver.insertFile(errorReport, getFailure(CRISTIN_ENTRY_LOCATION));
-        UnixPath folder = UnixPath.of( "errors", "nullpointer");
-        var s = s3Driver.getFiles(folder);
         var input = IoUtils.stringToStream(new RerunFailedEntriesEvent(URI.create(errorsLocation.toString())).toJsonString());
         handler.handleRequest(input, output, CONTEXT);
 
         assertThrows(NoSuchKeyException.class, () -> s3Driver.getFile(errorReport));
+    }
+
+    @Test
+    void shouldNotDeleteErrorReportWhenSqsMessageForCristinEntryHasNotBeenSent() throws IOException {
+        var errorsLocation = UriWrapper.fromHost(new Environment().readEnv("CRISTIN_IMPORT_BUCKET"))
+                                 .addChild("errors")
+                                 .addChild("nullpointer");
+        var errorReport = errorsLocation.addChild("12345").toS3bucketPath();
+        var failure = getFailure(CRISTIN_ENTRY_LOCATION);
+        sqsClient = amazonSqsThatFailsToSendMessages();
+        s3Driver.insertFile(errorReport, failure);
+        var input = IoUtils.stringToStream(new RerunFailedEntriesEvent(URI.create(errorsLocation.toString())).toJsonString());
+        new CristinRerunErrorsEventEmitter(s3Client, sqsClient).handleRequest(input, output, CONTEXT);
+        var notDeleteReport = s3Driver.getFile(errorReport);
+
+        assertThat(notDeleteReport, is(equalTo(failure)));
     }
 
     private String getFailure(String cristinEntryLocation) {
@@ -99,5 +119,26 @@ class CristinRerunEventEmitterTest {
               }
             }
             """.replace("CRISTIN_ENTRY_LOCATION", cristinEntryLocation);
+    }
+
+    private FakeAmazonSQS amazonSqsThatFailsToSendMessages() {
+        return new FakeAmazonSQS() {
+            @Override
+            public SendMessageBatchResult sendMessageBatch(SendMessageBatchRequest sendMessageBatchRequest) {
+                var result = new SendMessageBatchResult();
+                result.setFailed(
+                    sendMessageBatchRequest.getEntries().stream().map(entry -> createFailedResult(entry)).collect(
+                        Collectors.toList()));
+                result.setSuccessful(List.of());
+                return result;
+            }
+        };
+    }
+
+    private BatchResultErrorEntry createFailedResult(SendMessageBatchRequestEntry entry) {
+        var resultEntry = new BatchResultErrorEntry();
+        resultEntry.setId(entry.getId());
+        resultEntry.setMessage("Failed miserably");
+        return resultEntry;
     }
 }
