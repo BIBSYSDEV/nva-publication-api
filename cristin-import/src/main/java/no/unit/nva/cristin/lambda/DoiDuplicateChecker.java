@@ -24,7 +24,7 @@ public class DoiDuplicateChecker {
     }
 
     public PublicationRepresentations throwIfDoiExists(PublicationRepresentations pubRep) {
-        return Optional.ofNullable(pubRep.getPublication().getEntityDescription().getReference().getDoi())
+        return Optional.ofNullable(pubRep.getIncomingPublication().getEntityDescription().getReference().getDoi())
                    .map(doi -> fetchNvaPublicationsByDoi(doi, pubRep))
                    .orElse(pubRep);
     }
