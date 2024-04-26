@@ -26,11 +26,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.cristin.mapper.artisticproduction.CristinArtisticProduction;
@@ -534,6 +536,9 @@ public class CristinMapper extends CristinMappingModule {
         return tags.stream()
                    .flatMap(tag -> Stream.of(tag.getBokmal(), tag.getEnglish(), tag.getNynorsk()))
                    .filter(Objects::nonNull)
-                   .collect(Collectors.toSet()).stream().toList();
+                   .collect(Collectors.toMap(String::trim, Function.identity(), (a, b) -> a, LinkedHashMap::new))
+                   .values()
+                   .stream()
+                   .toList();
     }
 }
