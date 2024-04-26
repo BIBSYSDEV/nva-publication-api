@@ -131,6 +131,9 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
     }
 
     private String extractArticleNumber() {
-        return getCristinObject().getJournalPublication().getArticleNumber();
+        return Optional.ofNullable(getCristinObject())
+                   .map(CristinObject::getJournalPublication)
+                   .map(CristinJournalPublication::getArticleNumber)
+                   .orElse(null);
     }
 }
