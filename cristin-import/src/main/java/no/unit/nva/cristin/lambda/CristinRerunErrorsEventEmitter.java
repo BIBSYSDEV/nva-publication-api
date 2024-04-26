@@ -96,8 +96,8 @@ public class CristinRerunErrorsEventEmitter implements RequestStreamHandler {
                    .map(this::getFileLocation)
                    .map(CristinRerunErrorsEventEmitter::toEventReference)
                    .collect(Collectors.collectingAndThen(Collectors.toList(),
-                                                         list -> (list.isEmpty() ? new PutSqsMessageResult()
-                                                                      : batchMessenger.sendMessages(list))));
+                                                         list -> list.isEmpty() ? new PutSqsMessageResult()
+                                                                      : batchMessenger.sendMessages(list)));
     }
 
     private URI getFileLocation(String content) {
