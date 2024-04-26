@@ -15,13 +15,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -52,6 +52,7 @@ import org.junit.jupiter.api.function.Executable;
 import org.mockito.ArgumentCaptor;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
+import software.amazon.awssdk.services.s3.S3Client;
 
 class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
 
@@ -68,6 +69,8 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private TicketService ticketService;
     private AmazonDynamoDB dynamoDbClient;
+    private S3Client s3Client;
+    private Environment environment;
 
     @BeforeEach
     public void init() {
@@ -79,7 +82,9 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         dynamoDbClient = super.client;
         this.resourceService = spy(getResourceServiceBuilder().build());
         this.ticketService = getTicketService();
-        this.handler = new EventBasedBatchScanHandler(resourceService, eventBridgeClient);
+        this.s3Client = mock(S3Client.class);
+        this.environment = mock(Environment.class);
+        this.handler = new EventBasedBatchScanHandler(resourceService, eventBridgeClient, s3Client, environment);
     }
 
     @Test
@@ -225,7 +230,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         doThrow(new RuntimeException(expectedExceptionMessage)).when(spiedResourceService)
             .scanResources(anyInt(), any(), any());
 
-        handler = new EventBasedBatchScanHandler(spiedResourceService, eventBridgeClient);
+        handler = new EventBasedBatchScanHandler(spiedResourceService, eventBridgeClient, s3Client, environment);
         Executable action = () -> handler.handleRequest(createInitialScanRequest(ONE_ENTRY_PER_EVENT), output, context);
         assertThrows(RuntimeException.class, action);
         assertThat(logger.getMessages(), containsString(expectedExceptionMessage));
