@@ -42,7 +42,6 @@ import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -168,6 +167,36 @@ class MigrationTests extends ResourcesLocalTest {
         verify(uriRetriever, never()).getRawContent(any(), any());
     }
 
+    @Test
+    void shouldWorkWithEmptyContributors() {
+        var hardCodedIdentifier = new SortableIdentifier("0183892c7413-af720123-d7ae-4a97-a628-a3762faf8438");
+        var publication = createPublicationForOldDoiRequestFormatInResources(hardCodedIdentifier);
+        publication.getEntityDescription().setContributors(Collections.emptyList());
+        updatePublication(publication);
+        migrateResources();
+        var allMigratedItems = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
+        var resource = getResourceStream(allMigratedItems)
+                           .findFirst()
+                           .orElseThrow();
+
+        assertThat(resource.getCuratingInstitutions(), hasSize(0));
+    }
+
+    @Test
+    void shouldWorkWithEmptyEntityDescription() {
+        var hardCodedIdentifier = new SortableIdentifier("0183892c7413-af720123-d7ae-4a97-a628-a3762faf8438");
+        var publication = createPublicationForOldDoiRequestFormatInResources(hardCodedIdentifier);
+        publication.setEntityDescription(null);
+        updatePublication(publication);
+        migrateResources();
+        var allMigratedItems = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
+        var resource = getResourceStream(allMigratedItems)
+                           .findFirst()
+                           .orElseThrow();
+
+        assertThat(resource.getCuratingInstitutions(), hasSize(0));
+    }
+
     private static Stream<Resource> getResourceStream(List<Map<String, AttributeValue>> allMigratedItems) {
         return allMigratedItems.stream()
                    .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
@@ -194,11 +223,15 @@ class MigrationTests extends ResourcesLocalTest {
             );
         publication.setCuratingInstitutions(null);
         publication.setIdentifier(hardCodedIdentifier);
+        updatePublication(publication);
+
+        return publication;
+    }
+
+    private void updatePublication(Publication publication) {
         var resource = Resource.fromPublication(publication);
         var dao = resource.toDao();
         client.putItem(new PutItemRequest().withTableName(RESOURCES_TABLE_NAME).withItem(dao.toDynamoFormat()));
-
-        return publication;
     }
 
     private void migrateResources() {
