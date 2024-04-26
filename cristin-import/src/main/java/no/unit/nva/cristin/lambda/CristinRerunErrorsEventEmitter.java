@@ -35,7 +35,7 @@ public class CristinRerunErrorsEventEmitter implements RequestStreamHandler {
     public static final String FILE_URI_FIELD = "fileUri";
     public static final String DATA_IMPORT_TOPIC = "PublicationService.DataImport.DataEntry";
     public static final String CRISTIN_DATA_ENTRY_SUBTOPIC = "PublicationService.CristinData.DataEntry";
-    public static final String SQS_BATCH_RESULT_MESSAGE = "Failed to send to sqs: {}";
+    public static final String SQS_FAILED_RESULTS = "Failed to send to sqs: {}";
     public static final String REPORTS_DELETED_MESSAGE = "Successfully proceeded reports have been deleted!";
     private static final Logger logger = LoggerFactory.getLogger(CristinRerunErrorsEventEmitter.class);
     private final S3Driver s3Driver;
@@ -61,10 +61,9 @@ public class CristinRerunErrorsEventEmitter implements RequestStreamHandler {
         var errorReports = s3Driver.listAllFiles(event.s3Path());
         var failedEntries = putMessagesOnQueue(errorReports);
 
-        logger.info(SQS_BATCH_RESULT_MESSAGE, failedEntries.values());
+        logger.info(SQS_FAILED_RESULTS, failedEntries.values());
 
-        var successfullyProceededErrorReports = getSuccessfullyProceededReports(failedEntries, errorReports);
-        successfullyProceededErrorReports.forEach(s3Driver::deleteFile);
+        getSuccessfullyProceededReports(failedEntries, errorReports).forEach(s3Driver::deleteFile);
 
         logger.info(REPORTS_DELETED_MESSAGE);
     }
