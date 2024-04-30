@@ -18,6 +18,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -35,6 +36,7 @@ import java.util.stream.Stream;
 import net.datafaker.providers.base.BaseFaker;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.lambda.constants.HardcodedValues;
+import no.unit.nva.cristin.mapper.CristinAssociatedUri;
 import no.unit.nva.cristin.mapper.CristinLocale;
 import no.unit.nva.cristin.mapper.CristinLectureOrPosterMetaData;
 import no.unit.nva.cristin.mapper.PresentationEvent;
@@ -289,15 +291,19 @@ public final class CristinDataGenerator {
         return cristinObject;
     }
 
-    public static JsonNode objectWithTags() throws JsonProcessingException {
-        var cristingTagsList = List.of(CristinTags.builder()
-                                           .withBokmal(randomString())
-                                           .withEnglish(randomString())
-                                           .withNynorsk(randomString())
-                                           .build());
+    public static CristinObject objectWithTags() {
+        var cristingTagsList = randomTagList();
         var cristinObject = randomObject();
         cristinObject.setTags(cristingTagsList);
-        return cristinObjectAsObjectNode(cristinObject);
+        return cristinObject;
+    }
+
+    private static List<CristinTags> randomTagList() {
+        return List.of(CristinTags.builder()
+                           .withBokmal(randomString())
+                           .withEnglish(randomString())
+                           .withNynorsk(randomString())
+                           .build());
     }
 
     public static JsonNode objectWithCristinHrcsCategoriesAndActivities() throws JsonProcessingException {
@@ -426,7 +432,7 @@ public final class CristinDataGenerator {
         return createRandomMediaWithSpecifiedSecondaryCategory(secondaryCategory);
     }
 
-    private static CristinObject createRandomMediaWithSpecifiedSecondaryCategory(
+    public static CristinObject createRandomMediaWithSpecifiedSecondaryCategory(
         CristinSecondaryCategory secondaryCategory) {
         return CristinObject.builder()
                    .withYearReported(2001)
@@ -439,6 +445,27 @@ public final class CristinDataGenerator {
                    .withPublicationOwner(randomString())
                    .withContributors(randomContributors())
                    .withMediaContribution(randomMediaContribution())
+                   .withTags(randomTagList())
+                   .withCristinAssociatedUris(List.of(new CristinAssociatedUri("DATA", randomUri().toString())))
+                   .build();
+    }
+
+    public static CristinObject createObjectWithCategory(CristinMainCategory mainCategory,
+        CristinSecondaryCategory secondaryCategory) {
+        return CristinObject.builder()
+                   .withYearReported(2001)
+                   .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
+                   .withEntryCreationDate(LocalDate.now())
+                   .withMainCategory(mainCategory)
+                   .withSecondaryCategory(secondaryCategory)
+                   .withId(largeRandomNumber())
+                   .withPublicationYear(randomYear())
+                   .withPublicationOwner(randomString())
+                   .withContributors(randomContributors())
+                   .withMediaContribution(randomMediaContribution())
+                   .withTags(randomTagList())
+                   .withCristinAssociatedUris(List.of(new CristinAssociatedUri("DATA", randomUri().toString())))
+                   .withLectureOrPosterMetaData(randomLectureOrPosterMetaData())
                    .build();
     }
 
@@ -662,7 +689,7 @@ public final class CristinDataGenerator {
                    .withTitle(randomString())
                    .withAgent(randomString())
                    .withCountryCode(randomString())
-                   .withPlace(randomDoiString())
+                   .withPlace(randomString())
                    .withFrom("2023-11-28T00:00:00")
                    .withTo("2023-11-29T00:00:00")
                    .build();

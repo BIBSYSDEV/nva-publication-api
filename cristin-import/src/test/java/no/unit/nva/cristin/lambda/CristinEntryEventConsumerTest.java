@@ -8,8 +8,11 @@ import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.JSON;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.NVI_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.SUCCESS_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.EVENT;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.CHAPTER_ACADEMIC;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.CONFERENCE_LECTURE;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.FEATURE_ARTICLE;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.INTERVIEW;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.JOURNAL_ARTICLE;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.MUSICAL_PERFORMANCE;
 import static no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException.ERROR_PARSING_MAIN_CATEGORY;
@@ -29,6 +32,9 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -70,8 +76,10 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.instancetypes.artistic.music.Concert;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
+import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
@@ -561,22 +569,36 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldUpdateExistingPublicationWithAssociatedLinksWhenImportingExistingCristinPublication() throws IOException {
-        var cristinObject = CristinDataGenerator.randomObject();
-        var existingPublication = persistPublicationWithCristinId(cristinObject.getId());
+    void shouldAddNewAssociatedArtifactsToExistingCristinPublicationWhenAssociatedArtifactHasNotBeenImported() throws IOException {
+        var cristinObject =
+            CristinDataGenerator.createRandomMediaWithSpecifiedSecondaryCategory(INTERVIEW);
+        var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), Lecture.class);
+        var existingAssociatedArtifacts = existingPublication.getAssociatedArtifacts();
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
-        var publication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
         var updatedPublication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+        var updatedAssociatedArtifacts = updatedPublication.getAssociatedArtifacts();
 
-        assertThat(publication.getModifiedDate(), is(not(equalTo(updatedPublication.getModifiedDate()))));
-
-        assertThat(publication.copy().withModifiedDate(null).build(),
-                   is(equalTo(updatedPublication.copy().withModifiedDate(null).build())));
+        assertTrue(updatedAssociatedArtifacts.containsAll(existingAssociatedArtifacts));
+        assertThat(updatedAssociatedArtifacts.size(), is(not(equalTo(existingAssociatedArtifacts.size()))));
     }
 
-    private Publication persistPublicationWithCristinId(Integer id) {
-        var publication = randomPublication();
+    @Test
+    void shouldUpdateExistingPublicationEventWithEventPlaceWhenMissing() throws IOException {
+        var cristinObject = CristinDataGenerator.createObjectWithCategory(EVENT, CONFERENCE_LECTURE);
+        var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), Lecture.class);
+        existingPublication.getEntityDescription().getReference().setPublicationContext(new Event.Builder().withPlace(null).build());
+        resourceService.updatePublication(existingPublication);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var updatedPublication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+
+        assertNull(((Event) existingPublication.getEntityDescription().getReference().getPublicationContext()).getPlace());
+        assertNotNull(((Event) updatedPublication.getEntityDescription().getReference().getPublicationContext()).getPlace());
+    }
+
+    private Publication persistPublicationWithCristinId(Integer id, Class<?> instance) {
+        var publication = randomPublication(instance);
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", id.toString())));
         return resourceService.createPublicationFromImportedEntry(publication);
     }
