@@ -18,6 +18,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -31,18 +32,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
 import net.datafaker.providers.base.BaseFaker;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.lambda.constants.HardcodedValues;
-import no.unit.nva.cristin.mapper.CristinLocale;
-import no.unit.nva.cristin.mapper.CristinLectureOrPosterMetaData;
-import no.unit.nva.cristin.mapper.PresentationEvent;
-import no.unit.nva.cristin.mapper.ScientificPerson;
-import no.unit.nva.cristin.mapper.ScientificResource;
-import no.unit.nva.cristin.mapper.artisticproduction.ArtisticGenre;
-import no.unit.nva.cristin.mapper.artisticproduction.ArtisticProductionTimeUnit;
-import no.unit.nva.cristin.mapper.artisticproduction.CristinArtisticProduction;
+import no.unit.nva.cristin.mapper.CristinAssociatedUri;
 import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinContributor;
 import no.unit.nva.cristin.mapper.CristinContributorRole;
@@ -51,9 +44,12 @@ import no.unit.nva.cristin.mapper.CristinContributorsAffiliation;
 import no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities;
 import no.unit.nva.cristin.mapper.CristinJournalPublication;
 import no.unit.nva.cristin.mapper.CristinJournalPublicationJournal;
+import no.unit.nva.cristin.mapper.CristinLectureOrPosterMetaData;
+import no.unit.nva.cristin.mapper.CristinLocale;
 import no.unit.nva.cristin.mapper.CristinMainCategory;
 import no.unit.nva.cristin.mapper.CristinMediaContribution;
 import no.unit.nva.cristin.mapper.CristinMediumType;
+import no.unit.nva.cristin.mapper.CristinMediumTypeCode;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinPresentationalWork;
 import no.unit.nva.cristin.mapper.CristinPublisher;
@@ -62,13 +58,17 @@ import no.unit.nva.cristin.mapper.CristinSource;
 import no.unit.nva.cristin.mapper.CristinSubjectField;
 import no.unit.nva.cristin.mapper.CristinTags;
 import no.unit.nva.cristin.mapper.CristinTitle;
-import no.unit.nva.cristin.mapper.CristinMediumTypeCode;
+import no.unit.nva.cristin.mapper.PresentationEvent;
+import no.unit.nva.cristin.mapper.ScientificPerson;
+import no.unit.nva.cristin.mapper.ScientificResource;
 import no.unit.nva.cristin.mapper.VerificationStatus;
+import no.unit.nva.cristin.mapper.artisticproduction.ArtisticGenre;
+import no.unit.nva.cristin.mapper.artisticproduction.ArtisticProductionTimeUnit;
+import no.unit.nva.cristin.mapper.artisticproduction.CristinArtisticProduction;
 import no.unit.nva.cristin.mapper.artisticproduction.CristinProduct;
 import no.unit.nva.cristin.mapper.exhibition.CristinExhibition;
 import no.unit.nva.cristin.mapper.exhibition.ExhibitionEvent;
 import no.unit.nva.cristin.mapper.exhibition.MuseumEventCategory;
-import nva.commons.core.StringUtils;
 
 public final class CristinDataGenerator {
 
@@ -290,16 +290,20 @@ public final class CristinDataGenerator {
         return cristinObject;
     }
 
-    public static JsonNode objectWithTags() throws JsonProcessingException {
-        var tag = randomString() + StringUtils.SPACE + randomString();
-        var cristingTagsList = List.of(CristinTags.builder()
-                                           .withBokmal(tag)
-                                           .withEnglish(tag)
-                                           .withNynorsk(tag)
-                                           .build());
+    public static CristinObject objectWithTags() {
+        var cristingTagsList = randomTagList();
         var cristinObject = randomObject();
         cristinObject.setTags(cristingTagsList);
-        return cristinObjectAsObjectNode(cristinObject);
+        return cristinObject;
+    }
+
+    private static List<CristinTags> randomTagList() {
+        var tag = randomString();
+        return List.of(CristinTags.builder()
+                           .withBokmal(tag)
+                           .withEnglish(tag)
+                           .withNynorsk(tag)
+                           .build());
     }
 
     public static JsonNode objectWithCristinHrcsCategoriesAndActivities() throws JsonProcessingException {
@@ -428,7 +432,7 @@ public final class CristinDataGenerator {
         return createRandomMediaWithSpecifiedSecondaryCategory(secondaryCategory);
     }
 
-    private static CristinObject createRandomMediaWithSpecifiedSecondaryCategory(
+    public static CristinObject createRandomMediaWithSpecifiedSecondaryCategory(
         CristinSecondaryCategory secondaryCategory) {
         return CristinObject.builder()
                    .withYearReported(2001)
@@ -441,6 +445,28 @@ public final class CristinDataGenerator {
                    .withPublicationOwner(randomString())
                    .withContributors(randomContributors())
                    .withMediaContribution(randomMediaContribution())
+                   .withTags(randomTagList())
+                   .withCristinAssociatedUris(List.of(new CristinAssociatedUri("DATA", randomUri().toString())))
+                   .build();
+    }
+
+    public static CristinObject createObjectWithCategory(CristinMainCategory mainCategory,
+        CristinSecondaryCategory secondaryCategory) {
+        return CristinObject.builder()
+                   .withYearReported(2001)
+                   .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
+                   .withEntryCreationDate(LocalDate.now())
+                   .withMainCategory(mainCategory)
+                   .withSecondaryCategory(secondaryCategory)
+                   .withId(largeRandomNumber())
+                   .withPublicationYear(randomYear())
+                   .withPublicationOwner(randomString())
+                   .withContributors(randomContributors())
+                   .withMediaContribution(randomMediaContribution())
+                   .withTags(randomTagList())
+                   .withCristinAssociatedUris(List.of(new CristinAssociatedUri("DATA", randomUri().toString())))
+                   .withLectureOrPosterMetaData(randomLectureOrPosterMetaData())
+                   .withJournalPublication(randomJournalPublication())
                    .build();
     }
 
@@ -664,7 +690,7 @@ public final class CristinDataGenerator {
                    .withTitle(randomString())
                    .withAgent(randomString())
                    .withCountryCode(randomString())
-                   .withPlace(randomDoiString())
+                   .withPlace(randomString())
                    .withFrom("2023-11-28T00:00:00")
                    .withTo("2023-11-29T00:00:00")
                    .build();
@@ -790,6 +816,7 @@ public final class CristinDataGenerator {
                    .withPagesEnd(String.valueOf(pagesBegin + smallRandomNumber()))
                    .withVolume(String.valueOf(smallRandomNumber()))
                    .withDoi(randomDoiString())
+                   .withArticleNumber(randomString())
                    .build();
     }
 

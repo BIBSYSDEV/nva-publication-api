@@ -91,6 +91,12 @@ public class PublicationRepresentations {
             cristinObject.getBookOrReportPartMetadata().getPartOf());
     }
 
+    public boolean updateHasEffectiveChanges() {
+        var existingPublication = getExistingPublication().copy().withModifiedDate(null).withIdentifier(null).build();
+        var incomingPublication = getIncomingPublication().copy().withModifiedDate(null).withIdentifier(null).build();
+        return !existingPublication.equals(incomingPublication);
+    }
+
     @JacocoGenerated
     @Override
     public int hashCode() {

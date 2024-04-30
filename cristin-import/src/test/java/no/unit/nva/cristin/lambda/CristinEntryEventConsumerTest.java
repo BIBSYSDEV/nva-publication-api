@@ -8,11 +8,19 @@ import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.JSON;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.NVI_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.SUCCESS_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.BOOK;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.EVENT;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.JOURNAL;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.ACADEMIC_REVIEW;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.CHAPTER_ACADEMIC;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.CONFERENCE_LECTURE;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.FEATURE_ARTICLE;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.INTERVIEW;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.JOURNAL_ARTICLE;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.MUSICAL_PERFORMANCE;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.SHORT_COMMUNICATION;
 import static no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException.ERROR_PARSING_MAIN_CATEGORY;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
@@ -28,6 +36,10 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -46,9 +58,11 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
+import no.unit.nva.cristin.mapper.CristinAssociatedUri;
 import no.unit.nva.cristin.mapper.CristinBookOrReportPartMetadata;
 import no.unit.nva.cristin.mapper.CristinMapper;
 import no.unit.nva.cristin.mapper.CristinObject;
@@ -65,11 +79,17 @@ import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIssnRuntimeException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryException;
 import no.unit.nva.events.models.EventReference;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.instancetypes.artistic.music.Concert;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
+import no.unit.nva.model.instancetypes.event.Lecture;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
+import no.unit.nva.model.instancetypes.journal.AcademicLiteratureReview;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.ImportResult;
@@ -77,6 +97,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.utils.CristinUnitsUtil;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
+import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
@@ -93,6 +114,7 @@ import org.junit.jupiter.params.provider.EnumSource.Mode;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
@@ -542,27 +564,79 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                    is(equalTo(expectedPartOFCristinPublication)));
     }
 
-    //TODO: Update test when we actually update publication, for now updates modified date only.
     @Test
-    void shouldUpdateExistingPublicationWhenImportingCristinPostTwice() throws IOException {
+    void shouldNotUpdateExistingPublicationWhenImportingCristinPostTwiceAndPublicationsAreIdentical() throws IOException {
         var cristinObject = CristinDataGenerator.randomObject();
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
         var publication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
         var updatedPublication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
 
-        assertThat(publication.getModifiedDate(), is(not(equalTo(updatedPublication.getModifiedDate()))));
+        assertThat(publication.getModifiedDate(), is(equalTo(updatedPublication.getModifiedDate())));
 
-        assertThat(publication.copy().withModifiedDate(null).build(),
-                   is(equalTo(updatedPublication.copy().withModifiedDate(null).build())));
+        var reportLocation =  UnixPath.of("UPDATE").addChild(publication.getIdentifier().toString());
+        var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
+
+        assertThrows(NoSuchKeyException.class,() -> s3Driver.getFile(reportLocation));
     }
 
     @Test
-    void shouldPersistUpdateReportWhenUpdatingExistingPublication() throws IOException {
-        var cristinObject = CristinDataGenerator.randomObject();
+    void shouldAddNewAssociatedArtifactsToExistingCristinPublicationWhenAssociatedArtifactHasNotBeenImported() throws IOException {
+        var cristinObject =
+            CristinDataGenerator.createRandomMediaWithSpecifiedSecondaryCategory(INTERVIEW);
+        var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), Lecture.class);
+        var existingAssociatedArtifacts = existingPublication.getAssociatedArtifacts();
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var updatedPublication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+        var updatedAssociatedArtifacts = updatedPublication.getAssociatedArtifacts();
+
+        assertTrue(updatedAssociatedArtifacts.containsAll(existingAssociatedArtifacts));
+        assertThat(updatedAssociatedArtifacts.size(), is(not(equalTo(existingAssociatedArtifacts.size()))));
+    }
+
+    @Test
+    void shouldUpdateExistingPublicationEventWithEventPlaceWhenMissing() throws IOException {
+        var cristinObject = CristinDataGenerator.createObjectWithCategory(EVENT, CONFERENCE_LECTURE);
+        var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), Lecture.class);
+        existingPublication.getEntityDescription().getReference().setPublicationContext(new Event.Builder().withPlace(null).build());
+        resourceService.updatePublication(existingPublication);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var updatedPublication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+
+        assertNull(((Event) existingPublication.getEntityDescription().getReference().getPublicationContext()).getPlace());
+        assertNotNull(((Event) updatedPublication.getEntityDescription().getReference().getPublicationContext()).getPlace());
+    }
+
+    @Test
+    void shouldUpdateExistingPublicationWithJournalArticleNumberWhenMissing() throws IOException {
+        var cristinObject = CristinDataGenerator.createObjectWithCategory(JOURNAL, SHORT_COMMUNICATION);
+        var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), ProfessionalArticle.class);
+        existingPublication.getEntityDescription().getReference().setPublicationInstance(
+            new AcademicArticle(null, null, null, null));
+        resourceService.updatePublication(existingPublication);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var updatedPublication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+
+        assertNotNull(((JournalArticle) updatedPublication.getEntityDescription().getReference().getPublicationInstance()).getArticleNumber());
+    }
+
+    private Publication persistPublicationWithCristinId(Integer id, Class<?> instance) {
+        var publication = randomPublication(instance);
+        publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", id.toString())));
+        return resourceService.createPublicationFromImportedEntry(publication);
+    }
+
+    @Test
+    void shouldPersistUpdateReportWhenUpdatingExistingPublicationAndUpdateHasEffectiveChanges() throws IOException {
+        var cristinObject = CristinDataGenerator.createObjectWithCategory(EVENT, CONFERENCE_LECTURE);
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
         var publication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+
+        cristinObject.setCristinAssociatedUris(List.of(new CristinAssociatedUri("DATA", RandomDataGenerator.randomUri().toString())));
         handler.handleRequest(sqsEvent, CONTEXT).getFirst();
 
         var reportLocation =  UnixPath.of("UPDATE").addChild(publication.getIdentifier().toString());
