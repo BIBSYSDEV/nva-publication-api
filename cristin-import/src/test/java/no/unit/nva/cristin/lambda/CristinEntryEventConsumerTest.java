@@ -13,6 +13,7 @@ import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.FEATURE_ARTICL
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.JOURNAL_ARTICLE;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.MUSICAL_PERFORMANCE;
 import static no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException.ERROR_PARSING_MAIN_CATEGORY;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
@@ -46,6 +47,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
@@ -65,6 +67,7 @@ import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIssnRuntimeException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryException;
 import no.unit.nva.events.models.EventReference;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.instancetypes.artistic.music.Concert;
@@ -555,6 +558,27 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
         assertThat(publication.copy().withModifiedDate(null).build(),
                    is(equalTo(updatedPublication.copy().withModifiedDate(null).build())));
+    }
+
+    @Test
+    void shouldUpdateExistingPublicationWithAssociatedLinksWhenImportingExistingCristinPublication() throws IOException {
+        var cristinObject = CristinDataGenerator.randomObject();
+        var existingPublication = persistPublicationWithCristinId(cristinObject.getId());
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var publication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+        var updatedPublication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+
+        assertThat(publication.getModifiedDate(), is(not(equalTo(updatedPublication.getModifiedDate()))));
+
+        assertThat(publication.copy().withModifiedDate(null).build(),
+                   is(equalTo(updatedPublication.copy().withModifiedDate(null).build())));
+    }
+
+    private Publication persistPublicationWithCristinId(Integer id) {
+        var publication = randomPublication();
+        publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", id.toString())));
+        return resourceService.createPublicationFromImportedEntry(publication);
     }
 
     @Test
