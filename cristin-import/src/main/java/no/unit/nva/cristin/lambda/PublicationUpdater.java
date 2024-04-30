@@ -3,6 +3,7 @@ package no.unit.nva.cristin.lambda;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import java.util.ArrayList;
+import java.util.List;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
@@ -25,7 +26,16 @@ public final class PublicationUpdater {
     private static EntityDescription updatedEntityDescription(PublicationRepresentations publicationRepresentations) {
         return publicationRepresentations.getExistingPublication().getEntityDescription().copy()
                    .withReference(updateReference(publicationRepresentations))
+                   .withTags(updatedTags(publicationRepresentations))
                    .build();
+    }
+
+    private static List<String> updatedTags(PublicationRepresentations publicationRepresentations) {
+        var existingTags = publicationRepresentations.getExistingPublication().getEntityDescription().getTags();
+        var incomingTags = publicationRepresentations.getIncomingPublication().getEntityDescription().getTags();
+        var list = new ArrayList<>(existingTags);
+        list.addAll(incomingTags);
+        return list.stream().distinct().toList();
     }
 
     private static Reference updateReference(PublicationRepresentations publicationRepresentations) {

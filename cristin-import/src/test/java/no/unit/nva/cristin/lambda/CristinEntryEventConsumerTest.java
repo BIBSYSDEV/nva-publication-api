@@ -34,6 +34,7 @@ import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
@@ -57,6 +58,7 @@ import java.util.Set;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
+import no.unit.nva.cristin.mapper.CristinAssociatedUri;
 import no.unit.nva.cristin.mapper.CristinBookOrReportPartMetadata;
 import no.unit.nva.cristin.mapper.CristinMapper;
 import no.unit.nva.cristin.mapper.CristinObject;
@@ -88,6 +90,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.utils.CristinUnitsUtil;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
+import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
@@ -104,6 +107,7 @@ import org.junit.jupiter.params.provider.EnumSource.Mode;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
@@ -553,19 +557,20 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                    is(equalTo(expectedPartOFCristinPublication)));
     }
 
-    //TODO: Update test when we actually update publication, for now updates modified date only.
     @Test
-    void shouldUpdateExistingPublicationWhenImportingCristinPostTwice() throws IOException {
+    void shouldNotUpdateExistingPublicationWhenImportingCristinPostTwiceAndPublicationsAreIdentical() throws IOException {
         var cristinObject = CristinDataGenerator.randomObject();
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
         var publication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
         var updatedPublication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
 
-        assertThat(publication.getModifiedDate(), is(not(equalTo(updatedPublication.getModifiedDate()))));
+        assertThat(publication.getModifiedDate(), is(equalTo(updatedPublication.getModifiedDate())));
 
-        assertThat(publication.copy().withModifiedDate(null).build(),
-                   is(equalTo(updatedPublication.copy().withModifiedDate(null).build())));
+        var reportLocation =  UnixPath.of("UPDATE").addChild(publication.getIdentifier().toString());
+        var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
+
+        assertThrows(NoSuchKeyException.class,() -> s3Driver.getFile(reportLocation));
     }
 
     @Test
@@ -604,11 +609,13 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldPersistUpdateReportWhenUpdatingExistingPublication() throws IOException {
-        var cristinObject = CristinDataGenerator.randomObject();
+    void shouldPersistUpdateReportWhenUpdatingExistingPublicationAndUpdateHasEffectiveChanges() throws IOException {
+        var cristinObject = CristinDataGenerator.createObjectWithCategory(EVENT, CONFERENCE_LECTURE);
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
         var publication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+
+        cristinObject.setCristinAssociatedUris(List.of(new CristinAssociatedUri("DATA", RandomDataGenerator.randomUri().toString())));
         handler.handleRequest(sqsEvent, CONTEXT).getFirst();
 
         var reportLocation =  UnixPath.of("UPDATE").addChild(publication.getIdentifier().toString());
