@@ -68,6 +68,7 @@ import no.unit.nva.cristin.mapper.artisticproduction.CristinProduct;
 import no.unit.nva.cristin.mapper.exhibition.CristinExhibition;
 import no.unit.nva.cristin.mapper.exhibition.ExhibitionEvent;
 import no.unit.nva.cristin.mapper.exhibition.MuseumEventCategory;
+import nva.commons.core.StringUtils;
 
 public final class CristinDataGenerator {
 
@@ -290,10 +291,11 @@ public final class CristinDataGenerator {
     }
 
     public static JsonNode objectWithTags() throws JsonProcessingException {
+        var tag = randomString() + StringUtils.SPACE + randomString();
         var cristingTagsList = List.of(CristinTags.builder()
-                                           .withBokmal(randomString())
-                                           .withEnglish(randomString())
-                                           .withNynorsk(randomString())
+                                           .withBokmal(tag)
+                                           .withEnglish(tag)
+                                           .withNynorsk(tag)
                                            .build());
         var cristinObject = randomObject();
         cristinObject.setTags(cristingTagsList);

@@ -185,7 +185,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
         var actualPublications = handler.handleRequest(sqsEvent, CONTEXT);
-        var actualPublication = actualPublications.get(0);
+        var actualPublication = actualPublications.getFirst();
 
         var expectedPublication = mapToPublication(cristinObject);
         injectValuesThatAreCreatedWhenSavingInDynamo(actualPublication, expectedPublication);
@@ -200,7 +200,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
         var publications = handler.handleRequest(sqsEvent, CONTEXT);
-        var actualPublication = publications.get(0);
+        var actualPublication = publications.getFirst();
         var expectedFileNameStoredInS3 = actualPublication.getIdentifier().toString();
 
         var expectedTimestamp = eventBody.getTimestamp();
@@ -486,16 +486,16 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var sqsEvent = createSqsEvent(eventBody);
 
         var publications = handler.handleRequest(sqsEvent, CONTEXT);
-        assertThat(publications.get(0), notNullValue());
+        assertThat(publications.getFirst(), notNullValue());
     }
 
     @Test
-    void shouldBeAbleToParseCristinTags() throws IOException {
+    void shouldBeAbleToParseCristinTagsAndRemoveDuplicates() throws IOException {
         var cristinObjectWithTags = CristinDataGenerator.objectWithTags();
         var eventBody = createEventBody(cristinObjectWithTags);
         var sqsEvent = createSqsEvent(eventBody);
         var publications = handler.handleRequest(sqsEvent, CONTEXT);
-        assertThat(publications.get(0), notNullValue());
+        assertThat(publications.getFirst().getEntityDescription().getTags(), hasSize(1));
     }
 
     @Test
@@ -505,7 +505,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var eventBody = createEventBody(cristinObjectWithCristinHrcsCategoriesAndActivities);
         var sqsEvent = createSqsEvent(eventBody);
         var publications = handler.handleRequest(sqsEvent, CONTEXT);
-        assertThat(publications.get(0), notNullValue());
+        assertThat(publications.getFirst(), notNullValue());
     }
 
     @Test
@@ -520,7 +520,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var sqsEvent = createSqsEvent(eventBody);
         var publications = handler.handleRequest(sqsEvent, CONTEXT);
 
-        var actualPublication = publications.get(0);
+        var actualPublication = publications.getFirst();
         var expectedFileNameStoredInS3 = actualPublication.getIdentifier().toString();
         var expectedPartOFCristinPublication = NvaPublicationPartOfCristinPublication.builder()
                                                    .withPartOf(NvaPublicationPartOf.builder()
@@ -597,7 +597,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
         var publications = handler.handleRequest(sqsEvent, CONTEXT);
-        assertThat(publications.get(0), notNullValue());
+        assertThat(publications.getFirst(), notNullValue());
     }
 
     @Test
@@ -762,7 +762,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var sqsEvent = createSqsEvent(eventBody);
         var publications = handler.handleRequest(sqsEvent, CONTEXT);
 
-        var pages = ((JournalArticle) publications.get(0).getEntityDescription().getReference()
+        var pages = ((JournalArticle) publications.getFirst().getEntityDescription().getReference()
                                           .getPublicationInstance()).getPages();
 
         assertThat(pages.getBegin(), is(equalTo(pages.getEnd())));
