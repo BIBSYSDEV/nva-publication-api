@@ -32,19 +32,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
 import net.datafaker.providers.base.BaseFaker;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.lambda.constants.HardcodedValues;
 import no.unit.nva.cristin.mapper.CristinAssociatedUri;
-import no.unit.nva.cristin.mapper.CristinLocale;
-import no.unit.nva.cristin.mapper.CristinLectureOrPosterMetaData;
-import no.unit.nva.cristin.mapper.PresentationEvent;
-import no.unit.nva.cristin.mapper.ScientificPerson;
-import no.unit.nva.cristin.mapper.ScientificResource;
-import no.unit.nva.cristin.mapper.artisticproduction.ArtisticGenre;
-import no.unit.nva.cristin.mapper.artisticproduction.ArtisticProductionTimeUnit;
-import no.unit.nva.cristin.mapper.artisticproduction.CristinArtisticProduction;
 import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinContributor;
 import no.unit.nva.cristin.mapper.CristinContributorRole;
@@ -53,9 +44,12 @@ import no.unit.nva.cristin.mapper.CristinContributorsAffiliation;
 import no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities;
 import no.unit.nva.cristin.mapper.CristinJournalPublication;
 import no.unit.nva.cristin.mapper.CristinJournalPublicationJournal;
+import no.unit.nva.cristin.mapper.CristinLectureOrPosterMetaData;
+import no.unit.nva.cristin.mapper.CristinLocale;
 import no.unit.nva.cristin.mapper.CristinMainCategory;
 import no.unit.nva.cristin.mapper.CristinMediaContribution;
 import no.unit.nva.cristin.mapper.CristinMediumType;
+import no.unit.nva.cristin.mapper.CristinMediumTypeCode;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinPresentationalWork;
 import no.unit.nva.cristin.mapper.CristinPublisher;
@@ -64,8 +58,13 @@ import no.unit.nva.cristin.mapper.CristinSource;
 import no.unit.nva.cristin.mapper.CristinSubjectField;
 import no.unit.nva.cristin.mapper.CristinTags;
 import no.unit.nva.cristin.mapper.CristinTitle;
-import no.unit.nva.cristin.mapper.CristinMediumTypeCode;
+import no.unit.nva.cristin.mapper.PresentationEvent;
+import no.unit.nva.cristin.mapper.ScientificPerson;
+import no.unit.nva.cristin.mapper.ScientificResource;
 import no.unit.nva.cristin.mapper.VerificationStatus;
+import no.unit.nva.cristin.mapper.artisticproduction.ArtisticGenre;
+import no.unit.nva.cristin.mapper.artisticproduction.ArtisticProductionTimeUnit;
+import no.unit.nva.cristin.mapper.artisticproduction.CristinArtisticProduction;
 import no.unit.nva.cristin.mapper.artisticproduction.CristinProduct;
 import no.unit.nva.cristin.mapper.exhibition.CristinExhibition;
 import no.unit.nva.cristin.mapper.exhibition.ExhibitionEvent;
@@ -299,10 +298,11 @@ public final class CristinDataGenerator {
     }
 
     private static List<CristinTags> randomTagList() {
+        var tag = randomString();
         return List.of(CristinTags.builder()
-                           .withBokmal(randomString())
-                           .withEnglish(randomString())
-                           .withNynorsk(randomString())
+                           .withBokmal(tag)
+                           .withEnglish(tag)
+                           .withNynorsk(tag)
                            .build());
     }
 
