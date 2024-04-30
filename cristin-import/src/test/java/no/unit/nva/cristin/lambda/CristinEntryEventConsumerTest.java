@@ -8,13 +8,17 @@ import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.JSON;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.NVI_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.SUCCESS_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.BOOK;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.EVENT;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.JOURNAL;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.ACADEMIC_REVIEW;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.CHAPTER_ACADEMIC;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.CONFERENCE_LECTURE;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.FEATURE_ARTICLE;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.INTERVIEW;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.JOURNAL_ARTICLE;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.MUSICAL_PERFORMANCE;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.SHORT_COMMUNICATION;
 import static no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException.ERROR_PARSING_MAIN_CATEGORY;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
@@ -82,7 +86,10 @@ import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.instancetypes.artistic.music.Concert;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.event.Lecture;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
+import no.unit.nva.model.instancetypes.journal.AcademicLiteratureReview;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.ImportResult;
@@ -600,6 +607,20 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
         assertNull(((Event) existingPublication.getEntityDescription().getReference().getPublicationContext()).getPlace());
         assertNotNull(((Event) updatedPublication.getEntityDescription().getReference().getPublicationContext()).getPlace());
+    }
+
+    @Test
+    void shouldUpdateExistingPublicationWithJournalArticleNumberWhenMissing() throws IOException {
+        var cristinObject = CristinDataGenerator.createObjectWithCategory(JOURNAL, SHORT_COMMUNICATION);
+        var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), ProfessionalArticle.class);
+        existingPublication.getEntityDescription().getReference().setPublicationInstance(
+            new AcademicArticle(null, null, null, null));
+        resourceService.updatePublication(existingPublication);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var updatedPublication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+
+        assertNotNull(((JournalArticle) updatedPublication.getEntityDescription().getReference().getPublicationInstance()).getArticleNumber());
     }
 
     private Publication persistPublicationWithCristinId(Integer id, Class<?> instance) {

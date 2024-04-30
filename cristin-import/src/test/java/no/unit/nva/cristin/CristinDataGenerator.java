@@ -466,6 +466,7 @@ public final class CristinDataGenerator {
                    .withTags(randomTagList())
                    .withCristinAssociatedUris(List.of(new CristinAssociatedUri("DATA", randomUri().toString())))
                    .withLectureOrPosterMetaData(randomLectureOrPosterMetaData())
+                   .withJournalPublication(randomJournalPublication())
                    .build();
     }
 
@@ -815,6 +816,7 @@ public final class CristinDataGenerator {
                    .withPagesEnd(String.valueOf(pagesBegin + smallRandomNumber()))
                    .withVolume(String.valueOf(smallRandomNumber()))
                    .withDoi(randomDoiString())
+                   .withArticleNumber(randomString())
                    .build();
     }
 

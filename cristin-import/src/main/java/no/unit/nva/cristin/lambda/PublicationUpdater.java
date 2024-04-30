@@ -2,14 +2,24 @@ package no.unit.nva.cristin.lambda;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static nva.commons.core.attempt.Try.attempt;
 import java.util.ArrayList;
 import java.util.List;
+import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
+import no.unit.nva.model.instancetypes.journal.AcademicLiteratureReview;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.PopularScienceArticle;
+import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
+import no.unit.nva.model.pages.Pages;
+import nva.commons.core.JacocoGenerated;
 
 public final class PublicationUpdater {
 
@@ -41,8 +51,79 @@ public final class PublicationUpdater {
     private static Reference updateReference(PublicationRepresentations publicationRepresentations) {
         var existinReference = publicationRepresentations.getExistingPublication().getEntityDescription().getReference();
         existinReference.setPublicationContext(updatePublicationContext(publicationRepresentations));
+        existinReference.setPublicationInstance(updatePublicationInstance(publicationRepresentations));
         return existinReference;
 
+    }
+
+    private static PublicationInstance<? extends Pages> updatePublicationInstance(
+        PublicationRepresentations publicationRepresentations) {
+        var existingPublicationInstance = getPublicationInstance(publicationRepresentations.getExistingPublication());
+        var incomingPublicationInstance = getPublicationInstance(publicationRepresentations.getIncomingPublication());
+
+        if (existingPublicationInstance instanceof JournalArticle existingJournalArticle
+            && incomingPublicationInstance instanceof JournalArticle incomingJournalArticle
+            && existingPublicationInstance.getInstanceType().equals(incomingPublicationInstance.getInstanceType())) {
+                return updateJournalArticle(existingJournalArticle, incomingJournalArticle);
+        } else {
+            return existingPublicationInstance;
+        }
+    }
+
+    @JacocoGenerated
+    private static PublicationInstance<? extends Pages> updateJournalArticle(JournalArticle existingJournalArticle,
+                                                                             JournalArticle incomingJournalArticle) {
+        return switch (existingJournalArticle) {
+            case ProfessionalArticle professionalArticle ->
+                getProfessionalArticle(existingJournalArticle, incomingJournalArticle);
+            case PopularScienceArticle popularScienceArticle ->
+                getPopularScienceArticle(existingJournalArticle, incomingJournalArticle);
+            case AcademicArticle academicArticle ->
+                getAcademicArticle(existingJournalArticle, incomingJournalArticle);
+            case AcademicLiteratureReview academicLiteratureReview ->
+                getAcademicLiteratureReview(existingJournalArticle, incomingJournalArticle);
+            case null, default -> existingJournalArticle;
+        };
+    }
+
+    @JacocoGenerated
+    private static AcademicLiteratureReview getAcademicLiteratureReview(JournalArticle existingJournalArticle,
+                                                                        JournalArticle incomingJournalArticle) {
+        return new AcademicLiteratureReview(existingJournalArticle.getPages(),
+                                            existingJournalArticle.getVolume(),
+                                            existingJournalArticle.getIssue(),
+                                            incomingJournalArticle.getArticleNumber());
+    }
+
+    @JacocoGenerated
+    private static AcademicArticle getAcademicArticle(JournalArticle existingJournalArticle,
+                                                      JournalArticle incomingJournalArticle) {
+        return new AcademicArticle(existingJournalArticle.getPages(), existingJournalArticle.getVolume(),
+                                   existingJournalArticle.getIssue(),
+                                   incomingJournalArticle.getArticleNumber());
+    }
+
+    @JacocoGenerated
+    private static PopularScienceArticle getPopularScienceArticle(JournalArticle existingJournalArticle,
+                                                                  JournalArticle incomingJournalArticle) {
+        return new PopularScienceArticle(existingJournalArticle.getPages(), existingJournalArticle.getVolume(),
+                                         existingJournalArticle.getIssue(),
+                                         incomingJournalArticle.getArticleNumber());
+    }
+
+    @JacocoGenerated
+    private static ProfessionalArticle getProfessionalArticle(JournalArticle existingJournalArticle,
+                                                              JournalArticle incomingJournalArticle) {
+        return new ProfessionalArticle(existingJournalArticle.getPages(), existingJournalArticle.getVolume(),
+                                       existingJournalArticle.getIssue(),
+                                       incomingJournalArticle.getArticleNumber());
+    }
+
+    private static PublicationInstance<? extends Pages> getPublicationInstance(Publication publication) {
+        return publication
+                   .getEntityDescription()
+                   .getReference()
+                   .getPublicationInstance();
     }
 
     private static PublicationContext updatePublicationContext(PublicationRepresentations publicationRepresentations) {
