@@ -934,10 +934,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldUpdateExistingPendingPublishingRequestWhenPublicationUpdateRemovesFiles()
+    void shouldCompleteExistingPendingPublishingRequestWhenPublicationUpdateRemovesFilesAndFilesAreNotPublished()
         throws IOException, ApiGatewayException {
-        var persistedPublication = persistPublication(createNonDegreePublication().copy()).build();
-        publish(persistedPublication);
+        var persistedPublication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(customerId,
+                                                                                                  PUBLISHED, publicationService);
         var existingTicket = TicketEntry.requestNewTicket(persistedPublication, PublishingRequestCase.class)
                                  .persistNewTicket(ticketService);
         var updatedPublication = persistedPublication.copy().withAssociatedArtifacts(List.of()).build();
@@ -1560,6 +1560,19 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(event, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(SC_FORBIDDEN)));
+    }
+
+    @Test
+    void shouldAllowCuratorToRemovePublishedFile()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(customerId, PUBLISHED,
+                                                                                       publicationService);
+        var updatedPublication = publication.copy().withAssociatedArtifacts(Collections.emptyList()).build();
+        var event = curatorForPublicationUpdatesPublication(updatedPublication);
+
+        updatePublicationHandler.handleRequest(event, output, context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
     }
 
     private Publication createUnpublishedPublication() throws ApiGatewayException {

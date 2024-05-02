@@ -59,7 +59,6 @@ import no.unit.nva.publication.validation.DefaultPublicationValidator;
 import no.unit.nva.publication.validation.PublicationValidationException;
 import no.unit.nva.publication.validation.PublicationValidator;
 import no.unit.nva.s3.S3Driver;
-import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -107,7 +106,7 @@ public class UpdatePublicationHandler
     private final HttpClient httpClient;
     private final PublicationValidator publicationValidator;
     private final String apiHost;
-    private UriRetriever uriRetriever;
+    private final UriRetriever uriRetriever;
 
     /**
      * Default constructor for MainHandler.
@@ -129,11 +128,7 @@ public class UpdatePublicationHandler
      * Constructor for MainHandler.
      *
      * @param resourceService       publicationService
-     * @param ticketService
      * @param environment           environment
-     * @param identityServiceClient
-     * @param eventBridgeClient
-     * @param s3Client
      */
     public UpdatePublicationHandler(ResourceService resourceService,
                                     TicketService ticketService,
@@ -307,7 +302,7 @@ public class UpdatePublicationHandler
         validateRequest(identifierInPath, input);
         permissionStrategy.authorize(UPDATE);
 
-        validateRemovalOfPublishedFiles(existingPublication, input, userInstance);
+        validateRemovalOfPublishedFiles(existingPublication, input, permissionStrategy);
 
         var publicationUpdate = input.generatePublicationUpdate(existingPublication);
 
@@ -322,18 +317,15 @@ public class UpdatePublicationHandler
 
     private void validateRemovalOfPublishedFiles(Publication existingPublication,
                                                  UpdatePublicationRequest input,
-                                                 UserInstance userInstance) throws ForbiddenException {
+                                                 PublicationPermissionStrategy permissionStrategy) throws ForbiddenException {
         var inputFiles = input.getAssociatedArtifacts().stream()
                              .filter(PublishedFile.class::isInstance)
-                             .map(PublishedFile.class::cast)
-                             .toList();
-        var noChanges =
-            existingPublication.getAssociatedArtifacts().stream()
-                .filter(PublishedFile.class::isInstance)
-                .map(PublishedFile.class::cast)
-                .allMatch(inputFiles::contains);
+                             .map(PublishedFile.class::cast).toList();
+        var existingFiles = existingPublication.getAssociatedArtifacts().stream()
+                                .filter(PublishedFile.class::isInstance)
+                                .map(PublishedFile.class::cast);
 
-        if (!noChanges) {
+        if (!existingFiles.allMatch(inputFiles::contains) && !permissionStrategy.isCuratorOnPublication()) {
             throw new ForbiddenException();
         }
     }
