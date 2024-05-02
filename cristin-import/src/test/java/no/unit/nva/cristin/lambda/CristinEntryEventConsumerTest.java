@@ -8,10 +8,8 @@ import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.JSON;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.NVI_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.SUCCESS_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX;
-import static no.unit.nva.cristin.mapper.CristinMainCategory.BOOK;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.EVENT;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.JOURNAL;
-import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.ACADEMIC_REVIEW;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.CHAPTER_ACADEMIC;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.CONFERENCE_LECTURE;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.FEATURE_ARTICLE;
@@ -80,14 +78,15 @@ import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryExceptio
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryException;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.instancetypes.artistic.music.Concert;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
-import no.unit.nva.model.instancetypes.journal.AcademicLiteratureReview;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.publication.external.services.UriRetriever;
@@ -596,6 +595,18 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
+    void shouldAddNewFieldsWhenExistingPublicationIsEmpty() throws IOException {
+        var cristinObject = CristinDataGenerator.randomObject();
+        persistEmptyPublicationWithCristinId(cristinObject.getId());
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var updatedPublication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+
+        assertNotNull(updatedPublication.getProjects());
+        assertNotNull(updatedPublication.getFundings());
+    }
+
+    @Test
     void shouldUpdateExistingPublicationEventWithEventPlaceWhenMissing() throws IOException {
         var cristinObject = CristinDataGenerator.createObjectWithCategory(EVENT, CONFERENCE_LECTURE);
         var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), Lecture.class);
@@ -625,6 +636,18 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
     private Publication persistPublicationWithCristinId(Integer id, Class<?> instance) {
         var publication = randomPublication(instance);
+        publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", id.toString())));
+        return resourceService.createPublicationFromImportedEntry(publication);
+    }
+
+    private Publication persistEmptyPublicationWithCristinId(Integer id) {
+        var publication = randomPublication();
+        publication.setLink(null);
+        publication.setHandle(null);
+        publication.setFundings(null);
+        publication.setDoi(null);
+        publication.setEntityDescription(new EntityDescription().copy().withReference(new Reference()).build());
+        publication.setProjects(null);
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", id.toString())));
         return resourceService.createPublicationFromImportedEntry(publication);
     }

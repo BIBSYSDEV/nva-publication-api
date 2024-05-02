@@ -2,16 +2,17 @@ package no.unit.nva.cristin.lambda;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static nva.commons.core.attempt.Try.attempt;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.AcademicLiteratureReview;
@@ -30,7 +31,43 @@ public final class PublicationUpdater {
         var existingPublication = publicationRepresentations.getExistingPublication();
         existingPublication.setAssociatedArtifacts(updatedAssociatedLinks(publicationRepresentations));
         existingPublication.setEntityDescription(updatedEntityDescription(publicationRepresentations));
+        existingPublication.setFundings(updateFundings(publicationRepresentations));
+        existingPublication.setProjects(updateProjects(publicationRepresentations));
+        existingPublication.setHandle(updateHandle(publicationRepresentations));
+        existingPublication.setLink(updateLink(publicationRepresentations));
         return publicationRepresentations;
+    }
+
+    private static List<ResearchProject> updateProjects(PublicationRepresentations publicationRepresentations) {
+        var existingProjects = publicationRepresentations.getExistingPublication().getProjects();
+        var incomingProjects = publicationRepresentations.getExistingPublication().getProjects();
+        return shouldBeUpdated(existingProjects, incomingProjects) ? incomingProjects : existingProjects;
+    }
+
+    private static boolean shouldBeUpdated(List<?> oldList, List<?> newList) {
+        return oldList.isEmpty() && !newList.isEmpty();
+    }
+
+    private static URI updateLink(PublicationRepresentations publicationRepresentations) {
+        var existingLink = publicationRepresentations.getExistingPublication().getLink();
+        var incomingLink = publicationRepresentations.getIncomingPublication().getLink();
+        return shouldBeUpdated(existingLink, incomingLink) ? incomingLink : existingLink;
+    }
+
+    private static boolean shouldBeUpdated(Object oldEntry, Object newEntry) {
+        return isNull(oldEntry) && nonNull(newEntry);
+    }
+
+    private static URI updateHandle(PublicationRepresentations publicationRepresentations) {
+        var existingHandle = publicationRepresentations.getExistingPublication().getHandle();
+        var incomingHandle = publicationRepresentations.getIncomingPublication().getHandle();
+        return shouldBeUpdated(existingHandle, incomingHandle) ? incomingHandle : existingHandle;
+    }
+
+    private static List<Funding> updateFundings(PublicationRepresentations publicationRepresentations) {
+        var existingFundings = publicationRepresentations.getExistingPublication().getFundings();
+        var incomingFundings = publicationRepresentations.getIncomingPublication().getFundings();
+        return shouldBeUpdated(existingFundings, incomingFundings) ? incomingFundings : existingFundings;
     }
 
     private static EntityDescription updatedEntityDescription(PublicationRepresentations publicationRepresentations) {
@@ -52,8 +89,19 @@ public final class PublicationUpdater {
         var existinReference = publicationRepresentations.getExistingPublication().getEntityDescription().getReference();
         existinReference.setPublicationContext(updatePublicationContext(publicationRepresentations));
         existinReference.setPublicationInstance(updatePublicationInstance(publicationRepresentations));
+        existinReference.setDoi(updateDoi(publicationRepresentations));
         return existinReference;
 
+    }
+
+    private static URI updateDoi(PublicationRepresentations publicationRepresentations) {
+        var existingDoi = getDoi(publicationRepresentations.getExistingPublication());
+        var incomingDoi = getDoi(publicationRepresentations.getIncomingPublication());
+        return shouldBeUpdated(existingDoi, incomingDoi) ? incomingDoi : existingDoi;
+    }
+
+    private static URI getDoi(Publication publication) {
+        return publication.getEntityDescription().getReference().getDoi();
     }
 
     private static PublicationInstance<? extends Pages> updatePublicationInstance(
@@ -132,7 +180,7 @@ public final class PublicationUpdater {
         if (existingPublicationContext instanceof Event existingEvent && incomingPublicationContext instanceof Event incomingEvent) {
             var existingPlace = existingEvent.getPlace();
             var incomingPlace = incomingEvent.getPlace();
-            if (isNull(existingPlace) && nonNull(incomingPlace)) {
+            if (shouldBeUpdated(existingPlace, incomingPlace)) {
                 return new Event.Builder()
                            .withLabel(existingEvent.getLabel())
                            .withAgent(existingEvent.getAgent())
