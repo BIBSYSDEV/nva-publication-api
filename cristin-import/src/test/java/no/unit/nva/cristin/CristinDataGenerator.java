@@ -145,7 +145,7 @@ public final class CristinDataGenerator {
 
     public static CristinPresentationalWork randomPresentationalWork() {
         return CristinPresentationalWork.builder()
-                   .withPresentationType(randomWord())
+                   .withPresentationType("PROSJEKT")
                    .withIdentifier(smallRandomNumber())
                    .build();
     }
@@ -697,7 +697,7 @@ public final class CristinDataGenerator {
                    .build();
     }
 
-    private static CristinObject randomArtisticProduction(CristinSecondaryCategory secondaryCategory) {
+    public static CristinObject randomArtisticProduction(CristinSecondaryCategory secondaryCategory) {
         return CristinObject.builder()
                    .withId(largeRandomNumber())
                    .withMainCategory(CristinMainCategory.ARTISTIC_PRODUCTION)
@@ -777,7 +777,6 @@ public final class CristinDataGenerator {
                    .withContributors(contributors)
                    .withBookOrReportMetadata(randomBookOrReportMetadata())
                    .withPublicationOwner(HardcodedValues.SIKT_OWNER)
-                   .withCristinGrants(List.of(randomCristinGrant()))
                    .withPresentationalWork(List.of(randomPresentationalWork()))
                    .build();
     }
