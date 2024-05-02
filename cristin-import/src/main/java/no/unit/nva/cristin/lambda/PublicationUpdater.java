@@ -45,7 +45,7 @@ public final class PublicationUpdater {
     }
 
     private static boolean shouldBeUpdated(List<?> oldList, List<?> newList) {
-        return oldList.isEmpty() && !newList.isEmpty();
+        return nonNull(oldList) && oldList.isEmpty() && !newList.isEmpty();
     }
 
     private static URI updateLink(PublicationRepresentations publicationRepresentations) {
@@ -182,11 +182,11 @@ public final class PublicationUpdater {
             var incomingPlace = incomingEvent.getPlace();
             if (shouldBeUpdated(existingPlace, incomingPlace)) {
                 return new Event.Builder()
-                           .withLabel(existingEvent.getLabel())
-                           .withAgent(existingEvent.getAgent())
-                           .withTime(existingEvent.getTime())
-                           .withProduct(existingEvent.getProduct().orElse(null))
-                           .withSubEvent(existingEvent.getSubEvent().orElse(null))
+                           .withLabel(nonNull(existingEvent.getLabel()) ? existingEvent.getLabel() : incomingEvent.getLabel())
+                           .withAgent(nonNull(existingEvent.getAgent()) ? existingEvent.getAgent() : incomingEvent.getAgent())
+                           .withTime(nonNull(existingEvent.getTime()) ? existingEvent.getTime() : incomingEvent.getTime())
+                           .withProduct(existingEvent.getProduct().orElse(incomingEvent.getProduct().orElse(null)))
+                           .withSubEvent(existingEvent.getSubEvent().orElse(incomingEvent.getSubEvent().orElse(null)))
                            .withPlace(incomingPlace)
                            .build();
             } else {
