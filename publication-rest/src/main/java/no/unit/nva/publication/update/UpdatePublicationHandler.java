@@ -34,6 +34,7 @@ import no.unit.nva.model.UnpublishingNote;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.commons.customer.Customer;
@@ -58,12 +59,12 @@ import no.unit.nva.publication.validation.DefaultPublicationValidator;
 import no.unit.nva.publication.validation.PublicationValidationException;
 import no.unit.nva.publication.validation.PublicationValidator;
 import no.unit.nva.s3.S3Driver;
-import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
@@ -105,7 +106,7 @@ public class UpdatePublicationHandler
     private final HttpClient httpClient;
     private final PublicationValidator publicationValidator;
     private final String apiHost;
-    private UriRetriever uriRetriever;
+    private final UriRetriever uriRetriever;
 
     /**
      * Default constructor for MainHandler.
@@ -127,11 +128,7 @@ public class UpdatePublicationHandler
      * Constructor for MainHandler.
      *
      * @param resourceService       publicationService
-     * @param ticketService
      * @param environment           environment
-     * @param identityServiceClient
-     * @param eventBridgeClient
-     * @param s3Client
      */
     public UpdatePublicationHandler(ResourceService resourceService,
                                     TicketService ticketService,
@@ -295,15 +292,19 @@ public class UpdatePublicationHandler
                    .build();
     }
 
-    private Publication updateMetadata(UpdatePublicationRequest input, SortableIdentifier identifierInPath,
+    private Publication updateMetadata(UpdatePublicationRequest input,
+                                       SortableIdentifier identifierInPath,
                                        Publication existingPublication,
-                                       PublicationPermissionStrategy permissionStrategy, RequestInfo requestInfo,
+                                       PublicationPermissionStrategy permissionStrategy,
+                                       RequestInfo requestInfo,
                                        UserInstance userInstance)
         throws ApiGatewayException {
         validateRequest(identifierInPath, input);
         permissionStrategy.authorize(UPDATE);
 
-        Publication publicationUpdate = input.generatePublicationUpdate(existingPublication);
+        validateRemovalOfPublishedFiles(existingPublication, input, permissionStrategy);
+
+        var publicationUpdate = input.generatePublicationUpdate(existingPublication);
 
         var customerApiClient = getCustomerApiClient();
         var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, publicationUpdate.getPublisher().getId());
@@ -312,6 +313,21 @@ public class UpdatePublicationHandler
         upsertPublishingRequestIfNeeded(existingPublication, publicationUpdate, customer, requestInfo);
 
         return resourceService.updatePublication(publicationUpdate);
+    }
+
+    private void validateRemovalOfPublishedFiles(Publication existingPublication,
+                                                 UpdatePublicationRequest input,
+                                                 PublicationPermissionStrategy permissionStrategy) throws ForbiddenException {
+        var inputFiles = input.getAssociatedArtifacts().stream()
+                             .filter(PublishedFile.class::isInstance)
+                             .map(PublishedFile.class::cast).toList();
+        var existingFiles = existingPublication.getAssociatedArtifacts().stream()
+                                .filter(PublishedFile.class::isInstance)
+                                .map(PublishedFile.class::cast);
+
+        if (!existingFiles.allMatch(inputFiles::contains) && !permissionStrategy.isCuratorOnPublication()) {
+            throw new ForbiddenException();
+        }
     }
 
     private void setRrsOnFiles(Publication publicationUpdate, Publication existingPublication, Customer customer,
