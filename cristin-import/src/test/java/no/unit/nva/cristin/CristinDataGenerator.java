@@ -785,7 +785,7 @@ public final class CristinDataGenerator {
         return CristinGrant.builder()
                    .withSourceCode(randomString())
                    .withIdentifier(randomString())
-                   .withYearTo(2000)
+                   .withYearFrom(2000)
                    .withYearTo(2001)
                    .build();
     }
