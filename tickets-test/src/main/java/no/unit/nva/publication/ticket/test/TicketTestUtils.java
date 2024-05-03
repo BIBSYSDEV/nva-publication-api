@@ -4,8 +4,11 @@ import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
+import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublicationNonDegree;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,6 +19,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
@@ -29,6 +34,9 @@ import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.License;
 import no.unit.nva.model.associatedartifacts.file.UploadDetails;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
@@ -110,6 +118,23 @@ public final class TicketTestUtils {
         publication.setCuratingInstitutions(
             Set.of(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0")));
         return persistPublication(resourceService, publication);
+    }
+
+    public static Publication createPersistedPublishedPublicationWithUnpublishedFilesAndContributor(URI userCristinId,
+                                                                                                    ResourceService resourceService)
+        throws ApiGatewayException {
+        var publication = randomPublication().copy()
+                              .withEntityDescription(randomEntityDescription(JournalArticle.class))
+                              .withStatus(PUBLISHED)
+                              .withAssociatedArtifacts(new AssociatedArtifactList())
+                              .build();
+
+        var identity = new Identity.Builder().withName(randomString()).withId(userCristinId).build();
+        var contributor = new Contributor.Builder().withIdentity(identity).withRole(new RoleType(Role.CREATOR)).build();
+        var entityDesc = publication.getEntityDescription().copy().withContributors(List.of(contributor)).build();
+        var publicationWithContributor = publication.copy().withEntityDescription(entityDesc).build();
+
+        return persistPublication(resourceService, publicationWithContributor);
     }
 
     private static Publication persistPublication(ResourceService resourceService, Publication publication)

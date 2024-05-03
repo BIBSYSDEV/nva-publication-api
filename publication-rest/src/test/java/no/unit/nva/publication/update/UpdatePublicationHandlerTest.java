@@ -87,7 +87,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -116,13 +115,11 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.UnpublishingNote;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
-import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.License;
@@ -181,6 +178,7 @@ import org.hamcrest.core.Is;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -212,7 +210,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private final GetExternalClientResponse getExternalClientResponse = mock(GetExternalClientResponse.class);
     final Context context = new FakeContext();
-    ResourceService publicationService;
+    ResourceService resourceService;
     ByteArrayOutputStream output;
     protected UpdatePublicationHandler updatePublicationHandler;
     Publication publication;
@@ -224,6 +222,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private S3Client s3Client;
     private URI customerId;
     private UriRetriever uriRetriever;
+
+    public static Stream<Named<AccessRight>> privilegedUserProvider() {
+        return Stream.of(Named.of("Editor", MANAGE_RESOURCES_ALL), Named.of("Curator", MANAGE_RESOURCES_STANDARD));
+    }
 
     /**
      * Set up environment.
@@ -244,7 +246,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         lenient().when(environment.readEnv("BACKEND_CLIENT_AUTH_URL"))
             .thenReturn(baseUrl.toString());
 
-        publicationService = getResourceServiceBuilder().build();
+        resourceService = getResourceServiceBuilder().build();
         this.ticketService = getTicketService();
 
         this.eventBridgeClient = new FakeEventBridgeClient(EVENT_BUS_NAME);
@@ -259,7 +261,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         s3Client = mock(S3Client.class);
         var httpClient = WiremockHttpClient.create();
         updatePublicationHandler =
-            new UpdatePublicationHandler(publicationService, ticketService, environment, identityServiceClient,
+            new UpdatePublicationHandler(resourceService, ticketService, environment, identityServiceClient,
                                          eventBridgeClient, s3Client, secretsManagerClient, httpClient, uriRetriever);
         publication = createNonDegreePublication();
 
@@ -343,7 +345,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var publishedPublication = TicketTestUtils.createPersistedNonDegreePublication(customerId,
                                                                                        PUBLISHED,
-                                                                                       publicationService);
+                                                                                       resourceService);
 
         var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
 
@@ -365,7 +367,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var publishedPublication = TicketTestUtils.createPersistedNonDegreePublication(customerId,
                                                                                        PUBLISHED,
-                                                                                       publicationService);
+                                                                                       resourceService);
 
         var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
 
@@ -388,7 +390,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(customerId,
                                                                                        PublicationStatus.PUBLISHED,
-                                                                                       publicationService);
+                                                                                       resourceService);
 
         var existingTicket = TicketTestUtils.createCompletedTicket(publication, PublishingRequestCase.class,
                                                                    ticketService);
@@ -411,7 +413,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var publishedPublication = TicketTestUtils.createPersistedPublication(customerId,
                                                                               PUBLISHED,
-                                                                              publicationService);
+                                                                              resourceService);
         var completedTicket = persistCompletedPublishingRequest(publishedPublication);
         var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
 
@@ -432,7 +434,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws IOException, ApiGatewayException {
         var publishedPublication = TicketTestUtils.createPersistedPublication(customerId,
                                                                               PUBLISHED,
-                                                                              publicationService);
+                                                                              resourceService);
         var pendingTicket = createPendingPublishingRequest(publishedPublication);
         var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
 
@@ -450,7 +452,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var publishedPublication = TicketTestUtils.createPersistedPublication(customerId,
                                                                               PUBLISHED,
-                                                                              publicationService);
+                                                                              resourceService);
         persistCompletedPublishingRequest(publishedPublication);
         var pendingPublishingRequest = createPendingPublishingRequest(publishedPublication);
 
@@ -505,9 +507,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
     void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
         throws IOException, ApiGatewayException {
-        publicationService = serviceFailsOnModifyRequestWithRuntimeError();
+        resourceService = serviceFailsOnModifyRequestWithRuntimeError();
 
-        updatePublicationHandler = new UpdatePublicationHandler(publicationService,
+        updatePublicationHandler = new UpdatePublicationHandler(resourceService,
                                                                 ticketService,
                                                                 environment,
                                                                 identityServiceClient,
@@ -532,8 +534,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     void handlerLogsErrorDetailsOnUnexpectedException()
         throws IOException, ApiGatewayException {
         final TestAppender appender = createAppenderForLogMonitoring();
-        publicationService = serviceFailsOnModifyRequestWithRuntimeError();
-        updatePublicationHandler = new UpdatePublicationHandler(publicationService,
+        resourceService = serviceFailsOnModifyRequestWithRuntimeError();
+        updatePublicationHandler = new UpdatePublicationHandler(resourceService,
                                                                 ticketService,
                                                                 environment,
                                                                 identityServiceClient,
@@ -574,7 +576,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         try {
             return Resource
                        .fromPublication(publicationBuilder.build())
-                       .persistNew(publicationService, UserInstance.fromPublication(publication))
+                       .persistNew(resourceService, UserInstance.fromPublication(publication))
                        .copy();
         } catch (BadRequestException e) {
             throw new RuntimeException(e);
@@ -614,7 +616,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(SC_OK)));
 
-        var updatedPublication = publicationService.getPublicationByIdentifier(savedPublication.getIdentifier());
+        var updatedPublication = resourceService.getPublicationByIdentifier(savedPublication.getIdentifier());
 
         //inject modified date to the input object because modified date is not available before the actual update.
         publicationUpdate.setModifiedDate(updatedPublication.getModifiedDate());
@@ -688,7 +690,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(SC_OK)));
 
-        var updatedPublication = publicationService.getPublicationByIdentifier(savedPublication.getIdentifier());
+        var updatedPublication = resourceService.getPublicationByIdentifier(savedPublication.getIdentifier());
 
         //inject modified date to the input object because modified date is not available before the actual update.
         publicationUpdate.setModifiedDate(updatedPublication.getModifiedDate());
@@ -736,7 +738,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var thesisPublication = publication.copy().withEntityDescription(thesisPublishableEntityDescription()).build();
         var savedThesis = Resource
                               .fromPublication(thesisPublication)
-                              .persistNew(publicationService, UserInstance.fromPublication(publication));
+                              .persistNew(resourceService, UserInstance.fromPublication(publication));
         var updatedPublication = updateTitle(savedThesis);
         var input = ownerUpdatesOwnPublication(updatedPublication.getIdentifier(), updatedPublication);
         updatePublicationHandler.handleRequest(input, output, context);
@@ -750,7 +752,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var thesisPublication = publication.copy().withEntityDescription(thesisPublishableEntityDescription()).build();
         var savedThesis = Resource
                               .fromPublication(thesisPublication)
-                              .persistNew(publicationService, UserInstance.fromPublication(publication));
+                              .persistNew(resourceService, UserInstance.fromPublication(publication));
         var updatedPublication = updateTitle(savedThesis);
         var input = userUpdatesPublicationAndHasRightToUpdate(updatedPublication);
         updatePublicationHandler.handleRequest(input, output, context);
@@ -763,7 +765,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws IOException, ApiGatewayException {
         var publishedPublication = TicketTestUtils.createPersistedPublication(customerId,
                                                                               PUBLISHED,
-                                                                              publicationService);
+                                                                              resourceService);
 
         var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
 
@@ -814,7 +816,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var response = GatewayResponse.fromOutputStream(output, Publication.class);
         assertThat(response.getStatusCode(), is(equalTo(SC_OK)));
 
-        var updatedPublication = publicationService.getPublicationByIdentifier(savedPublication.getIdentifier());
+        var updatedPublication = resourceService.getPublicationByIdentifier(savedPublication.getIdentifier());
 
         publicationUpdate.setModifiedDate(updatedPublication.getModifiedDate());
 
@@ -836,7 +838,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var response = GatewayResponse.fromOutputStream(output, Publication.class);
         assertThat(response.getStatusCode(), is(equalTo(SC_OK)));
 
-        var updatedPublication = publicationService.getPublicationByIdentifier(savedPublication.getIdentifier());
+        var updatedPublication = resourceService.getPublicationByIdentifier(savedPublication.getIdentifier());
 
         publicationUpdate.setModifiedDate(updatedPublication.getModifiedDate());
 
@@ -857,7 +859,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var event = userWithAccessRightToEditDegree(publicationUpdate);
         updatePublicationHandler.handleRequest(event, output, context);
 
-        var updatedPublication = publicationService.getPublicationByIdentifier(degreePublication.getIdentifier());
+        var updatedPublication = resourceService.getPublicationByIdentifier(degreePublication.getIdentifier());
 
         publicationUpdate.setModifiedDate(updatedPublication.getModifiedDate());
 
@@ -879,7 +881,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
         assertThat(response.getStatusCode(), is(equalTo(SC_OK)));
 
-        var updatedPublication = publicationService.getPublicationByIdentifier(degreePublication.getIdentifier());
+        var updatedPublication = resourceService.getPublicationByIdentifier(degreePublication.getIdentifier());
 
         publicationUpdate.setModifiedDate(updatedPublication.getModifiedDate());
 
@@ -911,7 +913,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var thesisPublication = publication.copy().withEntityDescription(thesisPublishableEntityDescription()).build();
         var savedThesis = Resource
                               .fromPublication(thesisPublication)
-                              .persistNew(publicationService, UserInstance.fromPublication(publication));
+                              .persistNew(resourceService, UserInstance.fromPublication(publication));
         var publicationUpdate = updateTitle(savedThesis);
 
         when(getExternalClientResponse.getCustomerUri())
@@ -936,7 +938,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     void shouldCompleteExistingPendingPublishingRequestWhenPublicationUpdateRemovesFilesAndFilesAreNotPublished()
         throws IOException, ApiGatewayException {
         var persistedPublication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(customerId,
-                                                                                                  PUBLISHED, publicationService);
+                                                                                                  PUBLISHED,
+                                                                                                  resourceService);
         var existingTicket = TicketEntry.requestNewTicket(persistedPublication, PublishingRequestCase.class)
                                  .persistNewTicket(ticketService);
         var updatedPublication = persistedPublication.copy().withAssociatedArtifacts(List.of()).build();
@@ -951,7 +954,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldUpdateFilesForApprovalWhenPublicationUpdateHasFileChanges() throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
-            customerId, PUBLISHED, publicationService);
+            customerId, PUBLISHED, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
         var expectedFilesForApprovalBeforePublicationUpdate = getUnpublishedFiles(publication);
 
@@ -972,23 +975,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(filesForApproval, containsInAnyOrder(expectedFilesForApproval.toArray()));
     }
 
-    private static UnpublishedFile createFileWithRrs(RightsRetentionStrategy rrs) {
-        return createFileWithRrs(UUID.randomUUID(), rrs);
-    }
 
-    private static UnpublishedFile createFileWithRrs(UUID uuid, RightsRetentionStrategy rrs) {
-        return new UnpublishedFile(uuid,
-                                   RandomDataGenerator.randomString(),
-                                   RandomDataGenerator.randomString(),
-                                   RandomDataGenerator.randomInteger().longValue(),
-                                   RandomDataGenerator.randomUri(),
-                                   false,
-                                   PublisherVersion.ACCEPTED_VERSION,
-                                   (Instant) null,
-                                   rrs,
-                                   RandomDataGenerator.randomString(),
-                                   new UploadDetails(null, null));
-    }
 
     @Test
     void shouldNotSetCustomersConfiguredRrsWhenFileIsUnchanged() {
@@ -1016,7 +1003,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                         .withId(customerId)
                                                         .build())
                                      .build();
-        publicationWithRrs = publicationService.createPublicationFromImportedEntry(publicationWithRrs);
+        publicationWithRrs = resourceService.createPublicationFromImportedEntry(publicationWithRrs);
 
         publishedFileRrs.setRightsRetentionStrategy(OverriddenRightsRetentionStrategy.create(
             OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, null));
@@ -1028,7 +1015,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
 
-        var updatedPublication = publicationService.getPublicationByIdentifier(publicationUpdate.getIdentifier());
+        var updatedPublication = resourceService.getPublicationByIdentifier(publicationUpdate.getIdentifier());
         assertThat(updatedPublication.getAssociatedArtifacts(), hasSize(1));
         var actualPublishedFile = (PublishedFile) updatedPublication.getAssociatedArtifacts().getFirst();
         assertThat(actualPublishedFile.getRightsRetentionStrategy(),
@@ -1040,9 +1027,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     void shouldUpdatePublicationWithoutReferencedContext()
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithAdministrativeAgreement(customerId,
-                                                                                                publicationService);
+                                                                                                resourceService);
         publication.getEntityDescription().getReference().setDoi(null);
-        publicationService.updatePublication(publication);
+        resourceService.updatePublication(publication);
         TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService)
             .complete(publication, new Username(randomString())).persistUpdate(ticketService);
 
@@ -1126,7 +1113,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var userName = randomString();
 
         var publication = createPublicationWithoutDoiAndWithContributor(userId, userName);
-        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         var inputStream = createUnpublishHandlerRequest(publication, randomString(),
                                                         RandomPersonServiceResponse.randomUri(),
@@ -1147,12 +1134,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         assertTrue(publication.getAssociatedArtifacts().stream().anyMatch(PublishedFile.class::isInstance));
 
-        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         var inputStream = createUnpublishHandlerRequest(publication, userName,
                                                         RandomPersonServiceResponse.randomUri(), userCristinId);
         updatePublicationHandler.handleRequest(inputStream, output, context);
-        var updatedPublication = publicationService.getPublication(publication);
+        var updatedPublication = resourceService.getPublication(publication);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
         assertThat(updatedPublication.getStatus(), is(equalTo(PUBLISHED)));
@@ -1160,15 +1147,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldSetAllPendingAndNewTicketsToNotRelevantExceptUnpublishingTicketWhenUnpublishingPublication()
+    void shouldSetAllPendingAndNewTicketsToNotRelevantExceptUnpublishingTicketWhenUnpublishingPublicationWithoutPublishedFiles()
         throws ApiGatewayException, IOException {
         var userCristinId = RandomPersonServiceResponse.randomUri();
         var userName = randomString();
-
-        var publication = createPublicationWithoutDoiAndWithContributor(userCristinId, userName);
-
-        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
-
+        var publication = TicketTestUtils.createPersistedPublishedPublicationWithUnpublishedFilesAndContributor(userCristinId,
+                                                                                                                resourceService);
         GeneralSupportRequest.fromPublication(publication).persistNewTicket(ticketService);
         DoiRequest.fromPublication(publication).persistNewTicket(ticketService);
         var publishingRequestTicket =
@@ -1180,8 +1164,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                         RandomPersonServiceResponse.randomUri(), userCristinId);
         updatePublicationHandler.handleRequest(inputStream, output, context);
         var ticketsAfterUnpublishing =
-            publicationService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
-        var updatedPublication = publicationService.getPublication(publication);
+            resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
+        var updatedPublication = resourceService.getPublication(publication);
         assertThat(updatedPublication.getStatus(), is(equalTo(UNPUBLISHED)));
         assertThat(ticketsAfterUnpublishing,
                    hasItem(allOf(instanceOf(UnpublishRequest.class),
@@ -1195,17 +1179,47 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                            hasProperty("status", equalTo(NOT_APPLICABLE)))));
     }
 
+    @ParameterizedTest()
+    @DisplayName("User with access right should be able to unpublish publication with published files")
+    @MethodSource("privilegedUserProvider")
+    void shouldSetAllPendingAndNewTicketsToNotRelevantExceptUnpublishingTicketWhenCuratorUnpublishesPublicationWithPublishedFiles(AccessRight accessRight)
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(customerId, PUBLISHED,
+                                                                                       resourceService);
+        GeneralSupportRequest.fromPublication(publication).persistNewTicket(ticketService);
+        DoiRequest.fromPublication(publication).persistNewTicket(ticketService);
+        PublishingRequestCase.createOpeningCaseObject(publication)
+            .persistNewTicket(ticketService)
+            .complete(publication, new Username(randomString()))
+            .persistUpdate(ticketService);
+        var input = createUnpublishHandlerRequest(publication, randomString(), customerId, accessRight);
+        updatePublicationHandler.handleRequest(input, output, context);
+
+        var unpublishedPublication = resourceService.getPublication(publication);
+        var ticketsAfterUnpublishing =
+            resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
+
+        assertThat(unpublishedPublication.getStatus(), is(equalTo(UNPUBLISHED)));
+        assertThat(ticketsAfterUnpublishing, hasItem(allOf(instanceOf(UnpublishRequest.class),
+                                                           hasProperty("status", equalTo(PENDING)))));
+        assertThat(ticketsAfterUnpublishing, hasItem(allOf(instanceOf(DoiRequest.class),
+                                                           hasProperty("status", equalTo(NOT_APPLICABLE)))));
+        assertThat(ticketsAfterUnpublishing, hasItem(allOf(instanceOf(GeneralSupportRequest.class),
+                                                           hasProperty("status", equalTo(NOT_APPLICABLE)))));
+        assertThat(ticketsAfterUnpublishing, hasItem(allOf(instanceOf(PublishingRequestCase.class),
+                                                           hasProperty("status", equalTo(COMPLETED)))));
+    }
+
     @Test
     void shouldProduceUpdateDoiEventWhenUnpublishingIsSuccessful()
         throws ApiGatewayException, IOException {
 
         var userCristinId = RandomPersonServiceResponse.randomUri();
         var userName = randomString();
-        var doi = RandomPersonServiceResponse.randomUri();
+        var publication =
+            TicketTestUtils.createPersistedPublishedPublicationWithUnpublishedFilesAndContributor(userCristinId, resourceService);
 
-        var publication = createPublicationWithContributorAndDoi(userCristinId, userName, doi);
-
-        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         var inputStream = createUnpublishHandlerRequest(publication, userName,
                                                         RandomPersonServiceResponse.randomUri(), userCristinId);
@@ -1228,7 +1242,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var publication = createPublicationWithOwnerAndDoi(userCristinId, userName, doi);
 
-        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         var inputStream = createUnpublishRequestWithDuplicateOfValue(publication, userName,
                                                                      RandomPersonServiceResponse.randomUri(),
@@ -1252,7 +1266,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var publication = createPublicationWithOwnerAndDoi(userCristinId, userName, doi);
 
-        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         var inputStream = createUnpublishRequestWithDuplicateOfValue(publication, userName,
                                                                      RandomPersonServiceResponse.randomUri(),
@@ -1284,7 +1298,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var institutionId = RandomPersonServiceResponse.randomUri();
 
         var publication = createAndPersistPublicationWithoutDoiAndWithResourceOwner(userName, institutionId);
-        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         var inputStream = createUnpublishHandlerRequest(publication, userName, institutionId);
         updatePublicationHandler.handleRequest(inputStream, output, context);
@@ -1315,7 +1329,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var institutionId = RandomPersonServiceResponse.randomUri();
 
         var publication = createAndPersistPublicationWithoutDoiAndWithResourceOwner(userName, institutionId);
-        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         var unpublishRequest = new UnpublishPublicationRequest();
         var request = new HandlerRequestBuilder<UnpublishPublicationRequest>(restApiMapper)
@@ -1366,7 +1380,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws IOException, ApiGatewayException {
 
         var publication = createAndPersistPublicationWithoutDoi(true);
-        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         var publisherUri = publication.getPublisher().getId();
         var inputStream = createUnpublishHandlerRequest(publication, randomString(), publisherUri,
@@ -1376,14 +1390,14 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_ACCEPTED)));
 
-        var unpublishedPublication = publicationService.getPublication(publication);
+        var unpublishedPublication = resourceService.getPublication(publication);
         assertThat(unpublishedPublication.getStatus(), Is.is(IsEqual.equalTo(PublicationStatus.UNPUBLISHED)));
     }
 
     @Test
     void shouldReturnSuccessWhenEditorUnpublishesDegree() throws ApiGatewayException, IOException {
         var publication = createAndPersistDegreeWithoutDoi();
-        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         var publisherUri = publication.getPublisher().getId();
         var inputStream = createUnpublishHandlerRequest(publication, randomString(), publisherUri,
@@ -1397,7 +1411,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnUnauthorizedWhenNonEditorUnpublishesDegree() throws ApiGatewayException, IOException {
         var publication = createAndPersistDegreeWithoutDoi();
-        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         var publisherUri = publication.getPublisher().getId();
         var inputStream = createUnpublishHandlerRequest(publication, randomString(), publisherUri);
@@ -1411,7 +1425,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     void shouldUpdateUnpublishedResourceWithDuplicateOfValueWhenUserIsCurator()
         throws ApiGatewayException, IOException {
         var publication = createAndPersistDegreeWithoutDoi();
-        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         var duplicate = randomPublicationApiUri();
         var request = createUnpublishRequestWithDuplicateOfValue(publication,
                                                                  randomString(),
@@ -1420,7 +1434,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                  MANAGE_DEGREE, MANAGE_RESOURCES_STANDARD);
         updatePublicationHandler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        var updatedPublication = publicationService.getPublication(publication);
+        var updatedPublication = resourceService.getPublication(publication);
 
         assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_ACCEPTED)));
         assertThat(updatedPublication.getDuplicateOf(), Is.is(IsEqual.equalTo(duplicate)));
@@ -1436,7 +1450,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var publication = createAndPersistPublicationWithoutDoiAndWithResourceOwner(resourceOwnerUsername,
                                                                                     institutionId);
-        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         var inputStream = createUnpublishHandlerRequest(publication, curatorUsername, institutionId,
                                                         MANAGE_RESOURCES_STANDARD);
@@ -1458,10 +1472,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var publication = createAndPersistPublicationWithoutDoiAndWithResourceOwner(resourceOwnerUsername,
                                                                                     resourceOwnerInstitutionId);
-        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         var inputStream = createUnpublishHandlerRequestForTopLevelCristinOrg(publication, curatorUsername,
-                                                                             curatorInstitutionId, null, randomUri(),
+                                                                             curatorInstitutionId, randomUri(),
                                                                              AccessRight.MANAGE_RESOURCES_STANDARD);
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
@@ -1473,7 +1487,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     void shouldPersistUnpublishRequestWhenDeletingPublishedPublication()
         throws ApiGatewayException, IOException {
         var publication = createAndPersistDegreeWithoutDoi();
-        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         var publisherUri = publication.getPublisher().getId();
         var request = createUnpublishHandlerRequest(publication, randomString(), publisherUri,
                                                     MANAGE_DEGREE, MANAGE_RESOURCES_STANDARD);
@@ -1499,7 +1513,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
-        var deletePublication = publicationService.getPublication(publication);
+        var deletePublication = resourceService.getPublication(publication);
 
         assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_ACCEPTED)));
         assertThat(deletePublication.getStatus(), Is.is(IsEqual.equalTo(PublicationStatus.DELETED)));
@@ -1549,7 +1563,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     void shouldThrowExceptionWhenNonCuratorAttemptsToRemovePublishedFile()
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(customerId, PUBLISHED,
-                                                                                       publicationService);
+                                                                                       resourceService);
         var updatedPublication = publication.copy().withAssociatedArtifacts(Collections.emptyList()).build();
         var event = ownerUpdatesOwnPublication(updatedPublication.getIdentifier(), updatedPublication);
 
@@ -1562,7 +1576,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     void shouldAllowCuratorToRemovePublishedFile()
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(customerId, PUBLISHED,
-                                                                                       publicationService);
+                                                                                       resourceService);
         var updatedPublication = publication.copy().withAssociatedArtifacts(Collections.emptyList()).build();
         var event = curatorForPublicationUpdatesPublication(updatedPublication);
 
@@ -1573,9 +1587,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private Publication createUnpublishedPublication() throws ApiGatewayException {
         var publication = createAndPersistDegreeWithoutDoi();
-        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
-        publicationService.unpublishPublication(publicationService.getPublication(publication));
-        return publicationService.getPublication(publication);
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        resourceService.unpublishPublication(resourceService.getPublication(publication));
+        return resourceService.getPublication(publication);
     }
 
     private InputStream createUnpublishHandlerRequest(Publication publication, String username,
@@ -1607,7 +1621,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private InputStream createUnpublishHandlerRequestForTopLevelCristinOrg(Publication publication, String username,
-                                                                           URI institutionId, URI cristinId,
+                                                                           URI institutionId,
                                                                            URI topLevelCristinOrg,
                                                                            AccessRight... accessRight)
         throws JsonProcessingException {
@@ -1621,10 +1635,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                           .withTopLevelCristinOrgId(topLevelCristinOrg)
                           .withPersonCristinId(randomUri())
                           .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()));
-
-        if (nonNull(cristinId)) {
-            request.withPersonCristinId(cristinId);
-        }
 
         return request.build();
     }
@@ -1673,23 +1683,22 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                               .withEntityDescription(randomEntityDescription(JournalArticle.class))
                               .withDoi(null).build();
         var persistedPublication = Resource.fromPublication(publication)
-                                       .persistNew(publicationService, UserInstance.fromPublication(publication));
+                                       .persistNew(resourceService, UserInstance.fromPublication(publication));
 
         if (shouldBePublished) {
-            publicationService.publishPublication(UserInstance.fromPublication(persistedPublication),
-                                                  persistedPublication.getIdentifier());
+            resourceService.publishPublication(UserInstance.fromPublication(persistedPublication),
+                                               persistedPublication.getIdentifier());
         }
 
         return persistedPublication;
     }
 
-    private Publication createPublicationWithContributorAndDoi(URI contributorId, String contributorName,
-                                                               URI doi)
+    private Publication createPublicationWithContributorAndDoi(URI contributorId, String contributorName)
         throws ApiGatewayException {
 
         var publication = randomPublication().copy()
                               .withEntityDescription(randomEntityDescription(JournalArticle.class))
-                              .withDoi(doi).build();
+                              .build();
 
         var identity = new Identity.Builder().withName(contributorName).withId(contributorId).build();
         var contributor = new Contributor.Builder().withIdentity(identity).withRole(new RoleType(Role.CREATOR)).build();
@@ -1697,7 +1706,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publicationWithContributor = publication.copy().withEntityDescription(entityDesc).build();
 
         return Resource.fromPublication(publicationWithContributor)
-                   .persistNew(publicationService, UserInstance.fromPublication(publication));
+                   .persistNew(resourceService, UserInstance.fromPublication(publication));
     }
 
     private Publication createPublicationWithOwnerAndDoi(URI contributorId, String owner,
@@ -1717,13 +1726,13 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                               .withDoi(doi).build();
 
         return Resource.fromPublication(publication)
-                   .persistNew(publicationService, UserInstance.fromPublication(publication));
+                   .persistNew(resourceService, UserInstance.fromPublication(publication));
     }
 
     private Publication createPublicationWithoutDoiAndWithContributor(URI contributorId, String contributorName)
         throws ApiGatewayException {
 
-        return createPublicationWithContributorAndDoi(contributorId, contributorName, null);
+        return createPublicationWithContributorAndDoi(contributorId, contributorName);
     }
 
     private Publication createAndPersistDegreeWithoutDoi() throws BadRequestException {
@@ -1736,7 +1745,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publicationOfTypeDegree = publication.copy().withEntityDescription(entityDescription).build();
 
         return Resource.fromPublication(publicationOfTypeDegree)
-                   .persistNew(publicationService, UserInstance.fromPublication(publication));
+                   .persistNew(resourceService, UserInstance.fromPublication(publication));
     }
 
     private Publication createAndPersistPublicationWithoutDoiAndWithResourceOwner(String userName, URI institution)
@@ -1750,7 +1759,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                               .build();
 
         return Resource.fromPublication(publication)
-                   .persistNew(publicationService, UserInstance.fromPublication(publication));
+                   .persistNew(resourceService, UserInstance.fromPublication(publication));
     }
 
     private static LambdaDestinationInvocationDetail<DoiMetadataUpdateEvent> getDoiMetadataUpdateEvent(
@@ -1782,7 +1791,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         AssociatedArtifactList associatedArtifacts = publication.getAssociatedArtifacts();
         associatedArtifacts.add(newUnpublishedFile);
         publication.setAssociatedArtifacts(associatedArtifacts);
-        publicationService.updatePublication(publication);
+        resourceService.updatePublication(publication);
     }
 
     private static List<FileForApproval> getUnpublishedFiles(Publication publication) {
@@ -1792,14 +1801,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .map(FileForApproval::fromFile).toList();
     }
 
-    private void publish(Publication persistedPublication) throws ApiGatewayException {
-        publicationService.publishPublication(UserInstance.fromPublication(publication),
-                                              persistedPublication.getIdentifier());
-    }
-
     private Publication savePublication(Publication degreePublication) throws BadRequestException {
         UserInstance userInstance = UserInstance.fromPublication(degreePublication);
-        return Resource.fromPublication(degreePublication).persistNew(publicationService, userInstance);
+        return Resource.fromPublication(degreePublication).persistNew(resourceService, userInstance);
     }
 
     private void injectRandomContributorsWithoutCristinIdAndIdentity(Publication publication) {
@@ -1819,7 +1823,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var contributors = new ArrayList<>(savedPublication.getEntityDescription().getContributors());
         contributors.add(contributor);
         savedPublication.getEntityDescription().setContributors(contributors);
-        publicationService.updatePublication(savedPublication);
+        resourceService.updatePublication(savedPublication);
     }
 
     private Contributor createContributorForPublicationUpdate(URI cristinId) {
@@ -1853,7 +1857,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private Publication createSamplePublication() throws BadRequestException {
         UserInstance userInstance = UserInstance.fromPublication(publication);
-        return Resource.fromPublication(publication).persistNew(publicationService, userInstance);
+        return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
     }
 
     private InputStream requestWithoutUsername(Publication publicationUpdate)
