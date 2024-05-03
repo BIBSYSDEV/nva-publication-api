@@ -137,6 +137,21 @@ public final class TicketTestUtils {
         return persistPublication(resourceService, publicationWithContributor);
     }
 
+    public static Publication createPersistedPublishedPublicationWithUnpublishedFilesAndOwner(String owner,
+                                                                                                    ResourceService resourceService)
+        throws ApiGatewayException {
+        var publication = randomPublication().copy()
+                              .withEntityDescription(randomEntityDescription(JournalArticle.class))
+                              .withStatus(PUBLISHED)
+                              .withResourceOwner(new ResourceOwner(new Username(owner), randomUri()))
+                              .withAssociatedArtifacts(new AssociatedArtifactList())
+                              .build();
+        var publicationWithContributor = publication.copy().build();
+
+        return persistPublication(resourceService, publicationWithContributor);
+    }
+
+
     private static Publication persistPublication(ResourceService resourceService, Publication publication)
         throws ApiGatewayException {
         var persistedPublication = Resource

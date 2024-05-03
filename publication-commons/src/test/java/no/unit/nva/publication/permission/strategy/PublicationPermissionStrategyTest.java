@@ -48,6 +48,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
 import no.unit.nva.model.pages.MonographPages;
@@ -282,15 +283,14 @@ class PublicationPermissionStrategyTest {
     @Test
     void shouldAllowPermissionToUnpublishDegreeWhenUserIsCuratorWithPermissionToPublishDegree()
         throws JsonProcessingException, UnauthorizedException {
-        var username = randomString();
         var institution = randomUri();
         var cristinId = randomUri();
-        var requestInfo = createUserRequestInfo(username,
+        var publication = createDegreePhd(randomString(), institution);
+        var requestInfo = createUserRequestInfo(randomString(),
                                                 institution,
                                                 getCuratorWithPublishDegreeAccessRight(),
                                                 cristinId,
-                                                null);
-        var publication = createDegreePhd(username, institution);
+                                                publication.getResourceOwner().getOwnerAffiliation());
 
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
@@ -405,6 +405,7 @@ class PublicationPermissionStrategyTest {
 
         var requestInfo = createUserRequestInfo(resourceOwner, institutionId, cristinId, randomUri());
         var publication = createNonDegreePublication(resourceOwner, institutionId);
+        publication.setAssociatedArtifacts(new AssociatedArtifactList());
 
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
