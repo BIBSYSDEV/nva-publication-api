@@ -9,6 +9,8 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
@@ -45,6 +47,15 @@ public abstract class PermissionStrategy {
 
     protected boolean isVerifiedContributor(Contributor contributor) {
         return contributor.getIdentity() != null && contributor.getIdentity().getId() != null;
+    }
+
+
+    protected boolean hasPublishedFile() {
+        return publication.getAssociatedArtifacts().stream().anyMatch(PublishedFile.class::isInstance);
+    }
+
+    protected boolean hasUnpublishedFile() {
+        return publication.getAssociatedArtifacts().stream().anyMatch(UnpublishedFile.class::isInstance);
     }
 
     protected Boolean isOwner() {

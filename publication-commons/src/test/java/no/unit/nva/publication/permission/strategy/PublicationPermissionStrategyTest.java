@@ -361,7 +361,7 @@ class PublicationPermissionStrategyTest {
     }
 
     @Test
-    void shouldGivePermissionToUnpublishPublicationWhenUserIsContributor()
+    void shouldNotGivePermissionToUnpublishPublicationWithPublishedFilesWhenUserIsContributor()
         throws JsonProcessingException, UnauthorizedException {
         var contributorName = randomString();
         var contributorCristinId = randomUri();
@@ -372,7 +372,7 @@ class PublicationPermissionStrategyTest {
         var publication = createPublicationWithContributor(contributorName, contributorCristinId, Role.CREATOR,
                                                            randomUri(), topLevelCristinOrgId);
 
-        Assertions.assertTrue(PublicationPermissionStrategy
+        Assertions.assertFalse(PublicationPermissionStrategy
                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
                                       requestInfo, identityServiceClient), uriRetriever)
                                   .allowsAction(UNPUBLISH));
@@ -541,7 +541,7 @@ class PublicationPermissionStrategyTest {
         PublicationPermissionStrategy
             .create(publication, RequestUtil.createUserInstanceFromRequest(
                 requestInfo, identityServiceClient), uriRetriever)
-            .authorize(UNPUBLISH);
+            .authorize(UPDATE);
         assertThat(appender.getMessages(), containsString(contributorName));
         assertThat(appender.getMessages(), containsString(publication.getIdentifier().toString()));
         assertThat(appender.getMessages(), containsString("ContributorPermissionStrategy"));

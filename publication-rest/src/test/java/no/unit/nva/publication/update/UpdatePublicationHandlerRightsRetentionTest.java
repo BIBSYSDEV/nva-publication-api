@@ -56,7 +56,7 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
                                   .build();
 
         var persistedPublication = Resource.fromPublication(academicArticle)
-                                       .persistNew(publicationService, UserInstance.fromPublication(academicArticle));
+                                       .persistNew(resourceService, UserInstance.fromPublication(academicArticle));
         var username = academicArticle.getResourceOwner().getOwner().getValue();
 
 
@@ -76,7 +76,7 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
         var response = GatewayResponse.fromOutputStream(output, Publication.class);
         assertThat(response.getStatusCode(), is(equalTo(SC_OK)));
 
-        var updatedPublication = publicationService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+        var updatedPublication = resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
         var insertedFile = (File) updatedPublication.getAssociatedArtifacts().getFirst();
 
         assertTrue(insertedFile.getRightsRetentionStrategy() instanceof OverriddenRightsRetentionStrategy);
@@ -100,7 +100,7 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
                                   .build();
 
         var persistedPublication = Resource.fromPublication(academicArticle)
-                                       .persistNew(publicationService, UserInstance.fromPublication(academicArticle));
+                                       .persistNew(resourceService, UserInstance.fromPublication(academicArticle));
 
         var update = persistedPublication.copy().withEntityDescription(
             randomEntityDescription(DegreeBachelor.class)
@@ -114,7 +114,7 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
         var response = GatewayResponse.fromOutputStream(output, Publication.class);
         assertThat(response.getStatusCode(), is(equalTo(SC_OK)));
 
-        var updatedPublication = publicationService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+        var updatedPublication = resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
         var insertedFile = (File) updatedPublication.getAssociatedArtifacts().getFirst();
 
         assertTrue(insertedFile.getRightsRetentionStrategy() instanceof NullRightsRetentionStrategy);
@@ -138,7 +138,7 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
                                   .build();
 
         var persistedPublication = Resource.fromPublication(academicArticle)
-                                       .persistNew(publicationService, UserInstance.fromPublication(academicArticle));
+                                       .persistNew(resourceService, UserInstance.fromPublication(academicArticle));
 
         var update = persistedPublication.copy().withAssociatedArtifacts(
             List.of(updatedFile)
@@ -152,7 +152,7 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
         var response = GatewayResponse.fromOutputStream(output, Publication.class);
         assertThat(response.getStatusCode(), is(equalTo(SC_OK)));
 
-        var updatedPublication = publicationService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+        var updatedPublication = resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
         var insertedFile = (File) updatedPublication.getAssociatedArtifacts().getFirst();
 
         assertTrue(insertedFile.getRightsRetentionStrategy() instanceof OverriddenRightsRetentionStrategy);

@@ -12,6 +12,7 @@ dependencies {
     implementation libs.guava
     implementation libs.aws.sdk.dynamodb
     implementation libs.junit.jupiter.params
+    implementation libs.nva.testutils
     testImplementation(project(':publication-testing'))
     testImplementation libs.nva.testutils
     testImplementation libs.jsonassert
