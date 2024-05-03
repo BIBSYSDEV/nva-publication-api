@@ -492,12 +492,9 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     private String extractNpiSubjectHeading() {
-        CristinSubjectField subjectField = extractSubjectField();
-        if (isNull(subjectField)) {
-            return EMPTY_STRING;
-        } else {
-            return extractSubjectFieldCode(subjectField);
-        }
+        return Optional.ofNullable(extractSubjectField())
+                   .map(this::extractSubjectFieldCode)
+                   .orElse(null);
     }
 
     private String extractSubjectFieldCode(CristinSubjectField subjectField) {

@@ -40,7 +40,7 @@ public final class PublicationUpdater {
 
     private static List<ResearchProject> updateProjects(PublicationRepresentations publicationRepresentations) {
         var existingProjects = publicationRepresentations.getExistingPublication().getProjects();
-        var incomingProjects = publicationRepresentations.getExistingPublication().getProjects();
+        var incomingProjects = publicationRepresentations.getIncomingPublication().getProjects();
         return shouldBeUpdated(existingProjects, incomingProjects) ? incomingProjects : existingProjects;
     }
 

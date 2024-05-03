@@ -24,7 +24,7 @@ import nva.commons.core.paths.UriWrapper;
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"personlopenr"})
+@JsonIgnoreProperties({"personlopenr", "project"})
 
 public class CristinPresentationalWork {
 
@@ -46,6 +46,7 @@ public class CristinPresentationalWork {
     public CristinPresentationalWorkBuilder copy() {
         return this.toBuilder();
     }
+
 
     public boolean isProject() {
         return PROSJEKT.equals(presentationType);
