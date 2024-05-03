@@ -5,7 +5,7 @@ import java.net.URI;
 
 public class RandomPersonServiceResponse {
     
-    private URI affiliationUri;
+    private final URI affiliationUri;
     
     public RandomPersonServiceResponse() {
         this(randomUri());

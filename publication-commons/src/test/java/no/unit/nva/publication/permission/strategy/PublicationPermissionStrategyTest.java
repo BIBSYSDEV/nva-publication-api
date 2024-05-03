@@ -361,7 +361,7 @@ class PublicationPermissionStrategyTest {
     }
 
     @Test
-    void shouldNotGivePermissionToUnpublishPublicationWhenUserIsContributor()
+    void shouldNotGivePermissionToUnpublishPublicationWithPublishedFilesWhenUserIsContributor()
         throws JsonProcessingException, UnauthorizedException {
         var contributorName = randomString();
         var contributorCristinId = randomUri();
