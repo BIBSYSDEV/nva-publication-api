@@ -19,7 +19,7 @@ public class ContributorPermissionStrategy extends GrantPermissionStrategy {
     public boolean allowsAction(PublicationOperation permission) {
         return switch (permission) {
             case UPDATE -> userIsVerifiedContributor();
-            case UNPUBLISH -> userIsVerifiedContributor() && !hasPublishedFiles();
+            case UNPUBLISH -> userIsVerifiedContributor() && !hasPublishedFile();
             default -> false;
         };
     }
