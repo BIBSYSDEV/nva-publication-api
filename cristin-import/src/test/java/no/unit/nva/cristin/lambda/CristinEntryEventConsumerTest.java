@@ -607,6 +607,19 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
+    void shouldNotOverrideCuratingInstitutionsWhenUpdatingExistingPublication() throws IOException {
+        var cristinObject = CristinDataGenerator.randomObject();
+        var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), Lecture.class);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var updatedPublication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+
+
+        assertThat(existingPublication.getCuratingInstitutions(),
+                is(equalTo(updatedPublication.getCuratingInstitutions())));
+    }
+
+    @Test
     void shouldUpdateExistingPublicationEventWithEventPlaceWhenMissing() throws IOException {
         var cristinObject = CristinDataGenerator.createObjectWithCategory(EVENT, CONFERENCE_LECTURE);
         var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), Lecture.class);
@@ -659,8 +672,11 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var sqsEvent = createSqsEvent(eventBody);
         var publication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
 
-        cristinObject.setCristinAssociatedUris(List.of(new CristinAssociatedUri("DATA", RandomDataGenerator.randomUri().toString())));
-        handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+        var newObject = CristinDataGenerator.randomObject();
+        newObject.setId(cristinObject.getId());
+        var newBody = createEventBody(newObject);
+        var newEvent = createSqsEvent(newBody);
+        handler.handleRequest(newEvent, CONTEXT).getFirst();
 
         var reportLocation =  UnixPath.of("UPDATE").addChild(publication.getIdentifier().toString());
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);

@@ -41,6 +41,7 @@ import no.unit.nva.cristin.mapper.CristinContributor;
 import no.unit.nva.cristin.mapper.CristinContributorRole;
 import no.unit.nva.cristin.mapper.CristinContributorRoleCode;
 import no.unit.nva.cristin.mapper.CristinContributorsAffiliation;
+import no.unit.nva.cristin.mapper.CristinGrant;
 import no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities;
 import no.unit.nva.cristin.mapper.CristinJournalPublication;
 import no.unit.nva.cristin.mapper.CristinJournalPublicationJournal;
@@ -144,7 +145,7 @@ public final class CristinDataGenerator {
 
     public static CristinPresentationalWork randomPresentationalWork() {
         return CristinPresentationalWork.builder()
-                   .withPresentationType(randomWord())
+                   .withPresentationType("PROSJEKT")
                    .withIdentifier(smallRandomNumber())
                    .build();
     }
@@ -696,7 +697,7 @@ public final class CristinDataGenerator {
                    .build();
     }
 
-    private static CristinObject randomArtisticProduction(CristinSecondaryCategory secondaryCategory) {
+    public static CristinObject randomArtisticProduction(CristinSecondaryCategory secondaryCategory) {
         return CristinObject.builder()
                    .withId(largeRandomNumber())
                    .withMainCategory(CristinMainCategory.ARTISTIC_PRODUCTION)
@@ -776,6 +777,16 @@ public final class CristinDataGenerator {
                    .withContributors(contributors)
                    .withBookOrReportMetadata(randomBookOrReportMetadata())
                    .withPublicationOwner(HardcodedValues.SIKT_OWNER)
+                   .withPresentationalWork(List.of(randomPresentationalWork()))
+                   .build();
+    }
+
+    private static CristinGrant randomCristinGrant() {
+        return CristinGrant.builder()
+                   .withSourceCode(randomString())
+                   .withIdentifier(randomString())
+                   .withYearFrom(2000)
+                   .withYearTo(2001)
                    .build();
     }
 
