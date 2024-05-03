@@ -1147,6 +1147,24 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldReturnUnauthorizedWhenUserIsPublicationOwnerWhenUnpublishingPublicationAndPublicationContainsPublishedFiles()
+        throws ApiGatewayException, IOException {
+        var userCristinId = RandomPersonServiceResponse.randomUri();
+        var userName = randomString();
+        var doi = RandomPersonServiceResponse.randomUri();
+        var publication = createPublicationWithOwnerAndDoi(userCristinId, userName, doi);
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        var inputStream = createUnpublishHandlerRequest(publication, userName,
+                                                        RandomPersonServiceResponse.randomUri(), userCristinId);
+        updatePublicationHandler.handleRequest(inputStream, output, context);
+        var updatedPublication = resourceService.getPublication(publication);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+
+        assertThat(updatedPublication.getStatus(), is(equalTo(PUBLISHED)));
+        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_UNAUTHORIZED)));
+    }
+
+    @Test
     void shouldSetAllPendingAndNewTicketsToNotRelevantExceptUnpublishingTicketWhenUnpublishingPublicationWithoutPublishedFiles()
         throws ApiGatewayException, IOException {
         var userCristinId = RandomPersonServiceResponse.randomUri();
@@ -1259,12 +1277,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     void shouldProduceUpdateDoiEventWithDuplicateWhenUnpublishing()
         throws ApiGatewayException, IOException {
 
-        var userCristinId = RandomPersonServiceResponse.randomUri();
         var userName = randomString();
-        var doi = RandomPersonServiceResponse.randomUri();
         var duplicate = randomPublicationApiUri();
-
-        var publication = createPublicationWithOwnerAndDoi(userCristinId, userName, doi);
+        var publication = TicketTestUtils.createPersistedPublishedPublicationWithUnpublishedFilesAndOwner(userName,
+                                                                                                          resourceService);
 
         resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
@@ -1296,8 +1312,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var userName = randomString();
         var institutionId = RandomPersonServiceResponse.randomUri();
-
-        var publication = createAndPersistPublicationWithoutDoiAndWithResourceOwner(userName, institutionId);
+        var publication = TicketTestUtils.createPersistedPublishedPublicationWithUnpublishedFilesAndOwner(userName,
+                                                                                                        resourceService);
         resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         var inputStream = createUnpublishHandlerRequest(publication, userName, institutionId);

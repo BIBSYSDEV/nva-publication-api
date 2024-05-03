@@ -4,6 +4,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.model.PublicationOperation;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.publication.RequestUtil;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
@@ -25,6 +26,7 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
 
         var requestInfo = createUserRequestInfo(resourceOwner, institution, cristinId, randomUri());
         var publication = createNonDegreePublication(resourceOwner, institution);
+        publication.setAssociatedArtifacts(new AssociatedArtifactList());
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissionStrategy
