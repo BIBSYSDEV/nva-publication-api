@@ -14,8 +14,8 @@ import no.unit.nva.publication.permission.strategy.grant.EditorPermissionStrateg
 import no.unit.nva.publication.permission.strategy.grant.GrantPermissionStrategy;
 import no.unit.nva.publication.permission.strategy.grant.ResourceOwnerPermissionStrategy;
 import no.unit.nva.publication.permission.strategy.grant.TrustedThirdPartyStrategy;
-import no.unit.nva.publication.permission.strategy.restrict.NonDegreePermissionStrategy;
 import no.unit.nva.publication.permission.strategy.restrict.DenyPermissionStrategy;
+import no.unit.nva.publication.permission.strategy.restrict.NonDegreePermissionStrategy;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,8 +109,6 @@ public class PublicationPermissionStrategy {
             throw new UnauthorizedException(formatUnauthorizedMessage(requestedPermission));
         }
     }
-
-
 
     private void validateGrantStrategies(PublicationOperation requestedPermission) throws UnauthorizedException {
         var strategies = findAllowances(requestedPermission).stream()

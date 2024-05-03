@@ -30,7 +30,6 @@ import static no.unit.nva.publication.model.business.TicketStatus.NOT_APPLICABLE
 import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
-import static no.unit.nva.testutils.HandlerRequestBuilder.CUSTOMER_ID;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -1139,13 +1138,14 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldSuccessWhenUserIsContributorWhenUnpublishingPublication()
+    void shouldReturnUnauthorizedWhenUserIsContributorWhenUnpublishingPublicationAndPublicationContainsPublishedFiles()
         throws ApiGatewayException, IOException {
 
         var userCristinId = RandomPersonServiceResponse.randomUri();
         var userName = randomString();
-
         var publication = createPublicationWithoutDoiAndWithContributor(userCristinId, userName);
+
+        assertTrue(publication.getAssociatedArtifacts().stream().anyMatch(PublishedFile.class::isInstance));
 
         publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
@@ -1153,14 +1153,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                         RandomPersonServiceResponse.randomUri(), userCristinId);
         updatePublicationHandler.handleRequest(inputStream, output, context);
         var updatedPublication = publicationService.getPublication(publication);
-        assertThat(updatedPublication.getStatus(), is(equalTo(UNPUBLISHED)));
-        assertThat(updatedPublication.getPublicationNotes(),
-                   hasItem(allOf(instanceOf(UnpublishingNote.class),
-                                 hasProperty("note", equalTo(COMMENT_ON_UNPUBLISHING_REQUEST)),
-                                 hasProperty("createdBy", equalTo(new Username(userName))),
-                                 hasProperty("createdDate", is(notNullValue())))));
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_ACCEPTED)));
+
+        assertThat(updatedPublication.getStatus(), is(equalTo(PUBLISHED)));
+        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_UNAUTHORIZED)));
     }
 
     @Test
