@@ -4,7 +4,10 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
@@ -12,6 +15,7 @@ import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
@@ -74,7 +78,21 @@ public final class PublicationUpdater {
         return publicationRepresentations.getExistingPublication().getEntityDescription().copy()
                    .withReference(updateReference(publicationRepresentations))
                    .withTags(updatedTags(publicationRepresentations))
+                   .withContributors(updateContributors(publicationRepresentations))
                    .build();
+    }
+
+    private static List<Contributor> updateContributors(PublicationRepresentations publicationRepresentations) {
+        var existingContributors = getContributors(publicationRepresentations.getExistingPublication());
+        var incomingContributors = getContributors(publicationRepresentations.getIncomingPublication());
+
+        return listShouldBeOverwritten(existingContributors, incomingContributors)
+                   ? incomingContributors
+                   : existingContributors;
+    }
+
+    private static List<Contributor> getContributors(Publication publication) {
+        return publication.getEntityDescription().getContributors();
     }
 
     private static List<String> updatedTags(PublicationRepresentations publicationRepresentations) {
@@ -178,9 +196,10 @@ public final class PublicationUpdater {
         var existingPublicationContext = getPublicationContext(publicationRepresentations.getExistingPublication());
         var incomingPublicationContext = getPublicationContext(publicationRepresentations.getIncomingPublication());
         if (existingPublicationContext instanceof Event existingEvent && incomingPublicationContext instanceof Event incomingEvent) {
-            var existingPlace = existingEvent.getPlace();
-            var incomingPlace = incomingEvent.getPlace();
-            if (shouldBeUpdated(existingPlace, incomingPlace)) {
+            var existingPlace = getPlaceCountry(existingEvent);
+            var incomingPlace = getPlaceCountry(incomingEvent);
+            if (shouldBeUpdated(existingPlace, incomingPlace)
+                || shouldBeUpdated(existingPlace.getLabel(), incomingPlace.getLabel())) {
                 return new Event.Builder()
                            .withLabel(nonNull(existingEvent.getLabel()) ? existingEvent.getLabel() : incomingEvent.getLabel())
                            .withAgent(nonNull(existingEvent.getAgent()) ? existingEvent.getAgent() : incomingEvent.getAgent())
@@ -197,6 +216,12 @@ public final class PublicationUpdater {
         }
     }
 
+    private static UnconfirmedPlace getPlaceCountry(Event event) {
+        return Optional.ofNullable(event.getPlace())
+                   .map(UnconfirmedPlace.class::cast)
+                   .orElse(null);
+    }
+
     private static PublicationContext getPublicationContext(Publication publication) {
         return publication
                    .getEntityDescription()
@@ -211,5 +236,11 @@ public final class PublicationUpdater {
         var list = new ArrayList<>(existingAssociatedLinks);
         list.addAll(incomingAssociatedLinks);
         return new AssociatedArtifactList(list.stream().distinct().toList());
+    }
+
+    private static <T> boolean listShouldBeOverwritten(List<T> oldList, List<T> newList) {
+        return !(oldList.size() == newList.size()
+               && new HashSet<>(oldList).containsAll(newList)
+               && new HashSet<>(newList).containsAll(oldList));
     }
 }

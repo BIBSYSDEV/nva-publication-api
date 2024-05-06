@@ -34,6 +34,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -60,7 +61,6 @@ import java.util.Set;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
-import no.unit.nva.cristin.mapper.CristinAssociatedUri;
 import no.unit.nva.cristin.mapper.CristinBookOrReportPartMetadata;
 import no.unit.nva.cristin.mapper.CristinMapper;
 import no.unit.nva.cristin.mapper.CristinObject;
@@ -78,11 +78,13 @@ import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryExceptio
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryException;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Event;
+import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
 import no.unit.nva.model.instancetypes.artistic.music.Concert;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.event.Lecture;
@@ -96,7 +98,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.utils.CristinUnitsUtil;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
-import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
@@ -607,7 +608,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldNotOverrideCuratingInstitutionsWhenUpdatingExistingPublication() throws IOException {
+    void shouldOverrideCuratingInstitutionsWhenUpdatingExistingPublicationContributors() throws IOException {
         var cristinObject = CristinDataGenerator.randomObject();
         var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), Lecture.class);
         var eventBody = createEventBody(cristinObject);
@@ -616,7 +617,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
 
         assertThat(existingPublication.getCuratingInstitutions(),
-                is(equalTo(updatedPublication.getCuratingInstitutions())));
+                is(not(equalTo(updatedPublication.getCuratingInstitutions()))));
     }
 
     @Test
@@ -631,6 +632,51 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
         assertNull(((Event) existingPublication.getEntityDescription().getReference().getPublicationContext()).getPlace());
         assertNotNull(((Event) updatedPublication.getEntityDescription().getReference().getPublicationContext()).getPlace());
+    }
+
+    @Test
+    void shouldUpdateExistingPublicationEventWithEventPlaceWhenPlaceMissingLabel() throws IOException {
+        var cristinObject = CristinDataGenerator.createObjectWithCategory(EVENT, CONFERENCE_LECTURE);
+        var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), Lecture.class);
+        existingPublication.getEntityDescription().getReference().setPublicationContext(new Event.Builder().withPlace(new UnconfirmedPlace(null, null)).build());
+        resourceService.updatePublication(existingPublication);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var updatedPublication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+
+        assertNotNull(((Event) existingPublication.getEntityDescription().getReference().getPublicationContext()).getPlace());
+        assertNotEquals(((Event) updatedPublication.getEntityDescription().getReference().getPublicationContext()).getPlace(),
+                        ((Event) existingPublication.getEntityDescription().getReference().getPublicationContext()).getPlace());
+    }
+
+    @Test
+    void shouldNotUpdateExistingPublicationContributorsWhenImportSamePublicationTwice() throws IOException {
+        var cristinObject = CristinDataGenerator.randomObject();
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var publication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+        var updatedPublication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+
+        assertThat(publication.getModifiedDate(), is(equalTo(updatedPublication.getModifiedDate())));
+
+        var reportLocation =  UnixPath.of("UPDATE").addChild(publication.getIdentifier().toString());
+        var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
+
+        assertThrows(NoSuchKeyException.class,() -> s3Driver.getFile(reportLocation));
+    }
+
+    @Test
+    void shouldUpdateExistingPublicationContributorsWhenContributorsToIncomingPublicationDiffer() throws IOException {
+        var cristinObject = CristinDataGenerator.createObjectWithCategory(EVENT, CONFERENCE_LECTURE);
+        var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), Lecture.class);
+        existingPublication.getEntityDescription().setContributors(List.of(new Contributor.Builder().build()));
+        resourceService.updatePublication(existingPublication);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var updatedPublication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+
+        assertThat(updatedPublication.getEntityDescription().getContributors(),
+                   is(not(equalTo(existingPublication.getEntityDescription().getContributors()))));
     }
 
     @Test
