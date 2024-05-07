@@ -11,6 +11,7 @@ import static no.unit.nva.cristin.lambda.constants.MappingConstants.PATH_CUSTOME
 import static no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities.HRCS_ACTIVITY_URI;
 import static no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities.HRCS_CATEGORY_URI;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isChapter;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static nva.commons.core.attempt.Try.attempt;
@@ -25,8 +26,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.List;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -493,25 +494,20 @@ public class CristinMapper extends CristinMappingModule {
 
     private String extractNpiSubjectHeading() {
         return Optional.ofNullable(extractSubjectField())
-                   .map(this::extractSubjectFieldCode)
+                   .map(CristinSubjectField::getSubjectFieldCode)
+                   .map(String::valueOf)
                    .orElse(null);
     }
 
-    private String extractSubjectFieldCode(CristinSubjectField subjectField) {
-        return Optional.ofNullable(subjectField.getSubjectFieldCode())
-                   .map(String::valueOf)
-                   .orElseThrow(() -> new MissingFieldsException(CristinSubjectField.MISSING_SUBJECT_FIELD_CODE));
-    }
-
-    private boolean resourceTypeIsNotExpectedToHaveAnNpiSubjectHeading() {
-        return !(isBook(cristinObject) || isReport(cristinObject));
-    }
-
     private CristinSubjectField extractSubjectField() {
-        if (resourceTypeIsNotExpectedToHaveAnNpiSubjectHeading()) {
+        if (isBook(cristinObject) || isReport(cristinObject)) {
+            return extractCristinBookReport().getSubjectField();
+        }
+        if (isChapter(cristinObject)) {
+            return cristinObject.getBookOrReportPartMetadata().getSubjectField();
+        } else {
             return null;
         }
-        return extractCristinBookReport().getSubjectField();
     }
 
     private List<CristinTags> extractCristinTags() {
