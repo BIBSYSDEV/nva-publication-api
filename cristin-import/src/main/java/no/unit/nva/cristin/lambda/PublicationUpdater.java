@@ -14,6 +14,7 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.contexttypes.Event;
+import no.unit.nva.model.contexttypes.MediaContribution;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
 import no.unit.nva.model.funding.Funding;
@@ -195,24 +196,50 @@ public final class PublicationUpdater {
     private static PublicationContext updatePublicationContext(PublicationRepresentations publicationRepresentations) {
         var existingPublicationContext = getPublicationContext(publicationRepresentations.getExistingPublication());
         var incomingPublicationContext = getPublicationContext(publicationRepresentations.getIncomingPublication());
+        return updatePublicationContext(existingPublicationContext, incomingPublicationContext);
+    }
+
+    private static PublicationContext updatePublicationContext(PublicationContext existingPublicationContext,
+                                                            PublicationContext incomingPublicationContext) {
         if (existingPublicationContext instanceof Event existingEvent && incomingPublicationContext instanceof Event incomingEvent) {
-            var existingPlace = getPlaceCountry(existingEvent);
-            var incomingPlace = getPlaceCountry(incomingEvent);
-            if (shouldBeUpdated(existingPlace, incomingPlace)
-                || shouldBeUpdated(existingPlace.getLabel(), incomingPlace.getLabel())) {
-                return new Event.Builder()
-                           .withLabel(nonNull(existingEvent.getLabel()) ? existingEvent.getLabel() : incomingEvent.getLabel())
-                           .withAgent(nonNull(existingEvent.getAgent()) ? existingEvent.getAgent() : incomingEvent.getAgent())
-                           .withTime(nonNull(existingEvent.getTime()) ? existingEvent.getTime() : incomingEvent.getTime())
-                           .withProduct(existingEvent.getProduct().orElse(incomingEvent.getProduct().orElse(null)))
-                           .withSubEvent(existingEvent.getSubEvent().orElse(incomingEvent.getSubEvent().orElse(null)))
-                           .withPlace(incomingPlace)
-                           .build();
-            } else {
-                return existingEvent;
-            }
+            return updateEvent(existingEvent, incomingEvent);
+        }
+        if (existingPublicationContext instanceof MediaContribution existingMediaContribution
+            && incomingPublicationContext instanceof MediaContribution incomingMediaContribution) {
+            return new MediaContribution.Builder()
+                       .withFormat(existingMediaContribution.getFormat())
+                       .withMedium(existingMediaContribution.getMedium())
+                       .withDisseminationChannel(updateDisseminationChannel(existingMediaContribution, incomingMediaContribution))
+                       .build();
         } else {
             return existingPublicationContext;
+        }
+    }
+
+    private static String updateDisseminationChannel(MediaContribution existingMediaContribution,
+                                                  MediaContribution incomingMediaContribution) {
+        return nonNull(existingMediaContribution.getDisseminationChannel()) ?
+                   existingMediaContribution.getDisseminationChannel()
+                   : incomingMediaContribution.getDisseminationChannel();
+    }
+
+    private static Event updateEvent(Event existingEvent, Event incomingEvent) {
+        var existingPlace = getPlaceCountry(existingEvent);
+        var incomingPlace = getPlaceCountry(incomingEvent);
+        if (shouldBeUpdated(existingPlace, incomingPlace)
+            || shouldBeUpdated(existingPlace.getLabel(), incomingPlace.getLabel())) {
+            return new Event.Builder()
+                       .withLabel(
+                           nonNull(existingEvent.getLabel()) ? existingEvent.getLabel() : incomingEvent.getLabel())
+                       .withAgent(
+                           nonNull(existingEvent.getAgent()) ? existingEvent.getAgent() : incomingEvent.getAgent())
+                       .withTime(nonNull(existingEvent.getTime()) ? existingEvent.getTime() : incomingEvent.getTime())
+                       .withProduct(existingEvent.getProduct().orElse(incomingEvent.getProduct().orElse(null)))
+                       .withSubEvent(existingEvent.getSubEvent().orElse(incomingEvent.getSubEvent().orElse(null)))
+                       .withPlace(incomingPlace)
+                       .build();
+        } else {
+            return existingEvent;
         }
     }
 

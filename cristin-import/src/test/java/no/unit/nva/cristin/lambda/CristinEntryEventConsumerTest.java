@@ -17,6 +17,7 @@ import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.INTERVIEW;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.JOURNAL_ARTICLE;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.MUSICAL_PERFORMANCE;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.SHORT_COMMUNICATION;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.WRITTEN_INTERVIEW;
 import static no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException.ERROR_PARSING_MAIN_CATEGORY;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
@@ -84,6 +85,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Event;
+import no.unit.nva.model.contexttypes.MediaContribution;
 import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
 import no.unit.nva.model.instancetypes.artistic.music.Concert;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
@@ -925,6 +927,47 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                                           .getPublicationInstance()).getPages();
 
         assertThat(pages.getBegin(), is(equalTo(pages.getEnd())));
+    }
+
+    @Test
+    void shouldMediaContributionDisseminationChannelAsJournalTitleWhenCristinObjectHasJournalTitle()
+        throws IOException {
+        var cristinObject = CristinDataGenerator.createObjectWithCategory(JOURNAL,
+                                                                          WRITTEN_INTERVIEW);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var publications = handler.handleRequest(sqsEvent, CONTEXT);
+
+        var disseminationChannel = ((MediaContribution) publications.getFirst().getEntityDescription().getReference()
+                                          .getPublicationContext()).getDisseminationChannel();
+
+        assertThat(disseminationChannel,
+                   is(equalTo(cristinObject.getJournalPublication().getJournal().getJournalTitle())));
+    }
+
+    @Test
+    void shouldUpdateMediaContributionDisseminationChannelWhenExistingPublicationIsMissing()
+        throws IOException {
+        var cristinObject = CristinDataGenerator.createRandomMediaWithSpecifiedSecondaryCategory(WRITTEN_INTERVIEW);
+        cristinObject.getMediaContribution().setMediaPlaceName(null);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        handler.handleRequest(sqsEvent, CONTEXT);
+        var cristinObjectWithJournalTitle = CristinDataGenerator.createObjectWithCategory(JOURNAL,
+                                                                          WRITTEN_INTERVIEW);
+        cristinObjectWithJournalTitle.setId(cristinObject.getId());
+        var newSqsEvent = createSqsEvent(createEventBody(cristinObjectWithJournalTitle));
+        var updatedPublication = handler.handleRequest(newSqsEvent, CONTEXT).getFirst();
+        var reportLocation =  UnixPath.of("UPDATE").addChild(updatedPublication.getIdentifier().toString());
+        var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
+        var file = s3Driver.getFile(reportLocation);
+
+        assertThat(file, is(not(nullValue())));
+
+        var disseminationChannel = ((MediaContribution) updatedPublication.getEntityDescription().getReference()
+                                                            .getPublicationContext()).getDisseminationChannel();
+        assertThat(disseminationChannel,
+                   is(equalTo(cristinObjectWithJournalTitle.getJournalPublication().getJournal().getJournalTitle())));
     }
 
     private static <T> FileContentsEvent<T> createEventBody(T cristinObject) {

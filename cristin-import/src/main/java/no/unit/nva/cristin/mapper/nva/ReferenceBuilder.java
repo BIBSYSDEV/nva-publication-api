@@ -27,6 +27,7 @@ import no.unit.nva.cristin.lambda.ErrorReport;
 import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinBookOrReportPartMetadata;
 import no.unit.nva.cristin.mapper.CristinJournalPublication;
+import no.unit.nva.cristin.mapper.CristinJournalPublicationJournal;
 import no.unit.nva.cristin.mapper.CristinLectureOrPosterMetaData;
 import no.unit.nva.cristin.mapper.CristinMediaContribution;
 import no.unit.nva.cristin.mapper.CristinObject;
@@ -136,8 +137,21 @@ public class ReferenceBuilder extends CristinMappingModule {
     }
 
     private Optional<String> extractDisseminationChannel() {
-        return Optional.ofNullable(cristinObject.getMediaContribution())
-                   .map(CristinMediaContribution::getMediaPlaceName);
+        if (hasJournalTitle()) {
+            return Optional.ofNullable(cristinObject.getJournalPublication())
+                       .map(CristinJournalPublication::getJournal)
+                       .map(CristinJournalPublicationJournal::getJournalTitle);
+        } else {
+            return Optional.ofNullable(cristinObject.getMediaContribution())
+                       .map(CristinMediaContribution::getMediaPlaceName);
+        }
+    }
+
+    private boolean hasJournalTitle() {
+        return Optional.ofNullable(cristinObject.getJournalPublication())
+                   .map(CristinJournalPublication::getJournal)
+                   .map(CristinJournalPublicationJournal::getJournalTitle)
+                   .isPresent();
     }
 
     private boolean isWrittenInterview(CristinObject cristinObject) {
