@@ -17,6 +17,7 @@ import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.INTERVIEW;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.JOURNAL_ARTICLE;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.MUSICAL_PERFORMANCE;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.SHORT_COMMUNICATION;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.WRITTEN_INTERVIEW;
 import static no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException.ERROR_PARSING_MAIN_CATEGORY;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
@@ -34,6 +35,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -60,7 +62,6 @@ import java.util.Set;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
-import no.unit.nva.cristin.mapper.CristinAssociatedUri;
 import no.unit.nva.cristin.mapper.CristinBookOrReportPartMetadata;
 import no.unit.nva.cristin.mapper.CristinMapper;
 import no.unit.nva.cristin.mapper.CristinObject;
@@ -78,11 +79,14 @@ import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryExceptio
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryException;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Event;
+import no.unit.nva.model.contexttypes.MediaContribution;
+import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
 import no.unit.nva.model.instancetypes.artistic.music.Concert;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.event.Lecture;
@@ -96,7 +100,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.utils.CristinUnitsUtil;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
-import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
@@ -607,7 +610,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldNotOverrideCuratingInstitutionsWhenUpdatingExistingPublication() throws IOException {
+    void shouldOverrideCuratingInstitutionsWhenUpdatingExistingPublicationContributors() throws IOException {
         var cristinObject = CristinDataGenerator.randomObject();
         var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), Lecture.class);
         var eventBody = createEventBody(cristinObject);
@@ -616,7 +619,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
 
         assertThat(existingPublication.getCuratingInstitutions(),
-                is(equalTo(updatedPublication.getCuratingInstitutions())));
+                is(not(equalTo(updatedPublication.getCuratingInstitutions()))));
     }
 
     @Test
@@ -631,6 +634,51 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
         assertNull(((Event) existingPublication.getEntityDescription().getReference().getPublicationContext()).getPlace());
         assertNotNull(((Event) updatedPublication.getEntityDescription().getReference().getPublicationContext()).getPlace());
+    }
+
+    @Test
+    void shouldUpdateExistingPublicationEventWithEventPlaceWhenPlaceMissingLabel() throws IOException {
+        var cristinObject = CristinDataGenerator.createObjectWithCategory(EVENT, CONFERENCE_LECTURE);
+        var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), Lecture.class);
+        existingPublication.getEntityDescription().getReference().setPublicationContext(new Event.Builder().withPlace(new UnconfirmedPlace(null, null)).build());
+        resourceService.updatePublication(existingPublication);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var updatedPublication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+
+        assertNotNull(((Event) existingPublication.getEntityDescription().getReference().getPublicationContext()).getPlace());
+        assertNotEquals(((Event) updatedPublication.getEntityDescription().getReference().getPublicationContext()).getPlace(),
+                        ((Event) existingPublication.getEntityDescription().getReference().getPublicationContext()).getPlace());
+    }
+
+    @Test
+    void shouldNotUpdateExistingPublicationContributorsWhenImportSamePublicationTwice() throws IOException {
+        var cristinObject = CristinDataGenerator.randomObject();
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var publication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+        var updatedPublication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+
+        assertThat(publication.getModifiedDate(), is(equalTo(updatedPublication.getModifiedDate())));
+
+        var reportLocation =  UnixPath.of("UPDATE").addChild(publication.getIdentifier().toString());
+        var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
+
+        assertThrows(NoSuchKeyException.class,() -> s3Driver.getFile(reportLocation));
+    }
+
+    @Test
+    void shouldUpdateExistingPublicationContributorsWhenContributorsToIncomingPublicationDiffer() throws IOException {
+        var cristinObject = CristinDataGenerator.createObjectWithCategory(EVENT, CONFERENCE_LECTURE);
+        var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), Lecture.class);
+        existingPublication.getEntityDescription().setContributors(List.of(new Contributor.Builder().build()));
+        resourceService.updatePublication(existingPublication);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var updatedPublication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+
+        assertThat(updatedPublication.getEntityDescription().getContributors(),
+                   is(not(equalTo(existingPublication.getEntityDescription().getContributors()))));
     }
 
     @Test
@@ -879,6 +927,47 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                                           .getPublicationInstance()).getPages();
 
         assertThat(pages.getBegin(), is(equalTo(pages.getEnd())));
+    }
+
+    @Test
+    void shouldMediaContributionDisseminationChannelAsJournalTitleWhenCristinObjectHasJournalTitle()
+        throws IOException {
+        var cristinObject = CristinDataGenerator.createObjectWithCategory(JOURNAL,
+                                                                          WRITTEN_INTERVIEW);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var publications = handler.handleRequest(sqsEvent, CONTEXT);
+
+        var disseminationChannel = ((MediaContribution) publications.getFirst().getEntityDescription().getReference()
+                                          .getPublicationContext()).getDisseminationChannel();
+
+        assertThat(disseminationChannel,
+                   is(equalTo(cristinObject.getJournalPublication().getJournal().getJournalTitle())));
+    }
+
+    @Test
+    void shouldUpdateMediaContributionDisseminationChannelWhenExistingPublicationIsMissing()
+        throws IOException {
+        var cristinObject = CristinDataGenerator.createRandomMediaWithSpecifiedSecondaryCategory(WRITTEN_INTERVIEW);
+        cristinObject.getMediaContribution().setMediaPlaceName(null);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        handler.handleRequest(sqsEvent, CONTEXT);
+        var cristinObjectWithJournalTitle = CristinDataGenerator.createObjectWithCategory(JOURNAL,
+                                                                          WRITTEN_INTERVIEW);
+        cristinObjectWithJournalTitle.setId(cristinObject.getId());
+        var newSqsEvent = createSqsEvent(createEventBody(cristinObjectWithJournalTitle));
+        var updatedPublication = handler.handleRequest(newSqsEvent, CONTEXT).getFirst();
+        var reportLocation =  UnixPath.of("UPDATE").addChild(updatedPublication.getIdentifier().toString());
+        var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
+        var file = s3Driver.getFile(reportLocation);
+
+        assertThat(file, is(not(nullValue())));
+
+        var disseminationChannel = ((MediaContribution) updatedPublication.getEntityDescription().getReference()
+                                                            .getPublicationContext()).getDisseminationChannel();
+        assertThat(disseminationChannel,
+                   is(equalTo(cristinObjectWithJournalTitle.getJournalPublication().getJournal().getJournalTitle())));
     }
 
     private static <T> FileContentsEvent<T> createEventBody(T cristinObject) {
