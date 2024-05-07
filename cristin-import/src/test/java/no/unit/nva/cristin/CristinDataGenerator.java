@@ -17,6 +17,7 @@ import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -37,6 +38,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.lambda.constants.HardcodedValues;
 import no.unit.nva.cristin.mapper.CristinAssociatedUri;
 import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
+import no.unit.nva.cristin.mapper.CristinBookOrReportPartMetadata;
 import no.unit.nva.cristin.mapper.CristinContributor;
 import no.unit.nva.cristin.mapper.CristinContributorRole;
 import no.unit.nva.cristin.mapper.CristinContributorRoleCode;
@@ -467,7 +469,14 @@ public final class CristinDataGenerator {
                    .withTags(randomTagList())
                    .withCristinAssociatedUris(List.of(new CristinAssociatedUri("DATA", randomUri().toString())))
                    .withLectureOrPosterMetaData(randomLectureOrPosterMetaData())
+                   .withBookOrReportPartMetadata(randomBookOrReportPartMetadata())
                    .withJournalPublication(randomJournalPublication())
+                   .build();
+    }
+
+    private static CristinBookOrReportPartMetadata randomBookOrReportPartMetadata() {
+        return CristinBookOrReportPartMetadata.builder()
+                   .withSubjectField(CristinSubjectField.builder().withSubjectFieldCode(randomInteger()).build())
                    .build();
     }
 

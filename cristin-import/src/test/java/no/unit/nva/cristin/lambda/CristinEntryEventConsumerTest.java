@@ -8,6 +8,7 @@ import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.JSON;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.NVI_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.SUCCESS_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.CHAPTER;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.EVENT;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.JOURNAL;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.CHAPTER_ACADEMIC;
@@ -15,6 +16,7 @@ import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.CONFERENCE_LEC
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.FEATURE_ARTICLE;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.INTERVIEW;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.JOURNAL_ARTICLE;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.LEXICAL_IMPORT;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.MUSICAL_PERFORMANCE;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.SHORT_COMMUNICATION;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.WRITTEN_INTERVIEW;
@@ -41,6 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -89,6 +92,7 @@ import no.unit.nva.model.contexttypes.MediaContribution;
 import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
 import no.unit.nva.model.instancetypes.artistic.music.Concert;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
@@ -968,6 +972,33 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                                                             .getPublicationContext()).getDisseminationChannel();
         assertThat(disseminationChannel,
                    is(equalTo(cristinObjectWithJournalTitle.getJournalPublication().getJournal().getJournalTitle())));
+    }
+
+    @Test
+    void shouldExtractNpiSubjectHeadingForChapter()
+        throws IOException {
+        var cristinObject = CristinDataGenerator.createObjectWithCategory(CHAPTER, LEXICAL_IMPORT);
+        var sqsEvent = createSqsEvent(createEventBody(cristinObject));
+        var publication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+        var expectedNpiSubjectHeading =
+            cristinObject.getBookOrReportPartMetadata().getSubjectField().getSubjectFieldCode().toString();
+
+        assertThat(publication.getEntityDescription().getNpiSubjectHeading(), is(equalTo(expectedNpiSubjectHeading)));
+    }
+
+    @Test
+    void shouldUpdateNpiSubjectHeadingWhenMissing()
+        throws IOException {
+        var cristinObject = CristinDataGenerator.createObjectWithCategory(CHAPTER, LEXICAL_IMPORT);
+        var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), ChapterArticle.class);
+        existingPublication.getEntityDescription().setNpiSubjectHeading(null);
+        resourceService.updatePublication(existingPublication);
+        var sqsEvent = createSqsEvent(createEventBody(cristinObject));
+        var publication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+        var expectedNpiSubjectHeading =
+            cristinObject.getBookOrReportPartMetadata().getSubjectField().getSubjectFieldCode().toString();
+
+        assertThat(publication.getEntityDescription().getNpiSubjectHeading(), is(equalTo(expectedNpiSubjectHeading)));
     }
 
     private static <T> FileContentsEvent<T> createEventBody(T cristinObject) {

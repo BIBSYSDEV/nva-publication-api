@@ -80,7 +80,20 @@ public final class PublicationUpdater {
                    .withReference(updateReference(publicationRepresentations))
                    .withTags(updatedTags(publicationRepresentations))
                    .withContributors(updateContributors(publicationRepresentations))
+                   .withNpiSubjectHeading(updateNpiSubjectHeading(publicationRepresentations))
                    .build();
+    }
+
+    private static String updateNpiSubjectHeading(PublicationRepresentations publicationRepresentations) {
+        var existingNpiSubjectHeading = getNpiSubjectHeading(publicationRepresentations.getExistingPublication());
+        var incomingNpiSubjectHeading = getNpiSubjectHeading(publicationRepresentations.getIncomingPublication());
+        return shouldBeUpdated(existingNpiSubjectHeading, incomingNpiSubjectHeading)
+                   ? incomingNpiSubjectHeading
+                   : existingNpiSubjectHeading;
+    }
+
+    private static String getNpiSubjectHeading(Publication existingPublication) {
+        return existingPublication.getEntityDescription().getNpiSubjectHeading();
     }
 
     private static List<Contributor> updateContributors(PublicationRepresentations publicationRepresentations) {

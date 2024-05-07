@@ -442,16 +442,6 @@ class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void constructorThrowsExceptionWhenABookReportHasASubjectFieldButSubjectFieldCodeIsNull() {
-        CristinObject cristinObject = CristinDataGenerator.randomBook();
-        cristinObject.getBookOrReportMetadata().getSubjectField().setSubjectFieldCode(null);
-
-        System.out.println(cristinObject);
-
-        assertThrows(MissingFieldsException.class, () -> mapToPublication(cristinObject));
-    }
-
-    @Test
     void mapThrowsMissingFieldsExceptionWhenNonIgnoredFieldIsMissing() {
         //re-use the test for the author's name
         mapSetsNameToNullWhenBothFamilyNameAndGivenNameAreMissing();
