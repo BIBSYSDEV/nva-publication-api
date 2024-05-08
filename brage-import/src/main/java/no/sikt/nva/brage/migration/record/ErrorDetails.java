@@ -68,6 +68,7 @@ public class ErrorDetails {
         DUPLICATE_PUBLISHER_IN_CHANNEL_REGISTER,
         INVALID_DC_RIGHTS_URI,
         MULTIPLE_VALUES,
-        CONTENT_FILE_MISSING
+        CONTENT_FILE_MISSING,
+        INVALID_ISMN
     }
 }
