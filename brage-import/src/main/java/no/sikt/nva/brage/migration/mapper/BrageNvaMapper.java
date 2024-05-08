@@ -26,6 +26,7 @@ import no.sikt.nva.brage.migration.lambda.MissingFieldsException;
 import no.sikt.nva.brage.migration.record.Affiliation;
 import no.sikt.nva.brage.migration.record.Customer;
 import no.sikt.nva.brage.migration.record.Language;
+import no.sikt.nva.brage.migration.record.Project;
 import no.sikt.nva.brage.migration.record.PublisherAuthority;
 import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
@@ -50,6 +51,7 @@ import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
+import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import nva.commons.core.Environment;
@@ -93,11 +95,18 @@ public final class BrageNvaMapper {
                               .withAdditionalIdentifiers(extractCristinIdentifier(brageRecord))
                               .withRightsHolder(brageRecord.getRightsholder())
                               .withSubjects(extractSubjects(brageRecord))
+                              .withFundings(extractFundings(brageRecord))
                               .build();
         if (!isCristinRecord(brageRecord)) {
             assertPublicationDoesNotHaveEmptyFields(publication);
         }
         return publication;
+    }
+
+    private static List<Funding> extractFundings(Record brageRecord) {
+        return nonNull(brageRecord.getProjects())
+                   ? brageRecord.getProjects().stream().map(Project::toFunding).collect(Collectors.toList())
+                   : List.of();
     }
 
     public static String extractDescription(Record record) {
