@@ -9,6 +9,7 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.instancetypes.PublicationInstance;
@@ -43,6 +44,17 @@ public abstract class PermissionStrategy {
                    .map(Reference::getPublicationInstance)
                    .map(PermissionStrategy::publicationInstanceIsDegree)
                    .orElse(false);
+    }
+
+    protected boolean isEmbargoDegree() {
+        return publication.getAssociatedArtifacts().stream()
+                   .filter(File.class::isInstance)
+                   .map(File.class::cast)
+                   .anyMatch(this::hasEmbargo);
+    }
+
+    private boolean hasEmbargo(File file) {
+        return !file.fileDoesNotHaveActiveEmbargo();
     }
 
     protected boolean isVerifiedContributor(Contributor contributor) {

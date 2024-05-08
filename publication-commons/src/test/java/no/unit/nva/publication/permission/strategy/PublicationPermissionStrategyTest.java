@@ -604,6 +604,17 @@ class PublicationPermissionStrategyTest {
         return publication.copy().withEntityDescription(entityDescription).build();
     }
 
+    Publication createDegreePhd(String resourceOwner, URI customerId, URI ownerAffiliation) {
+        var publication = createPublication(resourceOwner, customerId, ownerAffiliation);
+
+        var degreePhd = new DegreePhd(new MonographPages(), new PublicationDate(),
+                                      Set.of(new UnconfirmedDocument(randomString())));
+        var reference = new Reference.Builder().withPublicationInstance(degreePhd).build();
+        var entityDescription = publication.getEntityDescription().copy().withReference(reference).build();
+
+        return publication.copy().withEntityDescription(entityDescription).build();
+    }
+
     protected Publication createPublicationWithContributor(String contributorName, URI contributorId,
                                                          Role contributorRole, URI institutionId,
                                                            URI topLevelCristinOrgId) {
@@ -643,6 +654,15 @@ class PublicationPermissionStrategyTest {
     protected List<AccessRight> getCuratorAccessRightsWithDegree() {
         var accessRights = new ArrayList<AccessRight>();
         accessRights.add(AccessRight.MANAGE_DEGREE);
+        accessRights.add(AccessRight.MANAGE_PUBLISHING_REQUESTS);
+        accessRights.add(AccessRight.MANAGE_RESOURCES_STANDARD);
+        return accessRights;
+    }
+
+    protected List<AccessRight> getCuratorAccessRightsWithEmbargoDegree() {
+        var accessRights = new ArrayList<AccessRight>();
+        accessRights.add(AccessRight.MANAGE_DEGREE);
+        accessRights.add(AccessRight.MANAGE_DEGREE_EMBARGO);
         accessRights.add(AccessRight.MANAGE_PUBLISHING_REQUESTS);
         accessRights.add(AccessRight.MANAGE_RESOURCES_STANDARD);
         return accessRights;
