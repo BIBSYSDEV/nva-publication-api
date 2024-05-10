@@ -32,7 +32,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
                               .withAssociatedArtifacts(List.of(PublishedFileGenerator.random().toUnpublishedFile()))
                               .build();
 
-        var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRights(), cristinId,
+        var requestInfo = createUserRequestInfo(curatorUsername, institution, getAccessRightsForCurator(), cristinId,
                                                 publication.getResourceOwner().getOwnerAffiliation());
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
@@ -54,7 +54,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var curatorUsername = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(curatorUsername, randomUri(), getCuratorAccessRights(), cristinId,
+        var requestInfo = createUserRequestInfo(curatorUsername, randomUri(), getAccessRightsForCurator(), cristinId,
                                                 usersTopCristinOrg);
         var publication = createPublicationWithContributor(contributor, contributorCristinId, Role.CREATOR,
                                                            institution, randomUri()).copy()
@@ -78,7 +78,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var curatorUsername = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRights(), cristinId,
+        var requestInfo = createUserRequestInfo(curatorUsername, institution, getAccessRightsForCurator(), cristinId,
                                                 null);
         var publication = createNonDegreePublication(resourceOwner, institution);
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
@@ -100,7 +100,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var curatorUsername = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRights(), cristinId,
+        var requestInfo = createUserRequestInfo(curatorUsername, institution, getAccessRightsForCurator(), cristinId,
                                                 null);
         var publication = createDegreePhd(resourceOwner, institution);
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
@@ -125,7 +125,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
                               .withAssociatedArtifacts(List.of(PublishedFileGenerator.random().toUnpublishedFile()))
                               .build();
 
-        var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRightsWithDegree(),
+        var requestInfo = createUserRequestInfo(curatorUsername, institution, getAccessRightsForThesisCurator(),
                                                 cristinId, publication.getResourceOwner().getOwnerAffiliation());
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 

@@ -1,6 +1,7 @@
 package no.unit.nva.publication.permission.strategy.restrict;
 
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
+import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE_EMBARGO;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.external.services.UriRetriever;
@@ -14,7 +15,20 @@ public class NonDegreePermissionStrategy extends DenyPermissionStrategy {
 
     @Override
     public boolean deniesAction(PublicationOperation permission) {
-        return isDegree() && !hasAccessRight(MANAGE_DEGREE) && !isUsersDraft();
+        if (isUsersDraft()) {
+            return false; // allow
+        }
+
+        if (isDegree()) {
+            if (!hasAccessRight(MANAGE_DEGREE)) {
+                return true; // deny
+            }
+            if (isEmbargoDegree() && !hasAccessRight(MANAGE_DEGREE_EMBARGO)) {
+                return true; // deny
+            }
+        }
+
+        return false; // allow
     }
 
     private boolean isUsersDraft() {
