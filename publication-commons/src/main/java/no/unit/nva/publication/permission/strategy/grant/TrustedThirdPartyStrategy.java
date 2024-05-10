@@ -12,8 +12,6 @@ public class TrustedThirdPartyStrategy extends GrantPermissionStrategy {
         super(publication, userInstance, uriRetriever);
     }
 
-    // UPDATE, UNPUBLISH hvis du har upsert scope og
-
     @Override
     public boolean allowsAction(PublicationOperation permission) {
         return switch (permission) {
