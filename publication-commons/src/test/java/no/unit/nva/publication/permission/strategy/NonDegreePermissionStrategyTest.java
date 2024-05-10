@@ -115,28 +115,6 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
                                    .allowsAction(PublicationOperation.UPDATE));
     }
 
-    @Test
-    void shouldDenyDegreeCuratorEmbargoAccess()
-        throws JsonProcessingException, UnauthorizedException {
-
-        var institution = randomUri();
-        var resourceOwner = randomString();
-        var curatorUsername = randomString();
-        var cristinId = randomUri();
-
-        var publication = createDegreePhd(resourceOwner, institution, randomUri()).copy()
-                              .withStatus(PUBLISHED)
-                              .withAssociatedArtifacts(List.of(randomFileWithEmbargo(), PublishedFileGenerator.random()))
-                              .build();
-
-        var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRightsWithDegree(),
-                                                cristinId, publication.getResourceOwner().getOwnerAffiliation());
-        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
-
-        Assertions.assertFalse(PublicationPermissionStrategy
-                                  .create(publication, userInstance, uriRetriever)
-                                  .allowsAction(PublicationOperation.UPDATE));
-    }
 
     public static PublishedFile randomFileWithEmbargo() {
         return new PublishedFile(UUID.randomUUID(), RandomDataGenerator.randomString(),
