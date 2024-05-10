@@ -47,7 +47,7 @@ public abstract class PermissionStrategy {
     }
 
     protected boolean isEmbargoDegree() {
-        return publication.getAssociatedArtifacts().stream()
+        return isDegree() && publication.getAssociatedArtifacts().stream()
                    .filter(File.class::isInstance)
                    .map(File.class::cast)
                    .anyMatch(this::hasEmbargo);
