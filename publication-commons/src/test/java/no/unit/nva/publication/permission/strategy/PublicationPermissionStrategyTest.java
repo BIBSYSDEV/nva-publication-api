@@ -659,7 +659,7 @@ class PublicationPermissionStrategyTest {
         return accessRights;
     }
 
-    protected List<AccessRight> getCuratorAccessRightsWithEmbargoDegree() {
+    protected List<AccessRight> getAccessRightsForEmbargoThesisCurator() {
         var accessRights = new ArrayList<AccessRight>();
         accessRights.add(AccessRight.MANAGE_DEGREE);
         accessRights.add(AccessRight.MANAGE_DEGREE_EMBARGO);

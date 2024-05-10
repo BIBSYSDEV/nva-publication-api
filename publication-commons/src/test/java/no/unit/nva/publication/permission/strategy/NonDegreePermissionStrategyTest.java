@@ -106,7 +106,7 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
                               .withAssociatedArtifacts(List.of(randomFileWithEmbargo(), PublishedFileGenerator.random()))
                               .build();
 
-        var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRightsWithEmbargoDegree(),
+        var requestInfo = createUserRequestInfo(curatorUsername, institution, getAccessRightsForEmbargoThesisCurator(),
                                                 cristinId, publication.getResourceOwner().getOwnerAffiliation());
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
