@@ -18,7 +18,8 @@ httpcore = { require = '4.4.13' }
 dynamoDbLocal = { strictly = '2.0.0' }
 awsIon = { strictly = '1.5.1' }
 commonsValidator = { strictly = '1.8.0' }
-apacheCommons = { require = '4.4' }
+apacheCommonsCollections = { require = '4.4' }
+apacheCommonsText = { require = '1.12.0' }
 hamcrest = { strictly = '2.2' }
 cucumber = { strictly = '6.11.0' }
 junit = { strictly = '5.10.2' }
@@ -101,7 +102,8 @@ aws-sdk2-secrets = { group = 'software.amazon.awssdk', name = 'secretsmanager', 
 
 aws-ion = { group = 'software.amazon.ion', name = 'ion-java', version.ref = 'awsIon' }
 
-apache-commons-collections = { group = 'org.apache.commons', name = 'commons-collections4', version.ref = 'apacheCommons' }
+apache-commons-collections = { group = 'org.apache.commons', name = 'commons-collections4', version.ref = 'apacheCommonsCollections' }
+apache-commons-text = { group = 'org.apache.commons', name = 'commons-text', version.ref = 'apacheCommonsText' }
 
 commons-validator = { group = 'commons-validator', name = 'commons-validator', version.ref = 'commonsValidator' }
 jsonld = { group = 'com.github.jsonld-java', name = 'jsonld-java', version.ref = 'jsonld' }
