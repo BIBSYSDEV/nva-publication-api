@@ -167,7 +167,7 @@ public class CristinEntryEventConsumer
 
     private Publication update(PublicationRepresentations publicationRepresentations) {
         return attempt(() -> persistUpdatedPublication(publicationRepresentations))
-                   .map(this::persistUpdateReport)
+                   .map(this::persistReports)
                    .orElseThrow();
     }
 
@@ -177,13 +177,18 @@ public class CristinEntryEventConsumer
         return publicationRepresentations;
     }
 
-    private Publication persistUpdateReport(PublicationRepresentations publicationRepresentations) {
+    private Publication persistReports(PublicationRepresentations publicationRepresentations) {
+        persistUpdateReport(publicationRepresentations);
+        persistNviReportIfNeeded(publicationRepresentations);
+        return publicationRepresentations.getExistingPublication();
+    }
+
+    private void persistUpdateReport(PublicationRepresentations publicationRepresentations) {
         var fileUri = constructUpdateFileUri(publicationRepresentations);
         var s3Driver = new S3Driver(s3Client, fileUri.getUri().getHost());
         var content = publicationRepresentations.toString();
         attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(),
                                           content)).orElseThrow();
-        return publicationRepresentations.getExistingPublication();
     }
 
     private Publication getExistingPublication(PublicationRepresentations publicationRepresentation) {
