@@ -46,8 +46,7 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
                                    .allowsAction(operation));
     }
 
-    @ParameterizedTest(name = "Should allow Curator {0} operation on degree resources belonging to the institution "
-                              + "with MANAGE_DEGREE access rights")
+    @ParameterizedTest(name = "Should allow Thesis curator {0} operation on degree resources belonging to the institution")
     @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "TERMINATE",
         "TICKET_PUBLISH"})
     void shouldAllowCuratorOnDegree(PublicationOperation operation)
