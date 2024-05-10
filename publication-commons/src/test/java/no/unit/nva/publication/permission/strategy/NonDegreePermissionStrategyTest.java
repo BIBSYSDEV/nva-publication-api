@@ -49,7 +49,7 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
     @ParameterizedTest(name = "Should allow Thesis curator {0} operation on degree resources belonging to the institution")
     @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "TERMINATE",
         "TICKET_PUBLISH"})
-    void shouldAllowCuratorOnDegree(PublicationOperation operation)
+    void shouldAllowThesisCuratorOnDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
         var institution = randomUri();
@@ -70,7 +70,7 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
     }
 
     @Test
-    void shouldDenyCuratorWithMissingEmbargoAccess()
+    void shouldDenyNonEmbargoThesisCuratorOnDegreeWithEmbargo()
         throws JsonProcessingException, UnauthorizedException {
 
         var institution = randomUri();
@@ -93,7 +93,7 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
     }
 
     @Test
-    void shouldAllowCuratorWithEmbargoAccess()
+    void shouldAllowEmbargoThesisCuratorOnDegreeWithEmbargo()
         throws JsonProcessingException, UnauthorizedException {
 
         var institution = randomUri();
