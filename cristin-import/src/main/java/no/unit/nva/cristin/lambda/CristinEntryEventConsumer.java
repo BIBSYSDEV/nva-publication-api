@@ -159,10 +159,17 @@ public class CristinEntryEventConsumer
         return attempt(() -> getExistingPublication(publicationRepresentation))
                    .map(publicationRepresentation::withExistingPublication)
                    .map(PublicationUpdater::update)
-                   .map(publicationRepresentations -> publicationRepresentations.updateHasEffectiveChanges()
-                                                          ? update(publicationRepresentations)
-                                                          : publicationRepresentations.getExistingPublication())
+                   .map(this::getPublication)
                    .orElseThrow();
+    }
+
+    private Publication getPublication(PublicationRepresentations publicationRepresentations) {
+        if (publicationRepresentations.updateHasEffectiveChanges()) {
+            return update(publicationRepresentations);
+        } else {
+            persistNviReportIfNeeded(publicationRepresentations);
+            return publicationRepresentations.getExistingPublication();
+        }
     }
 
     private Publication update(PublicationRepresentations publicationRepresentations) {
