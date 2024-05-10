@@ -80,7 +80,7 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
 
         var publication = createDegreePhd(resourceOwner, institution, randomUri()).copy()
                               .withStatus(PUBLISHED)
-                              .withAssociatedArtifacts(List.of(randomFileWithEmbargo()))
+                              .withAssociatedArtifacts(List.of(randomFileWithEmbargo(), PublishedFileGenerator.random()))
                               .build();
 
         var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRightsWithDegree(),
