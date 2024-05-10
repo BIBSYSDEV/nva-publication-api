@@ -38,6 +38,7 @@ public class Record {
     private Set<URI> subjects;
     private String subjectCode;
     private String accessCode;
+    private Set<Project> projects;
 
 
     public Record() {
@@ -50,7 +51,7 @@ public class Record {
         return Objects.hash(getResourceOwner(), getEntityDescription(), getCustomer(), getId(), getDoi(), getLink(),
                             getType(), getPublisherAuthority(), getRightsholder(), getSpatialCoverage(), getPartOf(),
                             getPart(), getPublication(), getContentBundle(), getPublishedDate(), getCristinId(),
-                            getBrageLocation(), getErrors(), getWarnings(), getSubjects(), getAccessCode());
+                            getBrageLocation(), getErrors(), getWarnings(), getSubjects(), getAccessCode(), getProjects());
     }
 
     @JacocoGenerated
@@ -83,7 +84,8 @@ public class Record {
                && Objects.equals(getErrors(), record.getErrors())
                && Objects.equals(getWarnings(), record.getWarnings())
                && Objects.equals(getSubjects(), record.getSubjects())
-               && Objects.equals(getAccessCode(), record.getAccessCode());
+               && Objects.equals(getAccessCode(), record.getAccessCode())
+               && Objects.equals(getProjects(), record.getProjects());
     }
 
     @JacocoGenerated
@@ -95,6 +97,14 @@ public class Record {
     @JacocoGenerated
     public void setSubjectCode(String subjectCode) {
         this.subjectCode = subjectCode;
+    }
+
+    public Set<Project> getProjects() {
+        return projects;
+    }
+
+    public void setProjects(Set<Project> projects) {
+        this.projects = projects;
     }
 
     @JacocoGenerated

@@ -1519,7 +1519,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private void assertThatPublicationsMatch(Publication actualPublication, Publication expectedPublication) {
         assertThat(actualPublication.getSubjects(), containsInAnyOrder(expectedPublication.getSubjects().toArray()));
         var ignoredFields = new String[]{"createdDate", "identifier", "modifiedDate", "publishedDate", "subjects",
-            "associatedArtifacts"};
+            "associatedArtifacts", "fundings"};
         assertThat(actualPublication, is(samePropertyValuesAs(expectedPublication, ignoredFields)));
         assertThat(actualPublication.getAssociatedArtifacts(),
                    hasSize(expectedPublication.getAssociatedArtifacts().size()));

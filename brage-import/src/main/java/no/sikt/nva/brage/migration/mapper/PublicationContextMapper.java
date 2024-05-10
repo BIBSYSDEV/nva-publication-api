@@ -392,6 +392,7 @@ public final class PublicationContextMapper {
                    .withSeries(extractSeries(brageRecord))
                    .withIsbnList(extractIsbnList(brageRecord))
                    .withSeriesNumber(extractSeriesNumber(brageRecord))
+                   .withSeriesNumber(brageRecord.getEntityDescription().getPublicationInstance().getIssue())
                    .build();
     }
 

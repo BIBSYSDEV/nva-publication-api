@@ -2,8 +2,6 @@ package no.sikt.nva.brage.migration.testutils;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
-import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
@@ -26,6 +24,7 @@ import no.sikt.nva.brage.migration.record.Identity;
 import no.sikt.nva.brage.migration.record.Journal;
 import no.sikt.nva.brage.migration.record.Language;
 import no.sikt.nva.brage.migration.record.Pages;
+import no.sikt.nva.brage.migration.record.Project;
 import no.sikt.nva.brage.migration.record.PublicationContext;
 import no.sikt.nva.brage.migration.record.PublicationDate;
 import no.sikt.nva.brage.migration.record.PublicationDateNva;
@@ -49,6 +48,8 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.funding.Funding;
+import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -123,6 +124,14 @@ public class NvaBrageMigrationDataGenerator {
                    .withAdditionalIdentifiers(generateCristinIdentifier(builder))
                    .withRightsHolder(builder.getRightsHolder())
                    .withSubjects(builder.subjects.stream().toList())
+                   .withFundings(List.of(convertProjectToFunding(builder.getProject())))
+                   .build();
+    }
+
+    private static Funding convertProjectToFunding(Project project) {
+        return new FundingBuilder()
+                   .withIdentifier(project.identifier())
+                   .withLabels(Map.of("nb", project.name()))
                    .build();
     }
 
@@ -159,6 +168,7 @@ public class NvaBrageMigrationDataGenerator {
         brageRecord.setPart(Optional.ofNullable(builder.getHasPart())
                                 .orElse(Set.of()).stream().toList());
         brageRecord.setAccessCode(builder.getAccessCode());
+        brageRecord.setProjects(Set.of(builder.getProject()));
         return brageRecord;
     }
 
@@ -253,6 +263,7 @@ public class NvaBrageMigrationDataGenerator {
         private Set<String> hasPart;
         private List<String> ismnList;
         private String accessCode;
+        private Project project;
 
         public static URI randomHandle() {
             return UriWrapper.fromUri("http://hdl.handle.net/11250/" + randomInteger()).getUri();
@@ -678,6 +689,9 @@ public class NvaBrageMigrationDataGenerator {
             if (isNull(subjectCode)) {
                 subjectCode = randomString();
             }
+            if (isNull(project)) {
+                project = new Project(randomString(), randomString());
+            }
             return new NvaBrageMigrationDataGenerator(this);
         }
 
@@ -717,6 +731,14 @@ public class NvaBrageMigrationDataGenerator {
 
         public String getAccessCode() {
             return accessCode;
+        }
+
+        public Project getProject() {
+            return project;
+        }
+
+        public void setProject(Project project) {
+            this.project = project;
         }
 
         private static no.unit.nva.model.PublicationDate createPublicationDateForPublication(
