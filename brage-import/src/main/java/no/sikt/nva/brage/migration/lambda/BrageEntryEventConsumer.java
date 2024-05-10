@@ -28,6 +28,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
@@ -77,6 +78,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     public static final String INSTANCE_TYPE = "instanceType";
     public static final String AGGREGATION = "aggregation";
     public static final String NONE = "none";
+    public static final String ISBN = "isbn";
     private final S3Client s3Client;
     private final ResourceService resourceService;
     private String brageRecordFile;
@@ -125,10 +127,53 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
             var shouldMerge= existingPublicationHasSameDoi(publication);
             source = shouldMerge ? MergeSource.DOI : MergeSource.NOT_RELEVANT;
             return shouldMerge;
+        }
+        if (hasIsbn(publication)) {
+            var shouldMerge = existingPublicationHasSameIsbn(publication);
+            source = shouldMerge ? MergeSource.ISBN : MergeSource.NOT_RELEVANT;
+            return shouldMerge;
         } else {
             var shouldMerge = existingPublicationHasSamePublicationContent(publication);
             source = shouldMerge ? MergeSource.SEARCH : MergeSource.NOT_RELEVANT;
             return shouldMerge;
+        }
+    }
+
+    private boolean existingPublicationHasSameIsbn(Publication publication) {
+        var isbnList = ((Book) publication.getEntityDescription().getReference().getPublicationContext()).getIsbnList();
+        publicationsToMerge = isbnList.stream()
+                                  .map(isbn -> fetchPublicationsByParam(ISBN, isbn))
+                                  .flatMap(List::stream)
+                                  .collect(Collectors.toList());
+        return !publicationsToMerge.isEmpty();
+    }
+
+    private List<Publication> fetchPublicationsByParam(String searchParam, String value) {
+        var uri = searchPublicationByParamUri(searchParam, value);
+        return uriRetriever.getRawContent(uri, APPLICATION_JSON)
+                     .map(this::toResponse)
+                     .map(SearchResourceApiResponse::hits)
+                     .stream()
+                     .flatMap(List::stream)
+                     .map(ResourceWithId::getIdentifier)
+                     .map(this::getPublicationByIdentifier)
+                     .toList();
+    }
+
+    private URI searchPublicationByParamUri(String searchParam, String value) {
+        return UriWrapper.fromHost(apiHost)
+                   .addChild(SEARCH)
+                   .addChild(RESOURCES)
+                   .addQueryParameter(searchParam, value)
+                   .addQueryParameter(AGGREGATION, NONE)
+                   .getUri();
+    }
+
+    private boolean hasIsbn(Publication publication) {
+        if (publication.getEntityDescription().getReference().getPublicationContext() instanceof Book book) {
+            return !book.getIsbnList().isEmpty();
+        } else {
+            return false;
         }
     }
 
@@ -195,7 +240,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         var doi = publication.getEntityDescription().getReference().getDoi();
 
         if (nonNull(doi)) {
-            var publicationsByDoi = searchForPublicationsByDoi(doi);
+            var publicationsByDoi = fetchPublicationsByParam(DOI, doi.toString());
             if (publicationsByDoi.isEmpty()) {
                 return false;
             }
@@ -209,27 +254,6 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
             return true;
         }
         return false;
-    }
-
-    private List<ResourceWithId> searchForPublicationsByDoi(URI doi) {
-        var searchUri = constructSearchUri(doi);
-        return getResponseBody(searchUri)
-                       .map(this::toResponse)
-                       .map(SearchResourceApiResponse::hits)
-                .orElse(List.of());
-    }
-
-    private URI constructSearchUri(URI doi) {
-        return UriWrapper.fromHost(apiHost)
-                   .addChild(SEARCH)
-                   .addChild(RESOURCES)
-                   .addQueryParameter(DOI, doi.toString())
-                   .addQueryParameter(AGGREGATION, NONE)
-                   .getUri();
-    }
-
-    private Optional<String> getResponseBody(URI uri) {
-        return uriRetriever.getRawContent(uri, APPLICATION_JSON);
     }
 
     private SearchResourceApiResponse toResponse(String response) {

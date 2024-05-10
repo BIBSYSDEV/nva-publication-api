@@ -110,12 +110,14 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UploadDetails;
+import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.artistic.music.InvalidIsmnException;
 import no.unit.nva.model.instancetypes.artistic.music.Ismn;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.artistic.music.MusicScore;
+import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.event.ConferencePoster;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
@@ -1336,6 +1338,27 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                    is(equalTo(existingPublication.getIdentifier().toString())));
     }
 
+    @Test
+    void shouldMergeIncomingPublicationWithExistingOneWhenSearchByIsbnReturnsSingleHit() throws IOException {
+        var isbn = randomIsbn10();
+        var publication = randomPublication(BookAnthology.class);
+        publication.getEntityDescription().getReference().setPublicationContext(new Book.BookBuilder().withIsbnList(List.of(randomIsbn10())).build());
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication);
+
+        mockSearchPublicationByIsbnResponse(existingPublication.getIdentifier(), 200);
+        var generator = new NvaBrageMigrationDataGenerator.Builder().withIsbn(isbn).withType(TYPE_BOOK).build();
+
+        var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
+        var publicationFromBrage = handler.handleRequest(s3Event, CONTEXT);
+        var storedMergeReportString =
+            extractUpdateReportFromS3ByUpdateSource(s3Event, existingPublication, generator.getBrageRecord().getId(),
+                                                    "ISBN");
+
+        assertThat(storedMergeReportString, is(notNullValue()));
+        assertThat(publicationFromBrage.getIdentifier().toString(),
+                   is(equalTo(existingPublication.getIdentifier().toString())));
+    }
+
     private void mockSearchPublicationByTitleAndTypeResponse(SortableIdentifier identifier, int statusCode) {
         var publicationId = UriWrapper.fromHost(API_HOST)
                               .addChild("publication")
@@ -1346,6 +1369,15 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         when(response.statusCode()).thenReturn(statusCode);
         when(response.body()).thenReturn(searchResourceApiResponse.toString());
         when(this.uriRetriever.fetchResponse(any())).thenReturn(response);
+    }
+
+    private void mockSearchPublicationByIsbnResponse(SortableIdentifier identifier, int statusCode) {
+        var publicationId = UriWrapper.fromHost(API_HOST)
+                                .addChild("publication")
+                                .addChild(identifier.toString())
+                                .getUri();
+        var searchResourceApiResponse = new SearchResourceApiResponse(1, List.of(new ResourceWithId(publicationId)));
+        when(this.uriRetriever.getRawContent(any(), any())).thenReturn(Optional.ofNullable(searchResourceApiResponse.toString()));
     }
 
     private DiscardedFilesReport extractDiscardedFilesReportFromS3(Record brageRecord, S3Event s3Event,
