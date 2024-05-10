@@ -36,7 +36,7 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
         var cristinId = randomUri();
         var topLevelCristinOrgId = randomUri();
 
-        var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRights(), cristinId,
+        var requestInfo = createUserRequestInfo(curatorUsername, institution, getAccessRightsForCurator(), cristinId,
                                                 topLevelCristinOrgId);
         var publication = createDegreePhd(resourceOwner, institution, topLevelCristinOrgId);
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
@@ -60,7 +60,7 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
         var publication = createDegreePhd(resourceOwner, institution, randomUri()).copy()
                               .withStatus(PublicationOperation.UNPUBLISH == operation ? PUBLISHED : UNPUBLISHED)
                               .build();
-        var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRightsWithDegree(),
+        var requestInfo = createUserRequestInfo(curatorUsername, institution, getAccessRightsForThesisCurator(),
                                                 cristinId, publication.getResourceOwner().getOwnerAffiliation());
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
@@ -83,7 +83,7 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
                               .withAssociatedArtifacts(List.of(randomFileWithEmbargo(), PublishedFileGenerator.random()))
                               .build();
 
-        var requestInfo = createUserRequestInfo(curatorUsername, institution, getCuratorAccessRightsWithDegree(),
+        var requestInfo = createUserRequestInfo(curatorUsername, institution, getAccessRightsForThesisCurator(),
                                                 cristinId, publication.getResourceOwner().getOwnerAffiliation());
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 

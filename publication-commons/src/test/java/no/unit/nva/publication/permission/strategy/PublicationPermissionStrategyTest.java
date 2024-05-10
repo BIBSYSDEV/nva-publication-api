@@ -153,7 +153,7 @@ class PublicationPermissionStrategyTest {
         var resourceOwner = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId,
+        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getAccessRightsForEditor(), cristinId,
                                                 null);
         var publication = createDegreePhd(resourceOwner, editorInstitution)
                               .copy()
@@ -175,7 +175,7 @@ class PublicationPermissionStrategyTest {
         var resourceOwner = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId,
+        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getAccessRightsForEditor(), cristinId,
                                                 null);
         var publication = createPublication(resourceOwner, editorInstitution, randomUri());
 
@@ -195,7 +195,7 @@ class PublicationPermissionStrategyTest {
         var resourceOwnerInstitution = randomUri();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId,
+        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getAccessRightsForEditor(), cristinId,
                                                 null);
         var publication = createPublication(resourceOwner, resourceOwnerInstitution, randomUri());
 
@@ -213,7 +213,7 @@ class PublicationPermissionStrategyTest {
         var resourceOwner = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId,
+        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getAccessRightsForEditor(), cristinId,
                                                 null);
         var publication = createDegreePhd(resourceOwner, editorInstitution);
 
@@ -232,7 +232,7 @@ class PublicationPermissionStrategyTest {
         var resourceInstitution = randomUri();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId,
+        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getAccessRightsForEditor(), cristinId,
                                                 null);
         var publication = createDegreePhd(resourceOwner, resourceInstitution);
 
@@ -271,7 +271,7 @@ class PublicationPermissionStrategyTest {
         var username = randomString();
         var institution = randomUri();
         var cristinId = randomUri();
-        var requestInfo = createUserRequestInfo(username, institution, getCuratorAccessRights(), cristinId, null);
+        var requestInfo = createUserRequestInfo(username, institution, getAccessRightsForCurator(), cristinId, null);
         var publication = createDegreePhd(username, institution);
 
         Assertions.assertFalse(PublicationPermissionStrategy
@@ -351,7 +351,7 @@ class PublicationPermissionStrategyTest {
         var resourceOwnerInstitution = randomUri();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(curatorName, curatorInstitution, getCuratorAccessRights(), cristinId, null);
+        var requestInfo = createUserRequestInfo(curatorName, curatorInstitution, getAccessRightsForCurator(), cristinId, null);
         var publication = createDegreePhd(resourceOwner, resourceOwnerInstitution);
 
         Assertions.assertFalse(PublicationPermissionStrategy
@@ -420,7 +420,7 @@ class PublicationPermissionStrategyTest {
         var resourceOwner = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getEditorAccessRights(), cristinId, null);
+        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getAccessRightsForEditor(), cristinId, null);
         var publication = createPublication(resourceOwner, editorInstitution, randomUri());
 
         Assertions.assertTrue(
@@ -433,7 +433,7 @@ class PublicationPermissionStrategyTest {
     void shouldGivePermissionToEditPublicationWhenTrustedClient()
         throws JsonProcessingException, UnauthorizedException {
         var publication = createNonDegreePublication(randomString(), EXTERNAL_CLIENT_CUSTOMER_URI);
-        var requestInfo = createThirdPartyRequestInfo(getEditorAccessRights());
+        var requestInfo = createThirdPartyRequestInfo(getAccessRightsForEditor());
 
         Assertions.assertTrue(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
@@ -445,7 +445,7 @@ class PublicationPermissionStrategyTest {
     void shouldDenyTrustedClientEditPublicationWithoutMatchingCustomer()
         throws JsonProcessingException, UnauthorizedException {
         var publication = createPublication(randomString(), randomUri(), randomUri());
-        var requestInfo = createThirdPartyRequestInfo(getEditorAccessRights());
+        var requestInfo = createThirdPartyRequestInfo(getAccessRightsForEditor());
 
         Assertions.assertFalse(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
@@ -458,7 +458,7 @@ class PublicationPermissionStrategyTest {
         throws JsonProcessingException, UnauthorizedException {
         var publication = createPublication(randomString(), randomUri(), randomUri());
         publication.setPublisher(null);
-        var requestInfo = createThirdPartyRequestInfo(getEditorAccessRights());
+        var requestInfo = createThirdPartyRequestInfo(getAccessRightsForEditor());
 
         Assertions.assertFalse(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
@@ -469,7 +469,7 @@ class PublicationPermissionStrategyTest {
     @Test
     void shouldThrowUnauthorizedExceptionFromAuthorize() throws JsonProcessingException, UnauthorizedException {
         var publication = createDegreePhd(randomString(), randomUri());
-        var requestInfo = createThirdPartyRequestInfo(getCuratorAccessRights());
+        var requestInfo = createThirdPartyRequestInfo(getAccessRightsForCurator());
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         var strategy = PublicationPermissionStrategy.create(publication, userInstance, uriRetriever);
 
@@ -499,7 +499,7 @@ class PublicationPermissionStrategyTest {
         var username = randomString();
         var institution = randomUri();
         var cristinId = randomUri();
-        var requestInfo = createUserRequestInfo(username, institution, getCuratorAccessRights(), randomUri(), cristinId);
+        var requestInfo = createUserRequestInfo(username, institution, getAccessRightsForCurator(), randomUri(), cristinId);
         var publication = createNonDegreePublication(username, institution, cristinId);
         var permissionStrategy = PublicationPermissionStrategy.create(publication,
                                                                       RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient),
@@ -553,7 +553,7 @@ class PublicationPermissionStrategyTest {
     }
 
     private List<AccessRight> getCuratorWithPublishDegreeAccessRight() {
-        var curatorAccessRight = getCuratorAccessRights();
+        var curatorAccessRight = getAccessRightsForCurator();
         curatorAccessRight.add(AccessRight.MANAGE_DEGREE);
         return curatorAccessRight;
     }
@@ -637,21 +637,21 @@ class PublicationPermissionStrategyTest {
                    .withStatus(PUBLISHED).build();
     }
 
-    protected List<AccessRight> getEditorAccessRights() {
+    protected List<AccessRight> getAccessRightsForEditor() {
         var accessRights = new ArrayList<AccessRight>();
         accessRights.add(AccessRight.MANAGE_DEGREE);
         accessRights.add(AccessRight.MANAGE_RESOURCES_ALL);
         return accessRights;
     }
 
-    protected List<AccessRight> getCuratorAccessRights() {
+    protected List<AccessRight> getAccessRightsForCurator() {
         var accessRights = new ArrayList<AccessRight>();
         accessRights.add(AccessRight.MANAGE_PUBLISHING_REQUESTS);
         accessRights.add(AccessRight.MANAGE_RESOURCES_STANDARD);
         return accessRights;
     }
 
-    protected List<AccessRight> getCuratorAccessRightsWithDegree() {
+    protected List<AccessRight> getAccessRightsForThesisCurator() {
         var accessRights = new ArrayList<AccessRight>();
         accessRights.add(AccessRight.MANAGE_DEGREE);
         accessRights.add(AccessRight.MANAGE_PUBLISHING_REQUESTS);
