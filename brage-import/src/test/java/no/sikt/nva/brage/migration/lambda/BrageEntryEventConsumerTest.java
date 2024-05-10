@@ -45,6 +45,8 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
+import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.AssertionsKt.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -119,6 +121,7 @@ import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.artistic.music.MusicScore;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.event.ConferencePoster;
+import no.unit.nva.model.instancetypes.media.MediaInterview;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.model.business.Resource;
@@ -138,6 +141,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
@@ -1065,18 +1069,19 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                    is(equalTo(nvaBrageMigrationDataGenerator.getBrageRecord().getId().toString())));
     }
 
-    //TODO: flaky test
     @Test
     void shouldPersistMergeReport()
         throws IOException, BadRequestException, nva.commons.apigateway.exceptions.NotFoundException {
         var cristinIdentifier = randomString();
         var nvaBrageMigrationDataGenerator = new NvaBrageMigrationDataGenerator.Builder().withPublishedDate(null)
-                                                 .withType(TYPE_BOOK)
+                                                 .withType(TYPE_FILM)
                                                  .withCristinIdentifier(cristinIdentifier)
                                                  .build();
         var existingPublication =
             persistPublicationWithCristinIdAndHandle(cristinIdentifier,
                                                      nvaBrageMigrationDataGenerator.getNvaPublication().getHandle());
+        existingPublication.getEntityDescription().setMainTitle(nvaBrageMigrationDataGenerator.getNvaPublication().getEntityDescription().getMainTitle());
+        resourceService.updatePublication(existingPublication);
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
         handler.handleRequest(s3Event, CONTEXT);
         var storedMergeReportString =
@@ -1107,6 +1112,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                  .withPublishedDate(null)
                                                  .withType(TYPE_BOOK)
                                                  .withDoi(doi)
+                                                 .withMainTitle(existingPublication.getEntityDescription().getMainTitle())
                                                  .build();
 
         var brageRecord = nvaBrageMigrationDataGenerator.getBrageRecord();
@@ -1346,7 +1352,11 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var existingPublication = resourceService.createPublicationFromImportedEntry(publication);
 
         mockSearchPublicationByIsbnResponse(existingPublication.getIdentifier(), 200);
-        var generator = new NvaBrageMigrationDataGenerator.Builder().withIsbn(isbn).withType(TYPE_BOOK).build();
+        var generator = new NvaBrageMigrationDataGenerator.Builder()
+                            .withIsbn(isbn)
+                            .withType(TYPE_BOOK)
+                            .withMainTitle(existingPublication.getEntityDescription().getMainTitle())
+                            .build();
 
         var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
         var publicationFromBrage = handler.handleRequest(s3Event, CONTEXT);
@@ -1357,6 +1367,53 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         assertThat(storedMergeReportString, is(notNullValue()));
         assertThat(publicationFromBrage.getIdentifier().toString(),
                    is(equalTo(existingPublication.getIdentifier().toString())));
+    }
+
+    @Test
+    void shouldNotMergeIncomingPublicationWithExistingOneWhenMainTitleLevenshteinDistanceIsTooLarge() throws IOException {
+        var publication = randomPublication(ConferencePoster.class);
+        publication.setAdditionalIdentifiers(Set.of());
+        publication.getEntityDescription().getReference().setDoi(null);
+        publication.getEntityDescription().setMainTitle("Sensitivity analysis of the dynamic response of floating wind turbines");
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication);
+        var instanceType = existingPublication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
+
+        mockSearchPublicationByTitleAndTypeResponse(existingPublication.getIdentifier(), 200);
+
+        var generator = new NvaBrageMigrationDataGenerator.Builder()
+                            .withMainTitle("Dynamic Response of Floating Wind Turbines")
+                            .withType(new Type(List.of(), instanceType)).build();
+
+        var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
+        handler.handleRequest(s3Event, CONTEXT);
+
+        assertThrows(NoSuchKeyException.class, () -> extractUpdateReportFromS3ByUpdateSource(
+            s3Event, existingPublication, generator.getBrageRecord().getId(), "SEARCH"));
+    }
+
+    @Test
+    void shouldMergeIncomingPublicationWithExistingOneWhenMainTitleLevenshteinDistanceIsNotSignificant() throws IOException {
+        var publication = randomPublication(ConferencePoster.class);
+        publication.setAdditionalIdentifiers(Set.of());
+        publication.getEntityDescription().getReference().setDoi(null);
+        publication.getEntityDescription().setMainTitle("Dynamic - Response of Floating Wind Turbines! Report");
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication);
+        var instanceType = existingPublication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
+
+        mockSearchPublicationByTitleAndTypeResponse(existingPublication.getIdentifier(), 200);
+
+        var generator = new NvaBrageMigrationDataGenerator.Builder()
+                            .withMainTitle("Dynamic Response of Floating Wind Turbines")
+                            .withType(new Type(List.of(), instanceType)).build();
+
+        var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
+        var updatedPublication = handler.handleRequest(s3Event, CONTEXT);
+
+        assertDoesNotThrow(() -> extractUpdateReportFromS3ByUpdateSource(
+            s3Event, existingPublication, generator.getBrageRecord().getId(), "SEARCH"));
+
+        assertThat(updatedPublication.getIdentifier().toString(),
+                   is(equalTo(updatedPublication.getIdentifier().toString())));
     }
 
     private void mockSearchPublicationByTitleAndTypeResponse(SortableIdentifier identifier, int statusCode) {
@@ -1472,7 +1529,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     private Publication persistPublicationWithCristinIdAndHandle(String cristinIdentifier, URI handle)
         throws BadRequestException {
-        var publication = randomPublication().copy()
+        var publication = randomPublication(MediaInterview.class).copy()
                               .withAdditionalIdentifiers(
                                   Set.of(cristinAdditionalIdentifier(cristinIdentifier)))
                               .withHandle(handle)
