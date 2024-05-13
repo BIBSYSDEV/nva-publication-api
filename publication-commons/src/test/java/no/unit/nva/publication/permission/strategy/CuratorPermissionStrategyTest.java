@@ -1,7 +1,11 @@
 package no.unit.nva.publication.permission.strategy;
 
+import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.core.Is.is;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import no.unit.nva.model.PublicationOperation;
@@ -10,6 +14,7 @@ import no.unit.nva.model.testing.associatedartifacts.PublishedFileGenerator;
 import no.unit.nva.publication.RequestUtil;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
@@ -86,6 +91,38 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         Assertions.assertFalse(PublicationPermissionStrategy
                                    .create(publication, userInstance, uriRetriever)
                                    .allowsAction(operation));
+    }
+
+    @Test
+    void isCuratorOnPublicationShouldReturnTrueWhenCuratorIsAssociatedWithPublication()
+        throws JsonProcessingException, UnauthorizedException {
+        var username = randomString();
+        var institution = randomUri();
+        var cristinId = randomUri();
+        var requestInfo = createUserRequestInfo(username, institution, getAccessRightsForCurator(), randomUri(), cristinId);
+        var publication = createNonDegreePublication(username, institution, cristinId);
+        var permissionStrategy = PublicationPermissionStrategy.create(publication,
+                                                                      RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient),
+                                                                      uriRetriever);
+        assertThat(permissionStrategy.isCuratorOnPublication(), is(equalTo(true)));
+    }
+
+    @Test
+    void shouldNotGivePermissionToUnpublishPublicationWithPublishedFilesWhenUserIsContributor()
+        throws JsonProcessingException, UnauthorizedException {
+        var contributorName = randomString();
+        var contributorCristinId = randomUri();
+        var contributorInstitutionId = randomUri();
+        var topLevelCristinOrgId = randomUri();
+
+        var requestInfo = createUserRequestInfo(contributorName, contributorInstitutionId, contributorCristinId, topLevelCristinOrgId);
+        var publication = createPublicationWithContributor(contributorName, contributorCristinId, Role.CREATOR,
+                                                           randomUri(), topLevelCristinOrgId);
+
+        Assertions.assertFalse(PublicationPermissionStrategy
+                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
+                                       requestInfo, identityServiceClient), uriRetriever)
+                                   .allowsAction(UNPUBLISH));
     }
     //endregion
 

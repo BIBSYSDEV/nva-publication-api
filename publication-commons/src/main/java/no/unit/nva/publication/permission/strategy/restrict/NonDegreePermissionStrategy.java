@@ -15,7 +15,7 @@ public class NonDegreePermissionStrategy extends DenyPermissionStrategy {
 
     @Override
     public boolean deniesAction(PublicationOperation permission) {
-        if (isUsersDraft()) {
+        if (isUsersDraft() || userInstance.isExternalClient()) {
             return false; // allow
         }
 
