@@ -18,7 +18,7 @@ import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
-public class ImportCandidatePresignedUrlHandler extends ApiGatewayHandler<Void, PresignedUrl> {
+public class ImportCandidatePresignedUrlHandler extends ApiGatewayHandler<Void, PresignedUri> {
 
     public static final String BUCKET = new Environment().readEnv("IMPORT_CANDIDATES_STORAGE_BUCKET");
     public static final String IMPORT_CANDIDATE_MISSES_FILE_EXCEPTION_MESSAGE = "Import candidate with identifier: %s"
@@ -49,18 +49,18 @@ public class ImportCandidatePresignedUrlHandler extends ApiGatewayHandler<Void, 
     }
 
     @Override
-    protected PresignedUrl processInput(Void unused, RequestInfo requestInfo, Context context)
+    protected PresignedUri processInput(Void unused, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
         var importCandidateIdentifier = RequestUtil.getImportCandidateIdentifier(requestInfo);
         var fileIdentifier = RequestUtil.getFileIdentifier(requestInfo);
 
         validateExistence(importCandidateIdentifier, fileIdentifier);
 
-        return PresignedUrl.fromS3Key(fileIdentifier).bucket(BUCKET).create(s3Presigner);
+        return PresignedUri.fromS3Key(fileIdentifier).bucket(BUCKET).create(s3Presigner);
     }
 
     @Override
-    protected Integer getSuccessStatusCode(Void unused, PresignedUrl o) {
+    protected Integer getSuccessStatusCode(Void unused, PresignedUri o) {
         return HttpURLConnection.HTTP_OK;
     }
 
