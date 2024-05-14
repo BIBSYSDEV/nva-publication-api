@@ -59,4 +59,23 @@ class ContributorPermissionStrategyTest extends PublicationPermissionStrategyTes
                                    .create(publication, userInstance, uriRetriever)
                                    .allowsAction(operation));
     }
+
+
+    @Test
+    void shouldNotGivePermissionToUnpublishPublicationWithPublishedFilesWhenUserIsContributor()
+        throws JsonProcessingException, UnauthorizedException {
+        var contributorName = randomString();
+        var contributorCristinId = randomUri();
+        var contributorInstitutionId = randomUri();
+        var topLevelCristinOrgId = randomUri();
+
+        var requestInfo = createUserRequestInfo(contributorName, contributorInstitutionId, contributorCristinId, topLevelCristinOrgId);
+        var publication = createPublicationWithContributor(contributorName, contributorCristinId, Role.CREATOR,
+                                                           randomUri(), topLevelCristinOrgId);
+
+        Assertions.assertFalse(PublicationPermissionStrategy
+                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
+                                       requestInfo, identityServiceClient), uriRetriever)
+                                   .allowsAction(UNPUBLISH));
+    }
 }
