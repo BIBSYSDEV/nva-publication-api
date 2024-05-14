@@ -14,39 +14,39 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@JsonTypeName(PresignedUrl.TYPE)
-public record PresignedUrl(UUID fileIdentifier, @JsonIgnore String bucket, URI uri, Instant expires) {
+@JsonTypeName(PresignedUri.TYPE)
+public record PresignedUri(UUID fileIdentifier, @JsonIgnore String bucket, URI id, Instant expires) {
 
     public static final String TYPE = "PresignedUrl";
 
-    public static PresignedUrl fromS3Key(UUID fileIdentifier) {
-        return PresignedUrl.builder().withFileIdentifier(fileIdentifier).build();
+    public static PresignedUri fromS3Key(UUID fileIdentifier) {
+        return PresignedUri.builder().withFileIdentifier(fileIdentifier).build();
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public PresignedUrl bucket(String bucket) {
+    public PresignedUri bucket(String bucket) {
         return this.copy().withBucket(bucket).build();
     }
 
     public Builder copy() {
         return builder().withFileIdentifier(this.fileIdentifier)
                    .withBucket(this.bucket)
-                   .withUri(this.uri)
+                   .withUri(this.id)
                    .withExpiration(this.expires);
     }
 
-    public PresignedUrl fromS3PresignerResponse(PresignedGetObjectRequest response) {
-        return PresignedUrl.builder()
+    public PresignedUri fromS3PresignerResponse(PresignedGetObjectRequest response) {
+        return PresignedUri.builder()
                    .withFileIdentifier(fileIdentifier)
                    .withUri(attempt(() -> response.url().toURI()).orElseThrow())
                    .withExpiration(response.expiration())
                    .build();
     }
 
-    public PresignedUrl create(S3Presigner s3Presigner) {
+    public PresignedUri create(S3Presigner s3Presigner) {
         return attempt(() -> getS3ObjectRequest(fileIdentifier)).map(this::getPresignedUrlRequest)
                    .map(s3Presigner::presignGetObject)
                    .map(this::fromS3PresignerResponse)
@@ -94,8 +94,8 @@ public record PresignedUrl(UUID fileIdentifier, @JsonIgnore String bucket, URI u
             return this;
         }
 
-        public PresignedUrl build() {
-            return new PresignedUrl(fileIdentifier, bucket, uri, expiration);
+        public PresignedUri build() {
+            return new PresignedUri(fileIdentifier, bucket, uri, expiration);
         }
     }
 }

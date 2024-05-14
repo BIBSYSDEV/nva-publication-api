@@ -53,7 +53,7 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
-class ImportCandidatePresignedUrlHandlerTest extends ResourcesLocalTest {
+class ImportCandidatePresignedUriHandlerTest extends ResourcesLocalTest {
 
     private static final Context CONTEXT = new FakeContext();
     private ResourceService importCandidateService;
@@ -104,21 +104,21 @@ class ImportCandidatePresignedUrlHandlerTest extends ResourcesLocalTest {
         var request = createRequestForCandidateWithFile(importCandidate.getIdentifier(), file.getIdentifier());
         var expectedPresignedUri = mockS3Presigner(file);
         handler.handleRequest(request, output, CONTEXT);
-        var response = GatewayResponse.fromOutputStream(output, PresignedUrl.class);
+        var response = GatewayResponse.fromOutputStream(output, PresignedUri.class);
 
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_OK)));
-        assertThat(response.getBodyObject(PresignedUrl.class), is(equalTo(expectedPresignedUri)));
+        assertThat(response.getBodyObject(PresignedUri.class), is(equalTo(expectedPresignedUri)));
 
     }
 
-    private PresignedUrl mockS3Presigner(File file) throws MalformedURLException, URISyntaxException {
+    private PresignedUri mockS3Presigner(File file) throws MalformedURLException, URISyntaxException {
         var request = mock(PresignedGetObjectRequest.class);
         var presignedUrl = randomUri().toURL();
         when(request.url()).thenReturn(presignedUrl);
         var expires = Instant.now();
         when(request.expiration()).thenReturn(expires);
         when(s3Presigner.presignGetObject((GetObjectPresignRequest) any())).thenReturn(request);
-        return PresignedUrl.builder()
+        return PresignedUri.builder()
                    .withFileIdentifier(file.getIdentifier())
                    .withUri(presignedUrl.toURI())
                    .withExpiration(expires)
