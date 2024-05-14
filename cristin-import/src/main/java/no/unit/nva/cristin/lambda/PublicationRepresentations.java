@@ -54,7 +54,9 @@ public class PublicationRepresentations {
     }
 
     public String getNvaPublicationIdentifier() {
-        return incomingPublication.getIdentifier().toString();
+        return nonNull(incomingPublication.getIdentifier())
+                   ? incomingPublication.getIdentifier().toString()
+                   : existingPublication.getIdentifier().toString();
     }
 
     public URI getOriginalEventFileUri() {

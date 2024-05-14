@@ -1,10 +1,12 @@
 package no.unit.nva.cristin.mapper.nva;
 
+import static java.util.Objects.nonNull;
 import java.util.List;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.cristin.lambda.PublicationRepresentations;
 import no.unit.nva.cristin.mapper.CristinLocale;
 import no.unit.nva.cristin.mapper.ScientificResource;
+import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 
@@ -21,19 +23,26 @@ public record NviReport(String publicationIdentifier,
     }
 
     public static NviReport fromPublicationRepresentation(PublicationRepresentations publicationRepresentations) {
+        var publication = getPublication(publicationRepresentations);
         return NviReport.builder()
                    .withPublicationIdentifier(publicationRepresentations.getNvaPublicationIdentifier())
                    .withCristinIdentifier(publicationRepresentations.getCristinObject().getSourceRecordIdentifier())
                    .withCristinLocales(publicationRepresentations.getCristinObject().getCristinLocales())
                    .withScientificResource(publicationRepresentations.getCristinObject().getScientificResources())
-                   .withYearReported(publicationRepresentations.getCristinObject().getScientificResources().getFirst().getReportedYear())
-                   .withPublicationDate(publicationRepresentations.getIncomingPublication().getEntityDescription().getPublicationDate())
-                   .withInstanceType(publicationRepresentations.getIncomingPublication().getEntityDescription()
+                   .withYearReported(publicationRepresentations.getCristinObject().getYearReported().toString())
+                   .withPublicationDate(publication.getEntityDescription().getPublicationDate())
+                   .withInstanceType(publication.getEntityDescription()
                                          .getReference()
                                          .getPublicationInstance()
                                          .getInstanceType())
-                   .withReference(publicationRepresentations.getIncomingPublication().getEntityDescription().getReference())
+                   .withReference(publication.getEntityDescription().getReference())
                    .build();
+    }
+
+    private static Publication getPublication(PublicationRepresentations publicationRepresentations) {
+        return nonNull(publicationRepresentations.getExistingPublication())
+                   ? publicationRepresentations.getExistingPublication()
+                   : publicationRepresentations.getIncomingPublication();
     }
 
     public static final class Builder {
