@@ -45,7 +45,6 @@ import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UriWrapper;
-import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -120,7 +119,9 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private boolean shouldMergePublications(Publication publication) throws NotFoundException {
         var cristinIdentifier = getCristinIdentifier(publication);
         if (nonNull(cristinIdentifier)) {
-            publicationsToMerge = getPublicationsByCristinIdentifier(cristinIdentifier);
+            publicationsToMerge = resourceService.getPublicationsByCristinIdentifier(cristinIdentifier).stream()
+                                      .filter(item -> PublicationComparator.publicationsMatch(item, publication))
+                                      .toList();
             boolean shouldMerge = !publicationsToMerge.isEmpty();
             source = shouldMerge ? MergeSource.CRISTIN : MergeSource.NOT_RELEVANT;
             return shouldMerge;
@@ -146,17 +147,9 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         publicationsToMerge = isbnList.stream()
                                   .map(isbn -> fetchPublicationsByParam(ISBN, isbn))
                                   .flatMap(List::stream)
-                                  .filter(item -> publicationTitlesMatches(item, publication))
+                                  .filter(item -> PublicationComparator.publicationsMatch(item, publication))
                                   .collect(Collectors.toList());
         return !publicationsToMerge.isEmpty();
-    }
-
-    private boolean publicationTitlesMatches(Publication existingPublication, Publication incomingPublication) {
-        var existingPublicationTitle = existingPublication.getEntityDescription().getMainTitle();
-        var incomingPublicationTitle = incomingPublication.getEntityDescription().getMainTitle();
-        var levenshteinDistance = LevenshteinDistance.getDefaultInstance()
-                            .apply(existingPublicationTitle, incomingPublicationTitle);
-        return levenshteinDistance <= MAX_ACCEPTABLE_LEVENSHTEIN_DISTANCE;
     }
 
     private List<Publication> fetchPublicationsByParam(String searchParam, String value) {
@@ -203,7 +196,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                    .stream()
                    .map(ResourceWithId::getIdentifier)
                    .map(this::getPublicationByIdentifier)
-                   .filter(item -> publicationTitlesMatches(item, publication))
+                   .filter(item -> PublicationComparator.publicationsMatch(item, publication))
                    .collect(Collectors.toList()).reversed();
     }
 
@@ -253,7 +246,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
         if (nonNull(doi)) {
             var publicationsByDoi = fetchPublicationsByParam(DOI, doi.toString()).stream()
-                                        .filter(item -> publicationTitlesMatches(item, publication))
+                                        .filter(item -> PublicationComparator.publicationsMatch(item, publication))
                                         .toList();
             if (publicationsByDoi.isEmpty()) {
                 return false;
@@ -273,10 +266,6 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private SearchResourceApiResponse toResponse(String response) {
         return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response, SearchResourceApiResponse.class))
                    .orElseThrow();
-    }
-
-    private List<Publication> getPublicationsByCristinIdentifier(String cristinIdentifier) {
-        return resourceService.getPublicationsByCristinIdentifier(cristinIdentifier);
     }
 
     private Publication createNewPublication(Publication publication, S3Event s3Event) {

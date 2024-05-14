@@ -4,14 +4,17 @@ import java.util.Map;
 import java.util.Objects;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingBuilder;
+import nva.commons.core.JacocoGenerated;
 
 public record Project(String identifier, String name) {
 
+    @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(identifier(), name());
     }
 
+    @JacocoGenerated
     @Override
     public boolean equals(Object o) {
         if (this == o) {
