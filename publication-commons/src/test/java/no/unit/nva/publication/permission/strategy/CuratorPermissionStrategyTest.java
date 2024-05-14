@@ -1,6 +1,5 @@
 package no.unit.nva.publication.permission.strategy;
 
-import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
