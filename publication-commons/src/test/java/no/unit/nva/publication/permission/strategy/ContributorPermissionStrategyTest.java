@@ -59,21 +59,4 @@ class ContributorPermissionStrategyTest extends PublicationPermissionStrategyTes
                                    .create(publication, userInstance, uriRetriever)
                                    .allowsAction(operation));
     }
-
-    @Disabled("Not valid anymore?")
-    @Test
-    void shouldDenyPermissionToUnpublishPublicationWhenUserIsContributorButNotCreator()
-        throws JsonProcessingException, UnauthorizedException {
-        var contributorName = randomString();
-        var contributorCristinId = randomUri();
-        var contributorInstitutionId = randomUri();
-
-        var requestInfo = createUserRequestInfo(contributorName, contributorInstitutionId, contributorCristinId, randomUri());
-        var publication = createPublicationWithContributor(contributorName, contributorCristinId, null, randomUri(), randomUri());
-
-        Assertions.assertFalse(PublicationPermissionStrategy
-                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                       requestInfo, identityServiceClient), uriRetriever)
-                                   .allowsAction(UNPUBLISH));
-    }
 }
