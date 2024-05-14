@@ -422,7 +422,9 @@ public final class ReferenceGenerator {
         throws InvalidIssnException, InvalidUnconfirmedSeriesException {
         return new Report.Builder().withIsbnList(Collections.singletonList(builder.getIsbn()))
                    .withSeries(generateSeries(builder))
-                   .withSeriesNumber(builder.getSeriesNumberPublication())
+                   .withSeriesNumber(nonNull(builder.getSeriesNumberPublication())
+                                         ? builder.getSeriesNumberPublication()
+                                         : builder.getIssue())
                    .withSeriesNumber(builder.getIssue())
                    .build();
     }
