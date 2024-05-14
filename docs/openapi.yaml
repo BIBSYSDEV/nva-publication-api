@@ -60,11 +60,15 @@ paths:
             type: string
             format: uuid
           required: true
+          style: simple
+          explode: false
           description: UUID identifier of the Publication to fetch.
         - in: query
           name: doNotRedirect
           schema:
             type: boolean
+          style: form
+          explode: false
           description: If fetching a deleted / unpublished publication, the response code will be 410, instead of 301. A non deleted / non-unpublished will respond as if the query param was not set.
       x-amazon-apigateway-integration:
         uri:
@@ -138,6 +142,8 @@ paths:
             type: string
             format: uuid
           required: true
+          style: simple
+          explode: false
           description: UUID identifier of the Publication to update.
       x-amazon-apigateway-integration:
         uri:
@@ -194,6 +200,8 @@ paths:
             type: string
             format: uuid
           required: true
+          style: simple
+          explode: false
           description: UUID identifier of the Publication to delete.
       x-amazon-apigateway-integration:
         uri:
@@ -250,6 +258,8 @@ paths:
           required: true
           example:
             doi: '10.3848/135f2cf8-b816-11ed-afa1-0242ac120002'
+          style: simple
+          explode: false
           description: UUID identifier of the Publication to fetch.
       security:
         - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
@@ -304,7 +314,11 @@ paths:
         name: publicationIdentifier
         schema:
           type: string
+          format: uuid
         required: true
+        style: simple
+        explode: false
+        description: UUID of the publication
     post:
       operationId: createTicketForPublication
       description: Create a new ticket
@@ -341,12 +355,20 @@ paths:
         name: publicationIdentifier
         schema:
           type: string
+          format: uuid
         required: true
+        style: simple
+        explode: false
+        description: UUID of the publication
       - in: path
         name: ticketIdentifier
         schema:
           type: string
+          format: uuid
         required: true
+        style: simple
+        explode: false
+        description: UUID of the ticket
     put:
       operationId: updateTicketForPublication
       description: Update existing ticket
@@ -463,12 +485,20 @@ paths:
         name: publicationIdentifier
         schema:
           type: string
+          format: uuid
         required: true
+        style: simple
+        explode: false
+        description: UUID of the publication
       - in: path
         name: ticketIdentifier
         schema:
           type: string
+          format: uuid
         required: true
+        style: simple
+        explode: false
+        description: UUID of the ticket
     post:
       operationId: addMessageToTicket
       description: Add message to ticket
@@ -485,6 +515,7 @@ paths:
               description: The URI of the created message
               schema:
                 type: string
+                format: uri
         '403':
           description: "Forbidden"
           content:
@@ -505,17 +536,29 @@ paths:
         name: publicationIdentifier
         schema:
           type: string
+          format: uuid
         required: true
+        style: simple
+        explode: false
+        description: UUID of the publication
       - in: path
         name: ticketIdentifier
         schema:
           type: string
+          format: uuid
         required: true
+        style: simple
+        explode: false
+        description: UUID of the ticket
       - in: path
         name: messageIdentifier
         schema:
           type: string
+          format: uuid
         required: true
+        style: simple
+        explode: false
+        description: UUID of the message
     delete:
       operationId: deleteMessageForTicket
       description: Deleting message
@@ -580,7 +623,11 @@ paths:
         name: publicationIdentifier
         schema:
           type: string
+          format: uuid
         required: true
+        style: simple
+        explode: false
+        description: UUID of the ticket
     get:
       operationId: listTicketsForPublication
       description: List tickets for publication
@@ -653,6 +700,8 @@ paths:
             type: string
             format: uuid
           required: true
+          style: simple
+          explode: false
           description: UUID identifier of the import candidate to fetch.
       x-amazon-apigateway-integration:
         uri:
@@ -689,6 +738,8 @@ paths:
             type: string
             format: uuid
           required: true
+          style: simple
+          explode: false
           description: UUID identifier of the import candidate to publish.
       requestBody:
         required: true
@@ -737,6 +788,8 @@ paths:
             type: string
             format: uuid
           required: true
+          style: simple
+          explode: false
           description: UUID identifier of the import candidate
       requestBody:
         required: true
@@ -786,6 +839,8 @@ paths:
             type: string
             format: uuid
           required: true
+          style: simple
+          explode: false
           description: UUID identifier of the import candidate.
         - in: path
           name: fileIdentifier
@@ -793,6 +848,8 @@ paths:
             type: string
             format: uuid
           required: true
+          style: simple
+          explode: false
           description: UUID identifier of the file to fetch.
       x-amazon-apigateway-integration:
         uri:
@@ -865,14 +922,17 @@ components:
             properties:
               id:
                 type: string
+                format: uri
               name:
                 type: string
         description:
           type: string
         doi:
           type: string
-        id:
+          format: uri
+        identifier:
           type: string
+          format: uri
         modifiedDate:
           type: string
           format: date
@@ -899,6 +959,7 @@ components:
           properties:
             id:
               type: string
+              format: uri
             name:
               type: string
         reference:
@@ -1015,14 +1076,17 @@ components:
             properties:
               id:
                 type: string
+                format: uri
               name:
                 type: string
         description:
           type: string
         doi:
           type: string
+          format: uri
         id:
           type: string
+          format: uri
         modifiedDate:
           type: string
           format: date
@@ -1049,6 +1113,7 @@ components:
           properties:
             id:
               type: string
+              format: uri
             name:
               type: string
         reference:
@@ -1056,6 +1121,7 @@ components:
           properties:
             doi:
               type: string
+              format: uuid
             publicationContext:
               type: object
               properties:
@@ -1145,6 +1211,7 @@ components:
             - NOT_APPLICABLE
         nvaPublicationId:
           type: string
+          format: uri
         comment:
           type: string
     PublicationDataCiteXml:
@@ -1170,6 +1237,7 @@ components:
           description: The HTTP status code associated with the problem
         requestId:
           type: string
+          format: uuid
           description: Identifier of the request causing the problem
         instance:
           type: string
@@ -1221,6 +1289,7 @@ components:
       properties:
         doi:
           type: string
+          format: uri
     UpdateTicketRequest:
       description: Only few fields of Ticket are exposed for update
       type: object
@@ -1303,8 +1372,10 @@ components:
       properties:
         fileIdentifier:
           type: string
+          format: uuid
         uri:
           type: string
+          format: uri
         expires:
           type: string
   securitySchemes:
