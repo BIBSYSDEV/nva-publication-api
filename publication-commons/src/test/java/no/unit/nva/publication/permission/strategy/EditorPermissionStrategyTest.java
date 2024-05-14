@@ -6,14 +6,18 @@ import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.net.URI;
+import java.util.stream.Stream;
+import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.RequestUtil;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
 
@@ -60,40 +64,37 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
                                    .allowsAction(operation));
     }
 
-    @Test
-    void shouldGiveEditorPermissionToUnpublishPublicationWhenPublicationIsFromTheirInstitution()
+    public static Stream<Arguments> generateCombinations() {
+        return Stream.of(
+            Arguments.of(URI.create("https://editorInstitution"), URI.create("https://editorInstitution"), true, true),
+            Arguments.of(URI.create("https://editorInstitution"), URI.create("https://other"), true, true),
+            Arguments.of(URI.create("https://editorInstitution"), URI.create("https://editorInstitution"), false, true),
+            Arguments.of(URI.create("https://editorInstitution"), URI.create("https://other"), false, true)
+        );
+    }
+
+    @ParameterizedTest(name = "Should deny editor from {0} UNPUBLISH operation on resource from {1} with files {2}")
+    @MethodSource("generateCombinations")
+    void shouldAllowEditorOnPublicationWithAndWithoutFiles(URI editorInstitution, URI publicationCustomer,
+                                                        boolean hasFiles,
+                                      boolean expected)
         throws JsonProcessingException, UnauthorizedException {
 
         var editorName = randomString();
-        var editorInstitution = randomUri();
         var resourceOwner = randomString();
         var cristinId = randomUri();
 
         var requestInfo = createUserRequestInfo(editorName, editorInstitution, getAccessRightsForEditor(),
                                                 cristinId, randomUri());
-        var publication = createPublication(resourceOwner, editorInstitution, cristinId);
+        Publication publication;
+        if (hasFiles){
+            publication = createPublication(resourceOwner, publicationCustomer, cristinId);
+        } else {
+            publication = createPublication(resourceOwner, publicationCustomer, cristinId)
+                              .copy().withAssociatedArtifacts(null).build();
+        }
 
-        Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                      requestInfo, identityServiceClient), uriRetriever)
-                                  .allowsAction(UNPUBLISH));
-    }
-
-    @Test
-    void shouldGiveEditorPermissionToUnpublishPublicationWhenPublicationIsFromAnotherInstitution()
-        throws JsonProcessingException, UnauthorizedException {
-
-        var editorName = randomString();
-        var editorInstitution = randomUri();
-        var resourceOwner = randomString();
-        var resourceOwnerInstitution = randomUri();
-        var cristinId = randomUri();
-
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getAccessRightsForEditor(),
-                                                cristinId, resourceOwnerInstitution);
-        var publication = createPublication(resourceOwner, resourceOwnerInstitution, cristinId);
-
-        Assertions.assertTrue(PublicationPermissionStrategy
+        Assertions.assertEquals(expected, PublicationPermissionStrategy
                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
                                       requestInfo, identityServiceClient), uriRetriever)
                                   .allowsAction(UNPUBLISH));
