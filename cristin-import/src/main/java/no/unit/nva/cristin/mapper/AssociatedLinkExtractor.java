@@ -1,6 +1,5 @@
 package no.unit.nva.cristin.mapper;
 
-import static no.unit.nva.cristin.mapper.CristinMainCategory.MEDIA_CONTRIBUTION;
 import java.util.List;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
@@ -14,14 +13,12 @@ public final class AssociatedLinkExtractor {
     }
 
     public static List<AssociatedArtifact> extractAssociatedLinks(CristinObject cristinObject) {
-        if (cristinObject.getMainCategory().equals(MEDIA_CONTRIBUTION)) {
-            return cristinObject.getCristinAssociatedUris().stream()
-                       .filter(AssociatedLinkExtractor::isNotAHandle)
-                       .filter(AssociatedLinkExtractor::isAssociatedLink)
-                       .map(AssociatedLinkExtractor::toAssociatedLink)
-                       .toList();
-        }
-        return List.of();
+        return cristinObject.getCristinAssociatedUris()
+                   .stream()
+                   .filter(AssociatedLinkExtractor::isNotAHandle)
+                   .filter(AssociatedLinkExtractor::isAssociatedLink)
+                   .map(AssociatedLinkExtractor::toAssociatedLink)
+                   .toList();
     }
 
     private static boolean isNotAHandle(CristinAssociatedUri cristinAssociatedUri) {
