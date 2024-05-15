@@ -1,6 +1,5 @@
 package no.unit.nva.publication.update;
 
-import static com.fasterxml.jackson.databind.type.LogicalType.Collection;
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
@@ -92,7 +91,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -153,13 +151,11 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
-import no.unit.nva.publication.utils.CristinUnitsUtil;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeEventBridgeClient;
@@ -803,12 +799,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var savedPublication =
             persistPublication(nonDegreePublication
                                    .withEntityDescription(entityDescription)
-                                   .withCuratingInstitutions(
-                                       contributors
-                                           .stream()
-                                           .map(UpdatePublicationHandlerTest::getUriStream)
-                                           .flatMap(Set::stream)
-                                           .collect(Collectors.toSet()))).build();
+                                   .withCuratingInstitutions(mockCuratingInstitutions(contributors))).build();
 
         var customerId = ((Organization) contributor.getAffiliations().getFirst()).getId();
         var topLevelCristinOrgId = ((Organization) contributor.getAffiliations().getFirst()).getId();
@@ -843,12 +834,20 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(updatedPublication, is(equalTo(publicationUpdate)));
     }
 
-    private static Set<URI> getUriStream(Contributor c) {
+    private static Set<URI> mockCuratingInstitutions(ArrayList<Contributor> contributors) {
+        return contributors
+                   .stream()
+                   .map(UpdatePublicationHandlerTest::getAffiliationUriStream)
+                   .flatMap(Set::stream)
+                   .collect(Collectors.toSet());
+    }
+
+    private static Set<URI> getAffiliationUriStream(Contributor c) {
         return c.getAffiliations()
                    .stream()
                    .filter(a -> a instanceof Organization)
                    .map(b -> (Organization) b)
-                   .map(o -> o.getId())
+                   .map(Organization::getId)
                    .collect(Collectors.toSet());
     }
 
