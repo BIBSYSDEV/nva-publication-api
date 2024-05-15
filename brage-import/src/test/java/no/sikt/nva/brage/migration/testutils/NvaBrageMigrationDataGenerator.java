@@ -137,7 +137,8 @@ public class NvaBrageMigrationDataGenerator {
 
     private EntityDescription createEntityDescription(Builder builder) {
         return new EntityDescription.Builder().withLanguage(builder.getLanguage().getNva())
-                   .withContributors(builder.noContributors ? List.of() : List.of(createCorrespondingContributor()))
+                   .withContributors(builder.noContributors ? List.of() :
+                                                                            List.of(createCorrespondingContributor(builder.getContributor())))
                    .withReference(ReferenceGenerator.generateReference(builder))
                    .withDescription(builder.getDescriptionsForPublication())
                    .withAbstract(builder.getEntityAbstractsForPublication())
@@ -176,8 +177,7 @@ public class NvaBrageMigrationDataGenerator {
         return randomInteger() + "/" + randomInteger(100);
     }
 
-    private no.unit.nva.model.Contributor createCorrespondingContributor() {
-        var contributor = createContributor();
+    private no.unit.nva.model.Contributor createCorrespondingContributor(Contributor contributor) {
         var name = contributor.getIdentity().getName();
         return new no.unit.nva.model.Contributor.Builder().withIdentity(createIdentity(name))
                    .withAffiliations(createAffiliationList())
@@ -189,7 +189,7 @@ public class NvaBrageMigrationDataGenerator {
         var entityDescription = new no.sikt.nva.brage.migration.record.EntityDescription();
         entityDescription.setMainTitle(builder.getMainTitle());
         entityDescription.setAlternativeTitles(builder.getAlternativeTitles());
-        entityDescription.setContributors(builder.noContributors ? List.of() : List.of(createContributor()));
+        entityDescription.setContributors(builder.noContributors ? List.of() : List.of(builder.getContributor()));
         entityDescription.setDescriptions(builder.getDescriptions());
         entityDescription.setAbstracts(builder.getAbstracts());
         entityDescription.setAlternativeTitles(builder.getAlternativeTitles());
@@ -206,11 +206,6 @@ public class NvaBrageMigrationDataGenerator {
         publicationInstance.setIssue(builder.issue);
         publicationInstance.setArticleNumber(builder.articleNumber);
         return publicationInstance;
-    }
-
-    private Contributor createContributor() {
-        return new Contributor(new Identity("Ola", "123"), "Creator", "author",
-                               List.of(new Affiliation("12345", "someAffiliation", "handle")));
     }
 
     public static class Builder {
@@ -665,6 +660,9 @@ public class NvaBrageMigrationDataGenerator {
             } else if (nonNull(publicationDate) && isNull(publicationDateForPublication)) {
                 this.publicationDateForPublication = createPublicationDateForPublication(publicationDate);
             }
+            if (isNull(contributor)) {
+                contributor = createContributor();
+            }
             if (isNull(pages)) {
                 pages = new Pages("46 s.", new Range("5", "10"), "5");
             }
@@ -804,5 +802,10 @@ public class NvaBrageMigrationDataGenerator {
             publication.setJournal(journal);
             return publication;
         }
+    }
+
+    private static Contributor createContributor() {
+        return new Contributor(new Identity("Ola", "123"), "Creator", "author",
+                               List.of(new Affiliation("12345", "someAffiliation", "handle")));
     }
 }
