@@ -13,8 +13,9 @@ import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.RequestUtil;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -64,37 +65,44 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
                                    .allowsAction(operation));
     }
 
-    public static Stream<Arguments> generateCombinations() {
+    public static Stream<Named<Publication>> generateCombinations() {
+        var resourceOwner = randomString();
         return Stream.of(
-            Arguments.of(URI.create("https://editorInstitution"), URI.create("https://editorInstitution"), true, true),
-            Arguments.of(URI.create("https://editorInstitution"), URI.create("https://other"), true, true),
-            Arguments.of(URI.create("https://editorInstitution"), URI.create("https://editorInstitution"), false, true),
-            Arguments.of(URI.create("https://editorInstitution"), URI.create("https://other"), false, true)
+            Named.of("Editor is publication owner and publication has files",
+                     createPublication(resourceOwner,
+                                       URI.create("https://editorInstitution"),
+                                       URI.create("https://editorInstitution"))),
+            Named.of("Editor is not publication owner and publication has files",
+                     createPublication(resourceOwner,
+                                       URI.create("https://editorInstitution"),
+                                       URI.create("https://other"))),
+            Named.of("Editor is publication owner and publication has no files",
+                     createPublication(resourceOwner,
+                                       URI.create("https://editorInstitution"),
+                                       URI.create("https://editorInstitution"))
+                         .copy().withAssociatedArtifacts(null).build()),
+            Named.of("Editor is not publication owner and publication has no files",
+                     createPublication(resourceOwner,
+                                       URI.create("https://editorInstitution"),
+                                       URI.create("https://other"))
+                         .copy().withAssociatedArtifacts(null).build())
         );
     }
 
-    @ParameterizedTest(name = "Should deny editor from {0} UNPUBLISH operation on resource from {1} with files {2}")
+    @ParameterizedTest()
+    @DisplayName("Should deny unpublish operation")
     @MethodSource("generateCombinations")
-    void shouldAllowEditorOnPublicationWithAndWithoutFiles(URI editorInstitution, URI publicationCustomer,
-                                                        boolean hasFiles,
-                                      boolean expected)
+    void shouldAllowEditorOnPublicationWithAndWithoutFiles(Publication publication)
         throws JsonProcessingException, UnauthorizedException {
 
         var editorName = randomString();
-        var resourceOwner = randomString();
         var cristinId = randomUri();
+        var editorInstitution = URI.create("https://editorInstitution");
 
         var requestInfo = createUserRequestInfo(editorName, editorInstitution, getAccessRightsForEditor(),
                                                 cristinId, randomUri());
-        Publication publication;
-        if (hasFiles){
-            publication = createPublication(resourceOwner, publicationCustomer, cristinId);
-        } else {
-            publication = createPublication(resourceOwner, publicationCustomer, cristinId)
-                              .copy().withAssociatedArtifacts(null).build();
-        }
 
-        Assertions.assertEquals(expected, PublicationPermissionStrategy
+        Assertions.assertTrue(PublicationPermissionStrategy
                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
                                       requestInfo, identityServiceClient), uriRetriever)
                                   .allowsAction(UNPUBLISH));

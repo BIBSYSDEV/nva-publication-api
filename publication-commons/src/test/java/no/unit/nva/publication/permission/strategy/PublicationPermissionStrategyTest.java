@@ -212,7 +212,7 @@ class PublicationPermissionStrategyTest {
         return accessRight -> accessRight.toPersistedString() + AT + institutionId.toString();
     }
 
-    Publication createPublication(String resourceOwner, URI customer, URI cristinId) {
+    static Publication createPublication(String resourceOwner, URI customer, URI cristinId) {
         return randomPublication().copy()
                    .withResourceOwner(new ResourceOwner(new Username(resourceOwner), cristinId))
                    .withPublisher(new Organization.Builder().withId(customer).build())
