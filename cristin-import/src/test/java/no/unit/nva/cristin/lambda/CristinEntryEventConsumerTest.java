@@ -43,7 +43,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -260,13 +259,40 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         assertThat(nviReport, is(equalTo(expectedNviReport)));
     }
 
+    @Test
+    void shouldOverrideExistingNviReportWhenUpdatingPublicationThatAlreadyHasBeenNviReported() throws IOException {
+        var cristinObject = CristinDataGenerator.randomObjectWithReportedYear(2011);
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var publications = handler.handleRequest(sqsEvent, CONTEXT);
+        var actualPublication = publications.getFirst();
+        var expectedFileNameStoredInS3 = actualPublication.getIdentifier().toString();
+
+        var expectedTimestamp = eventBody.getTimestamp();
+        var expectedFileLocation = NVI_FOLDER
+                                       .addChild(timestampToString(expectedTimestamp))
+                                       .addChild(expectedFileNameStoredInS3);
+
+        var nviReportBeforeUpdate = s3Driver.getFile(expectedFileLocation);
+        var update = CristinDataGenerator.randomObjectWithReportedYear(2015);
+        update.setId(cristinObject.getId());
+        var updateEventBody = createEventBody(update);
+        handler.handleRequest(createSqsEvent(updateEventBody), CONTEXT);
+        var updateFileLocation = NVI_FOLDER
+                                       .addChild(timestampToString(updateEventBody.getTimestamp()))
+                                       .addChild(expectedFileNameStoredInS3);
+        var nviReportAfterUpdate = s3Driver.getFile(updateFileLocation);
+
+        assertThat(nviReportAfterUpdate, is(not(equalTo(nviReportBeforeUpdate))));
+    }
+
     private NviReport createExpectedNviReport(CristinObject cristinObject, Publication publication) {
         return NviReport.builder()
                    .withScientificResource(cristinObject.getScientificResources())
                    .withCristinLocales(cristinObject.getCristinLocales())
                    .withCristinIdentifier(cristinObject.getSourceRecordIdentifier())
                    .withPublicationIdentifier(publication.getIdentifier().toString())
-                   .withYearReported(cristinObject.getScientificResources().getFirst().getReportedYear())
+                   .withYearReported(cristinObject.getYearReported().toString())
                    .withPublicationDate(publication.getEntityDescription().getPublicationDate())
                    .withInstanceType(
                        publication.getEntityDescription().getReference().getPublicationInstance().getInstanceType())
