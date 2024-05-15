@@ -105,7 +105,7 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
     }
 
     @Test
-    void shouldAllowTrustedClientEditPublicationOnDegree()
+    void shouldAllowTrustedClientEditPublicationOnDegreeThatItPublished()
         throws JsonProcessingException, UnauthorizedException {
         var requestInfo = createThirdPartyRequestInfo();
         var userInstanse = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
@@ -113,6 +113,19 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
                                           userInstanse.getTopLevelOrgCristinId());
 
         Assertions.assertTrue(
+            PublicationPermissionStrategy.create(publication, userInstanse, uriRetriever)
+                .allowsAction(UPDATE));
+    }
+
+    @Test
+    void shouldDenyTrustedClientEditPublicationOnDegreeFromAnotherPublisher()
+        throws JsonProcessingException, UnauthorizedException {
+        var requestInfo = createThirdPartyRequestInfo();
+        var userInstanse = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+        var publisher = randomUri();
+        var publication = createDegreePhd(randomString(), publisher, userInstanse.getTopLevelOrgCristinId());
+
+        Assertions.assertFalse(
             PublicationPermissionStrategy.create(publication, userInstanse, uriRetriever)
                 .allowsAction(UPDATE));
     }
