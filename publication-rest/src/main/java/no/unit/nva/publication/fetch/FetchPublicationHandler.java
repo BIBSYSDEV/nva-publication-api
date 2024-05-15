@@ -16,13 +16,10 @@ import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.apigateway.MediaTypes.SCHEMA_ORG;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.paths.UriWrapper.HTTPS;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.google.common.net.MediaType;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.time.Clock;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +34,6 @@ import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.schemaorg.SchemaOrgDocument;
@@ -63,13 +59,12 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     private final IdentityServiceClient identityServiceClient;
     private final ResourceService resourceService;
     private final RawContentRetriever authorizedBackendUriRetriever;
-    private final UriRetriever uriRetriever;
     private int statusCode = HttpURLConnection.HTTP_OK;
 
     @JacocoGenerated
     public FetchPublicationHandler() {
         this(ResourceService.defaultService(), new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME), new Environment(),
-             IdentityServiceClient.prepare(), UriRetriever.defaultUriRetriever());
+             IdentityServiceClient.prepare());
     }
 
     /**
@@ -81,11 +76,9 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     public FetchPublicationHandler(ResourceService resourceService,
                                    RawContentRetriever authorizedBackendUriRetriever,
                                    Environment environment,
-                                   IdentityServiceClient identityServiceClient,
-                                   UriRetriever uriRetriever) {
+                                   IdentityServiceClient identityServiceClient) {
         super(Void.class, environment);
         this.authorizedBackendUriRetriever = authorizedBackendUriRetriever;
-        this.uriRetriever = uriRetriever;
         this.resourceService = resourceService;
         this.identityServiceClient = identityServiceClient;
     }
@@ -144,7 +137,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     }
 
     private String produceDraftPublicationResponse(RequestInfo requestInfo, Publication publication)
-        throws UnsupportedAcceptHeaderException, NotFoundException {
+        throws UnsupportedAcceptHeaderException {
         return producePublishedPublicationResponse(requestInfo, publication);
     }
 
@@ -189,7 +182,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     private Set<PublicationOperation> getAllowedOperations(RequestInfo requestInfo, Publication publication) {
         return attempt(() -> createUserInstanceFromRequest(requestInfo, identityServiceClient)).toOptional()
-                   .map(userInstance -> PublicationPermissionStrategy.create(publication, userInstance, uriRetriever))
+                   .map(userInstance -> PublicationPermissionStrategy.create(publication, userInstance))
                    .map(PublicationPermissionStrategy::getAllAllowedActions)
                    .orElse(Collections.emptySet());
     }

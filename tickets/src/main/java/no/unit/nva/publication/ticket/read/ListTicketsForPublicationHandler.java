@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.PublicationOperation;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -26,19 +25,16 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
     private final ResourceService resourceService;
 
     private final TicketService ticketService;
-    private final UriRetriever uriRetriever;
 
     @JacocoGenerated
     public ListTicketsForPublicationHandler() {
-        this(ResourceService.defaultService(), TicketService.defaultService(), UriRetriever.defaultUriRetriever());
+        this(ResourceService.defaultService(), TicketService.defaultService());
     }
 
-    public ListTicketsForPublicationHandler(ResourceService resourceService, TicketService ticketService,
-                                            UriRetriever uriRetriever) {
+    public ListTicketsForPublicationHandler(ResourceService resourceService, TicketService ticketService) {
         super(Void.class);
         this.resourceService = resourceService;
         this.ticketService = ticketService;
-        this.uriRetriever = uriRetriever;
     }
 
     @Override
@@ -71,7 +67,7 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
     }
 
     private boolean isAllowedToListTickets(UserInstance userInstance, Resource resource) {
-        return PublicationPermissionStrategy.create(resource.toPublication(), userInstance, uriRetriever)
+        return PublicationPermissionStrategy.create(resource.toPublication(), userInstance)
                    .allowsAction(PublicationOperation.UPDATE);
     }
 

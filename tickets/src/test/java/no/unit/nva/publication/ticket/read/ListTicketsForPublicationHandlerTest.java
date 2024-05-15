@@ -75,7 +75,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     @BeforeEach
     public void setup() {
         super.init();
-        this.handler = new ListTicketsForPublicationHandler(resourceService, ticketService, uriRetriever);
+        this.handler = new ListTicketsForPublicationHandler(resourceService, ticketService);
         this.messageService = getMessageService();
     }
 
@@ -182,6 +182,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     }
 
     private void mockSiktOrg() {
+        //todo
         when(uriRetriever.getRawContent(
             eq(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0")),
             any())).thenReturn(

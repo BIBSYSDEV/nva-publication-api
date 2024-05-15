@@ -1,5 +1,6 @@
 package no.unit.nva.publication.update;
 
+import static com.fasterxml.jackson.databind.type.LogicalType.Collection;
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
@@ -91,6 +92,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -151,11 +153,13 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
+import no.unit.nva.publication.utils.CristinUnitsUtil;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeEventBridgeClient;
@@ -221,7 +225,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private FakeEventBridgeClient eventBridgeClient;
     private S3Client s3Client;
     private URI customerId;
-    private UriRetriever uriRetriever;
 
     public static Stream<Named<AccessRight>> privilegedUserProvider() {
         return Stream.of(Named.of("Editor", MANAGE_RESOURCES_ALL), Named.of("Curator", MANAGE_RESOURCES_STANDARD));
@@ -262,7 +265,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var httpClient = WiremockHttpClient.create();
         updatePublicationHandler =
             new UpdatePublicationHandler(resourceService, ticketService, environment, identityServiceClient,
-                                         eventBridgeClient, s3Client, secretsManagerClient, httpClient, uriRetriever);
+                                         eventBridgeClient, s3Client, secretsManagerClient, httpClient);
         publication = createNonDegreePublication();
 
         customerId = UriWrapper.fromUri(wireMockRuntimeInfo.getHttpsBaseUrl())
@@ -516,8 +519,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                 eventBridgeClient,
                                                                 S3Driver.defaultS3Client().build(),
                                                                 secretsManagerClient,
-                                                                WiremockHttpClient.create(),
-                                                                uriRetriever);
+                                                                WiremockHttpClient.create());
 
         var savedPublication = createSamplePublication();
         var event = ownerUpdatesOwnPublication(savedPublication.getIdentifier(), savedPublication);
@@ -542,8 +544,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                 eventBridgeClient,
                                                                 S3Driver.defaultS3Client().build(),
                                                                 secretsManagerClient,
-                                                                WiremockHttpClient.create(),
-                                                                uriRetriever);
+                                                                WiremockHttpClient.create());
 
         var savedPublication = createSamplePublication();
 
@@ -678,10 +679,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws BadRequestException, IOException, NotFoundException {
         publication = randomNonDegreePublication(customerId);
         var savedPublication = createSamplePublication();
-        injectRandomContributorsWithoutCristinIdAndIdentity(savedPublication);
+        var contributors = new ArrayList<>(savedPublication.getEntityDescription().getContributors());
         var cristinId = randomUri();
         var contributor = createContributorForPublicationUpdate(cristinId);
-        injectContributor(savedPublication, contributor);
+        contributors.add(contributor);
+        contributors.addAll(getRandomContributorsWithoutCristinIdAndIdentity());
+        contributors.forEach(c -> injectContributor(savedPublication, c));
         var publicationUpdate = updateTitle(savedPublication);
 
         var event = contributorUpdatesPublicationAndHasRightsToUpdate(publicationUpdate, cristinId);
@@ -787,25 +790,39 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldUpdatePublicationWhenUserIsCuratorAndIsInSameInstitutionAsThePublicationContributor()
         throws IOException, NotFoundException {
-        var savedPublication = persistPublication(createNonDegreePublication().copy()).build();
-
-        injectRandomContributorsWithoutCristinIdAndIdentity(savedPublication);
+        var nonDegreePublication = createNonDegreePublication().copy();
+        var contributors = new ArrayList<Contributor>();
         var cristinId = randomUri();
+
+        var entityDescription = nonDegreePublication.build().getEntityDescription();
         var contributor = createContributorForPublicationUpdate(cristinId);
-        injectContributor(savedPublication, contributor);
+        contributors.add(contributor);
+        contributors.addAll(getRandomContributorsWithoutCristinIdAndIdentity());
+        entityDescription.setContributors(contributors);
+
+        var savedPublication =
+            persistPublication(nonDegreePublication
+                                   .withEntityDescription(entityDescription)
+                                   .withCuratingInstitutions(
+                                       contributors
+                                           .stream()
+                                           .map(UpdatePublicationHandlerTest::getUriStream)
+                                           .flatMap(Set::stream)
+                                           .collect(Collectors.toSet()))).build();
+
         var customerId = ((Organization) contributor.getAffiliations().getFirst()).getId();
         var topLevelCristinOrgId = ((Organization) contributor.getAffiliations().getFirst()).getId();
         when(uriRetriever.getRawContent(eq(topLevelCristinOrgId), any())).thenReturn(
             Optional.of(String.format("""
-                            {
-                              "@context" : "https://bibsysdev.github.io/src/organization-context.json",
-                              "type" : "Organization",
-                              "id" : "%s",
-                              "acronym" : "SIKT",
-                              "country" : "NO",
-                              "partOf" : [ ],
-                              "hasPart" : [ ]
-                            }""", topLevelCristinOrgId.toString())));
+                                          {
+                                            "@context" : "https://bibsysdev.github.io/src/organization-context.json",
+                                            "type" : "Organization",
+                                            "id" : "%s",
+                                            "acronym" : "SIKT",
+                                            "country" : "NO",
+                                            "partOf" : [ ],
+                                            "hasPart" : [ ]
+                                          }""", topLevelCristinOrgId.toString())));
 
         var publicationUpdate = updateTitle(savedPublication);
 
@@ -824,6 +841,15 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var actualTitle = updatedPublication.getEntityDescription().getMainTitle();
         assertThat(actualTitle, is(equalTo(expectedTitle)));
         assertThat(updatedPublication, is(equalTo(publicationUpdate)));
+    }
+
+    private static Set<URI> getUriStream(Contributor c) {
+        return c.getAffiliations()
+                   .stream()
+                   .filter(a -> a instanceof Organization)
+                   .map(b -> (Organization) b)
+                   .map(o -> o.getId())
+                   .collect(Collectors.toSet());
     }
 
     @Test
@@ -974,8 +1000,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         assertThat(filesForApproval, containsInAnyOrder(expectedFilesForApproval.toArray()));
     }
-
-
 
     @Test
     void shouldNotSetCustomersConfiguredRrsWhenFileIsUnchanged() {
@@ -1169,8 +1193,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var userCristinId = RandomPersonServiceResponse.randomUri();
         var userName = randomString();
-        var publication = TicketTestUtils.createPersistedPublishedPublicationWithUnpublishedFilesAndContributor(userCristinId,
-                                                                                                                resourceService);
+        var publication = TicketTestUtils.createPersistedPublishedPublicationWithUnpublishedFilesAndContributor(
+            userCristinId,
+            resourceService);
         GeneralSupportRequest.fromPublication(publication).persistNewTicket(ticketService);
         DoiRequest.fromPublication(publication).persistNewTicket(ticketService);
         var publishingRequestTicket =
@@ -1200,7 +1225,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @ParameterizedTest()
     @DisplayName("User with access right should be able to unpublish publication with published files")
     @MethodSource("privilegedUserProvider")
-    void shouldSetAllPendingAndNewTicketsToNotRelevantExceptUnpublishingTicketWhenCuratorUnpublishesPublicationWithPublishedFiles(AccessRight accessRight)
+    void shouldSetAllPendingAndNewTicketsToNotRelevantExceptUnpublishingTicketWhenCuratorUnpublishesPublicationWithPublishedFiles(
+        AccessRight accessRight)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(customerId, PUBLISHED,
                                                                                        resourceService);
@@ -1235,7 +1261,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var userCristinId = RandomPersonServiceResponse.randomUri();
         var userName = randomString();
         var publication =
-            TicketTestUtils.createPersistedPublishedPublicationWithUnpublishedFilesAndContributor(userCristinId, resourceService);
+            TicketTestUtils.createPersistedPublishedPublicationWithUnpublishedFilesAndContributor(userCristinId,
+                                                                                                  resourceService);
 
         resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
@@ -1313,7 +1340,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var userName = randomString();
         var institutionId = RandomPersonServiceResponse.randomUri();
         var publication = TicketTestUtils.createPersistedPublishedPublicationWithUnpublishedFilesAndOwner(userName,
-                                                                                                        resourceService);
+                                                                                                          resourceService);
         resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         var inputStream = createUnpublishHandlerRequest(publication, userName, institutionId);
@@ -1822,7 +1849,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return Resource.fromPublication(degreePublication).persistNew(resourceService, userInstance);
     }
 
-    private void injectRandomContributorsWithoutCristinIdAndIdentity(Publication publication) {
+    private List<Contributor> getRandomContributorsWithoutCristinIdAndIdentity() {
         var contributorWithoutCristinId = new Contributor.Builder()
                                               .withRole(new RoleType(Role.ARCHITECT))
                                               .withIdentity(new Identity.Builder().withName(randomString()).build())
@@ -1830,9 +1857,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var contributorWithoutIdentity = new Contributor.Builder()
                                              .withRole(new RoleType(Role.ARCHITECT))
                                              .build();
-        var contributors = new ArrayList<>(publication.getEntityDescription().getContributors());
-        contributors.addAll(List.of(contributorWithoutCristinId, contributorWithoutIdentity));
-        publication.getEntityDescription().setContributors(contributors);
+        return List.of(contributorWithoutCristinId, contributorWithoutIdentity);
     }
 
     private void injectContributor(Publication savedPublication, Contributor contributor) {

@@ -87,34 +87,31 @@ class PublicationPermissionStrategyTest {
 
     private static final URI EXTERNAL_CLIENT_CUSTOMER_URI = URI.create("https://example.com/external-client-org");
 
-    protected UriRetriever uriRetriever;
-
     @BeforeEach
     void setUp() throws NotFoundException {
         this.identityServiceClient = mock(IdentityServiceClient.class);
-        setupUriRetriever();
+        //setupUriRetriever();
 
         when(this.identityServiceClient.getExternalClient(any())).thenReturn(
             new GetExternalClientResponse(randomString(), randomString(), EXTERNAL_CLIENT_CUSTOMER_URI, randomUri()));
     }
 
-    private void setupUriRetriever() {
-        this.uriRetriever = mock(UriRetriever.class);
+    /*private void setupUriRetriever() {
         setupCristinResponse(TEST_ORG_NTNU_ROOT);
         setupCristinResponse(TEST_ORG_NTNU_OFFICE_INTERNATIONAL);
         setupCristinResponse(TEST_ORG_NTNU_DEPARTMENT_OF_LANGUAGES);
         setupCristinResponse(TEST_ORG_SIKT_DEPARTMENT_OF_COMMUNICATION);
-    }
+    }*/
 
     protected URI uriFromTestCase(String testCase) {
-        return URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/"+testCase);
+        return URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/" + testCase);
     }
 
-    private void setupCristinResponse(String testCase) {
-        var content = streamToString(inputStreamFromResources("cristin-orgs/"+testCase+".json"));
+    /*private void setupCristinResponse(String testCase) {
+        var content = streamToString(inputStreamFromResources("cristin-orgs/" + testCase + ".json"));
         when(uriRetriever.getRawContent(eq(uriFromTestCase(testCase)), eq(APPLICATION_JSON)))
             .thenReturn(Optional.of(content));
-    }
+    }*/
 
     @Test
     void shouldDenyPermissionToUnpublishPublicationWhenUserHasNoAccessRights()
@@ -125,7 +122,7 @@ class PublicationPermissionStrategyTest {
 
         Assertions.assertFalse(PublicationPermissionStrategy
                                    .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                       requestInfo, identityServiceClient), uriRetriever)
+                                       requestInfo, identityServiceClient))
                                    .allowsAction(UNPUBLISH));
     }
 
@@ -139,8 +136,7 @@ class PublicationPermissionStrategyTest {
         Assertions.assertThrows(UnauthorizedException.class, () -> PublicationPermissionStrategy
                                                                        .create(publication,
                                                                                RequestUtil.createUserInstanceFromRequest(
-                                                                                   requestInfo, identityServiceClient),
-                                                                               uriRetriever)
+                                                                                   requestInfo, identityServiceClient))
                                                                        .allowsAction(UNPUBLISH));
     }
 
@@ -162,7 +158,7 @@ class PublicationPermissionStrategyTest {
 
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                      requestInfo, identityServiceClient), uriRetriever)
+                                      requestInfo, identityServiceClient))
                                   .allowsAction(UPDATE));
     }
 
@@ -181,7 +177,7 @@ class PublicationPermissionStrategyTest {
 
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                      requestInfo, identityServiceClient), uriRetriever)
+                                      requestInfo, identityServiceClient))
                                   .allowsAction(UNPUBLISH));
     }
 
@@ -201,7 +197,7 @@ class PublicationPermissionStrategyTest {
 
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                      requestInfo, identityServiceClient), uriRetriever)
+                                      requestInfo, identityServiceClient))
                                   .allowsAction(UNPUBLISH));
     }
 
@@ -219,7 +215,7 @@ class PublicationPermissionStrategyTest {
 
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                      requestInfo, identityServiceClient), uriRetriever)
+                                      requestInfo, identityServiceClient))
                                   .allowsAction(UNPUBLISH));
     }
 
@@ -238,7 +234,7 @@ class PublicationPermissionStrategyTest {
 
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                      requestInfo, identityServiceClient), uriRetriever)
+                                      requestInfo, identityServiceClient))
                                   .allowsAction(UNPUBLISH));
     }
 
@@ -260,8 +256,7 @@ class PublicationPermissionStrategyTest {
         Assertions.assertFalse(PublicationPermissionStrategy
                                    .create(publication,
                                            RequestUtil.createUserInstanceFromRequest(requestInfo,
-                                                                                     identityServiceClient),
-                                           uriRetriever)
+                                                                                     identityServiceClient))
                                    .allowsAction(DELETE));
     }
 
@@ -276,7 +271,7 @@ class PublicationPermissionStrategyTest {
 
         Assertions.assertFalse(PublicationPermissionStrategy
                                    .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                       requestInfo, identityServiceClient), uriRetriever)
+                                       requestInfo, identityServiceClient))
                                    .allowsAction(UNPUBLISH));
     }
 
@@ -294,7 +289,7 @@ class PublicationPermissionStrategyTest {
 
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                      requestInfo, identityServiceClient), uriRetriever)
+                                      requestInfo, identityServiceClient))
                                   .allowsAction(UNPUBLISH));
     }
 
@@ -317,7 +312,7 @@ class PublicationPermissionStrategyTest {
 
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                      requestInfo, identityServiceClient), uriRetriever)
+                                      requestInfo, identityServiceClient))
                                   .allowsAction(UNPUBLISH));
     }
 
@@ -337,7 +332,7 @@ class PublicationPermissionStrategyTest {
 
         Assertions.assertFalse(PublicationPermissionStrategy
                                    .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                       requestInfo, identityServiceClient), uriRetriever)
+                                       requestInfo, identityServiceClient))
                                    .allowsAction(UNPUBLISH));
     }
 
@@ -351,12 +346,13 @@ class PublicationPermissionStrategyTest {
         var resourceOwnerInstitution = randomUri();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(curatorName, curatorInstitution, getAccessRightsForCurator(), cristinId, null);
+        var requestInfo = createUserRequestInfo(curatorName, curatorInstitution, getAccessRightsForCurator(), cristinId,
+                                                null);
         var publication = createDegreePhd(resourceOwner, resourceOwnerInstitution);
 
         Assertions.assertFalse(PublicationPermissionStrategy
                                    .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                       requestInfo, identityServiceClient), uriRetriever)
+                                       requestInfo, identityServiceClient))
                                    .allowsAction(UNPUBLISH));
     }
 
@@ -368,14 +364,15 @@ class PublicationPermissionStrategyTest {
         var contributorInstitutionId = randomUri();
         var topLevelCristinOrgId = randomUri();
 
-        var requestInfo = createUserRequestInfo(contributorName, contributorInstitutionId, contributorCristinId, topLevelCristinOrgId);
+        var requestInfo = createUserRequestInfo(contributorName, contributorInstitutionId, contributorCristinId,
+                                                topLevelCristinOrgId);
         var publication = createPublicationWithContributor(contributorName, contributorCristinId, Role.CREATOR,
                                                            randomUri(), topLevelCristinOrgId);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                  .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                      requestInfo, identityServiceClient), uriRetriever)
-                                  .allowsAction(UNPUBLISH));
+                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
+                                       requestInfo, identityServiceClient))
+                                   .allowsAction(UNPUBLISH));
     }
 
     @Disabled("Not valid anymore?")
@@ -386,13 +383,14 @@ class PublicationPermissionStrategyTest {
         var contributorCristinId = randomUri();
         var contributorInstitutionId = randomUri();
 
-        var requestInfo = createUserRequestInfo(contributorName, contributorInstitutionId, contributorCristinId, randomUri());
+        var requestInfo = createUserRequestInfo(contributorName, contributorInstitutionId, contributorCristinId,
+                                                randomUri());
         var publication = createPublicationWithContributor(contributorName, contributorCristinId, null, randomUri(),
                                                            randomUri());
 
         Assertions.assertFalse(PublicationPermissionStrategy
                                    .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                       requestInfo, identityServiceClient), uriRetriever)
+                                       requestInfo, identityServiceClient))
                                    .allowsAction(UNPUBLISH));
     }
 
@@ -409,7 +407,7 @@ class PublicationPermissionStrategyTest {
 
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                      requestInfo, identityServiceClient), uriRetriever)
+                                      requestInfo, identityServiceClient))
                                   .allowsAction(UNPUBLISH));
     }
 
@@ -420,12 +418,13 @@ class PublicationPermissionStrategyTest {
         var resourceOwner = randomString();
         var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getAccessRightsForEditor(), cristinId, null);
+        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getAccessRightsForEditor(), cristinId,
+                                                null);
         var publication = createPublication(resourceOwner, editorInstitution, randomUri());
 
         Assertions.assertTrue(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
-                    requestInfo, identityServiceClient), uriRetriever)
+                    requestInfo, identityServiceClient))
                 .allowsAction(UNPUBLISH));
     }
 
@@ -437,7 +436,7 @@ class PublicationPermissionStrategyTest {
 
         Assertions.assertTrue(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
-                    requestInfo, identityServiceClient), uriRetriever)
+                    requestInfo, identityServiceClient))
                 .allowsAction(UPDATE));
     }
 
@@ -449,7 +448,7 @@ class PublicationPermissionStrategyTest {
 
         Assertions.assertFalse(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
-                    requestInfo, identityServiceClient), uriRetriever)
+                    requestInfo, identityServiceClient))
                 .allowsAction(UPDATE));
     }
 
@@ -462,7 +461,7 @@ class PublicationPermissionStrategyTest {
 
         Assertions.assertFalse(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
-                    requestInfo, identityServiceClient), uriRetriever)
+                    requestInfo, identityServiceClient))
                 .allowsAction(UPDATE));
     }
 
@@ -471,7 +470,7 @@ class PublicationPermissionStrategyTest {
         var publication = createDegreePhd(randomString(), randomUri());
         var requestInfo = createThirdPartyRequestInfo(getAccessRightsForCurator());
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
-        var strategy = PublicationPermissionStrategy.create(publication, userInstance, uriRetriever);
+        var strategy = PublicationPermissionStrategy.create(publication, userInstance);
 
         Assertions.assertThrows(UnauthorizedException.class, () -> strategy.authorize(UPDATE));
     }
@@ -489,7 +488,7 @@ class PublicationPermissionStrategyTest {
 
         assertThat(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
-                    requestInfo, identityServiceClient), uriRetriever)
+                    requestInfo, identityServiceClient))
                 .getAllAllowedActions(), is(empty()));
     }
 
@@ -499,15 +498,14 @@ class PublicationPermissionStrategyTest {
         var username = randomString();
         var institution = randomUri();
         var cristinId = randomUri();
-        var requestInfo = createUserRequestInfo(username, institution, getAccessRightsForCurator(), randomUri(), cristinId);
+        var requestInfo = createUserRequestInfo(username, institution, getAccessRightsForCurator(), randomUri(),
+                                                cristinId);
         var publication = createNonDegreePublication(username, institution, cristinId);
         var permissionStrategy = PublicationPermissionStrategy.create(publication,
-                                                                      RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient),
-                                                                      uriRetriever);
+                                                                      RequestUtil.createUserInstanceFromRequest(
+                                                                          requestInfo, identityServiceClient));
         assertThat(permissionStrategy.isCuratorOnPublication(), is(equalTo(true)));
     }
-
-
 
     @Test
     void getAllAllowedOperationsShouldReturnUpdateUnpublishWhenUserHasAllAccessRights() throws JsonProcessingException,
@@ -523,7 +521,7 @@ class PublicationPermissionStrategyTest {
 
         assertThat(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
-                    requestInfo, identityServiceClient), uriRetriever)
+                    requestInfo, identityServiceClient))
                 .getAllAllowedActions(), containsInAnyOrder(UPDATE, UNPUBLISH));
     }
 
@@ -535,13 +533,14 @@ class PublicationPermissionStrategyTest {
         var contributorCristinId = randomUri();
         var contributorInstitutionId = randomUri();
 
-        var requestInfo = createUserRequestInfo(contributorName, contributorInstitutionId, contributorCristinId, randomUri());
+        var requestInfo = createUserRequestInfo(contributorName, contributorInstitutionId, contributorCristinId,
+                                                randomUri());
         var publication = createPublicationWithContributor(contributorName, contributorCristinId, Role.CREATOR,
                                                            randomUri(), randomUri());
 
         PublicationPermissionStrategy
             .create(publication, RequestUtil.createUserInstanceFromRequest(
-                requestInfo, identityServiceClient), uriRetriever)
+                requestInfo, identityServiceClient))
             .authorize(UPDATE);
         assertThat(appender.getMessages(), containsString(contributorName));
         assertThat(appender.getMessages(), containsString(publication.getIdentifier().toString()));
@@ -616,7 +615,7 @@ class PublicationPermissionStrategyTest {
     }
 
     protected Publication createPublicationWithContributor(String contributorName, URI contributorId,
-                                                         Role contributorRole, URI institutionId,
+                                                           Role contributorRole, URI institutionId,
                                                            URI topLevelCristinOrgId) {
         var publication = randomPublicationNonDegree();
         var identity = new Identity.Builder()
@@ -633,7 +632,8 @@ class PublicationPermissionStrategyTest {
                                     .build();
 
         return publication.copy().withEntityDescription(entityDescription)
-                   .withResourceOwner(new ResourceOwner(new Username(randomString()), topLevelCristinOrgId ))
+                   .withResourceOwner(new ResourceOwner(new Username(randomString()), topLevelCristinOrgId))
+                   .withCuratingInstitutions(Set.of(topLevelCristinOrgId))
                    .withStatus(PUBLISHED).build();
     }
 

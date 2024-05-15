@@ -37,7 +37,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, userInstance, uriRetriever)
+                                  .create(publication, userInstance)
                                   .allowsAction(operation));
     }
 
@@ -57,13 +57,13 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var requestInfo = createUserRequestInfo(curatorUsername, randomUri(), getAccessRightsForCurator(), cristinId,
                                                 usersTopCristinOrg);
         var publication = createPublicationWithContributor(contributor, contributorCristinId, Role.CREATOR,
-                                                           institution, randomUri()).copy()
+                                                           institution, usersTopCristinOrg).copy()
                               .withAssociatedArtifacts(List.of(PublishedFileGenerator.random().toUnpublishedFile()))
                               .build();
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, userInstance, uriRetriever)
+                                  .create(publication, userInstance)
                                   .allowsAction(operation));
     }
 
@@ -84,7 +84,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .create(publication, userInstance, uriRetriever)
+                                   .create(publication, userInstance)
                                    .allowsAction(operation));
     }
     //endregion
@@ -106,7 +106,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .create(publication, userInstance, uriRetriever)
+                                   .create(publication, userInstance)
                                    .allowsAction(operation));
     }
 
@@ -130,7 +130,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, userInstance, uriRetriever)
+                                  .create(publication, userInstance)
                                   .allowsAction(operation));
     }
 

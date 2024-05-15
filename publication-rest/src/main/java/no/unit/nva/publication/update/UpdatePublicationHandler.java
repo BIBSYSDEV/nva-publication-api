@@ -43,7 +43,6 @@ import no.unit.nva.publication.commons.customer.CustomerNotAvailableException;
 import no.unit.nva.publication.commons.customer.JavaHttpClientCustomerApiClient;
 import no.unit.nva.publication.delete.LambdaDestinationInvocationDetail;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -106,7 +105,6 @@ public class UpdatePublicationHandler
     private final HttpClient httpClient;
     private final PublicationValidator publicationValidator;
     private final String apiHost;
-    private final UriRetriever uriRetriever;
 
     /**
      * Default constructor for MainHandler.
@@ -120,8 +118,7 @@ public class UpdatePublicationHandler
              defaultEventBridgeClient(),
              S3Driver.defaultS3Client().build(),
              SecretsReader.defaultSecretsManagerClient(),
-             HttpClient.newHttpClient(),
-             UriRetriever.defaultUriRetriever());
+             HttpClient.newHttpClient());
     }
 
     /**
@@ -137,8 +134,7 @@ public class UpdatePublicationHandler
                                     EventBridgeClient eventBridgeClient,
                                     S3Client s3Client,
                                     SecretsManagerClient secretsManagerClient,
-                                    HttpClient httpClient,
-                                    UriRetriever uriRetriever) {
+                                    HttpClient httpClient) {
         super(PublicationRequest.class, environment);
         this.resourceService = resourceService;
         this.ticketService = ticketService;
@@ -150,7 +146,6 @@ public class UpdatePublicationHandler
         this.secretsReader = new SecretsReader(secretsManagerClient);
         this.publicationValidator = new DefaultPublicationValidator();
         this.httpClient = httpClient;
-        this.uriRetriever = uriRetriever;
     }
 
     private static boolean isPending(TicketEntry publishingRequest) {
@@ -167,7 +162,7 @@ public class UpdatePublicationHandler
         Publication existingPublication = fetchPublication(identifierInPath);
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
-        var permissionStrategy = PublicationPermissionStrategy.create(existingPublication, userInstance, uriRetriever);
+        var permissionStrategy = PublicationPermissionStrategy.create(existingPublication, userInstance);
         Publication updatedPublication = switch (input) {
             case UpdatePublicationRequest publicationMetadata ->
                 updateMetadata(publicationMetadata, identifierInPath, existingPublication, permissionStrategy,
@@ -192,7 +187,7 @@ public class UpdatePublicationHandler
 
     private Set<PublicationOperation> getAllowedOperations(RequestInfo requestInfo, Publication publication) {
         return attempt(() -> createUserInstanceFromRequest(requestInfo, identityServiceClient)).toOptional()
-                   .map(userInstance -> PublicationPermissionStrategy.create(publication, userInstance, uriRetriever))
+                   .map(userInstance -> PublicationPermissionStrategy.create(publication, userInstance))
                    .map(PublicationPermissionStrategy::getAllAllowedActions)
                    .orElse(Collections.emptySet());
     }

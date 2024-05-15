@@ -30,7 +30,7 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, userInstance, uriRetriever)
+                                  .create(publication, userInstance)
                                   .allowsAction(operation));
     }
 
@@ -48,7 +48,7 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                  .create(publication, userInstance, uriRetriever)
+                                  .create(publication, userInstance)
                                   .allowsAction(operation));
     }
     //endregion
@@ -68,7 +68,7 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .create(publication, userInstance, uriRetriever)
+                                   .create(publication, userInstance)
                                    .allowsAction(operation));
     }
 

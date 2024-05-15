@@ -57,16 +57,14 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     private Environment environment;
     private ByteArrayOutputStream outputStream;
     private GetExternalClientResponse getExternalClientResponse;
-    private UriRetriever uriRetriever;
 
     @BeforeEach
     public void setUp() throws NotFoundException {
         init();
         prepareEnvironment();
         prepareIdentityServiceClient();
-        uriRetriever = mock(UriRetriever.class);
         publicationService = getResourceServiceBuilder().build();
-        handler = new DeletePublicationHandler(publicationService, environment, identityServiceClient, uriRetriever);
+        handler = new DeletePublicationHandler(publicationService, environment, identityServiceClient);
         outputStream = new ByteArrayOutputStream();
     }
 
