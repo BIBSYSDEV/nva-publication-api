@@ -58,7 +58,6 @@ paths:
           name: publicationIdentifier
           schema:
             type: string
-            format: uuid
           required: true
           style: simple
           explode: false
@@ -140,7 +139,6 @@ paths:
           name: publicationIdentifier
           schema:
             type: string
-            format: uuid
           required: true
           style: simple
           explode: false
@@ -198,7 +196,6 @@ paths:
           name: publicationIdentifier
           schema:
             type: string
-            format: uuid
           required: true
           style: simple
           explode: false
@@ -254,7 +251,6 @@ paths:
           name: publicationIdentifier
           schema:
             type: string
-            format: uuid
           required: true
           example:
             doi: '10.3848/135f2cf8-b816-11ed-afa1-0242ac120002'
@@ -314,7 +310,6 @@ paths:
         name: publicationIdentifier
         schema:
           type: string
-          format: uuid
         required: true
         style: simple
         explode: false
@@ -355,7 +350,6 @@ paths:
         name: publicationIdentifier
         schema:
           type: string
-          format: uuid
         required: true
         style: simple
         explode: false
@@ -364,7 +358,6 @@ paths:
         name: ticketIdentifier
         schema:
           type: string
-          format: uuid
         required: true
         style: simple
         explode: false
@@ -485,7 +478,6 @@ paths:
         name: publicationIdentifier
         schema:
           type: string
-          format: uuid
         required: true
         style: simple
         explode: false
@@ -494,7 +486,6 @@ paths:
         name: ticketIdentifier
         schema:
           type: string
-          format: uuid
         required: true
         style: simple
         explode: false
@@ -536,7 +527,6 @@ paths:
         name: publicationIdentifier
         schema:
           type: string
-          format: uuid
         required: true
         style: simple
         explode: false
@@ -545,7 +535,6 @@ paths:
         name: ticketIdentifier
         schema:
           type: string
-          format: uuid
         required: true
         style: simple
         explode: false
@@ -554,7 +543,6 @@ paths:
         name: messageIdentifier
         schema:
           type: string
-          format: uuid
         required: true
         style: simple
         explode: false
@@ -623,7 +611,6 @@ paths:
         name: publicationIdentifier
         schema:
           type: string
-          format: uuid
         required: true
         style: simple
         explode: false
@@ -698,7 +685,6 @@ paths:
           name: importCandidateIdentifier
           schema:
             type: string
-            format: uuid
           required: true
           style: simple
           explode: false
@@ -736,7 +722,6 @@ paths:
           name: importCandidateIdentifier
           schema:
             type: string
-            format: uuid
           required: true
           style: simple
           explode: false
@@ -786,7 +771,6 @@ paths:
           name: importCandidateIdentifier
           schema:
             type: string
-            format: uuid
           required: true
           style: simple
           explode: false
@@ -837,20 +821,18 @@ paths:
           name: importCandidateIdentifier
           schema:
             type: string
-            format: uuid
           required: true
           style: simple
           explode: false
-          description: UUID identifier of the import candidate.
+          description: Identifier of the import candidate.
         - in: path
           name: fileIdentifier
           schema:
             type: string
-            format: uuid
           required: true
           style: simple
           explode: false
-          description: UUID identifier of the file to fetch.
+          description: Identifier of the file to fetch.
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ImportCandidatePresignedUrlHandler.Arn}:live/invocations
@@ -930,7 +912,7 @@ components:
         doi:
           type: string
           format: uri
-        identifier:
+        id:
           type: string
           format: uri
         modifiedDate:
@@ -1086,7 +1068,6 @@ components:
           format: uri
         id:
           type: string
-          format: uri
         modifiedDate:
           type: string
           format: date
@@ -1121,7 +1102,7 @@ components:
           properties:
             doi:
               type: string
-              format: uuid
+              format: uri
             publicationContext:
               type: object
               properties:
@@ -1258,7 +1239,6 @@ components:
           example: "https://api.<environment>.nva.aws.unit.no/publication/14d3030c-3b61-4070-b902-342f80e99364/ticket/8758ec62-5772-48ff-8856-38d3f3038383/message/a228ecf2-5442-49fd-2256-3d43f3f383ff"
         identifier:
           type: string
-          format: uuid
           example: "a228ecf2-5442-49fd-2256-3d43f3f383ff"
         owner:
           description: "Ticket owner"
@@ -1319,7 +1299,6 @@ components:
           format: date
         identifier:
           type: string
-          format: uuid
         messages:
           type: array
           items:
@@ -1336,7 +1315,6 @@ components:
           example: "https://api.<environment>.nva.aws.unit.no/cristin/organization/123.0.0.0"
         publicationIdentifier:
           type: string
-          format: uuid
         status:
           type: string
           enum:
@@ -1372,7 +1350,6 @@ components:
       properties:
         fileIdentifier:
           type: string
-          format: uuid
         uri:
           type: string
           format: uri
