@@ -249,7 +249,6 @@ public class ResourceService extends ServiceWithTransactions {
         return new ListingResult<>(values, scanResult.getLastEvaluatedKey(), isTruncated);
     }
 
-    @JacocoGenerated
     public void refreshResources(List<Entity> dataEntries) {
         final var refreshedEntries = refreshAndMigrate(dataEntries);
         var writeRequests = createWriteRequestsForBatchJob(refreshedEntries);
