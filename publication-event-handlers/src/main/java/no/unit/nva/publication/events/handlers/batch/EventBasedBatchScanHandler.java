@@ -8,7 +8,6 @@ import no.unit.nva.publication.events.bodies.ScanDatabaseRequest;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.service.impl.ResourceService;
-import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,38 +15,31 @@ import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
-import software.amazon.awssdk.services.s3.S3Client;
 
 public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest, Void> {
 
     public static final String DETAIL_TYPE = "NO_DETAIL_TYPE";
-    private static final String CRISTIN_UNITS_S3_URI_ENV = "CRISTIN_UNITS_S3_URI";
 
     private final ResourceService resourceService;
     private final EventBridgeClient eventBridgeClient;
     private final Logger logger = LoggerFactory.getLogger(EventBasedBatchScanHandler.class);
-    private final S3Client s3Client;
-    private final Environment environment;
 
     @JacocoGenerated
     public EventBasedBatchScanHandler() {
-        this(ResourceService.defaultService(), defaultEventBridgeClient(), S3Client.create(), new Environment());
+        this(ResourceService.defaultService(), defaultEventBridgeClient());
     }
 
-    public EventBasedBatchScanHandler(ResourceService resourceService, EventBridgeClient eventBridgeClient,
-                                      S3Client s3Client, Environment environment) {
+    public EventBasedBatchScanHandler(ResourceService resourceService, EventBridgeClient eventBridgeClient) {
         super(ScanDatabaseRequest.class);
         this.resourceService = resourceService;
         this.eventBridgeClient = eventBridgeClient;
-        this.s3Client = s3Client;
-        this.environment = environment;
     }
 
     @Override
     protected Void processInput(ScanDatabaseRequest input, AwsEventBridgeEvent<ScanDatabaseRequest> event,
                                 Context context) {
         var result = resourceService.scanResources(input.getPageSize(), input.getStartMarker(), input.getTypes());
-        resourceService.refreshResources(result.getDatabaseEntries(), s3Client, environment.readEnv(CRISTIN_UNITS_S3_URI_ENV));
+        resourceService.refreshResources(result.getDatabaseEntries());
         logger.info("Query starting point:" + input.getStartMarker());
         if (result.isTruncated()) {
             sendEventToInvokeNewRefreshRowVersionExecution(input, context, result);

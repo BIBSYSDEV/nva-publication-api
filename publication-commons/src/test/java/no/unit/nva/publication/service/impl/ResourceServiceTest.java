@@ -114,7 +114,6 @@ import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.Environment;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
@@ -131,7 +130,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
-import software.amazon.awssdk.services.s3.S3Client;
 
 class ResourceServiceTest extends ResourcesLocalTest {
 
@@ -162,7 +160,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private TicketService ticketService;
     private MessageService messageService;
     private Instant now;
-    private S3Client s3client;
 
     @BeforeEach
     public void init() {
@@ -171,7 +168,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         resourceService = getResourceServiceBuilder().build();
         ticketService = getTicketService();
         messageService = getMessageService();
-        s3client = mock(S3Client.class);
     }
 
     public Optional<ResourceDao> searchForResource(ResourceDao resourceDaoWithStatusDraft) {
@@ -1062,7 +1058,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var testAppender = LogUtils.getTestingAppenderForRootLogger();
 
-        resourceService.refreshResources(resources, s3client, "s3://cristin-cache/units.json");
+        resourceService.refreshResources(resources);
 
         assertThatFailedBatchScanLogsProperly(testAppender, userResources);
     }
