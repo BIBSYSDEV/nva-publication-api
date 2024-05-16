@@ -182,7 +182,6 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     }
 
     private void mockSiktOrg() {
-        //todo
         when(uriRetriever.getRawContent(
             eq(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0")),
             any())).thenReturn(
