@@ -1,5 +1,6 @@
 package no.sikt.nva.brage.migration.merger;
 
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -9,6 +10,7 @@ import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
+import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import org.junit.jupiter.api.Test;
 
 class CristinImportPublicationMergerTest {
@@ -37,6 +39,19 @@ class CristinImportPublicationMergerTest {
                    doesNotHaveEmptyValuesIgnoringFields(Set.of("additionalIdentifiers")));
     }
 
+    @Test
+    void shouldFillExistingEmptyDegreePhdWithBrageDegreePhd() throws InvalidUnconfirmedSeriesException,
+                                                                InvalidIsbnException {
+        var existingPublication = randomPublication(DegreePhd.class);
+        existingPublication.getEntityDescription().getReference().setPublicationInstance(emptyDegreePhd());
+        var bragePublication = randomPublication(DegreePhd.class);
+
+        var updatedPublication = mergePublications(bragePublication, bragePublication);
+
+        assertThat(updatedPublication.getEntityDescription().getReference().getPublicationInstance(),
+                   doesNotHaveEmptyValues());
+    }
+
     private static Publication mergePublications(Publication existingPublication, Publication bragePublication)
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
         return new CristinImportPublicationMerger(existingPublication,
@@ -45,5 +60,9 @@ class CristinImportPublicationMergerTest {
 
     private static Book emptyBook() throws InvalidUnconfirmedSeriesException {
         return new Book(null, null, null, null, null, null);
+    }
+
+    private static DegreePhd emptyDegreePhd() {
+        return new DegreePhd(null, null, null);
     }
 }

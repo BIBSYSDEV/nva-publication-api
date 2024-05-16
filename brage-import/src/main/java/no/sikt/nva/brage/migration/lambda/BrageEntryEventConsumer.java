@@ -501,11 +501,6 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private Publication parseBrageRecord(S3Event event)
         throws JsonProcessingException, InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var brageRecord = getBrageRecordFromS3(event);
-        return convertBrageRecordToNvaPublication(brageRecord);
-    }
-
-    private Publication convertBrageRecordToNvaPublication(Record brageRecord)
-        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         return BrageNvaMapper.toNvaPublication(brageRecord);
     }
 

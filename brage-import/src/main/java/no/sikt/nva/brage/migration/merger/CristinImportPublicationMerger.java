@@ -11,6 +11,7 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Course;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.contexttypes.Book;
@@ -26,6 +27,11 @@ import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
+import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.degree.DegreePhd;
+import no.unit.nva.model.instancetypes.degree.RelatedDocument;
+import no.unit.nva.model.pages.MonographPages;
+import no.unit.nva.model.pages.Pages;
 import nva.commons.core.StringUtils;
 
 public class CristinImportPublicationMerger {
@@ -62,8 +68,42 @@ public class CristinImportPublicationMerger {
     private Reference determineReference() throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var reference = cristinPublication.getEntityDescription().getReference();
         reference.setPublicationContext(determinePublicationContext(reference));
+        reference.setPublicationInstance(determincePublicationInstance(reference));
         reference.setDoi(determineDoi(reference));
         return reference;
+    }
+
+    private PublicationInstance<? extends Pages> determincePublicationInstance(Reference reference) {
+        var publicationInstance = reference.getPublicationInstance();
+        var bragePublicationInstance = bragePublication.getEntityDescription().getReference().getPublicationInstance();
+
+        if (publicationInstance instanceof DegreePhd degreePhd && bragePublicationInstance instanceof DegreePhd brageDegreePhd) {
+            return new DegreePhd(getPages(degreePhd.getPages(), brageDegreePhd.getPages()),
+                                 getDate(degreePhd.getSubmittedDate(), brageDegreePhd.getSubmittedDate()),
+                                 getRelated(degreePhd.getRelated(), brageDegreePhd.getRelated()));
+        }
+        else {
+            return publicationInstance;
+        }
+    }
+
+    private Set<RelatedDocument> getRelated(Set<RelatedDocument> documents, Set<RelatedDocument> brageDocuments) {
+        if (nonNull(documents)) {
+            var mergedDocuments = new HashSet<RelatedDocument>();
+            mergedDocuments.addAll(documents);
+            mergedDocuments.addAll(brageDocuments);
+            return mergedDocuments;
+        } else {
+            return brageDocuments;
+        }
+    }
+
+    private PublicationDate getDate(PublicationDate submittedDate, PublicationDate brageDate) {
+        return nonNull(submittedDate) ? submittedDate : brageDate;
+    }
+
+    private MonographPages getPages(MonographPages pages, MonographPages bragePages) {
+        return nonNull(pages) ? pages : bragePages;
     }
 
     private URI determineDoi(Reference reference) {
