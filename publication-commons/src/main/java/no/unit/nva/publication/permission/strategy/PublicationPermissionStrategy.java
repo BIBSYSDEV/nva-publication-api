@@ -6,7 +6,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permission.strategy.grant.ContributorPermissionStrategy;
 import no.unit.nva.publication.permission.strategy.grant.CuratorPermissionStrategy;
@@ -31,26 +30,24 @@ public class PublicationPermissionStrategy {
 
     public PublicationPermissionStrategy(
         Publication publication,
-        UserInstance userInstance,
-        UriRetriever uriRetriever
+        UserInstance userInstance
     ) {
         this.userInstance = userInstance;
         this.publication = publication;
         this.grantStrategies = Set.of(
-            new EditorPermissionStrategy(publication, userInstance, uriRetriever),
-            new CuratorPermissionStrategy(publication, userInstance, uriRetriever),
-            new ContributorPermissionStrategy(publication, userInstance, uriRetriever),
-            new ResourceOwnerPermissionStrategy(publication, userInstance, uriRetriever),
-            new TrustedThirdPartyStrategy(publication, userInstance, uriRetriever)
+            new EditorPermissionStrategy(publication, userInstance),
+            new CuratorPermissionStrategy(publication, userInstance),
+            new ContributorPermissionStrategy(publication, userInstance),
+            new ResourceOwnerPermissionStrategy(publication, userInstance),
+            new TrustedThirdPartyStrategy(publication, userInstance)
         );
         this.denyStrategies = Set.of(
-            new NonDegreePermissionStrategy(publication, userInstance, uriRetriever)
+            new NonDegreePermissionStrategy(publication, userInstance)
         );
     }
 
-    public static PublicationPermissionStrategy create(Publication publication, UserInstance userInstance,
-                                                       UriRetriever uriRetriever) {
-        return new PublicationPermissionStrategy(publication, userInstance, uriRetriever);
+    public static PublicationPermissionStrategy create(Publication publication, UserInstance userInstance) {
+        return new PublicationPermissionStrategy(publication, userInstance);
     }
 
     public boolean isCuratorOnPublication() {
@@ -61,7 +58,7 @@ public class PublicationPermissionStrategy {
     private boolean isCurator() {
         return findAllowances(PublicationOperation.UPDATE)
                    .stream()
-                   .anyMatch(grant -> grant instanceof CuratorPermissionStrategy);
+                   .anyMatch(CuratorPermissionStrategy.class::isInstance);
     }
 
     public boolean allowsAction(PublicationOperation permission) {

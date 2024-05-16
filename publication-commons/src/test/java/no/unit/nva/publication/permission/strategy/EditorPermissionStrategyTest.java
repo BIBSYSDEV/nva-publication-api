@@ -41,7 +41,7 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, userInstance, uriRetriever)
+                                  .create(publication, userInstance)
                                   .allowsAction(operation));
     }
 
@@ -61,7 +61,7 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .create(publication, userInstance, uriRetriever)
+                                   .create(publication, userInstance)
                                    .allowsAction(operation));
     }
 
@@ -104,7 +104,7 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
 
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                      requestInfo, identityServiceClient), uriRetriever)
+                                      requestInfo, identityServiceClient))
                                   .allowsAction(UNPUBLISH));
     }
 }

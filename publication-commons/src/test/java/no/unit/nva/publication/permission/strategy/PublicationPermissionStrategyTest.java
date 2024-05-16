@@ -7,20 +7,16 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublicationNonDegree;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
-import static no.unit.nva.publication.utils.RdfUtils.APPLICATION_JSON;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
-import static nva.commons.core.ioutils.IoUtils.streamToString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -31,7 +27,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import no.unit.nva.clients.GetExternalClientResponse;
@@ -52,7 +47,6 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.publication.external.services.UriRetriever;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -73,9 +67,7 @@ class PublicationPermissionStrategyTest {
     public static final String INJECT_CRISTIN_ID_CLAIM = "custom:cristinId";
     public static final String INJECT_TOP_ORG_CRISTIN_ID_CLAIM = "custom:topOrgCristinId";
     protected static final String TEST_ORG_NTNU_ROOT = "194.0.0.0";
-    protected static final String TEST_ORG_NTNU_OFFICE_INTERNATIONAL = "194.14.62.0";
     protected static final String TEST_ORG_NTNU_DEPARTMENT_OF_LANGUAGES = "194.62.60.0";
-    protected static final String TEST_ORG_SIKT_DEPARTMENT_OF_COMMUNICATION = "20754.6.0.0";
     public static final String AUTHORIZATION = "Authorization";
     public static final String BEARER_TOKEN = "Bearer token";
     IdentityServiceClient identityServiceClient;
@@ -85,33 +77,16 @@ class PublicationPermissionStrategyTest {
 
     protected static final URI EXTERNAL_CLIENT_CUSTOMER_URI = URI.create("https://example.com/external-client-org");
 
-    protected UriRetriever uriRetriever;
-
     @BeforeEach
     void setUp() throws NotFoundException {
         this.identityServiceClient = mock(IdentityServiceClient.class);
-        setupUriRetriever();
 
         when(this.identityServiceClient.getExternalClient(any())).thenReturn(
             new GetExternalClientResponse(randomString(), randomString(), EXTERNAL_CLIENT_CUSTOMER_URI, randomUri()));
     }
 
-    private void setupUriRetriever() {
-        this.uriRetriever = mock(UriRetriever.class);
-        setupCristinResponse(TEST_ORG_NTNU_ROOT);
-        setupCristinResponse(TEST_ORG_NTNU_OFFICE_INTERNATIONAL);
-        setupCristinResponse(TEST_ORG_NTNU_DEPARTMENT_OF_LANGUAGES);
-        setupCristinResponse(TEST_ORG_SIKT_DEPARTMENT_OF_COMMUNICATION);
-    }
-
     protected URI uriFromTestCase(String testCase) {
-        return URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/"+testCase);
-    }
-
-    private void setupCristinResponse(String testCase) {
-        var content = streamToString(inputStreamFromResources("cristin-orgs/"+testCase+".json"));
-        when(uriRetriever.getRawContent(eq(uriFromTestCase(testCase)), eq(APPLICATION_JSON)))
-            .thenReturn(Optional.of(content));
+        return URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/" + testCase);
     }
 
     @Test
@@ -123,7 +98,7 @@ class PublicationPermissionStrategyTest {
 
         Assertions.assertFalse(PublicationPermissionStrategy
                                    .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                       requestInfo, identityServiceClient), uriRetriever)
+                                       requestInfo, identityServiceClient))
                                    .allowsAction(UNPUBLISH));
     }
 
@@ -137,8 +112,7 @@ class PublicationPermissionStrategyTest {
         Assertions.assertThrows(UnauthorizedException.class, () -> PublicationPermissionStrategy
                                                                        .create(publication,
                                                                                RequestUtil.createUserInstanceFromRequest(
-                                                                                   requestInfo, identityServiceClient),
-                                                                               uriRetriever)
+                                                                                   requestInfo, identityServiceClient))
                                                                        .allowsAction(UNPUBLISH));
     }
 
@@ -147,7 +121,7 @@ class PublicationPermissionStrategyTest {
         var publication = createDegreePhd(randomString(), randomUri());
         var requestInfo = createThirdPartyRequestInfo(getAccessRightsForCurator());
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
-        var strategy = PublicationPermissionStrategy.create(publication, userInstance, uriRetriever);
+        var strategy = PublicationPermissionStrategy.create(publication, userInstance);
 
         Assertions.assertThrows(UnauthorizedException.class, () -> strategy.authorize(UPDATE));
     }
@@ -165,7 +139,7 @@ class PublicationPermissionStrategyTest {
 
         assertThat(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
-                    requestInfo, identityServiceClient), uriRetriever)
+                    requestInfo, identityServiceClient))
                 .getAllAllowedActions(), is(empty()));
     }
 
@@ -183,7 +157,7 @@ class PublicationPermissionStrategyTest {
 
         assertThat(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
-                    requestInfo, identityServiceClient), uriRetriever)
+                    requestInfo, identityServiceClient))
                 .getAllAllowedActions(), containsInAnyOrder(UPDATE, UNPUBLISH));
     }
 
@@ -195,13 +169,14 @@ class PublicationPermissionStrategyTest {
         var contributorCristinId = randomUri();
         var contributorInstitutionId = randomUri();
 
-        var requestInfo = createUserRequestInfo(contributorName, contributorInstitutionId, contributorCristinId, randomUri());
+        var requestInfo = createUserRequestInfo(contributorName, contributorInstitutionId, contributorCristinId,
+                                                randomUri());
         var publication = createPublicationWithContributor(contributorName, contributorCristinId, Role.CREATOR,
                                                            randomUri(), randomUri());
 
         PublicationPermissionStrategy
             .create(publication, RequestUtil.createUserInstanceFromRequest(
-                requestInfo, identityServiceClient), uriRetriever)
+                requestInfo, identityServiceClient))
             .authorize(UPDATE);
         assertThat(appender.getMessages(), containsString(contributorName));
         assertThat(appender.getMessages(), containsString(publication.getIdentifier().toString()));
@@ -255,7 +230,7 @@ class PublicationPermissionStrategyTest {
     }
 
     protected Publication createPublicationWithContributor(String contributorName, URI contributorId,
-                                                         Role contributorRole, URI institutionId,
+                                                           Role contributorRole, URI institutionId,
                                                            URI topLevelCristinOrgId) {
         var publication = randomPublicationNonDegree();
         var identity = new Identity.Builder()
@@ -272,7 +247,8 @@ class PublicationPermissionStrategyTest {
                                     .build();
 
         return publication.copy().withEntityDescription(entityDescription)
-                   .withResourceOwner(new ResourceOwner(new Username(randomString()), topLevelCristinOrgId ))
+                   .withResourceOwner(new ResourceOwner(new Username(randomString()), topLevelCristinOrgId))
+                   .withCuratingInstitutions(Set.of(topLevelCristinOrgId))
                    .withStatus(PUBLISHED).build();
     }
 

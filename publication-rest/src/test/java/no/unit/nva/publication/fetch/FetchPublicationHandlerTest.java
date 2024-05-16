@@ -133,8 +133,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         fetchPublicationHandler = new FetchPublicationHandler(publicationService,
                                                               uriRetriever,
                                                               environment,
-                                                              identityServiceClient,
-                                                              uriRetriever);
+                                                              identityServiceClient);
     }
 
     @Test
@@ -285,8 +284,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         fetchPublicationHandler = new FetchPublicationHandler(serviceThrowingException,
                                                               uriRetriever,
                                                               environment,
-                                                              identityServiceClient,
-                                                              uriRetriever);
+                                                              identityServiceClient);
         fetchPublicationHandler.handleRequest(generateHandlerRequest(IDENTIFIER_VALUE), output, context);
 
         var gatewayResponse = parseFailureResponse();

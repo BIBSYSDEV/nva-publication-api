@@ -4,9 +4,7 @@ import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,8 +12,8 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
 
     public static final Logger logger = LoggerFactory.getLogger(CuratorPermissionStrategy.class);
 
-    public CuratorPermissionStrategy(Publication publication, UserInstance userInstance, UriRetriever uriRetriever) {
-        super(publication, userInstance, uriRetriever);
+    public CuratorPermissionStrategy(Publication publication, UserInstance userInstance) {
+        super(publication, userInstance);
     }
 
     @Override
@@ -49,15 +47,14 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
     }
 
     private boolean userSharesTopLevelOrgWithAtLeastOneContributor() {
-        var contributorTopLevelOrgs = CuratingInstitutionsUtil.getCuratingInstitutionsOnline(publication, uriRetriever);
         var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
 
         logger.info("found topLevels {} for user {} of {}.",
-                    contributorTopLevelOrgs,
+                    publication.getCuratingInstitutions(),
                     userInstance.getUser(),
                     userTopLevelOrg);
 
-        return contributorTopLevelOrgs.stream().anyMatch(org -> org.equals(userTopLevelOrg));
+        return publication.getCuratingInstitutions().stream().anyMatch(org -> org.equals(userTopLevelOrg));
     }
 
     private boolean canManagePublishingRequests() {

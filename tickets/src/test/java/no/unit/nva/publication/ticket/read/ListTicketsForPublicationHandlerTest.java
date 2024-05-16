@@ -75,7 +75,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     @BeforeEach
     public void setup() {
         super.init();
-        this.handler = new ListTicketsForPublicationHandler(resourceService, ticketService, uriRetriever);
+        this.handler = new ListTicketsForPublicationHandler(resourceService, ticketService);
         this.messageService = getMessageService();
     }
 
