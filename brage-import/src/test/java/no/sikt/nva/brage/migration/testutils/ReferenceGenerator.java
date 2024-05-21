@@ -77,6 +77,7 @@ import no.unit.nva.model.instancetypes.media.MediaInterview;
 import no.unit.nva.model.instancetypes.media.MediaReaderOpinion;
 import no.unit.nva.model.instancetypes.report.ConferenceReport;
 import no.unit.nva.model.instancetypes.report.ReportBasic;
+import no.unit.nva.model.instancetypes.report.ReportBookOfAbstract;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
@@ -101,6 +102,12 @@ public final class ReferenceGenerator {
             if (NvaType.BOOK.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder().withPublishingContext(generatePublicationContextForBook(builder))
                            .withPublicationInstance(generatePublicationInstanceForBook(builder))
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
+            if (NvaType.BOOK_OF_ABSTRACTS.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder().withPublishingContext(generatePublicationContextForReport(builder))
+                           .withPublicationInstance(generatePublicationInstanceForReportBookOfAbstracts(builder))
                            .withDoi(builder.getDoi())
                            .build();
             }
@@ -349,6 +356,11 @@ public final class ReferenceGenerator {
         } catch (Exception e) {
             return new Reference.Builder().build();
         }
+    }
+
+    private static PublicationInstance<? extends Pages> generatePublicationInstanceForReportBookOfAbstracts(
+        Builder builder) {
+        return new ReportBookOfAbstract(generateMonographPages(builder));
     }
 
     @NotNull

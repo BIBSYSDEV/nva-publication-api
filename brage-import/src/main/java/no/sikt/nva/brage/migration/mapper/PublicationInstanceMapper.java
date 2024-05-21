@@ -7,10 +7,10 @@ import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isConf
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isCristinRecord;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isDataset;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isDesignProduct;
-import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isMediaFeatureArticle;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isFilm;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isInterview;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isLecture;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isMediaFeatureArticle;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isMusic;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isOtherPresentation;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isOtherStudentWork;
@@ -77,6 +77,7 @@ import no.unit.nva.model.instancetypes.media.MediaInterview;
 import no.unit.nva.model.instancetypes.media.MediaReaderOpinion;
 import no.unit.nva.model.instancetypes.report.ConferenceReport;
 import no.unit.nva.model.instancetypes.report.ReportBasic;
+import no.unit.nva.model.instancetypes.report.ReportBookOfAbstract;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
@@ -199,9 +200,16 @@ public final class PublicationInstanceMapper {
         }
         if (isCristinRecord(brageRecord)) {
             return null;
+        }
+        if (isBookOfAbstracts(brageRecord)) {
+            return buildReportBookOfAbstracts(brageRecord);
         } else {
             return buildPublicationInstanceWhenReport(brageRecord);
         }
+    }
+
+    private static PublicationInstance<? extends Pages> buildReportBookOfAbstracts(Record record) {
+        return new ReportBookOfAbstract(extractMonographPages(record));
     }
 
     public static boolean isEditorial(Record brageRecord) {
@@ -238,6 +246,10 @@ public final class PublicationInstanceMapper {
 
     public static boolean isConferenceReport(Record brageRecord) {
         return NvaType.CONFERENCE_REPORT.getValue().equals(brageRecord.getType().getNva());
+    }
+
+    public static boolean isBookOfAbstracts(Record record) {
+        return NvaType.BOOK_OF_ABSTRACTS.getValue().equals(record.getType().getNva());
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenEditorial(Record brageRecord) {
