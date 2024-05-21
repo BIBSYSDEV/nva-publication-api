@@ -221,7 +221,7 @@ public abstract class TicketDto implements JsonSerializable {
 
             var ticketClass = ticketEntry.getClass();
             if (DoiRequest.class.equals(ticketClass)) {
-                return createDoiRequestDto();
+                return createDoiRequestDto((DoiRequest) ticketEntry);
             } else if (PublishingRequestCase.class.equals(ticketClass)) {
                 return createPublishingRequestDto((PublishingRequestCase) ticketEntry);
             } else if (GeneralSupportRequest.class.equals(ticketClass)) {
@@ -270,10 +270,11 @@ public abstract class TicketDto implements JsonSerializable {
                                             owner,
                                             ownerAffiliation,
                                             publishingRequestCase.getWorkflow(),
-                                            publishingRequestCase.getApprovedFiles());
+                                            publishingRequestCase.getApprovedFiles(),
+                                            publishingRequestCase.getFinalizedBy());
         }
 
-        private DoiRequestDto createDoiRequestDto() {
+        private DoiRequestDto createDoiRequestDto(DoiRequest doiRequest) {
             return new DoiRequestDto(status,
                                      createdDate,
                                      modifiedDate,
@@ -284,7 +285,8 @@ public abstract class TicketDto implements JsonSerializable {
                                      viewedBy,
                                      assignee,
                                      owner,
-                                     ownerAffiliation);
+                                     ownerAffiliation,
+                                     doiRequest.getFinalizedBy());
         }
     }
 }
