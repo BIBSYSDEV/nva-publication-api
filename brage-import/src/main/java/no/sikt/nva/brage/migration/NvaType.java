@@ -27,6 +27,7 @@ public enum NvaType {
     MAP("Map"),
     INTERVIEW("Interview"),
     CONFERENCE_POSTER("ConferencePoster"),
+    CONFERENCE_LECTURE("ConferenceLecture"),
     PRESENTATION_OTHER("Other presentation"),
     ANTHOLOGY("Anthology"),
     PERFORMING_ARTS("Performing arts"),

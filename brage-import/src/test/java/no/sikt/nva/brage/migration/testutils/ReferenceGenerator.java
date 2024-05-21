@@ -1,6 +1,7 @@
 package no.sikt.nva.brage.migration.testutils;
 
 import static java.util.Objects.nonNull;
+import io.cucumber.java.ht.Le;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -65,6 +66,7 @@ import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
 import no.unit.nva.model.instancetypes.degree.RelatedDocument;
 import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
+import no.unit.nva.model.instancetypes.event.ConferenceLecture;
 import no.unit.nva.model.instancetypes.event.ConferencePoster;
 import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.event.OtherPresentation;
@@ -336,6 +338,13 @@ public final class ReferenceGenerator {
                            .withPublishingContext(new UnconfirmedJournal(builder.getJournalTitle(),
                                                                          builder.getIssnList().get(0),
                                                                          builder.getIssnList().get(1)))
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
+            if (NvaType.CONFERENCE_LECTURE.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublicationInstance(new ConferenceLecture())
+                           .withPublishingContext(new Event.Builder().build())
                            .withDoi(builder.getDoi())
                            .build();
             }
