@@ -529,7 +529,7 @@ public final class PublicationInstanceMapper {
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenJournalArticle(Record brageRecord) {
         return new ProfessionalArticle(extractPages(brageRecord), extractVolume(brageRecord), extractIssue(brageRecord),
-                                       null);
+                                       extractArticleNumber(brageRecord));
     }
 
     private static String extractVolume(Record brageRecord) {
