@@ -79,7 +79,8 @@ public final class PublicationContextMapper {
         if (isSupportedReportType(brageRecord)) {
             return buildPublicationContextWhenReport(brageRecord);
         }
-        if (isUnconfirmedJournal(brageRecord) || isUnconfirmedScientificArticle(brageRecord)) {
+        if (isUnconfirmedJournal(brageRecord) || isUnconfirmedScientificArticle(brageRecord)
+        || isUnconfirmedJournalIssue(brageRecord)) {
             return buildPublicationContextForUnconfirmedJournal(brageRecord);
         }
         if (isArticle(brageRecord)) {
@@ -114,6 +115,10 @@ public final class PublicationContextMapper {
         } else {
             throw new PublicationContextException(NOT_SUPPORTED_TYPE + brageRecord.getType().getNva());
         }
+    }
+
+    private static boolean isUnconfirmedJournalIssue(Record record) {
+        return NvaType.JOURNAL_ISSUE.getValue().equals(record.getType().getNva()) && !hasJournalId(record);
     }
 
     public static boolean isCristinRecord(Record record) {
@@ -241,7 +246,12 @@ public final class PublicationContextMapper {
                || isScientificArticle(brageRecord)
                || isMediaFeatureArticle(brageRecord)
                || isProfessionalArticle(brageRecord)
-               || isEditorial(brageRecord);
+               || isEditorial(brageRecord)
+               || isJournalIssue(brageRecord);
+    }
+
+    public static boolean isJournalIssue(Record record) {
+        return NvaType.JOURNAL_ISSUE.getValue().equals(record.getType().getNva());
     }
 
     private static PublicationContext buildPublicationContextWhenMediaContribution() {

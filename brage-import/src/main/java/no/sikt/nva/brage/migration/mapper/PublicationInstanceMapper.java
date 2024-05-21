@@ -7,6 +7,7 @@ import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isConf
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isCristinRecord;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isDataset;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isDesignProduct;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isJournalIssue;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isMediaFeatureArticle;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isFilm;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isInterview;
@@ -70,6 +71,7 @@ import no.unit.nva.model.instancetypes.event.ConferencePoster;
 import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.event.OtherPresentation;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
+import no.unit.nva.model.instancetypes.journal.JournalIssue;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.instancetypes.media.MediaFeatureArticle;
@@ -197,11 +199,19 @@ public final class PublicationInstanceMapper {
         if (isEditorial(brageRecord)) {
             return buildPublicationInstanceWhenEditorial(brageRecord);
         }
+        if (isJournalIssue(brageRecord)) {
+            return buildPublicationInstanceWhenJournalIssue(brageRecord);
+        }
         if (isCristinRecord(brageRecord)) {
             return null;
         } else {
             return buildPublicationInstanceWhenReport(brageRecord);
         }
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenJournalIssue(Record record) {
+        return new JournalIssue(extractVolume(record), extractIssue(record), extractArticleNumber(record),
+                                extractPages(record));
     }
 
     public static boolean isEditorial(Record brageRecord) {
