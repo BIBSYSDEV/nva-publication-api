@@ -24,6 +24,7 @@ import no.sikt.nva.brage.migration.record.Identity;
 import no.sikt.nva.brage.migration.record.Journal;
 import no.sikt.nva.brage.migration.record.Language;
 import no.sikt.nva.brage.migration.record.Pages;
+import no.sikt.nva.brage.migration.record.PartOfSeries;
 import no.sikt.nva.brage.migration.record.Project;
 import no.sikt.nva.brage.migration.record.PublicationContext;
 import no.sikt.nva.brage.migration.record.PublicationDate;
@@ -230,7 +231,7 @@ public class NvaBrageMigrationDataGenerator {
         private Map<String, String> alternativeTitlesMap;
         private String mainTitle;
         private PublicationDate publicationDate;
-        private String seriesNumberRecord;
+        private PartOfSeries partOfSeries;
         private String seriesNumberPublication;
         private no.unit.nva.model.PublicationDate publicationDateForPublication;
         private Pages pages;
@@ -462,8 +463,8 @@ public class NvaBrageMigrationDataGenerator {
             return seriesNumberPublication;
         }
 
-        public String getSeriesNumberRecord() {
-            return seriesNumberRecord;
+        public PartOfSeries getSeriesNumberRecord() {
+            return partOfSeries;
         }
 
         public no.unit.nva.model.PublicationDate getPublicationDateForPublication() {
@@ -563,8 +564,8 @@ public class NvaBrageMigrationDataGenerator {
             return this;
         }
 
-        public Builder withSeriesNumberRecord(String seriesNumberRecord) {
-            this.seriesNumberRecord = seriesNumberRecord;
+        public Builder withSeriesNumberRecord(PartOfSeries partOfSeries) {
+            this.partOfSeries = partOfSeries;
             return this;
         }
 
@@ -795,7 +796,7 @@ public class NvaBrageMigrationDataGenerator {
             publication.getPublicationContext().setPublisher(new Publisher(publisherId));
             publication.getPublicationContext().setJournal(new Journal(journalId));
             publication.getPublicationContext().setSeries(new Series(seriesId));
-            publication.setPartOfSeries(seriesNumberRecord);
+            publication.setPartOfSeries(partOfSeries);
             publication.setIsbnList(List.of(isbn));
             publication.setIsmnList(ismnList);
             publication.setIssnList(issnList);

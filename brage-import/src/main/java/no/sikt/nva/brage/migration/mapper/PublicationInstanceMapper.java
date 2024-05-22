@@ -8,10 +8,11 @@ import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isConf
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isCristinRecord;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isDataset;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isDesignProduct;
-import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isMediaFeatureArticle;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isFilm;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isInterview;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isJournalIssue;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isLecture;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isMediaFeatureArticle;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isMusic;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isOtherPresentation;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isOtherStudentWork;
@@ -72,6 +73,7 @@ import no.unit.nva.model.instancetypes.event.ConferencePoster;
 import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.event.OtherPresentation;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
+import no.unit.nva.model.instancetypes.journal.JournalIssue;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.instancetypes.media.MediaFeatureArticle;
@@ -79,6 +81,7 @@ import no.unit.nva.model.instancetypes.media.MediaInterview;
 import no.unit.nva.model.instancetypes.media.MediaReaderOpinion;
 import no.unit.nva.model.instancetypes.report.ConferenceReport;
 import no.unit.nva.model.instancetypes.report.ReportBasic;
+import no.unit.nva.model.instancetypes.report.ReportBookOfAbstract;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
@@ -199,14 +202,29 @@ public final class PublicationInstanceMapper {
         if (isEditorial(brageRecord)) {
             return buildPublicationInstanceWhenEditorial(brageRecord);
         }
+        if (isJournalIssue(brageRecord)) {
+            return buildPublicationInstanceWhenJournalIssue(brageRecord);
+        }
         if (isConferenceLecture(brageRecord)) {
             return new ConferenceLecture();
         }
         if (isCristinRecord(brageRecord)) {
             return null;
+        }
+        if (isBookOfAbstracts(brageRecord)) {
+            return buildReportBookOfAbstracts(brageRecord);
         } else {
             return buildPublicationInstanceWhenReport(brageRecord);
         }
+    }
+
+    private static PublicationInstance<? extends Pages> buildReportBookOfAbstracts(Record record) {
+        return new ReportBookOfAbstract(extractMonographPages(record));
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenJournalIssue(Record record) {
+        return new JournalIssue(extractVolume(record), extractIssue(record), extractArticleNumber(record),
+                                extractPages(record));
     }
 
     public static boolean isEditorial(Record brageRecord) {
@@ -243,6 +261,10 @@ public final class PublicationInstanceMapper {
 
     public static boolean isConferenceReport(Record brageRecord) {
         return NvaType.CONFERENCE_REPORT.getValue().equals(brageRecord.getType().getNva());
+    }
+
+    public static boolean isBookOfAbstracts(Record record) {
+        return NvaType.BOOK_OF_ABSTRACTS.getValue().equals(record.getType().getNva());
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenEditorial(Record brageRecord) {
@@ -524,7 +546,7 @@ public final class PublicationInstanceMapper {
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenJournalArticle(Record brageRecord) {
         return new ProfessionalArticle(extractPages(brageRecord), extractVolume(brageRecord), extractIssue(brageRecord),
-                                       null);
+                                       extractArticleNumber(brageRecord));
     }
 
     private static String extractVolume(Record brageRecord) {
