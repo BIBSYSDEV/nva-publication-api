@@ -16,6 +16,7 @@ public class Contributor {
     private Identity identity;
     private String role;
     private String brageRole;
+    private Integer sequence;
 
     @JsonCreator
     public Contributor(@JsonProperty("identity") Identity identity,
@@ -64,9 +65,20 @@ public class Contributor {
     }
 
     @JacocoGenerated
+    public Integer getSequence() {
+        return sequence;
+    }
+
+    @JacocoGenerated
+    public void setSequence(Integer sequence) {
+        this.sequence = sequence;
+    }
+
+    @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getAffiliations(), getIdentity(), getRole(), getBrageRole());
+        return Objects.hash(getAffiliations(), getIdentity(), getRole(), getBrageRole(),
+                            getSequence());
     }
 
     @JacocoGenerated
@@ -82,6 +94,7 @@ public class Contributor {
         return Objects.equals(getAffiliations(), that.getAffiliations())
                && Objects.equals(getIdentity(), that.getIdentity())
                && Objects.equals(getRole(), that.getRole())
-               && Objects.equals(getBrageRole(), that.getBrageRole());
+               && Objects.equals(getBrageRole(), that.getBrageRole())
+               && Objects.equals(getSequence(), that.getSequence());
     }
 }
