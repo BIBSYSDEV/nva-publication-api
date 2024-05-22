@@ -318,6 +318,7 @@ public final class BrageNvaMapper {
         return new Contributor.Builder().withRole(extractRole(contributor))
                    .withIdentity(extractIdentity(contributor))
                    .withAffiliations(generateAffiliations(contributor))
+                   .withSequence(contributor.getSequence())
                    .build();
     }
 
