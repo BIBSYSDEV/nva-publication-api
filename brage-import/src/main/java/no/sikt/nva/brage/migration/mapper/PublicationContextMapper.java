@@ -2,6 +2,7 @@ package no.sikt.nva.brage.migration.mapper;
 
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isAnthology;
+import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isBookOfAbstracts;
 import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isConferenceReport;
 import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isEditorial;
 import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isExhibitionCatalog;
@@ -140,7 +141,8 @@ public final class PublicationContextMapper {
         return isReport(brageRecord)
                || isResearchReport(brageRecord)
                || isReportWorkingPaper(brageRecord)
-               || isConferenceReport(brageRecord);
+               || isConferenceReport(brageRecord)
+               || isBookOfAbstracts(brageRecord);
     }
 
     public static boolean isMusic(Record brageRecord) {
