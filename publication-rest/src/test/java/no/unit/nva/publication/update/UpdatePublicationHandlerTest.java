@@ -409,7 +409,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(autoCompletedTicket.getStatus(), is(equalTo(COMPLETED)));
     }
 
-    @Test(
+    @Test
     void handlerCreatesPendingPublishingRequestTicketForPublishedPublicationWhenCompletedPublishingRequestExists()
         throws ApiGatewayException, IOException {
         var publishedPublication = TicketTestUtils.createPersistedPublication(customerId,
