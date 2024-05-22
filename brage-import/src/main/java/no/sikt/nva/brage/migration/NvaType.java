@@ -5,6 +5,7 @@ import nva.commons.core.JacocoGenerated;
 @JacocoGenerated
 public enum NvaType {
     BOOK("Book"),
+    BOOK_OF_ABSTRACTS("Book of abstracts"),
     CHAPTER("Chapter"),
     DATASET("DataSet"),
     JOURNAL_ARTICLE("JournalArticle"),

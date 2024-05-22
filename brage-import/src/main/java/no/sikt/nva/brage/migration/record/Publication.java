@@ -14,17 +14,17 @@ public class Publication {
     private List<String> isbnList;
     private List<String> ismnList;
     private PublicationContext publicationContext;
-    private String partOfSeries;
+    private PartOfSeries partOfSeries;
 
     public Publication() {
     }
 
     @JsonProperty("partOfSeries")
-    public String getPartOfSeries() {
+    public PartOfSeries getPartOfSeries() {
         return partOfSeries;
     }
 
-    public void setPartOfSeries(String partOfSeries) {
+    public void setPartOfSeries(PartOfSeries partOfSeries) {
         this.partOfSeries = partOfSeries;
     }
 
