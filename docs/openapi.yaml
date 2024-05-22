@@ -1335,6 +1335,9 @@ components:
         finalizedBy:
           type: string
           example: "123@123.0.0.0"
+        finalizedDate:
+          type: string
+          format: date
     TicketCollection:
       type: object
       properties:
