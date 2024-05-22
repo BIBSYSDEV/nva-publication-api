@@ -328,7 +328,7 @@ public class PublishingRequestCase extends TicketEntry {
     public int hashCode() {
         return Objects.hash(getIdentifier(), getStatus(), getCustomerId(), getOwner(), getModifiedDate(),
                             getCreatedDate(), getAssignee(), getWorkflow(), getOwnerAffiliation(),
-                            getApprovedFiles(), getFinalizedBy(), getFinalizedDate());
+                            getApprovedFiles());
     }
 
     @Override
@@ -350,9 +350,7 @@ public class PublishingRequestCase extends TicketEntry {
                && Objects.equals(getWorkflow(), that.getWorkflow())
                && Objects.equals(getAssignee(), that.getAssignee())
                && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation())
-               && Objects.equals(getApprovedFiles(), that.getApprovedFiles())
-               && Objects.equals(getFinalizedBy(), that.getFinalizedBy())
-               && Objects.equals(getFinalizedDate(), that.getFinalizedDate());
+               && Objects.equals(getApprovedFiles(), that.getApprovedFiles());
     }
 
     public PublishingRequestCase persistAutoComplete(TicketService ticketService, Publication publication)

@@ -276,8 +276,7 @@ public class DoiRequest extends TicketEntry {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getIdentifier(), getStatus(), getResourceStatus(), getModifiedDate(), getCreatedDate(),
-                            getCustomerId(), getOwner(), getAssignee(), getOwnerAffiliation(), getFinalizedBy(),
-                            getFinalizedDate());
+                            getCustomerId(), getOwner(), getAssignee(), getOwnerAffiliation());
     }
 
     @Override
@@ -299,9 +298,7 @@ public class DoiRequest extends TicketEntry {
                && Objects.equals(getCustomerId(), that.getCustomerId())
                && Objects.equals(getOwner(), that.getOwner())
                && Objects.equals(getAssignee(), that.getAssignee())
-               && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation())
-               && Objects.equals(getFinalizedBy(), that.getFinalizedBy())
-               && Objects.equals(getFinalizedDate(), that.getFinalizedDate());
+               && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation());
     }
 
     private boolean publicationDoesNotHaveAnExpectedStatus(Publication publication) {

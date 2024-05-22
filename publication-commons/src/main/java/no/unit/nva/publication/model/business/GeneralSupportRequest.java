@@ -209,8 +209,7 @@ public class GeneralSupportRequest extends TicketEntry {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getIdentifier(), getCreatedDate(), getModifiedDate(), getOwner(), getCustomerId(),
-                            getResourceIdentifier(), getStatus(), getAssignee(), getOwnerAffiliation(),
-                            getFinalizedBy(), getFinalizedDate());
+                            getResourceIdentifier(), getStatus(), getAssignee(), getOwnerAffiliation());
     }
 
     @Override
@@ -230,9 +229,7 @@ public class GeneralSupportRequest extends TicketEntry {
                && Objects.equals(getCustomerId(), that.getCustomerId())
                && getStatus() == that.getStatus()
                && Objects.equals(getAssignee(), that.getAssignee())
-               && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation())
-               && Objects.equals(getFinalizedBy(), that.getFinalizedBy())
-               && Objects.equals(getFinalizedDate(), that.getFinalizedDate());
+               && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation());
     }
 
     private static URI extractCustomerId(Publication publication) {
