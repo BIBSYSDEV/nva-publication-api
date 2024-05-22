@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.lambda.PublicationContextException;
 import no.sikt.nva.brage.migration.record.EntityDescription;
+import no.sikt.nva.brage.migration.record.PartOfSeries;
 import no.sikt.nva.brage.migration.record.Publication;
 import no.sikt.nva.brage.migration.record.PublicationDate;
 import no.sikt.nva.brage.migration.record.PublicationDateNva;
@@ -385,22 +386,8 @@ public final class PublicationContextMapper {
     private static String extractSeriesNumber(Record brageRecord) {
         return Optional.ofNullable(brageRecord.getPublication())
                    .map(Publication::getPartOfSeries)
-                   .map(PublicationContextMapper::extractPartOfSeriesValue)
+                   .map(PartOfSeries::getNumber)
                    .orElse(null);
-    }
-
-    private static String extractPartOfSeriesValue(String partOfSeriesValue) {
-        return Optional.ofNullable(partOfSeriesValue)
-                   .map(value -> hasNumber(value) ? getNumber(value) : null)
-                   .orElse(null);
-    }
-
-    private static String getNumber(String value) {
-        return value.split(";")[1];
-    }
-
-    private static boolean hasNumber(String value) {
-        return value.split(";").length == HAS_BOTH_SERIES_TITLE_AND_SERIES_NUMBER;
     }
 
     @SuppressWarnings("PMD.NullAssignment")
@@ -425,7 +412,7 @@ public final class PublicationContextMapper {
     private static String generateUnconfirmedSeriesTitle(Record brageRecord) {
         return Optional.ofNullable(brageRecord.getPublication())
                    .map(Publication::getPartOfSeries)
-                   .map(partOfSeriesValue -> partOfSeriesValue.split(";")[0])
+                   .map(PartOfSeries::getName)
                    .orElse(null);
     }
 

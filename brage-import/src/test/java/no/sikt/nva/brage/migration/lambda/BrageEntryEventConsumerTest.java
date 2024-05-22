@@ -73,7 +73,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import jdk.jfr.Description;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.mapper.InvalidIsmnRuntimeException;
@@ -85,6 +84,7 @@ import no.sikt.nva.brage.migration.merger.UnmappableCristinRecordException;
 import no.sikt.nva.brage.migration.record.Contributor;
 import no.sikt.nva.brage.migration.record.EntityDescription;
 import no.sikt.nva.brage.migration.record.Identity;
+import no.sikt.nva.brage.migration.record.PartOfSeries;
 import no.sikt.nva.brage.migration.record.PublicationDate;
 import no.sikt.nva.brage.migration.record.PublicationDateNva;
 import no.sikt.nva.brage.migration.record.PublisherAuthority;
@@ -142,9 +142,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
@@ -246,15 +243,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private S3Driver s3Driver;
     private FakeS3Client s3Client;
     private ResourceService resourceService;
-
-    public static Stream<Arguments> seriesNumberProvider() {
-        return Stream.of(Arguments.of(PART_OF_SERIES_VALUE_V1, "42"),
-                         Arguments.of(PART_OF_SERIES_VALUE_V2, "42:2022"),
-                         Arguments.of(PART_OF_SERIES_VALUE_V3, "2022:42"),
-                         Arguments.of(PART_OF_SERIES_VALUE_V4, "2022/42"),
-                         Arguments.of(PART_OF_SERIES_VALUE_V5, "42/2022"),
-                         Arguments.of(PART_OF_SERIES_VALUE_V6, null));
-    }
 
     @BeforeEach
     public void init() {
@@ -365,10 +353,9 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         assertThat(exception, containsString(DUPLICATE_PUBLICATIONS_MESSAGE));
     }
 
-    @ParameterizedTest(name = "shouldConvertBookToNvaPublication")
-    @MethodSource("seriesNumberProvider")
-    void shouldConvertBookToNvaPublication(String brageSeriesNumber, String expectedSeriesNumber) throws IOException {
-        var brageGenerator = buildGeneratorForBook(brageSeriesNumber, expectedSeriesNumber);
+    @Test
+    void shouldConvertBookToNvaPublication() throws IOException {
+        var brageGenerator = buildGeneratorForBook();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -1778,9 +1765,9 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     private NvaBrageMigrationDataGenerator buildGeneratorForReportWithUnconfirmedSeries() {
         return new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_REPORT)
-                   .withSeriesNumberRecord("series;42")
+                   .withSeriesNumberRecord(new PartOfSeries("seriesTitle","42"))
                    .withSeriesNumberPublication("42")
-                   .withSeriesTitle("series")
+                   .withSeriesTitle("seriesTitle")
                    .withIssn(List.of(randomIssn(), randomIssn()))
                    .build();
     }
@@ -1791,17 +1778,18 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     private NvaBrageMigrationDataGenerator buildGeneratorForBookWithoutValidSeriesNumber() {
         return new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_BOOK)
-                   .withSeriesNumberRecord(PART_OF_SERIES_VALUE_V6)
+                   .withSeriesNumberRecord(new PartOfSeries("NVE Rapport", null))
                    .withSeriesNumberPublication(null)
                    .withPublicationDate(PUBLICATION_DATE)
                    .withIsbn(randomIsbn10())
                    .build();
     }
 
-    private NvaBrageMigrationDataGenerator buildGeneratorForBook(String seriesNumber, String expectedSeriesNumber) {
+    private NvaBrageMigrationDataGenerator buildGeneratorForBook() {
+        var seriesNumber = randomString();
         return new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_BOOK)
-                   .withSeriesNumberRecord(seriesNumber)
-                   .withSeriesNumberPublication(expectedSeriesNumber)
+                   .withSeriesNumberRecord(new PartOfSeries(randomString(), seriesNumber))
+                   .withSeriesNumberPublication(seriesNumber)
                    .withPublicationDate(PUBLICATION_DATE)
                    .withIsbn(randomIsbn10())
                    .build();
