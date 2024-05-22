@@ -12,7 +12,6 @@ import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isPro
 import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isReaderOpinion;
 import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isVisualArts;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +19,7 @@ import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.lambda.PublicationContextException;
 import no.sikt.nva.brage.migration.record.EntityDescription;
+import no.sikt.nva.brage.migration.record.PartOfSeries;
 import no.sikt.nva.brage.migration.record.Publication;
 import no.sikt.nva.brage.migration.record.PublicationDate;
 import no.sikt.nva.brage.migration.record.PublicationDateNva;
@@ -271,7 +271,7 @@ public final class PublicationContextMapper {
         if (issnList.size() > SIZE_ONE) {
             return new UnconfirmedJournal(extractJournalTitle(brageRecord), issnList.get(0), issnList.get(1));
         } else {
-            var issn = !issnList.isEmpty() ? issnList.get(0) : null;
+            var issn = !issnList.isEmpty() ? issnList.getFirst() : null;
             return new UnconfirmedJournal(extractJournalTitle(brageRecord), issn, null);
         }
     }
@@ -366,19 +366,6 @@ public final class PublicationContextMapper {
                    .orElse(null);
     }
 
-    private static String extractPotentialSeriesNumberValue(String potentialSeriesNumber) {
-        if (potentialSeriesNumber.contains(":")) {
-            var seriesNumberAndYear = Arrays.asList(potentialSeriesNumber.split(":"));
-            return Collections.max(seriesNumberAndYear);
-        }
-
-        if (potentialSeriesNumber.contains("/")) {
-            var seriesNumberAndYear = Arrays.asList(potentialSeriesNumber.split("/"));
-            return Collections.max(seriesNumberAndYear);
-        }
-        return potentialSeriesNumber;
-    }
-
     private static PublicationContext buildPublicationContextWhenBook(Record brageRecord)
         throws InvalidIssnException {
         return new Book.BookBuilder().withPublisher(extractPublisher(brageRecord))
@@ -401,22 +388,8 @@ public final class PublicationContextMapper {
     private static String extractSeriesNumber(Record brageRecord) {
         return Optional.ofNullable(brageRecord.getPublication())
                    .map(Publication::getPartOfSeries)
-                   .map(PublicationContextMapper::extractPartOfSeriesValue)
+                   .map(PartOfSeries::getNumber)
                    .orElse(null);
-    }
-
-    private static String extractPartOfSeriesValue(String partOfSeriesValue) {
-        return Optional.ofNullable(partOfSeriesValue)
-                   .map(value -> hasNumber(value) ? extractPotentialSeriesNumberValue(getNumber(value)) : null)
-                   .orElse(null);
-    }
-
-    private static String getNumber(String value) {
-        return value.split(";")[1];
-    }
-
-    private static boolean hasNumber(String value) {
-        return value.split(";").length == HAS_BOTH_SERIES_TITLE_AND_SERIES_NUMBER;
     }
 
     @SuppressWarnings("PMD.NullAssignment")
@@ -433,7 +406,7 @@ public final class PublicationContextMapper {
         if (issnList.size() > SIZE_ONE) {
             return new UnconfirmedSeries(generateUnconfirmedSeriesTitle(brageRecord), issnList.get(0), issnList.get(1));
         } else {
-            var issn = !issnList.isEmpty() ? issnList.get(0) : null;
+            var issn = !issnList.isEmpty() ? issnList.getFirst() : null;
             return new UnconfirmedSeries(generateUnconfirmedSeriesTitle(brageRecord), issn, null);
         }
     }
@@ -441,7 +414,7 @@ public final class PublicationContextMapper {
     private static String generateUnconfirmedSeriesTitle(Record brageRecord) {
         return Optional.ofNullable(brageRecord.getPublication())
                    .map(Publication::getPartOfSeries)
-                   .map(partOfSeriesValue -> partOfSeriesValue.split(";")[0])
+                   .map(PartOfSeries::getName)
                    .orElse(null);
     }
 
