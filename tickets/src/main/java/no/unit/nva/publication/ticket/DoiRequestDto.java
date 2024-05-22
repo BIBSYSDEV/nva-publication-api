@@ -27,7 +27,6 @@ public class DoiRequestDto extends TicketDto {
     public static final String MODIFIED_DATE_FIELD = "modifiedDate";
     public static final String IDENTIFIER_FIELD = "identifier";
     public static final String ID_FIELD = "id";
-    public static final String FINALIZED_BY_FIELD = "finalizedBy";
 
     @JsonProperty(CREATED_DATE_FIELD)
     private final Instant createdDate;
@@ -37,8 +36,6 @@ public class DoiRequestDto extends TicketDto {
     private final SortableIdentifier identifier;
     @JsonProperty(ID_FIELD)
     private final URI id;
-    @JsonProperty(FINALIZED_BY_FIELD)
-    private final Username finalizedBy;
 
     @SuppressWarnings({"PMD.ExcessiveParameterList"})
     @JsonCreator
@@ -54,12 +51,11 @@ public class DoiRequestDto extends TicketDto {
                          @JsonProperty(OWNER_FIELD) User owner,
                          @JsonProperty(OWNER_AFFILIATION_FIELD) URI ownerAffiliation,
                          @JsonProperty(FINALIZED_BY_FIELD) Username finalizedBy) {
-        super(status, messages, viewedBy, assignee, publicationIdentifier, owner, ownerAffiliation);
+        super(status, messages, viewedBy, assignee, publicationIdentifier, owner, ownerAffiliation, finalizedBy);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
         this.id = id;
-        this.finalizedBy = finalizedBy;
     }
 
     public static TicketDto empty() {
@@ -76,10 +72,6 @@ public class DoiRequestDto extends TicketDto {
 
     public SortableIdentifier getIdentifier() {
         return identifier;
-    }
-
-    public Username getFinalizedBy() {
-        return finalizedBy;
     }
 
     @Override

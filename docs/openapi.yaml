@@ -1332,6 +1332,9 @@ components:
           items:
             type: string
             example: "123@123.0.0.0"
+        finalizedBy:
+          type: string
+          example: "123@123.0.0.0"
     TicketCollection:
       type: object
       properties:

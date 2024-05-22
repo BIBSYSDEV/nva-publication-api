@@ -44,6 +44,7 @@ public abstract class TicketDto implements JsonSerializable {
     public static final String OWNER_FIELD = "owner";
     public static final String OWNER_AFFILIATION_FIELD = "ownerAffiliation";
     public static final String PUBLICATION_IDENTIFIER_FIELD = "publicationIdentifier";
+    public static final String FINALIZED_BY_FIELD = "finalizedBy";
     @JsonProperty(STATUS_FIELD)
     private final TicketDtoStatus status;
     @JsonProperty(VIEWED_BY)
@@ -58,6 +59,8 @@ public abstract class TicketDto implements JsonSerializable {
     private final User owner;
     @JsonProperty(OWNER_AFFILIATION_FIELD)
     private final URI ownerAffiliation;
+    @JsonProperty(FINALIZED_BY_FIELD)
+    private final Username finalizedBy;
 
     protected TicketDto(TicketDtoStatus status,
                         List<MessageDto> messages,
@@ -65,7 +68,8 @@ public abstract class TicketDto implements JsonSerializable {
                         Username assignee,
                         SortableIdentifier publicationIdentifier,
                         User owner,
-                        URI ownerAffiliation) {
+                        URI ownerAffiliation,
+                        Username finalizedBy) {
         this.status = status;
         this.messages = messages;
         this.viewedBy = new ViewedBy(viewedBy);
@@ -73,6 +77,7 @@ public abstract class TicketDto implements JsonSerializable {
         this.publicationIdentifier = publicationIdentifier;
         this.owner = owner;
         this.ownerAffiliation = ownerAffiliation;
+        this.finalizedBy = finalizedBy;
     }
 
     public static TicketDto fromTicket(TicketEntry ticket) {
@@ -99,6 +104,7 @@ public abstract class TicketDto implements JsonSerializable {
                    .withAssignee(ticket.getAssignee())
                    .withOwnerAffiliation(ticket.getOwnerAffiliation())
                    .withOwner(ticket.getOwner())
+                   .withFinalizedBy(ticket.getFinalizedBy())
                    .build(ticket);
     }
 
@@ -143,6 +149,10 @@ public abstract class TicketDto implements JsonSerializable {
         return viewedBy;
     }
 
+    public Username getFinalizedBy() {
+        return finalizedBy;
+    }
+
     private static URI createPublicationId(SortableIdentifier publicationIdentifier) {
         return UriWrapper.fromHost(API_HOST)
                    .addChild(PublicationServiceConfig.PUBLICATION_PATH)
@@ -163,6 +173,7 @@ public abstract class TicketDto implements JsonSerializable {
         private Username assignee;
         private User owner;
         private URI ownerAffiliation;
+        private Username finalizedBy;
 
         private Builder() {
         }
@@ -217,11 +228,16 @@ public abstract class TicketDto implements JsonSerializable {
             return this;
         }
 
+        public Builder withFinalizedBy(Username finalizedBy) {
+            this.finalizedBy = finalizedBy;
+            return this;
+        }
+
         public TicketDto build(TicketEntry ticketEntry) {
 
             var ticketClass = ticketEntry.getClass();
             if (DoiRequest.class.equals(ticketClass)) {
-                return createDoiRequestDto((DoiRequest) ticketEntry);
+                return createDoiRequestDto();
             } else if (PublishingRequestCase.class.equals(ticketClass)) {
                 return createPublishingRequestDto((PublishingRequestCase) ticketEntry);
             } else if (GeneralSupportRequest.class.equals(ticketClass)) {
@@ -235,7 +251,8 @@ public abstract class TicketDto implements JsonSerializable {
                                                     viewedBy,
                                                     assignee,
                                                     owner,
-                                                    ownerAffiliation);
+                                                    ownerAffiliation,
+                                                    finalizedBy);
             } else if (UnpublishRequest.class.equals(ticketClass)) {
                 return new UnpublishRequestDto(status,
                                                createdDate,
@@ -247,7 +264,8 @@ public abstract class TicketDto implements JsonSerializable {
                                                viewedBy,
                                                assignee,
                                                owner,
-                                               ownerAffiliation);
+                                               ownerAffiliation,
+                                               finalizedBy);
             }
             throw new RuntimeException("Unsupported type");
         }
@@ -271,10 +289,10 @@ public abstract class TicketDto implements JsonSerializable {
                                             ownerAffiliation,
                                             publishingRequestCase.getWorkflow(),
                                             publishingRequestCase.getApprovedFiles(),
-                                            publishingRequestCase.getFinalizedBy());
+                                            finalizedBy);
         }
 
-        private DoiRequestDto createDoiRequestDto(DoiRequest doiRequest) {
+        private DoiRequestDto createDoiRequestDto() {
             return new DoiRequestDto(status,
                                      createdDate,
                                      modifiedDate,
@@ -286,7 +304,7 @@ public abstract class TicketDto implements JsonSerializable {
                                      assignee,
                                      owner,
                                      ownerAffiliation,
-                                     doiRequest.getFinalizedBy());
+                                     finalizedBy);
         }
     }
 }

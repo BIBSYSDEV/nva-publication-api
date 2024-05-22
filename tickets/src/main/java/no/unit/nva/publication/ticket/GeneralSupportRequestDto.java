@@ -46,8 +46,9 @@ public class GeneralSupportRequestDto extends TicketDto {
                                     @JsonProperty(VIEWED_BY) Set<User> viewedBy,
                                     @JsonProperty(ASSIGNEE_FIELD) Username assignee,
                                     @JsonProperty(OWNER_FIELD) User owner,
-                                    @JsonProperty(OWNER_AFFILIATION_FIELD) URI ownerAffiliation) {
-        super(status, messages, viewedBy, assignee, publicationIdentifier, owner, ownerAffiliation);
+                                    @JsonProperty(OWNER_AFFILIATION_FIELD) URI ownerAffiliation,
+                                    @JsonProperty(FINALIZED_BY_FIELD) Username finalizedBy) {
+        super(status, messages, viewedBy, assignee, publicationIdentifier, owner, ownerAffiliation, finalizedBy);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
@@ -55,7 +56,7 @@ public class GeneralSupportRequestDto extends TicketDto {
     }
 
     public static GeneralSupportRequestDto empty() {
-        return new GeneralSupportRequestDto(null, null, null, null, null, null, null, null, null, null, null);
+        return new GeneralSupportRequestDto(null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     public URI getId() {
@@ -85,7 +86,7 @@ public class GeneralSupportRequestDto extends TicketDto {
     public int hashCode() {
         return Objects.hash(getId(), getStatus(), getCreatedDate(), getModifiedDate(), getIdentifier(),
                             getPublicationIdentifier(), getMessages(), getAssignee(), getOwner(),
-                            getOwnerAffiliation());
+                            getOwnerAffiliation(), getFinalizedBy());
     }
 
     @Override
@@ -107,6 +108,7 @@ public class GeneralSupportRequestDto extends TicketDto {
                && Objects.equals(getMessages(), that.getMessages())
                && Objects.equals(getAssignee(), that.getAssignee())
                && Objects.equals(getOwner(), that.getOwner())
-               && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation());
+               && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation())
+               && Objects.equals(getFinalizedBy(), that.getFinalizedBy());
     }
 }

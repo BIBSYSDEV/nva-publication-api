@@ -45,8 +45,9 @@ public class UnpublishRequestDto extends TicketDto {
                                @JsonProperty(VIEWED_BY) Set<User> viewedBy,
                                @JsonProperty(ASSIGNEE_FIELD) Username assignee,
                                @JsonProperty(OWNER_FIELD) User owner,
-                               @JsonProperty(OWNER_AFFILIATION_FIELD) URI ownerAffiliation) {
-        super(status, messages, viewedBy, assignee, publicationIdentifier, owner, ownerAffiliation);
+                               @JsonProperty(OWNER_AFFILIATION_FIELD) URI ownerAffiliation,
+                               @JsonProperty(FINALIZED_BY_FIELD) Username finalizedBy) {
+        super(status, messages, viewedBy, assignee, publicationIdentifier, owner, ownerAffiliation, finalizedBy);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
@@ -54,7 +55,7 @@ public class UnpublishRequestDto extends TicketDto {
     }
 
     public static TicketDto empty() {
-        return new UnpublishRequestDto(null, null, null, null, null, null, null, null, null, null, null);
+        return new UnpublishRequestDto(null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     public Instant getCreatedDate() {
@@ -78,7 +79,7 @@ public class UnpublishRequestDto extends TicketDto {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getStatus(), getCreatedDate(), getModifiedDate(), getIdentifier(),
-                            getPublicationIdentifier(), id, getMessages(), getAssignee(), getOwner());
+                            getPublicationIdentifier(), id, getMessages(), getAssignee(), getOwner(), getFinalizedBy());
     }
 
     @Override
@@ -98,6 +99,7 @@ public class UnpublishRequestDto extends TicketDto {
                && Objects.equals(id, that.id)
                && Objects.equals(getMessages(), that.getMessages())
                && Objects.equals(getAssignee(), that.getAssignee())
-               && Objects.equals(getOwner(), that.getOwner());
+               && Objects.equals(getOwner(), that.getOwner())
+               && Objects.equals(getFinalizedBy(), that.getFinalizedBy());
     }
 }

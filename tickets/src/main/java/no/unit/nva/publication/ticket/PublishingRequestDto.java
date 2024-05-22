@@ -33,7 +33,6 @@ public class PublishingRequestDto extends TicketDto {
     public static final String ID_FIELD = "id";
     public static final String WORKFLOW_FIELD = "workflow";
     public static final String APPROVED_FILES_FIELD = "approvedFiles";
-    public static final String FINALIZED_BY_FIELD = "finalizedBy";
 
     @JsonProperty(CREATED_DATE_FIELD)
     private final Instant createdDate;
@@ -47,8 +46,6 @@ public class PublishingRequestDto extends TicketDto {
     private final PublishingWorkflow workflow;
     @JsonProperty(APPROVED_FILES_FIELD)
     private final Set<UUID> approvedFiles;
-    @JsonProperty(FINALIZED_BY_FIELD)
-    private final Username finalizedBy;
 
     @JsonCreator
     public PublishingRequestDto(@JsonProperty(STATUS_FIELD) TicketDtoStatus status,
@@ -65,14 +62,13 @@ public class PublishingRequestDto extends TicketDto {
                                 @JsonProperty(WORKFLOW_FIELD) PublishingWorkflow workflow,
                                 @JsonProperty(APPROVED_FILES_FIELD) Set<UUID> approvedFiles,
                                 @JsonProperty(FINALIZED_BY_FIELD) Username finalizedBy) {
-        super(status, messages, viewedBy, assignee, publicationIdentifier, owner, ownerAffiliation);
+        super(status, messages, viewedBy, assignee, publicationIdentifier, owner, ownerAffiliation, finalizedBy);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
         this.id = id;
         this.workflow = workflow;
         this.approvedFiles = approvedFiles;
-        this.finalizedBy = finalizedBy;
     }
 
     public static TicketDto empty() {
@@ -97,10 +93,6 @@ public class PublishingRequestDto extends TicketDto {
 
     public Set<UUID> getApprovedFiles() {
         return approvedFiles;
-    }
-
-    public Username getFinalizedBy() {
-        return finalizedBy;
     }
 
     @Override
