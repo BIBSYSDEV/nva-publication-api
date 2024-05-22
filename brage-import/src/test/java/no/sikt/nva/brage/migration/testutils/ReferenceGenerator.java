@@ -71,6 +71,7 @@ import no.unit.nva.model.instancetypes.event.OtherPresentation;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.JournalIssue;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.instancetypes.media.MediaInterview;
@@ -340,6 +341,16 @@ public final class ReferenceGenerator {
                            .withPublicationInstance(new JournalLeader(builder.getVolume(), builder.getIssue(),
                                                                       builder.getArticleNumber(),
                                                                       generateRange(builder)))
+                           .withPublishingContext(new UnconfirmedJournal(builder.getJournalTitle(),
+                                                                         builder.getIssnList().get(0),
+                                                                         builder.getIssnList().get(1)))
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
+            if (NvaType.JOURNAL_ISSUE.getValue().equals(builder.getType().getNva())) {
+                return new Reference.Builder()
+                           .withPublicationInstance(new JournalIssue(builder.getVolume(), builder.getIssue(),
+                                                                     builder.getArticleNumber(), generateRange(builder)))
                            .withPublishingContext(new UnconfirmedJournal(builder.getJournalTitle(),
                                                                          builder.getIssnList().get(0),
                                                                          builder.getIssnList().get(1)))
