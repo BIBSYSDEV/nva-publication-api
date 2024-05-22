@@ -61,8 +61,9 @@ public class PublishingRequestDto extends TicketDto {
                                 @JsonProperty(OWNER_AFFILIATION_FIELD) URI ownerAffiliation,
                                 @JsonProperty(WORKFLOW_FIELD) PublishingWorkflow workflow,
                                 @JsonProperty(APPROVED_FILES_FIELD) Set<UUID> approvedFiles,
-                                @JsonProperty(FINALIZED_BY_FIELD) Username finalizedBy) {
-        super(status, messages, viewedBy, assignee, publicationIdentifier, owner, ownerAffiliation, finalizedBy);
+                                @JsonProperty(FINALIZED_BY_FIELD) Username finalizedBy,
+                                @JsonProperty(FINALIZED_DATE_FIELD) Instant finalizedDate) {
+        super(status, messages, viewedBy, assignee, publicationIdentifier, owner, ownerAffiliation, finalizedBy, finalizedDate);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
@@ -72,7 +73,8 @@ public class PublishingRequestDto extends TicketDto {
     }
 
     public static TicketDto empty() {
-        return new PublishingRequestDto(null, null, null, null, null, null, null, null, null, null, null, null, Set.of(), null);
+        return new PublishingRequestDto(null, null, null, null, null, null, null, null, null, null, null, null,
+                                        Set.of(), null, null);
     }
 
     public Instant getCreatedDate() {
@@ -105,7 +107,7 @@ public class PublishingRequestDto extends TicketDto {
     public int hashCode() {
         return Objects.hash(getStatus(), getCreatedDate(), getModifiedDate(), getIdentifier(),
                             getPublicationIdentifier(), id, getMessages(), getAssignee(), getOwner(),
-                            getOwnerAffiliation(), getWorkflow(), getApprovedFiles(), getFinalizedBy());
+                            getOwnerAffiliation(), getWorkflow(), getApprovedFiles(), getFinalizedBy(), getFinalizedDate());
     }
 
     @Override
@@ -130,6 +132,7 @@ public class PublishingRequestDto extends TicketDto {
                && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation())
                && Objects.equals(getWorkflow(), that.getWorkflow())
                && Objects.equals(getApprovedFiles(), that.getApprovedFiles())
-               && Objects.equals(getFinalizedBy(), that.getFinalizedBy());
+               && Objects.equals(getFinalizedBy(), that.getFinalizedBy())
+               && Objects.equals(getFinalizedDate(), that.getFinalizedDate());
     }
 }

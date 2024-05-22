@@ -50,8 +50,9 @@ public class DoiRequestDto extends TicketDto {
                          @JsonProperty(ASSIGNEE_FIELD) Username assignee,
                          @JsonProperty(OWNER_FIELD) User owner,
                          @JsonProperty(OWNER_AFFILIATION_FIELD) URI ownerAffiliation,
-                         @JsonProperty(FINALIZED_BY_FIELD) Username finalizedBy) {
-        super(status, messages, viewedBy, assignee, publicationIdentifier, owner, ownerAffiliation, finalizedBy);
+                         @JsonProperty(FINALIZED_BY_FIELD) Username finalizedBy,
+                         @JsonProperty(FINALIZED_DATE_FIELD) Instant finalizedDate) {
+        super(status, messages, viewedBy, assignee, publicationIdentifier, owner, ownerAffiliation, finalizedBy, finalizedDate);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
@@ -59,7 +60,7 @@ public class DoiRequestDto extends TicketDto {
     }
 
     public static TicketDto empty() {
-        return new DoiRequestDto(null, null, null, null, null, null, null, null, null, null, null, null);
+        return new DoiRequestDto(null, null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     public Instant getCreatedDate() {
@@ -84,7 +85,7 @@ public class DoiRequestDto extends TicketDto {
     public int hashCode() {
         return Objects.hash(getStatus(), getCreatedDate(), getModifiedDate(), getIdentifier(),
                             getPublicationIdentifier(), id, getMessages(), getAssignee(), getOwner(),
-                            getOwnerAffiliation(), getFinalizedBy());
+                            getOwnerAffiliation(), getFinalizedBy(), getFinalizedDate());
     }
 
     @Override
@@ -107,6 +108,7 @@ public class DoiRequestDto extends TicketDto {
                && Objects.equals(getAssignee(), that.getAssignee())
                && Objects.equals(getOwner(), that.getOwner())
                && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation())
-               && Objects.equals(getFinalizedBy(), that.getFinalizedBy());
+               && Objects.equals(getFinalizedBy(), that.getFinalizedBy())
+               && Objects.equals(getFinalizedDate(), that.getFinalizedDate());
     }
 }

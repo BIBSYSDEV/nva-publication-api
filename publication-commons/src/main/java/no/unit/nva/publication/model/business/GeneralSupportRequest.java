@@ -167,6 +167,7 @@ public class GeneralSupportRequest extends TicketEntry {
         copy.setAssignee(this.getAssignee());
         copy.setOwnerAffiliation(this.getOwnerAffiliation());
         copy.setFinalizedBy(this.getFinalizedBy());
+        copy.setFinalizedDate(this.getFinalizedDate());
         return copy;
     }
 
@@ -208,7 +209,8 @@ public class GeneralSupportRequest extends TicketEntry {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getIdentifier(), getCreatedDate(), getModifiedDate(), getOwner(), getCustomerId(),
-                            getResourceIdentifier(), getStatus(), getAssignee(), getOwnerAffiliation());
+                            getResourceIdentifier(), getStatus(), getAssignee(), getOwnerAffiliation(),
+                            getFinalizedBy(), getFinalizedDate());
     }
 
     @Override
@@ -228,7 +230,9 @@ public class GeneralSupportRequest extends TicketEntry {
                && Objects.equals(getCustomerId(), that.getCustomerId())
                && getStatus() == that.getStatus()
                && Objects.equals(getAssignee(), that.getAssignee())
-               && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation());
+               && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation())
+               && Objects.equals(getFinalizedBy(), that.getFinalizedBy())
+               && Objects.equals(getFinalizedDate(), that.getFinalizedDate());
     }
 
     private static URI extractCustomerId(Publication publication) {

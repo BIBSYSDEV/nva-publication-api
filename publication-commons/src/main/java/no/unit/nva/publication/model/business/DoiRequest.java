@@ -213,6 +213,7 @@ public class DoiRequest extends TicketEntry {
                    .withAssignee(getAssignee())
                    .withOwnerAffiliation(getOwnerAffiliation())
                    .withFinalizedBy(getFinalizedBy())
+                   .withFinalizedDate(getFinalizedDate())
                    .build();
     }
 
@@ -275,7 +276,8 @@ public class DoiRequest extends TicketEntry {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getIdentifier(), getStatus(), getResourceStatus(), getModifiedDate(), getCreatedDate(),
-                            getCustomerId(), getOwner(), getAssignee(), getOwnerAffiliation());
+                            getCustomerId(), getOwner(), getAssignee(), getOwnerAffiliation(), getFinalizedBy(),
+                            getFinalizedDate());
     }
 
     @Override
@@ -297,7 +299,9 @@ public class DoiRequest extends TicketEntry {
                && Objects.equals(getCustomerId(), that.getCustomerId())
                && Objects.equals(getOwner(), that.getOwner())
                && Objects.equals(getAssignee(), that.getAssignee())
-               && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation());
+               && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation())
+               && Objects.equals(getFinalizedBy(), that.getFinalizedBy())
+               && Objects.equals(getFinalizedDate(), that.getFinalizedDate());
     }
 
     private boolean publicationDoesNotHaveAnExpectedStatus(Publication publication) {
@@ -373,6 +377,11 @@ public class DoiRequest extends TicketEntry {
 
         public Builder withFinalizedBy(Username finalizedBy) {
             doiRequest.setFinalizedBy(finalizedBy);
+            return this;
+        }
+
+        public Builder withFinalizedDate(Instant finalizedDate) {
+            doiRequest.setFinalizedDate(finalizedDate);
             return this;
         }
 

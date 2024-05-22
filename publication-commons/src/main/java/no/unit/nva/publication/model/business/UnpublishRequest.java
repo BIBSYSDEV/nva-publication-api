@@ -181,6 +181,7 @@ public class UnpublishRequest extends TicketEntry {
                    .withAssignee(getAssignee())
                    .withOwnerAffiliation(getOwnerAffiliation())
                    .withFinalizedBy(getFinalizedBy())
+                   .withFinalizedDate(getFinalizedDate())
                    .build();
     }
 
@@ -231,7 +232,8 @@ public class UnpublishRequest extends TicketEntry {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getIdentifier(), getCreatedDate(), getModifiedDate(), getOwner(), getCustomerId(),
-                            getResourceIdentifier(), getStatus(), getAssignee(), getOwnerAffiliation());
+                            getResourceIdentifier(), getStatus(), getAssignee(), getOwnerAffiliation(),
+                            getFinalizedBy(), getFinalizedDate());
     }
 
     @Override
@@ -251,7 +253,9 @@ public class UnpublishRequest extends TicketEntry {
                && Objects.equals(getCustomerId(), that.getCustomerId())
                && getStatus() == that.getStatus()
                && Objects.equals(getAssignee(), that.getAssignee())
-               && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation());
+               && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation())
+               && Objects.equals(getFinalizedBy(), that.getFinalizedBy())
+               && Objects.equals(getFinalizedDate(), that.getFinalizedDate());
     }
 
     private static URI extractCustomerId(Publication publication) {
@@ -329,6 +333,11 @@ public class UnpublishRequest extends TicketEntry {
 
         public Builder withFinalizedBy(Username finalizedBy) {
             unpublishRequest.setFinalizedBy(finalizedBy);
+            return this;
+        }
+
+        public Builder withFinalizedDate(Instant finalizedDate) {
+            unpublishRequest.setFinalizedDate(finalizedDate);
             return this;
         }
 
