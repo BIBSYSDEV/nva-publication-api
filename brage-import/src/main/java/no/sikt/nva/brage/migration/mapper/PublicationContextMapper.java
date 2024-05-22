@@ -11,7 +11,6 @@ import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isPro
 import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isReaderOpinion;
 import static no.sikt.nva.brage.migration.mapper.PublicationInstanceMapper.isVisualArts;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -269,7 +268,7 @@ public final class PublicationContextMapper {
         if (issnList.size() > SIZE_ONE) {
             return new UnconfirmedJournal(extractJournalTitle(brageRecord), issnList.get(0), issnList.get(1));
         } else {
-            var issn = !issnList.isEmpty() ? issnList.get(0) : null;
+            var issn = !issnList.isEmpty() ? issnList.getFirst() : null;
             return new UnconfirmedJournal(extractJournalTitle(brageRecord), issn, null);
         }
     }
@@ -364,19 +363,6 @@ public final class PublicationContextMapper {
                    .orElse(null);
     }
 
-    private static String extractPotentialSeriesNumberValue(String potentialSeriesNumber) {
-        if (potentialSeriesNumber.contains(":")) {
-            var seriesNumberAndYear = Arrays.asList(potentialSeriesNumber.split(":"));
-            return Collections.max(seriesNumberAndYear);
-        }
-
-        if (potentialSeriesNumber.contains("/")) {
-            var seriesNumberAndYear = Arrays.asList(potentialSeriesNumber.split("/"));
-            return Collections.max(seriesNumberAndYear);
-        }
-        return potentialSeriesNumber;
-    }
-
     private static PublicationContext buildPublicationContextWhenBook(Record brageRecord)
         throws InvalidIssnException {
         return new Book.BookBuilder().withPublisher(extractPublisher(brageRecord))
@@ -405,7 +391,7 @@ public final class PublicationContextMapper {
 
     private static String extractPartOfSeriesValue(String partOfSeriesValue) {
         return Optional.ofNullable(partOfSeriesValue)
-                   .map(value -> hasNumber(value) ? extractPotentialSeriesNumberValue(getNumber(value)) : null)
+                   .map(value -> hasNumber(value) ? getNumber(value) : null)
                    .orElse(null);
     }
 
@@ -431,7 +417,7 @@ public final class PublicationContextMapper {
         if (issnList.size() > SIZE_ONE) {
             return new UnconfirmedSeries(generateUnconfirmedSeriesTitle(brageRecord), issnList.get(0), issnList.get(1));
         } else {
-            var issn = !issnList.isEmpty() ? issnList.get(0) : null;
+            var issn = !issnList.isEmpty() ? issnList.getFirst() : null;
             return new UnconfirmedSeries(generateUnconfirmedSeriesTitle(brageRecord), issn, null);
         }
     }
