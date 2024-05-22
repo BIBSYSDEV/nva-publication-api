@@ -3,14 +3,14 @@ package no.sikt.nva.brage.migration.mapper;
 import static no.sikt.nva.brage.migration.mapper.BrageNvaMapper.extractDescription;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isBook;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isChapter;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isConferenceLecture;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isConferencePoster;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isCristinRecord;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isDataset;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isDesignProduct;
-import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isJournalIssue;
-import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isMediaFeatureArticle;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isFilm;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isInterview;
+import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isJournalIssue;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isLecture;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isMediaFeatureArticle;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isMusic;
@@ -68,6 +68,7 @@ import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
 import no.unit.nva.model.instancetypes.degree.RelatedDocument;
 import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
+import no.unit.nva.model.instancetypes.event.ConferenceLecture;
 import no.unit.nva.model.instancetypes.event.ConferencePoster;
 import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.event.OtherPresentation;
@@ -203,6 +204,9 @@ public final class PublicationInstanceMapper {
         }
         if (isJournalIssue(brageRecord)) {
             return buildPublicationInstanceWhenJournalIssue(brageRecord);
+        }
+        if (isConferenceLecture(brageRecord)) {
+            return new ConferenceLecture();
         }
         if (isCristinRecord(brageRecord)) {
             return null;

@@ -188,6 +188,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     public static final Type TYPE_BOOK_OF_ABSTRACTS = new Type(List.of(NvaType.BOOK_OF_ABSTRACTS.getValue()),
                                                                NvaType.BOOK_OF_ABSTRACTS.getValue());
     public static final Type TYPE_JOURNAL_ISSUE = new Type(List.of(NvaType.JOURNAL_ISSUE.getValue()), NvaType.JOURNAL_ISSUE.getValue());
+    public static final Type TYPE_CONFERENCE_LECTURE = new Type(List.of(NvaType.CONFERENCE_LECTURE.getValue()),
+                                                                NvaType.CONFERENCE_LECTURE.getValue());
     public static final Type TYPE_REPORT = new Type(List.of(NvaType.REPORT.getValue()), NvaType.REPORT.getValue());
     public static final Type TYPE_RESEARCH_REPORT = new Type(List.of(NvaType.RESEARCH_REPORT.getValue()),
                                                              NvaType.RESEARCH_REPORT.getValue());
@@ -377,6 +379,15 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     @Test
     void shouldConvertMapToNvaPublication() throws IOException {
         var brageGenerator = buildGeneratorForMap();
+        var expectedPublication = brageGenerator.getNvaPublication();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThatPublicationsMatch(actualPublication, expectedPublication);
+    }
+
+    @Test
+    void shouldConvertConferenceLectureToNvaPublication() throws IOException {
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_CONFERENCE_LECTURE).build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);

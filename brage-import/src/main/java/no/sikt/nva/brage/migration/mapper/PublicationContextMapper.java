@@ -96,7 +96,7 @@ public final class PublicationContextMapper {
         if (isChapter(brageRecord) || isScientificChapter(brageRecord)) {
             return new Anthology();
         }
-        if (isLecture(brageRecord) || isConferencePoster(brageRecord) || isOtherPresentation(brageRecord)) {
+        if (isEvent(brageRecord)) {
             return buildPublicationContextWhenEvent();
         }
         if (isArtistic(brageRecord)) {
@@ -120,6 +120,17 @@ public final class PublicationContextMapper {
 
     private static boolean isUnconfirmedJournalIssue(Record record) {
         return NvaType.JOURNAL_ISSUE.getValue().equals(record.getType().getNva()) && !hasJournalId(record);
+    }
+
+    private static boolean isEvent(Record brageRecord) {
+        return isLecture(brageRecord)
+               || isConferencePoster(brageRecord)
+               || isOtherPresentation(brageRecord)
+               || isConferenceLecture(brageRecord);
+    }
+
+    public static boolean isConferenceLecture(Record record) {
+        return NvaType.CONFERENCE_LECTURE.getValue().equals(record.getType().getNva());
     }
 
     public static boolean isCristinRecord(Record record) {
