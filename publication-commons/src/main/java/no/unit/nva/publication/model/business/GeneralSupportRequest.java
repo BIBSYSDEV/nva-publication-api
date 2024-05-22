@@ -166,6 +166,8 @@ public class GeneralSupportRequest extends TicketEntry {
         copy.setViewedBy(this.getViewedBy());
         copy.setAssignee(this.getAssignee());
         copy.setOwnerAffiliation(this.getOwnerAffiliation());
+        copy.setFinalizedBy(this.getFinalizedBy());
+        copy.setFinalizedDate(this.getFinalizedDate());
         return copy;
     }
 

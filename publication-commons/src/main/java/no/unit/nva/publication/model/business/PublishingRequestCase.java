@@ -178,6 +178,8 @@ public class PublishingRequestCase extends TicketEntry {
         copy.setOwnerAffiliation(this.getOwnerAffiliation());
         copy.setApprovedFiles(this.getApprovedFiles().isEmpty() ? Set.of() : this.getApprovedFiles());
         copy.setFilesForApproval(this.getFilesForApproval().isEmpty() ? Set.of() : this.getFilesForApproval());
+        copy.setFinalizedBy(this.getFinalizedBy());
+        copy.setFinalizedDate(this.getFinalizedDate());
         return copy;
     }
 

@@ -212,6 +212,8 @@ public class DoiRequest extends TicketEntry {
                    .withViewedBy(this.getViewedBy())
                    .withAssignee(getAssignee())
                    .withOwnerAffiliation(getOwnerAffiliation())
+                   .withFinalizedBy(getFinalizedBy())
+                   .withFinalizedDate(getFinalizedDate())
                    .build();
     }
 
@@ -365,13 +367,23 @@ public class DoiRequest extends TicketEntry {
             return this;
         }
 
-        public DoiRequest build() {
-            return doiRequest;
-        }
-
         public Builder withResourceIdentifier(SortableIdentifier resourceIdentifier) {
             doiRequest.setResourceIdentifier(resourceIdentifier);
             return this;
+        }
+
+        public Builder withFinalizedBy(Username finalizedBy) {
+            doiRequest.setFinalizedBy(finalizedBy);
+            return this;
+        }
+
+        public Builder withFinalizedDate(Instant finalizedDate) {
+            doiRequest.setFinalizedDate(finalizedDate);
+            return this;
+        }
+
+        public DoiRequest build() {
+            return doiRequest;
         }
     }
 }

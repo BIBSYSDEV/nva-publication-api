@@ -180,6 +180,8 @@ public class UnpublishRequest extends TicketEntry {
                    .withViewedBy(this.getViewedBy())
                    .withAssignee(getAssignee())
                    .withOwnerAffiliation(getOwnerAffiliation())
+                   .withFinalizedBy(getFinalizedBy())
+                   .withFinalizedDate(getFinalizedDate())
                    .build();
     }
 
@@ -321,13 +323,23 @@ public class UnpublishRequest extends TicketEntry {
             return this;
         }
 
-        public UnpublishRequest build() {
-            return unpublishRequest;
-        }
-
         public UnpublishRequest.Builder withResourceIdentifier(SortableIdentifier resourceIdentifier) {
             unpublishRequest.setResourceIdentifier(resourceIdentifier);
             return this;
+        }
+
+        public Builder withFinalizedBy(Username finalizedBy) {
+            unpublishRequest.setFinalizedBy(finalizedBy);
+            return this;
+        }
+
+        public Builder withFinalizedDate(Instant finalizedDate) {
+            unpublishRequest.setFinalizedDate(finalizedDate);
+            return this;
+        }
+
+        public UnpublishRequest build() {
+            return unpublishRequest;
         }
     }
 }
