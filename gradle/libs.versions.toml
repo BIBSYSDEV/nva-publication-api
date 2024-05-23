@@ -41,6 +41,7 @@ datafaker = { strictly = '2.1.0' }
 tika = { strictly = '2.9.0' }
 resilience4jRetry = { strictly = '2.2.0' }
 vavrVersion = { strictly = '0.10.4' }
+assert-j = {strictly = '3.25.3' }
 
 
 [libraries]
@@ -156,6 +157,8 @@ karate-parent = { group = 'com.intuit.karate', name = 'karate-parent', version.r
 jena-core = { group=  'org.apache.jena', name = 'jena-core', version.ref = 'jena' }
 jena-arq = { group = 'org.apache.jena', name = 'jena-arq', version.ref = 'jena' }
 
+assert-j = { group = 'org.assertj', name = 'assertj-core', version.ref = 'assert-j' }
+
 tika-core = { group = 'org.apache.tika', name = 'tika-core', version.ref = 'tika' }
 tika-langdetect = { group = 'org.apache.tika', name = 'tika-langdetect', version.ref = 'tika' }
 tika-langdetect-optimaize = { group = 'org.apache.tika', name = 'tika-langdetect-optimaize', version.ref = 'tika' }
@@ -177,7 +180,7 @@ open-csv = { group = 'com.opencsv', name = 'opencsv', version = '5.8' } # open-c
 testing = ['junit-jupiter-params', 'junit-jupiter-api', 'junit-vintage-engine', 'guava',
     'junit-jupiter-engine', 'mockito-core', 'mockito-junit', 'hamcrest-base', 'hamcrest-core',
     'hamcrest-optional', 'logutils', 'nva-testutils', 'nva-datamodel-testutils', 'javers', 'zalando',
-    'mockito-junit-jupiter','datafaker']
+    'mockito-junit-jupiter','datafaker', "assert-j"]
 logging = ['log4j-core', 'log4j-api', 'log4j-slf4j-impl', 'slf4j-api']
 jackson = ['jackson-core', 'jackson-datatype-jdk8', 'jackson-datatype-jsr310', 'jackson-databind', 'jackson-annotations', 'jackson-module-parameter-names', 'jackson-datatype-problem']
 jaxb = ['xsd2java-api', 'jaxb-runtime', 'xsd2java-jakarta']

@@ -125,7 +125,6 @@ import no.unit.nva.model.instancetypes.artistic.music.MusicScore;
 import no.unit.nva.model.instancetypes.book.NonFictionMonograph;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.event.ConferencePoster;
-import no.unit.nva.model.instancetypes.media.MediaInterview;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.model.business.Resource;
@@ -138,8 +137,8 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
+import org.assertj.core.api.Assertions;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
@@ -560,12 +559,33 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldConvertChapterToNvaPublication() throws IOException {
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_CHAPTER).build();
+    void shouldConvertChapterToNvaPublicationAndPersistPartOfReport() throws IOException {
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                 .withType(TYPE_CHAPTER)
+                                 .withIsbn(randomIsbn10())
+                                 .build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+
         assertThatPublicationsMatch(actualPublication, expectedPublication);
+
+        var partOfReport = getPartOfReport(s3Event, brageGenerator, actualPublication);
+        var expectedPartOfReport = new PartOfReport(actualPublication, brageGenerator.getBrageRecord()).toJsonString();
+        Assertions.assertThat(partOfReport).isEqualTo(expectedPartOfReport);
+    }
+
+    private String getPartOfReport(S3Event s3Event, NvaBrageMigrationDataGenerator brageGenerator,
+                                   Publication actualPublication) throws JsonProcessingException {
+        var timestamp = s3Event.getRecords().getFirst().getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
+        var uri = UriWrapper.fromUri("PART_OF")
+                      .addChild("institution")
+                      .addChild(timestamp)
+                      .addChild(brageGenerator.getBrageRecord().getId().getPath())
+                      .addChild(String.valueOf(actualPublication.getIdentifier()));
+        S3Driver s3Driver = new S3Driver(s3Client,
+                                         new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
+        return s3Driver.getFile(uri.toS3bucketPath());
     }
 
     @Test
@@ -817,7 +837,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var embargoToBeAfterThisDate = Instant.now().plus(Duration.ofDays(ALMOST_HUNDRED_YEARS));
 
         assertThat(file.getLegalNote(), is(equalTo(accessCode)));
-        Assertions.assertTrue(file.getEmbargoDate().orElseThrow().isAfter(embargoToBeAfterThisDate));
+        Assertions.assertThat(file.getEmbargoDate().orElseThrow()).isAfter(embargoToBeAfterThisDate);
     }
 
     @Test
@@ -1656,17 +1676,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         contentFile.setIdentifier(java.util.UUID.randomUUID());
         contentFile.setLicense(new License("", new NvaLicense(randomUri())));
         return contentFile;
-    }
-
-    private Publication persistPublicationWithCristinIdAndHandle(String cristinIdentifier, URI handle)
-        throws BadRequestException {
-        var publication = randomPublication(MediaInterview.class).copy()
-                              .withAdditionalIdentifiers(
-                                  Set.of(cristinAdditionalIdentifier(cristinIdentifier)))
-                              .withHandle(handle)
-                              .build();
-        return Resource.fromPublication(publication)
-                   .persistNew(resourceService, UserInstance.fromPublication(publication));
     }
 
     private String extractUpdateReportFromS3ByUpdateSource(S3Event s3Event,
