@@ -137,7 +137,6 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
-import org.assertj.core.api.Assertions;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -572,7 +571,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
         var partOfReport = getPartOfReport(s3Event, brageGenerator, actualPublication);
         var expectedPartOfReport = new PartOfReport(actualPublication, brageGenerator.getBrageRecord()).toJsonString();
-        Assertions.assertThat(partOfReport).isEqualTo(expectedPartOfReport);
+        assertThat(partOfReport, is(equalTo(expectedPartOfReport)));
     }
 
     private String getPartOfReport(S3Event s3Event, NvaBrageMigrationDataGenerator brageGenerator,
@@ -837,7 +836,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var embargoToBeAfterThisDate = Instant.now().plus(Duration.ofDays(ALMOST_HUNDRED_YEARS));
 
         assertThat(file.getLegalNote(), is(equalTo(accessCode)));
-        Assertions.assertThat(file.getEmbargoDate().orElseThrow()).isAfter(embargoToBeAfterThisDate);
+        assertThat(file.getEmbargoDate().orElseThrow().isAfter(embargoToBeAfterThisDate), is(true));
     }
 
     @Test
