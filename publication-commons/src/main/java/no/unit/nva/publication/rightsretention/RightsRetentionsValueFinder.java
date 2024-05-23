@@ -119,7 +119,7 @@ public class RightsRetentionsValueFinder {
                 throw new IllegalArgumentException("Unknown RightsRetentionStrategy type " + fileRightsRetention);
         };
         if (!isValid(rrs)) {
-            throw new BadRequestException(ILLEGAL_RIGHTS_RETENTION_STRATEGY_ON_FILE + file.getIdentifier() + fileRightsRetention);
+            throw new BadRequestException(ILLEGAL_RIGHTS_RETENTION_STRATEGY_ON_FILE + file.getIdentifier());
         }
         return rrs;
     }
