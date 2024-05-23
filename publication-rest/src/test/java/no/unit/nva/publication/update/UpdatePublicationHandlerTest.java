@@ -119,6 +119,7 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -179,6 +180,7 @@ import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Named;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -2064,7 +2066,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return new UnpublishedFile(UUID.randomUUID(), randomString(), randomString(),
                                    Long.valueOf(randomInteger().toString()),
                                    new License.Builder().withIdentifier(randomString()).withLink(randomUri()).build(),
-                                   false, PublisherVersion.ACCEPTED_VERSION, null, null, randomString(),
+                                   false, PublisherVersion.ACCEPTED_VERSION, null,
+                                   OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, randomString()),
+                                   randomString(),
                                    new UploadDetails(null, null));
     }
 
