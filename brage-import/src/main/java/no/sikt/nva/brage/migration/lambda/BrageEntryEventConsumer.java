@@ -277,11 +277,21 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private Publication persistPublication(Publication publication, S3Event s3Event) {
         return attempt(() -> publication)
                    .flatMap(this::persistInDatabase)
-                   .map(pub -> persistHandleReport(pub,
-                                                   pub.getHandle(),
-                                                   s3Event,
-                                                   HANDLE_REPORTS_PATH))
+                   .map(pub -> persistReports(s3Event, pub))
                    .orElse(fail -> handleSavingError(fail, s3Event));
+    }
+
+    private Publication persistReports(S3Event s3Event, Publication publication) {
+        persistPartOfReport(publication, s3Client, s3Event);
+        persistHandleReport(publication, publication.getHandle(), s3Event, HANDLE_REPORTS_PATH);
+        return publication;
+    }
+
+    private void persistPartOfReport(Publication publication, S3Client s3Client, S3Event s3Event) {
+        var record = attempt(() -> JsonUtils.dtoObjectMapper.readValue(brageRecordFile, Record.class)).orElseThrow();
+        if (record.hasParentPublication()) {
+            new PartOfReport(publication, record).persist(s3Client, timePath(s3Event));
+        }
     }
 
     private Publication unableToMergeCristinRecordException(Publication publication, S3Event s3Event) {
@@ -393,14 +403,13 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         return SOURCE_CRISTIN.equals(identifier.getSourceName());
     }
 
-    private Publication persistHandleReport(Publication publication,
+    private void persistHandleReport(Publication publication,
                                             URI brageHandle,
                                             S3Event s3Event,
                                             String destinationFolder) {
         var fileUri = constructResourceHandleFileUri(s3Event, publication, destinationFolder, brageHandle);
         var s3Driver = new S3Driver(s3Client, new Environment().readEnv(BRAGE_MIGRATION_REPORTS_BUCKET_NAME));
         attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(), brageHandle.toString())).orElseThrow();
-        return publication;
     }
 
     private UriWrapper constructResourceHandleFileUri(S3Event s3Event,
