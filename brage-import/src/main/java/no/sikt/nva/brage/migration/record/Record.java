@@ -1,5 +1,6 @@
 package no.sikt.nva.brage.migration.record;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -7,14 +8,16 @@ import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
+import no.unit.nva.commons.json.JsonSerializable;
 import nva.commons.core.JacocoGenerated;
 
 @JsonPropertyOrder({"customer", "resourceOwner", "brageLocation", "id", "cristinId", "doi", "link", "publishedDate",
     "publisherAuthority", "rightsholder", "type", "partOf", "hasPart", "publisherAuthority", "spatialCoverage", "date",
     "language", "publication", "entityDescription", "recordContent", "errors", "warnings"})
 @SuppressWarnings({"PMD.TooManyFields", "PMD.GodClass"})
-public class Record {
+public class Record implements JsonSerializable {
 
     private ResourceOwner resourceOwner;
     private EntityDescription entityDescription;
@@ -40,7 +43,7 @@ public class Record {
     private String accessCode;
     private Set<Project> projects;
 
-
+    @JsonCreator
     public Record() {
         // Default constructor
     }
@@ -51,7 +54,8 @@ public class Record {
         return Objects.hash(getResourceOwner(), getEntityDescription(), getCustomer(), getId(), getDoi(), getLink(),
                             getType(), getPublisherAuthority(), getRightsholder(), getSpatialCoverage(), getPartOf(),
                             getPart(), getPublication(), getContentBundle(), getPublishedDate(), getCristinId(),
-                            getBrageLocation(), getErrors(), getWarnings(), getSubjects(), getAccessCode(), getProjects());
+                            getBrageLocation(), getErrors(), getWarnings(), getSubjects(), getAccessCode(),
+                            getProjects());
     }
 
     @JacocoGenerated
@@ -86,6 +90,12 @@ public class Record {
                && Objects.equals(getSubjects(), record.getSubjects())
                && Objects.equals(getAccessCode(), record.getAccessCode())
                && Objects.equals(getProjects(), record.getProjects());
+    }
+
+    @JacocoGenerated
+    @Override
+    public String toString() {
+        return this.toJsonString();
     }
 
     @JacocoGenerated
@@ -288,6 +298,10 @@ public class Record {
         return rightsholder;
     }
 
+    public void setRightsholder(String rightsholder) {
+        this.rightsholder = rightsholder;
+    }
+
     @JacocoGenerated
     public void setRightsHolder(String rightsholder) {
         this.rightsholder = rightsholder;
@@ -327,5 +341,18 @@ public class Record {
 
     public void setAccessCode(String accessCode) {
         this.accessCode = accessCode;
+    }
+
+    public boolean hasParentPublication() {
+        return hasIsbn() && isChapter();
+    }
+
+    private boolean hasIsbn() {
+        return !publication.getIsbnList().isEmpty();
+    }
+
+    private boolean isChapter() {
+        return NvaType.CHAPTER.getValue().equals(type.getNva()) || NvaType.SCIENTIFIC_CHAPTER.getValue()
+                                                                       .equals(type.getNva());
     }
 }

@@ -683,7 +683,7 @@ public class NvaBrageMigrationDataGenerator {
                 publication = createPublication();
             }
             if (isNull(subjects) || subjects.isEmpty()) {
-                subjects = Set.of(randomUri(), randomUri());
+                subjects = Set.of(randomUri());
             }
             if (isNull(subjectCode)) {
                 subjectCode = randomString();

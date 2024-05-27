@@ -3,6 +3,8 @@ package no.sikt.nva.brage.migration.lambda;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.util.Objects;
 import no.sikt.nva.brage.migration.record.Record;
@@ -14,6 +16,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import software.amazon.awssdk.services.s3.S3Client;
 
+@JsonTypeInfo(use = Id.NAME, property = "type")
 public class PartOfReport implements JsonSerializable {
 
     public static final String PART_OF = "PART_OF";
