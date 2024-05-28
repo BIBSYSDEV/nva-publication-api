@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.Getter;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.expansion.JournalExpansionServiceImpl;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -414,11 +415,14 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .map(EntityDescription::getReference)
                    .map(Reference::getPublicationContext)
                    .map(Journal.class::cast)
-                   .map(journal ->  new ExpandedJournal(journal, uriRetriever))
+                   .map(journal ->  expandJournal(journal, uriRetriever))
                    .orElse(null);
     }
 
-
+    private static ExpandedJournal expandJournal(Journal journal, RawContentRetriever uriRetriever) {
+        var journalExpansionService = new JournalExpansionServiceImpl(uriRetriever);
+        return journalExpansionService.expandJournal(journal);
+    }
 
     private static boolean isJournalContent(ImportCandidate importCandidate) {
         return Optional.ofNullable(importCandidate.getEntityDescription())

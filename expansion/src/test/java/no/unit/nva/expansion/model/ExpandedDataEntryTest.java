@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 import lombok.Getter;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.expansion.JournalExpansionServiceImpl;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
@@ -157,7 +158,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
     @Test
     void shouldExpandImportCandidateJournalSuccessfullyWhenBadResponseFromChannelRegistry() {
-        var logAppender = LogUtils.getTestingAppender(ExpandedJournal.class);
+        var logAppender = LogUtils.getTestingAppender(JournalExpansionServiceImpl.class);
         var journalId = randomUri();
         var journalContext = new Journal(journalId);
         mockBadRequestForJournalId(journalId);
@@ -183,7 +184,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
     @Test
     void shouldLogFailureToParseChannelRegistryResponse() {
-        var logAppender = LogUtils.getTestingAppender(ExpandedJournal.class);
+        var logAppender = LogUtils.getTestingAppender(JournalExpansionServiceImpl.class);
         var journalId = randomUri();
         var journalContext = new Journal(journalId);
         mockUnparsableResponseForChannelRegistry(journalId);
