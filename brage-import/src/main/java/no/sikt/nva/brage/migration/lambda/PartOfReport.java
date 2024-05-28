@@ -1,8 +1,11 @@
 package no.sikt.nva.brage.migration.lambda;
 
 import static nva.commons.core.attempt.Try.attempt;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import java.net.URI;
 import java.util.Objects;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.commons.json.JsonSerializable;
@@ -14,10 +17,41 @@ import nva.commons.core.paths.UriWrapper;
 import software.amazon.awssdk.services.s3.S3Client;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
-public record PartOfReport(Publication publication, Record record) implements JsonSerializable {
+public class PartOfReport implements JsonSerializable {
 
     public static final String PART_OF = "PART_OF";
     private static final String BRAGE_MIGRATION_BUCKET = "BRAGE_MIGRATION_ERROR_BUCKET_NAME";
+    private final Publication publication;
+    private final Record record;
+    private URI location;
+
+    @JsonCreator
+    public PartOfReport(@JsonProperty("publication") Publication publication, @JsonProperty("record")Record record) {
+        this.publication = publication;
+        this.record = record;
+    }
+
+    public Publication getPublication() {
+        return publication;
+    }
+
+    public Record getRecord() {
+        return record;
+    }
+
+    public URI getLocation() {
+        return location;
+    }
+
+    public void setLocation(URI location) {
+        this.location = location;
+    }
+
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(publication, record);
+    }
 
     @JacocoGenerated
     @Override
@@ -33,12 +67,6 @@ public record PartOfReport(Publication publication, Record record) implements Js
 
     @JacocoGenerated
     @Override
-    public int hashCode() {
-        return Objects.hash(publication, record);
-    }
-
-    @JacocoGenerated
-    @Override
     public String toString() {
         return this.toJsonString();
     }
@@ -46,7 +74,8 @@ public record PartOfReport(Publication publication, Record record) implements Js
     public void persist(S3Client s3Client, String timeStamp) {
         var fileUri = createPartOfReportS3Location(timeStamp);
         var s3Driver = new S3Driver(s3Client, new Environment().readEnv(BRAGE_MIGRATION_BUCKET));
-        attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(), this.toJsonString())).orElseThrow();
+        var uri = attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(), this.toJsonString())).orElseThrow();
+        setLocation(uri);
     }
 
     private UriWrapper createPartOfReportS3Location(String timeStamp) {
