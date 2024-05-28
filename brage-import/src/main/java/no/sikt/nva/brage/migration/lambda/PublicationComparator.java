@@ -24,8 +24,7 @@ public final class PublicationComparator {
                                                                                incomingPublication);
         var instanceTypeMatches = instanceTypeMatches(existingPublication, incomingPublication);
         return Stream.of(titlesMatch, atLeastOneContributorMatch, publicationDatesAreCloseToEachOther,
-                         instanceTypeMatches)
-                   .allMatch(Boolean::valueOf);
+                         instanceTypeMatches).allMatch(Boolean::valueOf);
     }
 
     private static boolean instanceTypeMatches(Publication existingPublication, Publication incomingPublication) {

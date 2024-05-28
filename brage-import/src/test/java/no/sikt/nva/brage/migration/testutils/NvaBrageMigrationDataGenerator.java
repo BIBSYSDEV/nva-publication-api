@@ -99,17 +99,17 @@ public class NvaBrageMigrationDataGenerator {
         }
     }
 
-    @NotNull
-    private static List<Corporation> createAffiliationList() {
-        return List.of(
-            new Organization.Builder().withId(URI.create("https://test.nva.aws.unit.no/cristin/organization/12345"))
-                .build());
+    private static List<Corporation> createAffiliationList(Contributor contributor) {
+        return contributor.getAffiliations().stream()
+            .map(Affiliation::getIdentifier)
+            .map(value -> URI.create("https://test.nva.aws.unit.no/cristin/organization/" + value))
+            .map(uri -> new Organization.Builder().withId(uri).build())
+            .collect(Collectors.toList());
     }
 
-    @NotNull
-    private static no.unit.nva.model.Identity createIdentity(String name) {
-        return new no.unit.nva.model.Identity.Builder().withName(name)
-                   .withId(URI.create("https://test.nva.aws.unit.no/cristin/person/123"))
+    private static no.unit.nva.model.Identity createIdentity(Contributor contributor) {
+        return new no.unit.nva.model.Identity.Builder().withName(contributor.getIdentity().getName())
+                   .withId(URI.create("https://test.nva.aws.unit.no/cristin/person/" + contributor.getIdentity().getIdentifier()))
                    .build();
     }
 
@@ -179,9 +179,8 @@ public class NvaBrageMigrationDataGenerator {
     }
 
     private no.unit.nva.model.Contributor createCorrespondingContributor(Contributor contributor) {
-        var name = contributor.getIdentity().getName();
-        return new no.unit.nva.model.Contributor.Builder().withIdentity(createIdentity(name))
-                   .withAffiliations(createAffiliationList())
+        return new no.unit.nva.model.Contributor.Builder().withIdentity(createIdentity(contributor))
+                   .withAffiliations(createAffiliationList(contributor))
                    .withRole(new RoleType(Role.parse(contributor.getRole())))
                    .build();
     }

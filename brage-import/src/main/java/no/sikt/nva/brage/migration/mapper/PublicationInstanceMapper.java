@@ -33,6 +33,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.NvaType;
+import no.sikt.nva.brage.migration.record.Contributor;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.instancetypes.Map;
@@ -89,6 +90,7 @@ import no.unit.nva.model.instancetypes.researchdata.GeographicalDescription;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
+import no.unit.nva.model.role.Role;
 import org.jetbrains.annotations.NotNull;
 import org.joda.time.DateTime;
 
@@ -145,7 +147,7 @@ public final class PublicationInstanceMapper {
         if (isOtherStudentWork(brageRecord) || isStudentPaper(brageRecord)) {
             return buildPublicationInstanceWhenOtherStudentWork(brageRecord);
         }
-        if (isBook(brageRecord)) {
+        if (isBook(brageRecord) && !containsEditor(brageRecord)) {
             return buildPublicationInstanceWhenBook(brageRecord);
         }
         if (isScientificMonograph(brageRecord)) {
@@ -181,7 +183,7 @@ public final class PublicationInstanceMapper {
         if (isReaderOpinion(brageRecord)) {
             return buildPublicationInstanceWhenReaderOpinion(brageRecord);
         }
-        if (isAnthology(brageRecord)) {
+        if (isAnthology(brageRecord) || isBookWithEditor(brageRecord)) {
             return buildPublicationInstanceWhenAnthology(brageRecord);
         }
         if (isTextbook(brageRecord)) {
@@ -216,15 +218,6 @@ public final class PublicationInstanceMapper {
         } else {
             return buildPublicationInstanceWhenReport(brageRecord);
         }
-    }
-
-    private static PublicationInstance<? extends Pages> buildReportBookOfAbstracts(Record record) {
-        return new ReportBookOfAbstract(extractMonographPages(record));
-    }
-
-    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenJournalIssue(Record record) {
-        return new JournalIssue(extractVolume(record), extractIssue(record), extractArticleNumber(record),
-                                extractPages(record));
     }
 
     public static boolean isEditorial(Record brageRecord) {
@@ -265,6 +258,27 @@ public final class PublicationInstanceMapper {
 
     public static boolean isBookOfAbstracts(Record record) {
         return NvaType.BOOK_OF_ABSTRACTS.getValue().equals(record.getType().getNva());
+    }
+
+    private static boolean isBookWithEditor(Record record) {
+        return isBook(record) && containsEditor(record);
+    }
+
+    private static boolean containsEditor(Record record) {
+        return record.getEntityDescription().getContributors().stream().anyMatch(PublicationInstanceMapper::isEditor);
+    }
+
+    private static boolean isEditor(Contributor contributor) {
+        return contributor.getRole().equals(Role.EDITOR.getValue());
+    }
+
+    private static PublicationInstance<? extends Pages> buildReportBookOfAbstracts(Record record) {
+        return new ReportBookOfAbstract(extractMonographPages(record));
+    }
+
+    private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenJournalIssue(Record record) {
+        return new JournalIssue(extractVolume(record), extractIssue(record), extractArticleNumber(record),
+                                extractPages(record));
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenEditorial(Record brageRecord) {
@@ -348,8 +362,7 @@ public final class PublicationInstanceMapper {
     }
 
     private static List<MusicPerformanceManifestation> extractManifestation(Record brageRecord) {
-        return brageRecord
-                   .getPublication()
+        return brageRecord.getPublication()
                    .getIsmnList()
                    .stream()
                    .map(PublicationInstanceMapper::createIsmn)
@@ -358,11 +371,7 @@ public final class PublicationInstanceMapper {
     }
 
     private static MusicScore createMusicScore(Ismn ismn) {
-        return new MusicScore(null,
-                              null,
-                              null,
-                              null,
-                              ismn);
+        return new MusicScore(null, null, null, null, ismn);
     }
 
     private static Ismn createIsmn(String ismn) {
