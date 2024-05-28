@@ -94,7 +94,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     @JsonProperty(PUBLISHER_FIELD)
     private PublishingHouse publisher;
     @JsonProperty(JOURNAL_FIELD)
-    private Journal journal;
+    private ExpandedJournal journal;
     @JsonProperty(VERIFIED_CONTRIBUTORS_NUMBER_FIELD)
     private int numberOfVerifiedContributors;
     @JsonProperty(CONTRIBUTORS_NUMBER_FIELD)
@@ -135,7 +135,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .withTotalNumberOfContributors(extractNumberOfContributors(importCandidate))
                    .withNumberOfVerifiedContributors(extractNumberOfVerifiedContributors(importCandidate))
                    .withContributors(extractContributors(importCandidate))
-                   .withJournal(extractJournal(importCandidate))
+                   .withJournal(extractJournal(importCandidate, uriRetriever))
                    .withPublisher(extractPublisher(importCandidate))
                    .withCreatedDate(importCandidate.getCreatedDate())
                    .withCooperation(extractCorporation(organizations))
@@ -257,11 +257,11 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     @JacocoGenerated
-    public Journal getJournal() {
+    public ExpandedJournal getJournal() {
         return journal;
     }
 
-    public void setJournal(Journal journal) {
+    public void setJournal(ExpandedJournal journal) {
         this.journal = journal;
     }
 
@@ -405,17 +405,20 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
         return publicationContext.getClass().equals(Book.class);
     }
 
-    private static Journal extractJournal(ImportCandidate importCandidate) {
-        return isJournalContent(importCandidate) ? getPublicationContext(importCandidate) : null;
+    private static ExpandedJournal extractJournal(ImportCandidate importCandidate, RawContentRetriever uriRetriever) {
+        return isJournalContent(importCandidate) ? getPublicationContext(importCandidate, uriRetriever) : null;
     }
 
-    private static Journal getPublicationContext(ImportCandidate importCandidate) {
+    private static ExpandedJournal getPublicationContext(ImportCandidate importCandidate, RawContentRetriever uriRetriever) {
         return Optional.ofNullable(importCandidate.getEntityDescription())
                    .map(EntityDescription::getReference)
                    .map(Reference::getPublicationContext)
                    .map(Journal.class::cast)
+                   .map(journal ->  new ExpandedJournal(journal, uriRetriever))
                    .orElse(null);
     }
+
+
 
     private static boolean isJournalContent(ImportCandidate importCandidate) {
         return Optional.ofNullable(importCandidate.getEntityDescription())
@@ -574,7 +577,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
             return this;
         }
 
-        public Builder withJournal(Journal journal) {
+        public Builder withJournal(ExpandedJournal journal) {
             expandedImportCandidate.setJournal(journal);
             return this;
         }
