@@ -1,7 +1,6 @@
 package no.sikt.nva.brage.migration.testutils;
 
 import static java.util.Objects.nonNull;
-import io.cucumber.java.ht.Le;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -88,6 +87,7 @@ import no.unit.nva.model.instancetypes.researchdata.GeographicalDescription;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
+import no.unit.nva.model.role.Role;
 import nva.commons.core.paths.UriWrapper;
 import org.jetbrains.annotations.NotNull;
 import org.joda.time.DateTime;
@@ -102,9 +102,15 @@ public final class ReferenceGenerator {
 
     private static Reference buildReference(Builder builder) {
         try {
-            if (NvaType.BOOK.getValue().equals(builder.getType().getNva())) {
+            if (NvaType.BOOK.getValue().equals(builder.getType().getNva()) && !hasEditor(builder)) {
                 return new Reference.Builder().withPublishingContext(generatePublicationContextForBook(builder))
                            .withPublicationInstance(generatePublicationInstanceForBook(builder))
+                           .withDoi(builder.getDoi())
+                           .build();
+            }
+            if (NvaType.BOOK.getValue().equals(builder.getType().getNva()) && hasEditor(builder)) {
+                return new Reference.Builder().withPublishingContext(generatePublicationContextForBook(builder))
+                           .withPublicationInstance(generateBookAnthology(builder))
                            .withDoi(builder.getDoi())
                            .build();
             }
@@ -299,7 +305,7 @@ public final class ReferenceGenerator {
                            .build();
             }
             if (NvaType.ANTHOLOGY.getValue().equals(builder.getType().getNva())) {
-                return new Reference.Builder().withPublicationInstance(new BookAnthology(builder.getMonographPages()))
+                return new Reference.Builder().withPublicationInstance(generateBookAnthology(builder))
                            .withPublishingContext(generatePublicationContextForBook(builder))
                            .withDoi(builder.getDoi())
                            .build();
@@ -376,6 +382,14 @@ public final class ReferenceGenerator {
         } catch (Exception e) {
             return new Reference.Builder().build();
         }
+    }
+
+    private static @NotNull BookAnthology generateBookAnthology(Builder builder) {
+        return new BookAnthology(builder.getMonographPages());
+    }
+
+    private static boolean hasEditor(Builder builder) {
+        return builder.getContributor().getRole().equals(Role.EDITOR.getValue());
     }
 
     private static PublicationInstance<? extends Pages> generatePublicationInstanceForReportBookOfAbstracts(

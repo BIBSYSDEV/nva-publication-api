@@ -690,6 +690,20 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldConvertToBookAnthologyWhenBrageRecordIsBookAndHasEditor() throws IOException {
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                 .withIsbn(randomIsbn10())
+                                 .withType(TYPE_BOOK)
+                                 .withContributor(new Contributor(new Identity(randomString(), randomString()), "Editor", null,
+                                                                  List.of()))
+                                 .build();
+        var expectedPublication = brageGenerator.getNvaPublication();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
+        assertThatPublicationsMatch(actualPublication, expectedPublication);
+    }
+
+    @Test
     void shouldConvertWhenConferenceReport() throws IOException {
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withPublishedDate(null)
                                  .withIsbn(randomIsbn10())
