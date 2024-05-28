@@ -3,6 +3,7 @@ package no.unit.nva.publication.s3imports;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultS3Client;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
+import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUBTOPIC_SEND_EVENT_TO_BRAGE_PATCH_EVENT_CONSUMER;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUBTOPIC_SEND_EVENT_TO_CRISTIN_ENTRIES_PATCH_EVENT_CONSUMER;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUBTOPIC_SEND_EVENT_TO_NVI_PATCH_EVENT_CONSUMER;
@@ -81,7 +82,9 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
                                          SUBTOPIC_SEND_EVENT_TO_CRISTIN_ENTRIES_PATCH_EVENT_CONSUMER,
                                          new Environment().readEnv("CRISTIN_IMPORT_PATCH_QUEUE_URL"),
                                          SUBTOPIC_SEND_EVENT_TO_NVI_PATCH_EVENT_CONSUMER,
-                                         new Environment().readEnv("CRISTIN_IMPORT_NVI_PATCH_QUEUE_URL"));
+                                         new Environment().readEnv("CRISTIN_IMPORT_NVI_PATCH_QUEUE_URL"),
+                                         SUBTOPIC_SEND_EVENT_TO_BRAGE_PATCH_EVENT_CONSUMER,
+                                         new Environment().readEnv("BRAGE_IMPORT_PATCH_QUEUE_URL"));
         this.s3Client = s3Client;
         this.amazonSQS = amazonSQS;
     }

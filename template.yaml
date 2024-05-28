@@ -1668,6 +1668,7 @@ Resources:
           CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL: !Ref CristinImportDataEntryQueue
           CRISTIN_IMPORT_PATCH_QUEUE_URL: !Ref CristinImportPatchQueue
           CRISTIN_IMPORT_NVI_PATCH_QUEUE_URL: !Ref CristinImportNviPatchQueueUrl
+          BRAGE_IMPORT_PATCH_QUEUE_URL: !Ref BrageImportPatchQueue
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -1676,7 +1677,7 @@ Resources:
             Pattern:
               detail:
                 topic: [ "PublicationService.DataImport.Filename" ]
-                subtopic: [ "PublicationService.CristinData.DataEntry", "PublicationService.CristinData.PatchEntry", "PublicationService.CristinData.NviPatch" ]
+                subtopic: [ "PublicationService.CristinData.DataEntry", "PublicationService.CristinData.PatchEntry", "PublicationService.CristinData.NviPatch", "PublicationService.BrageData.PatchEntry" ]
 
 
   CreatePublishedPublicationHandler:
@@ -1869,6 +1870,8 @@ Resources:
   CristinImportPatchQueue:
     Type: "AWS::SQS::Queue"
   CristinImportDLQ:
+    Type: "AWS::SQS::Queue"
+  BrageImportPatchQueue:
     Type: "AWS::SQS::Queue"
 
   CristinEntriesSQSConsumer:
