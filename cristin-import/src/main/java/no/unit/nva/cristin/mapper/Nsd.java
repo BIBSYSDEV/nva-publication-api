@@ -4,6 +4,7 @@ import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_CHANNEL_
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NSD_PROXY_PATH_PUBLISHER;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import java.net.URI;
+import java.util.List;
 import java.util.Optional;
 import no.unit.nva.cristin.lambda.ErrorReport;
 import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryEntry;
@@ -16,15 +17,19 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class Nsd {
 
-    private final int nsdCode;
+    private final Optional<Integer> nsdCode;
     private final int year;
+    private final List<String> channelNames;
     private final ChannelRegistryMapper channelRegistryMapper;
     private final S3Client s3Client;
     private final Integer cristinId;
 
-    public Nsd(int nsdCode, int year, ChannelRegistryMapper channelRegistryMapper, S3Client s3Client, Integer cristinId) {
-        this.nsdCode = nsdCode;
+    public Nsd(Integer nsdCode, int year, List<String> channelNames, ChannelRegistryMapper channelRegistryMapper,
+               S3Client s3Client,
+               Integer cristinId) {
+        this.nsdCode = Optional.ofNullable(nsdCode);
         this.year = year;
+        this.channelNames = channelNames;
         this.channelRegistryMapper = channelRegistryMapper;
         this.s3Client = s3Client;
         this.cristinId = cristinId;
@@ -32,8 +37,16 @@ public class Nsd {
 
     public URI getPublisherUri() {
         return lookupNsdPublisherProxyUri()
+                   .or(this::lookupCristinPublisherByhName)
                    .orElseGet(() -> lookupNsdJournalOrSeriesProxyUri()
                                         .orElse(persistChannelRegistryExceptionReport("Publisher")));
+    }
+
+    private Optional<? extends URI> lookupCristinPublisherByhName() {
+        return channelNames.stream().map(channelRegistryMapper::convertPublisherNameToPid)
+                   .flatMap(Optional::stream)
+                   .findFirst()
+                   .map(pid -> getNsdProxyUri(NSD_PROXY_PATH_PUBLISHER, pid));
     }
 
     public URI createJournal() {
@@ -53,8 +66,8 @@ public class Nsd {
     }
 
     private Optional<URI> lookUpNsdSeries() {
-        return channelRegistryMapper.convertNsdJournalCodeToPid(nsdCode)
-            .map(this::toSeriesUri);
+        return nsdCode.flatMap(integer -> channelRegistryMapper.convertNsdJournalCodeToPid(integer)
+                                              .map(this::toSeriesUri));
     }
 
     private URI toSeriesUri(ChannelRegistryEntry channelRegistryEntry) {
@@ -69,8 +82,8 @@ public class Nsd {
     }
 
     private Optional<URI> lookUpNsdJournal() {
-        return channelRegistryMapper.convertNsdJournalCodeToPid(nsdCode)
-                   .map(this::toJournalUri);
+        return nsdCode.flatMap(integer -> channelRegistryMapper.convertNsdJournalCodeToPid(integer)
+                                              .map(this::toJournalUri));
     }
 
     private URI toJournalUri(ChannelRegistryEntry channelRegistryEntry) {
@@ -85,14 +98,14 @@ public class Nsd {
     }
 
     private Optional<URI> lookupNsdPublisherProxyUri() {
-        return channelRegistryMapper.convertNsdPublisherCodeToPid(nsdCode)
-                   .map(pid -> getNsdProxyUri(NSD_PROXY_PATH_PUBLISHER, pid));
+        return nsdCode.flatMap(integer -> channelRegistryMapper.convertNsdPublisherCodeToPid(integer)
+                                              .map(pid -> getNsdProxyUri(NSD_PROXY_PATH_PUBLISHER, pid)));
     }
 
     private Optional<URI> lookupNsdJournalOrSeriesProxyUri() {
-        return channelRegistryMapper.convertNsdJournalCodeToPid(nsdCode)
-                   .map(channelRegistryEntry -> getNsdProxyUri(channelRegistryEntry.getEntryPath(),
-                                                               channelRegistryEntry.id()));
+        return nsdCode.flatMap(integer -> channelRegistryMapper.convertNsdJournalCodeToPid(integer)
+                                              .map(channelRegistryEntry -> getNsdProxyUri(channelRegistryEntry.getEntryPath(),
+                                                                                          channelRegistryEntry.id())));
     }
 
     private URI getNsdProxyUri(String nsdProxyPath, String pid) {

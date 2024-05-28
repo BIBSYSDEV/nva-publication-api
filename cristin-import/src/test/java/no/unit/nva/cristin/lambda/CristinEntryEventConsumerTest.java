@@ -873,7 +873,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var sqsEvent = createSqsEvent(eventBody);
         handler.handleRequest(sqsEvent, CONTEXT);
         var expectedReportFileLocation =
-            UnixPath.of(ERROR_REPORT).addChild("NoPublisherException").addChild(String.valueOf(cristinObject.getId()));
+            UnixPath.of(ERROR_REPORT).addChild("ChannelRegistryException").addChild(String.valueOf(cristinObject.getId()));
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
         var file = s3Driver.getFile(expectedReportFileLocation);
         assertThat(file, is(not(emptyString())));

@@ -1,6 +1,7 @@
 package no.unit.nva.cristin.mapper.nva;
 
 import static java.util.Objects.nonNull;
+import java.util.List;
 import java.util.Optional;
 import no.unit.nva.cristin.lambda.ErrorReport;
 import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
@@ -53,7 +54,8 @@ public class NvaBookSeriesBuilder extends CristinMappingModule {
     private BookSeries createConfirmedBookSeries(CristinJournalPublicationJournal b) {
         int nsdCode = b.getNsdCode();
         int publicationYear = cristinObject.getPublicationYear();
-        var seriesUri = new Nsd(nsdCode, publicationYear, channelRegistryMapper, s3Client, cristinObject.getId())
+        var seriesUri = new Nsd(nsdCode, publicationYear, List.of(), channelRegistryMapper, s3Client,
+                                cristinObject.getId())
                             .createSeries();
         return nonNull(seriesUri) ? new Series(seriesUri) : null;
     }
