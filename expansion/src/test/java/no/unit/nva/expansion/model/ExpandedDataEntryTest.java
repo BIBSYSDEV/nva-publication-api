@@ -10,6 +10,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.mockito.ArgumentMatchers.any;
@@ -50,9 +51,11 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.MediaContributionPeriodical;
+import no.unit.nva.model.contexttypes.NullPublisher;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Report;
+import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
@@ -161,7 +164,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var logAppender = LogUtils.getTestingAppender(JournalExpansionServiceImpl.class);
         var journalId = randomUri();
         var journalContext = new Journal(journalId);
-        mockBadRequestForJournalId(journalId);
+        mockBadRequestForChannelRegistry(journalId);
         var importCandidate = randomImportCandidate(journalContext);
         var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
         assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
@@ -180,6 +183,54 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
         assertThat(expandedImportCandidate.getJournal(),
                    is(equalTo(new ExpandedJournal(journalId, expectedJournalTitle))));
+    }
+
+    @Test
+    void shouldExpandPublisherSuccessfullyWhenBadResponseFromChannelRegistry() {
+        var publisherId = randomUri();
+        var publisher = new Publisher(publisherId);
+        var bookContext = new Book(null, null, publisher, null, null);
+        mockBadRequestForChannelRegistry(publisherId);
+        var importCandidate = randomImportCandidate(bookContext);
+        var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
+        assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
+        assertThat(expandedImportCandidate.getPublisher(), is(equalTo(new ExpandedPublisher(publisherId, null))));
+    }
+
+    @Test
+    void shouldExpandUnconfirmedPublisher(){
+        var publisherName = randomString();
+        var publisher = new UnconfirmedPublisher(publisherName);
+        var bookContext = new Book(null, null, publisher, null, null);
+        var importCandidate = randomImportCandidate(bookContext);
+        var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
+        assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
+        assertThat(expandedImportCandidate.getPublisher(), is(equalTo(new ExpandedPublisher(null, publisherName))));
+    }
+
+    @Test
+    void shouldSkipExpandingNullPublisher(){
+        var publisher = new NullPublisher();
+        var bookContext = new Book(null, null, publisher, null, null);
+        var importCandidate = randomImportCandidate(bookContext);
+        var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
+        assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
+
+        assertThat(expandedImportCandidate.getPublisher(), is((nullValue())));
+    }
+
+    @Test
+    void shouldExpandPublisherSuccessfullyWhenOkResponseFromChannelRegistry() throws JsonProcessingException {
+        var expectedPublisherTitle = randomString();
+        var publisherId = randomUri();
+        var publisher = new Publisher(publisherId);
+        var bookContext = new Book(null, null, publisher, null, null);
+        mockResponseForChannelRegistry(publisherId, expectedPublisherTitle);
+        var importCandidate = randomImportCandidate(bookContext);
+        var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
+        assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
+
+        assertThat(expandedImportCandidate.getPublisher(), is((equalTo(new ExpandedPublisher(publisherId, expectedPublisherTitle)))));
     }
 
     @Test
@@ -215,10 +266,10 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     }
 
     @SuppressWarnings("unchecked")
-    private void mockBadRequestForJournalId(URI journalId) {
+    private void mockBadRequestForChannelRegistry(URI id) {
         var response = (HttpResponse<String>) mock(HttpResponse.class);
         when(response.statusCode()).thenReturn(404);
-        when(uriRetriever.fetchResponse(eq(journalId), any())).thenReturn(Optional.of(response));
+        when(uriRetriever.fetchResponse(eq(id), any())).thenReturn(Optional.of(response));
     }
 
     @SuppressWarnings("unchecked")
