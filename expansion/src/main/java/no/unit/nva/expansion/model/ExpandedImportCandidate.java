@@ -17,6 +17,7 @@ import java.util.stream.Stream;
 import lombok.Getter;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.JournalExpansionServiceImpl;
+import no.unit.nva.expansion.PublisherExpansionServiceImpl;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -31,6 +32,7 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
@@ -93,7 +95,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     @JsonProperty(MAIN_TITLE_FIELD)
     private String mainTitle;
     @JsonProperty(PUBLISHER_FIELD)
-    private PublishingHouse publisher;
+    private ExpandedPublisher publisher;
     @JsonProperty(JOURNAL_FIELD)
     private ExpandedJournal journal;
     @JsonProperty(VERIFIED_CONTRIBUTORS_NUMBER_FIELD)
@@ -137,7 +139,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .withNumberOfVerifiedContributors(extractNumberOfVerifiedContributors(importCandidate))
                    .withContributors(extractContributors(importCandidate))
                    .withJournal(extractJournal(importCandidate, uriRetriever))
-                   .withPublisher(extractPublisher(importCandidate))
+                   .withPublisher(extractPublisher(importCandidate, uriRetriever))
                    .withCreatedDate(importCandidate.getCreatedDate())
                    .withCooperation(extractCorporation(organizations))
                    .withAssociatedArtifacts(importCandidate.getAssociatedArtifacts())
@@ -240,11 +242,11 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     @JacocoGenerated
-    public PublishingHouse getPublisher() {
+    public ExpandedPublisher getPublisher() {
         return publisher;
     }
 
-    public void setPublisher(PublishingHouse publisher) {
+    public void setPublisher(ExpandedPublisher publisher) {
         this.publisher = publisher;
     }
 
@@ -375,12 +377,12 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .orElse(null);
     }
 
-    private static PublishingHouse extractPublisher(ImportCandidate importCandidate) {
+    private static ExpandedPublisher extractPublisher(ImportCandidate importCandidate, RawContentRetriever uriRetriever) {
         return Optional.ofNullable(importCandidate.getEntityDescription())
                    .map(EntityDescription::getReference)
                    .map(Reference::getPublicationContext)
                    .filter(ExpandedImportCandidate::hasPublisher)
-                   .map(ExpandedImportCandidate::extractPublishingHouse)
+                   .map(publicationContext -> extractPublishingHouse(publicationContext, uriRetriever))
                    .orElse(null);
     }
 
@@ -389,9 +391,15 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
      * types where PublishingHouse is present: Book and Report.
      */
 
-    private static PublishingHouse extractPublishingHouse(PublicationContext publicationContext) {
-        return isBook(publicationContext) ? ((Book) publicationContext).getPublisher()
-                   : ((Report) publicationContext).getPublisher();
+    private static ExpandedPublisher extractPublishingHouse(PublicationContext publicationContext, RawContentRetriever uriRetriever) {
+        return isBook(publicationContext)
+                   ? expandPublisher( ((Book) publicationContext).getPublisher(), uriRetriever)
+                   : expandPublisher( ((Report) publicationContext).getPublisher(), uriRetriever);
+    }
+
+    private static ExpandedPublisher expandPublisher(PublishingHouse publisher, RawContentRetriever uriRetriever) {
+        var publisherExpansionService = new PublisherExpansionServiceImpl(uriRetriever);
+        return publisherExpansionService.createExpandedPublisher(publisher);
     }
 
     private static boolean hasPublisher(PublicationContext publicationContext) {
@@ -571,7 +579,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
             return this;
         }
 
-        public Builder withPublisher(PublishingHouse publisher) {
+        public Builder withPublisher(ExpandedPublisher publisher) {
             expandedImportCandidate.setPublisher(publisher);
             return this;
         }
