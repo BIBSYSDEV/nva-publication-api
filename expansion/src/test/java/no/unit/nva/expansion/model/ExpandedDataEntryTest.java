@@ -9,15 +9,18 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.net.URI;
 import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.util.List;
@@ -26,6 +29,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import lombok.Getter;
+import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.expansion.JournalExpansionServiceImpl;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
@@ -43,6 +48,7 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Revision;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.MediaContributionPeriodical;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
@@ -75,7 +81,9 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UriWrapper;
+import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -146,6 +154,71 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
         assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
         this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
+    }
+
+    @Test
+    void shouldExpandImportCandidateJournalSuccessfullyWhenBadResponseFromChannelRegistry() {
+        var logAppender = LogUtils.getTestingAppender(JournalExpansionServiceImpl.class);
+        var journalId = randomUri();
+        var journalContext = new Journal(journalId);
+        mockBadRequestForJournalId(journalId);
+        var importCandidate = randomImportCandidate(journalContext);
+        var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
+        assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
+        assertThat(expandedImportCandidate.getJournal(), is(equalTo(new ExpandedJournal(journalId, null))));
+        assertThat(logAppender.getMessages(), containsString("Not Ok response from channel registry"));
+    }
+
+    @Test
+    void shouldExpandJournalSuccessfullyWhenOkResponseFromChannelRegistry() throws JsonProcessingException {
+        var journalId = randomUri();
+        var journalContext = new Journal(journalId);
+        var expectedJournalTitle = randomString();
+        mockResponseForChannelRegistry(journalId, expectedJournalTitle);
+        var importCandidate = randomImportCandidate(journalContext);
+        var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
+        assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
+        assertThat(expandedImportCandidate.getJournal(),
+                   is(equalTo(new ExpandedJournal(journalId, expectedJournalTitle))));
+    }
+
+    @Test
+    void shouldLogFailureToParseChannelRegistryResponse() {
+        var logAppender = LogUtils.getTestingAppender(JournalExpansionServiceImpl.class);
+        var journalId = randomUri();
+        var journalContext = new Journal(journalId);
+        mockUnparsableResponseForChannelRegistry(journalId);
+        var importCandidate = randomImportCandidate(journalContext);
+        var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
+        assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
+        assertThat(expandedImportCandidate.getJournal(), is(equalTo(new ExpandedJournal(journalId, null))));
+        assertThat(logAppender.getMessages(), containsString("Failed to parse channel registry response"));
+    }
+
+    @SuppressWarnings("unchecked")
+    private void mockUnparsableResponseForChannelRegistry(URI journalId) {
+        var response = (HttpResponse<String>) mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(200);
+        when(response.body()).thenReturn(randomString());
+        when(uriRetriever.fetchResponse(eq(journalId), any())).thenReturn(Optional.of(response));
+    }
+
+    @SuppressWarnings("unchecked")
+    private void mockResponseForChannelRegistry(URI journalId, String expectedJournalTitle)
+        throws JsonProcessingException {
+        var responseBody = new ChannelRegistryResponse(expectedJournalTitle);
+        var responseBodyString = JsonUtils.dtoObjectMapper.writeValueAsString(responseBody);
+        var response = (HttpResponse<String>) mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(200);
+        when(response.body()).thenReturn(responseBodyString);
+        when(uriRetriever.fetchResponse(eq(journalId), any())).thenReturn(Optional.of(response));
+    }
+
+    @SuppressWarnings("unchecked")
+    private void mockBadRequestForJournalId(URI journalId) {
+        var response = (HttpResponse<String>) mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(404);
+        when(uriRetriever.fetchResponse(eq(journalId), any())).thenReturn(Optional.of(response));
     }
 
     @SuppressWarnings("unchecked")
@@ -272,12 +345,6 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
     private DoiRequest createDoiRequest(Publication publication) throws ApiGatewayException {
         return (DoiRequest) TicketEntry.requestNewTicket(publication, DoiRequest.class).persistNewTicket(ticketService);
-    }
-
-    private Publication createPublicationWithoutDoi(Class<?> instanceType) throws BadRequestException {
-        var publication = randomPublicationWithoutDoi(instanceType);
-        return Resource.fromPublication(publication)
-                   .persistNew(resourceService, UserInstance.fromPublication(publication));
     }
 
     private Publication createPublishedPublicationWithoutDoi(Class<?> instanceType) throws ApiGatewayException {
@@ -411,4 +478,6 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             return requestCase;
         }
     }
+
+    private record ChannelRegistryResponse(String name){}
 }
