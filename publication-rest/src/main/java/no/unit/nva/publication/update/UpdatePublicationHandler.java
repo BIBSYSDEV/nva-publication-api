@@ -33,9 +33,12 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.UnpublishingNote;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
+import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
@@ -304,10 +307,43 @@ public class UpdatePublicationHandler
         var customerApiClient = getCustomerApiClient();
         var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, publicationUpdate.getPublisher().getId());
         validatePublication(publicationUpdate, customer);
+        injectFileUploadDetails(existingPublication, publicationUpdate, userInstance);
         setRrsOnFiles(publicationUpdate, existingPublication, customer, userInstance.getUsername(), permissionStrategy);
         upsertPublishingRequestIfNeeded(existingPublication, publicationUpdate, customer, requestInfo);
 
         return resourceService.updatePublication(publicationUpdate);
+    }
+
+    private static void injectFileUploadDetails(Publication existingPublication, Publication publicationUpdate,
+                                                UserInstance userInstance) {
+        if (!existingPublication.getAssociatedArtifacts().equals(publicationUpdate.getAssociatedArtifacts())) {
+            var username = new Username(userInstance.getUsername());
+            var uploadDetails = new UploadDetails(username, Instant.now());
+
+            var originalArtifacts = existingPublication.getAssociatedArtifacts();
+            var updatedArtifacts = publicationUpdate.getAssociatedArtifacts();
+
+            for (var updatedArtifact : updatedArtifacts) {
+                if (!originalArtifacts.contains(updatedArtifact)) {
+                    if (updatedArtifact instanceof File file) {
+                        var index = updatedArtifacts.indexOf(updatedArtifact);
+                        var fileBuilder = file.copy().withUploadDetails(uploadDetails);
+
+                        if (file instanceof PublishedFile) {
+                            updatedArtifacts.set(index, fileBuilder.buildPublishedFile());
+                        }
+
+                        if (file instanceof UnpublishedFile) {
+                            updatedArtifacts.set(index, fileBuilder.buildUnpublishedFile());
+                        }
+
+                        if (file instanceof AdministrativeAgreement) {
+                            updatedArtifacts.set(index, fileBuilder.buildUnpublishableFile());
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private void validateRemovalOfPublishedFiles(Publication existingPublication,
