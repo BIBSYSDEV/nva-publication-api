@@ -22,16 +22,16 @@ public final class PublicationComparator {
         var atLeastOneContributorMatch = atLeastOneContributorMatch(existingPublication, incomingPublication);
         var publicationDatesAreCloseToEachOther = publicationsDateAreClose(existingPublication,
                                                                                incomingPublication);
-        var instanceTypeMatches = instanceTypeMatches(existingPublication, incomingPublication);
+        var instanceTypeMatches = publicationContextTypeMatches(existingPublication, incomingPublication);
         return Stream.of(titlesMatch, atLeastOneContributorMatch, publicationDatesAreCloseToEachOther,
                          instanceTypeMatches).allMatch(Boolean::valueOf);
     }
 
-    private static boolean instanceTypeMatches(Publication existingPublication, Publication incomingPublication) {
+    private static boolean publicationContextTypeMatches(Publication existingPublication, Publication incomingPublication) {
         var existingInstanceType =
-            existingPublication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
+            existingPublication.getEntityDescription().getReference().getPublicationContext().getClass().getSimpleName();
         var incomingInstanceType =
-            incomingPublication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
+            incomingPublication.getEntityDescription().getReference().getPublicationContext().getClass().getSimpleName();
         return existingInstanceType.equals(incomingInstanceType);
     }
 

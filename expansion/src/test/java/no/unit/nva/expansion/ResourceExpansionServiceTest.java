@@ -465,6 +465,134 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(logAppender.getMessages(), containsString(type + ": " + entity.getIdentifier().toString()));
     }
 
+    @Test
+    void some() throws JsonProcessingException, NotFoundException {
+        var p = """
+            {
+  "type": "Publication",
+  "identifier": "018f3035b287-fc073a5c-374d-4494-9060-085a30883b3e",
+  "status": "PUBLISHED",
+  "resourceOwner": {
+    "owner": "ntnu@194.0.0.0",
+    "ownerAffiliation": "https://api.test.nva.aws.unit.no/cristin/organization/194.0.0.0"
+  },
+  "publisher": {
+    "type": "Organization",
+    "id": "https://api.test.nva.aws.unit.no/customer/0baf8fcb-b18d-4c09-88bb-956b4f659103"
+  },
+  "createdDate": "2020-12-15T00:00:00Z",
+  "modifiedDate": "2024-05-07T17:30:54.416279201Z",
+  "publishedDate": "2020-12-15T00:00:00Z",
+  "entityDescription": {
+    "type": "EntityDescription",
+    "mainTitle": "NIKT: Norsk IKT-konferanse for forskning og utdanning 2020",
+    "alternativeTitles": {},
+    "language": "http://lexvo.org/id/iso639-3/und",
+    "publicationDate": {
+      "type": "PublicationDate",
+      "year": "2020"
+    },
+    "contributors": [
+      {
+        "type": "Contributor",
+        "identity": {
+          "type": "Identity",
+          "id": "https://api.test.nva.aws.unit.no/cristin/person/26638",
+          "name": "Rune Hjelsvold",
+          "verificationStatus": "Verified",
+          "additionalIdentifiers": []
+        },
+        "affiliations": [
+          {
+            "type": "Organization",
+            "id": "https://api.test.nva.aws.unit.no/cristin/organization/194.63.10.0"
+          }
+        ],
+        "role": {
+          "type": "EditorialBoardMember"
+        },
+        "sequence": 1,
+        "correspondingAuthor": false
+      },
+      {
+        "type": "Contributor",
+        "identity": {
+          "type": "Identity",
+          "id": "https://api.test.nva.aws.unit.no/cristin/person/3549",
+          "name": "Eric Bartley Jul",
+          "verificationStatus": "Verified",
+          "additionalIdentifiers": []
+        },
+        "affiliations": [
+          {
+            "type": "Organization",
+            "id": "https://api.test.nva.aws.unit.no/cristin/organization/185.15.5.25"
+          }
+        ],
+        "role": {
+          "type": "EditorialBoardMember"
+        },
+        "sequence": 2,
+        "correspondingAuthor": false
+      }
+    ],
+    "alternativeAbstracts": {},
+    "npiSubjectHeading": "1152",
+    "tags": [],
+    "reference": {
+      "type": "Reference",
+      "publicationContext": {
+        "type": "Book",
+        "series": {
+          "type": "Series",
+          "id": "https://api.test.nva.aws.unit.no/publication-channels-v2/journal/23E19F1D-8FAC-46E5-88A7-C628F3985910/2020"
+        },
+        "seriesNumber": "Issue:1",
+        "publisher": {
+          "type": "UnconfirmedPublisher",
+          "name": "Bibsys Open Journal Systems",
+          "valid": true
+        },
+        "isbnList": [
+          "9783540681649"
+        ],
+        "revision": "Unrevised",
+        "additionalIdentifiers": []
+      },
+      "publicationInstance": {
+        "type": "BookAnthology",
+        "pages": {
+          "type": "MonographPages",
+          "pages": "146",
+          "illustrated": false
+        }
+      }
+    }
+  },
+  "projects": [],
+  "fundings": [],
+  "subjects": [],
+  "associatedArtifacts": [],
+  "additionalIdentifiers": [
+    {
+      "type": "AdditionalIdentifier",
+      "sourceName": "Cristin",
+      "value": "1859916"
+    }
+  ],
+  "allowedOperations": [
+    "update",
+    "unpublish"
+  ],
+  "publicationNotes": [],
+  "id": "https://api.test.nva.aws.unit.no/publication/018f3035b287-fc073a5c-374d-4494-9060-085a30883b3e"
+}
+            """;
+        var publication = JsonUtils.dtoObjectMapper.readValue(p, Publication.class);
+        var s = expansionService.expandEntry(Resource.fromPublication(publication));
+        var l = "";
+    }
+
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldUpdateExpandedTicketStatusNewWhenTicketStatusIsPendingWithoutAssignee(
