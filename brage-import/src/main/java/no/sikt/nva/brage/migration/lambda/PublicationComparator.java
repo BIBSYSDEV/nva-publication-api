@@ -22,17 +22,17 @@ public final class PublicationComparator {
         var atLeastOneContributorMatch = atLeastOneContributorMatch(existingPublication, incomingPublication);
         var publicationDatesAreCloseToEachOther = publicationsDateAreClose(existingPublication,
                                                                                incomingPublication);
-        var instanceTypeMatches = instanceTypeMatches(existingPublication, incomingPublication);
+        var publicationContextTypeMatches = publicationContextTypeMatches(existingPublication, incomingPublication);
         return Stream.of(titlesMatch, atLeastOneContributorMatch, publicationDatesAreCloseToEachOther,
-                         instanceTypeMatches).allMatch(Boolean::valueOf);
+                         publicationContextTypeMatches).allMatch(Boolean::valueOf);
     }
 
-    private static boolean instanceTypeMatches(Publication existingPublication, Publication incomingPublication) {
-        var existingInstanceType =
-            existingPublication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
-        var incomingInstanceType =
-            incomingPublication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
-        return existingInstanceType.equals(incomingInstanceType);
+    private static boolean publicationContextTypeMatches(Publication existingPublication, Publication incomingPublication) {
+        var existingPublicationContext =
+            existingPublication.getEntityDescription().getReference().getPublicationContext().getClass();
+        var incomingPublicationContext =
+            incomingPublication.getEntityDescription().getReference().getPublicationContext().getClass();
+        return existingPublicationContext.equals(incomingPublicationContext);
     }
 
     private static boolean publicationsDateAreClose(Publication existingPublication, Publication incomingPublication) {
