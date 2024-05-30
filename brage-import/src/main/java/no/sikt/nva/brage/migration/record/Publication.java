@@ -1,8 +1,7 @@
 package no.sikt.nva.brage.migration.record;
 
-import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
@@ -65,7 +64,7 @@ public class Publication {
     @JacocoGenerated
     @JsonProperty("issnList")
     public List<String> getIssnList() {
-        return issnList;
+        return nonNull(issnList) ? issnList : List.of();
     }
 
     @JacocoGenerated
@@ -76,7 +75,7 @@ public class Publication {
     @JacocoGenerated
     @JsonProperty("isbnList")
     public List<String> getIsbnList() {
-        return isbnList;
+        return nonNull(isbnList) ? isbnList : List.of();
     }
 
     @JacocoGenerated
@@ -97,10 +96,7 @@ public class Publication {
     @JacocoGenerated
     @JsonProperty("ismnList")
     public List<String> getIsmnList() {
-        if (isNull(ismnList)) {
-            return Collections.emptyList();
-        }
-        return ismnList;
+        return nonNull(ismnList) ? ismnList : List.of();
     }
 
     public void setIsmnList(List<String> ismnList) {
