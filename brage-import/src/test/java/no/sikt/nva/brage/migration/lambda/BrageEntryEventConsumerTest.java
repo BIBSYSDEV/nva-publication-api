@@ -909,6 +909,33 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldNotMergeBookWithADegree() throws IOException, nva.commons.apigateway.exceptions.NotFoundException {
+        var cristinIdentifier = randomString();
+        var publication = randomPublication(NonFictionMonograph.class);
+        publication.setAdditionalIdentifiers(Set.of());
+        publication.getEntityDescription().getReference().setDoi(null);
+        publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)));
+        publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder().withYear("2022").build());
+        publication.getEntityDescription().setMainTitle("Dynamic - Response of Floating Wind Turbines! Report");
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication);
+        var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
+        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
+                                               "ARTIST", null, List.of());
+
+        var generator = new NvaBrageMigrationDataGenerator.Builder()
+                            .withMainTitle("Dynamic Response of Floating Wind Turbines")
+                            .withContributor(brageContributor)
+                            .withCristinIdentifier(cristinIdentifier)
+                            .withPublicationDate(new PublicationDate("2023",
+                                                                     new PublicationDateNva.Builder().withYear("2023").build()))
+                            .withType(new Type(List.of(), "DegreeBachelor")).build();
+        var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
+        handler.handleRequest(s3Event, CONTEXT);
+        var notUpdatedPublication = resourceService.getPublication(existingPublication);
+        assertThat(notUpdatedPublication, is(equalTo(existingPublication)));
+    }
+
+    @Test
     void shouldMergePublicationContextAndUseCourseFromBragePublicationWhenPublicationContextIsDegree()
         throws IOException, InvalidUnconfirmedSeriesException {
         var cristinIdentifier = randomString();
