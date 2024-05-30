@@ -31,6 +31,7 @@ import no.sikt.nva.brage.migration.record.PublisherAuthority;
 import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
+import no.sikt.nva.brage.migration.record.content.ResourceContent.BundleType;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
@@ -45,6 +46,7 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UploadDetails;
@@ -193,6 +195,25 @@ public final class BrageNvaMapper {
     private static AssociatedArtifact generateFile(ContentFile file, Record brageRecord) {
         var legalNote = extractLegalNote(brageRecord);
         var embargoDate = defineEmbargoDate(legalNote, file);
+        return BundleType.ORIGINAL.equals(file.getBundleType())
+                   ? createPublishedFile(file, brageRecord, embargoDate, legalNote)
+                   : createAdministrativeAgreement(file, brageRecord);
+    }
+
+    private static AssociatedArtifact createAdministrativeAgreement(ContentFile file, Record brageRecord) {
+        return AdministrativeAgreement.builder()
+                   .withName(file.getFilename())
+                   .withIdentifier(file.getIdentifier())
+                   .withUploadDetails(createUploadDetails(brageRecord))
+                   .withAdministrativeAgreement(true)
+                   .buildUnpublishableFile();
+    }
+
+    private static UploadDetails createUploadDetails(Record brageRecord) {
+        return new UploadDetails(new Username(brageRecord.getResourceOwner().getOwner()), Instant.now());
+    }
+
+    private static File createPublishedFile(ContentFile file, Record brageRecord, Instant embargoDate, String legalNote) {
         return File.builder()
                    .withName(file.getFilename())
                    .withIdentifier(file.getIdentifier())
@@ -200,7 +221,7 @@ public final class BrageNvaMapper {
                    .withPublisherVersion(extractPublisherAuthority(brageRecord))
                    .withEmbargoDate(embargoDate)
                    .withLegalNote(legalNote)
-                   .withUploadDetails(new UploadDetails(new Username(brageRecord.getResourceOwner().getOwner()), Instant.now()))
+                   .withUploadDetails(createUploadDetails(brageRecord))
                    .buildPublishedFile();
     }
 

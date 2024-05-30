@@ -260,7 +260,7 @@ public class NvaBrageMigrationDataGenerator {
         private String accessCode;
         private Project project;
 
-        public static URI randomHandle() {
+        private static URI randomHandle() {
             return UriWrapper.fromUri("http://hdl.handle.net/11250/" + randomInteger()).getUri();
         }
 
