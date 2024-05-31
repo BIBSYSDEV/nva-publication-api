@@ -1,5 +1,6 @@
 package no.sikt.nva.brage.migration.record;
 
+import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Objects;
@@ -60,7 +61,7 @@ public class EntityDescription {
 
     @JsonProperty("contributors")
     public List<Contributor> getContributors() {
-        return contributors;
+        return nonNull(contributors) ? contributors : List.of();
     }
 
     public void setContributors(List<Contributor> contributors) {

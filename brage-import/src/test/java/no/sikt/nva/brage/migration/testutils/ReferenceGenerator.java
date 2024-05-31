@@ -547,7 +547,7 @@ public final class ReferenceGenerator {
     private static HashSet<RelatedDocument> extractUnconfirmedDocuments(Builder builder) {
         return Optional.ofNullable(builder)
                    .map(Builder::getHasPart)
-                   .orElseGet(Collections::emptySet)
+                   .orElseGet(Collections::emptyList)
                    .stream()
                    .map(UnconfirmedDocument::new)
                    .collect(Collectors.toCollection(HashSet::new));

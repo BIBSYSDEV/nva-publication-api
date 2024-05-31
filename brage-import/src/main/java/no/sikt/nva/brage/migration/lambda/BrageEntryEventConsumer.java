@@ -75,11 +75,10 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private static final String DOI = "doi";
     private static final String APPLICATION_JSON = "application/json";
     public static final String TITLE = "title";
-    public static final String INSTANCE_TYPE = "instanceType";
+    public static final String CONTEXT_TYPE = "contextType";
     public static final String AGGREGATION = "aggregation";
     public static final String NONE = "none";
     public static final String ISBN = "isbn";
-    public static final int MAX_ACCEPTABLE_LEVENSHTEIN_DISTANCE = 10;
     private final S3Client s3Client;
     private final ResourceService resourceService;
     private String brageRecordFile;
@@ -223,7 +222,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                    .addChild(SEARCH)
                    .addChild(RESOURCES)
                    .addQueryParameter(TITLE, getMainTitle(publication))
-                   .addQueryParameter(INSTANCE_TYPE, getInstanceType(publication))
+                   .addQueryParameter(CONTEXT_TYPE, getInstanceType(publication))
                    .addQueryParameter(AGGREGATION, NONE)
                    .getUri();
     }
