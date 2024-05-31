@@ -168,9 +168,9 @@ public class NvaBrageMigrationDataGenerator {
         brageRecord.setSubjects(builder.getSubjects());
         brageRecord.setSubjectCode(builder.getSubjectCode());
         brageRecord.setPart(Optional.ofNullable(builder.getHasPart())
-                                .orElse(Set.of()).stream().toList());
+                                .orElse(List.of()).stream().toList());
         brageRecord.setAccessCode(builder.getAccessCode());
-        brageRecord.setProjects(Set.of(builder.getProject()));
+        brageRecord.setProjects(List.of(builder.getProject()));
         return brageRecord;
     }
 
@@ -250,12 +250,12 @@ public class NvaBrageMigrationDataGenerator {
         private String cristinIdentifier;
         private String rightsHolder;
         private URI link;
-        private Set<URI> subjects;
+        private List<URI> subjects;
         private String volume;
         private String issue;
         private String articleNumber;
         private String subjectCode;
-        private Set<String> hasPart;
+        private List<String> hasPart;
         private List<String> ismnList;
         private String accessCode;
         private Project project;
@@ -264,7 +264,7 @@ public class NvaBrageMigrationDataGenerator {
             return UriWrapper.fromUri("http://hdl.handle.net/11250/" + randomInteger()).getUri();
         }
 
-        public Set<String> getHasPart() {
+        public List<String> getHasPart() {
             return hasPart;
         }
 
@@ -399,7 +399,7 @@ public class NvaBrageMigrationDataGenerator {
             return this;
         }
 
-        public Builder withHasPart(Set<String> hasPart) {
+        public Builder withHasPart(List<String> hasPart) {
             this.hasPart = hasPart;
             return this;
         }
@@ -588,7 +588,7 @@ public class NvaBrageMigrationDataGenerator {
             return this;
         }
 
-        public Builder withSubjects(Set<URI> subjects) {
+        public Builder withSubjects(List<URI> subjects) {
             this.subjects = subjects;
             return this;
         }
@@ -682,7 +682,7 @@ public class NvaBrageMigrationDataGenerator {
                 publication = createPublication();
             }
             if (isNull(subjects) || subjects.isEmpty()) {
-                subjects = Set.of(randomUri());
+                subjects = List.of(randomUri());
             }
             if (isNull(subjectCode)) {
                 subjectCode = randomString();
@@ -703,7 +703,7 @@ public class NvaBrageMigrationDataGenerator {
             return link;
         }
 
-        public Set<URI> getSubjects() {
+        public List<URI> getSubjects() {
             return subjects;
         }
 

@@ -481,7 +481,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     void shouldConvertPhdWithPartsToNvaPublication() throws IOException {
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_PHD)
                                  .withPublicationDate(PUBLICATION_DATE)
-                                 .withHasPart(Set.of(randomString(), randomString()))
+                                 .withHasPart(List.of(randomString(), randomString()))
                                  .build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
