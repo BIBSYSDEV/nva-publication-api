@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Objects;
+import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -24,8 +25,8 @@ public class DiscardedFilesReport implements JsonSerializable {
     }
 
     public static DiscardedFilesReport fromBrageMergeReport(BrageMergingReport mergingReport,
-                                                            Publication brageConversion){
-        var discardedBrageFiles = findDiscardedAssociatedArtifacts(brageConversion,
+                                                            PublicationRepresentation brageConversion){
+        var discardedBrageFiles = findDiscardedAssociatedArtifacts(brageConversion.nvaPublication(),
                                                                    mergingReport.newImage());
         var discardedExistingFiles =
             findDiscardedAssociatedArtifacts(mergingReport.oldImage(), mergingReport.newImage());

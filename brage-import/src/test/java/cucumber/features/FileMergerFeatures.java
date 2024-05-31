@@ -38,7 +38,7 @@ public class FileMergerFeatures {
     @Given("a brage publication with handle {string}")
     public void bragePublicationWithHandle(String handle) {
         var bragePublication = scenarioContext.getBragePublication();
-        bragePublication.setHandle(createHandleFromCandidate(handle));
+        bragePublication.brageRecord().setId(createHandleFromCandidate(handle));
     }
 
     @And("the nva publication has main handle {string}")
@@ -50,7 +50,7 @@ public class FileMergerFeatures {
     @And("the brage publication has a file with values:")
     public void bragePublicationHasAFileWithValues(PublishedFile publishedFile) {
         var bragePublication = scenarioContext.getBragePublication();
-        bragePublication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(publishedFile)));
+        bragePublication.nvaPublication().setAssociatedArtifacts(new AssociatedArtifactList(List.of(publishedFile)));
     }
 
     @And("the nva publication has a file with values:")
@@ -64,7 +64,7 @@ public class FileMergerFeatures {
         var mergedPublication = scenarioContext.getMergedPublication();
         var associatedArtifacts = mergedPublication.getAssociatedArtifacts();
         assertThat(associatedArtifacts, hasSize(1));
-        var associatedArtifact = associatedArtifacts.get(0);
+        var associatedArtifact = associatedArtifacts.getFirst();
         assertThat(associatedArtifact, is(instanceOf(PublishedFile.class)));
         var actualPublishedFile = (PublishedFile) associatedArtifact;
         assertThat(actualPublishedFile, is(samePropertyValuesAs(publishedFile)));
@@ -91,7 +91,7 @@ public class FileMergerFeatures {
     @And("the brage publication has no associated artifacts")
     public void bragePublicationHasNoAssociatedArtifacts() {
         var bragePublication = scenarioContext.getBragePublication();
-        bragePublication.setAssociatedArtifacts(new AssociatedArtifactList());
+        bragePublication.nvaPublication().setAssociatedArtifacts(new AssociatedArtifactList());
     }
 
     private static URI createHandleFromCandidate(String candidate) {

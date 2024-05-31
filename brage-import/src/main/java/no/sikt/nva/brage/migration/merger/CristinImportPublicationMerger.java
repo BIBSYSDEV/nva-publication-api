@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Course;
 import no.unit.nva.model.EntityDescription;
@@ -40,9 +41,9 @@ public class CristinImportPublicationMerger {
         = "dummy_handle_unis";
 
     private final Publication cristinPublication;
-    private final Publication bragePublication;
+    private final PublicationRepresentation bragePublication;
 
-    public CristinImportPublicationMerger(Publication existingPublication, Publication bragePublication) {
+    public CristinImportPublicationMerger(Publication existingPublication, PublicationRepresentation bragePublication) {
         this.cristinPublication = existingPublication;
         this.bragePublication = bragePublication;
     }
@@ -75,7 +76,8 @@ public class CristinImportPublicationMerger {
 
     private PublicationInstance<? extends Pages> determincePublicationInstance(Reference reference) {
         var publicationInstance = reference.getPublicationInstance();
-        var bragePublicationInstance = bragePublication.getEntityDescription().getReference().getPublicationInstance();
+        var bragePublicationInstance =
+            bragePublication.nvaPublication().getEntityDescription().getReference().getPublicationInstance();
 
         if (publicationInstance instanceof DegreePhd degreePhd && bragePublicationInstance instanceof DegreePhd brageDegreePhd) {
             return new DegreePhd(getPages(degreePhd.getPages(), brageDegreePhd.getPages()),
@@ -109,14 +111,14 @@ public class CristinImportPublicationMerger {
     private URI determineDoi(Reference reference) {
         return nonNull(reference.getDoi())
                    ? reference.getDoi()
-                   : bragePublication.getEntityDescription()
+                   : bragePublication.nvaPublication().getEntityDescription()
                          .getReference()
                          .getDoi();
     }
 
     private PublicationContext determinePublicationContext(Reference reference) throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var publicationContext = reference.getPublicationContext();
-        var bragePublicationContext = bragePublication.getEntityDescription().getReference().getPublicationContext();
+        var bragePublicationContext = bragePublication.nvaPublication().getEntityDescription().getReference().getPublicationContext();
         if (publicationContext instanceof Degree degree && bragePublicationContext instanceof Degree brageDegree) {
             return new Builder().withIsbnList(getIsbnList(degree.getIsbnList(), brageDegree.getIsbnList()))
                                .withSeries(getSeries(degree.getSeries(), brageDegree.getSeries()))
@@ -181,7 +183,7 @@ public class CristinImportPublicationMerger {
     }
 
     private Course extractBrageCourse() {
-        return Optional.ofNullable(bragePublication.getEntityDescription().getReference().getPublicationContext())
+        return Optional.ofNullable(bragePublication.nvaPublication().getEntityDescription().getReference().getPublicationContext())
                    .filter(Degree.class::isInstance)
                    .map(Degree.class::cast)
                    .map(Degree::getCourse)
@@ -191,18 +193,18 @@ public class CristinImportPublicationMerger {
     private String determineRightsHolder() {
         return nonNull(cristinPublication.getRightsHolder())
                    ? cristinPublication.getRightsHolder()
-                   : bragePublication.getRightsHolder();
+                   : bragePublication.nvaPublication().getRightsHolder();
     }
 
     private List<URI> determineSubject() {
         return cristinPublication.getSubjects().isEmpty()
-                   ? bragePublication.getSubjects()
+                   ? bragePublication.nvaPublication().getSubjects()
                    : cristinPublication.getSubjects();
     }
 
     private Set<AdditionalIdentifier> mergeAdditionalIdentifiers() {
         var additionalIdentifiers = new HashSet<>(cristinPublication.getAdditionalIdentifiers());
-        additionalIdentifiers.addAll(bragePublication.getAdditionalIdentifiers());
+        additionalIdentifiers.addAll(bragePublication.nvaPublication().getAdditionalIdentifiers());
         if (shouldAddBrageHandleToAdditionalIdentifiers()) {
             additionalIdentifiers.add(extractBrageHandleAsAdditionalIdentifier());
         }
@@ -211,12 +213,12 @@ public class CristinImportPublicationMerger {
 
     private boolean shouldAddBrageHandleToAdditionalIdentifiers() {
         return nonNull(cristinPublication.getHandle())
-               && nonNull(bragePublication.getHandle())
+               && nonNull(bragePublication.brageRecord().getId())
                && !isDummyHandle();
     }
 
     private AdditionalIdentifier extractBrageHandleAsAdditionalIdentifier() {
-        return new AdditionalIdentifier("handle", bragePublication.getHandle().toString());
+        return new AdditionalIdentifier("handle", bragePublication.brageRecord().getId().toString());
     }
 
     private URI determineHandle() {
@@ -226,9 +228,8 @@ public class CristinImportPublicationMerger {
     }
 
     private boolean isDummyHandle() {
-        return nonNull(bragePublication.getHandle())
-               && bragePublication
-                      .getHandle()
+        return nonNull(bragePublication.brageRecord().getId())
+               && bragePublication.brageRecord().getId()
                       .toString()
                       .contains(DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS);
     }
@@ -236,7 +237,7 @@ public class CristinImportPublicationMerger {
     private Optional<URI> getBrageHandleAsLongAsItIsNotADummyHandle() {
         return isDummyHandle()
                    ? Optional.empty()
-                   : Optional.of(bragePublication.getHandle());
+                   : Optional.of(bragePublication.brageRecord().getId());
     }
 
     private Publication fillNewPublicationWithMetadataFromBrage(Publication publicationForUpdating) {
@@ -248,7 +249,7 @@ public class CristinImportPublicationMerger {
 
     private AssociatedArtifactList determineAssociatedArtifacts() {
         return shouldUseBrageArtifacts()
-                   ? bragePublication.getAssociatedArtifacts()
+                   ? bragePublication.nvaPublication().getAssociatedArtifacts()
                    : cristinPublication.getAssociatedArtifacts();
     }
 
@@ -260,7 +261,7 @@ public class CristinImportPublicationMerger {
     }
 
     private boolean bragePublicationHasAssociatedArtifacts() {
-        return !bragePublication.getAssociatedArtifacts().isEmpty();
+        return !bragePublication.nvaPublication().getAssociatedArtifacts().isEmpty();
     }
 
     private boolean cristinHandleIsNotSet() {
@@ -268,18 +269,18 @@ public class CristinImportPublicationMerger {
     }
 
     private boolean hasTheSameHandle() {
-        return bragePublication.getHandle().equals(cristinPublication.getHandle());
+        return bragePublication.brageRecord().getId().equals(cristinPublication.getHandle());
     }
 
     private String getCorrectDescription() {
         return StringUtils.isNotEmpty(cristinPublication.getEntityDescription().getDescription())
                    ? cristinPublication.getEntityDescription().getDescription()
-                   : bragePublication.getEntityDescription().getDescription();
+                   : bragePublication.nvaPublication().getEntityDescription().getDescription();
     }
 
     private String getCorrectAbstract() {
         return StringUtils.isNotEmpty(cristinPublication.getEntityDescription().getAbstract())
                    ? cristinPublication.getEntityDescription().getAbstract()
-                   : bragePublication.getEntityDescription().getAbstract();
+                   : bragePublication.nvaPublication().getEntityDescription().getAbstract();
     }
 }

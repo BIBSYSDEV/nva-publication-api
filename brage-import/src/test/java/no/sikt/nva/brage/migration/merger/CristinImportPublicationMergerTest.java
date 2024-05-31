@@ -5,6 +5,8 @@ import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static org.hamcrest.MatcherAssert.assertThat;
 import java.util.Set;
+import no.sikt.nva.brage.migration.model.PublicationRepresentation;
+import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
@@ -54,8 +56,11 @@ class CristinImportPublicationMergerTest {
 
     private static Publication mergePublications(Publication existingPublication, Publication bragePublication)
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var record = new Record();
+        record.setId(bragePublication.getHandle());
+        var representation = new PublicationRepresentation(record, bragePublication);
         return new CristinImportPublicationMerger(existingPublication,
-                                                  bragePublication).mergePublications();
+                                                  representation).mergePublications();
     }
 
     private static Book emptyBook() throws InvalidUnconfirmedSeriesException {

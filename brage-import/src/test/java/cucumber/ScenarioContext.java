@@ -1,9 +1,12 @@
 package cucumber;
 
 import static java.util.Objects.isNull;
+import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
 import java.util.Set;
 import no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger;
+import no.sikt.nva.brage.migration.model.PublicationRepresentation;
+import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
@@ -13,7 +16,7 @@ import nva.commons.core.attempt.Try;
 
 public class ScenarioContext {
 
-    private Publication bragePublication;
+    private PublicationRepresentation bragePublication;
 
     private Publication nvaPublication;
 
@@ -28,7 +31,9 @@ public class ScenarioContext {
     public void newBragePublication(String cristinIdentifier) {
         var publication = PublicationGenerator.randomPublication();
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("cristin", cristinIdentifier)));
-        this.bragePublication = publication;
+        var record = new Record();
+        record.setId(randomUri());
+        this.bragePublication = new PublicationRepresentation(record, publication);
     }
 
     public void newNvaPublication(String cristinIdentifier) {
@@ -37,7 +42,7 @@ public class ScenarioContext {
         this.nvaPublication = publication;
     }
 
-    public Publication getBragePublication() {
+    public PublicationRepresentation getBragePublication() {
         return bragePublication;
     }
 
