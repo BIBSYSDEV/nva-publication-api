@@ -314,8 +314,8 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
     private boolean isEmptyCristinRecord(Publication publication) {
         return isNull(publication.getEntityDescription().getReference().getPublicationInstance())
-               & isNull(publication.getEntityDescription().getReference().getPublicationContext())
-               & nonNull(getCristinIdentifier(publication));
+               && isNull(publication.getEntityDescription().getReference().getPublicationContext())
+               && nonNull(getCristinIdentifier(publication));
     }
 
     private PublicationRepresentation attemptToUpdateExistingPublication(PublicationRepresentation publicationRepresentation,
