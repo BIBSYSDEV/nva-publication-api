@@ -22,7 +22,6 @@ import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.NOT_SUPPORTED_TYPE;
 import static no.sikt.nva.brage.migration.merger.AssociatedArtifactMover.COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE;
 import static no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger.DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.TEST_DESCRIPTION;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
@@ -145,13 +144,6 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
-    public static final String PART_OF_SERIES_VALUE_V1 = "SOMESERIES;42";
-    public static final String PART_OF_SERIES_VALUE_V2 = "SOMESERIES;42:2022";
-    public static final String PART_OF_SERIES_VALUE_V3 = "SOMESERIES;2022:42";
-    public static final String PART_OF_SERIES_VALUE_V4 = "SOMESERIES;2022/42";
-    public static final String PART_OF_SERIES_VALUE_V5 = "SOMESERIES;42/2022";
-    public static final String PART_OF_SERIES_VALUE_V6 = "NVE Rapport;";
-    public static final String EXPECTED_SERIES_NUMBER = "42";
     public static final UUID UUID = java.util.UUID.randomUUID();
     public static final Context CONTEXT = null;
     public static final long SOME_FILE_SIZE = 100L;
@@ -262,7 +254,38 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var brageGenerator = buildGeneratorForRecord();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, brageGenerator.getNvaPublication());
+        assertThatPublicationsMatch(actualPublication.publication(), brageGenerator.getNvaPublication());
+    }
+
+    @Test
+    void shouldNotConvertBrageRecordMissingHandle() throws IOException {
+        var brageGenerator = buildGeneratorForRecord();
+        var record = brageGenerator.getBrageRecord();
+        record.setId(UriWrapper.fromUri("").getUri());
+        var s3Event = createNewBrageRecordEvent(record);
+        handler.handleRequest(s3Event, CONTEXT);
+        var actualErrorReport =
+            extractActualReportFromS3Client(s3Event,
+                                            IllegalArgumentException.class.getSimpleName(),
+                                            record);
+
+        var exception = actualErrorReport.get("exception").asText();
+        assertThat(exception, containsString("Record must contain a handle"));
+    }
+
+    @Test
+    void shouldNotConvertBrageRecordMissingTitle() throws IOException {
+        var brageGenerator = buildGeneratorForRecord();
+        var record = brageGenerator.getBrageRecord();
+        record.getEntityDescription().setMainTitle(null);
+        var s3Event = createNewBrageRecordEvent(record);
+        handler.handleRequest(s3Event, CONTEXT);
+        var actualErrorReport =
+            extractActualReportFromS3Client(s3Event,
+                                            MissingFieldsException.class.getSimpleName(),
+                                            record);
+        var exception = actualErrorReport.get("exception").asText();
+        assertThat(exception, containsString("All fields of all included objects need to be non empty"));
     }
 
     @Test
@@ -285,11 +308,11 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         resourceService.createPublicationFromImportedEntry(cristinPublication);
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThat(actualPublication.getEntityDescription().getDescription(),
+        assertThat(actualPublication.publication().getEntityDescription().getDescription(),
                    is(equalTo(brageGenerator.getNvaPublication().getEntityDescription().getDescription())));
-        assertThat(actualPublication.getEntityDescription().getAbstract(),
+        assertThat(actualPublication.publication().getEntityDescription().getAbstract(),
                    is(equalTo(brageGenerator.getNvaPublication().getEntityDescription().getAbstract())));
-        assertThat(actualPublication.getHandle(), is(equalTo(brageGenerator.getNvaPublication().getHandle())));
+        assertThat(actualPublication.publication().getHandle(), is(equalTo(brageGenerator.getNvaPublication().getHandle())));
     }
 
     @Test
@@ -313,8 +336,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         resourceService.createPublicationFromImportedEntry(cristinPublication);
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThat(actualPublication.getEntityDescription().getDescription(), is(equalTo(cristinDescription)));
-        assertThat(actualPublication.getEntityDescription().getAbstract(), is(equalTo(cristinAbstract)));
+        assertThat(actualPublication.publication().getEntityDescription().getDescription(), is(equalTo(cristinDescription)));
+        assertThat(actualPublication.publication().getEntityDescription().getAbstract(), is(equalTo(cristinAbstract)));
     }
 
     @Test
@@ -330,7 +353,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -338,7 +361,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_REPORT_WORKING_PAPER).build();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, brageGenerator.getNvaPublication());
+        assertThatPublicationsMatch(actualPublication.publication(), brageGenerator.getNvaPublication());
     }
 
     @Test
@@ -362,7 +385,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -371,7 +394,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -380,7 +403,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -389,7 +412,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -400,7 +423,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -409,7 +432,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -418,7 +441,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -427,7 +450,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -436,7 +459,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -445,7 +468,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -454,7 +477,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -463,7 +486,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -474,19 +497,19 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
     void shouldConvertPhdWithPartsToNvaPublication() throws IOException {
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_PHD)
                                  .withPublicationDate(PUBLICATION_DATE)
-                                 .withHasPart(Set.of(randomString(), randomString()))
+                                 .withHasPart(List.of(randomString(), randomString()))
                                  .build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -495,7 +518,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -504,7 +527,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -513,7 +536,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -522,7 +545,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -534,7 +557,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -545,7 +568,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -554,7 +577,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -567,15 +590,15 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
 
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
 
-        var partOfReport = getPartOfReport(s3Event, brageGenerator, actualPublication);
-        var expectedPartOfReport = new PartOfReport(actualPublication, brageGenerator.getBrageRecord()).toJsonString();
+        var partOfReport = getPartOfReport(s3Event, brageGenerator, actualPublication.publication());
+        var expectedPartOfReport = new PartOfReport(actualPublication.publication(), brageGenerator.getBrageRecord()).toJsonString();
         assertThat(partOfReport, is(equalTo(expectedPartOfReport)));
     }
 
     private String getPartOfReport(S3Event s3Event, NvaBrageMigrationDataGenerator brageGenerator,
-                                   Publication actualPublication) throws JsonProcessingException {
+                                   Publication actualPublication) {
         var timestamp = s3Event.getRecords().getFirst().getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
         var uri = UriWrapper.fromUri("PART_OF")
                       .addChild("institution")
@@ -593,7 +616,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -602,7 +625,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -611,7 +634,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -620,7 +643,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -629,7 +652,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -638,7 +661,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -647,7 +670,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -656,7 +679,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -665,7 +688,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -674,7 +697,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -686,7 +709,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -700,7 +723,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -712,7 +735,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -724,7 +747,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -733,7 +756,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -742,7 +765,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -751,7 +774,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -760,7 +783,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -769,7 +792,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -778,7 +801,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -787,7 +810,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -797,7 +820,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -807,7 +830,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -819,7 +842,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -831,7 +854,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -845,7 +868,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
 
-        var file = (File) actualPublication.getAssociatedArtifacts().getFirst();
+        var file = (File) actualPublication.publication().getAssociatedArtifacts().getFirst();
 
         var embargoToBeAfterThisDate = Instant.now().plus(Duration.ofDays(ALMOST_HUNDRED_YEARS));
 
@@ -877,7 +900,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                             .withType(new Type(List.of(), instanceType)).build();
         var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThat(actualPublication.getEntityDescription().getReference().getPublicationContext(),
+        assertThat(actualPublication.publication().getEntityDescription().getReference().getPublicationContext(),
                    is(not(nullValue())));
     }
 
@@ -965,20 +988,11 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
 
-        var actualPublicationContext = ((Degree) actualPublication.getEntityDescription()
+        var actualPublicationContext = ((Degree) actualPublication.publication().getEntityDescription()
                                       .getReference()
                                       .getPublicationContext());
 
         assertThat(((UnconfirmedCourse) actualPublicationContext.getCourse()).code(), is(equalTo(subjectCode)));
-    }
-
-    private static no.unit.nva.model.EntityDescription entityDescriptionWithPublicationContextDegree(Publication publication)
-        throws InvalidUnconfirmedSeriesException {
-        var reference = publication.getEntityDescription().getReference();
-        var degree = new Degree(null, null, null, null, List.of(), null);
-        reference.setPublicationContext(degree);
-        publication.getEntityDescription().setReference(reference);
-        return publication.getEntityDescription();
     }
 
     @NotNull
@@ -995,7 +1009,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
 
-        assertThatPublicationsMatch(actualPublication, expectedPublication);
+        assertThatPublicationsMatch(actualPublication.publication(), expectedPublication);
     }
 
     @Test
@@ -1007,8 +1021,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
 
-        assertThat(actualPublication.getEntityDescription().getDescription(), not(containsString("\n")));
-        assertThat(actualPublication.getEntityDescription().getAbstract(), not(containsString("\n")));
+        assertThat(actualPublication.publication().getEntityDescription().getDescription(), not(containsString("\n")));
+        assertThat(actualPublication.publication().getEntityDescription().getAbstract(), not(containsString("\n")));
     }
 
     @Test
@@ -1020,8 +1034,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
 
-        assertThat(actualPublication.getEntityDescription().getDescription(), is(nullValue()));
-        assertThat(actualPublication.getEntityDescription().getAbstract(), is(nullValue()));
+        assertThat(actualPublication.publication().getEntityDescription().getDescription(), is(nullValue()));
+        assertThat(actualPublication.publication().getEntityDescription().getAbstract(), is(nullValue()));
     }
 
     @Test
@@ -1065,9 +1079,9 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var publication = handler.handleRequest(s3Event, CONTEXT);
         assertThat(publication, is(nullValue()));
         var errorReport = extractActualReportFromS3ClientForInvalidRecord(s3Event,
-                                                                          NullPointerException.class.getSimpleName());
+                                                                          IllegalArgumentException.class.getSimpleName());
         var exception = errorReport.get("exception").asText();
-        assertThat(exception, containsString("NullPointerException"));
+        assertThat(exception, containsString("Record must contain a handle"));
     }
 
     @Test
@@ -1078,7 +1092,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                  .build();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThatPublicationsMatch(resourceService.getPublicationByIdentifier(actualPublication.getIdentifier()),
+        assertThatPublicationsMatch(resourceService.getPublicationByIdentifier(actualPublication.publication().getIdentifier()),
                                     brageGenerator.getNvaPublication());
     }
 
@@ -1147,10 +1161,10 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Event = createNewBrageRecordEvent(record);
         var publication = handler.handleRequest(s3Event, CONTEXT);
         assertThat(publication, is(nullValue()));
-        var errorReport = extractActualReportFromS3Client(s3Event, MissingFieldsException.class.getSimpleName(),
+        var errorReport = extractActualReportFromS3Client(s3Event, IllegalArgumentException.class.getSimpleName(),
                                                           record);
         var exception = errorReport.get("exception").asText();
-        assertThat(exception, containsString(TEST_DESCRIPTION));
+        assertThat(exception, containsString("Record must contain a handle"));
     }
 
     @Test
@@ -1181,10 +1195,10 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
         var actualStoredHandleString =
             extractHandleReportFromS3Client(s3Event,
-                                            actualPublication,
+                                            actualPublication.publication(),
                                             nvaBrageMigrationDataGenerator.getBrageRecord().getId());
         assertThat(actualStoredHandleString,
-                   is(equalTo(nvaBrageMigrationDataGenerator.getNvaPublication().getHandle().toString())));
+                   is(equalTo(nvaBrageMigrationDataGenerator.getBrageRecord().getId().toString())));
     }
 
     @Test
@@ -1214,10 +1228,10 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
         var actualStoredHandleString =
             extractUpdatedPublicationsHandleReportFromS3Client(s3Event,
-                                                               updatedPublication,
+                                                               updatedPublication.publication(),
                                                                generator.getBrageRecord()
                                                                    .getId());
-        assertThat(updatedPublication.getIdentifier(), is(equalTo(existingPublication.getIdentifier())));
+        assertThat(updatedPublication.publication().getIdentifier(), is(equalTo(existingPublication.getIdentifier())));
         assertThat(actualStoredHandleString,
                    is(equalTo(generator.getBrageRecord().getId().toString())));
     }
@@ -1244,7 +1258,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                  .withMainTitle(existingPublication.getEntityDescription().getMainTitle())
                                                  .withPublicationDate(new PublicationDate("2023",
                                                                                           new PublicationDateNva.Builder().withYear("2023").build()))
-                                                 .build();;
+                                                 .build();
         existingPublication.getEntityDescription().setMainTitle(nvaBrageMigrationDataGenerator.getNvaPublication().getEntityDescription().getMainTitle());
         resourceService.updatePublication(existingPublication);
         var s3Event = createNewBrageRecordEvent(nvaBrageMigrationDataGenerator.getBrageRecord());
@@ -1298,8 +1312,9 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var brageRecord = nvaBrageMigrationDataGenerator.getBrageRecord();
         var s3Event = createNewBrageRecordEvent(brageRecord);
         var updatedPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThat(updatedPublication.getHandle(), is(equalTo(brageRecord.getId())));
-        assertThat(updatedPublication.getIdentifier(), is(equalTo(existingPublication.getIdentifier())));
+        assertThat(updatedPublication.publication().getAdditionalIdentifiers(),
+                   contains(new AdditionalIdentifier("handle", brageRecord.getId().toString())));
+        assertThat(updatedPublication.publication().getIdentifier(), is(equalTo(existingPublication.getIdentifier())));
 
         var actualStoredHandleString = extractUpdatedPublicationsHandleReportFromS3Client(s3Event,
                                                                                           existingPublication,
@@ -1323,9 +1338,10 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var brageRecord = nvaBrageMigrationDataGenerator.getBrageRecord();
         var s3Event = createNewBrageRecordEvent(brageRecord);
         var publication = handler.handleRequest(s3Event, CONTEXT);
-        assertThat(publication.getHandle(), is(equalTo(brageRecord.getId())));
+        assertThat(publication.publication().getAdditionalIdentifiers(),
+                   contains(new AdditionalIdentifier("handle" ,brageRecord.getId().toString())));
 
-        var actualStoredHandleString = extractHandleReportFromS3Client(s3Event, publication, brageRecord.getId());
+        var actualStoredHandleString = extractHandleReportFromS3Client(s3Event, publication.publication(), brageRecord.getId());
         assertThat(actualStoredHandleString,
                    is(equalTo(nvaBrageMigrationDataGenerator.getBrageRecord().getId().toString())));
     }
@@ -1359,7 +1375,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var filesInUpdatedPublicationsFolder = s3Driver.getFiles(updatedPublicationsFolder);
         assertThat(filesInUpdatedPublicationsFolder, is(not(empty())));
 
-        var storedHandleString = extractUpdatedPublicationsHandleReportFromS3Client(s3Event, updatedPublication,
+        var storedHandleString = extractUpdatedPublicationsHandleReportFromS3Client(s3Event, updatedPublication.publication(),
                                                                                     generator.getBrageRecord()
                                                                                         .getId());
         assertThat(storedHandleString, is(not(nullValue())));
@@ -1377,49 +1393,10 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         assertThat(filesInHandleReportsFolder, is(not(empty())));
 
         var storedHandleString = extractHandleReportFromS3Client(s3Event,
-                                                                 publication,
+                                                                 publication.publication(),
                                                                  brageGenerator.getBrageRecord().getId());
         assertThat(storedHandleString, is(not(nullValue())));
     }
-
-//TODO: I guess this test is for import of Unis. We have to identify unis records, otherwise they will not be merged.
-
-//    @Test
-//    void shouldMergeCristinPublicationEvenWhenMostDataIsMissing()
-//        throws BadRequestException, IOException, nva.commons.apigateway.exceptions.NotFoundException {
-//        var cristinIdentifier = randomString();
-//        var cristinPublication = createCristinPublication(cristinIdentifier);
-//        var minimalRecord = createMinimalRecord(cristinIdentifier);
-//        var contentFile = createContentFile();
-//        minimalRecord.setContentBundle(new ResourceContent(List.of(contentFile)));
-//        var s3Event = createNewBrageRecordEvent(minimalRecord);
-//        handler.handleRequest(s3Event, CONTEXT);
-//        var updatedPublication = resourceService.getPublication(cristinPublication);
-//
-//        //assert that dummy handles has not been stored in the updated publication
-//        assertThat(updatedPublication.getHandle(), not(equalTo(minimalRecord.getId())));
-//        assertThat(updatedPublication.getAdditionalIdentifiers(), not(hasItem(
-//            new AdditionalIdentifier("handle",
-//                                     minimalRecord.getId().toString()))));
-//        var associatedArtifacts = updatedPublication.getAssociatedArtifacts();
-//
-//        // assert that  contentFile was copied
-//        assertThat(associatedArtifacts, hasSize(1));
-//        var publishedFile = (PublishedFile) associatedArtifacts.getFirst();
-//        assertThat(publishedFile.getName(), is(equalTo(contentFile.getFilename())));
-//        assertThat(publishedFile.getIdentifier(), is(equalTo(contentFile.getIdentifier())));
-//        assertThat(publishedFile.getLicense(), is(equalTo(contentFile.getLicense().getNvaLicense().getLicense())));
-//        assertThat(publishedFile.getPublisherVersion(), is(equalTo(minimalRecord.getPublisherAuthority().getNva())));
-//
-//        //assert that we are storing reports based on the dummy handles:
-//        var updateHandleReporstFolder = UnixPath.of(UPDATE_REPORTS_PATH);
-//        var filesInUpdatedHandleReportsFolder = s3Driver.getFiles(updateHandleReporstFolder);
-//        assertThat(filesInUpdatedHandleReportsFolder, is(not(empty())));
-//        var storedHandleString = extractUpdateReportFromS3ByUpdateSource(s3Event,
-//                                                                         cristinPublication,
-//                                                                         minimalRecord.getId(), "CRISTIN");
-//        assertThat(storedHandleString, is(not(nullValue())));
-//    }
 
     @Test
     void whenCristinPublicationIsMissingImportingMinimalRecordShouldNotCreateNewPublication() throws IOException {
@@ -1448,7 +1425,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                  .build();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var publication = handler.handleRequest(s3Event, CONTEXT);
-        var musicPerformance = (MusicPerformance) publication.getEntityDescription()
+        var musicPerformance = (MusicPerformance) publication.publication().getEntityDescription()
                                                       .getReference()
                                                       .getPublicationInstance();
         var actualManifestation = musicPerformance.getManifestations();
@@ -1499,7 +1476,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
         var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
                                                "ARTIST", null, List.of());
-        mockSearchPublicationByIsbnResponse(existingPublication.getIdentifier(), 200);
+        mockSearchPublicationByIsbnResponse(existingPublication.getIdentifier());
         var generator = new NvaBrageMigrationDataGenerator.Builder()
                             .withCristinIdentifier(cristinIdentifier)
                             .withType(TYPE_BOOK)
@@ -1514,7 +1491,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
         var updatedPublication = handler.handleRequest(s3Event, CONTEXT);
 
-        var discardedFilesReport = extractDiscardedFilesReportFromS3(generator.getBrageRecord(), s3Event, updatedPublication);
+        var discardedFilesReport = extractDiscardedFilesReportFromS3(generator.getBrageRecord(), s3Event, updatedPublication.publication());
         assertThat(discardedFilesReport.getDiscardedFromUpdatedRecord(), hasSize(0));
         assertThat(discardedFilesReport.getDiscardedFromBrageRecord(),
                    hasSize(generator.getBrageRecord().getContentBundle().getContentFiles().size()));
@@ -1531,7 +1508,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
         var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
                                                "ARTIST", null, List.of());
-        mockSearchPublicationByIsbnResponse(existingPublication.getIdentifier(), 200);
+        mockSearchPublicationByIsbnResponse(existingPublication.getIdentifier());
         var generator = new NvaBrageMigrationDataGenerator.Builder()
                             .withIsbn(isbn)
                             .withType(TYPE_BOOK)
@@ -1548,7 +1525,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                     "ISBN");
 
         assertThat(storedMergeReportString, is(notNullValue()));
-        assertThat(publicationFromBrage.getIdentifier().toString(),
+        assertThat(publicationFromBrage.publication().getIdentifier().toString(),
                    is(equalTo(existingPublication.getIdentifier().toString())));
     }
 
@@ -1608,8 +1585,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         assertDoesNotThrow(() -> extractUpdateReportFromS3ByUpdateSource(
             s3Event, existingPublication, generator.getBrageRecord().getId(), "SEARCH"));
 
-        assertThat(updatedPublication.getIdentifier().toString(),
-                   is(equalTo(updatedPublication.getIdentifier().toString())));
+        assertThat(updatedPublication.publication().getIdentifier().toString(),
+                   is(equalTo(updatedPublication.publication().getIdentifier().toString())));
     }
 
     @Test
@@ -1646,7 +1623,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         when(this.uriRetriever.fetchResponse(any())).thenReturn(response);
     }
 
-    private void mockSearchPublicationByIsbnResponse(SortableIdentifier identifier, int statusCode) {
+    private void mockSearchPublicationByIsbnResponse(SortableIdentifier identifier) {
         var publicationId = UriWrapper.fromHost(API_HOST)
                                 .addChild("publication")
                                 .addChild(identifier.toString())
@@ -1672,14 +1649,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                    .addChild(timestamp)
                    .addChild(brageRecord.getId().getPath())
                    .addChild(String.valueOf(cristinPublication.getIdentifier()));
-    }
-
-    private Publication createCristinPublicationWithFilesAndRandomHandle(String cristinIdentifier)
-        throws BadRequestException {
-        var publication = createCristinPublication(cristinIdentifier);
-        publication.setHandle(randomUri());
-        publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(randomPublishedFile())));
-        return resourceService.updatePublication(publication);
     }
 
     private AssociatedArtifact randomPublishedFile() {
@@ -1710,16 +1679,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                     throw new RuntimeException(e);
                 }
             });
-    }
-
-    private Publication createCristinPublication(String cristinIdentifier) throws BadRequestException {
-        var publication = randomPublication().copy()
-                              .withAdditionalIdentifiers(
-                                  Set.of(cristinAdditionalIdentifier(cristinIdentifier)))
-                              .withAssociatedArtifacts(List.of())
-                              .build();
-        return Resource.fromPublication(publication)
-                   .persistNew(resourceService, UserInstance.fromPublication(publication));
     }
 
     private Record createMinimalRecord(String cristinIdentifier) {

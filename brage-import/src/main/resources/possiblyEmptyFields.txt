@@ -45,6 +45,7 @@ entityDescription.reference.publicationInstance.manifestations.movements
 entityDescription.reference.publicationInstance.manifestations.extent
 entityDescription.reference.publicationInstance.manifestations.publisher
 
+handle
 publicationNotes
 subjects
 projects

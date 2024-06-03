@@ -7,6 +7,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import java.net.URI;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
@@ -33,7 +34,9 @@ public final class TestingUtils extends TestDataSource {
     }
     
     public static Publication randomPublicationWithoutDoi() {
-        return randomPublication().copy().withDoi(null).build();
+        var publication = randomPublication().copy().withDoi(null).build();
+        publication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
+        return publication;
     }
     
     public static Publication createUnpersistedPublication(UserInstance userInstance) {

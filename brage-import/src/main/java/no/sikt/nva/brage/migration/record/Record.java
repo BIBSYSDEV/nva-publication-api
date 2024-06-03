@@ -38,10 +38,10 @@ public class Record implements JsonSerializable {
     private String brageLocation;
     private List<ErrorDetails> errors;
     private List<WarningDetails> warnings;
-    private Set<URI> subjects;
+    private List<URI> subjects;
     private String subjectCode;
     private String accessCode;
-    private Set<Project> projects;
+    private List<Project> projects;
 
     @JsonCreator
     public Record() {
@@ -109,11 +109,11 @@ public class Record implements JsonSerializable {
         this.subjectCode = subjectCode;
     }
 
-    public Set<Project> getProjects() {
+    public List<Project> getProjects() {
         return projects;
     }
 
-    public void setProjects(Set<Project> projects) {
+    public void setProjects(List<Project> projects) {
         this.projects = projects;
     }
 
@@ -298,6 +298,7 @@ public class Record implements JsonSerializable {
         return rightsholder;
     }
 
+    @JacocoGenerated
     public void setRightsholder(String rightsholder) {
         this.rightsholder = rightsholder;
     }
@@ -327,11 +328,11 @@ public class Record implements JsonSerializable {
     }
 
     @JsonProperty("subjects")
-    public Set<URI> getSubjects() {
+    public List<URI> getSubjects() {
         return subjects;
     }
 
-    public void setSubjects(Set<URI> subjects) {
+    public void setSubjects(List<URI> subjects) {
         this.subjects = subjects;
     }
 
@@ -343,14 +344,17 @@ public class Record implements JsonSerializable {
         this.accessCode = accessCode;
     }
 
+    @JacocoGenerated
     public boolean hasParentPublication() {
         return hasIsbn() && isChapter();
     }
 
+    @JacocoGenerated
     private boolean hasIsbn() {
         return !publication.getIsbnList().isEmpty();
     }
 
+    @JacocoGenerated
     private boolean isChapter() {
         return NvaType.CHAPTER.getValue().equals(type.getNva()) || NvaType.SCIENTIFIC_CHAPTER.getValue()
                                                                        .equals(type.getNva());
