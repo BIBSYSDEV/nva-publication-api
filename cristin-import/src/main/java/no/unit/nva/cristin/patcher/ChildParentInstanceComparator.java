@@ -37,7 +37,7 @@ public final class ChildParentInstanceComparator {
         List.of(BookAnthology.class.getSimpleName(), NonFictionMonograph.class.getSimpleName(),
                 Textbook.class.getSimpleName(), PopularScienceMonograph.class.getSimpleName(),
                 AcademicMonograph.class.getSimpleName(), Encyclopedia.class.getSimpleName(),
-                ExhibitionCatalog.class.getSimpleName()),
+                ExhibitionCatalog.class.getSimpleName(),ReportResearch.class.getSimpleName()),
 
         Introduction.class.getSimpleName(),
         List.of(BookAnthology.class.getSimpleName(), NonFictionMonograph.class.getSimpleName(),
