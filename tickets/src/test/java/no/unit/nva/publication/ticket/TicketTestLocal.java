@@ -3,9 +3,9 @@ package no.unit.nva.publication.ticket;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static nva.commons.core.attempt.Try.attempt;
 import java.io.ByteArrayOutputStream;
-import java.time.Clock;
 import java.util.function.Consumer;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationDate;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -77,6 +77,7 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
     private Publication createAndPersistPublicationAndThenActOnIt(Consumer<Publication> action)
         throws ApiGatewayException {
         var publication = randomPublicationWithoutDoi();
+        publication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
         var userInstance = UserInstance.fromPublication(publication);
         var storedResult = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
         action.accept(storedResult);
@@ -86,6 +87,7 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
     private Publication createAndPersistPublicationWithDoiAndThenActOnIt(Consumer<Publication> action)
         throws NotFoundException, BadRequestException {
         var publication = randomPublication();
+        publication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
         publication.setDoi(RandomDataGenerator.randomDoi());
         var userInstance = UserInstance.fromPublication(publication);
         var storedResult = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
