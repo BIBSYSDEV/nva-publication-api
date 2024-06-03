@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
 import cucumber.ScenarioContext;
 import io.cucumber.java.en.And;
@@ -104,6 +105,12 @@ public class FileMergerFeatures {
     public void theMergedNvaPublicationHasARootLevelHandleEqualTo(String handle) {
         var mergedPublication = scenarioContext.getMergedPublication();
         assertThat(mergedPublication.getHandle().toString(), equalTo(handle) );
+    }
+
+    @And("the merged nva publication has a null handle")
+    public void theMergedNvaPublicationHasANullHandle() {
+        var mergedPublication = scenarioContext.getMergedPublication();
+        assertThat(mergedPublication.getHandle(), is(nullValue()));
     }
 
     private static URI createHandleFromCandidate(String candidate) {

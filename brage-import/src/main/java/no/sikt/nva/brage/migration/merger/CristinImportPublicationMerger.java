@@ -1,6 +1,5 @@
 package no.sikt.nva.brage.migration.merger;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import java.net.URI;
 import java.util.HashSet;
@@ -223,17 +222,13 @@ public class CristinImportPublicationMerger {
     private boolean shouldUseBrageArtifacts() {
         return bragePublicationHasAssociatedArtifacts()
                && (cristinPublication.getAssociatedArtifacts().isEmpty()
-                   || hasTheSameHandle()
-                   || cristinHandleIsNotSet());
+                   || hasTheSameHandle());
     }
 
     private boolean bragePublicationHasAssociatedArtifacts() {
         return !bragePublication.nvaPublication().getAssociatedArtifacts().isEmpty();
     }
 
-    private boolean cristinHandleIsNotSet() {
-        return isNull(cristinPublication.getHandle());
-    }
 
     private boolean hasTheSameHandle() {
         return bragePublication.brageRecord().getId().equals(cristinPublication.getHandle());
