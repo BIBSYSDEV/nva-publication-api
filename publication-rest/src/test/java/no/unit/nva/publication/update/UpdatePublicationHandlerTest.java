@@ -285,6 +285,15 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .build();
     }
 
+    private Publication randomNonDegreePublicationWithPublisher() {
+        return randomPublicationNonDegree()
+                   .copy()
+                   .withPublisher(new Organization.Builder()
+                                      .withId(customerId)
+                                      .build())
+                   .build();
+    }
+
     private static Publication randomPublicationWithPublisher(URI publisherId, Class<?> publicationInstanceClass) {
         return randomPublication(publicationInstanceClass)
                    .copy()
@@ -1978,11 +1987,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication createAndPersistNonDegreePublication() throws BadRequestException {
-        var publication = randomPublicationNonDegree().copy()
-                              .withPublisher(new Organization.Builder()
-                                                 .withId(customerId)
-                                                 .build())
-                              .build();
+        var publication = randomNonDegreePublicationWithPublisher();
         UserInstance userInstance = UserInstance.fromPublication(publication);
         return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
     }
