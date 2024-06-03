@@ -26,7 +26,7 @@ public class DiscardedFilesReport implements JsonSerializable {
 
     public static DiscardedFilesReport fromBrageMergeReport(BrageMergingReport mergingReport,
                                                             PublicationRepresentation brageConversion){
-        var discardedBrageFiles = findDiscardedAssociatedArtifacts(brageConversion.nvaPublication(),
+        var discardedBrageFiles = findDiscardedAssociatedArtifacts(brageConversion.publication(),
                                                                    mergingReport.newImage());
         var discardedExistingFiles =
             findDiscardedAssociatedArtifacts(mergingReport.oldImage(), mergingReport.newImage());

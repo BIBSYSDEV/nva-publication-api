@@ -43,9 +43,9 @@ public class FileMergerFeatures {
     public void bragePublicationWithHandle(String handle) {
         var bragePublication = scenarioContext.getBragePublication();
         bragePublication.brageRecord().setId(createHandleFromCandidate(handle));
-        var additionalIdentifiers = new HashSet<>(bragePublication.nvaPublication().getAdditionalIdentifiers());
+        var additionalIdentifiers = new HashSet<>(bragePublication.publication().getAdditionalIdentifiers());
         additionalIdentifiers.add(new AdditionalIdentifier("handle", handle));
-        bragePublication.nvaPublication().setAdditionalIdentifiers(additionalIdentifiers);
+        bragePublication.publication().setAdditionalIdentifiers(additionalIdentifiers);
     }
 
     @And("the nva publication has main handle {string}")
@@ -57,7 +57,7 @@ public class FileMergerFeatures {
     @And("the brage publication has a file with values:")
     public void bragePublicationHasAFileWithValues(PublishedFile publishedFile) {
         var bragePublication = scenarioContext.getBragePublication();
-        bragePublication.nvaPublication().setAssociatedArtifacts(new AssociatedArtifactList(List.of(publishedFile)));
+        bragePublication.publication().setAssociatedArtifacts(new AssociatedArtifactList(List.of(publishedFile)));
     }
 
     @And("the nva publication has a file with values:")
@@ -98,7 +98,7 @@ public class FileMergerFeatures {
     @And("the brage publication has no associated artifacts")
     public void bragePublicationHasNoAssociatedArtifacts() {
         var bragePublication = scenarioContext.getBragePublication();
-        bragePublication.nvaPublication().setAssociatedArtifacts(new AssociatedArtifactList());
+        bragePublication.publication().setAssociatedArtifacts(new AssociatedArtifactList());
     }
 
     @And("the merged nva publication has a root level handle equal to {string}")

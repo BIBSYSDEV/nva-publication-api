@@ -124,27 +124,27 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                        fail.getException()));
     }
 
-    private boolean shouldMergePublications(PublicationRepresentation publication) throws NotFoundException {
-        var cristinIdentifier = getCristinIdentifier(publication.nvaPublication());
+    private boolean shouldMergePublications(PublicationRepresentation publicationRepresentation) throws NotFoundException {
+        var cristinIdentifier = getCristinIdentifier(publicationRepresentation.publication());
         if (nonNull(cristinIdentifier)) {
             publicationsToMerge = resourceService.getPublicationsByCristinIdentifier(cristinIdentifier).stream()
-                                      .filter(item -> PublicationComparator.publicationsMatch(item, publication.nvaPublication()))
+                                      .filter(item -> PublicationComparator.publicationsMatch(item, publicationRepresentation.publication()))
                                       .toList();
             boolean shouldMerge = !publicationsToMerge.isEmpty();
             source = shouldMerge ? MergeSource.CRISTIN : MergeSource.NOT_RELEVANT;
             return shouldMerge;
         }
-        if (hasDoi(publication.nvaPublication())) {
-            var shouldMerge= existingPublicationHasSameDoi(publication.nvaPublication());
+        if (hasDoi(publicationRepresentation.publication())) {
+            var shouldMerge= existingPublicationHasSameDoi(publicationRepresentation.publication());
             source = shouldMerge ? MergeSource.DOI : MergeSource.NOT_RELEVANT;
             return shouldMerge;
         }
-        if (hasIsbn(publication.nvaPublication())) {
-            var shouldMerge = existingPublicationHasSameIsbn(publication.nvaPublication());
+        if (hasIsbn(publicationRepresentation.publication())) {
+            var shouldMerge = existingPublicationHasSameIsbn(publicationRepresentation.publication());
             source = shouldMerge ? MergeSource.ISBN : MergeSource.NOT_RELEVANT;
             return shouldMerge;
         } else {
-            var shouldMerge = existingPublicationHasSamePublicationContent(publication.nvaPublication());
+            var shouldMerge = existingPublicationHasSamePublicationContent(publicationRepresentation.publication());
             source = shouldMerge ? MergeSource.SEARCH : MergeSource.NOT_RELEVANT;
             return shouldMerge;
         }
@@ -277,7 +277,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private PublicationRepresentation createNewPublication(PublicationRepresentation publicationRepresentation, S3Event s3Event) {
-        return isEmptyCristinRecord(publicationRepresentation.nvaPublication())
+        return isEmptyCristinRecord(publicationRepresentation.publication())
                    ? unableToMergeCristinRecordException(publicationRepresentation, s3Event)
                    : persistPublication(publicationRepresentation, s3Event);
     }
@@ -290,8 +290,8 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private PublicationRepresentation persistReports(S3Event s3Event, PublicationRepresentation publicationRepresentation) {
-        persistPartOfReport(publicationRepresentation.nvaPublication(), s3Client, s3Event);
-        persistHandleReport(publicationRepresentation.nvaPublication().getIdentifier(),
+        persistPartOfReport(publicationRepresentation.publication(), s3Client, s3Event);
+        persistHandleReport(publicationRepresentation.publication().getIdentifier(),
                             publicationRepresentation.brageRecord().getId(), s3Event,
                             HANDLE_REPORTS_PATH);
         return publicationRepresentation;
@@ -308,7 +308,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                                                              S3Event s3Event) {
         handleSavingError(new Failure<>(
             new UnmappableCristinRecordException(CRISTIN_RECORD_EXCEPTION
-                                                 + getCristinIdentifier(publicationRepresentation.nvaPublication()))), s3Event);
+                                                 + getCristinIdentifier(publicationRepresentation.publication()))), s3Event);
         return null;
     }
 
@@ -486,14 +486,14 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
     private PublicationRepresentation createPublication(PublicationRepresentation publicationRepresentation) {
         var updatedPublication =
-            resourceService.createPublicationFromImportedEntry(publicationRepresentation.nvaPublication());
+            resourceService.createPublicationFromImportedEntry(publicationRepresentation.publication());
         return new PublicationRepresentation(publicationRepresentation.brageRecord(), updatedPublication);
     }
 
     private PublicationRepresentation pushAssociatedFilesToPersistedStorage(PublicationRepresentation publicationRepresentation,
                                                                             S3Event s3Event) {
         var associatedArtifactMover = new AssociatedArtifactMover(s3Client, s3Event);
-        associatedArtifactMover.pushAssociatedArtifactsToPersistedStorage(publicationRepresentation.nvaPublication());
+        associatedArtifactMover.pushAssociatedArtifactsToPersistedStorage(publicationRepresentation.publication());
         return publicationRepresentation;
     }
 
