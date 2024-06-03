@@ -11,6 +11,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -56,7 +57,6 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import nva.commons.core.language.LanguageMapper;
 import nva.commons.core.paths.UriWrapper;
-import org.jetbrains.annotations.NotNull;
 import org.joda.time.Instant;
 
 public class NvaBrageMigrationDataGenerator {
@@ -92,11 +92,14 @@ public class NvaBrageMigrationDataGenerator {
     }
 
     private static Set<AdditionalIdentifier> generateCristinIdentifier(Builder builder) {
-        if (isNull(builder.getCristinIdentifier())) {
-            return null;
-        } else {
-            return Set.of(new AdditionalIdentifier(SOURCE_CRISTIN, builder.cristinIdentifier));
+        var additionalIdentifiers = new HashSet<AdditionalIdentifier>();
+        if (nonNull(builder.handle)) {
+            additionalIdentifiers.add(new AdditionalIdentifier("handle", builder.handle.toString()));
         }
+        if (nonNull(builder.cristinIdentifier)){
+            additionalIdentifiers.add(new AdditionalIdentifier(SOURCE_CRISTIN, builder.cristinIdentifier));
+        }
+        return additionalIdentifiers;
     }
 
     private static List<Corporation> createAffiliationList(Contributor contributor) {
@@ -114,7 +117,7 @@ public class NvaBrageMigrationDataGenerator {
     }
 
     private Publication createCorrespondingNvaPublication(Builder builder) {
-        return new Publication.Builder().withHandle(builder.getHandle())
+        return new Publication.Builder()
                    .withEntityDescription(createEntityDescription(builder))
                    .withCreatedDate(convertPublishedDateToInstant(builder))
                    .withPublishedDate(convertPublishedDateToInstant(builder))
@@ -387,7 +390,7 @@ public class NvaBrageMigrationDataGenerator {
                 return new AssociatedArtifactList(List.of(new AssociatedLink(link, null, null)));
             }
             if (nonNull(link) && !associatedArtifacts.isEmpty()) {
-                var list = new ArrayList<AssociatedArtifact>(associatedArtifacts);
+                var list = new ArrayList<>(associatedArtifacts);
                 list.add(new AssociatedLink(link, null, null));
                 return list;
             }
@@ -749,13 +752,6 @@ public class NvaBrageMigrationDataGenerator {
 
         private PublicationDate createPublicationDate() {
             return new PublicationDate("2020", new PublicationDateNva.Builder().withYear("2020").build());
-        }
-
-        private PublishedDate createRandomPublishedDate() {
-            var publishedDate = new PublishedDate();
-            publishedDate.setBrageDates(List.of("2019"));
-            publishedDate.setNvaDate("2019");
-            return publishedDate;
         }
 
         private Map<String, String> createCorrespondingMap() {

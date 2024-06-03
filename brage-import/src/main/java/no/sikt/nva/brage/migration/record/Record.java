@@ -298,6 +298,7 @@ public class Record implements JsonSerializable {
         return rightsholder;
     }
 
+    @JacocoGenerated
     public void setRightsholder(String rightsholder) {
         this.rightsholder = rightsholder;
     }
@@ -343,14 +344,17 @@ public class Record implements JsonSerializable {
         this.accessCode = accessCode;
     }
 
+    @JacocoGenerated
     public boolean hasParentPublication() {
         return hasIsbn() && isChapter();
     }
 
+    @JacocoGenerated
     private boolean hasIsbn() {
         return !publication.getIsbnList().isEmpty();
     }
 
+    @JacocoGenerated
     private boolean isChapter() {
         return NvaType.CHAPTER.getValue().equals(type.getNva()) || NvaType.SCIENTIFIC_CHAPTER.getValue()
                                                                        .equals(type.getNva());

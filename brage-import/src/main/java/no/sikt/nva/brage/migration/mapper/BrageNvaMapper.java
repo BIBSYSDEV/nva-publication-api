@@ -4,6 +4,7 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.SOURCE_CRISTIN;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.HTTPS_PREFIX;
+import static no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger.DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static org.hamcrest.MatcherAssert.assertThat;
 import java.net.URI;
@@ -69,15 +70,13 @@ public final class BrageNvaMapper {
     public static final String PERSON = "person";
     public static final String BASE_PATH = new Environment().readEnv("DOMAIN_NAME");
     public static final String ORGANIZATION = "organization";
+    public static final int HUNDRED_YEARS = 36_524;
     private static final List<String> LEGAL_NOTES_WITH_EMBARGO = List.of(
         "Dette dokumentet er ikke elektronisk tilgjengelig etter ønske fra forfatter",
         "Kun forskere og studenter kan få innsyn i dokumentet",
         "Dokumentet er klausulert grunnet lovpålagt taushetsplikt",
         "Klausulert: Kan bare siteres etter nærmere avtale med forfatter",
         "Klausulert: Kan bare tillates lest etter nærmere avtale med forfatter");
-    public static final int HUNDRED_YEARS = 36_524;
-
-
 
     private BrageNvaMapper() {
 
@@ -86,7 +85,8 @@ public final class BrageNvaMapper {
     public static Publication toNvaPublication(Record brageRecord)
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var now = Instant.now();
-        var publication = new Publication.Builder().withHandle(extractHandle(brageRecord))
+        validateBrageRecord(brageRecord);
+        var publication = new Publication.Builder()
                               .withEntityDescription(extractEntityDescription(brageRecord))
                               .withCreatedDate(now)
                               .withModifiedDate(now)
@@ -94,7 +94,7 @@ public final class BrageNvaMapper {
                               .withPublisher(extractPublisher(brageRecord))
                               .withAssociatedArtifacts(extractAssociatedArtifacts(brageRecord))
                               .withResourceOwner(extractResourceOwner(brageRecord))
-                              .withAdditionalIdentifiers(extractCristinIdentifier(brageRecord))
+                              .withAdditionalIdentifiers(extractAdditionalIdentifiers(brageRecord))
                               .withRightsHolder(brageRecord.getRightsholder())
                               .withSubjects(extractSubjects(brageRecord))
                               .withFundings(extractFundings(brageRecord))
@@ -105,18 +105,24 @@ public final class BrageNvaMapper {
         return publication;
     }
 
-    private static List<Funding> extractFundings(Record brageRecord) {
-        return nonNull(brageRecord.getProjects())
-                   ? brageRecord.getProjects().stream().map(Project::toFunding).collect(Collectors.toList())
-                   : List.of();
-    }
-
     public static String extractDescription(Record record) {
         return Optional.ofNullable(record.getEntityDescription().getDescriptions())
                    .map(BrageNvaMapper::filterOutEmptyValues)
                    .filter(descriptions -> !descriptions.isEmpty())
                    .map(BrageNvaMapper::joinByNewLine)
                    .orElse(null);
+    }
+
+    private static void validateBrageRecord(Record brageRecord) {
+        if (isNull(brageRecord.getId()) || StringUtils.isBlank(brageRecord.getId().toString())) {
+            throw new IllegalArgumentException("Record must contain a handle");
+        }
+    }
+
+    private static List<Funding> extractFundings(Record brageRecord) {
+        return nonNull(brageRecord.getProjects())
+                   ? brageRecord.getProjects().stream().map(Project::toFunding).collect(Collectors.toList())
+                   : List.of();
     }
 
     private static String joinByNewLine(List<String> values) {
@@ -149,18 +155,34 @@ public final class BrageNvaMapper {
         return nonNull(brageRecord.getLink()) ? new AssociatedLink(brageRecord.getLink(), null, null) : null;
     }
 
-    private static Set<AdditionalIdentifier> extractCristinIdentifier(Record brageRecord) {
-        if (isNull(brageRecord.getCristinId())) {
-            return Set.of();
-        } else {
-            return Set.of(new AdditionalIdentifier(SOURCE_CRISTIN, brageRecord.getCristinId()));
-        }
+    private static Set<AdditionalIdentifier> extractAdditionalIdentifiers(Record brageRecord) {
+        return Stream.of(extractCristinAdditionalIdentifier(brageRecord), extractBrageHandle(brageRecord))
+                   .filter(Optional::isPresent)
+                   .map(Optional::get)
+                   .collect(Collectors.toSet());
+    }
+
+    private static Optional<AdditionalIdentifier> extractBrageHandle(Record brageRecord) {
+        return isDummyHandle(brageRecord)
+                   ? Optional.empty()
+                   : Optional.of(new AdditionalIdentifier("handle", brageRecord.getId().toString()));
+    }
+
+    private static boolean isDummyHandle(Record brageRecord) {
+        return brageRecord.getId().toString().contains(DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS);
+    }
+
+    private static Optional<AdditionalIdentifier> extractCristinAdditionalIdentifier(Record brageRecord) {
+        return isNull(brageRecord.getCristinId())
+                   ? Optional.empty()
+                   : Optional.of(new AdditionalIdentifier(SOURCE_CRISTIN, brageRecord.getCristinId()));
     }
 
     private static void assertPublicationDoesNotHaveEmptyFields(Publication publication) {
         // TODO: Fix this so we don't depend on JUnit.
         try {
-            Set<String> ignoredAndPossiblyEmptyPublicationFields = MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS;
+            Set<String> ignoredAndPossiblyEmptyPublicationFields =
+                MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS;
             assertThat(publication, doesNotHaveEmptyValuesIgnoringFields(
                 ignoredAndPossiblyEmptyPublicationFields));
         } catch (Error error) {
@@ -213,7 +235,8 @@ public final class BrageNvaMapper {
         return new UploadDetails(new Username(brageRecord.getResourceOwner().getOwner()), Instant.now());
     }
 
-    private static File createPublishedFile(ContentFile file, Record brageRecord, Instant embargoDate, String legalNote) {
+    private static File createPublishedFile(ContentFile file, Record brageRecord, Instant embargoDate,
+                                            String legalNote) {
         return File.builder()
                    .withName(file.getFilename())
                    .withIdentifier(file.getIdentifier())
@@ -258,10 +281,6 @@ public final class BrageNvaMapper {
 
     private static Organization generateOrganization(URI customerUri) {
         return new Organization.Builder().withId(customerUri).build();
-    }
-
-    private static URI extractHandle(Record brageRecord) {
-        return brageRecord.getId();
     }
 
     private static EntityDescription extractEntityDescription(Record brageRecord)
