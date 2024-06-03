@@ -110,6 +110,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                    .orElse(fail -> handleSavingError(fail, s3Event));
     }
 
+    @SuppressWarnings("PMD.NullAssignment")
     private void resetRuntime() {
         brageRecordFile = null;
         source = null;
