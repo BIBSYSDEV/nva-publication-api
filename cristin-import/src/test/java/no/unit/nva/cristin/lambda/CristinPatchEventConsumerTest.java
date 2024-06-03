@@ -24,7 +24,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.IOException;
 import java.net.URI;
-import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -120,6 +119,7 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
             Arguments.of(AcademicChapter.class, AcademicMonograph.class),
             Arguments.of(AcademicChapter.class, Encyclopedia.class),
             Arguments.of(AcademicChapter.class, ExhibitionCatalog.class),
+            Arguments.of(AcademicChapter.class, ReportResearch.class),
 
             Arguments.of(NonFictionChapter.class, BookAnthology.class),
             Arguments.of(NonFictionChapter.class, Textbook.class),
