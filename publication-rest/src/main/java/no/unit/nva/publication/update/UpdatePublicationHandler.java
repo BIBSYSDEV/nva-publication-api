@@ -33,9 +33,13 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.UnpublishingNote;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.File.Builder;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
+import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
@@ -304,10 +308,57 @@ public class UpdatePublicationHandler
         var customerApiClient = getCustomerApiClient();
         var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, publicationUpdate.getPublisher().getId());
         validatePublication(publicationUpdate, customer);
+        updateAssociatedArtifactList(existingPublication.getAssociatedArtifacts(),
+                                     publicationUpdate.getAssociatedArtifacts(),
+                                     extractUploadDetails(userInstance));
         setRrsOnFiles(publicationUpdate, existingPublication, customer, userInstance.getUsername(), permissionStrategy);
         upsertPublishingRequestIfNeeded(existingPublication, publicationUpdate, customer, requestInfo);
 
         return resourceService.updatePublication(publicationUpdate);
+    }
+
+    private static UploadDetails extractUploadDetails(UserInstance userInstance) {
+        return new UploadDetails(new Username(userInstance.getUsername()), Instant.now());
+    }
+
+    private static void updateAssociatedArtifactList(AssociatedArtifactList originalArtifacts,
+                                                     AssociatedArtifactList updatedArtifacts,
+                                                     UploadDetails uploadDetails) throws BadRequestException {
+        if (originalArtifacts.equals(updatedArtifacts)) {
+            return;
+        }
+
+        var originalFileIdentifiers = originalArtifacts.stream()
+                                              .filter(File.class::isInstance)
+                                              .map(f -> ((File) f).getIdentifier())
+                                              .toList();
+
+        for (var updatedArtifact : updatedArtifacts) {
+            if (updatedArtifact instanceof File file && !originalFileIdentifiers.contains(file.getIdentifier())) {
+                updateAssociatedArtifacts(updatedArtifacts, uploadDetails, file);
+            }
+        }
+    }
+
+    private static void updateAssociatedArtifacts(AssociatedArtifactList updatedArtifacts,
+                                                  UploadDetails uploadDetails,
+                                                  File item) throws BadRequestException {
+        var index = updatedArtifacts.indexOf(item);
+        var updated = updateFileWithUploadDetails(item, uploadDetails);
+        updatedArtifacts.set(index, updated);
+    }
+
+    private static File updateFileWithUploadDetails(File file, UploadDetails uploadDetails) throws BadRequestException {
+        return switch (file) {
+            case PublishedFile publishedFile -> addUploadDetails(publishedFile, uploadDetails).buildPublishedFile();
+            case UnpublishedFile unpublishedFile -> addUploadDetails(unpublishedFile, uploadDetails).buildUnpublishedFile();
+            case AdministrativeAgreement unpublishableFile -> addUploadDetails(unpublishableFile, uploadDetails).buildUnpublishableFile();
+            default -> throw new BadRequestException("Unsupported file type: " + file);
+        };
+    }
+
+    private static Builder addUploadDetails(File file, UploadDetails uploadDetails) {
+        return file.copy().withUploadDetails(uploadDetails);
     }
 
     private void validateRemovalOfPublishedFiles(Publication existingPublication,
