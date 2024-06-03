@@ -37,6 +37,10 @@ import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArtsSub
 import no.unit.nva.model.instancetypes.artistic.performingarts.PerformingArtsSubtypeEnum;
 import no.unit.nva.model.instancetypes.artistic.performingarts.realization.PerformingArtsOutput;
 import no.unit.nva.model.time.Instant;
+import no.unit.nva.model.time.duration.DefinedDuration;
+import no.unit.nva.model.time.duration.Duration;
+import no.unit.nva.model.time.duration.NullDuration;
+import no.unit.nva.model.time.duration.UndefinedDuration;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 
@@ -47,6 +51,8 @@ import java.util.stream.Stream;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.cristin.mapper.artisticproduction.ArtisticProductionTimeUnit.MINUTE;
+import static no.unit.nva.cristin.mapper.artisticproduction.ArtisticProductionTimeUnit.UKE;
 import static no.unit.nva.model.instancetypes.artistic.music.MusicMediaType.COMPACT_DISC;
 import static no.unit.nva.model.instancetypes.artistic.music.MusicMediaType.DIGITAL_FILE;
 import static no.unit.nva.model.instancetypes.artistic.music.MusicMediaType.OTHER;
@@ -145,8 +151,24 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     public MovingPicture toMovingPicture() {
         return new MovingPicture(extractSubType(artisticProductionTimeUnit, duration),
                                  extractDescription(descriptionFields()),
-                                 extractOutPuts());
+                                 extractOutPuts(),
+                                 extractDuration());
     }
+
+    private Duration extractDuration() {
+        return nonNull(duration) ? createNonNullDuration() : NullDuration.create();
+    }
+
+
+    private Duration createNonNullDuration() {
+        return nonNull(artisticProductionTimeUnit) && nonNull(artisticProductionTimeUnit.getTimeUnitCode())
+            ? switch (artisticProductionTimeUnit.getTimeUnitCode()) {
+            case UKE -> DefinedDuration.builder().withWeeks(duration).build();
+            case MINUTE -> DefinedDuration.builder().withMinutes(duration).build();
+            default -> UndefinedDuration.fromValue(duration);
+        } : UndefinedDuration.fromValue(duration);
+    }
+
 
     @JsonIgnore
     public MusicPerformance toMusicPerformance(Integer cristinId, S3Client s3Client) {

@@ -88,6 +88,7 @@ import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import no.unit.nva.model.role.Role;
+import no.unit.nva.model.time.duration.NullDuration;
 import nva.commons.core.paths.UriWrapper;
 import org.jetbrains.annotations.NotNull;
 import org.joda.time.DateTime;
@@ -318,7 +319,7 @@ public final class ReferenceGenerator {
             }
             if (NvaType.FILM.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder().withPublicationInstance(
-                        new MovingPicture(MovingPictureSubtype.createOther(null), null, List.of()))
+                        new MovingPicture(MovingPictureSubtype.createOther(null), null, List.of(), NullDuration.create()))
                            .withPublishingContext(new Artistic())
                            .withDoi(builder.getDoi())
                            .build();

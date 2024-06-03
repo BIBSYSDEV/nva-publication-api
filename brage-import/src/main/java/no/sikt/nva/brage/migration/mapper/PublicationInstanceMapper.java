@@ -91,6 +91,7 @@ import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import no.unit.nva.model.role.Role;
+import no.unit.nva.model.time.duration.NullDuration;
 import org.jetbrains.annotations.NotNull;
 import org.joda.time.DateTime;
 
@@ -299,9 +300,8 @@ public final class PublicationInstanceMapper {
         return new LiteraryArts(LiteraryArtsSubtypeOther.createOther(null), List.of(), null);
     }
 
-    @NotNull
     private static MovingPicture buildPublicationInstanceWhenFilm() {
-        return new MovingPicture(MovingPictureSubtype.createOther(null), null, List.of());
+        return new MovingPicture(MovingPictureSubtype.createOther(null), null, List.of(), NullDuration.create());
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenTextbook(Record brageRecord) {

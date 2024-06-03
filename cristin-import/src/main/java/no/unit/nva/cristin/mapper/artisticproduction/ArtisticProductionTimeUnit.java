@@ -30,6 +30,10 @@ public class ArtisticProductionTimeUnit {
     //The only time codes that exist in the dataset are minutes or weeks.
     @JsonIgnore
     public static final String MINUTE = "MINUTT";
+    @JsonIgnore
+    public static final String UKE = "UKE";
+    @JsonIgnore
+    public static final String NULL = null;
 
     @JsonProperty("tidsenhetkode")
     private String timeUnitCode;
