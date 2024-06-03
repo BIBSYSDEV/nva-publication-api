@@ -36,6 +36,7 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.File.Builder;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UploadDetails;
@@ -307,43 +308,57 @@ public class UpdatePublicationHandler
         var customerApiClient = getCustomerApiClient();
         var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, publicationUpdate.getPublisher().getId());
         validatePublication(publicationUpdate, customer);
-        injectFileUploadDetails(existingPublication, publicationUpdate, userInstance);
+        updateAssociatedArtifactList(existingPublication.getAssociatedArtifacts(),
+                                     publicationUpdate.getAssociatedArtifacts(),
+                                     extractUploadDetails(userInstance));
         setRrsOnFiles(publicationUpdate, existingPublication, customer, userInstance.getUsername(), permissionStrategy);
         upsertPublishingRequestIfNeeded(existingPublication, publicationUpdate, customer, requestInfo);
 
         return resourceService.updatePublication(publicationUpdate);
     }
 
-    private static void injectFileUploadDetails(Publication existingPublication, Publication publicationUpdate,
-                                                UserInstance userInstance) {
-        if (!existingPublication.getAssociatedArtifacts().equals(publicationUpdate.getAssociatedArtifacts())) {
-            var username = new Username(userInstance.getUsername());
-            var uploadDetails = new UploadDetails(username, Instant.now());
+    private static UploadDetails extractUploadDetails(UserInstance userInstance) {
+        return new UploadDetails(new Username(userInstance.getUsername()), Instant.now());
+    }
 
-            var originalArtifacts = existingPublication.getAssociatedArtifacts();
-            var updatedArtifacts = publicationUpdate.getAssociatedArtifacts();
+    private static void updateAssociatedArtifactList(AssociatedArtifactList originalArtifacts,
+                                                     AssociatedArtifactList updatedArtifacts,
+                                                     UploadDetails uploadDetails) throws BadRequestException {
+        if (originalArtifacts.equals(updatedArtifacts)) {
+            return;
+        }
 
-            for (var updatedArtifact : updatedArtifacts) {
-                if (!originalArtifacts.contains(updatedArtifact)) {
-                    if (updatedArtifact instanceof File file) {
-                        var index = updatedArtifacts.indexOf(updatedArtifact);
-                        var fileBuilder = file.copy().withUploadDetails(uploadDetails);
+        var originalFileIdentifiers = originalArtifacts.stream()
+                                              .filter(File.class::isInstance)
+                                              .map(f -> ((File) f).getIdentifier())
+                                              .toList();
 
-                        if (file instanceof PublishedFile) {
-                            updatedArtifacts.set(index, fileBuilder.buildPublishedFile());
-                        }
-
-                        if (file instanceof UnpublishedFile) {
-                            updatedArtifacts.set(index, fileBuilder.buildUnpublishedFile());
-                        }
-
-                        if (file instanceof AdministrativeAgreement) {
-                            updatedArtifacts.set(index, fileBuilder.buildUnpublishableFile());
-                        }
-                    }
-                }
+        for (var updatedArtifact : updatedArtifacts) {
+            if (updatedArtifact instanceof File file && !originalFileIdentifiers.contains(file.getIdentifier())) {
+                updateAssociatedArtifacts(updatedArtifacts, uploadDetails, file);
             }
         }
+    }
+
+    private static void updateAssociatedArtifacts(AssociatedArtifactList updatedArtifacts,
+                                                  UploadDetails uploadDetails,
+                                                  File item) throws BadRequestException {
+        var index = updatedArtifacts.indexOf(item);
+        var updated = updateFileWithUploadDetails(item, uploadDetails);
+        updatedArtifacts.set(index, updated);
+    }
+
+    private static File updateFileWithUploadDetails(File file, UploadDetails uploadDetails) throws BadRequestException {
+        return switch (file) {
+            case PublishedFile publishedFile -> addUploadDetails(publishedFile, uploadDetails).buildPublishedFile();
+            case UnpublishedFile unpublishedFile -> addUploadDetails(unpublishedFile, uploadDetails).buildUnpublishedFile();
+            case AdministrativeAgreement unpublishableFile -> addUploadDetails(unpublishableFile, uploadDetails).buildUnpublishableFile();
+            default -> throw new BadRequestException("Unsupported file type: " + file);
+        };
+    }
+
+    private static Builder addUploadDetails(File file, UploadDetails uploadDetails) {
+        return file.copy().withUploadDetails(uploadDetails);
     }
 
     private void validateRemovalOfPublishedFiles(Publication existingPublication,

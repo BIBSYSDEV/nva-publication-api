@@ -63,6 +63,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -89,6 +90,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -121,7 +123,6 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
-import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -1661,7 +1662,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldNotOverrideUploadDetailsOnExistingFilesWhenFileIsUploaded() throws BadRequestException, IOException {
+    void shouldNotOverrideUploadDetailsOnOtherFilesWhenFileIsUploaded() throws BadRequestException, IOException {
         var publication = createSamplePublication();
         var cristinId = randomUri();
         var contributor = createContributorForPublicationUpdate(cristinId);
@@ -1688,6 +1689,41 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertFalse(existingFiles.isEmpty());
         assertTrue(existingFiles.stream().allMatch(file -> file.getUploadDetails() != null && file.getUploadDetails().getUploadedBy() != null));
         assertTrue(existingFiles.stream().noneMatch(file -> file.getUploadDetails().getUploadedBy().getValue().equals(contributorName)));
+    }
+
+    @Test
+    void shouldNotOverrideUploadDetailsWhenFileIsUpdated() throws BadRequestException, IOException {
+        var unpublishedFile = (File) randomUnpublishedFile();
+        var publication = createAndPersistNonDegreePublicationWithFile(unpublishedFile);
+
+        var cristinId = randomUri();
+        var contributor = createContributorForPublicationUpdate(cristinId);
+        injectContributor(publication, contributor);
+
+        var indexOfFirstFile = publication.getAssociatedArtifacts().indexOf(unpublishedFile);
+        var fileUpdate = unpublishedFile.copy().withLicense(randomUri()).buildUnpublishedFile();
+        publication.getAssociatedArtifacts().set(indexOfFirstFile, fileUpdate);
+
+        var contributorName = contributor.getIdentity().getName();
+        var event = contributorUpdatesPublicationAndHasRightsToUpdate(publication, cristinId, contributorName);
+        updatePublicationHandler.handleRequest(event, output, context);
+
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
+
+        var body = gatewayResponse.getBodyObject(PublicationResponse.class);
+        var updatedFile = body.getAssociatedArtifacts().stream()
+                                .filter(File.class::isInstance)
+                                .map(File.class::cast)
+                                .filter(f -> f.getIdentifier().equals(fileUpdate.getIdentifier()))
+                                .toList().getFirst();
+
+        assertNotNull(updatedFile.getUploadDetails());
+        assertThat(updatedFile.getUploadDetails().getUploadedBy().getValue(), is(not(equalTo(contributorName))));
+    }
+
+    private Publication createAndPersistNonDegreePublicationWithFile(File file) throws BadRequestException {
+        return persistPublication(addFileToPublication(createSampleNonDegreePublication(), file).copy()).build();
     }
 
     private Publication createUnpublishedPublication() throws ApiGatewayException {
@@ -1963,6 +1999,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
     }
 
+    private Publication createSampleNonDegreePublication() throws BadRequestException {
+        var publication = randomPublicationNonDegree();
+        UserInstance userInstance = UserInstance.fromPublication(publication);
+        return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+    }
+
     private InputStream requestWithoutUsername(Publication publicationUpdate)
         throws JsonProcessingException {
         var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationUpdate.getIdentifier().toString());
@@ -2138,7 +2180,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                    new License.Builder().withIdentifier(randomString()).withLink(randomUri()).build(),
                                    false, PublisherVersion.ACCEPTED_VERSION, null,
                                    OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, randomString()),
-                                   randomString(), new UploadDetails(null, null));
+                                   randomString(), new UploadDetails(new Username(randomString()), Instant.now()));
     }
 
     private TestAppender createAppenderForLogMonitoring() {
