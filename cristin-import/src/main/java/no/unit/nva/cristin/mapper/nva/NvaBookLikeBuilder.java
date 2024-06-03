@@ -10,7 +10,7 @@ import no.unit.nva.cristin.lambda.ErrorReport;
 import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinPublisher;
-import no.unit.nva.cristin.mapper.Nsd;
+import no.unit.nva.cristin.mapper.PublishingChannelEntryResolver;
 import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
 import no.unit.nva.cristin.mapper.nva.exceptions.NoPublisherException;
 import no.unit.nva.model.Revision;
@@ -70,10 +70,10 @@ public class NvaBookLikeBuilder extends CristinMappingModule {
 
     private Optional<PublishingHouse> createConfirmedPublisherIfPublisherReferenceHasNsdCode() {
         var nsdCode = extractPublishersNsdCode().orElse(null);
-        var nsd = new Nsd(nsdCode, extractYearReportedInNvi(), extractPublisherNames(),
-                          channelRegistryMapper,
-                          s3Client,
-                          cristinObject.getId());
+        var nsd = new PublishingChannelEntryResolver(nsdCode, extractYearReportedInNvi(), extractPublisherNames(),
+                                                     channelRegistryMapper,
+                                                     s3Client,
+                                                     cristinObject.getId());
         var publisherUri = nsd.getPublisherUri();
         return nonNull(publisherUri) ? Optional.of(new Publisher(publisherUri)) : Optional.empty();
     }

@@ -15,19 +15,22 @@ import no.unit.nva.cristin.mapper.nva.exceptions.WrongChannelTypeException;
 import nva.commons.core.paths.UriWrapper;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class Nsd {
+public class PublishingChannelEntryResolver {
 
-    private final Optional<Integer> nsdCode;
+    private final Integer nsdCode;
     private final int year;
     private final List<String> channelNames;
     private final ChannelRegistryMapper channelRegistryMapper;
     private final S3Client s3Client;
     private final Integer cristinId;
 
-    public Nsd(Integer nsdCode, int year, List<String> channelNames, ChannelRegistryMapper channelRegistryMapper,
-               S3Client s3Client,
-               Integer cristinId) {
-        this.nsdCode = Optional.ofNullable(nsdCode);
+    public PublishingChannelEntryResolver(Integer nsdCode,
+                                          int year,
+                                          List<String> channelNames,
+                                          ChannelRegistryMapper channelRegistryMapper,
+                                          S3Client s3Client,
+                                          Integer cristinId) {
+        this.nsdCode = nsdCode;
         this.year = year;
         this.channelNames = channelNames;
         this.channelRegistryMapper = channelRegistryMapper;
@@ -66,7 +69,8 @@ public class Nsd {
     }
 
     private Optional<URI> lookUpNsdSeries() {
-        return nsdCode.flatMap(integer -> channelRegistryMapper.convertNsdJournalCodeToPid(integer)
+        return Optional.ofNullable(nsdCode)
+                   .flatMap(identifier -> channelRegistryMapper.convertNsdJournalCodeToPid(identifier)
                                               .map(this::toSeriesUri));
     }
 
@@ -82,8 +86,9 @@ public class Nsd {
     }
 
     private Optional<URI> lookUpNsdJournal() {
-        return nsdCode.flatMap(integer -> channelRegistryMapper.convertNsdJournalCodeToPid(integer)
-                                              .map(this::toJournalUri));
+        return Optional.ofNullable(nsdCode)
+                   .flatMap(integer -> channelRegistryMapper.convertNsdJournalCodeToPid(integer)
+                                           .map(this::toJournalUri));
     }
 
     private URI toJournalUri(ChannelRegistryEntry channelRegistryEntry) {
@@ -98,14 +103,16 @@ public class Nsd {
     }
 
     private Optional<URI> lookupNsdPublisherProxyUri() {
-        return nsdCode.flatMap(integer -> channelRegistryMapper.convertNsdPublisherCodeToPid(integer)
+        return Optional.ofNullable(nsdCode)
+                   .flatMap(integer -> channelRegistryMapper.convertNsdPublisherCodeToPid(integer)
                                               .map(pid -> getNsdProxyUri(NSD_PROXY_PATH_PUBLISHER, pid)));
     }
 
     private Optional<URI> lookupNsdJournalOrSeriesProxyUri() {
-        return nsdCode.flatMap(integer -> channelRegistryMapper.convertNsdJournalCodeToPid(integer)
-                                              .map(channelRegistryEntry -> getNsdProxyUri(channelRegistryEntry.getEntryPath(),
-                                                                                          channelRegistryEntry.id())));
+        return Optional.ofNullable(nsdCode)
+                   .flatMap(integer -> channelRegistryMapper.convertNsdJournalCodeToPid(integer)
+                                           .map(channelRegistryEntry -> getNsdProxyUri(channelRegistryEntry.getEntryPath(),
+                                                                                       channelRegistryEntry.id())));
     }
 
     private URI getNsdProxyUri(String nsdProxyPath, String pid) {
