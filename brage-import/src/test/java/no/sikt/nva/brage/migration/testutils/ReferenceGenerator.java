@@ -242,7 +242,7 @@ public final class ReferenceGenerator {
             }
             if (NvaType.RECORDING_MUSICAL.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder().withPublishingContext(new Artistic())
-                           .withPublicationInstance(new MusicPerformance(Collections.emptyList()))
+                           .withPublicationInstance(new MusicPerformance(Collections.emptyList(), NullDuration.create()))
                            .withDoi(builder.getDoi())
                            .build();
             }

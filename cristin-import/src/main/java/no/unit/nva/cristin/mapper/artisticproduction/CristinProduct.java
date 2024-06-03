@@ -123,12 +123,19 @@ public class CristinProduct implements DescriptionExtractor, MovingPictureExtrac
 
 
     private Duration createNonNullDuration() {
-        return nonNull(timeUnit) && nonNull(timeUnit.getTimeUnitCode())
-                   ? switch (timeUnit.getTimeUnitCode()) {
-            case UKE -> DefinedDuration.builder().withWeeks(duration).build();
-            case MINUTE -> DefinedDuration.builder().withMinutes(duration).build();
+        return hasTimeUnit() ? createDefinedDuration() : UndefinedDuration.fromValue(duration);
+    }
+
+    private Duration createDefinedDuration() {
+        return switch (timeUnit.getTimeUnitCode()) {
+            case UKE -> DefinedDuration.builder().withWeeks(Integer.parseInt(duration)).build();
+            case MINUTE -> DefinedDuration.builder().withMinutes(Integer.parseInt(duration)).build();
             default -> UndefinedDuration.fromValue(duration);
-        } : UndefinedDuration.fromValue(duration);
+        };
+    }
+
+    private boolean hasTimeUnit() {
+        return Optional.ofNullable(timeUnit).map(ArtisticProductionTimeUnit::getTimeUnitCode).isPresent();
     }
 
     @JsonIgnore

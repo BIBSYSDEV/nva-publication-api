@@ -92,7 +92,6 @@ import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.time.duration.NullDuration;
-import org.jetbrains.annotations.NotNull;
 import org.joda.time.DateTime;
 
 @SuppressWarnings("PMD.GodClass")
@@ -358,7 +357,7 @@ public final class PublicationInstanceMapper {
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenMusic(Record brageRecord) {
-        return new MusicPerformance(extractManifestation(brageRecord));
+        return new MusicPerformance(extractManifestation(brageRecord), NullDuration.create());
     }
 
     private static List<MusicPerformanceManifestation> extractManifestation(Record brageRecord) {

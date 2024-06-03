@@ -163,8 +163,8 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
     private Duration createNonNullDuration() {
         return nonNull(artisticProductionTimeUnit) && nonNull(artisticProductionTimeUnit.getTimeUnitCode())
             ? switch (artisticProductionTimeUnit.getTimeUnitCode()) {
-            case UKE -> DefinedDuration.builder().withWeeks(duration).build();
-            case MINUTE -> DefinedDuration.builder().withMinutes(duration).build();
+            case UKE -> DefinedDuration.builder().withWeeks(Integer.parseInt(duration)).build();
+            case MINUTE -> DefinedDuration.builder().withMinutes(Integer.parseInt(duration)).build();
             default -> UndefinedDuration.fromValue(duration);
         } : UndefinedDuration.fromValue(duration);
     }
@@ -172,7 +172,7 @@ public class CristinArtisticProduction implements DescriptionExtractor, MovingPi
 
     @JsonIgnore
     public MusicPerformance toMusicPerformance(Integer cristinId, S3Client s3Client) {
-        return new MusicPerformance(extractMusicPerformanceManifestations(cristinId, s3Client));
+        return new MusicPerformance(extractMusicPerformanceManifestations(cristinId, s3Client), extractDuration());
     }
 
     @JsonIgnore
