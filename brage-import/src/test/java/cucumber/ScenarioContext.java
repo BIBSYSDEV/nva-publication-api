@@ -29,10 +29,13 @@ public class ScenarioContext {
     }
 
     public void newBragePublication(String cristinIdentifier) {
+        var handle = randomUri();
         var publication = PublicationGenerator.randomPublication();
-        publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("cristin", cristinIdentifier)));
+        publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("cristin", cristinIdentifier),
+                                                    new AdditionalIdentifier("handle", handle.toString())));
         var record = new Record();
-        record.setId(randomUri());
+        record.setId(handle);
+
         this.bragePublication = new PublicationRepresentation(record, publication);
     }
 

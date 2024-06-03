@@ -22,7 +22,6 @@ import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.NOT_SUPPORTED_TYPE;
 import static no.sikt.nva.brage.migration.merger.AssociatedArtifactMover.COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE;
 import static no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger.DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.TEST_DESCRIPTION;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
@@ -145,13 +144,6 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
-    public static final String PART_OF_SERIES_VALUE_V1 = "SOMESERIES;42";
-    public static final String PART_OF_SERIES_VALUE_V2 = "SOMESERIES;42:2022";
-    public static final String PART_OF_SERIES_VALUE_V3 = "SOMESERIES;2022:42";
-    public static final String PART_OF_SERIES_VALUE_V4 = "SOMESERIES;2022/42";
-    public static final String PART_OF_SERIES_VALUE_V5 = "SOMESERIES;42/2022";
-    public static final String PART_OF_SERIES_VALUE_V6 = "NVE Rapport;";
-    public static final String EXPECTED_SERIES_NUMBER = "42";
     public static final UUID UUID = java.util.UUID.randomUUID();
     public static final Context CONTEXT = null;
     public static final long SOME_FILE_SIZE = 100L;
@@ -263,6 +255,37 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
         assertThatPublicationsMatch(actualPublication.nvaPublication(), brageGenerator.getNvaPublication());
+    }
+
+    @Test
+    void shouldNotConvertBrageRecordMissingHandle() throws IOException {
+        var brageGenerator = buildGeneratorForRecord();
+        var record = brageGenerator.getBrageRecord();
+        record.setId(UriWrapper.fromUri("").getUri());
+        var s3Event = createNewBrageRecordEvent(record);
+        handler.handleRequest(s3Event, CONTEXT);
+        var actualErrorReport =
+            extractActualReportFromS3Client(s3Event,
+                                            IllegalArgumentException.class.getSimpleName(),
+                                            record);
+
+        var exception = actualErrorReport.get("exception").asText();
+        assertThat(exception, containsString("Record must contain a handle"));
+    }
+
+    @Test
+    void shouldNotConvertBrageRecordMissingTitle() throws IOException {
+        var brageGenerator = buildGeneratorForRecord();
+        var record = brageGenerator.getBrageRecord();
+        record.getEntityDescription().setMainTitle(null);
+        var s3Event = createNewBrageRecordEvent(record);
+        handler.handleRequest(s3Event, CONTEXT);
+        var actualErrorReport =
+            extractActualReportFromS3Client(s3Event,
+                                            MissingFieldsException.class.getSimpleName(),
+                                            record);
+        var exception = actualErrorReport.get("exception").asText();
+        assertThat(exception, containsString("All fields of all included objects need to be non empty"));
     }
 
     @Test
@@ -1056,9 +1079,9 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var publication = handler.handleRequest(s3Event, CONTEXT);
         assertThat(publication, is(nullValue()));
         var errorReport = extractActualReportFromS3ClientForInvalidRecord(s3Event,
-                                                                          NullPointerException.class.getSimpleName());
+                                                                          IllegalArgumentException.class.getSimpleName());
         var exception = errorReport.get("exception").asText();
-        assertThat(exception, containsString("NullPointerException"));
+        assertThat(exception, containsString("Record must contain a handle"));
     }
 
     @Test
@@ -1138,10 +1161,10 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Event = createNewBrageRecordEvent(record);
         var publication = handler.handleRequest(s3Event, CONTEXT);
         assertThat(publication, is(nullValue()));
-        var errorReport = extractActualReportFromS3Client(s3Event, MissingFieldsException.class.getSimpleName(),
+        var errorReport = extractActualReportFromS3Client(s3Event, IllegalArgumentException.class.getSimpleName(),
                                                           record);
         var exception = errorReport.get("exception").asText();
-        assertThat(exception, containsString(TEST_DESCRIPTION));
+        assertThat(exception, containsString("Record must contain a handle"));
     }
 
     @Test
@@ -1175,7 +1198,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                             actualPublication.nvaPublication(),
                                             nvaBrageMigrationDataGenerator.getBrageRecord().getId());
         assertThat(actualStoredHandleString,
-                   is(equalTo(nvaBrageMigrationDataGenerator.getNvaPublication().getHandle().toString())));
+                   is(equalTo(nvaBrageMigrationDataGenerator.getBrageRecord().getId().toString())));
     }
 
     @Test
@@ -1289,7 +1312,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var brageRecord = nvaBrageMigrationDataGenerator.getBrageRecord();
         var s3Event = createNewBrageRecordEvent(brageRecord);
         var updatedPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThat(updatedPublication.nvaPublication().getHandle(), is(equalTo(brageRecord.getId())));
+        assertThat(updatedPublication.nvaPublication().getAdditionalIdentifiers(),
+                   contains(new AdditionalIdentifier("handle", brageRecord.getId().toString())));
         assertThat(updatedPublication.nvaPublication().getIdentifier(), is(equalTo(existingPublication.getIdentifier())));
 
         var actualStoredHandleString = extractUpdatedPublicationsHandleReportFromS3Client(s3Event,
@@ -1314,7 +1338,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var brageRecord = nvaBrageMigrationDataGenerator.getBrageRecord();
         var s3Event = createNewBrageRecordEvent(brageRecord);
         var publication = handler.handleRequest(s3Event, CONTEXT);
-        assertThat(publication.nvaPublication().getHandle(), is(equalTo(brageRecord.getId())));
+        assertThat(publication.nvaPublication().getAdditionalIdentifiers(),
+                   contains(new AdditionalIdentifier("handle" ,brageRecord.getId().toString())));
 
         var actualStoredHandleString = extractHandleReportFromS3Client(s3Event, publication.nvaPublication(), brageRecord.getId());
         assertThat(actualStoredHandleString,
@@ -1372,45 +1397,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                                  brageGenerator.getBrageRecord().getId());
         assertThat(storedHandleString, is(not(nullValue())));
     }
-
-//TODO: I guess this test is for import of Unis. We have to identify unis records, otherwise they will not be merged.
-
-//    @Test
-//    void shouldMergeCristinPublicationEvenWhenMostDataIsMissing()
-//        throws BadRequestException, IOException, nva.commons.apigateway.exceptions.NotFoundException {
-//        var cristinIdentifier = randomString();
-//        var cristinPublication = createCristinPublication(cristinIdentifier);
-//        var minimalRecord = createMinimalRecord(cristinIdentifier);
-//        var contentFile = createContentFile();
-//        minimalRecord.setContentBundle(new ResourceContent(List.of(contentFile)));
-//        var s3Event = createNewBrageRecordEvent(minimalRecord);
-//        handler.handleRequest(s3Event, CONTEXT);
-//        var updatedPublication = resourceService.getPublication(cristinPublication);
-//
-//        //assert that dummy handles has not been stored in the updated publication
-//        assertThat(updatedPublication.getHandle(), not(equalTo(minimalRecord.getId())));
-//        assertThat(updatedPublication.getAdditionalIdentifiers(), not(hasItem(
-//            new AdditionalIdentifier("handle",
-//                                     minimalRecord.getId().toString()))));
-//        var associatedArtifacts = updatedPublication.getAssociatedArtifacts();
-//
-//        // assert that  contentFile was copied
-//        assertThat(associatedArtifacts, hasSize(1));
-//        var publishedFile = (PublishedFile) associatedArtifacts.getFirst();
-//        assertThat(publishedFile.getName(), is(equalTo(contentFile.getFilename())));
-//        assertThat(publishedFile.getIdentifier(), is(equalTo(contentFile.getIdentifier())));
-//        assertThat(publishedFile.getLicense(), is(equalTo(contentFile.getLicense().getNvaLicense().getLicense())));
-//        assertThat(publishedFile.getPublisherVersion(), is(equalTo(minimalRecord.getPublisherAuthority().getNva())));
-//
-//        //assert that we are storing reports based on the dummy handles:
-//        var updateHandleReporstFolder = UnixPath.of(UPDATE_REPORTS_PATH);
-//        var filesInUpdatedHandleReportsFolder = s3Driver.getFiles(updateHandleReporstFolder);
-//        assertThat(filesInUpdatedHandleReportsFolder, is(not(empty())));
-//        var storedHandleString = extractUpdateReportFromS3ByUpdateSource(s3Event,
-//                                                                         cristinPublication,
-//                                                                         minimalRecord.getId(), "CRISTIN");
-//        assertThat(storedHandleString, is(not(nullValue())));
-//    }
 
     @Test
     void whenCristinPublicationIsMissingImportingMinimalRecordShouldNotCreateNewPublication() throws IOException {

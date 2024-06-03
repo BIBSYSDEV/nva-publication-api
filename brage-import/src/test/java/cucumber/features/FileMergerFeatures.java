@@ -2,6 +2,7 @@ package cucumber.features;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -11,7 +12,9 @@ import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import java.net.URI;
+import java.util.HashSet;
 import java.util.List;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import nva.commons.core.StringUtils;
@@ -39,6 +42,9 @@ public class FileMergerFeatures {
     public void bragePublicationWithHandle(String handle) {
         var bragePublication = scenarioContext.getBragePublication();
         bragePublication.brageRecord().setId(createHandleFromCandidate(handle));
+        var additionalIdentifiers = new HashSet<>(bragePublication.nvaPublication().getAdditionalIdentifiers());
+        additionalIdentifiers.add(new AdditionalIdentifier("handle", handle));
+        bragePublication.nvaPublication().setAdditionalIdentifiers(additionalIdentifiers);
     }
 
     @And("the nva publication has main handle {string}")
@@ -76,10 +82,10 @@ public class FileMergerFeatures {
         nvaPublication.setHandle(createHandleFromCandidate(handle));
     }
 
-    @And("the merged nva publication has a handle equal to {string}")
+    @And("the merged nva publication has a handle equal to {string} in additional identifiers")
     public void mergedNvaPublicationHasAHandleEqualTo(String handle) {
         var mergedPublication = scenarioContext.getMergedPublication();
-        assertThat(mergedPublication.getHandle(), is(equalTo(UriWrapper.fromUri(handle).getUri())));
+        assertThat(mergedPublication.getAdditionalIdentifiers(), hasItem(new AdditionalIdentifier("handle", handle)));
     }
 
     @And("the nva publication has no associatedArtifacts")
@@ -92,6 +98,12 @@ public class FileMergerFeatures {
     public void bragePublicationHasNoAssociatedArtifacts() {
         var bragePublication = scenarioContext.getBragePublication();
         bragePublication.nvaPublication().setAssociatedArtifacts(new AssociatedArtifactList());
+    }
+
+    @And("the merged nva publication has a root level handle equal to {string}")
+    public void theMergedNvaPublicationHasARootLevelHandleEqualTo(String handle) {
+        var mergedPublication = scenarioContext.getMergedPublication();
+        assertThat(mergedPublication.getHandle().toString(), equalTo(handle) );
     }
 
     private static URI createHandleFromCandidate(String candidate) {

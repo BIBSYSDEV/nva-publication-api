@@ -50,7 +50,6 @@ public class CristinImportPublicationMerger {
 
     public Publication mergePublications() throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var publicationForUpdating = cristinPublication.copy()
-                                         .withHandle(determineHandle())
                                          .withAdditionalIdentifiers(mergeAdditionalIdentifiers())
                                          .withSubjects(determineSubject())
                                          .withRightsHolder(determineRightsHolder())
@@ -205,39 +204,7 @@ public class CristinImportPublicationMerger {
     private Set<AdditionalIdentifier> mergeAdditionalIdentifiers() {
         var additionalIdentifiers = new HashSet<>(cristinPublication.getAdditionalIdentifiers());
         additionalIdentifiers.addAll(bragePublication.nvaPublication().getAdditionalIdentifiers());
-        if (shouldAddBrageHandleToAdditionalIdentifiers()) {
-            additionalIdentifiers.add(extractBrageHandleAsAdditionalIdentifier());
-        }
         return additionalIdentifiers;
-    }
-
-    private boolean shouldAddBrageHandleToAdditionalIdentifiers() {
-        return nonNull(cristinPublication.getHandle())
-               && nonNull(bragePublication.brageRecord().getId())
-               && !isDummyHandle();
-    }
-
-    private AdditionalIdentifier extractBrageHandleAsAdditionalIdentifier() {
-        return new AdditionalIdentifier("handle", bragePublication.brageRecord().getId().toString());
-    }
-
-    private URI determineHandle() {
-        return nonNull(cristinPublication.getHandle())
-                   ? cristinPublication.getHandle()
-                   : getBrageHandleAsLongAsItIsNotADummyHandle().orElse(null);
-    }
-
-    private boolean isDummyHandle() {
-        return nonNull(bragePublication.brageRecord().getId())
-               && bragePublication.brageRecord().getId()
-                      .toString()
-                      .contains(DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS);
-    }
-
-    private Optional<URI> getBrageHandleAsLongAsItIsNotADummyHandle() {
-        return isDummyHandle()
-                   ? Optional.empty()
-                   : Optional.of(bragePublication.brageRecord().getId());
     }
 
     private Publication fillNewPublicationWithMetadataFromBrage(Publication publicationForUpdating) {
