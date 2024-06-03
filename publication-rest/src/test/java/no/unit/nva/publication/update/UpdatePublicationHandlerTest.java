@@ -132,7 +132,6 @@ import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
-import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
@@ -183,7 +182,6 @@ import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Named;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -267,37 +265,18 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler =
             new UpdatePublicationHandler(resourceService, ticketService, environment, identityServiceClient,
                                          eventBridgeClient, s3Client, secretsManagerClient, httpClient);
-        publication = createNonDegreePublication();
 
         customerId = UriWrapper.fromUri(wireMockRuntimeInfo.getHttpsBaseUrl())
                          .addChild("customer", UUID.randomUUID().toString())
                          .getUri();
 
-        publication = randomPublicationWithPublisher(customerId);
+        publication = randomPublicationWithPublisher();
 
         stubSuccessfulTokenResponse();
         stubCustomerResponseAcceptingFilesForAllTypes(customerId);
     }
 
-    private static Publication randomNonDegreePublication(URI publisherId) {
-        Publication candidate;
-        do {
-            candidate = randomPublicationWithPublisher(publisherId);
-        } while (isDegree(candidate));
-
-        return candidate;
-    }
-
-    private static boolean isDegree(Publication publication) {
-        var publicationInstance = publication.getEntityDescription().getReference().getPublicationInstance();
-
-        return publicationInstance instanceof DegreeBachelor
-               || publicationInstance instanceof DegreeMaster
-               || publicationInstance instanceof DegreePhd
-               || publicationInstance instanceof DegreeLicentiate;
-    }
-
-    private static Publication randomPublicationWithPublisher(URI customerId) {
+    private Publication randomPublicationWithPublisher() {
         return randomPublication()
                    .copy()
                    .withPublisher(new Organization.Builder()
@@ -678,7 +657,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldUpdateResourceWhenAuthorizedUserIsContributorAndHasCristinId()
         throws BadRequestException, IOException, NotFoundException {
-        publication = randomNonDegreePublication(customerId);
+//        publication = randomNonDegreePublication(customerId);
         var savedPublication = createSamplePublication();
         var contributors = new ArrayList<>(savedPublication.getEntityDescription().getContributors());
         var cristinId = randomUri();
@@ -1634,7 +1613,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldSetUploadDetailsWhenFileIsUploaded() throws BadRequestException, IOException {
-        var publication = createSamplePublication();
+        var publication = createAndPersistNonDegreePublication();
         var cristinId = randomUri();
         var contributor = createContributorForPublicationUpdate(cristinId);
         injectContributor(publication, contributor);
@@ -1663,7 +1642,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldNotOverrideUploadDetailsOnOtherFilesWhenFileIsUploaded() throws BadRequestException, IOException {
-        var publication = createSamplePublication();
+        var publication = createAndPersistNonDegreePublication();
         var cristinId = randomUri();
         var contributor = createContributorForPublicationUpdate(cristinId);
         injectContributor(publication, contributor);
@@ -1700,9 +1679,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var contributor = createContributorForPublicationUpdate(cristinId);
         injectContributor(publication, contributor);
 
-        var indexOfFirstFile = publication.getAssociatedArtifacts().indexOf(unpublishedFile);
+        var indexOfFileToUpdate = publication.getAssociatedArtifacts().indexOf(unpublishedFile);
         var fileUpdate = unpublishedFile.copy().withLicense(randomUri()).buildUnpublishedFile();
-        publication.getAssociatedArtifacts().set(indexOfFirstFile, fileUpdate);
+        publication.getAssociatedArtifacts().set(indexOfFileToUpdate, fileUpdate);
 
         var contributorName = contributor.getIdentity().getName();
         var event = contributorUpdatesPublicationAndHasRightsToUpdate(publication, cristinId, contributorName);
@@ -1723,7 +1702,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication createAndPersistNonDegreePublicationWithFile(File file) throws BadRequestException {
-        return persistPublication(addFileToPublication(createSampleNonDegreePublication(), file).copy()).build();
+        return persistPublication(addFileToPublication(createAndPersistNonDegreePublication(), file).copy()).build();
     }
 
     private Publication createUnpublishedPublication() throws ApiGatewayException {
@@ -1942,9 +1921,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .map(FileForApproval::fromFile).toList();
     }
 
-    private Publication savePublication(Publication degreePublication) throws BadRequestException {
-        UserInstance userInstance = UserInstance.fromPublication(degreePublication);
-        return Resource.fromPublication(degreePublication).persistNew(resourceService, userInstance);
+    private Publication savePublication(Publication publication) throws BadRequestException {
+        UserInstance userInstance = UserInstance.fromPublication(publication);
+        return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
     }
 
     private List<Contributor> getRandomContributorsWithoutCristinIdAndIdentity() {
@@ -1999,8 +1978,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
     }
 
-    private Publication createSampleNonDegreePublication() throws BadRequestException {
-        var publication = randomPublicationNonDegree();
+    private Publication createAndPersistNonDegreePublication() throws BadRequestException {
+        var publication = randomPublicationNonDegree().copy()
+                              .withPublisher(new Organization.Builder()
+                                                 .withId(customerId)
+                                                 .build())
+                              .build();
         UserInstance userInstance = UserInstance.fromPublication(publication);
         return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
     }
@@ -2178,7 +2161,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return new UnpublishedFile(UUID.randomUUID(), randomString(), randomString(),
                                    Long.valueOf(randomInteger().toString()),
                                    new License.Builder().withIdentifier(randomString()).withLink(randomUri()).build(),
-                                   false, PublisherVersion.ACCEPTED_VERSION, null,
+                                   false, PublisherVersion.PUBLISHED_VERSION, null,
                                    OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, randomString()),
                                    randomString(), new UploadDetails(new Username(randomString()), Instant.now()));
     }
