@@ -17,7 +17,6 @@ import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.cristin.mapper.artisticproduction.CristinArtisticProduction;
 import no.unit.nva.cristin.mapper.artisticproduction.CristinProduct;
 import no.unit.nva.cristin.mapper.exhibition.CristinExhibition;
-import no.unit.nva.model.Publication;
 
 @Builder(
     builderClassName = "CristinObjectBuilder",

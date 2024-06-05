@@ -24,6 +24,7 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
@@ -110,6 +111,7 @@ public final class TicketTestUtils {
     public static Publication createPersistedPublication(PublicationStatus status, ResourceService resourceService)
         throws ApiGatewayException {
         var publication = randomNonDegreePublication(status);
+        publication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
         publication.getEntityDescription().getContributors().forEach(contributor ->
             contributor.getAffiliations()
                 .forEach(affiliation -> ((Organization) affiliation).setId(

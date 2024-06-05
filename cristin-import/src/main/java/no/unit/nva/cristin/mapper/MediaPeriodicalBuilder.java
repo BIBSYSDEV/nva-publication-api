@@ -2,6 +2,7 @@ package no.unit.nva.cristin.mapper;
 
 import static no.unit.nva.cristin.mapper.nva.exceptions.ExceptionHandling.handlePublicationContextFailure;
 import static nva.commons.core.attempt.Try.attempt;
+import java.util.List;
 import java.util.Optional;
 import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
 import no.unit.nva.cristin.mapper.nva.CristinMappingModule;
@@ -31,7 +32,7 @@ public class MediaPeriodicalBuilder extends CristinMappingModule {
         Integer nsdCode = cristinObject.getJournalPublication().getJournal().getNsdCode();
         int publicationYear = extractYearReportedInNvi();
         var journalUri =
-            new Nsd(nsdCode, publicationYear, channelRegistryMapper, s3Client, cristinObject.getId()).createJournal();
+            new PublishingChannelEntryResolver(nsdCode, publicationYear, List.of(), channelRegistryMapper, s3Client, cristinObject.getId()).createJournal();
         return new MediaContributionPeriodical(journalUri);
     }
 

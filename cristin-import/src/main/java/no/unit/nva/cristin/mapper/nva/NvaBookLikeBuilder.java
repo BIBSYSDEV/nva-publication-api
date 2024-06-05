@@ -1,7 +1,6 @@
 package no.unit.nva.cristin.mapper.nva;
 
 import static java.util.Objects.nonNull;
-import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -11,7 +10,7 @@ import no.unit.nva.cristin.lambda.ErrorReport;
 import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinPublisher;
-import no.unit.nva.cristin.mapper.Nsd;
+import no.unit.nva.cristin.mapper.PublishingChannelEntryResolver;
 import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
 import no.unit.nva.cristin.mapper.nva.exceptions.NoPublisherException;
 import no.unit.nva.model.Revision;
@@ -70,11 +69,20 @@ public class NvaBookLikeBuilder extends CristinMappingModule {
     }
 
     private Optional<PublishingHouse> createConfirmedPublisherIfPublisherReferenceHasNsdCode() {
-        return extractPublishersNsdCode()
-                   .map(nsdCode -> new Nsd(nsdCode, extractYearReportedInNvi(), channelRegistryMapper, s3Client,
-                                           cristinObject.getId()))
-                   .map(Nsd::getPublisherUri)
-                   .map(this::createConfirmedPublisher);
+        var nsdCode = extractPublishersNsdCode().orElse(null);
+        var nsd = new PublishingChannelEntryResolver(nsdCode, extractYearReportedInNvi(), extractPublisherNames(),
+                                                     channelRegistryMapper,
+                                                     s3Client,
+                                                     cristinObject.getId());
+        var publisherUri = nsd.getPublisherUri();
+        return nonNull(publisherUri) ? Optional.of(new Publisher(publisherUri)) : Optional.empty();
+    }
+
+    private List<String> extractPublisherNames() {
+        return Stream.of(extractPublisherNameFromAlternativeField(),
+                         extractPublisherNameFromPrimaryField().orElse(null))
+                   .filter(Objects::nonNull)
+                   .toList();
     }
 
     private Optional<Integer> extractPublishersNsdCode() {
@@ -88,13 +96,9 @@ public class NvaBookLikeBuilder extends CristinMappingModule {
         return nonNull(publisherName) ? new UnconfirmedPublisher(publisherName) : new NullPublisher();
     }
 
-    private PublishingHouse createConfirmedPublisher(URI uri) {
-        return nonNull(uri) ? new Publisher(uri) : new NullPublisher();
-    }
-
     private String extractUnconfirmedPublisherName() {
         var publisherName = extractPublisherNameFromPrimaryField()
-                                   .orElseGet(this::lookForPublisherNameInAlternativeField);
+                                   .orElseGet(this::extractPublisherNameFromAlternativeField);
         return Optional.ofNullable(publisherName)
                    .orElse(persistReportForNoPublisherException());
     }
@@ -113,7 +117,7 @@ public class NvaBookLikeBuilder extends CristinMappingModule {
                    .map(CristinPublisher::getPublisherName);
     }
 
-    private String lookForPublisherNameInAlternativeField() {
+    private String extractPublisherNameFromAlternativeField() {
         return extractBookOrReportMetadata()
                    .map(CristinBookOrReportMetadata::getPublisherName)
                    .orElse(null);

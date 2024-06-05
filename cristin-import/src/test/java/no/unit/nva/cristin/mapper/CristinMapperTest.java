@@ -37,6 +37,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
+import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
+import no.unit.nva.cristin.mapper.nva.NvaBookBuilder;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -44,7 +46,10 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.NullPublisher;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.Publisher;
+import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
@@ -329,7 +334,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     private CristinObject cristinObjectTwoContributors(CristinObject singleCristinObject) {
-        var contributor = singleCristinObject.getContributors().get(0);
+        var contributor = singleCristinObject.getContributors().getFirst();
         var firstContributor = contributor.copy().withContributorOrder(1).build();
         var secondContributor = contributor.copy().withContributorOrder(null).build();
         singleCristinObject.getContributors().removeAll(singleCristinObject.getContributors());
@@ -421,7 +426,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
         Book bookSubType = (Book) actualPublicationContext;
         List<String> actualIsbnList = bookSubType.getIsbnList();
 
-        assertThat(actualIsbnList.get(0), is(equalTo(isbn)));
+        assertThat(actualIsbnList.getFirst(), is(equalTo(isbn)));
     }
 
     @Test
@@ -458,8 +463,64 @@ class CristinMapperTest extends AbstractCristinImportTest {
         var projects = publication.getProjects();
         Assertions.assertFalse(projects.isEmpty());
 
-        var projectName = projects.get(0).getName();
+        var projectName = projects.getFirst().getName();
         assertNull(projectName);
+    }
+
+    @Test
+    void shouldLookUpForPublisherByNsdCodeWhenCristinPublisherIsMissingNsdCode() {
+        var cristinObject = CristinDataGenerator.randomBook();
+        cristinObject.getBookOrReportMetadata().getCristinPublisher().setNsdCode(5497);
+        cristinObject.getBookOrReportMetadata().getCristinPublisher().setPublisherName("NORD UniverSITet");
+        cristinObject.getBookOrReportMetadata().setPublisherName("NORD UniverSITet");
+        var book = new NvaBookBuilder(cristinObject, ChannelRegistryMapper.getInstance(),
+                                      mock(S3Client.class)).buildBookForPublicationContext();
+        assertThat(((Publisher) book.getPublisher()).getId().toString(),
+                   containsString("89938E70-AC80-48EE-BAAD-4C81514F6CA9"));
+    }
+
+    @Test
+    void shouldLookUpForPublisherByPrimaryNameWhenCristinPublisherIsMissingNsdCode() {
+        var cristinObject = CristinDataGenerator.randomBook();
+        cristinObject.getBookOrReportMetadata().getCristinPublisher().setNsdCode(null);
+        cristinObject.getBookOrReportMetadata().getCristinPublisher().setPublisherName("NORD UniverSITet");
+        var book =
+            new NvaBookBuilder(cristinObject, ChannelRegistryMapper.getInstance(), mock(S3Client.class)).buildBookForPublicationContext();
+        assertThat(book.getPublisher(), is(instanceOf(Publisher.class)));
+    }
+
+    @Test
+    void shouldLookUpForPublisherByAlternativeNameWhenCristinPublisherIsMissingNsdCodeAndPrimaryName() {
+        var cristinObject = CristinDataGenerator.randomBook();
+        cristinObject.getBookOrReportMetadata().getCristinPublisher().setNsdCode(null);
+        cristinObject.getBookOrReportMetadata().getCristinPublisher().setPublisherName(null);
+        cristinObject.getBookOrReportMetadata().setPublisherName("NORD UniverSITet");
+        var book = new NvaBookBuilder(cristinObject, ChannelRegistryMapper.getInstance(), mock(S3Client.class))
+                       .buildBookForPublicationContext();
+        assertThat(book.getPublisher(), is(instanceOf(Publisher.class)));
+    }
+
+    @Test
+    void shouldCreateUnconfirmedPublisherWhenPrimaryPublisherNameIsMissing() {
+        var cristinObject = CristinDataGenerator.randomBook();
+        cristinObject.getBookOrReportMetadata().getCristinPublisher().setNsdCode(null);
+        cristinObject.getBookOrReportMetadata().getCristinPublisher().setPublisherName(null);
+        var publisherName = randomString();
+        cristinObject.getBookOrReportMetadata().setPublisherName(publisherName);
+        var book = new NvaBookBuilder(cristinObject, ChannelRegistryMapper.getInstance(), mock(S3Client.class))
+                       .buildBookForPublicationContext();
+        assertThat(((UnconfirmedPublisher) book.getPublisher()).getName(), is(equalTo(publisherName)));
+    }
+
+    @Test
+    void shouldCreateNullPublisherWhenAllPublisherDataIsMissing() {
+        var cristinObject = CristinDataGenerator.randomBook();
+        cristinObject.getBookOrReportMetadata().getCristinPublisher().setNsdCode(null);
+        cristinObject.getBookOrReportMetadata().getCristinPublisher().setPublisherName(null);
+        cristinObject.getBookOrReportMetadata().setPublisherName(null);
+        var book = new NvaBookBuilder(cristinObject, ChannelRegistryMapper.getInstance(), mock(S3Client.class))
+                       .buildBookForPublicationContext();
+        assertThat( book.getPublisher(), is(instanceOf(NullPublisher.class)));
     }
 
     private List<Contributor> getContributors(CristinObject singleCristinObject) {
@@ -482,12 +543,12 @@ class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     private CristinObject getSingleCristinObject() {
-        return cristinObjects(1).toList().get(0);
+        return cristinObjects(1).toList().getFirst();
     }
 
     private CristinObject cristinObjectWithSomeContributorsWithoutSeqNumber(CristinObject cristinObject) {
-        cristinObject.getContributors().get(cristinObject.getContributors().size() - 1).setContributorOrder(null);
-        cristinObject.getContributors().get(0).setContributorOrder(null);
+        cristinObject.getContributors().getLast().setContributorOrder(null);
+        cristinObject.getContributors().getFirst().setContributorOrder(null);
         return cristinObject;
     }
 
