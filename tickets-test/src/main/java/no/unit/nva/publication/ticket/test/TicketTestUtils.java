@@ -3,6 +3,7 @@ package no.unit.nva.publication.ticket.test;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
+import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
@@ -333,6 +334,14 @@ public final class TicketTestUtils {
     }
 
     private static Publication randomPublicationWithAssociatedLink(PublicationStatus status) {
+        return randomPublicationNonDegree().copy()
+                   .withStatus(status)
+                   .withAssociatedArtifacts(List.of(new AssociatedLink(randomUri(), null, null)))
+                   .build();
+    }
+
+    private static Publication randomPublicationWithUnpublishedFile(PublicationStatus status) {
+        var file = randomPublicationWithUnpublishedFiles(UNPUBLISHED);
         return randomPublicationNonDegree().copy()
                    .withStatus(status)
                    .withAssociatedArtifacts(List.of(new AssociatedLink(randomUri(), null, null)))

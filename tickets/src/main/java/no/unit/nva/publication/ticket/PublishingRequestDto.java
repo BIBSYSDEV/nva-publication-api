@@ -33,6 +33,7 @@ public class PublishingRequestDto extends TicketDto {
     public static final String ID_FIELD = "id";
     public static final String WORKFLOW_FIELD = "workflow";
     public static final String APPROVED_FILES_FIELD = "approvedFiles";
+    public static final String FILES_FOR_APPROVAL = "filesForApproval";
 
     @JsonProperty(CREATED_DATE_FIELD)
     private final Instant createdDate;
@@ -46,6 +47,8 @@ public class PublishingRequestDto extends TicketDto {
     private final PublishingWorkflow workflow;
     @JsonProperty(APPROVED_FILES_FIELD)
     private final Set<UUID> approvedFiles;
+    @JsonProperty(FILES_FOR_APPROVAL)
+    private final Set<UUID> filesForApproval;
 
     @JsonCreator
     public PublishingRequestDto(@JsonProperty(STATUS_FIELD) TicketDtoStatus status,
@@ -61,6 +64,7 @@ public class PublishingRequestDto extends TicketDto {
                                 @JsonProperty(OWNER_AFFILIATION_FIELD) URI ownerAffiliation,
                                 @JsonProperty(WORKFLOW_FIELD) PublishingWorkflow workflow,
                                 @JsonProperty(APPROVED_FILES_FIELD) Set<UUID> approvedFiles,
+                                @JsonProperty(FILES_FOR_APPROVAL) Set<UUID> filesForApproval,
                                 @JsonProperty(FINALIZED_BY_FIELD) Username finalizedBy,
                                 @JsonProperty(FINALIZED_DATE_FIELD) Instant finalizedDate) {
         super(status, messages, viewedBy, assignee, publicationIdentifier, owner, ownerAffiliation, finalizedBy, finalizedDate);
@@ -70,11 +74,12 @@ public class PublishingRequestDto extends TicketDto {
         this.id = id;
         this.workflow = workflow;
         this.approvedFiles = approvedFiles;
+        this.filesForApproval = filesForApproval;
     }
 
     public static TicketDto empty() {
         return new PublishingRequestDto(null, null, null, null, null, null, null, null, null, null, null, null,
-                                        Set.of(), null, null);
+                                        Set.of(), Set.of(), null, null);
     }
 
     public Instant getCreatedDate() {
@@ -97,6 +102,10 @@ public class PublishingRequestDto extends TicketDto {
         return approvedFiles;
     }
 
+    public Set<UUID> getFilesForApproval() {
+        return filesForApproval;
+    }
+
     @Override
     public Class<? extends TicketEntry> ticketType() {
         return PublishingRequestCase.class;
@@ -107,7 +116,8 @@ public class PublishingRequestDto extends TicketDto {
     public int hashCode() {
         return Objects.hash(getStatus(), getCreatedDate(), getModifiedDate(), getIdentifier(),
                             getPublicationIdentifier(), id, getMessages(), getAssignee(), getOwner(),
-                            getOwnerAffiliation(), getWorkflow(), getApprovedFiles(), getFinalizedBy(), getFinalizedDate());
+                            getOwnerAffiliation(), getWorkflow(), getApprovedFiles(), getFilesForApproval(),
+                            getFinalizedBy(), getFinalizedDate());
     }
 
     @Override
@@ -132,6 +142,7 @@ public class PublishingRequestDto extends TicketDto {
                && Objects.equals(getOwnerAffiliation(), that.getOwnerAffiliation())
                && Objects.equals(getWorkflow(), that.getWorkflow())
                && Objects.equals(getApprovedFiles(), that.getApprovedFiles())
+               && Objects.equals(getFilesForApproval(), that.getFilesForApproval())
                && Objects.equals(getFinalizedBy(), that.getFinalizedBy())
                && Objects.equals(getFinalizedDate(), that.getFinalizedDate());
     }

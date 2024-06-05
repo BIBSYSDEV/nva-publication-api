@@ -7,6 +7,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.core.Is.is;
+import com.google.common.collect.Sets;
 import java.time.Instant;
 import java.util.Set;
 import no.unit.nva.commons.json.JsonUtils;
@@ -25,7 +26,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class TicketDtoTest extends TicketTestLocal {
 
-    public static final Set<String> DTO_FIELDS_TO_IGNORE = Set.of("messages", "workflow", "approvedFiles");
+    public static final Set<String> GENERAL_DTO_FIELDS_TO_IGNORE = Set.of("messages", "workflow");
+    public static final Set<String> PUBLISHING_REQUEST_DTO_FIELDS_TO_IGNORE = Set.of("approvedFiles",
+                                                                                     "filesForApproval");
 
     @BeforeEach
     public void setup() {
@@ -60,6 +63,7 @@ class TicketDtoTest extends TicketTestLocal {
         ticket.setAssignee(new Username(randomString()));
 
         var dto = TicketDto.fromTicket(ticket);
-        assertThat(dto, doesNotHaveEmptyValuesIgnoringFields(DTO_FIELDS_TO_IGNORE));
+        assertThat(dto, doesNotHaveEmptyValuesIgnoringFields(Sets.union(GENERAL_DTO_FIELDS_TO_IGNORE,
+                                                                        PUBLISHING_REQUEST_DTO_FIELDS_TO_IGNORE)));
     }
 }
