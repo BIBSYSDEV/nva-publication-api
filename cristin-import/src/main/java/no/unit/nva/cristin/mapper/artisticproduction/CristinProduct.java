@@ -1,5 +1,8 @@
 package no.unit.nva.cristin.mapper.artisticproduction;
 
+import static java.util.Objects.nonNull;
+import static no.unit.nva.cristin.mapper.artisticproduction.ArtisticProductionTimeUnit.MINUTE;
+import static no.unit.nva.cristin.mapper.artisticproduction.ArtisticProductionTimeUnit.UKE;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -24,6 +27,10 @@ import no.unit.nva.model.instancetypes.artistic.film.realization.MovingPictureOu
 import no.unit.nva.model.instancetypes.artistic.film.realization.OtherRelease;
 import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArts;
 import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArtsSubtype;
+import no.unit.nva.model.time.duration.DefinedDuration;
+import no.unit.nva.model.time.duration.Duration;
+import no.unit.nva.model.time.duration.NullDuration;
+import no.unit.nva.model.time.duration.UndefinedDuration;
 
 
 /*
@@ -106,7 +113,29 @@ public class CristinProduct implements DescriptionExtractor, MovingPictureExtrac
     public MovingPicture toMovingPicture() {
         return new MovingPicture(extractSubType(timeUnit, duration),
                                  extractDescription(descriptionFields()),
-                                 extractOutPuts());
+                                 extractOutPuts(),
+                                 extractDuration());
+    }
+
+    private Duration extractDuration() {
+        return nonNull(duration) ? createNonNullDuration() : NullDuration.create();
+    }
+
+
+    private Duration createNonNullDuration() {
+        return hasTimeUnit() ? createDefinedDuration() : UndefinedDuration.fromValue(duration);
+    }
+
+    private Duration createDefinedDuration() {
+        return switch (timeUnit.getTimeUnitCode()) {
+            case UKE -> DefinedDuration.builder().withWeeks(Integer.parseInt(duration)).build();
+            case MINUTE -> DefinedDuration.builder().withMinutes(Integer.parseInt(duration)).build();
+            default -> UndefinedDuration.fromValue(duration);
+        };
+    }
+
+    private boolean hasTimeUnit() {
+        return Optional.ofNullable(timeUnit).map(ArtisticProductionTimeUnit::getTimeUnitCode).isPresent();
     }
 
     @JsonIgnore

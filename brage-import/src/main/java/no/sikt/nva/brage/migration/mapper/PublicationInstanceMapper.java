@@ -91,7 +91,7 @@ import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import no.unit.nva.model.role.Role;
-import org.jetbrains.annotations.NotNull;
+import no.unit.nva.model.time.duration.NullDuration;
 import org.joda.time.DateTime;
 
 @SuppressWarnings("PMD.GodClass")
@@ -299,9 +299,8 @@ public final class PublicationInstanceMapper {
         return new LiteraryArts(LiteraryArtsSubtypeOther.createOther(null), List.of(), null);
     }
 
-    @NotNull
     private static MovingPicture buildPublicationInstanceWhenFilm() {
-        return new MovingPicture(MovingPictureSubtype.createOther(null), null, List.of());
+        return new MovingPicture(MovingPictureSubtype.createOther(null), null, List.of(), NullDuration.create());
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenTextbook(Record brageRecord) {
@@ -358,7 +357,7 @@ public final class PublicationInstanceMapper {
     }
 
     private static PublicationInstance<? extends Pages> buildPublicationInstanceWhenMusic(Record brageRecord) {
-        return new MusicPerformance(extractManifestation(brageRecord));
+        return new MusicPerformance(extractManifestation(brageRecord), NullDuration.create());
     }
 
     private static List<MusicPerformanceManifestation> extractManifestation(Record brageRecord) {
