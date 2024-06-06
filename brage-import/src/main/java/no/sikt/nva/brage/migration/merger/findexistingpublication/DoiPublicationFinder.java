@@ -1,4 +1,4 @@
-package no.sikt.nva.brage.migration.merger.findExistingPublicationService;
+package no.sikt.nva.brage.migration.merger.findexistingpublication;
 
 import static java.util.Objects.nonNull;
 import java.util.Optional;

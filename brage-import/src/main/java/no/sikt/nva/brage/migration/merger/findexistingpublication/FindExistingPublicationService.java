@@ -1,4 +1,4 @@
-package no.sikt.nva.brage.migration.merger.findExistingPublicationService;
+package no.sikt.nva.brage.migration.merger.findexistingpublication;
 
 import java.util.Optional;
 import no.sikt.nva.brage.migration.model.PublicationForUpdate;

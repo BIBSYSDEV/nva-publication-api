@@ -1,4 +1,4 @@
-package no.sikt.nva.brage.migration.merger.findExistingPublicationService;
+package no.sikt.nva.brage.migration.merger.findexistingpublication;
 
 import static java.net.HttpURLConnection.HTTP_OK;
 import static nva.commons.core.attempt.Try.attempt;

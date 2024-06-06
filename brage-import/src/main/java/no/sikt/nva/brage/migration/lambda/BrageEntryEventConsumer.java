@@ -18,7 +18,7 @@ import no.sikt.nva.brage.migration.merger.BrageMergingReport;
 import no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger;
 import no.sikt.nva.brage.migration.merger.DiscardedFilesReport;
 import no.sikt.nva.brage.migration.merger.UnmappableCristinRecordException;
-import no.sikt.nva.brage.migration.merger.findExistingPublicationService.FindExistingPublicationServiceImpl;
+import no.sikt.nva.brage.migration.merger.findexistingpublication.FindExistingPublicationServiceImpl;
 import no.sikt.nva.brage.migration.model.PublicationForUpdate;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.sikt.nva.brage.migration.record.Record;
