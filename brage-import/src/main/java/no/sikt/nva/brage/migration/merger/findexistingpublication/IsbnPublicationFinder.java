@@ -1,5 +1,6 @@
 package no.sikt.nva.brage.migration.merger.findexistingpublication;
 
+import static no.sikt.nva.brage.migration.merger.findexistingpublication.FindExistingPublicationService.DUPLICATE_PUBLICATIONS_COUNT;
 import java.util.List;
 import java.util.Optional;
 import no.sikt.nva.brage.migration.lambda.MergeSource;
@@ -45,7 +46,7 @@ public class IsbnPublicationFinder {
                                       .flatMap(List::stream)
                                       .filter(item -> PublicationComparator.publicationsMatch(item, publication))
                                       .toList();
-        if (publicationsToMerge.size() > 1) {
+        if (publicationsToMerge.size() >=  DUPLICATE_PUBLICATIONS_COUNT) {
             throw new DuplicatePublicationException("More than one ISBN found");
         }
         if (publicationsToMerge.isEmpty()) {

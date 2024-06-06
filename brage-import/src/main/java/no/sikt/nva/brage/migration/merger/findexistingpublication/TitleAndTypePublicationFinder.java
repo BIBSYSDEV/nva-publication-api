@@ -37,6 +37,7 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
     private final ResourceService resourceService;
     private final UriRetriever uriRetriever;
     private final String apiHost;
+    private final int SINGLE_PUBLICATION_SIZE = 1;
 
     public TitleAndTypePublicationFinder(ResourceService resourceService,
                                          UriRetriever uriRetriever,
@@ -54,7 +55,7 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
         }
         var potentialExistingPublications = searchForPublicationsByTypeAndTitle(
             publicationRepresentation.publication());
-        if (potentialExistingPublications.size() != 1) {
+        if (potentialExistingPublications.size() != SINGLE_PUBLICATION_SIZE) {
             return Optional.empty();
         }
         return Optional.of(new PublicationForUpdate(MergeSource.SEARCH, potentialExistingPublications.getFirst()));
