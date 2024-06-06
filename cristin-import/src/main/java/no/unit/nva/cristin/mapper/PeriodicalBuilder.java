@@ -1,9 +1,12 @@
 package no.unit.nva.cristin.mapper;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.cristin.mapper.nva.exceptions.ExceptionHandling.handlePublicationContextFailure;
 import static nva.commons.core.attempt.Try.attempt;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
 import no.unit.nva.cristin.mapper.nva.CristinMappingModule;
 import no.unit.nva.model.contexttypes.Journal;
@@ -25,7 +28,6 @@ public class PeriodicalBuilder extends CristinMappingModule {
         return Optional.ofNullable(cristinObject)
                    .map(CristinObject::getJournalPublication)
                    .map(CristinJournalPublication::getJournal)
-                   .map(CristinJournalPublicationJournal::getNsdCode)
                    .map(nsdCodeExists -> createJournal())
                    .orElseGet(this::createUnconfirmedJournal);
     }
@@ -36,10 +38,18 @@ public class PeriodicalBuilder extends CristinMappingModule {
     }
 
     private Periodical createJournal() {
-        Integer nsdCode = cristinObject.getJournalPublication().getJournal().getNsdCode();
+        var nsdCode = cristinObject.getJournalPublication().getJournal().getNsdCode();
         int publicationYear = extractYearReportedInNvi();
+        var channelNames = nonNull(extractPublisherTitle()) ? List.of(extractPublisherTitle()) : List.<String>of();
         var journalUri =
-            new PublishingChannelEntryResolver(nsdCode, publicationYear, List.of(), channelRegistryMapper, s3Client, cristinObject.getId()).createJournal();
-        return new Journal(journalUri);
+            new PublishingChannelEntryResolver(nsdCode, publicationYear, channelNames,
+                                               extractIssnList(),
+                                               channelRegistryMapper, s3Client,
+                                               cristinObject.getId()).createJournal();
+        return nonNull(journalUri) ? new Journal(journalUri) : null;
+    }
+
+    private List<String> extractIssnList() {
+        return Stream.of(extractIssn(), extractIssnOnline()).filter(Objects::nonNull).toList();
     }
 }

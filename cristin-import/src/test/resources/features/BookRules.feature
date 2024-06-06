@@ -149,12 +149,12 @@ Feature: Book conversion rules
     And the Cristin Result belongs to a Series
     And the Series does not include an NSD code
     And the Series mentions a title "SomeSeries"
-    And the Series mentions an issn "0028-0836"
-    And  the Series mentions online issn "0028-0836"
+    And the Series mentions an issn "2434-561X"
+    And  the Series mentions online issn "2434-561X"
     And the Series mentions a volume "Vol 1"
     And the Series mentions an issue "Issue 2"
     When the Cristin Result is converted to an NVA Resource
-    Then  the NVA Resource contains an Unconfirmed Series with title "SomeSeries", issn "0028-0836", online issn "0028-0836" and seriesNumber "Volume:Vol 1;Issue:Issue 2"
+    Then  the NVA Resource contains an Unconfirmed Series with title "SomeSeries", issn "2434-561X", online issn "2434-561X" and seriesNumber "Volume:Vol 1;Issue:Issue 2"
 
     Examples:
       | secondaryCategory |
