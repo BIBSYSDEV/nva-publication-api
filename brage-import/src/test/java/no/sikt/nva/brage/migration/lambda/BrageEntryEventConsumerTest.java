@@ -16,6 +16,7 @@ import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.CRISTIN
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.DUPLICATE_PUBLICATIONS_MESSAGE;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.ERROR_BUCKET_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.HANDLE_REPORTS_PATH;
+import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.SOURCE_CRISTIN;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.UPDATED_PUBLICATIONS_REPORTS_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.UPDATE_REPORTS_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM_DD_HH_FORMAT;
@@ -80,6 +81,7 @@ import no.sikt.nva.brage.migration.merger.BrageMergingReport;
 import no.sikt.nva.brage.migration.merger.DiscardedFilesReport;
 import no.sikt.nva.brage.migration.merger.DuplicatePublicationException;
 import no.sikt.nva.brage.migration.merger.UnmappableCristinRecordException;
+import no.sikt.nva.brage.migration.record.Affiliation;
 import no.sikt.nva.brage.migration.record.Contributor;
 import no.sikt.nva.brage.migration.record.EntityDescription;
 import no.sikt.nva.brage.migration.record.Identity;
@@ -124,6 +126,8 @@ import no.unit.nva.model.instancetypes.artistic.music.MusicScore;
 import no.unit.nva.model.instancetypes.book.NonFictionMonograph;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.event.ConferencePoster;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.model.business.Resource;
@@ -1609,6 +1613,48 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
         assertThrows(NoSuchKeyException.class, () -> extractUpdateReportFromS3ByUpdateSource(
             s3Event, existingPublication, generator.getBrageRecord().getId(), "SEARCH"));
+    }
+
+    @Test
+    void shouldKeepBrageContributorsIfNvaPublicationIsMissingContributors() throws IOException {
+        var cirstinIdentifier = "1234";
+        var publication = randomPublication(ConferencePoster.class);
+        publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier(SOURCE_CRISTIN, cirstinIdentifier)));
+        publication.getEntityDescription().getReference().setDoi(null);
+        publication.getEntityDescription().setContributors(List.of());
+        publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder().withYear("2022").build());
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication);
+        var instanceType = existingPublication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
+        var affiliationIdentifier = randomString();
+        var contributor = new Contributor(new Identity(randomString(), null),
+                                          "Creator",
+                                          "Creator",
+                                          List.of(new Affiliation(affiliationIdentifier, "ntnu",
+                                                                  null)));
+        var generator = new NvaBrageMigrationDataGenerator.Builder()
+                            .withCristinIdentifier(cirstinIdentifier)
+                            .withMainTitle(publication.getEntityDescription().getMainTitle())
+                            .withContributor(contributor)
+                            .withPublicationDate(new PublicationDate("2022",
+                                                                     new PublicationDateNva.Builder().withYear("2022").build()))
+                            .withType(new Type(List.of(), instanceType))
+                            .build();
+        var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
+        var updatedPublication = handler.handleRequest(s3Event, CONTEXT);
+        var expectedContributor = new no.unit.nva.model.Contributor.Builder()
+                                      .withIdentity(new no.unit.nva.model.Identity.Builder()
+                                                        .withName(contributor.getIdentity().getName())
+                                                        .build())
+                                      .withRole(new RoleType(Role.parse(contributor.getRole())))
+                                      .withSequence(1)
+                                      .withAffiliations(List.of(new Organization.Builder()
+                                                                    .withId(UriWrapper.fromUri("https://test.nva.aws"
+                                                                                               + ".unit.no/cristin/organization/" + affiliationIdentifier).getUri())
+                                                                    .build()))
+                                      .build();
+        assertThat(updatedPublication.publication().getIdentifier(), is(equalTo(existingPublication.getIdentifier())));
+        assertThat(updatedPublication.publication().getEntityDescription().getContributors(), contains(expectedContributor));
+
     }
 
     private void mockSearchPublicationByTitleAndTypeResponse(SortableIdentifier identifier, int statusCode) {

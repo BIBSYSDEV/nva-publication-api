@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.Set;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Course;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
@@ -60,8 +61,15 @@ public class CristinImportPublicationMerger {
     private EntityDescription determineEntityDescription()
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
         return cristinPublication.getEntityDescription().copy()
+                   .withContributors(determineContributors())
                    .withReference(determineReference())
                    .build();
+    }
+
+    private List<Contributor> determineContributors() {
+        return cristinPublication.getEntityDescription().getContributors().isEmpty()
+               ? bragePublication.publication().getEntityDescription().getContributors()
+               : cristinPublication.getEntityDescription().getContributors();
     }
 
     private Reference determineReference() throws InvalidIsbnException, InvalidUnconfirmedSeriesException {

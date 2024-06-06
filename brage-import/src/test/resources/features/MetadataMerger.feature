@@ -10,3 +10,13 @@ Feature:
     And the nva publication has main handle "https://hdl.handle.net/11250/1234567"
     When the nva publications are merged
     Then the NVA publication has an additionalIdentifier with type "handle" and value "https://hdl.handle.net/11250/2506045"
+
+  Scenario: If the NVA publication is missing contributors, the contributors from the brage publication should be kept
+    Given a brage publication with an creator with properties:
+      | name          | role    |  sequence |
+      | navn, navnesen | Creator |  1        |
+    And a NVA publication without contributors
+    When the nva publications are merged
+    Then the NVA publication has a contributor with properties:
+      | name          | role    |  sequence |
+      | navn, navnesen | Creator |  1        |
