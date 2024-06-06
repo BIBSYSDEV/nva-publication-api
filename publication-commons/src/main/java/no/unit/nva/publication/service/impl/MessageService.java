@@ -23,6 +23,7 @@ import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageStatus;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.MessageDao;
@@ -115,6 +116,7 @@ public class MessageService extends ServiceWithTransactions {
             case PublishingRequestCase publishingRequest -> userInstance.getAccessRights().contains(AccessRight.MANAGE_PUBLISHING_REQUESTS);
             case GeneralSupportRequest supportRequest -> userInstance.getAccessRights().contains(AccessRight.SUPPORT);
             case DoiRequest doiRequest -> userInstance.getAccessRights().contains(AccessRight.MANAGE_DOI);
+            case UnpublishRequest unpublishRequest -> userInstance.getAccessRights().contains(AccessRight.MANAGE_RESOURCES_STANDARD);
             default -> false;
         };
     }

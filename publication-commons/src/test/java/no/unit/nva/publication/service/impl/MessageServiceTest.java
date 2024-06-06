@@ -2,6 +2,10 @@ package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
+import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
+import static nva.commons.apigateway.AccessRight.SUPPORT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -14,7 +18,9 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.Period;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.TestingUtils;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -23,6 +29,7 @@ import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageStatus;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -34,6 +41,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -138,44 +146,45 @@ class MessageServiceTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @ValueSource(classes = {
-        DoiRequest.class,
-        GeneralSupportRequest.class,
-        PublishingRequestCase.class})
-    void shouldAllowCuratorToDeleteMessageWhenTicketHasCorrectType(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
+    @MethodSource("ticketTypeAccessRightsProvider")
+    void shouldAllowCuratorToDeleteMessageWhenTicketHasCorrectType(Class<? extends TicketEntry> ticketType, AccessRight accessRight) throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(
+            PublicationStatus.PUBLISHED, owner, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        var persistedMessage = messageService.createMessage(ticket, owner, randomString());
+        var curator = randomUserInstance(accessRight, owner.getCustomerId());
+
+        assertDoesNotThrow(() -> messageService.deleteMessage(curator, persistedMessage));
+    }
+
+    @ParameterizedTest
+    @MethodSource("ticketTypeAccessRightsProvider")
+    void shouldNotAllowWrongTypeOfCuratorToDeleteMessage(Class<? extends TicketEntry> ticketType, AccessRight accessRight) throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(
             PublicationStatus.PUBLISHED, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var persistedMessage = messageService.createMessage(ticket, owner, randomString());
 
-        var doiCurator = randomUserInstance(AccessRight.MANAGE_DOI, owner.getCustomerId());
-        var supportCurator = randomUserInstance(AccessRight.SUPPORT, owner.getCustomerId());
-        var publishingCurator = randomUserInstance(AccessRight.MANAGE_PUBLISHING_REQUESTS, owner.getCustomerId());
+        var curatorAccessRights = Stream.of(MANAGE_DOI, MANAGE_PUBLISHING_REQUESTS, SUPPORT)
+                                      .filter(ar -> !ar.equals(accessRight))
+                                      .toList();
 
-        var doiCuratorFromAnotherInstitution = randomUserInstance(AccessRight.MANAGE_DOI);
-        var supportCuratorFromAnotherInstitution = randomUserInstance(AccessRight.SUPPORT);
-        var publishingCuratorFromAnotherInstitution = randomUserInstance(AccessRight.MANAGE_PUBLISHING_REQUESTS);
-
-        if (ticketType == DoiRequest.class) {
-            assertDoesNotThrow(() -> messageService.deleteMessage(doiCurator, persistedMessage));
-            assertThrows(UnauthorizedException.class, () -> messageService.deleteMessage(doiCuratorFromAnotherInstitution, persistedMessage));
-            assertThrows(UnauthorizedException.class, () -> messageService.deleteMessage(publishingCurator, persistedMessage));
-            assertThrows(UnauthorizedException.class, () -> messageService.deleteMessage(supportCurator, persistedMessage));
+        for (AccessRight ar : curatorAccessRights) {
+            var curator = randomUserInstance(ar, owner.getCustomerId());
+            assertThrows(UnauthorizedException.class, () -> messageService.deleteMessage(curator, persistedMessage));
         }
+    }
 
-        if (ticketType == GeneralSupportRequest.class) {
-            assertDoesNotThrow(() -> messageService.deleteMessage(supportCurator, persistedMessage));
-            assertThrows(UnauthorizedException.class, () -> messageService.deleteMessage(supportCuratorFromAnotherInstitution, persistedMessage));
-            assertThrows(UnauthorizedException.class, () -> messageService.deleteMessage(doiCurator, persistedMessage));
-            assertThrows(UnauthorizedException.class, () -> messageService.deleteMessage(publishingCurator, persistedMessage));
-        }
+    @ParameterizedTest
+    @MethodSource("ticketTypeAccessRightsProvider")
+    void shouldNotAllowCuratorFromAnotherInstitutionToDeleteMessage(Class<? extends TicketEntry> ticketType, AccessRight accessRight) throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(
+            PublicationStatus.PUBLISHED, owner, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        var persistedMessage = messageService.createMessage(ticket, owner, randomString());
+        var curatorFromRandomInstitution = randomUserInstance(accessRight, randomUri());
 
-        if (ticketType == PublishingRequestCase.class) {
-            assertDoesNotThrow(() -> messageService.deleteMessage(publishingCurator, persistedMessage));
-            assertThrows(UnauthorizedException.class, () -> messageService.deleteMessage(publishingCuratorFromAnotherInstitution, persistedMessage));
-            assertThrows(UnauthorizedException.class, () -> messageService.deleteMessage(doiCurator, persistedMessage));
-            assertThrows(UnauthorizedException.class, () -> messageService.deleteMessage(supportCurator, persistedMessage));
-        }
+        assertThrows(UnauthorizedException.class, () -> messageService.deleteMessage(curatorFromRandomInstitution, persistedMessage));
     }
 
     private UserInstance randomUserInstance() {
@@ -203,5 +212,12 @@ class MessageServiceTest extends ResourcesLocalTest {
             .thenReturn(SECOND_MESSAGE_CREATION_TIME)
             .thenReturn(THIRD_MESSAGE_CREATION_TIME);
         return clock;
+    }
+
+    public static Stream<Arguments> ticketTypeAccessRightsProvider() {
+        return Stream.of(Arguments.of(DoiRequest.class, MANAGE_DOI),
+                         Arguments.of(PublishingRequestCase.class, MANAGE_PUBLISHING_REQUESTS),
+                         Arguments.of(UnpublishRequest.class, MANAGE_RESOURCES_STANDARD),
+                         Arguments.of(GeneralSupportRequest.class, SUPPORT));
     }
 }
