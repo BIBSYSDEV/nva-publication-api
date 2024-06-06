@@ -22,7 +22,6 @@ import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.NOT_SUPPORTED_TYPE;
 import static no.sikt.nva.brage.migration.merger.AssociatedArtifactMover.COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE;
 import static no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger.DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS;
-import static no.sikt.nva.brage.migration.merger.PreMergeValidator.HANDLE_ALREADY_EXIST_ERROR_MESSAGE;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
@@ -922,7 +921,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                             generator.getBrageRecord());
 
         var exception = actualErrorReport.get("exception").asText();
-        assertThat(exception, containsString(HANDLE_ALREADY_EXIST_ERROR_MESSAGE));
+        assertThat(exception, containsString("Cannot merge student degree with nva publication with handle in additional identifiers"));
 
         //Assert that the existing publication has not been modified:
         var actualPublication =
