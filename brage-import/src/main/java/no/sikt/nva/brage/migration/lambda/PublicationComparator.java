@@ -19,7 +19,7 @@ public final class PublicationComparator {
 
     public static boolean publicationsMatch(Publication existingPublication, Publication  incomingPublication) {
         var titlesMatch = titlesMatch(existingPublication, incomingPublication);
-        var atLeastOneContributorMatch = atLeastOneContributorMatch(existingPublication, incomingPublication);
+        var atLeastOneContributorMatch = contributorsMatch(existingPublication, incomingPublication);
         var publicationDatesAreCloseToEachOther = publicationsDateAreClose(existingPublication,
                                                                                incomingPublication);
         var publicationContextTypeMatches = publicationContextTypeMatches(existingPublication, incomingPublication);
@@ -43,8 +43,15 @@ public final class PublicationComparator {
         return difference <= ALLOWED_PUBLICATION_YEAR_DIFFERENCE;
     }
 
-    private static boolean atLeastOneContributorMatch(Publication existingPublication, Publication incomingPublication) {
+    private static boolean contributorsMatch(Publication existingPublication, Publication incomingPublication) {
         var existingContributors = existingPublication.getEntityDescription().getContributors();
+        if (existingContributors.isEmpty()){
+            return true;
+        }
+        return atleasOneContributorMatch(incomingPublication, existingContributors);
+    }
+
+    private static boolean atleasOneContributorMatch(Publication incomingPublication, List<Contributor> existingContributors) {
         var incomingContributors = incomingPublication.getEntityDescription().getContributors();
         return existingContributors.stream()
                    .flatMap(contributor -> containsContributor(incomingContributors, contributor))
