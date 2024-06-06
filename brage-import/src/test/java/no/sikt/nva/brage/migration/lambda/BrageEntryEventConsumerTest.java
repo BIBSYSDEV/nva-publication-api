@@ -44,6 +44,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.AssertionsKt.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -111,6 +112,7 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
+import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
@@ -1018,6 +1020,43 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                       .getPublicationContext());
 
         assertThat(((UnconfirmedCourse) actualPublicationContext.getCourse()).code(), is(equalTo(subjectCode)));
+    }
+
+    @Test
+    void shouldMigrateAdministrativeAgreementFromIncomingPublicationWhenExistingPublicationDoesNotHaveAdministrativeAgreement()
+        throws IOException, InvalidUnconfirmedSeriesException {
+        var cristinIdentifier = randomString();
+        var publication = randomPublication(DegreeBachelor.class);
+        publication.setAdditionalIdentifiers(Set.of());
+        publication.setAdditionalIdentifiers(Set.of(cristinAdditionalIdentifier(cristinIdentifier)));
+        publication.getEntityDescription().getReference().setDoi(null);
+        publication.getEntityDescription().getReference().setPublicationContext(new Degree(null, null, null, null,
+                                                                                           List.of(), null));
+        publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder().withYear("2022").build());
+        publication.getEntityDescription().setMainTitle("Dynamic - Response of Floating Wind Turbines! Report");
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication);
+        var instanceType = existingPublication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
+        var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
+        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
+                                               "ARTIST", null, List.of());
+        var subjectCode = randomString();
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_MASTER)
+                                 .withCristinIdentifier(cristinIdentifier)
+                                 .withMainTitle("Dynamic - Response of Floating Wind Turbines! Report")
+                                 .withContributor(brageContributor)
+                                 .withType(new Type(List.of(), instanceType))
+                                 .withPublicationDate(new PublicationDate("2023",
+                                                                          new PublicationDateNva.Builder().withYear("2023").build()))
+                                 .withResourceContent(new ResourceContent(List.of(new ContentFile(randomString(), BundleType.LICENSE,
+                                                                           randomString(),
+                                                                           java.util.UUID.randomUUID(), null, null))))
+                                 .withSubjectCode(subjectCode)
+                                 .build();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var actualPublicationRepresentation = handler.handleRequest(s3Event, CONTEXT);
+
+        assertTrue(actualPublicationRepresentation.publication().getAssociatedArtifacts().stream()
+                       .anyMatch(AdministrativeAgreement.class::isInstance));
     }
 
     @Test

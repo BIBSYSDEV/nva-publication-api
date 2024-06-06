@@ -5,11 +5,14 @@ import java.util.stream.Collectors;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.File.Builder;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import nva.commons.core.Environment;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UnixPath;
+import org.jetbrains.annotations.NotNull;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 
@@ -41,8 +44,7 @@ public class AssociatedArtifactMover {
 
     private AssociatedArtifact pushAssociatedArtifactToPersistedStorage(AssociatedArtifact associatedArtifact) {
         try {
-            if (associatedArtifact instanceof File) {
-                var file = (PublishedFile) associatedArtifact;
+            if (associatedArtifact instanceof File file) {
                 var objectKey = file.getIdentifier().toString();
 
                 S3MultipartCopier.fromSourceKey(getObjectKeyPath() + objectKey)
@@ -65,7 +67,15 @@ public class AssociatedArtifactMover {
         var headObjectResponse = s3Client.headObject(createHeadObjectRequest(objectKey));
         var size = headObjectResponse.contentLength();
         var mimeType = headObjectResponse.contentType();
+        var associatedArtifactBuilder = buildFile(file, mimeType, size);
+        if (file instanceof AdministrativeAgreement) {
+            return associatedArtifactBuilder.buildUnpublishableFile();
+        } else  {
+            return associatedArtifactBuilder.buildPublishedFile();
+        }
+    }
 
+    private static Builder buildFile(File file, String mimeType, Long size) {
         return File.builder()
                    .withName(file.getName())
                    .withIdentifier(file.getIdentifier())
@@ -75,8 +85,7 @@ public class AssociatedArtifactMover {
                    .withMimeType(mimeType)
                    .withSize(size)
                    .withLegalNote(file.getLegalNote())
-                   .withUploadDetails(file.getUploadDetails())
-                   .buildPublishedFile();
+                   .withUploadDetails(file.getUploadDetails());
     }
 
     private HeadObjectRequest createHeadObjectRequest(String objectKey) {
