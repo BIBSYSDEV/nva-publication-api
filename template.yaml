@@ -963,6 +963,7 @@ Resources:
       Handler: no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer::handleRequest
       ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
+      Timeout: 900
       Environment:
         Variables:
           BRAGE_MIGRATION_ERROR_BUCKET_NAME: !Sub "${BrageMigrationErrorBucketName}-${AWS::AccountId}"

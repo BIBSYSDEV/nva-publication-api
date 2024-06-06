@@ -49,6 +49,7 @@ public class CristinImportPublicationMerger {
     }
 
     public Publication mergePublications() throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        preMergeValidation();
         var publicationForUpdating = cristinPublication.copy()
                                          .withAdditionalIdentifiers(mergeAdditionalIdentifiers())
                                          .withSubjects(determineSubject())
@@ -56,6 +57,10 @@ public class CristinImportPublicationMerger {
                                          .withEntityDescription(determineEntityDescription())
                                          .build();
         return fillNewPublicationWithMetadataFromBrage(publicationForUpdating);
+    }
+
+    private void preMergeValidation() {
+        PreMergeValidator.validate(cristinPublication);
     }
 
     private EntityDescription determineEntityDescription()
