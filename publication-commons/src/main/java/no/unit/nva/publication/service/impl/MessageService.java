@@ -87,7 +87,7 @@ public class MessageService extends ServiceWithTransactions {
 
     public void deleteMessage(UserInstance userInstance, Message message)
         throws UnauthorizedException, NotFoundException {
-        if (!userInstance.isSender(message) && !isCuratorOnTicket(message, userInstance)) {
+        if (!canManageMessage(message, userInstance)) {
             throw new UnauthorizedException(SENDER_OR_CURATOR_ONLY_MESSAGE);
         }
         message.setModifiedDate(Instant.now());
@@ -97,10 +97,19 @@ public class MessageService extends ServiceWithTransactions {
         getClient().transactWriteItems(transactionRequest);
     }
 
-    private boolean isCuratorOnTicket(Message message, UserInstance userInstance) throws NotFoundException {
+    private boolean canManageMessage(Message message, UserInstance userInstance) throws NotFoundException {
+        if (userInstance.isSender(message)) {
+            return true;
+        }
+
+        return isCuratorForMessage(message, userInstance);
+    }
+
+    private boolean isCuratorForMessage(Message message, UserInstance userInstance) throws NotFoundException {
         if (!message.getCustomerId().equals(userInstance.getCustomerId())) {
             return false;
         }
+
         var ticket = ticketService.fetchTicketByIdentifier(message.getTicketIdentifier());
         return switch (ticket) {
             case PublishingRequestCase publishingRequest -> userInstance.getAccessRights().contains(AccessRight.MANAGE_PUBLISHING_REQUESTS);
