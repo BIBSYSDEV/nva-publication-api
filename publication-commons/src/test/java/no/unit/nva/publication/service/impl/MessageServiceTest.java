@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.Period;
@@ -148,25 +149,13 @@ class MessageServiceTest extends ResourcesLocalTest {
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var persistedMessage = messageService.createMessage(ticket, owner, randomString());
 
-        var doiCurator = UserInstance.create(
-            randomString(), owner.getCustomerId(), randomUri(), List.of(AccessRight.MANAGE_DOI), randomUri()
-        );
-        var supportCurator = UserInstance.create(
-            randomString(), owner.getCustomerId(), randomUri(), List.of(AccessRight.SUPPORT), randomUri()
-        );
-        var publishingCurator = UserInstance.create(
-            randomString(), owner.getCustomerId(), randomUri(), List.of(AccessRight.MANAGE_PUBLISHING_REQUESTS), randomUri()
-        );
+        var doiCurator = randomUserInstance(AccessRight.MANAGE_DOI, owner.getCustomerId());
+        var supportCurator = randomUserInstance(AccessRight.SUPPORT, owner.getCustomerId());
+        var publishingCurator = randomUserInstance(AccessRight.MANAGE_PUBLISHING_REQUESTS, owner.getCustomerId());
 
-        var doiCuratorFromAnotherInstitution = UserInstance.create(
-            randomString(), randomUri(), randomUri(), List.of(AccessRight.MANAGE_DOI), randomUri()
-        );
-        var supportCuratorFromAnotherInstitution = UserInstance.create(
-            randomString(), randomUri(), randomUri(), List.of(AccessRight.SUPPORT), randomUri()
-        );
-        var publishingCuratorFromAnotherInstitution = UserInstance.create(
-            randomString(), randomUri(), randomUri(), List.of(AccessRight.MANAGE_PUBLISHING_REQUESTS), randomUri()
-        );
+        var doiCuratorFromAnotherInstitution = randomUserInstance(AccessRight.MANAGE_DOI);
+        var supportCuratorFromAnotherInstitution = randomUserInstance(AccessRight.SUPPORT);
+        var publishingCuratorFromAnotherInstitution = randomUserInstance(AccessRight.MANAGE_PUBLISHING_REQUESTS);
 
         if (ticketType == DoiRequest.class) {
             assertDoesNotThrow(() -> messageService.deleteMessage(doiCurator, persistedMessage));
@@ -190,12 +179,16 @@ class MessageServiceTest extends ResourcesLocalTest {
         }
     }
 
-    private static UserInstance randomUserInstance() {
+    private UserInstance randomUserInstance() {
         return UserInstance.create(new User(randomString()), randomUri());
     }
 
-    private static UserInstance randomUserInstanceWithAccessRight(AccessRight accessRight) {
-        return UserInstance.create(new User(randomString()), randomUri());
+    private UserInstance randomUserInstance(AccessRight accessRight) {
+        return UserInstance.create(randomString(), randomUri(), randomUri(), List.of(accessRight), randomUri());
+    }
+
+    private UserInstance randomUserInstance(AccessRight accessRight, URI customerId) {
+        return UserInstance.create(randomString(), customerId, randomUri(), List.of(accessRight), randomUri());
     }
 
     private Message publicationOwnerSendsMessage(TicketEntry ticket, String messageText) {
