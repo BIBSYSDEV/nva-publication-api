@@ -39,6 +39,7 @@ import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
 import no.unit.nva.cristin.mapper.nva.NvaBookBuilder;
+import no.unit.nva.cristin.mapper.nva.NvaBookSeriesBuilder;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -50,6 +51,7 @@ import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.NullPublisher;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
+import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
@@ -525,7 +527,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldLookUpForJournalByNsdCode() {
+    void shouldLookupForJournalByNsdCode() {
         var cristinObject = CristinDataGenerator.randomObject(CristinSecondaryCategory.JOURNAL_ARTICLE.getValue());
         cristinObject.getJournalPublication().getJournal().setNsdCode(339700);
         var periodical = new PeriodicalBuilder(cristinObject, ChannelRegistryMapper.getInstance(),
@@ -535,7 +537,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldLookUpForJournalByJournalTitleWhenNsdCodeIsMissing() {
+    void shouldLookupForJournalByJournalTitleWhenNsdCodeIsMissing() {
         var cristinObject = CristinDataGenerator.randomObject(CristinSecondaryCategory.JOURNAL_ARTICLE.getValue());
         cristinObject.getJournalPublication().getJournal().setNsdCode(null);
         cristinObject.getJournalPublication().getJournal().setJournalTitle("Arctos: Acta Philologica Fennica");
@@ -546,7 +548,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldLookUpForJournalByPrintIssnWhenNsdCodeAndJournalTitleIsMissing() {
+    void shouldLookupForJournalByPrintIssnWhenNsdCodeAndJournalTitleIsMissing() {
         var cristinObject = CristinDataGenerator.randomObject(CristinSecondaryCategory.JOURNAL_ARTICLE.getValue());
         cristinObject.getJournalPublication().getJournal().setNsdCode(null);
         cristinObject.getJournalPublication().getJournal().setJournalTitle(null);
@@ -558,7 +560,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldLookUpForJournalByOnlineIssnWhenNsdCodeAndPrintIssnAndJournalTitleIsMissing() {
+    void shouldLookupForJournalByOnlineIssnWhenNsdCodeAndPrintIssnAndJournalTitleIsMissing() {
         var cristinObject = CristinDataGenerator.randomObject(CristinSecondaryCategory.JOURNAL_ARTICLE.getValue());
         cristinObject.getJournalPublication().getJournal().setNsdCode(null);
         cristinObject.getJournalPublication().getJournal().setJournalTitle(null);
@@ -568,6 +570,52 @@ class CristinMapperTest extends AbstractCristinImportTest {
                                                mock(S3Client.class)).buildPeriodicalForPublicationContext();
         assertThat(((Journal) periodical).getId().toString(),
                    containsString("48D7E3B5-B05E-4834-B01C-65B2E14124B2"));
+    }
+
+    @Test
+    void shouldLookupForSeriesByNsdCode() {
+        var cristinObject = CristinDataGenerator.randomBook();
+        cristinObject.getBookOrReportMetadata().getBookSeries().setNsdCode(487595);
+        var periodical = new NvaBookSeriesBuilder(cristinObject, ChannelRegistryMapper.getInstance(),
+                                                  mock(S3Client.class)).createBookSeries();
+        assertThat(((Series) periodical).getId().toString(),
+                   containsString("48D7E3B5-B05E-4834-B01C-65B2E14124B2"));
+    }
+
+    @Test
+    void shouldLookupForSeriesByTitleWhenNsdCodeIsMissing() {
+        var cristinObject = CristinDataGenerator.randomBook();
+        cristinObject.getBookOrReportMetadata().getBookSeries().setNsdCode(null);
+        cristinObject.getBookOrReportMetadata().getBookSeries().setJournalTitle("Physical Review E. Statistical, Nonlinear, and Soft Matter Physics");
+        var periodical = new NvaBookSeriesBuilder(cristinObject, ChannelRegistryMapper.getInstance(),
+                                                  mock(S3Client.class)).createBookSeries();
+        assertThat(((Series) periodical).getId().toString(),
+                   containsString("0000CD61-4C96-48CC-A121-D8073A071EA5"));
+    }
+
+    @Test
+    void shouldLookupForSeriesByPrintIssnWhenNsdCodeAndSeriesTitleIsMissing() {
+        var cristinObject = CristinDataGenerator.randomBook();
+        cristinObject.getBookOrReportMetadata().getBookSeries().setNsdCode(null);
+        cristinObject.getBookOrReportMetadata().getBookSeries().setJournalTitle(null);
+        cristinObject.getBookOrReportMetadata().getBookSeries().setIssn("1539-3755");
+        var periodical = new NvaBookSeriesBuilder(cristinObject, ChannelRegistryMapper.getInstance(),
+                                                  mock(S3Client.class)).createBookSeries();
+        assertThat(((Series) periodical).getId().toString(),
+                   containsString("0000CD61-4C96-48CC-A121-D8073A071EA5"));
+    }
+
+    @Test
+    void shouldLookupForSeriesByOnlineIssnWhenNsdCodeAndSeriesTitleIsMissing() {
+        var cristinObject = CristinDataGenerator.randomBook();
+        cristinObject.getBookOrReportMetadata().getBookSeries().setNsdCode(null);
+        cristinObject.getBookOrReportMetadata().getBookSeries().setJournalTitle(null);
+        cristinObject.getBookOrReportMetadata().getBookSeries().setIssn(null);
+        cristinObject.getBookOrReportMetadata().getBookSeries().setIssnOnline("2296-889X");
+        var periodical = new NvaBookSeriesBuilder(cristinObject, ChannelRegistryMapper.getInstance(),
+                                                  mock(S3Client.class)).createBookSeries();
+        assertThat(((Series) periodical).getId().toString(),
+                   containsString("0012291D-1927-4B27-A49B-1ADC08CA771A"));
     }
 
     private List<Contributor> getContributors(CristinObject singleCristinObject) {

@@ -5,6 +5,7 @@ import java.util.Optional;
 import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinBookOrReportPartMetadata;
 import no.unit.nva.cristin.mapper.CristinJournalPublication;
+import no.unit.nva.cristin.mapper.CristinJournalPublicationJournal;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -56,15 +57,45 @@ public class CristinMappingModule {
     }
 
     protected String extractIssn() {
-        return extractCristinJournalPublication().getJournal().getIssn();
+        return Optional.ofNullable(extractCristinJournalPublication())
+                   .map(CristinJournalPublication::getJournal)
+                   .map(CristinJournalPublicationJournal::getIssn)
+                   .orElse(null);
     }
 
     protected String extractIssnOnline() {
-        return extractCristinJournalPublication().getJournal().getIssnOnline();
+        return Optional.ofNullable(extractCristinJournalPublication())
+                   .map(CristinJournalPublication::getJournal)
+                   .map(CristinJournalPublicationJournal::getIssnOnline)
+                   .orElse(null);
     }
 
     protected String extractPublisherTitle() {
-        return extractCristinJournalPublication().getJournal().getJournalTitle();
+        return Optional.ofNullable(extractCristinJournalPublication())
+                   .map(CristinJournalPublication::getJournal)
+                   .map(CristinJournalPublicationJournal::getJournalTitle)
+                   .orElse(null);
+    }
+
+    protected String extractSeriesTitle() {
+        return Optional.ofNullable(extractCristinBookReport())
+                   .map(CristinBookOrReportMetadata::getBookSeries)
+                   .map(CristinJournalPublicationJournal::getJournalTitle)
+                   .orElse(null);
+    }
+
+    protected String extractSeriesPrintIssn() {
+        return Optional.ofNullable(extractCristinBookReport())
+                   .map(CristinBookOrReportMetadata::getBookSeries)
+                   .map(CristinJournalPublicationJournal::getIssn)
+                   .orElse(null);
+    }
+
+    protected String extractSeriesOnlineIssn() {
+        return Optional.ofNullable(extractCristinBookReport())
+                   .map(CristinBookOrReportMetadata::getBookSeries)
+                   .map(CristinJournalPublicationJournal::getIssnOnline)
+                   .orElse(null);
     }
 
     private String cleanCristinIsbn(String isbn) {

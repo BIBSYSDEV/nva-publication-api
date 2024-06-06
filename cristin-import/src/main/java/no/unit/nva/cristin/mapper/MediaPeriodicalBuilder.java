@@ -26,7 +26,6 @@ public class MediaPeriodicalBuilder extends CristinMappingModule {
         return Optional.ofNullable(cristinObject)
                    .map(CristinObject::getJournalPublication)
                    .map(CristinJournalPublication::getJournal)
-                   .map(CristinJournalPublicationJournal::getNsdCode)
                    .map(nsdCodeExists -> createMediaContributionPeriodical())
                    .orElseGet(this::createUnconfirmedMediaContributionPeriodical);
     }
@@ -40,7 +39,7 @@ public class MediaPeriodicalBuilder extends CristinMappingModule {
                                                extractIssnList(), channelRegistryMapper,
                                                s3Client,
                                                cristinObject.getId()).createJournal();
-        return new MediaContributionPeriodical(journalUri);
+        return nonNull(journalUri) ? new MediaContributionPeriodical(journalUri) : null;
     }
 
     private List<String> extractIssnList() {

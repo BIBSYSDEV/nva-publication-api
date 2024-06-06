@@ -2,7 +2,9 @@ package no.unit.nva.cristin.mapper.nva;
 
 import static java.util.Objects.nonNull;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 import no.unit.nva.cristin.lambda.ErrorReport;
 import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinJournalPublicationJournal;
@@ -30,11 +32,8 @@ public class NvaBookSeriesBuilder extends CristinMappingModule {
     }
 
     private BookSeries toNvaBookSeries(CristinJournalPublicationJournal bookSeries) {
-        if (nonNull(bookSeries.getNsdCode())) {
-            return createConfirmedBookSeries(bookSeries);
-        } else {
-            return createUnconfirmedBookSeries(bookSeries);
-        }
+        return Optional.ofNullable(createConfirmedBookSeries(bookSeries))
+            .orElseGet(() -> createUnconfirmedBookSeries(bookSeries));
     }
 
     private BookSeries createUnconfirmedBookSeries(CristinJournalPublicationJournal bookSeries) {
@@ -52,13 +51,18 @@ public class NvaBookSeriesBuilder extends CristinMappingModule {
     }
 
     private BookSeries createConfirmedBookSeries(CristinJournalPublicationJournal b) {
-        int nsdCode = b.getNsdCode();
+        var nsdCode = Optional.ofNullable(b).map(CristinJournalPublicationJournal::getNsdCode).orElse(null);
         int publicationYear = cristinObject.getPublicationYear();
-        var seriesUri = new PublishingChannelEntryResolver(nsdCode, publicationYear, List.of(b.getJournalTitle()),
-                                                           List.of(b.getIssnOnline(), b.getIssn()),
+        var channelNames = nonNull(extractSeriesTitle()) ? List.of(extractSeriesTitle()) : List.<String>of();
+        var seriesUri = new PublishingChannelEntryResolver(nsdCode, publicationYear, channelNames,
+                                                           extractSeriesIssnList(),
                                                            channelRegistryMapper, s3Client,
                                                            cristinObject.getId())
                             .createSeries();
         return nonNull(seriesUri) ? new Series(seriesUri) : null;
+    }
+
+    private List<String> extractSeriesIssnList() {
+        return Stream.of(extractSeriesPrintIssn(), extractSeriesOnlineIssn()).filter(Objects::nonNull).toList();
     }
 }
