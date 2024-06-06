@@ -21,15 +21,15 @@ Feature: Mapping of "Article in business/trade/industry journal", "Academic arti
 
   Scenario: Cristin Entry's Journal Publication "issn" entry is copied to the NVA field  "printISSN".
     Given that the Cristin Result has a non empty Journal Publication
-    And the Journal Publication has a "issn" entry equal to "1903-6523"
+    And the Journal Publication has a "issn" entry equal to "2434-561X"
     When the Cristin Result is converted to an NVA Resource
-    Then the Nva Resource has a PublicationContext with printISSN equal to "1903-6523"
+    Then the Nva Resource has a PublicationContext with printISSN equal to "2434-561X"
 
   Scenario: Cristin Entry's Journal Publication "issnOnline" entry maps to NVA's field "onlineIssn".
     Given that the Cristin Result has a non empty Journal Publication
-    And the Journal Publication has a "issnOnline" entry equal to "1903-6523"
+    And the Journal Publication has a "issnOnline" entry equal to "2434-561X"
     When the Cristin Result is converted to an NVA Resource
-    Then the Nva Resource has a PublicationContext with onlineIssn equal to "1903-6523"
+    Then the Nva Resource has a PublicationContext with onlineIssn equal to "2434-561X"
 
   Scenario: Cristin Entry's Journal Publication "Journal name" ("tidskriftsnavn")  is copied as is
   in the field "title" of the Journal Publication Context of the NVA entry.

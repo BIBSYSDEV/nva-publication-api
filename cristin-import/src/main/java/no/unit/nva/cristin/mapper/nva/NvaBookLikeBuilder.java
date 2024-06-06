@@ -71,6 +71,7 @@ public class NvaBookLikeBuilder extends CristinMappingModule {
     private Optional<PublishingHouse> createConfirmedPublisherIfPublisherReferenceHasNsdCode() {
         var nsdCode = extractPublishersNsdCode().orElse(null);
         var nsd = new PublishingChannelEntryResolver(nsdCode, extractYearReportedInNvi(), extractPublisherNames(),
+                                                     List.of(),
                                                      channelRegistryMapper,
                                                      s3Client,
                                                      cristinObject.getId());

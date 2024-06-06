@@ -175,6 +175,9 @@ public class JournalFeatures {
     @Given("the Journal Publication has a reference to an NSD journal with identifier {int}")
     public void theJournalPublicationHasAReferenceToAnNsdJournalOrPublisherWithIdentifier(int nsdCode) {
         scenarioContext.getCristinEntry().getJournalPublication().getJournal().setNsdCode(nsdCode);
+        scenarioContext.getCristinEntry().getJournalPublication().getJournal().setIssnOnline(null);
+        scenarioContext.getCristinEntry().getJournalPublication().getJournal().setIssn(null);
+        scenarioContext.getCristinEntry().getJournalPublication().getJournal().setJournalTitle(null);
     }
 
     @Given("the Journal Publication has publishing year equal to {int}")

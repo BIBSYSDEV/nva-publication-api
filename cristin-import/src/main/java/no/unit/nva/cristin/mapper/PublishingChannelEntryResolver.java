@@ -5,6 +5,7 @@ import static no.unit.nva.cristin.lambda.constants.MappingConstants.NSD_PROXY_PA
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import java.net.URI;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import no.unit.nva.cristin.lambda.ErrorReport;
 import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryEntry;
@@ -20,6 +21,7 @@ public class PublishingChannelEntryResolver {
     private final Integer nsdCode;
     private final int year;
     private final List<String> channelNames;
+    private final List<String> issnList;
     private final ChannelRegistryMapper channelRegistryMapper;
     private final S3Client s3Client;
     private final Integer cristinId;
@@ -27,12 +29,14 @@ public class PublishingChannelEntryResolver {
     public PublishingChannelEntryResolver(Integer nsdCode,
                                           int year,
                                           List<String> channelNames,
+                                          List<String> issnList,
                                           ChannelRegistryMapper channelRegistryMapper,
                                           S3Client s3Client,
                                           Integer cristinId) {
         this.nsdCode = nsdCode;
         this.year = year;
-        this.channelNames = channelNames;
+        this.channelNames = channelNames.stream().filter(Objects::nonNull).toList();
+        this.issnList = issnList.stream().filter(Objects::nonNull).toList();
         this.channelRegistryMapper = channelRegistryMapper;
         this.s3Client = s3Client;
         this.cristinId = cristinId;
@@ -53,7 +57,24 @@ public class PublishingChannelEntryResolver {
     }
 
     public URI createJournal() {
-        return lookUpNsdJournal().orElse(persistChannelRegistryExceptionReport("Journal"));
+        return lookupJournalByNsdCode()
+                   .or(() -> lookupJournalByTitle().map(this::toJournalUri))
+                   .or(() -> lookupJournalByIssn().map(this::toJournalUri))
+                   .orElseGet(() -> persistChannelRegistryExceptionReport("Journal"));
+    }
+
+    private Optional<String> lookupJournalByIssn() {
+        return issnList.stream()
+                   .map(channelRegistryMapper::convertJournalIssnToPid)
+                   .flatMap(Optional::stream)
+                   .findFirst();
+    }
+
+    private Optional<String> lookupJournalByTitle() {
+        return channelNames.stream()
+                   .map(channelRegistryMapper::convertJournalNameToPid)
+                   .flatMap(Optional::stream)
+                   .findFirst();
     }
 
     private URI persistChannelRegistryExceptionReport(String channelType) {
@@ -65,10 +86,13 @@ public class PublishingChannelEntryResolver {
     }
 
     public URI createSeries() {
-        return lookUpNsdSeries().orElse(persistChannelRegistryExceptionReport("Series"));
+        return lookupSeriesByNscCode()
+                   .or(() -> lookupJournalByTitle().map(this::toSeriesUri))
+                   .or(() -> lookupJournalByIssn().map(this::toSeriesUri))
+                   .orElseGet(() -> persistChannelRegistryExceptionReport("Series"));
     }
 
-    private Optional<URI> lookUpNsdSeries() {
+    private Optional<URI> lookupSeriesByNscCode() {
         return Optional.ofNullable(nsdCode)
                    .flatMap(identifier -> channelRegistryMapper.convertNsdJournalCodeToPid(identifier)
                                               .map(this::toSeriesUri));
@@ -85,7 +109,11 @@ public class PublishingChannelEntryResolver {
         return uri;
     }
 
-    private Optional<URI> lookUpNsdJournal() {
+    private URI toSeriesUri(String identifier) {
+        return getNsdProxyUri("series", identifier);
+    }
+
+    private Optional<URI> lookupJournalByNsdCode() {
         return Optional.ofNullable(nsdCode)
                    .flatMap(integer -> channelRegistryMapper.convertNsdJournalCodeToPid(integer)
                                            .map(this::toJournalUri));
@@ -100,6 +128,10 @@ public class PublishingChannelEntryResolver {
                 .persist(s3Client);
         }
         return uri;
+    }
+
+    private URI toJournalUri(String identifier) {
+        return getNsdProxyUri("journal", identifier);
     }
 
     private Optional<URI> lookupNsdPublisherProxyUri() {
