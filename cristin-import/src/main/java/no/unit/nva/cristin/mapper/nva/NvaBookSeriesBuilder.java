@@ -54,7 +54,9 @@ public class NvaBookSeriesBuilder extends CristinMappingModule {
     private BookSeries createConfirmedBookSeries(CristinJournalPublicationJournal b) {
         int nsdCode = b.getNsdCode();
         int publicationYear = cristinObject.getPublicationYear();
-        var seriesUri = new PublishingChannelEntryResolver(nsdCode, publicationYear, List.of(), channelRegistryMapper, s3Client,
+        var seriesUri = new PublishingChannelEntryResolver(nsdCode, publicationYear, List.of(b.getJournalTitle()),
+                                                           List.of(b.getIssnOnline(), b.getIssn()),
+                                                           channelRegistryMapper, s3Client,
                                                            cristinObject.getId())
                             .createSeries();
         return nonNull(seriesUri) ? new Series(seriesUri) : null;

@@ -16,15 +16,18 @@ public final class ChannelRegistryMapper {
     private static final char SEPARATOR = ';';
     private static final String PATH_PUBLISHER_ID_CSV = "channelRegistry/publisher_id_mapping.csv";
     private static final String PATH_PUBLISHER_NAME_CSV = "channelRegistry/publishers_by_name.csv";
+    private static final String PATH_JOURNAL_NAME_CSV = "channelRegistry/journals_by_name_and_issn.csv";
 
     private final Map<Integer, ChannelRegistryEntry> channelRegisterJournals;
     private final Map<Integer, String> channelRegisterPublishersById;
     private final List<ChannelRegistryPublisherByNameRepresentation> channelRegisterPublishersByName;
+    private final List<ChannelRegistryJournalByNameRepresentation> channelRegisterJournalsByName;
 
     private ChannelRegistryMapper() {
         this.channelRegisterJournals = getMapWithEntryFromResource(JOURNAL_SERIES_ID_MAPPING_CSV);
         this.channelRegisterPublishersById = getMapFromResource(PATH_PUBLISHER_ID_CSV);
         this.channelRegisterPublishersByName = getMapFromPublisherNameList(PATH_PUBLISHER_NAME_CSV);
+        this.channelRegisterJournalsByName = getJournalNameList(PATH_JOURNAL_NAME_CSV);
     }
 
     public static ChannelRegistryMapper getInstance() {
@@ -44,6 +47,20 @@ public final class ChannelRegistryMapper {
                    .filter(entry -> entry.hasTitle(name))
                    .findFirst()
                    .map(ChannelRegistryPublisherByNameRepresentation::getPid);
+    }
+
+    public Optional<String> convertJournalNameToPid(String name) {
+        return channelRegisterJournalsByName.stream()
+                   .filter(entry -> entry.hasTitle(name))
+                   .findFirst()
+                   .map(ChannelRegistryJournalByNameRepresentation::getPid);
+    }
+
+    public Optional<String> convertJournalIssnToPid(String issn) {
+        return channelRegisterJournalsByName.stream()
+                   .filter(entry -> entry.hasIssn(issn))
+                   .findFirst()
+                   .map(ChannelRegistryJournalByNameRepresentation::getPid);
     }
 
     private static Map<Integer, String> getMapFromResource(String path) {
@@ -71,6 +88,21 @@ public final class ChannelRegistryMapper {
                                    .build()
                                    .stream()
                                    .toList();
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private List<ChannelRegistryJournalByNameRepresentation> getJournalNameList(String path) {
+        try (var inputStream = IoUtils.inputStreamFromResources(path);
+            var bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
+            return new CsvToBeanBuilder<ChannelRegistryJournalByNameRepresentation>(bufferedReader)
+                       .withSeparator(SEPARATOR)
+                       .withType(ChannelRegistryJournalByNameRepresentation.class)
+                       .build()
+                       .stream()
+                       .toList();
 
         } catch (IOException e) {
             throw new RuntimeException(e);

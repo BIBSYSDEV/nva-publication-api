@@ -46,6 +46,7 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.NullPublisher;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
@@ -521,6 +522,52 @@ class CristinMapperTest extends AbstractCristinImportTest {
         var book = new NvaBookBuilder(cristinObject, ChannelRegistryMapper.getInstance(), mock(S3Client.class))
                        .buildBookForPublicationContext();
         assertThat( book.getPublisher(), is(instanceOf(NullPublisher.class)));
+    }
+
+    @Test
+    void shouldLookUpForJournalByNsdCode() {
+        var cristinObject = CristinDataGenerator.randomObject(CristinSecondaryCategory.JOURNAL_ARTICLE.getValue());
+        cristinObject.getJournalPublication().getJournal().setNsdCode(339700);
+        var periodical = new PeriodicalBuilder(cristinObject, ChannelRegistryMapper.getInstance(),
+                                      mock(S3Client.class)).buildPeriodicalForPublicationContext();
+        assertThat(((Journal) periodical).getId().toString(),
+                   containsString("48C55300-CAFE-45EE-8386-402EC6E791EF"));
+    }
+
+    @Test
+    void shouldLookUpForJournalByJournalTitleWhenNsdCodeIsMissing() {
+        var cristinObject = CristinDataGenerator.randomObject(CristinSecondaryCategory.JOURNAL_ARTICLE.getValue());
+        cristinObject.getJournalPublication().getJournal().setNsdCode(null);
+        cristinObject.getJournalPublication().getJournal().setJournalTitle("Arctos: Acta Philologica Fennica");
+        var periodical = new PeriodicalBuilder(cristinObject, ChannelRegistryMapper.getInstance(),
+                                               mock(S3Client.class)).buildPeriodicalForPublicationContext();
+        assertThat(((Journal) periodical).getId().toString(),
+                   containsString("48C55300-CAFE-45EE-8386-402EC6E791EF"));
+    }
+
+    @Test
+    void shouldLookUpForJournalByPrintIssnWhenNsdCodeAndJournalTitleIsMissing() {
+        var cristinObject = CristinDataGenerator.randomObject(CristinSecondaryCategory.JOURNAL_ARTICLE.getValue());
+        cristinObject.getJournalPublication().getJournal().setNsdCode(null);
+        cristinObject.getJournalPublication().getJournal().setJournalTitle(null);
+        cristinObject.getJournalPublication().getJournal().setIssn("0570-734X");
+        var periodical = new PeriodicalBuilder(cristinObject, ChannelRegistryMapper.getInstance(),
+                                               mock(S3Client.class)).buildPeriodicalForPublicationContext();
+        assertThat(((Journal) periodical).getId().toString(),
+                   containsString("48C55300-CAFE-45EE-8386-402EC6E791EF"));
+    }
+
+    @Test
+    void shouldLookUpForJournalByOnlineIssnWhenNsdCodeAndPrintIssnAndJournalTitleIsMissing() {
+        var cristinObject = CristinDataGenerator.randomObject(CristinSecondaryCategory.JOURNAL_ARTICLE.getValue());
+        cristinObject.getJournalPublication().getJournal().setNsdCode(null);
+        cristinObject.getJournalPublication().getJournal().setJournalTitle(null);
+        cristinObject.getJournalPublication().getJournal().setIssn(null);
+        cristinObject.getJournalPublication().getJournal().setIssnOnline("1940-3372");
+        var periodical = new PeriodicalBuilder(cristinObject, ChannelRegistryMapper.getInstance(),
+                                               mock(S3Client.class)).buildPeriodicalForPublicationContext();
+        assertThat(((Journal) periodical).getId().toString(),
+                   containsString("48D7E3B5-B05E-4834-B01C-65B2E14124B2"));
     }
 
     private List<Contributor> getContributors(CristinObject singleCristinObject) {
