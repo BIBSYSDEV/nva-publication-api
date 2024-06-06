@@ -37,7 +37,7 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
     private final ResourceService resourceService;
     private final UriRetriever uriRetriever;
     private final String apiHost;
-    private final int SINGLE_PUBLICATION_SIZE = 1;
+    private static final int SINGLE_PUBLICATION_SIZE = 1;
 
     public TitleAndTypePublicationFinder(ResourceService resourceService,
                                          UriRetriever uriRetriever,
