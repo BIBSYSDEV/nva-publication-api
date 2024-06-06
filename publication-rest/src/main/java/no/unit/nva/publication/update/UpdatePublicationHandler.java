@@ -430,8 +430,8 @@ public class UpdatePublicationHandler
     private boolean updateHasFileChanges(Publication existingPublication, Publication publicationUpdate) {
         var existingFiles = getUnpublishedFiles(existingPublication);
         var updatedFiles = getUnpublishedFiles(publicationUpdate);
-        return new HashSet<>(existingFiles).containsAll(updatedFiles)
-               && new HashSet<>(updatedFiles).containsAll(existingFiles);
+        return !(new HashSet<>(existingFiles).containsAll(updatedFiles)
+               && new HashSet<>(updatedFiles).containsAll(existingFiles));
     }
 
     private static Customer fetchCustomerOrFailWithBadGateway(CustomerApiClient customerApiClient,
