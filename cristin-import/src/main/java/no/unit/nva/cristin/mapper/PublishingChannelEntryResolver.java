@@ -57,7 +57,7 @@ public class PublishingChannelEntryResolver {
     }
 
     public URI createJournal() {
-        return lookUpNsdJournal()
+        return lookupJournalByNsdCode()
                    .or(() -> lookupJournalByTitle().map(this::toJournalUri))
                    .or(() -> lookupJournalByIssn().map(this::toJournalUri))
                    .orElseGet(() -> persistChannelRegistryExceptionReport("Journal"));
@@ -86,13 +86,13 @@ public class PublishingChannelEntryResolver {
     }
 
     public URI createSeries() {
-        return lookupNsdSeriesByNscCode()
+        return lookupSeriesByNscCode()
                    .or(() -> lookupJournalByTitle().map(this::toSeriesUri))
                    .or(() -> lookupJournalByIssn().map(this::toSeriesUri))
                    .orElseGet(() -> persistChannelRegistryExceptionReport("Series"));
     }
 
-    private Optional<URI> lookupNsdSeriesByNscCode() {
+    private Optional<URI> lookupSeriesByNscCode() {
         return Optional.ofNullable(nsdCode)
                    .flatMap(identifier -> channelRegistryMapper.convertNsdJournalCodeToPid(identifier)
                                               .map(this::toSeriesUri));
@@ -113,7 +113,7 @@ public class PublishingChannelEntryResolver {
         return getNsdProxyUri("series", identifier);
     }
 
-    private Optional<URI> lookUpNsdJournal() {
+    private Optional<URI> lookupJournalByNsdCode() {
         return Optional.ofNullable(nsdCode)
                    .flatMap(integer -> channelRegistryMapper.convertNsdJournalCodeToPid(integer)
                                            .map(this::toJournalUri));
