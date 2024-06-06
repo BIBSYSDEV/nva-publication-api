@@ -75,7 +75,7 @@ public class CristinImportPublicationMerger {
 
     private List<Contributor> determineContributors() {
         return cristinPublication.getEntityDescription().getContributors().isEmpty()
-               ? bragePublication.publication().getEntityDescription().getContributors()
+               ? bragePublicationRepresentation.publication().getEntityDescription().getContributors()
                : cristinPublication.getEntityDescription().getContributors();
     }
 
