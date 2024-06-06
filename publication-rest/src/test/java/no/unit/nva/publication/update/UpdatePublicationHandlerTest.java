@@ -1919,7 +1919,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         AssociatedArtifactList associatedArtifacts = publication.getAssociatedArtifacts();
         associatedArtifacts.add(newUnpublishedFile);
         publication.setAssociatedArtifacts(associatedArtifacts);
-        resourceService.updatePublication(publication);
     }
 
     private static List<FileForApproval> getUnpublishedFiles(Publication publication) {
