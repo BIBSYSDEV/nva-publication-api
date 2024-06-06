@@ -30,7 +30,6 @@ import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
-import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -184,7 +183,7 @@ class MessageServiceTest extends ResourcesLocalTest {
     }
 
     private UserInstance randomUserInstance(AccessRight accessRight) {
-        return UserInstance.create(randomString(), randomUri(), randomUri(), List.of(accessRight), randomUri());
+        return randomUserInstance(accessRight, randomUri());
     }
 
     private UserInstance randomUserInstance(AccessRight accessRight, URI customerId) {
