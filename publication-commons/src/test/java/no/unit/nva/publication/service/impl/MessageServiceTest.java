@@ -6,22 +6,27 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.Period;
+import java.util.List;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.TestingUtils;
 import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageStatus;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.logutils.LogUtils;
@@ -30,6 +35,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class MessageServiceTest extends ResourcesLocalTest {
     
@@ -77,12 +83,26 @@ class MessageServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldDeleteMessageForMessageOwner() throws ApiGatewayException {
+    void shouldNotDeleteMessageForMessageOwnerWhenMessageOwnerIsNotMessageSender() throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(
             PublicationStatus.PUBLISHED, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, DoiRequest.class, ticketService);
-        var persistedMessage = messageService.createMessage(ticket, owner, randomString());
-        messageService.deleteMessage(UserInstance.fromMessage(persistedMessage), persistedMessage);
+
+        var sender = UserInstance.create(randomString(), owner.getCustomerId());
+        var persistedMessage = messageService.createMessage(ticket, sender, randomString());
+
+        assertThrows(UnauthorizedException.class, () -> messageService.deleteMessage(owner, persistedMessage));
+    }
+
+    @Test
+    void shouldDeleteMessageForMessageSender() throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(
+            PublicationStatus.PUBLISHED, owner, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, DoiRequest.class, ticketService);
+
+        var sender = UserInstance.create(randomString(), owner.getCustomerId());
+        var persistedMessage = messageService.createMessage(ticket, sender, randomString());
+        messageService.deleteMessage(sender, persistedMessage);
         var deletedMessage = messageService.getMessage(owner, persistedMessage.getIdentifier());
 
         assertThat(deletedMessage.getStatus(), is(equalTo(MessageStatus.DELETED)));
@@ -117,7 +137,64 @@ class MessageServiceTest extends ResourcesLocalTest {
                      () -> messageService.deleteMessage(randomUserInstance(), persistedMessage));
     }
 
+    @ParameterizedTest
+    @ValueSource(classes = {
+        DoiRequest.class,
+        GeneralSupportRequest.class,
+        PublishingRequestCase.class})
+    void shouldAllowCuratorToDeleteMessageWhenTicketHasCorrectType(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(
+            PublicationStatus.PUBLISHED, owner, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+        var persistedMessage = messageService.createMessage(ticket, owner, randomString());
+
+        var doiCurator = UserInstance.create(
+            randomString(), owner.getCustomerId(), randomUri(), List.of(AccessRight.MANAGE_DOI), randomUri()
+        );
+        var supportCurator = UserInstance.create(
+            randomString(), owner.getCustomerId(), randomUri(), List.of(AccessRight.SUPPORT), randomUri()
+        );
+        var publishingCurator = UserInstance.create(
+            randomString(), owner.getCustomerId(), randomUri(), List.of(AccessRight.MANAGE_PUBLISHING_REQUESTS), randomUri()
+        );
+
+        var doiCuratorFromAnotherInstitution = UserInstance.create(
+            randomString(), randomUri(), randomUri(), List.of(AccessRight.MANAGE_DOI), randomUri()
+        );
+        var supportCuratorFromAnotherInstitution = UserInstance.create(
+            randomString(), randomUri(), randomUri(), List.of(AccessRight.SUPPORT), randomUri()
+        );
+        var publishingCuratorFromAnotherInstitution = UserInstance.create(
+            randomString(), randomUri(), randomUri(), List.of(AccessRight.MANAGE_PUBLISHING_REQUESTS), randomUri()
+        );
+
+        if (ticketType == DoiRequest.class) {
+            assertDoesNotThrow(() -> messageService.deleteMessage(doiCurator, persistedMessage));
+            assertThrows(UnauthorizedException.class, () -> messageService.deleteMessage(doiCuratorFromAnotherInstitution, persistedMessage));
+            assertThrows(UnauthorizedException.class, () -> messageService.deleteMessage(publishingCurator, persistedMessage));
+            assertThrows(UnauthorizedException.class, () -> messageService.deleteMessage(supportCurator, persistedMessage));
+        }
+
+        if (ticketType == GeneralSupportRequest.class) {
+            assertDoesNotThrow(() -> messageService.deleteMessage(supportCurator, persistedMessage));
+            assertThrows(UnauthorizedException.class, () -> messageService.deleteMessage(supportCuratorFromAnotherInstitution, persistedMessage));
+            assertThrows(UnauthorizedException.class, () -> messageService.deleteMessage(doiCurator, persistedMessage));
+            assertThrows(UnauthorizedException.class, () -> messageService.deleteMessage(publishingCurator, persistedMessage));
+        }
+
+        if (ticketType == PublishingRequestCase.class) {
+            assertDoesNotThrow(() -> messageService.deleteMessage(publishingCurator, persistedMessage));
+            assertThrows(UnauthorizedException.class, () -> messageService.deleteMessage(publishingCuratorFromAnotherInstitution, persistedMessage));
+            assertThrows(UnauthorizedException.class, () -> messageService.deleteMessage(doiCurator, persistedMessage));
+            assertThrows(UnauthorizedException.class, () -> messageService.deleteMessage(supportCurator, persistedMessage));
+        }
+    }
+
     private static UserInstance randomUserInstance() {
+        return UserInstance.create(new User(randomString()), randomUri());
+    }
+
+    private static UserInstance randomUserInstanceWithAccessRight(AccessRight accessRight) {
         return UserInstance.create(new User(randomString()), randomUri());
     }
 
