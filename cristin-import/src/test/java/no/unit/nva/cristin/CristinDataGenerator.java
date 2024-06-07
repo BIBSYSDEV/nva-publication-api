@@ -227,10 +227,11 @@ public final class CristinDataGenerator {
             case JOURNAL_LEADER -> randomJournalLeader();
             case JOURNAL_CORRIGENDUM -> randomJournalCorrigendum();
             case JOURNAL_ARTICLE,
-                     ARTICLE,
-                     POPULAR_ARTICLE,
-                     ACADEMIC_REVIEW,
-                     SHORT_COMMUNICATION -> randomJournalArticle(category);
+                 ARTICLE,
+                 POPULAR_ARTICLE,
+                 ACADEMIC_REVIEW,
+                 SHORT_COMMUNICATION,
+                 ABSTRACT -> randomJournalArticle(category);
             case RESEARCH_REPORT -> randomResearchReport();
             case DEGREE_PHD, MAGISTER_THESIS -> randomDegreePhd(category);
             case DEGREE_LICENTIATE -> randomDegreeLicentiate();
