@@ -5,6 +5,11 @@ import java.util.stream.Stream;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.event.Lecture;
+import no.unit.nva.model.instancetypes.report.ConferenceReport;
+import no.unit.nva.model.pages.Pages;
 import org.apache.commons.text.similarity.LevenshteinDistance;
 
 public final class PublicationComparator {
@@ -28,11 +33,24 @@ public final class PublicationComparator {
     }
 
     private static boolean publicationContextTypeMatches(Publication existingPublication, Publication incomingPublication) {
-        var existingPublicationContext =
-            existingPublication.getEntityDescription().getReference().getPublicationContext().getClass();
-        var incomingPublicationContext =
-            incomingPublication.getEntityDescription().getReference().getPublicationContext().getClass();
-        return existingPublicationContext.equals(incomingPublicationContext);
+        var existingPublicationContext = getPublicationContext(existingPublication);
+        var incomingPublicationContext = getPublicationContext(incomingPublication);
+        var existingPublicationInstance = getPublicationInstance(existingPublication);
+        var incomingPublicationInstance = getPublicationInstance(incomingPublication);
+        if (incomingPublicationInstance instanceof ConferenceReport) {
+            return existingPublicationInstance instanceof Lecture
+                || existingPublicationContext.equals(incomingPublicationContext);
+        } else {
+            return existingPublicationContext.equals(incomingPublicationContext);
+        }
+    }
+
+    private static PublicationInstance<? extends Pages> getPublicationInstance(Publication publication) {
+        return publication.getEntityDescription().getReference().getPublicationInstance();
+    }
+
+    private static Class<? extends PublicationContext> getPublicationContext(Publication incomingPublication) {
+        return incomingPublication.getEntityDescription().getReference().getPublicationContext().getClass();
     }
 
     private static boolean publicationsDateAreClose(Publication existingPublication, Publication incomingPublication) {
