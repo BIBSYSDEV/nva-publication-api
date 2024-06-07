@@ -4,8 +4,8 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.testing.PublicationGenerator.fromInstanceClassesExcluding;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublicationNonDegree;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
@@ -45,7 +45,6 @@ import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
-import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.RequestUtil;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
@@ -187,6 +186,17 @@ class PublicationPermissionStrategyTest {
         return accessRight -> accessRight.toPersistedString() + AT + institutionId.toString();
     }
 
+    static Publication createPublication(Class<?> instanceTypeClass,
+                                         String resourceOwner,
+                                         URI customer,
+                                         URI cristinId) {
+        return randomPublication(instanceTypeClass).copy()
+                   .withResourceOwner(new ResourceOwner(new Username(resourceOwner), cristinId))
+                   .withPublisher(new Organization.Builder().withId(customer).build())
+                   .withStatus(PUBLISHED)
+                   .build();
+    }
+
     static Publication createPublication(String resourceOwner, URI customer, URI cristinId) {
         return randomPublication().copy()
                    .withResourceOwner(new ResourceOwner(new Username(resourceOwner), cristinId))
@@ -194,9 +204,9 @@ class PublicationPermissionStrategyTest {
                    .withStatus(PUBLISHED)
                    .build();
     }
-
     Publication createNonDegreePublication(String resourceOwner, URI customer, URI ownerAffiliation) {
-        return PublicationGenerator.randomPublicationNonDegree().copy()
+        return fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES)
+                   .copy()
                    .withResourceOwner(new ResourceOwner(new Username(resourceOwner), ownerAffiliation))
                    .withPublisher(new Organization.Builder().withId(customer).build())
                    .withStatus(PUBLISHED)
@@ -232,7 +242,7 @@ class PublicationPermissionStrategyTest {
     protected Publication createPublicationWithContributor(String contributorName, URI contributorId,
                                                            Role contributorRole, URI institutionId,
                                                            URI topLevelCristinOrgId) {
-        var publication = randomPublicationNonDegree();
+        var publication = fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES);
         var identity = new Identity.Builder()
                            .withName(contributorName)
                            .withId(contributorId)

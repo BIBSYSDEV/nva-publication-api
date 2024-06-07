@@ -11,9 +11,9 @@ import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.OVERRIDABLE_RIGHTS_RETENTION_STRATEGY;
+import static no.unit.nva.model.testing.PublicationGenerator.fromInstanceClassesExcluding;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublicationNonDegree;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypes;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseNotFound;
@@ -132,6 +132,7 @@ import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
+import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
@@ -154,6 +155,7 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.permission.strategy.PermissionStrategy;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -286,7 +288,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication randomNonDegreePublicationWithPublisher() {
-        return randomPublicationNonDegree()
+        return fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES)
                    .copy()
                    .withPublisher(new Organization.Builder()
                                       .withId(customerId)
@@ -303,8 +305,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .build();
     }
 
-    static Stream<Arguments> allDegreeInstances() {
+    static Stream<Arguments> allProtectedDegreeInstances() {
         return Stream.of(
+            Arguments.of(DegreeLicentiate.class),
             Arguments.of(DegreeMaster.class),
             Arguments.of(DegreeBachelor.class),
             Arguments.of(DegreePhd.class)
@@ -867,7 +870,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest(name = "Should update degree publication when user has access rights to edit degree")
-    @MethodSource("allDegreeInstances")
+    @MethodSource("allProtectedDegreeInstances")
     void shouldUpdateDegreePublicationWhenUserHasAccessRightToEditDegree(Class<?> degree)
         throws BadRequestException, IOException, NotFoundException {
         var degreePublication = savePublication(randomPublicationWithPublisher(customerId, degree));
@@ -887,7 +890,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest(name = "Should update degree publication when user is resource owner")
-    @MethodSource("allDegreeInstances")
+    @MethodSource("allProtectedDegreeInstances")
     void shouldUpdateDegreePublicationWhenUserIsResourceOwner(Class<?> degree)
         throws BadRequestException, IOException, NotFoundException {
         var degreePublication = savePublication(randomPublicationWithPublisher(customerId, degree));
@@ -910,7 +913,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @ParameterizedTest(name = "Should return Unauthorized publication when user does not has access rights to edit "
                               + "degree and is not publication owner and the publication is Degree")
-    @MethodSource("allDegreeInstances")
+    @MethodSource("allProtectedDegreeInstances")
     void shouldReturnForbiddenWhenUserDoesNotHasAccessRightToEditDegree(Class<?> degree)
         throws BadRequestException, IOException {
         var degreePublication = savePublication(randomPublicationWithPublisher(customerId, degree));
@@ -1630,7 +1633,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publicationWithNewFile = addFileToPublication(publication, fileToUpload);
 
         var contributorName = contributor.getIdentity().getName();
-        var event = contributorUpdatesPublicationAndHasRightsToUpdate(publicationWithNewFile, cristinId, contributorName);
+        var event = contributorUpdatesPublicationAndHasRightsToUpdate(publicationWithNewFile, cristinId,
+                                                                      contributorName);
         updatePublicationHandler.handleRequest(event, output, context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
@@ -1659,7 +1663,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publicationWithNewFile = addFileToPublication(publication, fileToUpload);
 
         var contributorName = contributor.getIdentity().getName();
-        var event = contributorUpdatesPublicationAndHasRightsToUpdate(publicationWithNewFile, cristinId, contributorName);
+        var event = contributorUpdatesPublicationAndHasRightsToUpdate(publicationWithNewFile, cristinId,
+                                                                      contributorName);
         updatePublicationHandler.handleRequest(event, output, context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
@@ -1674,8 +1679,11 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         assertNotNull(existingFiles);
         assertFalse(existingFiles.isEmpty());
-        assertTrue(existingFiles.stream().allMatch(file -> file.getUploadDetails() != null && file.getUploadDetails().getUploadedBy() != null));
-        assertTrue(existingFiles.stream().noneMatch(file -> file.getUploadDetails().getUploadedBy().getValue().equals(contributorName)));
+        assertTrue(existingFiles.stream()
+                       .allMatch(
+                           file -> file.getUploadDetails() != null && file.getUploadDetails().getUploadedBy() != null));
+        assertTrue(existingFiles.stream()
+                       .noneMatch(file -> file.getUploadDetails().getUploadedBy().getValue().equals(contributorName)));
     }
 
     @Test
@@ -1700,10 +1708,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var body = gatewayResponse.getBodyObject(PublicationResponse.class);
         var updatedFile = body.getAssociatedArtifacts().stream()
-                                .filter(File.class::isInstance)
-                                .map(File.class::cast)
-                                .filter(f -> f.getIdentifier().equals(fileUpdate.getIdentifier()))
-                                .toList().getFirst();
+                              .filter(File.class::isInstance)
+                              .map(File.class::cast)
+                              .filter(f -> f.getIdentifier().equals(fileUpdate.getIdentifier()))
+                              .toList().getFirst();
 
         assertNotNull(updatedFile.getUploadDetails());
         assertThat(updatedFile.getUploadDetails().getUploadedBy().getValue(), is(not(equalTo(contributorName))));
@@ -2166,7 +2174,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                    Long.valueOf(randomInteger().toString()),
                                    new License.Builder().withIdentifier(randomString()).withLink(randomUri()).build(),
                                    false, PublisherVersion.PUBLISHED_VERSION, null,
-                                   OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, randomString()),
+                                   OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY,
+                                                                            randomString()),
                                    randomString(), new UploadDetails(new Username(randomString()), Instant.now()));
     }
 
@@ -2193,7 +2202,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     Publication createNonDegreePublication() {
-        var publication = randomPublicationNonDegree();
+        var publication = fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES);
         publication.setIdentifier(SortableIdentifier.next());
         return publication;
     }
