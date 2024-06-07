@@ -89,8 +89,8 @@ public class UserInstance implements JsonSerializable {
         return UserInstance.create(ticket.getOwner(), ticket.getCustomerId());
     }
 
-    public boolean isOwner(Message message) {
-        return this.user.equals(message.getOwner())
+    public boolean isSender(Message message) {
+        return this.user.equals(message.getSender())
                && this.customerId.equals(message.getCustomerId());
     }
 
