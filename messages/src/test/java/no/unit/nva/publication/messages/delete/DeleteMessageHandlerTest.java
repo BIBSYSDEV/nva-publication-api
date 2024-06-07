@@ -82,7 +82,10 @@ class DeleteMessageHandlerTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @ValueSource(classes = {DoiRequest.class, PublishingRequestCase.class, GeneralSupportRequest.class})
+    @ValueSource(classes = {
+        DoiRequest.class,
+        PublishingRequestCase.class,
+        GeneralSupportRequest.class})
     void shouldReturnUnauthorizedWhenUserIsAttemptingToDeleteTicketUserDoesNotOwn(
         Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException, IOException {
