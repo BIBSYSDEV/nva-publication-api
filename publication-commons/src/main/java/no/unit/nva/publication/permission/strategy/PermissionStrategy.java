@@ -43,7 +43,7 @@ public abstract class PermissionStrategy {
         return userInstance.getAccessRights().contains(accessRight);
     }
 
-    protected boolean isDegree() {
+    protected boolean isProtectedDegreeInstanceType() {
         return Optional.ofNullable(publication.getEntityDescription())
                    .map(EntityDescription::getReference)
                    .map(Reference::getPublicationInstance)
@@ -51,8 +51,8 @@ public abstract class PermissionStrategy {
                    .orElse(false);
     }
 
-    protected boolean isEmbargoDegree() {
-        return isDegree() && publication.getAssociatedArtifacts().stream()
+    protected boolean isProtectedDegreeInstanceTypeWithEmbargo() {
+        return isProtectedDegreeInstanceType() && publication.getAssociatedArtifacts().stream()
                                  .filter(File.class::isInstance)
                                  .map(File.class::cast)
                                  .anyMatch(this::hasEmbargo);
