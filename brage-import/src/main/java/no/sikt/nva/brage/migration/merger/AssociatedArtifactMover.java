@@ -5,8 +5,8 @@ import java.util.stream.Collectors;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import nva.commons.core.Environment;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UnixPath;
@@ -41,8 +41,7 @@ public class AssociatedArtifactMover {
 
     private AssociatedArtifact pushAssociatedArtifactToPersistedStorage(AssociatedArtifact associatedArtifact) {
         try {
-            if (associatedArtifact instanceof File) {
-                var file = (PublishedFile) associatedArtifact;
+            if (associatedArtifact instanceof File file) {
                 var objectKey = file.getIdentifier().toString();
 
                 S3MultipartCopier.fromSourceKey(getObjectKeyPath() + objectKey)
@@ -65,8 +64,11 @@ public class AssociatedArtifactMover {
         var headObjectResponse = s3Client.headObject(createHeadObjectRequest(objectKey));
         var size = headObjectResponse.contentLength();
         var mimeType = headObjectResponse.contentType();
+        return buildFile(file, mimeType, size);
+    }
 
-        return File.builder()
+    private static File buildFile(File file, String mimeType, Long size) {
+        var builder =  File.builder()
                    .withName(file.getName())
                    .withIdentifier(file.getIdentifier())
                    .withLicense(file.getLicense())
@@ -75,8 +77,12 @@ public class AssociatedArtifactMover {
                    .withMimeType(mimeType)
                    .withSize(size)
                    .withLegalNote(file.getLegalNote())
-                   .withUploadDetails(file.getUploadDetails())
-                   .buildPublishedFile();
+                   .withUploadDetails(file.getUploadDetails());
+        if (file instanceof AdministrativeAgreement) {
+            return builder.buildUnpublishableFile();
+        } else  {
+            return builder.buildPublishedFile();
+        }
     }
 
     private HeadObjectRequest createHeadObjectRequest(String objectKey) {

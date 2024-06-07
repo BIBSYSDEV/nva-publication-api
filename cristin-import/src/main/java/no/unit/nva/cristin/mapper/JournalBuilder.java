@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isAbstract;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalArticle;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalCorrigendum;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalLeader;
@@ -11,6 +12,7 @@ import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryExc
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.AcademicLiteratureReview;
+import no.unit.nva.model.instancetypes.journal.ConferenceAbstract;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
@@ -39,9 +41,17 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
             return createJournalCorrigendum();
         } else if (isJournalArticle(getCristinObject())) {
             return createJournalArticle();
-        } else {
+        } else if (isAbstract(getCristinObject())) {
+            return createAbstract();
+        }
+        else {
             throw unknownSecondaryCategory();
         }
+    }
+
+    private PublicationInstance<? extends Pages> createAbstract() {
+        return new ConferenceAbstract(extractVolume(), extractIssue(), extractArticleNumber(),
+                                      new Range(extractPagesBegin(), extractPagesEnd()));
     }
 
     @Override

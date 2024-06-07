@@ -60,6 +60,7 @@ public enum CristinSecondaryCategory {
     THEATRICAL_PRODUCTION("TEATERPRODUKSJON", "THEATRICAL_PRODUCTION"),
     VISUAL_ARTS("KUNST_OG_BILDE", "VISUAL_ARTS"),
     WRITTEN_INTERVIEW("INTERVJUSKRIFTL", "WRITTEN INTERVIEW"),
+    ABSTRACT("SAMMENDRAG", "ABSTRACT"),
     UNMAPPED;
 
     public static final int DEFAULT_VALUE = 0;
@@ -104,6 +105,10 @@ public enum CristinSecondaryCategory {
 
     public static boolean isJournalLeader(CristinObject cristinObject) {
         return CristinSecondaryCategory.JOURNAL_LEADER.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static boolean isAbstract(CristinObject cristinObject) {
+        return CristinSecondaryCategory.ABSTRACT.equals(cristinObject.getSecondaryCategory());
     }
 
     public static boolean isJournalCorrigendum(CristinObject cristinObject) {
