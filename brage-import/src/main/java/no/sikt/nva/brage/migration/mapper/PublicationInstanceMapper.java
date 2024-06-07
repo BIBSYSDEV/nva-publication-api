@@ -27,7 +27,7 @@ import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isStud
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.isTextbook;
 import static nva.commons.core.attempt.Try.attempt;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -521,7 +521,7 @@ public final class PublicationInstanceMapper {
                    .orElseGet(Collections::emptyList)
                    .stream()
                    .map(UnconfirmedDocument::new)
-                   .collect(Collectors.toCollection(HashSet::new));
+                   .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     private static MonographPages extractMonographPages(Record brageRecord) {
