@@ -24,7 +24,7 @@ import nva.commons.apigateway.AccessRight;
 
 public abstract class PermissionStrategy {
 
-    public static final Class<?>[] PROTECTED_DEGREE_INSTANCE_TYPES = new Class<?>[]{
+    public static final Class<?>[] PROTECTED_DEGREE_INSTANCE_TYPES = {
         DegreeLicentiate.class,
         DegreeBachelor.class,
         DegreeMaster.class,
