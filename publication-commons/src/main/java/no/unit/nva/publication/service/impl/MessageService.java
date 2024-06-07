@@ -13,13 +13,24 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
+import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageStatus;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.MessageDao;
+import no.unit.nva.publication.utils.RequestUtils;
+import nva.commons.apigateway.AccessRight;
+import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.JacocoGenerated;
@@ -29,7 +40,8 @@ import org.slf4j.LoggerFactory;
 public class MessageService extends ServiceWithTransactions {
 
     private static final Logger logger = LoggerFactory.getLogger(MessageService.class);
-    public static final String OWNER_ONLY_MESSAGE = "Message owner only can perform this action!";
+    public static final String SENDER_OR_CURATOR_ONLY_MESSAGE = "Only message sender and curator can perform this "
+                                                               + "action!";
     public static final String MESSAGE_NOT_FOUND_ERROR = "Could not find message with identifier:";
     private static final String MESSAGE_REFRESHED_MESSAGE =
         "Message {} for ticket {} for publication {} has been refreshed successfully";
@@ -74,15 +86,39 @@ public class MessageService extends ServiceWithTransactions {
                    .toOptional();
     }
 
-    public void deleteMessage(UserInstance userInstance, Message message) throws UnauthorizedException {
-        if (!userInstance.isOwner(message)) {
-            throw new UnauthorizedException(OWNER_ONLY_MESSAGE);
+    public void deleteMessage(UserInstance userInstance, Message message)
+        throws UnauthorizedException, NotFoundException {
+        if (!canManageMessage(message, userInstance)) {
+            throw new UnauthorizedException(SENDER_OR_CURATOR_ONLY_MESSAGE);
         }
         message.setModifiedDate(Instant.now());
         message.setStatus(MessageStatus.DELETED);
         var dao = message.toDao();
         var transactionRequest = dao.createInsertionTransactionRequest();
         getClient().transactWriteItems(transactionRequest);
+    }
+
+    private boolean canManageMessage(Message message, UserInstance userInstance) throws NotFoundException {
+        if (userInstance.isSender(message)) {
+            return true;
+        }
+
+        return isCuratorForMessage(message, userInstance);
+    }
+
+    private boolean isCuratorForMessage(Message message, UserInstance userInstance) throws NotFoundException {
+        if (!message.getCustomerId().equals(userInstance.getCustomerId())) {
+            return false;
+        }
+
+        var ticket = ticketService.fetchTicketByIdentifier(message.getTicketIdentifier());
+        return switch (ticket) {
+            case PublishingRequestCase publishingRequest -> userInstance.getAccessRights().contains(AccessRight.MANAGE_PUBLISHING_REQUESTS);
+            case GeneralSupportRequest supportRequest -> userInstance.getAccessRights().contains(AccessRight.SUPPORT);
+            case DoiRequest doiRequest -> userInstance.getAccessRights().contains(AccessRight.MANAGE_DOI);
+            case UnpublishRequest unpublishRequest -> userInstance.getAccessRights().contains(AccessRight.MANAGE_RESOURCES_STANDARD);
+            default -> false;
+        };
     }
 
     public void refresh(SortableIdentifier identifier) {
