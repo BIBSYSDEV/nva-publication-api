@@ -65,16 +65,11 @@ public class AssociatedArtifactMover {
         var headObjectResponse = s3Client.headObject(createHeadObjectRequest(objectKey));
         var size = headObjectResponse.contentLength();
         var mimeType = headObjectResponse.contentType();
-        var associatedArtifactBuilder = buildFile(file, mimeType, size);
-        if (file instanceof AdministrativeAgreement) {
-            return associatedArtifactBuilder.buildUnpublishableFile();
-        } else  {
-            return associatedArtifactBuilder.buildPublishedFile();
-        }
+        return buildFile(file, mimeType, size);
     }
 
-    private static Builder buildFile(File file, String mimeType, Long size) {
-        return File.builder()
+    private static File buildFile(File file, String mimeType, Long size) {
+        var builder =  File.builder()
                    .withName(file.getName())
                    .withIdentifier(file.getIdentifier())
                    .withLicense(file.getLicense())
@@ -84,6 +79,11 @@ public class AssociatedArtifactMover {
                    .withSize(size)
                    .withLegalNote(file.getLegalNote())
                    .withUploadDetails(file.getUploadDetails());
+        if (file instanceof AdministrativeAgreement) {
+            return builder.buildUnpublishableFile();
+        } else  {
+            return builder.buildPublishedFile();
+        }
     }
 
     private HeadObjectRequest createHeadObjectRequest(String objectKey) {
