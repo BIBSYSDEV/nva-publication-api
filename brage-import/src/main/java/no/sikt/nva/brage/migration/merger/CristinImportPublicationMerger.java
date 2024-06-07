@@ -3,6 +3,7 @@ package no.sikt.nva.brage.migration.merger;
 import static java.util.Objects.nonNull;
 import java.net.URI;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -101,8 +102,8 @@ public class CristinImportPublicationMerger {
     }
 
     private Set<RelatedDocument> getRelated(Set<RelatedDocument> documents, Set<RelatedDocument> brageDocuments) {
-        if (nonNull(documents)) {
-            var mergedDocuments = new HashSet<RelatedDocument>();
+        if (nonNull(documents) && !documents.isEmpty()) {
+            var mergedDocuments = new LinkedHashSet<RelatedDocument>();
             mergedDocuments.addAll(documents);
             mergedDocuments.addAll(brageDocuments);
             return mergedDocuments;
