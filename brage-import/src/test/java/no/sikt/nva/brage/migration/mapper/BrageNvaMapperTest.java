@@ -28,7 +28,20 @@ class BrageNvaMapperTest {
     @Test
     void shouldMapContentFileWithBundleTypeLicenseToAdministrativeAgreement()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        var licenseContentFile = createRandomLicenseContentFile();
+        var licenseContentFile = createRandomContentFileWithBundleType(BundleType.LICENSE);
+        var generator =  new NvaBrageMigrationDataGenerator.Builder()
+                             .withType(new Type(List.of(), NvaType.CHAPTER.getValue()))
+                             .withResourceContent(new ResourceContent(List.of(licenseContentFile)))
+                             .build();
+        var file = BrageNvaMapper.toNvaPublication(generator.getBrageRecord()).getAssociatedArtifacts().getFirst();
+
+        assertThat(file, is(instanceOf(AdministrativeAgreement.class)));
+    }
+
+    @Test
+    void shouldMapContentFileWithBundleTypeIgnoredToAdministrativeAgreement()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var licenseContentFile = createRandomContentFileWithBundleType(BundleType.IGNORED);
         var generator =  new NvaBrageMigrationDataGenerator.Builder()
                              .withType(new Type(List.of(), NvaType.CHAPTER.getValue()))
                              .withResourceContent(new ResourceContent(List.of(licenseContentFile)))
@@ -51,7 +64,7 @@ class BrageNvaMapperTest {
         assertThat(degreePhd.getRelated(), is(equalTo(expectedRelatedDocuments)));
     }
 
-    private ContentFile createRandomLicenseContentFile() {
-        return new ContentFile(randomString(), BundleType.LICENSE, randomString(), UUID.randomUUID(), null, null);
+    private ContentFile createRandomContentFileWithBundleType(BundleType bundleType) {
+        return new ContentFile(randomString(), bundleType, randomString(), UUID.randomUUID(), null, null);
     }
 }
