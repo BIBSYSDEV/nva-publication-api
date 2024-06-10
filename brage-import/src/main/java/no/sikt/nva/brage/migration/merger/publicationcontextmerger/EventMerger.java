@@ -7,7 +7,7 @@ import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.place.Place;
 
-public class EventMerger extends PublicationContextMerger {
+public final class EventMerger extends PublicationContextMerger {
 
     private EventMerger() {
         super();

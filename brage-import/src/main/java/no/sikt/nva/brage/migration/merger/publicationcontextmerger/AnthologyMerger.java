@@ -5,7 +5,7 @@ import java.net.URI;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.PublicationContext;
 
-public class AnthologyMerger extends PublicationContextMerger {
+public final class AnthologyMerger extends PublicationContextMerger {
 
     private AnthologyMerger() {
         super();
