@@ -237,7 +237,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
     private Publication updatedPublication(PublicationRepresentation publicationRepresentation,
                                            Publication existingPublication)
-        throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
         var cristinImportPublicationMerger = new CristinImportPublicationMerger(existingPublication,
             publicationRepresentation);
         return cristinImportPublicationMerger.mergePublications();

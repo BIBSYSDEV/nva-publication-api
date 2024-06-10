@@ -5,12 +5,10 @@ import java.net.URI;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
-import no.unit.nva.model.Course;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
@@ -19,17 +17,11 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.contexttypes.Book;
-import no.unit.nva.model.contexttypes.Book.BookBuilder;
-import no.unit.nva.model.contexttypes.BookSeries;
 import no.unit.nva.model.contexttypes.Degree;
-import no.unit.nva.model.contexttypes.Degree.Builder;
+import no.unit.nva.model.contexttypes.Periodical;
 import no.unit.nva.model.contexttypes.PublicationContext;
-import no.unit.nva.model.contexttypes.Publisher;
-import no.unit.nva.model.contexttypes.PublishingHouse;
-import no.unit.nva.model.contexttypes.Series;
-import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
-import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
+import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
@@ -51,7 +43,8 @@ public class CristinImportPublicationMerger {
         this.bragePublicationRepresentation = bragePublication;
     }
 
-    public Publication mergePublications() throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
+    public Publication mergePublications()
+        throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
         preMergeValidation();
         var publicationForUpdating = cristinPublication.copy()
                                          .withAdditionalIdentifiers(mergeAdditionalIdentifiers())
@@ -67,7 +60,7 @@ public class CristinImportPublicationMerger {
     }
 
     private EntityDescription determineEntityDescription()
-        throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
         return cristinPublication.getEntityDescription().copy()
                    .withContributors(determineContributors())
                    .withReference(determineReference())
@@ -80,7 +73,8 @@ public class CristinImportPublicationMerger {
                : cristinPublication.getEntityDescription().getContributors();
     }
 
-    private Reference determineReference() throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
+    private Reference determineReference()
+        throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
         var reference = cristinPublication.getEntityDescription().getReference();
         reference.setPublicationContext(determinePublicationContext(reference));
         reference.setPublicationInstance(determincePublicationInstance(reference));
@@ -130,78 +124,16 @@ public class CristinImportPublicationMerger {
                          .getDoi();
     }
 
-    private PublicationContext determinePublicationContext(Reference reference) throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
+    private PublicationContext determinePublicationContext(Reference reference)
+        throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
         var publicationContext = reference.getPublicationContext();
         var bragePublicationContext = bragePublicationRepresentation.publication().getEntityDescription().getReference().getPublicationContext();
-        if (publicationContext instanceof Degree degree && bragePublicationContext instanceof Degree brageDegree) {
-            return new Builder().withIsbnList(getIsbnList(degree.getIsbnList(), brageDegree.getIsbnList()))
-                               .withSeries(getSeries(degree.getSeries(), brageDegree.getSeries()))
-                               .withPublisher(getPublisher(degree.getPublisher(), brageDegree.getPublisher()))
-                               .withSeriesNumber(getSeriesNumber(degree, brageDegree))
-                               .withCourse(getCourse(degree))
-                               .build();
-        }
-        if (publicationContext instanceof Book book && bragePublicationContext instanceof Book brageBook) {
-            return new BookBuilder()
-                       .withIsbnList(getIsbnList(book.getIsbnList(), brageBook.getIsbnList()))
-                       .withPublisher(getPublisher(book.getPublisher(), brageBook.getPublisher()))
-                       .withSeries(getSeries(book.getSeries(), brageBook.getSeries()))
-                       .withSeriesNumber(getSeriesNumber(book, brageBook))
-                       .withRevision(nonNull(book.getRevision()) ? book.getRevision() : brageBook.getRevision())
-                       .build();
-        }
-        else {
-            return publicationContext;
-        }
-    }
-
-    private Course getCourse(Degree degree) {
-        return nonNull(degree.getCourse()) ? degree.getCourse() : extractBrageCourse();
-    }
-
-    private static String getSeriesNumber(Book book, Book brageBook) {
-        return nonNull(book.getSeriesNumber()) ? book.getSeriesNumber() :
-                                                                                brageBook.getSeriesNumber();
-    }
-
-    private PublishingHouse getPublisher(PublishingHouse existingPublisher, PublishingHouse bragePublisher) {
-        if (nonNull(existingPublisher) && existingPublisher instanceof Publisher publisher) {
-            return publisher;
-        }
-        if (nonNull(bragePublisher) && bragePublisher instanceof Publisher publisher) {
-            return publisher;
-        }
-        if (nonNull(existingPublisher) && existingPublisher instanceof UnconfirmedPublisher unconfirmedPublisher) {
-            return unconfirmedPublisher;
-        } else {
-            return bragePublisher;
-        }
-    }
-
-    private static BookSeries getSeries(BookSeries degree, BookSeries brageDegree) {
-        if (nonNull(degree) && degree instanceof Series series) {
-            return series;
-        }
-        if (nonNull(brageDegree) && brageDegree instanceof Series series) {
-            return series;
-        }
-        if (nonNull(degree) && degree instanceof UnconfirmedSeries unconfirmedSeries) {
-            return unconfirmedSeries;
-        } else {
-            return brageDegree;
-        }
-    }
-
-    private static List<String> getIsbnList(List<String> existingList, List<String> brageList) {
-        return nonNull(existingList) && !existingList.isEmpty() ? existingList : brageList;
-    }
-
-    private Course extractBrageCourse() {
-        return Optional.ofNullable(bragePublicationRepresentation.publication().getEntityDescription().getReference().getPublicationContext())
-                   .filter(Degree.class::isInstance)
-                   .map(Degree.class::cast)
-                   .map(Degree::getCourse)
-                   .orElse(null);
+        return switch (publicationContext) {
+            case Degree degree -> DegreeMerger.merge(degree, bragePublicationContext);
+            case Book book -> BookMerger.merge(book, bragePublicationContext);
+            case Periodical journal -> JournalMerger.merge(journal, bragePublicationContext);
+            default -> publicationContext;
+        };
     }
 
     private String determineRightsHolder() {
