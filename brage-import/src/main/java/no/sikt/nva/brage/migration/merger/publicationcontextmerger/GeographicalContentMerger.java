@@ -6,6 +6,7 @@ import no.unit.nva.model.contexttypes.PublicationContext;
 public final class GeographicalContentMerger extends PublicationContextMerger{
 
     private GeographicalContentMerger() {
+        super();
     }
 
     public static PublicationContext merge(GeographicalContent geographicalContent,

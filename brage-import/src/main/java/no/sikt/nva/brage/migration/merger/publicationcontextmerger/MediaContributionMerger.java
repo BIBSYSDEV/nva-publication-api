@@ -10,6 +10,7 @@ import no.unit.nva.model.contexttypes.media.SeriesEpisode;
 public final class MediaContributionMerger extends PublicationContextMerger {
 
     private MediaContributionMerger() {
+        super();
     }
 
     public static MediaContribution merge(MediaContribution mediaContribution, PublicationContext publicationContext) {

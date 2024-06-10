@@ -6,6 +6,7 @@ import no.unit.nva.model.contexttypes.ResearchData;
 public final class ResearchDataMerger extends PublicationContextMerger{
 
     private ResearchDataMerger() {
+        super();
     }
 
     public static ResearchData merge(ResearchData researchData, PublicationContext publicationContext) {
