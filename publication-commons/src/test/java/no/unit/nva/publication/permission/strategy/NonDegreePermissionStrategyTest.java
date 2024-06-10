@@ -7,6 +7,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.model.PublicationOperation;
@@ -14,6 +15,7 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
+import no.unit.nva.model.instancetypes.degree.DegreeBase;
 import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
@@ -31,41 +33,40 @@ import org.junit.jupiter.params.provider.MethodSource;
 class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest {
 
     private static Stream<Arguments> argumentsForDenyingCuratorFromPerformingOperationsOnProtectedDegreeResources() {
-        return Stream.of(
-            Arguments.of(PublicationOperation.UPDATE, DegreeLicentiate.class),
-            Arguments.of(PublicationOperation.UPDATE, DegreeBachelor.class),
-            Arguments.of(PublicationOperation.UPDATE, DegreeMaster.class),
-            Arguments.of(PublicationOperation.UPDATE, DegreePhd.class),
-            Arguments.of(PublicationOperation.DELETE, DegreeLicentiate.class),
-            Arguments.of(PublicationOperation.DELETE, DegreeBachelor.class),
-            Arguments.of(PublicationOperation.DELETE, DegreeMaster.class),
-            Arguments.of(PublicationOperation.DELETE, DegreePhd.class),
-            Arguments.of(PublicationOperation.UNPUBLISH, DegreeLicentiate.class),
-            Arguments.of(PublicationOperation.UNPUBLISH, DegreeBachelor.class),
-            Arguments.of(PublicationOperation.UNPUBLISH, DegreeMaster.class),
-            Arguments.of(PublicationOperation.UNPUBLISH, DegreePhd.class),
-            Arguments.of(PublicationOperation.TERMINATE, DegreeLicentiate.class),
-            Arguments.of(PublicationOperation.TERMINATE, DegreeBachelor.class),
-            Arguments.of(PublicationOperation.TERMINATE, DegreeMaster.class),
-            Arguments.of(PublicationOperation.TERMINATE, DegreePhd.class),
-            Arguments.of(PublicationOperation.TICKET_PUBLISH, DegreeLicentiate.class),
-            Arguments.of(PublicationOperation.TICKET_PUBLISH, DegreeBachelor.class),
-            Arguments.of(PublicationOperation.TICKET_PUBLISH, DegreeMaster.class),
-            Arguments.of(PublicationOperation.TICKET_PUBLISH, DegreePhd.class)
-        );
+        final var operations = Set.of(PublicationOperation.UPDATE,
+                                      PublicationOperation.DELETE,
+                                      PublicationOperation.UNPUBLISH,
+                                      PublicationOperation.TERMINATE,
+                                      PublicationOperation.TICKET_PUBLISH);
+
+        final var instanceClasses = Set.of(DegreeLicentiate.class,
+                                           DegreeBachelor.class,
+                                           DegreeMaster.class,
+                                           DegreePhd.class);
+
+        return generateAllCombinationsOfOperationsAndInstanceClasses(operations, instanceClasses);
     }
 
     private static Stream<Arguments> argumentsForAllowingThesisCuratorPerformingOperationsOnProtectedDegreeResources() {
-        return Stream.of(
-            Arguments.of(PublicationOperation.UPDATE, DegreeLicentiate.class),
-            Arguments.of(PublicationOperation.UPDATE, DegreeBachelor.class),
-            Arguments.of(PublicationOperation.UPDATE, DegreeMaster.class),
-            Arguments.of(PublicationOperation.UPDATE, DegreePhd.class),
-            Arguments.of(PublicationOperation.UNPUBLISH, DegreeLicentiate.class),
-            Arguments.of(PublicationOperation.UNPUBLISH, DegreeBachelor.class),
-            Arguments.of(PublicationOperation.UNPUBLISH, DegreeMaster.class),
-            Arguments.of(PublicationOperation.UNPUBLISH, DegreePhd.class)
-        );
+        final var operations = Set.of(PublicationOperation.UPDATE,
+                                      PublicationOperation.UNPUBLISH);
+
+        final var instanceClasses = Set.of(DegreeLicentiate.class,
+                                           DegreeBachelor.class,
+                                           DegreeMaster.class,
+                                           DegreePhd.class);
+
+        return generateAllCombinationsOfOperationsAndInstanceClasses(operations, instanceClasses);
+    }
+
+    private static Stream<Arguments> generateAllCombinationsOfOperationsAndInstanceClasses(
+        final Set<PublicationOperation> operations,
+        final Set<Class<? extends DegreeBase>> instanceClasses) {
+        return operations.stream()
+                   .flatMap(operation -> instanceClasses.stream()
+                                             .map(instanceClass -> Arguments.of(operation, instanceClass)))
+                   .toList()
+                   .stream();
     }
 
     @ParameterizedTest(name = "Should deny Curator {0} operation on instance type {1} belonging to the institution")
