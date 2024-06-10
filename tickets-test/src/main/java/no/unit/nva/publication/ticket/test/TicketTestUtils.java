@@ -3,10 +3,10 @@ package no.unit.nva.publication.ticket.test;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
+import static no.unit.nva.model.testing.PublicationGenerator.fromInstanceClassesExcluding;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublicationNonDegree;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import java.net.URI;
@@ -46,6 +46,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.permission.strategy.PermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.AccessRight;
@@ -113,9 +114,14 @@ public final class TicketTestUtils {
         var publication = randomNonDegreePublication(status);
         publication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
         publication.getEntityDescription().getContributors().forEach(contributor ->
-            contributor.getAffiliations()
-                .forEach(affiliation -> ((Organization) affiliation).setId(
-                    URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0")))
+                                                                         contributor.getAffiliations()
+                                                                             .forEach(
+                                                                                 affiliation -> ((Organization) affiliation).setId(
+                                                                                     URI.create(
+                                                                                         "https://api.dev.nva.aws"
+                                                                                         + ".unit.no/cristin"
+                                                                                         + "/organization/20754.6.0"
+                                                                                         + ".0")))
         );
         publication.setCuratingInstitutions(
             Set.of(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0")));
@@ -140,7 +146,7 @@ public final class TicketTestUtils {
     }
 
     public static Publication createPersistedPublishedPublicationWithUnpublishedFilesAndOwner(String owner,
-                                                                                                    ResourceService resourceService)
+                                                                                              ResourceService resourceService)
         throws ApiGatewayException {
         var publication = randomPublication().copy()
                               .withEntityDescription(randomEntityDescription(JournalArticle.class))
@@ -152,7 +158,6 @@ public final class TicketTestUtils {
 
         return persistPublication(resourceService, publicationWithContributor);
     }
-
 
     private static Publication persistPublication(ResourceService resourceService, Publication publication)
         throws ApiGatewayException {
@@ -168,7 +173,7 @@ public final class TicketTestUtils {
 
     public static Publication createPersistedPublicationWithAdministrativeAgreement(ResourceService resourceService)
         throws ApiGatewayException {
-        var publication = randomPublicationNonDegree().copy()
+        var publication = fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES).copy()
                               .withAssociatedArtifacts(List.of(administrativeAgreement()))
                               .build();
 
@@ -213,7 +218,7 @@ public final class TicketTestUtils {
     }
 
     private static Publication randomPublicationWithPublishedFiles(PublicationStatus status) {
-        var publication = randomPublicationNonDegree().copy()
+        var publication = fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES).copy()
                               .withStatus(status)
                               .build();
         publishFiles(publication);
@@ -307,14 +312,14 @@ public final class TicketTestUtils {
     }
 
     private static Publication randomPublicationWithStatus(PublicationStatus status) {
-        return randomPublicationNonDegree().copy()
+        return fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES).copy()
                    .withDoi(null)
                    .withStatus(status)
                    .build();
     }
 
     private static Publication randomPublicationWithUnpublishedFiles(PublicationStatus status) {
-        var publication = randomPublicationNonDegree().copy()
+        var publication = fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES).copy()
                               .withStatus(status)
                               .build();
         unpublishFiles(publication);
@@ -333,14 +338,14 @@ public final class TicketTestUtils {
     }
 
     private static Publication randomPublicationWithAssociatedLink(PublicationStatus status) {
-        return randomPublicationNonDegree().copy()
+        return fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES).copy()
                    .withStatus(status)
                    .withAssociatedArtifacts(List.of(new AssociatedLink(randomUri(), null, null)))
                    .build();
     }
 
     private static Publication randomNonDegreePublication(PublicationStatus status) {
-        var publication = randomPublicationNonDegree();
+        var publication = fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES);
         return publication.copy()
                    .withStatus(status)
                    .withDoi(null)

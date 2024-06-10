@@ -4,6 +4,7 @@ import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static nva.commons.core.attempt.Try.attempt;
+import java.util.Arrays;
 import java.util.Optional;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -23,6 +24,13 @@ import nva.commons.apigateway.AccessRight;
 
 public abstract class PermissionStrategy {
 
+    public static final Class<?>[] PROTECTED_DEGREE_INSTANCE_TYPES = {
+        DegreeLicentiate.class,
+        DegreeBachelor.class,
+        DegreeMaster.class,
+        DegreePhd.class
+    };
+
     protected final Publication publication;
     protected final UserInstance userInstance;
 
@@ -35,7 +43,7 @@ public abstract class PermissionStrategy {
         return userInstance.getAccessRights().contains(accessRight);
     }
 
-    protected boolean isDegree() {
+    protected boolean isProtectedDegreeInstanceType() {
         return Optional.ofNullable(publication.getEntityDescription())
                    .map(EntityDescription::getReference)
                    .map(Reference::getPublicationInstance)
@@ -43,11 +51,11 @@ public abstract class PermissionStrategy {
                    .orElse(false);
     }
 
-    protected boolean isEmbargoDegree() {
-        return isDegree() && publication.getAssociatedArtifacts().stream()
-                   .filter(File.class::isInstance)
-                   .map(File.class::cast)
-                   .anyMatch(this::hasEmbargo);
+    protected boolean isProtectedDegreeInstanceTypeWithEmbargo() {
+        return isProtectedDegreeInstanceType() && publication.getAssociatedArtifacts().stream()
+                                 .filter(File.class::isInstance)
+                                 .map(File.class::cast)
+                                 .anyMatch(this::hasEmbargo);
     }
 
     private boolean hasEmbargo(File file) {
@@ -57,7 +65,6 @@ public abstract class PermissionStrategy {
     protected boolean isVerifiedContributor(Contributor contributor) {
         return contributor.getIdentity() != null && contributor.getIdentity().getId() != null;
     }
-
 
     protected boolean hasPublishedFile() {
         return publication.getAssociatedArtifacts().stream().anyMatch(PublishedFile.class::isInstance);
@@ -86,9 +93,7 @@ public abstract class PermissionStrategy {
     }
 
     private static Boolean publicationInstanceIsDegree(PublicationInstance<? extends Pages> publicationInstance) {
-        return publicationInstance instanceof DegreeBachelor
-               || publicationInstance instanceof DegreeMaster
-               || publicationInstance instanceof DegreePhd
-               || publicationInstance instanceof DegreeLicentiate;
+        return Arrays.stream(PROTECTED_DEGREE_INSTANCE_TYPES)
+                   .anyMatch(instanceTypeClass -> instanceTypeClass.equals(publicationInstance.getClass()));
     }
 }
