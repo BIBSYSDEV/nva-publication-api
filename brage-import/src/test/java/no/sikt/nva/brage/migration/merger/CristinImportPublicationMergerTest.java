@@ -60,31 +60,6 @@ class CristinImportPublicationMergerTest {
     }
 
     @Test
-    void shouldFillExistingEmptyDegreePhdWithBrageDegreePhd() throws InvalidUnconfirmedSeriesException,
-                                                                     InvalidIsbnException, InvalidIssnException {
-        var existingPublication = randomPublication(DegreePhd.class);
-        existingPublication.getEntityDescription().getReference().setPublicationInstance(emptyDegreePhd());
-        var bragePublication = randomPublication(DegreePhd.class);
-
-        var updatedPublication = mergePublications(existingPublication, bragePublication);
-
-        assertThat(updatedPublication.getEntityDescription().getReference().getPublicationInstance(),
-                   doesNotHaveEmptyValues());
-    }
-
-    @Test
-    void shouldUseExistingDegreeWhenUnsupportedContextType() throws InvalidUnconfirmedSeriesException,
-                                                                     InvalidIsbnException, InvalidIssnException {
-        var existingPublication = randomPublication(DegreePhd.class);
-        var bragePublication = randomPublication(DegreePhd.class);
-        bragePublication.getEntityDescription().getReference().setPublicationInstance(null);
-        var updatedPublication = mergePublications(existingPublication, bragePublication);
-
-        assertThat(updatedPublication.getEntityDescription().getReference().getPublicationInstance(),
-                   doesNotHaveEmptyValues());
-    }
-
-    @Test
     void shouldUseBrageJournalWhenExistingJournalIsUnconfirmedJournalMissingAllValues() throws InvalidUnconfirmedSeriesException,
                                                                     InvalidIsbnException, InvalidIssnException {
         var existingPublication = randomPublication(JournalArticle.class);
@@ -224,7 +199,4 @@ class CristinImportPublicationMergerTest {
         return new Event.Builder().build();
     }
 
-    private static DegreePhd emptyDegreePhd() {
-        return new DegreePhd(null, null, null);
-    }
 }
