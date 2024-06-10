@@ -6,6 +6,7 @@ import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 public final class DegreeBachelorMerger extends PublicationInstanceMerger{
 
     private DegreeBachelorMerger() {
+        super();
     }
 
     public static DegreeBachelor merge(DegreeBachelor degreeBachelor,

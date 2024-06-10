@@ -5,9 +5,10 @@ import static no.sikt.nva.brage.migration.merger.publicationisntancemerger.Publi
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
 
-public class OtherStudentWorkMerger {
+public final class OtherStudentWorkMerger {
 
     private OtherStudentWorkMerger() {
+        super();
     }
 
     public static OtherStudentWork merge(OtherStudentWork otherStudentWork,

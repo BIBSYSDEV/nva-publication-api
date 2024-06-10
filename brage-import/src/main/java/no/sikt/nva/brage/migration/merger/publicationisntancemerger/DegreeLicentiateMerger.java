@@ -3,9 +3,10 @@ package no.sikt.nva.brage.migration.merger.publicationisntancemerger;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
 
-public class DegreeLicentiateMerger extends PublicationInstanceMerger{
+public final class DegreeLicentiateMerger extends PublicationInstanceMerger{
 
     private DegreeLicentiateMerger() {
+        super();
     }
 
     public static DegreeLicentiate merge(DegreeLicentiate degreeLicentiate,
