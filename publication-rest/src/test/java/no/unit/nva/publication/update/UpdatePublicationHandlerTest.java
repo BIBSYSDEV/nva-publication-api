@@ -184,6 +184,7 @@ import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Named;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -669,7 +670,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldUpdateResourceWhenAuthorizedUserIsContributorAndHasCristinId()
         throws BadRequestException, IOException, NotFoundException {
-        var savedPublication = createSamplePublication();
+        var savedPublication = createAndPersistNonDegreePublication();
         var contributors = new ArrayList<>(savedPublication.getEntityDescription().getContributors());
         var cristinId = randomUri();
         var contributor = createContributorForPublicationUpdate(cristinId);
