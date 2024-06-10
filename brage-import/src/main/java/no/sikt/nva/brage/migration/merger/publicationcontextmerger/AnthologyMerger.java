@@ -1,4 +1,4 @@
-package no.sikt.nva.brage.migration.merger;
+package no.sikt.nva.brage.migration.merger.publicationcontextmerger;
 
 import static java.util.Objects.nonNull;
 import java.net.URI;
@@ -8,6 +8,7 @@ import no.unit.nva.model.contexttypes.PublicationContext;
 public class AnthologyMerger extends PublicationContextMerger {
 
     private AnthologyMerger() {
+        super();
     }
 
     public static Anthology merge(Anthology anthology, PublicationContext publicationContext) {

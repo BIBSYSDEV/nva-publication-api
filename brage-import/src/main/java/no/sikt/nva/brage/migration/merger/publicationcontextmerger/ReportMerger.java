@@ -1,4 +1,4 @@
-package no.sikt.nva.brage.migration.merger;
+package no.sikt.nva.brage.migration.merger.publicationcontextmerger;
 
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Report;
@@ -8,6 +8,7 @@ import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 public final class ReportMerger extends PublicationContextMerger {
 
     private ReportMerger() {
+        super();
     }
 
     public static Report merge(Report report, PublicationContext publicationContext)

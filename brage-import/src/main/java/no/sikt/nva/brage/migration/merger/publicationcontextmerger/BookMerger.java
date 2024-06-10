@@ -1,4 +1,4 @@
-package no.sikt.nva.brage.migration.merger;
+package no.sikt.nva.brage.migration.merger.publicationcontextmerger;
 
 import static java.util.Objects.nonNull;
 import no.unit.nva.model.Revision;
@@ -8,6 +8,7 @@ import no.unit.nva.model.contexttypes.PublicationContext;
 public final class BookMerger extends PublicationContextMerger {
 
     private BookMerger() {
+        super();
     }
 
     public static Book merge(Book book, PublicationContext publicationContext) {

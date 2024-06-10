@@ -1,4 +1,4 @@
-package no.sikt.nva.brage.migration.merger;
+package no.sikt.nva.brage.migration.merger.publicationcontextmerger;
 
 import static java.util.Objects.nonNull;
 import no.unit.nva.model.Course;
@@ -11,6 +11,7 @@ import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 public final class DegreeMerger extends PublicationContextMerger {
 
     private DegreeMerger() {
+        super();
     }
 
     public static Degree merge(Degree degree, PublicationContext publicationContext)
