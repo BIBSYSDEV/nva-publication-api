@@ -47,6 +47,7 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
@@ -217,9 +218,21 @@ public final class BrageNvaMapper {
     private static AssociatedArtifact generateFile(ContentFile file, Record brageRecord) {
         var legalNote = extractLegalNote(brageRecord);
         var embargoDate = defineEmbargoDate(legalNote, file);
-        return BundleType.ORIGINAL.equals(file.getBundleType())
-                   ? createPublishedFile(file, brageRecord, embargoDate, legalNote)
-                   : createAdministrativeAgreement(file, brageRecord);
+        return switch (file.getBundleType()) {
+            case BundleType.ORIGINAL -> createPublishedFile(file, brageRecord, embargoDate, legalNote);
+            case BundleType.LICENSE -> createAdministrativeAgreement(file, brageRecord);
+            case BundleType.IGNORED -> createAdministrativeAgreementForDublinCore(file, brageRecord);
+            default -> new NullAssociatedArtifact();
+        };
+    }
+
+    private static AssociatedArtifact createAdministrativeAgreementForDublinCore(ContentFile file, Record record) {
+        return AdministrativeAgreement.builder()
+                   .withName(file.getFilename())
+                   .withIdentifier(file.getIdentifier())
+                   .withUploadDetails(createUploadDetails(record))
+                   .withAdministrativeAgreement(true)
+                   .buildUnpublishableFile();
     }
 
     private static AssociatedArtifact createAdministrativeAgreement(ContentFile file, Record brageRecord) {
