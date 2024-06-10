@@ -16,10 +16,13 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
+import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Degree;
+import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.Periodical;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
@@ -130,8 +133,11 @@ public class CristinImportPublicationMerger {
         var bragePublicationContext = bragePublicationRepresentation.publication().getEntityDescription().getReference().getPublicationContext();
         return switch (publicationContext) {
             case Degree degree -> DegreeMerger.merge(degree, bragePublicationContext);
+            case Report report -> ReportMerger.merge(report, bragePublicationContext);
             case Book book -> BookMerger.merge(book, bragePublicationContext);
             case Periodical journal -> JournalMerger.merge(journal, bragePublicationContext);
+            case Event event -> EventMerger.merge(event, publicationContext);
+            case Anthology anthology -> AnthologyMerger.merge(anthology, publicationContext);
             default -> publicationContext;
         };
     }

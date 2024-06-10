@@ -126,12 +126,14 @@ import no.unit.nva.model.instancetypes.artistic.music.InvalidIsmnException;
 import no.unit.nva.model.instancetypes.artistic.music.Ismn;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.artistic.music.MusicScore;
+import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.NonFictionMonograph;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
 import no.unit.nva.model.instancetypes.event.ConferencePoster;
+import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.ResourceWithId;
@@ -1342,7 +1344,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     void shouldPersistMergeReport()
         throws IOException, nva.commons.apigateway.exceptions.NotFoundException {
         var cristinIdentifier = randomString();
-        var publication = randomPublication(ConferencePoster.class);
+        var publication = randomPublication(DataSet.class);
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)));
         publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder().withYear("2022").build());
         publication.getEntityDescription().setMainTitle("Dynamic - Response of Floating Wind Turbines! Report");

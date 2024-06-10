@@ -8,6 +8,7 @@ import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.UnconfirmedSeries;
+import no.unit.nva.model.time.Time;
 import nva.commons.core.JacocoGenerated;
 
 public class PublicationContextMerger {
@@ -34,10 +35,6 @@ public class PublicationContextMerger {
         }
     }
 
-    public static String getSeriesNumber(String oldSeriesNumber, String newSeriesNumber) {
-        return nonNull(oldSeriesNumber) ? oldSeriesNumber : newSeriesNumber;
-    }
-
     public static PublishingHouse getPublisher(PublishingHouse oldPublisher, PublishingHouse newPublisher) {
         if (nonNull(oldPublisher) && oldPublisher instanceof Publisher publisher) {
             return publisher;
@@ -54,5 +51,9 @@ public class PublicationContextMerger {
 
     public static String getNonNullValue(String oldValue, String newValue) {
         return nonNull(oldValue) ? oldValue : newValue;
+    }
+
+    public static Time getTime(Time oldTime, Time newTime) {
+        return nonNull(oldTime) ? oldTime : newTime;
     }
 }

@@ -19,7 +19,7 @@ public final class DegreeMerger extends PublicationContextMerger {
             return new Builder().withIsbnList(getIsbnList(degree.getIsbnList(), newDegree.getIsbnList()))
                        .withSeries(getSeries(degree.getSeries(), newDegree.getSeries()))
                        .withPublisher(getPublisher(degree.getPublisher(), newDegree.getPublisher()))
-                       .withSeriesNumber(getSeriesNumber(degree.getSeriesNumber(), newDegree.getSeriesNumber()))
+                       .withSeriesNumber(getNonNullValue(degree.getSeriesNumber(), newDegree.getSeriesNumber()))
                        .withCourse(getCourse(degree.getCourse(), newDegree.getCourse()))
                        .build();
         } else {

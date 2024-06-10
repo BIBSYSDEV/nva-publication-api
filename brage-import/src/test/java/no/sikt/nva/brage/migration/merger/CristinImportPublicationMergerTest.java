@@ -12,17 +12,23 @@ import java.util.Set;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Book.BookBuilder;
+import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
+import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.report.ReportResearch;
 import org.junit.jupiter.api.Test;
 
 class CristinImportPublicationMergerTest {
@@ -148,6 +154,43 @@ class CristinImportPublicationMergerTest {
                    doesNotHaveEmptyValues());
     }
 
+    @Test
+    void shouldUseExistingPublicationContextWhenIncomingReportIsEmpty()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var existingPublication = randomPublication(ReportResearch.class);
+        existingPublication.getEntityDescription().getReference().setPublicationContext(unconfirmedJournal());
+        var bragePublication = randomPublication(JournalArticle.class);
+        bragePublication.getEntityDescription().getReference().setPublicationContext(emptyReport());
+        var updatedPublication = mergePublications(existingPublication, bragePublication);
+
+        assertThat(updatedPublication.getEntityDescription().getReference().getPublicationContext(),
+                   doesNotHaveEmptyValues());
+    }
+
+    @Test
+    void shouldUseExistingPublicationContextWhenIncomingEventIsEmpty()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var existingPublication = randomPublication(Lecture.class);
+        var bragePublication = randomPublication(Lecture.class);
+        bragePublication.getEntityDescription().getReference().setPublicationContext(emptyEvent());
+        var updatedPublication = mergePublications(existingPublication, bragePublication);
+
+        assertThat(updatedPublication.getEntityDescription().getReference().getPublicationContext(),
+                   doesNotHaveEmptyValues());
+    }
+
+    @Test
+    void shouldUseExistingPublicationContextWhenIncomingAnthologyIsEmpty()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var existingPublication = randomPublication(ChapterArticle.class);
+        var bragePublication = randomPublication(ChapterArticle.class);
+        bragePublication.getEntityDescription().getReference().setPublicationContext(new Anthology());
+        var updatedPublication = mergePublications(existingPublication, bragePublication);
+
+        assertThat(updatedPublication.getEntityDescription().getReference().getPublicationContext(),
+                   doesNotHaveEmptyValues());
+    }
+
     private PublicationContext emptyUnconfirmedJournal() throws InvalidIssnException {
         return new UnconfirmedJournal(null, null, null);
     }
@@ -171,6 +214,14 @@ class CristinImportPublicationMergerTest {
 
     private static UnconfirmedJournal unconfirmedJournal() throws InvalidIssnException {
         return new UnconfirmedJournal(randomString(), randomIssn(), randomIssn());
+    }
+
+    private static Report emptyReport() throws InvalidIssnException, InvalidUnconfirmedSeriesException {
+        return new Report.Builder().build();
+    }
+
+    private static Event emptyEvent() {
+        return new Event.Builder().build();
     }
 
     private static DegreePhd emptyDegreePhd() {
