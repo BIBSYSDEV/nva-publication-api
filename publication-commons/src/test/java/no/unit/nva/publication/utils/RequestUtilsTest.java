@@ -2,7 +2,7 @@ package no.unit.nva.publication.utils;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublicationNonDegree;
+import static no.unit.nva.model.testing.PublicationGenerator.fromInstanceClassesExcluding;
 import static no.unit.nva.publication.utils.RequestUtils.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.utils.RequestUtils.TICKET_IDENTIFIER;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -32,6 +32,7 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.permission.strategy.PermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
@@ -65,7 +66,8 @@ public class RequestUtilsTest {
 
     @Test
     void shouldReturnFalseWhenCheckingAuthorizationForNullTicket() throws UnauthorizedException {
-        Assertions.assertFalse(RequestUtils.fromRequestInfo(mockedRequestInfo(), uriRetriever).isAuthorizedToManage(null));
+        Assertions.assertFalse(
+            RequestUtils.fromRequestInfo(mockedRequestInfo(), uriRetriever).isAuthorizedToManage(null));
     }
 
     @Test
@@ -116,10 +118,10 @@ public class RequestUtilsTest {
         var requestInfo = mockedRequestInfo();
 
         var expectedUserInstance = new UserInstance(requestInfo.getUserName(),
-                                                       requestInfo.getCurrentCustomer(),
-                                                       requestInfo.getTopLevelOrgCristinId().orElseThrow(),
-                                                       requestInfo.getPersonCristinId(),
-                                                       requestInfo.getAccessRights());
+                                                    requestInfo.getCurrentCustomer(),
+                                                    requestInfo.getTopLevelOrgCristinId().orElseThrow(),
+                                                    requestInfo.getPersonCristinId(),
+                                                    requestInfo.getAccessRights());
         var createdUserInstance = RequestUtils.fromRequestInfo(requestInfo, uriRetriever).toUserInstance();
         Assertions.assertEquals(createdUserInstance, expectedUserInstance);
     }
@@ -133,7 +135,7 @@ public class RequestUtilsTest {
     }
 
     private static Publication publicationWithOwner(String owner) {
-        return randomPublicationNonDegree().copy()
+        return fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES).copy()
                    .withStatus(PUBLISHED)
                    .withResourceOwner(new ResourceOwner(new Username(owner), randomUri())).build();
     }

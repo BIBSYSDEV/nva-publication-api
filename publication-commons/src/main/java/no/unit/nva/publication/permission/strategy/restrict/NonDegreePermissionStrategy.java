@@ -18,11 +18,11 @@ public class NonDegreePermissionStrategy extends DenyPermissionStrategy {
             return false; // allow
         }
 
-        if (isDegree()) {
+        if (isProtectedDegreeInstanceType()) {
             if (!hasAccessRight(MANAGE_DEGREE)) {
                 return true; // deny
             }
-            if (isEmbargoDegree() && !hasAccessRight(MANAGE_DEGREE_EMBARGO)) {
+            if (isProtectedDegreeInstanceTypeWithEmbargo() && !hasAccessRight(MANAGE_DEGREE_EMBARGO)) {
                 return true; // deny
             }
         }
