@@ -1,25 +1,24 @@
 package no.sikt.nva.brage.migration.merger.publicationinstancemerger;
 
-import static no.sikt.nva.brage.migration.merger.publicationinstancemerger.PublicationInstanceMerger.getNonNullValue;
-import static no.sikt.nva.brage.migration.merger.publicationinstancemerger.PublicationInstanceMerger.getRange;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 
-public final class AcademicArticleMerger {
+public final class AcademicArticleMerger extends PublicationInstanceMerger<AcademicArticle> {
 
-    private AcademicArticleMerger() {
-        super();
+    public AcademicArticleMerger(AcademicArticle academicArticle) {
+        super(academicArticle);
     }
 
-    public static AcademicArticle merge(AcademicArticle academicArticle,
-                                                             PublicationInstance<?> publicationInstance) {
+    @Override
+    public AcademicArticle merge(PublicationInstance<?> publicationInstance) {
         if (publicationInstance instanceof AcademicArticle newAcademicArticle) {
-            return new AcademicArticle(getRange(academicArticle.getPages(), newAcademicArticle.getPages()),
-                                                getNonNullValue(academicArticle.getVolume(), newAcademicArticle.getVolume()),
-                                                getNonNullValue(academicArticle.getIssue(), newAcademicArticle.getIssue()),
-                                                getNonNullValue(academicArticle.getArticleNumber(), newAcademicArticle.getArticleNumber()));
+            return new AcademicArticle(getRange(this.publicationInstance.getPages(),
+                                                newAcademicArticle.getPages()),
+                                                getNonNullValue(this.publicationInstance.getVolume(), newAcademicArticle.getVolume()),
+                                                getNonNullValue(this.publicationInstance.getIssue(), newAcademicArticle.getIssue()),
+                                                getNonNullValue(this.publicationInstance.getArticleNumber(), newAcademicArticle.getArticleNumber()));
         } else {
-            return academicArticle;
+            return this.publicationInstance;
         }
     }
 }

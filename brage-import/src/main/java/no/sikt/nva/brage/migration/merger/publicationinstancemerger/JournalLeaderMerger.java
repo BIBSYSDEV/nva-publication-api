@@ -1,25 +1,23 @@
 package no.sikt.nva.brage.migration.merger.publicationinstancemerger;
 
-import static no.sikt.nva.brage.migration.merger.publicationinstancemerger.PublicationInstanceMerger.getNonNullValue;
-import static no.sikt.nva.brage.migration.merger.publicationinstancemerger.PublicationInstanceMerger.getRange;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 
-public final class JournalLeaderMerger {
+public final class JournalLeaderMerger extends PublicationInstanceMerger<JournalLeader> {
 
-    private JournalLeaderMerger() {
-        super();
+    public JournalLeaderMerger(JournalLeader journalLeader) {
+        super(journalLeader);
     }
 
-    public static JournalLeader merge(JournalLeader journalLeader,
-                                                             PublicationInstance<?> publicationInstance) {
+    @Override
+    public JournalLeader merge(PublicationInstance<?> publicationInstance) {
         if (publicationInstance instanceof JournalLeader newJournalLeader) {
-            return new JournalLeader(getNonNullValue(journalLeader.getVolume(), newJournalLeader.getVolume()),
-                                    getNonNullValue(journalLeader.getIssue(), newJournalLeader.getIssue()),
-                                    getNonNullValue(journalLeader.getArticleNumber(), newJournalLeader.getArticleNumber()),
-                                    getRange(journalLeader.getPages(), newJournalLeader.getPages()));
+            return new JournalLeader(getNonNullValue(this.publicationInstance.getVolume(), newJournalLeader.getVolume()),
+                                    getNonNullValue(this.publicationInstance.getIssue(), newJournalLeader.getIssue()),
+                                    getNonNullValue(this.publicationInstance.getArticleNumber(), newJournalLeader.getArticleNumber()),
+                                    getRange(this.publicationInstance.getPages(), newJournalLeader.getPages()));
         } else {
-            return journalLeader;
+            return this.publicationInstance;
         }
     }
 }

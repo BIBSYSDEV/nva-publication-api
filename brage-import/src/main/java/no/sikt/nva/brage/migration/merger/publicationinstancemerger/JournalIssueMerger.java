@@ -3,20 +3,21 @@ package no.sikt.nva.brage.migration.merger.publicationinstancemerger;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalIssue;
 
-public final class JournalIssueMerger extends PublicationInstanceMerger {
+public final class JournalIssueMerger extends PublicationInstanceMerger<JournalIssue> {
 
-    private JournalIssueMerger() {
-        super();
+    public JournalIssueMerger(JournalIssue journalIssue) {
+        super(journalIssue);
     }
 
-    public static JournalIssue merge(JournalIssue journalIssue, PublicationInstance<?> publicationInstance) {
+    @Override
+    public JournalIssue merge(PublicationInstance<?> publicationInstance) {
         if (publicationInstance instanceof JournalIssue newJournalIssue) {
-            return new JournalIssue(getNonNullValue(journalIssue.getVolume(), newJournalIssue.getVolume()),
-                                    getNonNullValue(journalIssue.getIssue(), newJournalIssue.getIssue()),
-                                    getNonNullValue(journalIssue.getArticleNumber(), newJournalIssue.getArticleNumber()),
-                                    getRange(journalIssue.getPages(), newJournalIssue.getPages()));
+            return new JournalIssue(getNonNullValue(this.publicationInstance.getVolume(), newJournalIssue.getVolume()),
+                                    getNonNullValue(this.publicationInstance.getIssue(), newJournalIssue.getIssue()),
+                                    getNonNullValue(this.publicationInstance.getArticleNumber(), newJournalIssue.getArticleNumber()),
+                                    getRange(this.publicationInstance.getPages(), newJournalIssue.getPages()));
         } else {
-            return journalIssue;
+            return this.publicationInstance;
         }
     }
 }
