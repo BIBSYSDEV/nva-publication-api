@@ -18,20 +18,9 @@ public final class DegreePhdMerger extends PublicationInstanceMerger {
         if (publicationInstance instanceof DegreePhd newDegreePhd) {
             return new DegreePhd(getPages(degreePhd.getPages(), newDegreePhd.getPages()),
                                  getDate(degreePhd.getSubmittedDate(), newDegreePhd.getSubmittedDate()),
-                                 getRelated(degreePhd.getRelated(), newDegreePhd.getRelated()));
+                                 mergeCollections(degreePhd.getRelated(), newDegreePhd.getRelated(), LinkedHashSet::new));
         } else {
             return degreePhd;
-        }
-    }
-
-    private static Set<RelatedDocument> getRelated(Set<RelatedDocument> documents, Set<RelatedDocument> brageDocuments) {
-        if (nonNull(documents) && !documents.isEmpty()) {
-            var mergedDocuments = new LinkedHashSet<RelatedDocument>();
-            mergedDocuments.addAll(documents);
-            mergedDocuments.addAll(brageDocuments);
-            return mergedDocuments;
-        } else {
-            return brageDocuments;
         }
     }
 }
