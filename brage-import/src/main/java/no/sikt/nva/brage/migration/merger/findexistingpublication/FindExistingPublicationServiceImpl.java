@@ -22,12 +22,14 @@ public class FindExistingPublicationServiceImpl implements FindExistingPublicati
 
     @Override
     public Optional<PublicationForUpdate> findExistingPublication(PublicationRepresentation publicationRepresentation) {
+        var handleFinder = new HandleFinder(resourceService, uriRetriever, apiHost);
         var cristinIdentifierFinder = new CristinIdentifierFinder(resourceService);
         var doiFinder = new DoiPublicationFinder(resourceService, uriRetriever, apiHost);
         var isbnFinder = new IsbnPublicationFinder(resourceService, uriRetriever, apiHost);
         var titleAndTypeFinder = new TitleAndTypePublicationFinder(resourceService, uriRetriever, apiHost);
 
         List<Supplier<Optional<PublicationForUpdate>>> updatePublicationSuppliers = List.of(
+            () -> handleFinder.findExistingPublication(publicationRepresentation),
             () -> cristinIdentifierFinder.findExistingPublication(publicationRepresentation),
             () -> doiFinder.findExistingPublication(publicationRepresentation),
             () -> isbnFinder.findExistingPublication(publicationRepresentation),
