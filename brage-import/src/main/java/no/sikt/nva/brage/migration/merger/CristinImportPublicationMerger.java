@@ -3,7 +3,6 @@ package no.sikt.nva.brage.migration.merger;
 import static java.util.Objects.nonNull;
 import java.net.URI;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.AnthologyMerger;
@@ -12,12 +11,16 @@ import no.sikt.nva.brage.migration.merger.publicationcontextmerger.DegreeMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.EventMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.JournalMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.ReportMerger;
+import no.sikt.nva.brage.migration.merger.publicationisntancemerger.AcademicArticleMerger;
+import no.sikt.nva.brage.migration.merger.publicationisntancemerger.JournalIssueMerger;
+import no.sikt.nva.brage.migration.merger.publicationisntancemerger.JournalLeaderMerger;
+import no.sikt.nva.brage.migration.merger.publicationisntancemerger.MediaFeatureArticleMerger;
+import no.sikt.nva.brage.migration.merger.publicationisntancemerger.ProfessionalArticleMerger;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
@@ -33,9 +36,11 @@ import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.degree.DegreePhd;
-import no.unit.nva.model.instancetypes.degree.RelatedDocument;
-import no.unit.nva.model.pages.MonographPages;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
+import no.unit.nva.model.instancetypes.journal.JournalIssue;
+import no.unit.nva.model.instancetypes.journal.JournalLeader;
+import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
+import no.unit.nva.model.instancetypes.media.MediaFeatureArticle;
 import no.unit.nva.model.pages.Pages;
 import nva.commons.core.StringUtils;
 
@@ -93,36 +98,17 @@ public class CristinImportPublicationMerger {
 
     private PublicationInstance<? extends Pages> determincePublicationInstance(Reference reference) {
         var publicationInstance = reference.getPublicationInstance();
-        var bragePublicationInstance =
+        var newPublicationInstance =
             bragePublicationRepresentation.publication().getEntityDescription().getReference().getPublicationInstance();
 
-        if (publicationInstance instanceof DegreePhd degreePhd && bragePublicationInstance instanceof DegreePhd brageDegreePhd) {
-            return new DegreePhd(getPages(degreePhd.getPages(), brageDegreePhd.getPages()),
-                                 getDate(degreePhd.getSubmittedDate(), brageDegreePhd.getSubmittedDate()),
-                                 getRelated(degreePhd.getRelated(), brageDegreePhd.getRelated()));
-        }
-        else {
-            return publicationInstance;
-        }
-    }
-
-    private Set<RelatedDocument> getRelated(Set<RelatedDocument> documents, Set<RelatedDocument> brageDocuments) {
-        if (nonNull(documents) && !documents.isEmpty()) {
-            var mergedDocuments = new LinkedHashSet<RelatedDocument>();
-            mergedDocuments.addAll(documents);
-            mergedDocuments.addAll(brageDocuments);
-            return mergedDocuments;
-        } else {
-            return brageDocuments;
-        }
-    }
-
-    private PublicationDate getDate(PublicationDate submittedDate, PublicationDate brageDate) {
-        return nonNull(submittedDate) ? submittedDate : brageDate;
-    }
-
-    private MonographPages getPages(MonographPages pages, MonographPages bragePages) {
-        return nonNull(pages) ? pages : bragePages;
+        return switch (publicationInstance) {
+            case JournalIssue journalIssue -> JournalIssueMerger.merge(journalIssue, newPublicationInstance);
+            case JournalLeader journalLeader -> JournalLeaderMerger.merge(journalLeader, newPublicationInstance);
+            case ProfessionalArticle professionalArticle -> ProfessionalArticleMerger.merge(professionalArticle, newPublicationInstance);
+            case AcademicArticle academicArticle -> AcademicArticleMerger.merge(academicArticle, newPublicationInstance);
+            case MediaFeatureArticle mediaFeatureArticle -> MediaFeatureArticleMerger.merge(mediaFeatureArticle, newPublicationInstance);
+            default -> publicationInstance;
+        };
     }
 
     private URI determineDoi(Reference reference) {
