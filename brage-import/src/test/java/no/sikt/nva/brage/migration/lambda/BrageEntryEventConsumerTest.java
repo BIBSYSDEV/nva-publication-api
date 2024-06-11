@@ -138,6 +138,11 @@ import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
 import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
 import no.unit.nva.model.instancetypes.event.ConferencePoster;
+import no.unit.nva.model.instancetypes.report.ConferenceReport;
+import no.unit.nva.model.instancetypes.report.ReportBasic;
+import no.unit.nva.model.instancetypes.report.ReportBookOfAbstract;
+import no.unit.nva.model.instancetypes.report.ReportResearch;
+import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -258,11 +263,16 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private FakeS3Client s3Client;
     private ResourceService resourceService;
 
-    public static Stream<Arguments> emptyDegreeSupplier() {
+    public static Stream<Arguments> emptyPublicationInstanceSupplier() {
         return Stream.of(Arguments.of(new DegreePhd(null, null, Set.of()), TYPE_PHD),
                          Arguments.of(new DegreeBachelor(null, null), TYPE_BACHELOR),
                          Arguments.of(new DegreeMaster(null, null), TYPE_MASTER),
-                         Arguments.of(new OtherStudentWork(null, null), TYPE_OTHER_STUDENT_WORK));
+                         Arguments.of(new OtherStudentWork(null, null), TYPE_OTHER_STUDENT_WORK),
+                         Arguments.of(new ConferenceReport(null), TYPE_CONFERENCE_REPORT),
+                         Arguments.of(new ReportResearch(null), TYPE_RESEARCH_REPORT),
+                         Arguments.of(new ReportBasic(null), TYPE_REPORT),
+                         Arguments.of(new ReportWorkingPaper(null), TYPE_REPORT_WORKING_PAPER),
+                         Arguments.of(new ReportBookOfAbstract(null), TYPE_BOOK_OF_ABSTRACTS));
     }
 
     @BeforeEach
@@ -1772,10 +1782,9 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @ParameterizedTest
-    @MethodSource("emptyDegreeSupplier")
+    @MethodSource("emptyPublicationInstanceSupplier")
     void shouldUpdateExistingPublicationByFillingUpInstanceTypeEmptyValues(PublicationInstance<?> publicationInstance, Type type) throws IOException {
-        var cristinIdentifier = "1234";
-        var generator = generateBrageRecordAndPersistDuplicateByCristinIdentifier(publicationInstance, type, cristinIdentifier);
+        var generator = generateBrageRecordAndPersistDuplicateByCristinIdentifier(publicationInstance, type);
         var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
         var updatedPublicationInstance = handler.handleRequest(s3Event, CONTEXT)
                                              .publication().getEntityDescription().getReference().getPublicationInstance();
@@ -1785,7 +1794,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     private NvaBrageMigrationDataGenerator generateBrageRecordAndPersistDuplicateByCristinIdentifier(PublicationInstance<?> publicationInstance,
-                                                                             Type type, String cristinIdentifier) {
+                                                                             Type type) {
+        var cristinIdentifier = "1234";
         var publication = randomPublication(publicationInstance.getClass());
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier(SOURCE_CRISTIN, cristinIdentifier)));
         publication.getEntityDescription().getReference().setDoi(null);

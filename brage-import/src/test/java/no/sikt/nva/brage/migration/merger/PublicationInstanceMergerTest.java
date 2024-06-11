@@ -11,33 +11,43 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
+import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
-import no.unit.nva.model.instancetypes.degree.DegreeBase;
 import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
+import no.unit.nva.model.instancetypes.report.ConferenceReport;
+import no.unit.nva.model.instancetypes.report.ReportBasic;
+import no.unit.nva.model.instancetypes.report.ReportBookOfAbstract;
+import no.unit.nva.model.instancetypes.report.ReportResearch;
+import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 public class PublicationInstanceMergerTest {
 
-    public static Stream<Arguments> emptyDegreeSupplier() {
+    public static Stream<Arguments> emptyPublicationInstanceSupplier() {
         return Stream.of(Arguments.of(new DegreePhd(null, null, Set.of())),
                          Arguments.of(new DegreeBachelor(null, null)),
                          Arguments.of(new DegreeMaster(null, null)),
                          Arguments.of(new DegreeLicentiate(null, null)),
-                         Arguments.of(new OtherStudentWork(null, null)));
+                         Arguments.of(new OtherStudentWork(null, null)),
+                         Arguments.of(new ConferenceReport(null)),
+                         Arguments.of(new ReportResearch(null)),
+                         Arguments.of(new ReportBasic(null)),
+                         Arguments.of(new ReportWorkingPaper(null)),
+                         Arguments.of(new ReportBookOfAbstract(null)));
     }
 
     @ParameterizedTest
-    @MethodSource("emptyDegreeSupplier")
-    void shouldUseExistingPublicationInstanceWhenNewPublicationInstanceIsEmpty(DegreeBase degreeBase)
+    @MethodSource("emptyPublicationInstanceSupplier")
+    void shouldUseExistingPublicationInstanceWhenNewPublicationInstanceIsEmpty(PublicationInstance<?> publicationInstance)
         throws InvalidUnconfirmedSeriesException, InvalidIsbnException, InvalidIssnException {
-        var existingPublication = randomPublication(degreeBase.getClass());
-        var bragePublication = randomPublication(degreeBase.getClass());
-        bragePublication.getEntityDescription().getReference().setPublicationInstance(degreeBase);
+        var existingPublication = randomPublication(publicationInstance.getClass());
+        var bragePublication = randomPublication(publicationInstance.getClass());
+        bragePublication.getEntityDescription().getReference().setPublicationInstance(publicationInstance);
         var updatedPublication = mergePublications(existingPublication, bragePublication);
 
         assertThat(updatedPublication.getEntityDescription().getReference().getPublicationInstance(),
@@ -45,12 +55,12 @@ public class PublicationInstanceMergerTest {
     }
 
     @ParameterizedTest
-    @MethodSource("emptyDegreeSupplier")
-    void shouldUseNewPublicationInstanceWhenExistingPublicationInstanceIsEmpty(DegreeBase degreeBase)
+    @MethodSource("emptyPublicationInstanceSupplier")
+    void shouldUseNewPublicationInstanceWhenExistingPublicationInstanceIsEmpty(PublicationInstance<?>  publicationInstance)
         throws InvalidUnconfirmedSeriesException, InvalidIsbnException, InvalidIssnException {
-        var existingPublication = randomPublication(degreeBase.getClass());
-        existingPublication.getEntityDescription().getReference().setPublicationInstance(degreeBase);
-        var bragePublication = randomPublication(degreeBase.getClass());
+        var existingPublication = randomPublication(publicationInstance.getClass());
+        existingPublication.getEntityDescription().getReference().setPublicationInstance(publicationInstance);
+        var bragePublication = randomPublication(publicationInstance.getClass());
         var updatedPublication = mergePublications(existingPublication, bragePublication);
 
         assertThat(updatedPublication.getEntityDescription().getReference().getPublicationInstance(),
