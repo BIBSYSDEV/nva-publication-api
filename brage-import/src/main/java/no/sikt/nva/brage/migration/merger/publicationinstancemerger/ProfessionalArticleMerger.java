@@ -1,4 +1,4 @@
-package no.sikt.nva.brage.migration.merger.publicationisntancemerger;
+package no.sikt.nva.brage.migration.merger.publicationinstancemerger;
 
 import static no.sikt.nva.brage.migration.merger.publicationinstancemerger.PublicationInstanceMerger.getNonNullValue;
 import static no.sikt.nva.brage.migration.merger.publicationinstancemerger.PublicationInstanceMerger.getRange;

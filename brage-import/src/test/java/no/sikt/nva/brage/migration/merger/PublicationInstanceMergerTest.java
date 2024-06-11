@@ -3,6 +3,7 @@ package no.sikt.nva.brage.migration.merger;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static org.hamcrest.MatcherAssert.assertThat;
+import java.util.Set;
 import java.util.stream.Stream;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.sikt.nva.brage.migration.record.Record;
@@ -11,28 +12,39 @@ import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
+import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
+import no.unit.nva.model.instancetypes.degree.DegreeMaster;
+import no.unit.nva.model.instancetypes.degree.DegreePhd;
+import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.JournalIssue;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.instancetypes.media.MediaFeatureArticle;
-import no.unit.nva.model.pages.Range;
+import no.unit.nva.model.instancetypes.report.ConferenceReport;
+import no.unit.nva.model.instancetypes.report.ReportBasic;
+import no.unit.nva.model.instancetypes.report.ReportBookOfAbstract;
+import no.unit.nva.model.instancetypes.report.ReportResearch;
+import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 public class PublicationInstanceMergerTest {
 
-    private static Publication mergePublications(Publication existingPublication, Publication bragePublication)
-        throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
-        var record = new Record();
-        record.setId(bragePublication.getHandle());
-        var representation = new PublicationRepresentation(record, bragePublication);
-        return new CristinImportPublicationMerger(existingPublication, representation).mergePublications();
-    }
-
-    public static Stream<Arguments> emptyJournalsSupplier() {
-        return Stream.of(Arguments.of(new JournalIssue(null, null, null, null)),
+    public static Stream<Arguments> emptyPublicationInstanceSupplier() {
+        return Stream.of(Arguments.of(new DegreePhd(null, null, Set.of())),
+                         Arguments.of(new DegreeBachelor(null, null)),
+                         Arguments.of(new DegreeMaster(null, null)),
+                         Arguments.of(new DegreeLicentiate(null, null)),
+                         Arguments.of(new OtherStudentWork(null, null)),
+                         Arguments.of(new ConferenceReport(null)),
+                         Arguments.of(new ReportResearch(null)),
+                         Arguments.of(new ReportBasic(null)),
+                         Arguments.of(new ReportWorkingPaper(null)),
+                         Arguments.of(new ReportBookOfAbstract(null)),
+                         Arguments.of(new JournalIssue(null, null, null, null)),
                          Arguments.of(new JournalLeader(null, null, null, null)),
                          Arguments.of(new ProfessionalArticle(null, null, null, null)),
                          Arguments.of(new AcademicArticle(null, null, null, null)),
@@ -40,10 +52,9 @@ public class PublicationInstanceMergerTest {
     }
 
     @ParameterizedTest
-    @MethodSource("emptyJournalsSupplier")
-    void shouldUseExistingPublicationInstanceWhenNewPublicationInstanceIsEmpty(
-        PublicationInstance<?> publicationInstance)
-        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+    @MethodSource("emptyPublicationInstanceSupplier")
+    void shouldUseExistingPublicationInstanceWhenNewPublicationInstanceIsEmpty(PublicationInstance<?> publicationInstance)
+        throws InvalidUnconfirmedSeriesException, InvalidIsbnException, InvalidIssnException {
         var existingPublication = randomPublication(publicationInstance.getClass());
         var bragePublication = randomPublication(publicationInstance.getClass());
         bragePublication.getEntityDescription().getReference().setPublicationInstance(publicationInstance);
@@ -54,9 +65,9 @@ public class PublicationInstanceMergerTest {
     }
 
     @ParameterizedTest
-    @MethodSource("emptyJournalsSupplier")
-    void shouldUseNewPublicationInstanceWhenExistingPublicationInstanceIsEmpty(PublicationInstance<?> publicationInstance)
-        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+    @MethodSource("emptyPublicationInstanceSupplier")
+    void shouldUseNewPublicationInstanceWhenExistingPublicationInstanceIsEmpty(PublicationInstance<?>  publicationInstance)
+        throws InvalidUnconfirmedSeriesException, InvalidIsbnException, InvalidIssnException {
         var existingPublication = randomPublication(publicationInstance.getClass());
         existingPublication.getEntityDescription().getReference().setPublicationInstance(publicationInstance);
         var bragePublication = randomPublication(publicationInstance.getClass());
@@ -64,5 +75,13 @@ public class PublicationInstanceMergerTest {
 
         assertThat(updatedPublication.getEntityDescription().getReference().getPublicationInstance(),
                    doesNotHaveEmptyValues());
+    }
+
+    private static Publication mergePublications(Publication existingPublication, Publication bragePublication)
+        throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
+        var record = new Record();
+        record.setId(bragePublication.getHandle());
+        var representation = new PublicationRepresentation(record, bragePublication);
+        return new CristinImportPublicationMerger(existingPublication, representation).mergePublications();
     }
 }
