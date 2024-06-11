@@ -30,6 +30,7 @@ entityDescription.reference.publicationContext.url
 entityDescription.reference.publicationContext.linkedContext
 entityDescription.reference.publicationContext.additionalIdentifiers
 entityDescription.reference.publicationContext.course
+entityDescription.reference.publicationContext.partOf
 
 entityDescription.reference.publicationInstance.manifestations.concertSeries
 entityDescription.reference.publicationInstance.manifestations.performanceType
