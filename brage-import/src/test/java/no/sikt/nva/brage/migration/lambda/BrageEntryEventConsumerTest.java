@@ -23,6 +23,7 @@ import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.NOT_SUPPORTED_TYPE;
 import static no.sikt.nva.brage.migration.merger.AssociatedArtifactMover.COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE;
 import static no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger.DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
@@ -74,6 +75,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import jdk.jfr.Description;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.mapper.InvalidIsmnRuntimeException;
@@ -87,10 +89,12 @@ import no.sikt.nva.brage.migration.record.Affiliation;
 import no.sikt.nva.brage.migration.record.Contributor;
 import no.sikt.nva.brage.migration.record.EntityDescription;
 import no.sikt.nva.brage.migration.record.Identity;
+import no.sikt.nva.brage.migration.record.Pages;
 import no.sikt.nva.brage.migration.record.PartOfSeries;
 import no.sikt.nva.brage.migration.record.PublicationDate;
 import no.sikt.nva.brage.migration.record.PublicationDateNva;
 import no.sikt.nva.brage.migration.record.PublisherAuthority;
+import no.sikt.nva.brage.migration.record.Range;
 import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.record.ResourceOwner;
 import no.sikt.nva.brage.migration.record.Type;
@@ -122,17 +126,23 @@ import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
+import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.artistic.music.InvalidIsmnException;
 import no.unit.nva.model.instancetypes.artistic.music.Ismn;
 import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
 import no.unit.nva.model.instancetypes.artistic.music.MusicScore;
-import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.NonFictionMonograph;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
+import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
 import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
 import no.unit.nva.model.instancetypes.event.ConferencePoster;
+import no.unit.nva.model.instancetypes.report.ConferenceReport;
+import no.unit.nva.model.instancetypes.report.ReportBasic;
+import no.unit.nva.model.instancetypes.report.ReportBookOfAbstract;
+import no.unit.nva.model.instancetypes.report.ReportResearch;
+import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -148,9 +158,11 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
@@ -250,6 +262,18 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private S3Driver s3Driver;
     private FakeS3Client s3Client;
     private ResourceService resourceService;
+
+    public static Stream<Arguments> emptyPublicationInstanceSupplier() {
+        return Stream.of(Arguments.of(new DegreePhd(null, null, Set.of()), TYPE_PHD),
+                         Arguments.of(new DegreeBachelor(null, null), TYPE_BACHELOR),
+                         Arguments.of(new DegreeMaster(null, null), TYPE_MASTER),
+                         Arguments.of(new OtherStudentWork(null, null), TYPE_OTHER_STUDENT_WORK),
+                         Arguments.of(new ConferenceReport(null), TYPE_CONFERENCE_REPORT),
+                         Arguments.of(new ReportResearch(null), TYPE_RESEARCH_REPORT),
+                         Arguments.of(new ReportBasic(null), TYPE_REPORT),
+                         Arguments.of(new ReportWorkingPaper(null), TYPE_REPORT_WORKING_PAPER),
+                         Arguments.of(new ReportBookOfAbstract(null), TYPE_BOOK_OF_ABSTRACTS));
+    }
 
     @BeforeEach
     public void init() {
@@ -1757,7 +1781,50 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     }
 
-    @NotNull
+    @ParameterizedTest
+    @MethodSource("emptyPublicationInstanceSupplier")
+    void shouldUpdateExistingPublicationByFillingUpInstanceTypeEmptyValues(PublicationInstance<?> publicationInstance, Type type) throws IOException {
+        var generator = generateBrageRecordAndPersistDuplicateByCristinIdentifier(publicationInstance, type);
+        var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
+        var updatedPublicationInstance = handler.handleRequest(s3Event, CONTEXT)
+                                             .publication().getEntityDescription().getReference().getPublicationInstance();
+
+        assertThat(updatedPublicationInstance,
+                   doesNotHaveEmptyValuesIgnoringFields(Set.of(".pages.introduction", ".pages.illustrated")));
+    }
+
+    private NvaBrageMigrationDataGenerator generateBrageRecordAndPersistDuplicateByCristinIdentifier(PublicationInstance<?> publicationInstance,
+                                                                             Type type) {
+        var cristinIdentifier = "1234";
+        var publication = randomPublication(publicationInstance.getClass());
+        publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier(SOURCE_CRISTIN, cristinIdentifier)));
+        publication.getEntityDescription().getReference().setDoi(null);
+        publication.getEntityDescription().setContributors(List.of());
+        publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder().withYear("2022").withMonth("03").withDay("01").build());
+        publication.getEntityDescription().getReference().setPublicationInstance(publicationInstance);
+        resourceService.createPublicationFromImportedEntry(publication);
+        var affiliationIdentifier = randomString();
+        var contributor = new Contributor(new Identity(randomString(), null),
+                                          "Creator",
+                                          "Creator",
+                                          List.of(new Affiliation(affiliationIdentifier, "ntnu",
+                                                                  null)));
+        return new NvaBrageMigrationDataGenerator.Builder()
+                            .withCristinIdentifier(cristinIdentifier)
+                            .withMainTitle(publication.getEntityDescription().getMainTitle())
+                            .withContributor(contributor)
+                            .withPublicationDate(new PublicationDate("2022",
+                                                                     new PublicationDateNva.Builder()
+                                                                         .withYear("2022")
+                                                                         .withMonth("03")
+                                                                         .withDay("01")
+                                                                         .build()))
+                            .withType(type)
+                            .withHasPart(List.of(randomString()))
+                            .withPages(new Pages(randomString(), new Range("1", "2"), randomString()))
+                            .build();
+    }
+
     private static AdditionalIdentifier cristinAdditionalIdentifier(String cristinIdentifier) {
         return new AdditionalIdentifier("Cristin", cristinIdentifier);
     }
