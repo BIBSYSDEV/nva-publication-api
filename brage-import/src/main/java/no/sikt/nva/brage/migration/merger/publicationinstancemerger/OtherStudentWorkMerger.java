@@ -1,7 +1,7 @@
-package no.sikt.nva.brage.migration.merger.publicationisntancemerger;
+package no.sikt.nva.brage.migration.merger.publicationinstancemerger;
 
-import static no.sikt.nva.brage.migration.merger.publicationisntancemerger.PublicationInstanceMerger.getDate;
-import static no.sikt.nva.brage.migration.merger.publicationisntancemerger.PublicationInstanceMerger.getPages;
+import static no.sikt.nva.brage.migration.merger.publicationinstancemerger.PublicationInstanceMerger.getDate;
+import static no.sikt.nva.brage.migration.merger.publicationinstancemerger.PublicationInstanceMerger.getPages;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
 

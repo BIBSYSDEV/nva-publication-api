@@ -1,4 +1,4 @@
-package no.sikt.nva.brage.migration.merger.publicationisntancemerger;
+package no.sikt.nva.brage.migration.merger.publicationinstancemerger;
 
 import static java.util.Objects.nonNull;
 import java.util.LinkedHashSet;

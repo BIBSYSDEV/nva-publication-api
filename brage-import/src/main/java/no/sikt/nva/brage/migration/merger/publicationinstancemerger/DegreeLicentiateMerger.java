@@ -1,4 +1,4 @@
-package no.sikt.nva.brage.migration.merger.publicationisntancemerger;
+package no.sikt.nva.brage.migration.merger.publicationinstancemerger;
 
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
