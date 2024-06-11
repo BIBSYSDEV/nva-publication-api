@@ -16,19 +16,26 @@ import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Book.BookBuilder;
 import no.unit.nva.model.contexttypes.Event;
+import no.unit.nva.model.contexttypes.GeographicalContent;
 import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.NullPublisher;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Report;
+import no.unit.nva.model.contexttypes.ResearchData;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
+import no.unit.nva.model.instancetypes.Map;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.media.MediaInterview;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
+import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import org.junit.jupiter.api.Test;
 
 class CristinImportPublicationMergerTest {
@@ -164,6 +171,42 @@ class CristinImportPublicationMergerTest {
 
         assertThat(updatedPublication.getEntityDescription().getReference().getPublicationContext(),
                    doesNotHaveEmptyValues());
+    }
+
+    @Test
+    void shouldUseExistingPublicationContextWhenIncomingMediaContributionIsEmpty()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var existingPublication = randomPublication(MediaInterview.class);
+        var bragePublication = randomPublication(MediaInterview.class);
+        bragePublication.getEntityDescription().getReference().setPublicationContext(new Anthology());
+        var updatedPublication = mergePublications(existingPublication, bragePublication);
+
+        assertThat(updatedPublication.getEntityDescription().getReference().getPublicationContext(),
+                   doesNotHaveEmptyValues());
+    }
+
+    @Test
+    void shouldUseExistingPublicationContextWhenIncomingResearchDataIsEmpty()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var existingPublication = randomPublication(DataSet.class);
+        var bragePublication = randomPublication(DataSet.class);
+        bragePublication.getEntityDescription().getReference().setPublicationContext(new ResearchData(new NullPublisher()));
+        var updatedPublication = mergePublications(existingPublication, bragePublication);
+
+        var researchData = (ResearchData) updatedPublication.getEntityDescription().getReference().getPublicationContext();
+        assertThat(researchData.getPublisher(), is(instanceOf(Publisher.class)));
+    }
+
+    @Test
+    void shouldUseExistingPublicationContextWhenIncomingGeographicalContentIsEmpty()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var existingPublication = randomPublication(Map.class);
+        var bragePublication = randomPublication(Map.class);
+        bragePublication.getEntityDescription().getReference().setPublicationContext(new GeographicalContent(new NullPublisher()));
+        var updatedPublication = mergePublications(existingPublication, bragePublication);
+
+        var researchData = (GeographicalContent) updatedPublication.getEntityDescription().getReference().getPublicationContext();
+        assertThat(researchData.getPublisher(), is(instanceOf(Publisher.class)));
     }
 
     private PublicationContext emptyUnconfirmedJournal() throws InvalidIssnException {

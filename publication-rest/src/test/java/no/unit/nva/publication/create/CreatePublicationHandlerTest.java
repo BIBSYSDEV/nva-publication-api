@@ -71,12 +71,12 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UploadDetails;
-import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.model.testing.associatedartifacts.util.RightsRetentionStrategyGenerator;
 import no.unit.nva.publication.events.bodies.CreatePublicationRequest;
 import no.unit.nva.publication.model.BackendClientCredentials;
+import no.unit.nva.publication.permission.strategy.PermissionStrategy;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.stubs.FakeContext;
@@ -178,6 +178,10 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         stubSuccessfulTokenResponse();
 
         stubCustomerResponseAcceptingFilesForAllTypes(customerId);
+    }
+
+    private static Class<?>[] protectedDegreeInstanceTypeClassesProvider() {
+        return PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES;
     }
 
     @Test
@@ -293,7 +297,8 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var actualPublicationResponse = actual.getBodyObject(PublicationResponse.class);
 
         var expectedPublicationResponse =
-            constructResponseSettingFieldsThatAreNotCopiedByTheRequest(publicationWithoutFiles, actualPublicationResponse);
+            constructResponseSettingFieldsThatAreNotCopiedByTheRequest(publicationWithoutFiles,
+                                                                       actualPublicationResponse);
 
         var diff = JAVERS.compare(expectedPublicationResponse, actualPublicationResponse);
         assertThat(actualPublicationResponse.getIdentifier(), is(equalTo(expectedPublicationResponse.getIdentifier())));
@@ -309,10 +314,12 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
     }
 
-    @Test
-    void shouldReturnForbiddenWhenNoAccessRight() throws IOException {
+    @ParameterizedTest(name = "should return forbidden when creating instance type {0} without being a thesis curator")
+    @MethodSource("protectedDegreeInstanceTypeClassesProvider")
+    void shouldReturnForbiddenCreatingProtectedDegreePublicationWithoutBeingThesisCurator(
+        final Class<?> protectedDegreeInstanceClass) throws IOException {
         var thesisPublication = samplePublication.copy()
-                                    .withEntityDescription(thesisPublishableEntityDescription())
+                                    .withEntityDescription(publishableEntityDescription(protectedDegreeInstanceClass))
                                     .build();
         var event = requestWithoutAccessRights(CreatePublicationRequest.fromPublication(thesisPublication));
         handler.handleRequest(event, outputStream, context);
@@ -320,10 +327,11 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_FORBIDDEN)));
     }
 
-    @Test
-    void shouldPersistDegreePublicationWhenUserIsExternalClient() throws IOException {
+    @ParameterizedTest(name = "should allow creating protected degree instance type {0} when done by external client")
+    @MethodSource("protectedDegreeInstanceTypeClassesProvider")
+    void shouldPersistDegreePublicationWhenUserIsExternalClient(Class<?> protectedDegreeInstanceClass) throws IOException {
         var thesisPublication = samplePublication.copy()
-                                    .withEntityDescription(thesisPublishableEntityDescription())
+                                    .withEntityDescription(publishableEntityDescription(protectedDegreeInstanceClass))
                                     .build();
         var event = requestFromExternalClient(CreatePublicationRequest.fromPublication(thesisPublication));
         handler.handleRequest(event, outputStream, context);
@@ -442,7 +450,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                                        RandomDataGenerator.randomUri(),
                                        false,
                                        PublisherVersion.ACCEPTED_VERSION,
-                                       (Instant)null,
+                                       (Instant) null,
                                        RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
                                        RandomDataGenerator.randomString(),
                                        new UploadDetails(null, null));
@@ -455,7 +463,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         var request = createEmptyPublicationRequest();
         request.setAssociatedArtifacts(associatedArtifactsInPublication);
-        request.setEntityDescription(randomPublishableEntityDescriptionForAcademicArticle());
+        request.setEntityDescription(publishableEntityDescription(AcademicArticle.class));
 
         var inputStream = createPublicationRequest(request);
 
@@ -480,7 +488,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                                        RandomDataGenerator.randomUri(),
                                        false,
                                        PublisherVersion.ACCEPTED_VERSION,
-                                       (Instant)null,
+                                       (Instant) null,
                                        RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
                                        RandomDataGenerator.randomString(),
                                        new UploadDetails(null, null));
@@ -495,7 +503,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         var request = createEmptyPublicationRequest();
         request.setAssociatedArtifacts(associatedArtifactsInPublication);
-        request.setEntityDescription(randomPublishableEntityDescriptionForAcademicArticle());
+        request.setEntityDescription(publishableEntityDescription(AcademicArticle.class));
 
         var inputStream = createPublicationRequest(request);
 
@@ -506,7 +514,8 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         var publicationResponse = actual.getBodyObject(PublicationResponse.class);
         var actualFile = (File)
-            Lists.newArrayList(publicationResponse.getAssociatedArtifacts().stream().iterator()).getFirst();
+                             Lists.newArrayList(publicationResponse.getAssociatedArtifacts().stream().iterator())
+                                 .getFirst();
         assertTrue(actualFile.getRightsRetentionStrategy() instanceof OverriddenRightsRetentionStrategy);
         assertThat(((OverriddenRightsRetentionStrategy) actualFile.getRightsRetentionStrategy()).getOverriddenBy(),
                    is(equalTo(testUserName)));
@@ -716,26 +725,14 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private EntityDescription randomPublishableEntityDescriptionForAcademicArticle() {
+    private EntityDescription publishableEntityDescription(final Class<?> instanceClass) {
         return new EntityDescription.Builder()
                    .withMainTitle(randomString())
                    .withReference(
                        new Reference.Builder()
                            .withDoi(RandomDataGenerator.randomDoi())
                            .withPublicationInstance(
-                               PublicationInstanceBuilder.randomPublicationInstance(AcademicArticle.class))
-                           .build())
-                   .build();
-    }
-
-    private EntityDescription thesisPublishableEntityDescription() {
-        return new EntityDescription.Builder()
-                   .withMainTitle(randomString())
-                   .withReference(
-                       new Reference.Builder()
-                           .withDoi(RandomDataGenerator.randomDoi())
-                           .withPublicationInstance(
-                               PublicationInstanceBuilder.randomPublicationInstance(DegreeMaster.class))
+                               PublicationInstanceBuilder.randomPublicationInstance(instanceClass))
                            .build())
                    .build();
     }
