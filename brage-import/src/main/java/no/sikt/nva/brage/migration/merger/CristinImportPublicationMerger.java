@@ -86,7 +86,7 @@ public class CristinImportPublicationMerger {
     }
 
     private void preMergeValidation() {
-        PreMergeValidator.validate(existingPublication);
+        PreMergeValidator.validate(existingPublication, bragePublicationRepresentation);
     }
 
     private EntityDescription determineEntityDescription()
