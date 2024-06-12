@@ -303,7 +303,7 @@ public final class BrageNvaMapper {
         var abstractList = extractAbstract(brageRecord);
         return new EntityDescription.Builder()
                    .withLanguage(extractLanguage(brageRecord))
-                   .withAbstract(!abstractList.isEmpty() ? abstractList.getFirst() : null)
+                   .withAbstract(Optional.ofNullable(abstractList).map(List::getFirst).orElse(null))
                    .withAlternativeAbstracts(extractAlternativeAbstracts(abstractList))
                    .withDescription(extractDescription(brageRecord))
                    .withPublicationDate(extractDate(brageRecord))
@@ -316,10 +316,10 @@ public final class BrageNvaMapper {
     }
 
     private static Map<String, String> extractAlternativeAbstracts(List<String> abstractList) {
-        return !abstractList.isEmpty()
+        return nonNull(abstractList) && !abstractList.isEmpty()
                    ? abstractList.subList(1, abstractList.size()).stream()
-                   .collect(Collectors.collectingAndThen(Collectors.joining(TWO_NEWLINES),
-                                                         joined -> Map.of(UNDEFINED_LANGUAGE, joined)))
+                   .collect(Collectors.collectingAndThen(
+                       Collectors.joining(TWO_NEWLINES), joined -> Map.of(UNDEFINED_LANGUAGE, joined)))
             : Map.of();
     }
 
