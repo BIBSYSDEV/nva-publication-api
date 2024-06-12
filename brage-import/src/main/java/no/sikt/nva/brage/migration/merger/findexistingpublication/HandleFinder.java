@@ -44,7 +44,7 @@ public class HandleFinder implements FindExistingPublicationService {
 
     private void reportDuplicatesIfNecessary(PublicationRepresentation publicationRepresentation,
                                              List<Publication> publicationsWithHandleInAdditionalIdentifiers) {
-        if (publicationsWithHandleInAdditionalIdentifiers.size() > 1) {
+        if (FindExistingPublicationService.moreThanOneDuplicateFound(publicationsWithHandleInAdditionalIdentifiers)) {
             duplicatePublicationReporter.reportDuplicatePublications(publicationsWithHandleInAdditionalIdentifiers,
                                                                      publicationRepresentation.brageRecord(), DuplicateDetectionCause.HANDLE_DUPLICATES);
         }

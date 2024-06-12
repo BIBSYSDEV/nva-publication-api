@@ -1,6 +1,5 @@
 package no.sikt.nva.brage.migration.merger.findexistingpublication;
 
-import static no.sikt.nva.brage.migration.merger.findexistingpublication.FindExistingPublicationService.DUPLICATE_PUBLICATIONS_COUNT;
 import java.util.List;
 import java.util.Optional;
 import no.sikt.nva.brage.migration.lambda.MergeSource;
@@ -12,7 +11,7 @@ import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.service.impl.ResourceService;
 
-public class IsbnPublicationFinder {
+public class IsbnPublicationFinder implements FindExistingPublicationService {
 
     public static final String ISBN = "isbn";
 
@@ -49,7 +48,7 @@ public class IsbnPublicationFinder {
                                       .flatMap(List::stream)
                                       .filter(item -> PublicationComparator.publicationsMatch(item, publicationRepresentation.publication()))
                                       .toList();
-        if (publicationsToMerge.size() >=  DUPLICATE_PUBLICATIONS_COUNT) {
+        if (FindExistingPublicationService.moreThanOneDuplicateFound(publicationsToMerge)) {
             duplicatePublicationReporter.reportDuplicatePublications(publicationsToMerge,
                                                                      publicationRepresentation.brageRecord(), DuplicateDetectionCause.ISBN_DUPLICATES);
         }

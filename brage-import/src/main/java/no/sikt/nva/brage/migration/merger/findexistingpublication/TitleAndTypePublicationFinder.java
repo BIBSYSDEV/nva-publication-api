@@ -38,7 +38,6 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
     private final UriRetriever uriRetriever;
     private final String apiHost;
     private final DuplicatePublicationReporter duplicatePublicationReporter;
-    private static final int SINGLE_PUBLICATION_SIZE = 1;
 
     public TitleAndTypePublicationFinder(ResourceService resourceService,
                                          UriRetriever uriRetriever,
@@ -61,7 +60,7 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
         if (potentialExistingPublications.isEmpty()) {
             return Optional.empty();
         }
-        if (potentialExistingPublications.size() > SINGLE_PUBLICATION_SIZE) {
+        if (FindExistingPublicationService.moreThanOneDuplicateFound(potentialExistingPublications)) {
             duplicatePublicationReporter.reportDuplicatePublications(potentialExistingPublications,
                                                                             publicationRepresentation.brageRecord(), DuplicateDetectionCause.TITLE_DUPLICATES);
         }

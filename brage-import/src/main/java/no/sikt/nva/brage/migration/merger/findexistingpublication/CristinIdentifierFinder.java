@@ -1,7 +1,6 @@
 package no.sikt.nva.brage.migration.merger.findexistingpublication;
 
 import static java.util.Objects.nonNull;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -33,7 +32,7 @@ public class CristinIdentifierFinder implements FindExistingPublicationService {
                                    .filter(item -> PublicationComparator.publicationsMatch(item,
                                                                                            publicationRepresentation.publication()))
                                    .toList();
-            if (moreThanOneDuplicateFound(publications)) {
+            if (FindExistingPublicationService.moreThanOneDuplicateFound(publications)) {
                 duplicatePublicationReporter.reportDuplicatePublications(publications,
                                                                          publicationRepresentation.brageRecord(), DuplicateDetectionCause.CRISTIN_DUPLICATES);
             }
@@ -44,9 +43,7 @@ public class CristinIdentifierFinder implements FindExistingPublicationService {
         return Optional.empty();
     }
 
-    private static boolean moreThanOneDuplicateFound(List<Publication> publications) {
-        return publications.size() >= DUPLICATE_PUBLICATIONS_COUNT;
-    }
+
 
     private String getCristinIdentifier(Publication publication) {
         var cristinIdentifiers = getCristinIdentifiers(publication);

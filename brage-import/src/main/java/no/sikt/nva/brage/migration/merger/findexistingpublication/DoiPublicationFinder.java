@@ -54,7 +54,7 @@ public class DoiPublicationFinder implements FindExistingPublicationService {
     }
 
     private void reportMultipleDuplicatesIfNecessary(List<Publication> publicationsByDoi, Record record) {
-        if (publicationsByDoi.size() > 1){
+        if (FindExistingPublicationService.moreThanOneDuplicateFound(publicationsByDoi)){
             duplicatePublicationReporter.reportDuplicatePublications(publicationsByDoi, record, DuplicateDetectionCause.DOI_DUPLICATES);
         }
     }
