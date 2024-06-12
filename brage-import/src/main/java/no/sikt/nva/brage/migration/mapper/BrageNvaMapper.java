@@ -80,6 +80,7 @@ public final class BrageNvaMapper {
         "Klausulert: Kan bare tillates lest etter nærmere avtale med forfatter");
     public static final String UNDEFINED_LANGUAGE = "und";
     public static final String TWO_NEWLINES = "\n\n";
+    public static final String NO_ABSTRACT = null;
 
     private BrageNvaMapper() {
 
@@ -303,7 +304,7 @@ public final class BrageNvaMapper {
         var abstractList = extractAbstract(brageRecord);
         return new EntityDescription.Builder()
                    .withLanguage(extractLanguage(brageRecord))
-                   .withAbstract(Optional.ofNullable(abstractList).map(List::getFirst).orElse(null))
+                   .withAbstract(abstractList.isEmpty() ? NO_ABSTRACT : abstractList.getFirst())
                    .withAlternativeAbstracts(extractAlternativeAbstracts(abstractList))
                    .withDescription(extractDescription(brageRecord))
                    .withPublicationDate(extractDate(brageRecord))
