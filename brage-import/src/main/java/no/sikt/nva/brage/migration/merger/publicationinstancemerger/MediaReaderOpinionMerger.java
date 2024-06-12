@@ -3,20 +3,21 @@ package no.sikt.nva.brage.migration.merger.publicationinstancemerger;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.media.MediaReaderOpinion;
 
-public final class MediaReaderOpinionMerger extends PublicationInstanceMerger {
+public final class MediaReaderOpinionMerger extends PublicationInstanceMerger<MediaReaderOpinion> {
 
-    private MediaReaderOpinionMerger() {
-        super();
+    public MediaReaderOpinionMerger(MediaReaderOpinion mediaReaderOpinion) {
+        super(mediaReaderOpinion);
     }
 
-    public static MediaReaderOpinion merge(MediaReaderOpinion mediaReaderOpinion, PublicationInstance<?> publicationInstance) {
+    @Override
+    public MediaReaderOpinion merge(PublicationInstance<?> publicationInstance) {
         if (publicationInstance instanceof MediaReaderOpinion newMediaReaderOpinion) {
-            return new MediaReaderOpinion(getNonNullValue(mediaReaderOpinion.getVolume(), newMediaReaderOpinion.getVolume()),
-                                          getNonNullValue(mediaReaderOpinion.getIssue(), newMediaReaderOpinion.getIssue()),
-                                          getNonNullValue(mediaReaderOpinion.getArticleNumber(), newMediaReaderOpinion.getArticleNumber()),
-                                          getRange(mediaReaderOpinion.getPages(), newMediaReaderOpinion.getPages()));
+            return new MediaReaderOpinion(getNonNullValue(this.publicationInstance.getVolume(), newMediaReaderOpinion.getVolume()),
+                                          getNonNullValue(this.publicationInstance.getIssue(), newMediaReaderOpinion.getIssue()),
+                                          getNonNullValue(this.publicationInstance.getArticleNumber(), newMediaReaderOpinion.getArticleNumber()),
+                                          getRange(this.publicationInstance.getPages(), newMediaReaderOpinion.getPages()));
         } else {
-            return mediaReaderOpinion;
+            return this.publicationInstance;
         }
     }
 }

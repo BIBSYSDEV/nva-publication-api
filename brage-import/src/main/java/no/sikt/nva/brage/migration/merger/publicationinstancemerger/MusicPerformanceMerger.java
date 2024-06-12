@@ -7,19 +7,19 @@ import no.unit.nva.model.time.duration.DefinedDuration;
 import no.unit.nva.model.time.duration.Duration;
 import no.unit.nva.model.time.duration.UndefinedDuration;
 
-public final class MusicPerformanceMerger extends PublicationInstanceMerger {
+public final class MusicPerformanceMerger extends PublicationInstanceMerger<MusicPerformance> {
 
-    private MusicPerformanceMerger() {
-        super();
+    public MusicPerformanceMerger(MusicPerformance musicPerformance) {
+        super(musicPerformance);
     }
 
-    public static MusicPerformance merge(MusicPerformance musicPerformance,
-                                         PublicationInstance<?> publicationInstance) {
+    @Override
+    public MusicPerformance merge(PublicationInstance<?> publicationInstance) {
         if (publicationInstance instanceof MusicPerformance newMusicPerformance) {
-            return new MusicPerformance(mergeCollections(musicPerformance.getManifestations(), newMusicPerformance.getManifestations(), ArrayList::new),
-                                        getDuration(musicPerformance.getDuration(), newMusicPerformance.getDuration()));
+            return new MusicPerformance(mergeCollections(this.publicationInstance.getManifestations(), newMusicPerformance.getManifestations(), ArrayList::new),
+                                        getDuration(this.publicationInstance.getDuration(), newMusicPerformance.getDuration()));
         } else {
-            return musicPerformance;
+            return this.publicationInstance;
         }
     }
 

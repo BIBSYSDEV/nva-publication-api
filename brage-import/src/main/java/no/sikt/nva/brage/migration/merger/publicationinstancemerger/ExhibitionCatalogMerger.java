@@ -3,17 +3,18 @@ package no.sikt.nva.brage.migration.merger.publicationinstancemerger;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.ExhibitionCatalog;
 
-public final class ExhibitionCatalogMerger extends PublicationInstanceMerger {
+public final class ExhibitionCatalogMerger extends PublicationInstanceMerger<ExhibitionCatalog> {
 
-    private ExhibitionCatalogMerger() {
-        super();
+    public ExhibitionCatalogMerger(ExhibitionCatalog exhibitionCatalog) {
+        super(exhibitionCatalog);
     }
 
-    public static ExhibitionCatalog merge(ExhibitionCatalog exhibitionCatalog, PublicationInstance<?> publicationInstance) {
+    @Override
+    public ExhibitionCatalog merge(PublicationInstance<?> publicationInstance) {
         if (publicationInstance instanceof ExhibitionCatalog newExhibitionCatalog) {
-            return new ExhibitionCatalog(getPages(exhibitionCatalog.getPages(), newExhibitionCatalog.getPages()));
+            return new ExhibitionCatalog(getPages(this.publicationInstance.getPages(), newExhibitionCatalog.getPages()));
         } else {
-            return exhibitionCatalog;
+            return this.publicationInstance;
         }
     }
 }

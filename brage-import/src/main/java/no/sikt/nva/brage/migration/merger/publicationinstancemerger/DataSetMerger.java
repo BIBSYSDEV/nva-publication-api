@@ -12,21 +12,22 @@ import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.instancetypes.researchdata.GeographicalDescription;
 import no.unit.nva.model.instancetypes.researchdata.ReferencedByUris;
 
-public final class DataSetMerger extends PublicationInstanceMerger {
+public final class DataSetMerger extends PublicationInstanceMerger<DataSet> {
 
-    private DataSetMerger() {
-        super();
+    public DataSetMerger(DataSet dataSet) {
+        super(dataSet);
     }
 
-    public static DataSet merge(DataSet dataSet, PublicationInstance<?> publicationInstance) {
+    @Override
+    public DataSet merge(PublicationInstance<?> publicationInstance) {
         if (publicationInstance instanceof DataSet newDataSet) {
-            return new DataSet(dataSet.isUserAgreesToTermsAndConditions(),
-                               getGeographicalCoverage(dataSet.getGeographicalCoverage(), newDataSet.getGeographicalCoverage()),
-                               new ReferencedByUris(getUriSet(dataSet.getReferencedBy(), newDataSet.getReferencedBy())),
-                               mergeCollections(dataSet.getRelated(), newDataSet.getRelated(), LinkedHashSet::new),
-                               new CompliesWithUris(getUriSet(dataSet.getCompliesWith(), newDataSet.getCompliesWith())));
+            return new DataSet(this.publicationInstance.isUserAgreesToTermsAndConditions(),
+                               getGeographicalCoverage(this.publicationInstance.getGeographicalCoverage(), newDataSet.getGeographicalCoverage()),
+                               new ReferencedByUris(getUriSet(this.publicationInstance.getReferencedBy(), newDataSet.getReferencedBy())),
+                               mergeCollections(this.publicationInstance.getRelated(), newDataSet.getRelated(), LinkedHashSet::new),
+                               new CompliesWithUris(getUriSet(this.publicationInstance.getCompliesWith(), newDataSet.getCompliesWith())));
         } else {
-            return dataSet;
+            return this.publicationInstance;
         }
     }
 

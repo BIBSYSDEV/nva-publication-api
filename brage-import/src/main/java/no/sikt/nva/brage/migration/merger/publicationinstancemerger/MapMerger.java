@@ -3,18 +3,20 @@ package no.sikt.nva.brage.migration.merger.publicationinstancemerger;
 import no.unit.nva.model.instancetypes.Map;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 
-public final class MapMerger extends PublicationInstanceMerger {
+public final class MapMerger extends PublicationInstanceMerger<Map> {
 
-    private MapMerger() {
-        super();
+    public MapMerger(Map map) {
+        super(map);
     }
 
-    public static Map merge(Map map, PublicationInstance<?> publicationInstance) {
+    @Override
+    public Map merge(PublicationInstance<?> publicationInstance) {
         if (publicationInstance instanceof Map newMap) {
-            return new Map(getNonNullValue(map.getDescription(), newMap.getDescription),
-                           getPages(map.getPages(), newMap.getPages()));
+            return new Map(
+                getNonNullValue(this.publicationInstance.getDescription(), newMap.getDescription()),
+                getPages(this.publicationInstance.getPages(), newMap.getPages()));
         } else {
-            return map;
+            return this.publicationInstance;
         }
     }
 }

@@ -7,20 +7,31 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.RelatedDocument;
 
-public final class DegreePhdMerger extends PublicationInstanceMerger {
+public final class DegreePhdMerger extends PublicationInstanceMerger<DegreePhd> {
 
-    private DegreePhdMerger() {
-        super();
+    public DegreePhdMerger(DegreePhd degreePhd) {
+        super(degreePhd);
     }
 
-    public static DegreePhd merge(DegreePhd degreePhd,
-                                                             PublicationInstance<?> publicationInstance) {
+    @Override
+    public DegreePhd merge(PublicationInstance<?> publicationInstance) {
         if (publicationInstance instanceof DegreePhd newDegreePhd) {
-            return new DegreePhd(getPages(degreePhd.getPages(), newDegreePhd.getPages()),
-                                 getDate(degreePhd.getSubmittedDate(), newDegreePhd.getSubmittedDate()),
-                                 mergeCollections(degreePhd.getRelated(), newDegreePhd.getRelated(), LinkedHashSet::new));
+            return new DegreePhd(getPages(this.publicationInstance.getPages(), newDegreePhd.getPages()),
+                                 getDate(this.publicationInstance.getSubmittedDate(), newDegreePhd.getSubmittedDate()),
+                                 getRelated(this.publicationInstance.getRelated(), newDegreePhd.getRelated()));
         } else {
-            return degreePhd;
+            return this.publicationInstance;
+        }
+    }
+
+    private static Set<RelatedDocument> getRelated(Set<RelatedDocument> documents, Set<RelatedDocument> brageDocuments) {
+        if (nonNull(documents) && !documents.isEmpty()) {
+            var mergedDocuments = new LinkedHashSet<RelatedDocument>();
+            mergedDocuments.addAll(documents);
+            mergedDocuments.addAll(brageDocuments);
+            return mergedDocuments;
+        } else {
+            return brageDocuments;
         }
     }
 }

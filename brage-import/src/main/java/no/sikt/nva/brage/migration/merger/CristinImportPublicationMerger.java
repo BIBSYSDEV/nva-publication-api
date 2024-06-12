@@ -6,26 +6,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.AnthologyMerger;
-import no.sikt.nva.brage.migration.merger.publicationcontextmerger.GeographicalContentMerger;
-import no.sikt.nva.brage.migration.merger.publicationcontextmerger.ResearchDataMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.BookMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.DegreeMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.EventMerger;
+import no.sikt.nva.brage.migration.merger.publicationcontextmerger.GeographicalContentMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.JournalMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.MediaContributionMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.ReportMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.DataSetMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.DegreeBachelorMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.DegreeLicentiateMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.DegreeMasterMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.DegreePhdMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.ExhibitionCatalogMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.MapMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.MediaReaderOpinionMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.MusicPerformanceMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.NonFictionMonographMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.OtherStudentWorkMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.TextbookMerger;
+import no.sikt.nva.brage.migration.merger.publicationcontextmerger.ResearchDataMerger;
+import no.sikt.nva.brage.migration.merger.publicationinstancemerger.PublicationInstanceMerger;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
@@ -48,19 +37,7 @@ import no.unit.nva.model.contexttypes.ResearchData;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
-import no.unit.nva.model.instancetypes.Map;
 import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
-import no.unit.nva.model.instancetypes.book.ExhibitionCatalog;
-import no.unit.nva.model.instancetypes.book.NonFictionMonograph;
-import no.unit.nva.model.instancetypes.book.Textbook;
-import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
-import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
-import no.unit.nva.model.instancetypes.degree.DegreeMaster;
-import no.unit.nva.model.instancetypes.degree.DegreePhd;
-import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
-import no.unit.nva.model.instancetypes.media.MediaReaderOpinion;
-import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.pages.Pages;
 import nva.commons.core.StringUtils;
 
@@ -90,7 +67,7 @@ public class CristinImportPublicationMerger {
     }
 
     private void preMergeValidation() {
-        PreMergeValidator.validate(existingPublication);
+        PreMergeValidator.validate(existingPublication, bragePublicationRepresentation);
     }
 
     private EntityDescription determineEntityDescription()
@@ -120,22 +97,7 @@ public class CristinImportPublicationMerger {
         var publicationInstance = reference.getPublicationInstance();
         var newPublicationInstance =
             bragePublicationRepresentation.publication().getEntityDescription().getReference().getPublicationInstance();
-        return switch (publicationInstance) {
-            case DegreePhd degreePhd -> DegreePhdMerger.merge(degreePhd, newPublicationInstance);
-            case DegreeBachelor degreeBachelor -> DegreeBachelorMerger.merge(degreeBachelor, newPublicationInstance);
-            case DegreeMaster degreeMaster -> DegreeMasterMerger.merge(degreeMaster, newPublicationInstance);
-            case DegreeLicentiate degreeLicentiate -> DegreeLicentiateMerger.merge(degreeLicentiate, newPublicationInstance);
-            case OtherStudentWork otherStudentWork -> OtherStudentWorkMerger.merge(otherStudentWork, newPublicationInstance);
-
-            case NonFictionMonograph nonFictionMonograph -> NonFictionMonographMerger.merge(nonFictionMonograph, newPublicationInstance);
-            case Textbook textbook -> TextbookMerger.merge(textbook, newPublicationInstance);
-            case DataSet dataSet -> DataSetMerger.merge(dataSet, newPublicationInstance);
-            case MusicPerformance musicPerformance -> MusicPerformanceMerger.merge(musicPerformance, newPublicationInstance);
-            case MediaReaderOpinion mediaReaderOpinion -> MediaReaderOpinionMerger.merge(mediaReaderOpinion, newPublicationInstance);
-            case ExhibitionCatalog exhibitionCatalog -> ExhibitionCatalogMerger.merge(exhibitionCatalog, newPublicationInstance);
-            case Map map -> MapMerger.merge(map, newPublicationInstance);
-            default -> publicationInstance;
-        };
+        return PublicationInstanceMerger.of(publicationInstance).merge(newPublicationInstance);
     }
 
     private URI determineDoi(Reference reference) {
