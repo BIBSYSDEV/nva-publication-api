@@ -37,14 +37,17 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
     private final ResourceService resourceService;
     private final UriRetriever uriRetriever;
     private final String apiHost;
+    private final DuplicatePublicationReporter duplicatePublicationReporter;
     private static final int SINGLE_PUBLICATION_SIZE = 1;
 
     public TitleAndTypePublicationFinder(ResourceService resourceService,
                                          UriRetriever uriRetriever,
-                                         String apiHost) {
+                                         String apiHost,
+                                         DuplicatePublicationReporter duplicatePublicationReporter) {
         this.resourceService = resourceService;
         this.uriRetriever = uriRetriever;
         this.apiHost = apiHost;
+        this.duplicatePublicationReporter = duplicatePublicationReporter;
     }
 
     @Override
@@ -55,8 +58,12 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
         }
         var potentialExistingPublications = searchForPublicationsByTypeAndTitle(
             publicationRepresentation.publication());
-        if (potentialExistingPublications.size() != SINGLE_PUBLICATION_SIZE) {
+        if (potentialExistingPublications.isEmpty()) {
             return Optional.empty();
+        }
+        if (potentialExistingPublications.size() > SINGLE_PUBLICATION_SIZE) {
+            duplicatePublicationReporter.reportDuplicatePublications(potentialExistingPublications,
+                                                                            publicationRepresentation.brageRecord(), DuplicateDetectionCause.TITLE_DUPLICATES);
         }
         return Optional.of(new PublicationForUpdate(MergeSource.SEARCH, potentialExistingPublications.getFirst()));
     }

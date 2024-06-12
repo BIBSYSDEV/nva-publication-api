@@ -7,7 +7,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.lambda.MergeSource;
 import no.sikt.nva.brage.migration.lambda.PublicationComparator;
-import no.sikt.nva.brage.migration.merger.DuplicatePublicationException;
 import no.sikt.nva.brage.migration.model.PublicationForUpdate;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -16,14 +15,14 @@ import no.unit.nva.publication.service.impl.ResourceService;
 
 public class CristinIdentifierFinder implements FindExistingPublicationService {
     public static final String SOURCE_CRISTIN = "Cristin";
-    public static final String DUPLICATE_PUBLICATIONS_MESSAGE =
-        "More than one publication with this cristin identifier already exists";
 
 
     private final ResourceService resourceService;
+    private final DuplicatePublicationReporter duplicatePublicationReporter;
 
-    public CristinIdentifierFinder(ResourceService resourceService) {
+    public CristinIdentifierFinder(ResourceService resourceService, DuplicatePublicationReporter duplicatePublicationReporter) {
         this.resourceService = resourceService;
+        this.duplicatePublicationReporter = duplicatePublicationReporter;
     }
 
     @Override
@@ -35,11 +34,12 @@ public class CristinIdentifierFinder implements FindExistingPublicationService {
                                                                                            publicationRepresentation.publication()))
                                    .toList();
             if (moreThanOneDuplicateFound(publications)) {
-                throw new DuplicatePublicationException(DUPLICATE_PUBLICATIONS_MESSAGE);
+                duplicatePublicationReporter.reportDuplicatePublications(publications,
+                                                                         publicationRepresentation.brageRecord(), DuplicateDetectionCause.CRISTIN_DUPLICATES);
             }
-            return !publications.isEmpty()
-                       ? Optional.of(new PublicationForUpdate(MergeSource.CRISTIN, publications.getFirst()))
-                       : Optional.empty();
+            return publications.isEmpty()
+                       ? Optional.empty()
+                       : Optional.of(new PublicationForUpdate(MergeSource.CRISTIN, publications.getFirst()));
         }
         return Optional.empty();
     }

@@ -13,7 +13,6 @@ import static no.sikt.nva.brage.migration.NvaType.READER_OPINION;
 import static no.sikt.nva.brage.migration.NvaType.TEXTBOOK;
 import static no.sikt.nva.brage.migration.NvaType.VISUAL_ARTS;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.CRISTIN_RECORD_EXCEPTION;
-import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.DUPLICATE_PUBLICATIONS_MESSAGE;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.ERROR_BUCKET_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.HANDLE_REPORTS_PATH;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.SOURCE_CRISTIN;
@@ -40,6 +39,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -84,8 +84,8 @@ import no.sikt.nva.brage.migration.merger.AssociatedArtifactException;
 import no.sikt.nva.brage.migration.merger.BrageMergingReport;
 import no.sikt.nva.brage.migration.merger.DegreeMergingException;
 import no.sikt.nva.brage.migration.merger.DiscardedFilesReport;
-import no.sikt.nva.brage.migration.merger.DuplicatePublicationException;
 import no.sikt.nva.brage.migration.merger.UnmappableCristinRecordException;
+import no.sikt.nva.brage.migration.merger.findexistingpublication.DuplicateDetectionCause;
 import no.sikt.nva.brage.migration.record.Affiliation;
 import no.sikt.nva.brage.migration.record.Contributor;
 import no.sikt.nva.brage.migration.record.EntityDescription;
@@ -405,19 +405,23 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldPersistExceptionWhenThereIsMultipleSearchResultsOnCristinId() throws IOException {
+    void shouldUpdatePublicationAndPersistDuplicateWarningWhenThereIsMultipleSearchResultsOnCristinId()
+        throws IOException {
         var record = buildGeneratorObjectWithCristinId().getBrageRecord();
         var s3Event = createNewBrageRecordEvent(record);
-        persistMultiplePublicationWithSameCristinId(record);
+        var existingPublicationIdentifiers = persistMultiplePublicationWithSameCristinId(record);
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-        assertThat(actualPublication, is(nullValue()));
-        var actualErrorReport =
-            extractActualReportFromS3Client(s3Event,
-                                            DuplicatePublicationException.class.getSimpleName(),
-                                            record);
-        var exception = actualErrorReport.get("exception").asText();
-        assertThat(exception, containsString(DUPLICATE_PUBLICATIONS_MESSAGE));
+
+        //Check that we updated one of the existing publications and not created a new one.
+        assertThat(existingPublicationIdentifiers, hasItem(actualPublication.publication().getIdentifier()));
+
+        // Assert that all the duplicates have been reported.
+        var actualWarnReport = extractWarnReportFromS3Client(record);
+        existingPublicationIdentifiers.forEach(
+            identifier -> assertThat(actualWarnReport, containsString(identifier.toString())));
     }
+
+
 
     @Test
     void shouldConvertBookToNvaPublication() throws IOException {
@@ -2018,11 +2022,12 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
             });
     }
 
-    private void persistMultiplePublicationWithSameCristinId(Record record) {
-        IntStream.range(0, 5)
-            .boxed()
-            .map(i -> publicationThatMatchesRecord(record))
-            .forEach(publication -> resourceService.createPublicationFromImportedEntry(publication));
+    private List<SortableIdentifier> persistMultiplePublicationWithSameCristinId(Record record) {
+        return IntStream.range(0, 5)
+                   .boxed()
+                   .map(i -> publicationThatMatchesRecord(record))
+                   .map(publication -> resourceService.createPublicationFromImportedEntry(publication))
+                   .map(Publication::getIdentifier).toList();
     }
 
     private Publication publicationThatMatchesRecord(Record record) {
@@ -2185,6 +2190,19 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Driver = new S3Driver(s3Client, new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
         var content = s3Driver.getFile(errorFileUri.toS3bucketPath());
         return JsonUtils.dtoObjectMapper.readTree(content);
+    }
+
+    private String extractWarnReportFromS3Client(Record record) {
+        var warningFileUri = constructWarnFileUri(record);
+        var s3Driver = new S3Driver(s3Client, new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
+        return s3Driver.getFile(warningFileUri.toS3bucketPath());
+    }
+
+    private UriWrapper constructWarnFileUri(Record record) {
+        return UriWrapper.fromUri("DUPLICATES_DETECTED")
+                   .addChild(record.getResourceOwner().getOwner().split("@")[0])
+                   .addChild(DuplicateDetectionCause.CRISTIN_DUPLICATES.getValue())
+                   .addChild(UriWrapper.fromUri(record.getId()).getLastPathElement());
     }
 
     private UriWrapper constructErrorFileUri(S3Event event, String exceptionSimpleName, Record brageRecord) {
