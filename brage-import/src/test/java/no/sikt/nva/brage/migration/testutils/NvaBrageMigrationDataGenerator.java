@@ -407,6 +407,11 @@ public class NvaBrageMigrationDataGenerator {
             return this;
         }
 
+        public Builder withHandle(URI handle) {
+            this.handle = handle;
+            return this;
+        }
+
         public List<String> getAbstracts() {
             return abstracts;
         }

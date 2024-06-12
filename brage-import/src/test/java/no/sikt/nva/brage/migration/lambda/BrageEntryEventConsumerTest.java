@@ -24,6 +24,7 @@ import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.NOT_SU
 import static no.sikt.nva.brage.migration.merger.AssociatedArtifactMover.COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE;
 import static no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger.DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static no.unit.nva.model.testing.PublicationGenerator.randomAdditionalIdentifier;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
@@ -39,6 +40,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -81,7 +83,6 @@ import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.mapper.InvalidIsmnRuntimeException;
 import no.sikt.nva.brage.migration.merger.AssociatedArtifactException;
 import no.sikt.nva.brage.migration.merger.BrageMergingReport;
-import no.sikt.nva.brage.migration.merger.DegreeMergingException;
 import no.sikt.nva.brage.migration.merger.DiscardedFilesReport;
 import no.sikt.nva.brage.migration.merger.DuplicatePublicationException;
 import no.sikt.nva.brage.migration.merger.UnmappableCristinRecordException;
@@ -144,6 +145,7 @@ import no.unit.nva.model.instancetypes.report.ReportBookOfAbstract;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
+import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.ResourceWithId;
@@ -928,38 +930,33 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldPersistErrorWhenMergingStudentPaperWithPublicationThatHaveHandleInAdditionalIdentifiers()
-        throws IOException, nva.commons.apigateway.exceptions.NotFoundException {
-        var year = "2022";
-        var title = "some title";
-        var cristinIdentifier = "1234";
-        var contributorName = "some contributor";
-        var existingPublication = persistPublicationWithHandleInAdditionalIdentifiers(cristinIdentifier, year, title,
-                                                                                      contributorName, DegreeMaster.class);
-        var generator = new NvaBrageMigrationDataGenerator.Builder()
-                            .withCristinIdentifier(cristinIdentifier)
-                            .withMainTitle(title)
-                            .withContributor(
-                                new Contributor(new Identity(contributorName, null), "ARTIST", null, List.of()))
-                            .withType(TYPE_MASTER)
-                            .withPublicationDate(new PublicationDate(year,
-                                                                     new PublicationDateNva.Builder().withYear(year)
-                                                                         .build()))
-                            .build();
-        var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
-        handler.handleRequest(s3Event, CONTEXT);
-        var actualErrorReport =
-            extractActualReportFromS3Client(s3Event,
-                                            DegreeMergingException.class.getSimpleName(),
-                                            generator.getBrageRecord());
+    void shouldInjectBrageHandleAsAdditionalIdentifierOnlyWhenMergingDegreeWithPublicationThatHasHandleInAdditionalIdentifiers()
+        throws IOException {
+        var publicationInstance = new DegreeBachelor(new MonographPages.Builder().build(), null);
+        var handle = randomUri();
+        var expectedAdditionalIdentifier = new AdditionalIdentifier("handle", handle.toString());
+        var brageTestRecord =
+            generateBrageRecordAndPersistDuplicateByCristinIdentifier(publicationInstance, TYPE_BACHELOR, expectedAdditionalIdentifier);
+        var existingPublication = brageTestRecord.getExistingPublication();
 
-        var exception = actualErrorReport.get("exception").asText();
-        assertThat(exception, containsString("Cannot merge student degree with nva publication with handle in additional identifiers"));
+        var s3Event = createNewBrageRecordEvent(brageTestRecord.getGeneratorBuilder().withHandle(handle).build().getBrageRecord());
+        var publicationRepresentation = handler.handleRequest(s3Event, CONTEXT);
+        var handles = publicationRepresentation.publication()
+                          .getAdditionalIdentifiers().stream()
+                          .filter(additionalIdentifier -> "handle".equals(additionalIdentifier.getSourceName()))
+                          .toList();
 
-        //Assert that the existing publication has not been modified:
-        var actualPublication =
-            resourceService.getPublicationByIdentifier(existingPublication.getIdentifier());
-        assertThat(actualPublication, is(equalTo(existingPublication)));
+
+        assertThat(handles, hasItem(expectedAdditionalIdentifier));
+
+        var set = existingPublication.getAdditionalIdentifiers();
+        set.add(expectedAdditionalIdentifier);
+        var expectedUpdatedPublication = existingPublication.copy()
+                                             .withAdditionalIdentifiers(set)
+                                             .withModifiedDate(publicationRepresentation.publication().getModifiedDate())
+                                             .build();
+
+        assertThat(publicationRepresentation.publication(), is(equalTo(expectedUpdatedPublication)));
     }
 
     @Test
@@ -1784,8 +1781,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     @ParameterizedTest
     @MethodSource("emptyPublicationInstanceSupplier")
     void shouldUpdateExistingPublicationByFillingUpInstanceTypeEmptyValues(PublicationInstance<?> publicationInstance, Type type) throws IOException {
-        var generator = generateBrageRecordAndPersistDuplicateByCristinIdentifier(publicationInstance, type);
-        var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
+        var generator = generateBrageRecordAndPersistDuplicateByCristinIdentifier(publicationInstance, type, randomAdditionalIdentifier());
+        var s3Event = createNewBrageRecordEvent(generator.getGeneratorBuilder().build().getBrageRecord());
         var updatedPublicationInstance = handler.handleRequest(s3Event, CONTEXT)
                                              .publication().getEntityDescription().getReference().getPublicationInstance();
 
@@ -1793,23 +1790,25 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                    doesNotHaveEmptyValuesIgnoringFields(Set.of(".pages.introduction", ".pages.illustrated")));
     }
 
-    private NvaBrageMigrationDataGenerator generateBrageRecordAndPersistDuplicateByCristinIdentifier(PublicationInstance<?> publicationInstance,
-                                                                             Type type) {
+    private BrageTestRecord generateBrageRecordAndPersistDuplicateByCristinIdentifier(PublicationInstance<?> publicationInstance,
+                                                                                      Type type, AdditionalIdentifier additionalIdentifier) {
         var cristinIdentifier = "1234";
         var publication = randomPublication(publicationInstance.getClass());
-        publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier(SOURCE_CRISTIN, cristinIdentifier)));
+
+        publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier(SOURCE_CRISTIN, cristinIdentifier),
+                                                    additionalIdentifier));
         publication.getEntityDescription().getReference().setDoi(null);
         publication.getEntityDescription().setContributors(List.of());
         publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder().withYear("2022").withMonth("03").withDay("01").build());
         publication.getEntityDescription().getReference().setPublicationInstance(publicationInstance);
-        resourceService.createPublicationFromImportedEntry(publication);
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication);
         var affiliationIdentifier = randomString();
         var contributor = new Contributor(new Identity(randomString(), null),
                                           "Creator",
                                           "Creator",
                                           List.of(new Affiliation(affiliationIdentifier, "ntnu",
                                                                   null)));
-        return new NvaBrageMigrationDataGenerator.Builder()
+        var generatorBuilder = new NvaBrageMigrationDataGenerator.Builder()
                             .withCristinIdentifier(cristinIdentifier)
                             .withMainTitle(publication.getEntityDescription().getMainTitle())
                             .withContributor(contributor)
@@ -1821,8 +1820,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                                          .build()))
                             .withType(type)
                             .withHasPart(List.of(randomString()))
-                            .withPages(new Pages(randomString(), new Range("1", "2"), randomString()))
-                            .build();
+                            .withPages(new Pages(randomString(), new Range("1", "2"), randomString()));
+        return new BrageTestRecord(generatorBuilder, existingPublication);
     }
 
     private static AdditionalIdentifier cristinAdditionalIdentifier(String cristinIdentifier) {
