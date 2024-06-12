@@ -3,17 +3,18 @@ package no.sikt.nva.brage.migration.merger.publicationinstancemerger;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.report.ReportBookOfAbstract;
 
-public final class ReportBookOfAbstractMerger extends PublicationInstanceMerger {
+public final class ReportBookOfAbstractMerger extends PublicationInstanceMerger<ReportBookOfAbstract> {
 
-    private ReportBookOfAbstractMerger() {
-        super();
+    public ReportBookOfAbstractMerger(ReportBookOfAbstract reportBookOfAbstract) {
+        super(reportBookOfAbstract);
     }
 
-    public static ReportBookOfAbstract merge(ReportBookOfAbstract reportBookOfAbstract, PublicationInstance<?> publicationInstance) {
+    @Override
+    public ReportBookOfAbstract merge(PublicationInstance<?> publicationInstance) {
         if (publicationInstance instanceof ReportBookOfAbstract newReportBookOfAbstract) {
-            return new ReportBookOfAbstract(getPages(reportBookOfAbstract.getPages(), newReportBookOfAbstract.getPages()));
+            return new ReportBookOfAbstract(getPages(this.publicationInstance.getPages(), newReportBookOfAbstract.getPages()));
         } else {
-            return reportBookOfAbstract;
+            return this.publicationInstance;
         }
     }
 }

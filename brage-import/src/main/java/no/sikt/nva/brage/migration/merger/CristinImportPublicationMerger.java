@@ -5,25 +5,16 @@ import java.net.URI;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.ConferenceReportMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.ReportBasicMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.ReportBookOfAbstractMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.ReportResearchMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.ReportWorkingPaperMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.AnthologyMerger;
-import no.sikt.nva.brage.migration.merger.publicationcontextmerger.GeographicalContentMerger;
-import no.sikt.nva.brage.migration.merger.publicationcontextmerger.ResearchDataMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.BookMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.DegreeMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.EventMerger;
+import no.sikt.nva.brage.migration.merger.publicationcontextmerger.GeographicalContentMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.JournalMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.MediaContributionMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.ReportMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.DegreeBachelorMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.DegreeLicentiateMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.DegreeMasterMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.DegreePhdMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.OtherStudentWorkMerger;
+import no.sikt.nva.brage.migration.merger.publicationcontextmerger.ResearchDataMerger;
+import no.sikt.nva.brage.migration.merger.publicationinstancemerger.PublicationInstanceMerger;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
@@ -47,16 +38,6 @@ import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.report.ConferenceReport;
-import no.unit.nva.model.instancetypes.report.ReportBasic;
-import no.unit.nva.model.instancetypes.report.ReportBookOfAbstract;
-import no.unit.nva.model.instancetypes.report.ReportResearch;
-import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
-import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
-import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
-import no.unit.nva.model.instancetypes.degree.DegreeMaster;
-import no.unit.nva.model.instancetypes.degree.DegreePhd;
-import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
 import no.unit.nva.model.pages.Pages;
 import nva.commons.core.StringUtils;
 
@@ -116,19 +97,7 @@ public class CristinImportPublicationMerger {
         var publicationInstance = reference.getPublicationInstance();
         var newPublicationInstance =
             bragePublicationRepresentation.publication().getEntityDescription().getReference().getPublicationInstance();
-        return switch (publicationInstance) {
-            case DegreePhd degreePhd -> DegreePhdMerger.merge(degreePhd, newPublicationInstance);
-            case DegreeBachelor degreeBachelor -> DegreeBachelorMerger.merge(degreeBachelor, newPublicationInstance);
-            case DegreeMaster degreeMaster -> DegreeMasterMerger.merge(degreeMaster, newPublicationInstance);
-            case DegreeLicentiate degreeLicentiate -> DegreeLicentiateMerger.merge(degreeLicentiate, newPublicationInstance);
-            case OtherStudentWork otherStudentWork -> OtherStudentWorkMerger.merge(otherStudentWork, newPublicationInstance);
-            case ConferenceReport conferenceReport -> ConferenceReportMerger.merge(conferenceReport, newPublicationInstance);
-            case ReportResearch reportResearch -> ReportResearchMerger.merge(reportResearch, newPublicationInstance);
-            case ReportWorkingPaper reportWorkingPaper -> ReportWorkingPaperMerger.merge(reportWorkingPaper, newPublicationInstance);
-            case ReportBookOfAbstract reportBookOfAbstract -> ReportBookOfAbstractMerger.merge(reportBookOfAbstract, newPublicationInstance);
-            case ReportBasic reportBasic -> ReportBasicMerger.merge(reportBasic, newPublicationInstance);
-            default -> publicationInstance;
-        };
+        return PublicationInstanceMerger.of(publicationInstance).merge(newPublicationInstance);
     }
 
     private URI determineDoi(Reference reference) {

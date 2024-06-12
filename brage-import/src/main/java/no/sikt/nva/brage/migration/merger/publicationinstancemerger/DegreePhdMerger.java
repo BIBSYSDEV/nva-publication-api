@@ -7,20 +7,20 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.RelatedDocument;
 
-public final class DegreePhdMerger extends PublicationInstanceMerger {
+public final class DegreePhdMerger extends PublicationInstanceMerger<DegreePhd> {
 
-    private DegreePhdMerger() {
-        super();
+    public DegreePhdMerger(DegreePhd degreePhd) {
+        super(degreePhd);
     }
 
-    public static DegreePhd merge(DegreePhd degreePhd,
-                                                             PublicationInstance<?> publicationInstance) {
+    @Override
+    public DegreePhd merge(PublicationInstance<?> publicationInstance) {
         if (publicationInstance instanceof DegreePhd newDegreePhd) {
-            return new DegreePhd(getPages(degreePhd.getPages(), newDegreePhd.getPages()),
-                                 getDate(degreePhd.getSubmittedDate(), newDegreePhd.getSubmittedDate()),
-                                 getRelated(degreePhd.getRelated(), newDegreePhd.getRelated()));
+            return new DegreePhd(getPages(this.publicationInstance.getPages(), newDegreePhd.getPages()),
+                                 getDate(this.publicationInstance.getSubmittedDate(), newDegreePhd.getSubmittedDate()),
+                                 getRelated(this.publicationInstance.getRelated(), newDegreePhd.getRelated()));
         } else {
-            return degreePhd;
+            return this.publicationInstance;
         }
     }
 
