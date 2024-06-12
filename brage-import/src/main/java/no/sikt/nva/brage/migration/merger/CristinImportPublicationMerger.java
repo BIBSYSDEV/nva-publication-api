@@ -75,7 +75,7 @@ public class CristinImportPublicationMerger {
 
     public Publication mergePublications()
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
-        return PreMergeValidator.shouldNotMergePublications(existingPublication)
+        return PreMergeValidator.shouldNotMergeMetadata(existingPublication)
                    ? injectBrageHandleOnly()
                    : mergePublicationsMetadata();
     }

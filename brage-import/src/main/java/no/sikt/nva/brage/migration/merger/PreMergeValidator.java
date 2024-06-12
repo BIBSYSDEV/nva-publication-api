@@ -11,7 +11,7 @@ public final class PreMergeValidator {
 
     }
 
-    public static boolean shouldNotMergePublications(Publication existingPublication) {
+    public static boolean shouldNotMergeMetadata(Publication existingPublication) {
         return isDegree(existingPublication) && hasBrageHandle(existingPublication);
     }
 
