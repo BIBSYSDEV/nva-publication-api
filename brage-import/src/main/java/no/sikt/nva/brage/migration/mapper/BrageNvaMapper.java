@@ -78,6 +78,8 @@ public final class BrageNvaMapper {
         "Dokumentet er klausulert grunnet lovpålagt taushetsplikt",
         "Klausulert: Kan bare siteres etter nærmere avtale med forfatter",
         "Klausulert: Kan bare tillates lest etter nærmere avtale med forfatter");
+    public static final String UNDEFINED_LANGUAGE = "und";
+    public static final String TWO_NEWLINES = "\n\n";
 
     private BrageNvaMapper() {
 
@@ -298,9 +300,11 @@ public final class BrageNvaMapper {
 
     private static EntityDescription extractEntityDescription(Record brageRecord)
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var abstractList = extractAbstract(brageRecord);
         return new EntityDescription.Builder()
                    .withLanguage(extractLanguage(brageRecord))
-                   .withAbstract(extractAbstract(brageRecord))
+                   .withAbstract(!abstractList.isEmpty() ? abstractList.getFirst() : null)
+                   .withAlternativeAbstracts(extractAlternativeAbstracts(abstractList))
                    .withDescription(extractDescription(brageRecord))
                    .withPublicationDate(extractDate(brageRecord))
                    .withContributors(extractContributors(brageRecord))
@@ -309,6 +313,14 @@ public final class BrageNvaMapper {
                    .withMainTitle(extractMainTitle(brageRecord))
                    .withAlternativeTitles(extractAlternativeTitles(brageRecord))
                    .build();
+    }
+
+    private static Map<String, String> extractAlternativeAbstracts(List<String> abstractList) {
+        return !abstractList.isEmpty()
+                   ? abstractList.subList(1, abstractList.size()).stream()
+                   .collect(Collectors.collectingAndThen(Collectors.joining(TWO_NEWLINES),
+                                                         joined -> Map.of(UNDEFINED_LANGUAGE, joined)))
+            : Map.of();
     }
 
     private static Map<String, String> extractAlternativeTitles(Record brageRecord) {
@@ -455,11 +467,10 @@ public final class BrageNvaMapper {
         return language.getNva();
     }
 
-    private static String extractAbstract(Record brageRecord) {
+    private static List<String> extractAbstract(Record brageRecord) {
         return Optional.ofNullable(brageRecord.getEntityDescription().getAbstracts())
                    .map(BrageNvaMapper::filterOutEmptyValues)
                    .filter(abstracts -> !abstracts.isEmpty())
-                   .map(BrageNvaMapper::joinByNewLine)
-                   .orElse(null);
+                   .orElse(List.of());
     }
 }
