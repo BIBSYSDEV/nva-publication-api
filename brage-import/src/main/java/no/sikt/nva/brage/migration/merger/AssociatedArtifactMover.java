@@ -69,15 +69,16 @@ public class AssociatedArtifactMover {
 
     private static File buildFile(File file, String mimeType, Long size) {
         var builder =  File.builder()
-                   .withName(file.getName())
-                   .withIdentifier(file.getIdentifier())
-                   .withLicense(file.getLicense())
-                   .withPublisherVersion(file.getPublisherVersion())
-                   .withEmbargoDate(file.getEmbargoDate().orElse(null))
-                   .withMimeType(mimeType)
-                   .withSize(size)
-                   .withLegalNote(file.getLegalNote())
-                   .withUploadDetails(file.getUploadDetails());
+                           .withName(file.getName())
+                           .withIdentifier(file.getIdentifier())
+                           .withLicense(file.getLicense())
+                           .withPublisherVersion(file.getPublisherVersion())
+                           .withEmbargoDate(file.getEmbargoDate().orElse(null))
+                           .withMimeType(mimeType)
+                           .withSize(size)
+                           .withLegalNote(file.getLegalNote())
+                           .withAdministrativeAgreement(file.isAdministrativeAgreement())
+                           .withUploadDetails(file.getUploadDetails());
         if (file instanceof AdministrativeAgreement) {
             return builder.buildUnpublishableFile();
         } else  {
