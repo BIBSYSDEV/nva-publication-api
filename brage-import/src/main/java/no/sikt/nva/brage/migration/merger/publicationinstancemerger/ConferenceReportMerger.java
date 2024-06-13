@@ -1,19 +1,20 @@
 package no.sikt.nva.brage.migration.merger.publicationinstancemerger;
 
-import static no.sikt.nva.brage.migration.merger.publicationinstancemerger.PublicationInstanceMerger.getPages;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.report.ConferenceReport;
 
-public final class ConferenceReportMerger {
+public final class ConferenceReportMerger extends PublicationInstanceMerger<ConferenceReport> {
 
-    private ConferenceReportMerger() {
+    public ConferenceReportMerger(ConferenceReport conferenceReport) {
+        super(conferenceReport);
     }
 
-    public static ConferenceReport merge(ConferenceReport conferenceReport, PublicationInstance<?> publicationInstance) {
+    @Override
+    public ConferenceReport merge(PublicationInstance<?> publicationInstance) {
         if (publicationInstance instanceof ConferenceReport newConferenceReport) {
-            return new ConferenceReport(getPages(conferenceReport.getPages(), newConferenceReport.getPages()));
+            return new ConferenceReport(getPages(this.publicationInstance.getPages(), newConferenceReport.getPages()));
         } else {
-            return conferenceReport;
+            return this.publicationInstance;
         }
     }
 }

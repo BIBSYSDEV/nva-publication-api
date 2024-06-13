@@ -64,6 +64,22 @@ class BrageNvaMapperTest {
         assertThat(degreePhd.getRelated(), is(equalTo(expectedRelatedDocuments)));
     }
 
+    @Test
+    void shouldMapFirstAlternativeAbstractAsAbstractAndAllOthersAsAlternativeAbstracts()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var firstAbstract = randomString();
+        var secondAbstract = randomString();
+        var thirdAbstract = randomString();
+        var generator =  new NvaBrageMigrationDataGenerator.Builder()
+                             .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
+                             .withAbstracts(List.of(firstAbstract, secondAbstract, thirdAbstract))
+                             .build();
+        var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord());
+        assertThat(publication.getEntityDescription().getAbstract(), is(equalTo(firstAbstract)));
+        assertThat(publication.getEntityDescription().getAlternativeAbstracts().get("und"),
+                   is(equalTo(secondAbstract + "\n\n" + thirdAbstract)));
+    }
+
     private ContentFile createRandomContentFileWithBundleType(BundleType bundleType) {
         return new ContentFile(randomString(), bundleType, randomString(), UUID.randomUUID(), null, null);
     }

@@ -1,24 +1,22 @@
 package no.sikt.nva.brage.migration.merger.publicationinstancemerger;
 
-import static no.sikt.nva.brage.migration.merger.publicationinstancemerger.PublicationInstanceMerger.getDate;
-import static no.sikt.nva.brage.migration.merger.publicationinstancemerger.PublicationInstanceMerger.getPages;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
 
-public final class OtherStudentWorkMerger {
+public final class OtherStudentWorkMerger extends PublicationInstanceMerger<OtherStudentWork> {
 
-    private OtherStudentWorkMerger() {
-        super();
+    public OtherStudentWorkMerger(OtherStudentWork otherStudentWork) {
+        super(otherStudentWork);
     }
 
-    public static OtherStudentWork merge(OtherStudentWork otherStudentWork,
-                                         PublicationInstance<?> publicationInstance) {
+    @Override
+    public OtherStudentWork merge(PublicationInstance<?> publicationInstance) {
         if (publicationInstance instanceof OtherStudentWork newDegreeBachelor) {
-            return new OtherStudentWork(getPages(otherStudentWork.getPages(), newDegreeBachelor.getPages()),
-                                        getDate(otherStudentWork.getSubmittedDate(),
+            return new OtherStudentWork(getPages(this.publicationInstance.getPages(), newDegreeBachelor.getPages()),
+                                        getDate(this.publicationInstance.getSubmittedDate(),
                                                 newDegreeBachelor.getSubmittedDate()));
         } else {
-            return otherStudentWork;
+            return this.publicationInstance;
         }
     }
 }
