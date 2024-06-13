@@ -85,7 +85,7 @@ public class PublicationInstanceMergerTest {
         var updatedPublication = mergePublications(existingPublication, bragePublication);
 
         assertThat(updatedPublication.getEntityDescription().getReference().getPublicationInstance(),
-                   doesNotHaveEmptyValuesIgnoringFields(Set.of("")));
+                   doesNotHaveEmptyValuesIgnoringFields(Set.of("duration")));
     }
 
     @ParameterizedTest
