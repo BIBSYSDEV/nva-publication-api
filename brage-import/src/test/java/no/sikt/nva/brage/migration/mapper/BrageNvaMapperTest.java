@@ -2,6 +2,8 @@ package no.sikt.nva.brage.migration.mapper;
 
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anEmptyMap;
+import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -78,6 +80,17 @@ class BrageNvaMapperTest {
         assertThat(publication.getEntityDescription().getAbstract(), is(equalTo(firstAbstract)));
         assertThat(publication.getEntityDescription().getAlternativeAbstracts().get("und"),
                    is(equalTo(secondAbstract + "\n\n" + thirdAbstract)));
+    }
+
+    @Test
+    void shouldNotCreateAlternativeAbstractsWhenSingleAbstractInBrage()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var generator =  new NvaBrageMigrationDataGenerator.Builder()
+                             .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
+                             .withAbstracts(List.of(randomString()))
+                             .build();
+        var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord());
+        assertThat(publication.getEntityDescription().getAlternativeAbstracts(), is(anEmptyMap()));
     }
 
     private ContentFile createRandomContentFileWithBundleType(BundleType bundleType) {

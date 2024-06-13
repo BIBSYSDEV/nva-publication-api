@@ -317,11 +317,15 @@ public final class BrageNvaMapper {
     }
 
     private static Map<String, String> extractAlternativeAbstracts(List<String> abstractList) {
-        return nonNull(abstractList) && !abstractList.isEmpty()
+        return nonNull(abstractList) && hasMoreThatOneEntry(abstractList)
                    ? abstractList.subList(1, abstractList.size()).stream()
                    .collect(Collectors.collectingAndThen(
                        Collectors.joining(TWO_NEWLINES), joined -> Map.of(UNDEFINED_LANGUAGE, joined)))
             : Map.of();
+    }
+
+    private static boolean hasMoreThatOneEntry(List<String> abstractList) {
+        return abstractList.size() >= 2;
     }
 
     private static Map<String, String> extractAlternativeTitles(Record brageRecord) {
