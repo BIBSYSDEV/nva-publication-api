@@ -73,6 +73,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -953,8 +954,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
 
         assertThat(handles, hasItem(expectedAdditionalIdentifier));
-
-        var set = existingPublication.getAdditionalIdentifiers();
+        var set = new HashSet<>(existingPublication.getAdditionalIdentifiers());
         set.add(new AdditionalIdentifier("handle", handle.toString()));
         var expectedUpdatedPublication = existingPublication.copy()
                                              .withAdditionalIdentifiers(set)
@@ -1930,22 +1930,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         S3Driver s3Driver = new S3Driver(s3Client,
                                          new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
         return s3Driver.getFile(uri.toS3bucketPath());
-    }
-
-    private Publication persistPublicationWithHandleInAdditionalIdentifiers(String cristinIdentifier, String year,
-                                                                            String title, String contributorName, Class<?> publicationInstanceClass) {
-        var publication = randomPublication(publicationInstanceClass);
-        publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier),
-                                                    new AdditionalIdentifier("handle", randomString())));
-        publication.getEntityDescription()
-            .setPublicationDate(new no.unit.nva.model.PublicationDate.Builder().withYear(year).build());
-        publication.getEntityDescription().setMainTitle(title);
-        publication.getEntityDescription().setContributors(List.of(new no.unit.nva.model.Contributor(new
-                                                                                                         no.unit.nva.model.Identity.Builder().withName(
-            contributorName).build(), List.of(),
-                                                                                                     null,
-                                                                                                     1, false)));
-        return resourceService.createPublicationFromImportedEntry(publication);
     }
 
     private void mockSingleHitSearchApiResponse(SortableIdentifier identifier, int statusCode) {

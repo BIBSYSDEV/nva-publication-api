@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.mapper.ChannelType;
@@ -293,7 +294,7 @@ public final class ReferenceGenerator {
             }
             if (NvaType.VISUAL_ARTS.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder().withPublicationInstance(
-                        new VisualArts(VisualArtsSubtype.createOther(null), null, null))
+                        new VisualArts(VisualArtsSubtype.createOther(null), null, Set.of()))
                            .withPublishingContext(new Artistic())
                            .withDoi(builder.getDoi())
                            .build();
@@ -326,7 +327,7 @@ public final class ReferenceGenerator {
             }
             if (NvaType.LITERARY_ARTS.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder().withPublicationInstance(
-                    new LiteraryArts(LiteraryArtsSubtypeOther.createOther(null), null, null))
+                    new LiteraryArts(LiteraryArtsSubtypeOther.createOther(null), List.of(), null))
                            .withPublishingContext(new Artistic())
                            .withDoi(builder.getDoi())
                            .build();
