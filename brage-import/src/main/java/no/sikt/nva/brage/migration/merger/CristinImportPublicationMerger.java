@@ -61,18 +61,26 @@ public class CristinImportPublicationMerger {
 
     public Publication mergePublications()
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
-        preMergeValidation();
+        return PreMergeValidator.shouldNotMergeMetadata(bragePublicationRepresentation, existingPublication)
+                   ? injectBrageHandleOnly()
+                   : mergePublicationsMetadata();
+    }
+
+    private Publication injectBrageHandleOnly() {
         return existingPublication.copy()
                    .withAdditionalIdentifiers(mergeAdditionalIdentifiers())
-                   .withSubjects(determineSubject())
-                   .withRightsHolder(determineRightsHolder())
-                   .withEntityDescription(determineEntityDescription())
-                   .withAssociatedArtifacts(determineAssociatedArtifacts())
                    .build();
     }
 
-    private void preMergeValidation() {
-        PreMergeValidator.validate(existingPublication, bragePublicationRepresentation);
+    private Publication mergePublicationsMetadata()
+        throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
+        return existingPublication.copy()
+                                         .withAdditionalIdentifiers(mergeAdditionalIdentifiers())
+                                         .withSubjects(determineSubject())
+                                         .withRightsHolder(determineRightsHolder())
+                                         .withEntityDescription(determineEntityDescription())
+                                         .withAssociatedArtifacts(determineAssociatedArtifacts())
+                                         .build();
     }
 
     private EntityDescription determineEntityDescription()

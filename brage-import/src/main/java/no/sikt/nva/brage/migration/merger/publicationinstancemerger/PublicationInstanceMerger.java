@@ -1,8 +1,15 @@
 package no.sikt.nva.brage.migration.merger.publicationinstancemerger;
 
 import static java.util.Objects.nonNull;
+import java.util.Collection;
+import java.util.function.Supplier;
 import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.instancetypes.Map;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
+import no.unit.nva.model.instancetypes.book.ExhibitionCatalog;
+import no.unit.nva.model.instancetypes.book.NonFictionMonograph;
+import no.unit.nva.model.instancetypes.book.Textbook;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
@@ -13,11 +20,13 @@ import no.unit.nva.model.instancetypes.journal.JournalIssue;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.instancetypes.media.MediaFeatureArticle;
+import no.unit.nva.model.instancetypes.media.MediaReaderOpinion;
 import no.unit.nva.model.instancetypes.report.ConferenceReport;
 import no.unit.nva.model.instancetypes.report.ReportBasic;
 import no.unit.nva.model.instancetypes.report.ReportBookOfAbstract;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
+import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.JacocoGenerated;
@@ -48,6 +57,13 @@ public abstract class PublicationInstanceMerger<T extends PublicationInstance<?>
             case ProfessionalArticle professionalArticle -> new ProfessionalArticleMerger(professionalArticle);
             case AcademicArticle academicArticle -> new AcademicArticleMerger(academicArticle);
             case MediaFeatureArticle mediaFeatureArticle -> new MediaFeatureArticleMerger(mediaFeatureArticle);
+            case NonFictionMonograph nonFictionMonograph -> new NonFictionMonographMerger(nonFictionMonograph);
+            case Textbook textbook -> new TextbookMerger(textbook);
+            case DataSet dataSet -> new DataSetMerger(dataSet);
+            case MusicPerformance musicPerformance -> new MusicPerformanceMerger(musicPerformance);
+            case MediaReaderOpinion mediaReaderOpinion -> new MediaReaderOpinionMerger(mediaReaderOpinion);
+            case ExhibitionCatalog exhibitionCatalog -> new ExhibitionCatalogMerger(exhibitionCatalog);
+            case Map map -> new MapMerger(map);
             default -> new NoMerger<>(instance);
         };
     }
@@ -68,5 +84,16 @@ public abstract class PublicationInstanceMerger<T extends PublicationInstance<?>
 
     public static String getNonNullValue(String oldValue, String newValue) {
         return nonNull(oldValue) ? oldValue : newValue;
+    }
+
+    public static <T, C extends Collection<T>> C mergeCollections(C oldCollection, C newCollection, Supplier<C> collectionFactory) {
+        var result = collectionFactory.get();
+        if (nonNull(oldCollection)) {
+            result.addAll(oldCollection);
+        }
+        if (nonNull(newCollection)) {
+            result.addAll(newCollection);
+        }
+        return result;
     }
 }

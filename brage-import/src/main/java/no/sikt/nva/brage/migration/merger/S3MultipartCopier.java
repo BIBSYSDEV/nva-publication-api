@@ -11,6 +11,7 @@ import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload;
 import software.amazon.awssdk.services.s3.model.CompletedPart;
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
@@ -24,6 +25,7 @@ public final class S3MultipartCopier {
     private static final String MISSING_REQUIRING_PARAMETERS_MESSAGE = "All required params have to be provided to "
                                                                        + "perform multipart copy!";
     private static final long PARTITION_SIZE = 5L * 1024 * 1024;
+    public static final int ZERO_LENGTH = 0;
     private final Logger logger = LoggerFactory.getLogger(S3MultipartCopier.class);
     private final String sourceS3Key;
     private final String sourceS3Bucket;
@@ -98,6 +100,28 @@ public final class S3MultipartCopier {
 
     private void performCopying(S3Client s3Client) throws MultipartCopyException {
         var headOfObjectToCopy = getHeadOfObjectToCopy(s3Client);
+        if (objectToCopyIsEmpty(headOfObjectToCopy)) {
+            performSimpleCopy(s3Client);
+        } else {
+            performMultiPartCopy(s3Client, headOfObjectToCopy);
+        }
+    }
+
+    private static boolean objectToCopyIsEmpty(HeadObjectResponse headOfObjectToCopy) {
+        return headOfObjectToCopy.contentLength() == ZERO_LENGTH;
+    }
+
+    private void performSimpleCopy(S3Client s3Client) {
+        var copyObjRequest = CopyObjectRequest.builder()
+                                 .sourceBucket(this.sourceS3Bucket)
+                                 .destinationBucket(this.destinationS3Bucket)
+                                 .sourceKey(this.sourceS3Key)
+                                 .destinationKey(this.destinationS3Key)
+                                 .build();
+        s3Client.copyObject(copyObjRequest);
+    }
+
+    private void performMultiPartCopy(S3Client s3Client, HeadObjectResponse headOfObjectToCopy) {
         var request = initiateMultiUploadRequest(headOfObjectToCopy);
         var response = s3Client.createMultipartUpload(request);
         try {
