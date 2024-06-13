@@ -1932,7 +1932,7 @@ Resources:
     Properties:
       CodeUri: brage-import
       Handler: no.sikt.nva.brage.migration.lambda.BragePatchEventConsumer::handleRequest
-      Timeout: 900
+      Timeout: 30
       Role: !GetAtt LambdaRole.Arn
       ReservedConcurrentExecutions: 1
       Environment:
