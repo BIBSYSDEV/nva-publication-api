@@ -1,6 +1,7 @@
 package no.sikt.nva.brage.migration.merger;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -15,9 +16,14 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
+import no.unit.nva.model.instancetypes.Map;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPictureSubtype;
+import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
+import no.unit.nva.model.instancetypes.book.ExhibitionCatalog;
+import no.unit.nva.model.instancetypes.book.NonFictionMonograph;
+import no.unit.nva.model.instancetypes.book.Textbook;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
@@ -28,11 +34,13 @@ import no.unit.nva.model.instancetypes.journal.JournalIssue;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.instancetypes.media.MediaFeatureArticle;
+import no.unit.nva.model.instancetypes.media.MediaReaderOpinion;
 import no.unit.nva.model.instancetypes.report.ConferenceReport;
 import no.unit.nva.model.instancetypes.report.ReportBasic;
 import no.unit.nva.model.instancetypes.report.ReportBookOfAbstract;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
+import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -46,6 +54,14 @@ public class PublicationInstanceMergerTest {
                          Arguments.of(new DegreeMaster(null, null)),
                          Arguments.of(new DegreeLicentiate(null, null)),
                          Arguments.of(new OtherStudentWork(null, null)),
+                         Arguments.of(new NonFictionMonograph(null)),
+                         Arguments.of(new Textbook(null)),
+                         Arguments.of(new DataSet(false, null, null, null, null)),
+                         Arguments.of(new MusicPerformance(List.of(), null)),
+                         Arguments.of(new MediaReaderOpinion(null, null, null, null)),
+                         Arguments.of(new ExhibitionCatalog(null)),
+                         Arguments.of(new Map(null, null)),
+                         Arguments.of(new OtherStudentWork(null, null)),
                          Arguments.of(new ConferenceReport(null)),
                          Arguments.of(new ReportResearch(null)),
                          Arguments.of(new ReportBasic(null)),
@@ -55,7 +71,8 @@ public class PublicationInstanceMergerTest {
                          Arguments.of(new JournalLeader(null, null, null, null)),
                          Arguments.of(new ProfessionalArticle(null, null, null, null)),
                          Arguments.of(new AcademicArticle(null, null, null, null)),
-                         Arguments.of(new MediaFeatureArticle(null, null, null, null)));
+                         Arguments.of(new MediaFeatureArticle(null, null, null, null))
+        );
     }
 
     @ParameterizedTest
@@ -68,7 +85,7 @@ public class PublicationInstanceMergerTest {
         var updatedPublication = mergePublications(existingPublication, bragePublication);
 
         assertThat(updatedPublication.getEntityDescription().getReference().getPublicationInstance(),
-                   doesNotHaveEmptyValues());
+                   doesNotHaveEmptyValuesIgnoringFields(Set.of("duration")));
     }
 
     @ParameterizedTest
