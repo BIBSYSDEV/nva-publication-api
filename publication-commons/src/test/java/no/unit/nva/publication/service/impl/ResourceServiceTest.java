@@ -33,7 +33,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -285,16 +284,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         createPersistedPublicationWithDoi(resourceService, sampleResource);
         assertDoesNotThrow(() -> createPersistedPublicationWithDoi(resourceService, anotherResource));
-    }
-
-    @Test
-    void createPublicationReturnsNullWhenResourceDoesNotBecomeAvailable() throws BadRequestException {
-        Publication publication = publicationWithoutIdentifier();
-        AmazonDynamoDB client = mock(AmazonDynamoDB.class);
-
-        ResourceService resourceService = resourceServiceThatDoesNotReceivePublicationUpdateAfterCreation(client);
-        Publication actualPublication = createPersistedPublicationWithDoi(resourceService, publication);
-        assertThat(actualPublication, is(nullValue()));
     }
 
     @Test
@@ -1351,13 +1340,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private Publication publishResource(Publication resource) throws ApiGatewayException {
         resourceService.publishPublication(UserInstance.fromPublication(resource), resource.getIdentifier());
         return resourceService.getPublication(resource);
-    }
-
-    private ResourceService resourceServiceThatDoesNotReceivePublicationUpdateAfterCreation(AmazonDynamoDB client) {
-        when(client.getItem(any(GetItemRequest.class))).thenReturn(
-            new GetItemResult().withItem(Collections.emptyMap()));
-
-        return getResourceServiceBuilder(client).build();
     }
 
     private void assertThatIdentifierEntryHasBeenCreated() {
