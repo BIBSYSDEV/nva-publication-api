@@ -2,6 +2,7 @@ package no.sikt.nva.brage.migration.merger;
 
 import static java.util.Objects.nonNull;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -50,6 +51,7 @@ public class CristinImportPublicationMerger {
 
     public static final String DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS
         = "dummy_handle_unis";
+    public static final String DUBLIN_CORE_XML = "dublin_core.xml";
 
     private final Publication existingPublication;
     private final PublicationRepresentation bragePublicationRepresentation;
@@ -171,9 +173,23 @@ public class CristinImportPublicationMerger {
             return existingPublication.getAssociatedArtifacts();
         }
         if (shouldOverWriteWithBrageArtifacts()) {
-            return bragePublicationRepresentation.publication().getAssociatedArtifacts();
+            return keepBrageAssociatedArtifactAndKeepDublinCoreFromExistsing();
         }
         return existingPublication.getAssociatedArtifacts();
+    }
+
+    private AssociatedArtifactList keepBrageAssociatedArtifactAndKeepDublinCoreFromExistsing() {
+        var associatedArtifacts = new ArrayList<>(bragePublicationRepresentation.publication().getAssociatedArtifacts());
+        var dublinCoresFromExisting = extractDublinCores(existingPublication.getAssociatedArtifacts());
+        associatedArtifacts.addAll(dublinCoresFromExisting);
+        return new AssociatedArtifactList(associatedArtifacts);
+    }
+
+    private List<File> extractDublinCores(AssociatedArtifactList associatedArtifacts) {
+        return associatedArtifacts.stream().filter(a -> a instanceof File)
+                   .map(a -> (File) a)
+                   .filter(file -> DUBLIN_CORE_XML.equals(file.getName()))
+                   .toList();
     }
 
     private boolean shouldOverWriteWithBrageArtifacts() {
