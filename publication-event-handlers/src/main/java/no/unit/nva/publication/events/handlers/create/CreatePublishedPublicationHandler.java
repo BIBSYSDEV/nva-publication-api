@@ -16,6 +16,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.events.bodies.CreatePublicationRequest;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
@@ -67,7 +68,7 @@ public class CreatePublishedPublicationHandler extends EventHandler<EventReferen
         return randomString() + "@unit.no";
     }
     
-    private Publication storeAsPublishedPublication(Publication publication) {
+    private Publication storeAsPublishedPublication(Publication publication) throws GatewayTimeoutException {
         return resourceService.createPublicationFromImportedEntry(publication);
     }
     

@@ -87,7 +87,6 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
-import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -190,6 +189,7 @@ import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
@@ -1159,7 +1159,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldTryToPersistPublicationInDatabaseSeveralTimesWhenResourceServiceIsThrowingException()
-        throws IOException {
+        throws IOException, GatewayTimeoutException {
         var fakeResourceServiceThrowingException = resourceServiceThrowingExceptionWhenSavingResource();
         var s3Event = createNewScopusPublicationEvent();
         var handler = new ScopusHandler(this.s3Client, this.piaConnection, this.cristinConnection,
@@ -1435,7 +1435,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         createPiaAffiliationMock(affiliationList, authorGroupTp.getAffiliation().getAfid());
     }
 
-    private ResourceService resourceServiceThrowingExceptionWhenSavingResource() {
+    private ResourceService resourceServiceThrowingExceptionWhenSavingResource() throws GatewayTimeoutException {
         var resourceService = spy(getResourceServiceBuilder().build());
         doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE)).when(resourceService)
             .createPublicationFromImportedEntry(any());

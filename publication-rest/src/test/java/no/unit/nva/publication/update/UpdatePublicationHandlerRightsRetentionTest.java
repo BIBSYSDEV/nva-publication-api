@@ -27,6 +27,7 @@ import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.testutils.RandomDataGenerator;
@@ -48,7 +49,8 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
 
     @Test
     void shouldSetCustomersConfiguredRrsWithOverridenByWhenFileIsNew() throws BadRequestException, IOException,
-                                                                              NotFoundException {
+                                                                              NotFoundException,
+                                                                              GatewayTimeoutException {
         WireMock.reset();
         var academicArticle = publication.copy()
                                   .withEntityDescription(randomEntityDescription(AcademicArticle.class))
@@ -87,7 +89,8 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
     @Test
     void shouldSetNullRightsRetentionWhenChangingAcademicArticleToSomethingElse() throws BadRequestException,
                                                                                          IOException,
-                                                                                         NotFoundException {
+                                                                                         NotFoundException,
+                                                                                         GatewayTimeoutException {
         WireMock.reset();
 
         OverriddenRightsRetentionStrategy userSetRrs = OverriddenRightsRetentionStrategy.create(
@@ -123,7 +126,8 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
     @Test
     void shouldPreserveRrsOverridenByWhenChangingNonRrsFileMetadata() throws BadRequestException,
                                                                              IOException,
-                                                                             NotFoundException {
+                                                                             NotFoundException,
+                                                                             GatewayTimeoutException {
         WireMock.reset();
         var rrsOverriddenBy = randomString();
         OverriddenRightsRetentionStrategy userSetRrs = OverriddenRightsRetentionStrategy.create(

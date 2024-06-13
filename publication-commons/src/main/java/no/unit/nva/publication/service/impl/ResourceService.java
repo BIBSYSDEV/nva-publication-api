@@ -32,6 +32,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
@@ -72,8 +73,6 @@ public class ResourceService extends ServiceWithTransactions {
     public static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_SUPPLIER = SortableIdentifier::next;
     public static final int AWAIT_TIME_BEFORE_FETCH_RETRY = 50;
     public static final String RESOURCE_REFRESHED_MESSAGE = "Resource has been refreshed successfully: {}";
-    public static final String INVALID_PATH_ERROR = "The document path provided in the update expression is invalid "
-                                                    + "for update";
     public static final String EMPTY_RESOURCE_IDENTIFIER_ERROR = "Empty resource identifier";
     public static final String DOI_FIELD_IN_RESOURCE = "doi";
     public static final String RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE = "Resource cannot be deleted: ";
@@ -88,6 +87,8 @@ public class ResourceService extends ServiceWithTransactions {
     private static final String SEPARATOR_TABLE = ";";
     private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
     public static final String RESOURCE_TO_REFRESH_NOT_FOUND_MESSAGE = "Resource to refresh is not found: {}";
+    public static final String COULD_NOT_ACHIEVE_DATABASE_CONSISTENCY = "Could not achieve database consistency, when"
+                                                                        + " persisting resource with identifier:";
     private final String tableName;
     private final Clock clockForTimestamps;
     private final Supplier<SortableIdentifier> identifierSupplier;
@@ -133,7 +134,8 @@ public class ResourceService extends ServiceWithTransactions {
         return new ResourceServiceBuilder();
     }
 
-    public Publication createPublication(UserInstance userInstance, Publication inputData) throws BadRequestException {
+    public Publication createPublication(UserInstance userInstance, Publication inputData)
+        throws BadRequestException, GatewayTimeoutException {
         Instant currentTime = clockForTimestamps.instant();
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
@@ -158,14 +160,15 @@ public class ResourceService extends ServiceWithTransactions {
         toResource.setStatus(status);
     }
 
-    public Publication createPublicationWithPredefinedCreationDate(Publication inputData) {
+    public Publication createPublicationWithPredefinedCreationDate(Publication inputData)
+        throws GatewayTimeoutException {
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
         newResource.setCreatedDate(inputData.getCreatedDate());
         return insertResource(newResource);
     }
 
-    public Publication createPublicationFromImportedEntry(Publication inputData) {
+    public Publication createPublicationFromImportedEntry(Publication inputData) throws GatewayTimeoutException {
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
         newResource.setPublishedDate(inputData.getPublishedDate());
@@ -194,7 +197,7 @@ public class ResourceService extends ServiceWithTransactions {
      * @deprecated Only here for existing tests
      */
     @Deprecated(forRemoval = true)
-    public Publication insertPreexistingPublication(Publication publication) {
+    public Publication insertPreexistingPublication(Publication publication) throws GatewayTimeoutException {
         Resource resource = Resource.fromPublication(publication);
         return insertResource(resource);
     }
@@ -210,7 +213,7 @@ public class ResourceService extends ServiceWithTransactions {
         return updateResourceService.publishPublication(userInstance, resourceIdentifier);
     }
 
-    public Publication autoImportPublication(ImportCandidate inputData) {
+    public Publication autoImportPublication(ImportCandidate inputData) throws GatewayTimeoutException {
         var publication = inputData.toPublication();
         Instant currentTime = clockForTimestamps.instant();
         var userInstance = UserInstance.fromPublication(publication);
@@ -443,7 +446,7 @@ public class ResourceService extends ServiceWithTransactions {
                    .collect(Collectors.toList());
     }
 
-    private Publication insertResource(Resource newResource) {
+    private Publication insertResource(Resource newResource) throws GatewayTimeoutException {
         if (newResource.getCuratingInstitutions().isEmpty()) {
             setCuratingInstitutions(newResource);
         }
@@ -478,8 +481,16 @@ public class ResourceService extends ServiceWithTransactions {
         return Optional.ofNullable(fetchSavedResource(newResource)).map(Resource::toImportCandidate).orElse(null);
     }
 
-    private Publication fetchSavedPublication(Resource newResource) {
-        return Optional.ofNullable(fetchSavedResource(newResource)).map(Resource::toPublication).orElse(null);
+    private Publication fetchSavedPublication(Resource newResource) throws GatewayTimeoutException {
+        return Optional.ofNullable(fetchSavedResource(newResource))
+                   .map(Resource::toPublication)
+                   .orElseThrow(() -> handleDatabaseConsistencyProblem(newResource));
+    }
+
+    private static GatewayTimeoutException handleDatabaseConsistencyProblem(Resource newResource) {
+        logger.error("Could not verify DynamoDb persisted resource: {}", newResource);
+        return new GatewayTimeoutException(
+            COULD_NOT_ACHIEVE_DATABASE_CONSISTENCY + newResource.getIdentifier().toString());
     }
 
     private Resource fetchSavedResource(Resource newResource) {

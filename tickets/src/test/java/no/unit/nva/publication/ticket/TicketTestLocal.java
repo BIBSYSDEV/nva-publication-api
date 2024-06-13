@@ -6,6 +6,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.function.Consumer;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -45,7 +46,8 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
         return createAndPersistPublicationAndThenActOnIt(this::publish);
     }
 
-    protected Publication createPersistAndPublishPublicationWithDoi() throws NotFoundException, BadRequestException {
+    protected Publication createPersistAndPublishPublicationWithDoi()
+        throws NotFoundException, BadRequestException, GatewayTimeoutException {
         return createAndPersistPublicationWithDoiAndThenActOnIt(this::publish);
     }
     
@@ -85,7 +87,7 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
     }
 
     private Publication createAndPersistPublicationWithDoiAndThenActOnIt(Consumer<Publication> action)
-        throws NotFoundException, BadRequestException {
+        throws NotFoundException, BadRequestException, GatewayTimeoutException {
         var publication = randomPublication();
         publication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
         publication.setDoi(RandomDataGenerator.randomDoi());

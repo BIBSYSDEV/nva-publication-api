@@ -17,6 +17,7 @@ import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Resource;
@@ -39,7 +40,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.time.Clock;
 import java.util.Optional;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -173,7 +173,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         return ExpandedDoiRequest.createEntry(doiRequest, resourceExpansionService, resourceService, ticketService);
     }
 
-    private Publication insertSamplePublication() throws BadRequestException {
+    private Publication insertSamplePublication() throws BadRequestException, GatewayTimeoutException {
         var samplePublication = randomPublication();
         UserInstance userInstance = UserInstance.fromPublication(samplePublication);
         samplePublication = Resource.fromPublication(samplePublication).persistNew(resourceService, userInstance);

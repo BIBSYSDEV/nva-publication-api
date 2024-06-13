@@ -4,6 +4,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -106,7 +107,7 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
         return (PublishingRequestDao) publishingRequestCase.toDao();
     }
 
-    private Publication createPublication() throws BadRequestException {
+    private Publication createPublication() throws BadRequestException, GatewayTimeoutException {
         var publication = PublicationGenerator.randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
         return Resource.fromPublication(publication).persistNew(resourceService, userInstance);

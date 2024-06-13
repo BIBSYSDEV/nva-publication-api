@@ -68,6 +68,7 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.TestingUtils;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.FileForApproval;
@@ -821,7 +822,8 @@ public class TicketServiceTest extends ResourcesLocalTest {
             () -> createUnpersistedTicket(publication, ticketType).persistNewTicket(ticketService)).orElseThrow();
     }
 
-    private Publication persistEmptyPublication(UserInstance owner) throws BadRequestException {
+    private Publication persistEmptyPublication(UserInstance owner) throws BadRequestException,
+                                                                           GatewayTimeoutException {
 
         var publication = new Publication.Builder().withResourceOwner(
                 new ResourceOwner(new Username(owner.getUsername()), randomOrgUnitId()))

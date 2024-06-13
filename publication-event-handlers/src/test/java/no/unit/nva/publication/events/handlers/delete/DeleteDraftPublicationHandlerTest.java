@@ -10,10 +10,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.time.Clock;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ReadResourceService;
@@ -92,7 +92,8 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
         return new ByteArrayInputStream(event.getBytes());
     }
     
-    private Publication insertPublicationWithStatus(PublicationStatus status) throws BadRequestException {
+    private Publication insertPublicationWithStatus(PublicationStatus status)
+        throws BadRequestException, GatewayTimeoutException {
         Publication publicationToCreate = publicationWithoutIdentifier().copy()
                                               .withDoi(null)
                                               .build();

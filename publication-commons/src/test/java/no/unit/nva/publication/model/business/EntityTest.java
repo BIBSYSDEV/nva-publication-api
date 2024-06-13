@@ -5,9 +5,9 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import java.time.Clock;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -42,14 +42,15 @@ class EntityTest extends ResourcesLocalTest {
     }
     
     @Test
-    void shouldReturnEquivalentPublicationWhenEntityIsInternalRepresentationOfPublication() throws BadRequestException {
+    void shouldReturnEquivalentPublicationWhenEntityIsInternalRepresentationOfPublication()
+        throws BadRequestException, GatewayTimeoutException {
         var publication = createDraftPublicationWithoutDoi();
         var resource = Resource.fromPublication(publication);
         var regeneratedPublication = resource.toPublication(SHOULD_NOT_USE_RESOURCE_SERVICE);
         assertThat(regeneratedPublication, is(equalTo(publication)));
     }
     
-    private Publication createDraftPublicationWithoutDoi() throws BadRequestException {
+    private Publication createDraftPublicationWithoutDoi() throws BadRequestException, GatewayTimeoutException {
         var publication = randomPublication().copy().withDoi(null).withStatus(DRAFT).build();
         return Resource.fromPublication(publication).persistNew(resourceService,
             UserInstance.fromPublication(publication));

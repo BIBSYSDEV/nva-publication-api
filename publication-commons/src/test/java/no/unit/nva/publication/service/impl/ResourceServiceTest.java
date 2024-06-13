@@ -12,6 +12,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedLink;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
+import static no.unit.nva.publication.service.impl.ResourceService.COULD_NOT_ACHIEVE_DATABASE_CONSISTENCY;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
 import static no.unit.nva.publication.service.impl.UpdateResourceService.ILLEGAL_DELETE_WHEN_NOT_DRAFT;
@@ -33,7 +34,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -41,6 +41,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -87,6 +88,7 @@ import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.exception.UnsupportedPublicationStatusTransition;
@@ -119,6 +121,7 @@ import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
+import org.apache.http.HttpStatus;
 import org.hamcrest.Matchers;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
@@ -187,7 +190,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldKeepImportedDataCreationDates() throws NotFoundException {
+    void shouldKeepImportedDataCreationDates() throws NotFoundException, GatewayTimeoutException {
         var randomInstant = RandomDataGenerator.randomInstant();
         var inputPublication =
             randomPublication().copy().withCreatedDate(randomInstant).withCuratingInstitutions(null).build();
@@ -204,7 +207,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldKeepImportedEntryCreationAndModifiedDates() throws NotFoundException {
+    void shouldKeepImportedEntryCreationAndModifiedDates() throws NotFoundException, GatewayTimeoutException {
         var createdDate = randomInstant();
         var modifiedDate = randomInstant();
         var inputPublication = randomPublication().copy()
@@ -252,7 +255,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void createResourceThrowsTransactionFailedExceptionWhenResourceWithSameIdentifierExists()
-        throws BadRequestException {
+        throws BadRequestException, GatewayTimeoutException {
         final Publication sampleResource = randomPublication();
         final Publication collidingResource = sampleResource.copy()
                                                   .withPublisher(anotherPublisher())
@@ -279,7 +282,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void createResourceSavesResourcesWithSameOwnerAndPublisherButDifferentIdentifier() throws BadRequestException {
+    void createResourceSavesResourcesWithSameOwnerAndPublisherButDifferentIdentifier()
+        throws BadRequestException, GatewayTimeoutException {
         final Publication sampleResource = publicationWithIdentifier();
         final Publication anotherResource = publicationWithIdentifier();
 
@@ -288,13 +292,18 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void createPublicationReturnsNullWhenResourceDoesNotBecomeAvailable() throws BadRequestException {
+    void createPublicationThrowsGatewayTimeoutExceptionWhenResourceDoesNotBecomeAvailable() {
         Publication publication = publicationWithoutIdentifier();
         AmazonDynamoDB client = mock(AmazonDynamoDB.class);
 
         ResourceService resourceService = resourceServiceThatDoesNotReceivePublicationUpdateAfterCreation(client);
-        Publication actualPublication = createPersistedPublicationWithDoi(resourceService, publication);
-        assertThat(actualPublication, is(nullValue()));
+        var gatewayTimeoutException = assertThrows(GatewayTimeoutException.class,
+                                                   () -> createPersistedPublicationWithDoi(resourceService, publication));
+        assertThat(gatewayTimeoutException.getMessage(), containsString(COULD_NOT_ACHIEVE_DATABASE_CONSISTENCY));
+        assertThat(gatewayTimeoutException.getStatusCode(), is(equalTo(HttpStatus.SC_GATEWAY_TIMEOUT)));
+
+        //check that we tried several times to retrieve publication before throwing exception.
+        verify(client, times(10)).getItem(any());
     }
 
     @Test
@@ -374,7 +383,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void resourceUpdateFailsWhenUpdateChangesTheOwnerPartOfThePrimaryKey() throws BadRequestException {
+    void resourceUpdateFailsWhenUpdateChangesTheOwnerPartOfThePrimaryKey()
+        throws BadRequestException, GatewayTimeoutException {
         Publication resource = createPersistedPublicationWithDoi();
         Publication resourceUpdate = updateResourceTitle(resource);
         resourceUpdate.setResourceOwner(new ResourceOwner(new Username(ANOTHER_OWNER), UNIMPORTANT_AFFILIATION));
@@ -382,7 +392,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void resourceUpdateFailsWhenUpdateChangesTheOrganizationPartOfThePrimaryKey() throws BadRequestException {
+    void resourceUpdateFailsWhenUpdateChangesTheOrganizationPartOfThePrimaryKey()
+        throws BadRequestException, GatewayTimeoutException {
         Publication resource = createPersistedPublicationWithDoi();
         Publication resourceUpdate = updateResourceTitle(resource);
 
@@ -391,7 +402,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void resourceUpdateFailsWhenUpdateChangesTheIdentifierPartOfThePrimaryKey() throws BadRequestException {
+    void resourceUpdateFailsWhenUpdateChangesTheIdentifierPartOfThePrimaryKey()
+        throws BadRequestException, GatewayTimeoutException {
         Publication resource = createPersistedPublicationWithDoi();
         Publication resourceUpdate = updateResourceTitle(resource);
 
@@ -416,7 +428,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void insertPreexistingPublicationIdentifierStoresPublicationInDatabaseWithoutChangingIdentifier() {
+    void insertPreexistingPublicationIdentifierStoresPublicationInDatabaseWithoutChangingIdentifier()
+        throws GatewayTimeoutException {
         Publication publication = publicationWithIdentifier();
         Publication savedPublication = resourceService.insertPreexistingPublication(publication);
         assertThat(savedPublication.getIdentifier(), is(equalTo(publication.getIdentifier())));
@@ -587,7 +600,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void publishResourceThrowsInvalidPublicationExceptionExceptionWhenResourceHasNoTitle() throws BadRequestException {
+    void publishResourceThrowsInvalidPublicationExceptionExceptionWhenResourceHasNoTitle()
+        throws BadRequestException, GatewayTimeoutException {
         Publication sampleResource = publicationWithIdentifier();
         sampleResource.getEntityDescription().setMainTitle(null);
         Publication savedResource = createPersistedPublicationWithoutDoi(sampleResource);
@@ -668,7 +682,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void createResourceReturnsNewIdentifierWhenResourceIsCreated() throws BadRequestException {
+    void createResourceReturnsNewIdentifierWhenResourceIsCreated() throws BadRequestException, GatewayTimeoutException {
         Publication sampleResource = randomPublication();
         Publication savedResource = createPersistedPublicationWithDoi(resourceService, sampleResource);
         assertThat(savedResource.getIdentifier(), is(not(equalTo(sampleResource.getIdentifier()))));
@@ -731,7 +745,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void updateResourceDoesNotCreateDoiRequestWhenItDoesNotPreexist() throws BadRequestException {
+    void updateResourceDoesNotCreateDoiRequestWhenItDoesNotPreexist()
+        throws BadRequestException, GatewayTimeoutException {
         Publication resource = createPersistedPublicationWithoutDoi();
         resource.getEntityDescription().setMainTitle(ANOTHER_TITLE);
         resourceService.updatePublication(resource);
@@ -759,7 +774,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void deleteDraftPublicationThrowsExceptionWhenResourceHasDoi() throws BadRequestException {
+    void deleteDraftPublicationThrowsExceptionWhenResourceHasDoi() throws BadRequestException, GatewayTimeoutException {
         Publication publication = createPersistedPublicationWithDoi();
         assertThatIdentifierEntryHasBeenCreated();
         Executable fetchResourceAction = () -> resourceService.getPublication(publication);
@@ -847,7 +862,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldLogUserInformationQueryObjectAndResourceIdentifierWhenFailingToPublishResource()
-        throws BadRequestException {
+        throws BadRequestException, GatewayTimeoutException {
 
         var samplePublication = createUnpublishablePublication();
         var userInstance = UserInstance.fromPublication(samplePublication);
@@ -1011,7 +1026,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldCreatePublicationWithStatusPublishedWhenUsingAutoImport() throws NotFoundException {
+    void shouldCreatePublicationWithStatusPublishedWhenUsingAutoImport()
+        throws NotFoundException, GatewayTimeoutException {
         var publication = randomImportCandidate();
         var persistedPublication = resourceService.autoImportPublication(publication);
         var fetchedPublication = resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
@@ -1029,7 +1045,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldProvidePublicationNotesWhenTheyAreSet() throws BadRequestException, NotFoundException {
+    void shouldProvidePublicationNotesWhenTheyAreSet()
+        throws BadRequestException, NotFoundException, GatewayTimeoutException {
         var publication = randomPublication();
         publication.setPublicationNotes(List.of(new PublicationNote(randomString())));
         var result = Resource.fromPublication(publication).persistNew(resourceService,
@@ -1065,7 +1082,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldReturnResourceWithContributorsWhenResourceHasManyContributions()
-        throws BadRequestException, NotFoundException {
+        throws BadRequestException, NotFoundException, GatewayTimeoutException {
         var publication = createPersistedPublicationWithManyContributions(4000);
 
         var fetchedPublication = resourceService.getResourceByIdentifier(publication.getIdentifier());
@@ -1075,7 +1092,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldReturnResourceWithContributorsWhenResourceHasManyContributionsWithoutAffiliations()
-        throws BadRequestException, NotFoundException {
+        throws BadRequestException, NotFoundException, GatewayTimeoutException {
         var publication = createPersistedPublicationWithManyContributionsWithoutAffiliations(10000);
 
         var fetchedPublication = resourceService.getResourceByIdentifier(publication.getIdentifier());
@@ -1148,7 +1165,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @ParameterizedTest
     @EnumSource(value = PublicationStatus.class, mode = Mode.EXCLUDE, names = {"DRAFT", "PUBLISHED_METADATA",
         "PUBLISHED", "DELETED", "UNPUBLISHED"})
-    void shouldNotAllowPublish(PublicationStatus status) {
+    void shouldNotAllowPublish(PublicationStatus status) throws GatewayTimeoutException {
         var publication = randomPublication().copy().withStatus(status).build();
         resourceService.insertPreexistingPublication(publication);
         assertThrows(UnsupportedPublicationStatusTransition.class,
@@ -1157,7 +1174,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldThrowIllegalStateExceptionWhenUpdatingStatusWhenUpdatingPublication() throws BadRequestException {
+    void shouldThrowIllegalStateExceptionWhenUpdatingStatusWhenUpdatingPublication()
+        throws BadRequestException, GatewayTimeoutException {
         var publication = createPersistedPublicationWithDoi();
         publication.setStatus(PublicationStatus.PUBLISHED_METADATA);
         assertThrows(IllegalStateException.class, () -> resourceService.updatePublication(publication));
@@ -1248,7 +1266,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private Publication createPersistedPublicationWithManyContributions(int amount) throws BadRequestException {
+    private Publication createPersistedPublicationWithManyContributions(int amount)
+        throws BadRequestException, GatewayTimeoutException {
         var publication = randomPublication().copy().withDoi(null).build();
         var contributions = IntStream
                                 .rangeClosed(1, amount)
@@ -1260,7 +1279,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private Publication createPersistedPublicationWithManyContributionsWithoutAffiliations(int amount)
-        throws BadRequestException {
+        throws BadRequestException, GatewayTimeoutException {
         var publication = randomPublication().copy().withDoi(null).build();
         var contributions = IntStream
                                 .rangeClosed(1, amount)
@@ -1299,29 +1318,30 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private Publication createPersistedPublicationWithoutDoi() throws BadRequestException {
+    private Publication createPersistedPublicationWithoutDoi() throws BadRequestException, GatewayTimeoutException {
         var publication = randomPublication().copy().withDoi(null).build();
         return Resource.fromPublication(publication).persistNew(resourceService,
                                                                 UserInstance.fromPublication(publication));
     }
 
-    private Publication createPersistedPublicationWithoutDoi(Publication publication) throws BadRequestException {
+    private Publication createPersistedPublicationWithoutDoi(Publication publication)
+        throws BadRequestException, GatewayTimeoutException {
         var withoutDoi = publication.copy().withDoi(null).build();
         return Resource.fromPublication(withoutDoi).persistNew(resourceService,
                                                                UserInstance.fromPublication(withoutDoi));
     }
 
     private Publication createPersistedPublicationWithDoi(ResourceService resourceService, Publication sampleResource)
-        throws BadRequestException {
+        throws BadRequestException, GatewayTimeoutException {
         return Resource.fromPublication(sampleResource).persistNew(resourceService,
                                                                    UserInstance.fromPublication(sampleResource));
     }
 
-    private Publication createPersistedPublicationWithDoi() throws BadRequestException {
+    private Publication createPersistedPublicationWithDoi() throws BadRequestException, GatewayTimeoutException {
         return createPersistedPublicationWithDoi(resourceService, randomPublication());
     }
 
-    private Publication createUnpublishablePublication() throws BadRequestException {
+    private Publication createUnpublishablePublication() throws BadRequestException, GatewayTimeoutException {
         var publication = randomPublication();
         publication.getEntityDescription().setMainTitle(null);
         return Resource.fromPublication(publication).persistNew(resourceService,

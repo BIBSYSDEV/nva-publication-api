@@ -96,6 +96,7 @@ import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.ImportResult;
@@ -174,7 +175,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
     @Test
     void shouldSaveErrorReportInS3OutsideTheInputFolderAndWithFilenameTheObjectId()
-        throws IOException {
+        throws IOException, GatewayTimeoutException {
         resourceService = resourceServiceThrowingExceptionWhenSavingResource();
         handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker, cristinUnitsUtil);
         var cristinObject = CristinDataGenerator.randomObject();
@@ -190,7 +191,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldLogErrorWhenFailingToStorePublicationToDynamo() throws IOException {
+    void shouldLogErrorWhenFailingToStorePublicationToDynamo() throws IOException, GatewayTimeoutException {
 
         final TestAppender appender = LogUtils.getTestingAppenderForRootLogger();
         resourceService = resourceServiceThrowingExceptionWhenSavingResource();
@@ -321,7 +322,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldStoreErrorReportWhenFailingToStorePublicationToDynamo() throws IOException {
+    void shouldStoreErrorReportWhenFailingToStorePublicationToDynamo() throws IOException, GatewayTimeoutException {
         resourceService = resourceServiceThrowingExceptionWhenSavingResource();
         handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker, cristinUnitsUtil);
 
@@ -337,7 +338,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldStoreErrorReportContainingS3eventUri() throws IOException {
+    void shouldStoreErrorReportContainingS3eventUri() throws IOException, GatewayTimeoutException {
         resourceService = resourceServiceThrowingExceptionWhenSavingResource();
         handler = new CristinEntryEventConsumer(resourceService, s3Client, doiDuplicateChecker, cristinUnitsUtil);
         var cristinObject = CristinDataGenerator.randomObject();
@@ -365,7 +366,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
     @Test
     void shouldSaveErrorReportFileInS3ContainingInputDataWhenFailingToStorePublicationToDynamo()
-        throws IOException {
+        throws IOException, GatewayTimeoutException {
         resourceService = resourceServiceThrowingExceptionWhenSavingResource();
         var cristinObject = CristinDataGenerator.randomObject();
         var eventBody = createEventBody(cristinObject);
@@ -613,7 +614,8 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldAddNewAssociatedArtifactsToExistingCristinPublicationWhenAssociatedArtifactHasNotBeenImported() throws IOException {
+    void shouldAddNewAssociatedArtifactsToExistingCristinPublicationWhenAssociatedArtifactHasNotBeenImported()
+        throws IOException, GatewayTimeoutException {
         var cristinObject =
             CristinDataGenerator.createRandomMediaWithSpecifiedSecondaryCategory(INTERVIEW);
         var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), Lecture.class);
@@ -628,7 +630,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldAddNewFieldsWhenExistingPublicationIsEmpty() throws IOException {
+    void shouldAddNewFieldsWhenExistingPublicationIsEmpty() throws IOException, GatewayTimeoutException {
         var cristinObject = CristinDataGenerator.randomObject();
         persistEmptyPublicationWithCristinId(cristinObject.getId());
         var eventBody = createEventBody(cristinObject);
@@ -640,7 +642,8 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldOverrideCuratingInstitutionsWhenUpdatingExistingPublicationContributors() throws IOException {
+    void shouldOverrideCuratingInstitutionsWhenUpdatingExistingPublicationContributors()
+        throws IOException, GatewayTimeoutException {
         var cristinObject = CristinDataGenerator.randomObject();
         var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), Lecture.class);
         var eventBody = createEventBody(cristinObject);
@@ -653,7 +656,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldUpdateExistingPublicationEventWithEventPlaceWhenMissing() throws IOException {
+    void shouldUpdateExistingPublicationEventWithEventPlaceWhenMissing() throws IOException, GatewayTimeoutException {
         var cristinObject = CristinDataGenerator.createObjectWithCategory(EVENT, CONFERENCE_LECTURE);
         var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), Lecture.class);
         existingPublication.getEntityDescription().getReference().setPublicationContext(new Event.Builder().withPlace(null).build());
@@ -667,7 +670,8 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldUpdateExistingPublicationEventWithEventPlaceWhenPlaceMissingLabel() throws IOException {
+    void shouldUpdateExistingPublicationEventWithEventPlaceWhenPlaceMissingLabel()
+        throws IOException, GatewayTimeoutException {
         var cristinObject = CristinDataGenerator.createObjectWithCategory(EVENT, CONFERENCE_LECTURE);
         var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), Lecture.class);
         existingPublication.getEntityDescription().getReference().setPublicationContext(new Event.Builder().withPlace(new UnconfirmedPlace(null, null)).build());
@@ -698,7 +702,8 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldUpdateExistingPublicationContributorsWhenContributorsToIncomingPublicationDiffer() throws IOException {
+    void shouldUpdateExistingPublicationContributorsWhenContributorsToIncomingPublicationDiffer()
+        throws IOException, GatewayTimeoutException {
         var cristinObject = CristinDataGenerator.createObjectWithCategory(EVENT, CONFERENCE_LECTURE);
         var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), Lecture.class);
         existingPublication.getEntityDescription().setContributors(List.of(new Contributor.Builder().build()));
@@ -712,7 +717,8 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldUpdateExistingPublicationWithJournalArticleNumberWhenMissing() throws IOException {
+    void shouldUpdateExistingPublicationWithJournalArticleNumberWhenMissing()
+        throws IOException, GatewayTimeoutException {
         var cristinObject = CristinDataGenerator.createObjectWithCategory(JOURNAL, SHORT_COMMUNICATION);
         var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), ProfessionalArticle.class);
         existingPublication.getEntityDescription().getReference().setPublicationInstance(
@@ -725,13 +731,13 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         assertNotNull(((JournalArticle) updatedPublication.getEntityDescription().getReference().getPublicationInstance()).getArticleNumber());
     }
 
-    private Publication persistPublicationWithCristinId(Integer id, Class<?> instance) {
+    private Publication persistPublicationWithCristinId(Integer id, Class<?> instance) throws GatewayTimeoutException {
         var publication = randomPublication(instance);
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", id.toString())));
         return resourceService.createPublicationFromImportedEntry(publication);
     }
 
-    private Publication persistEmptyPublicationWithCristinId(Integer id) {
+    private Publication persistEmptyPublicationWithCristinId(Integer id) throws GatewayTimeoutException {
         var publication = randomPublication();
         publication.setLink(null);
         publication.setHandle(null);
@@ -1014,7 +1020,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
     @Test
     void shouldUpdateNpiSubjectHeadingWhenMissing()
-        throws IOException {
+        throws IOException, GatewayTimeoutException {
         var cristinObject = CristinDataGenerator.createObjectWithCategory(CHAPTER, LEXICAL_IMPORT);
         var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), ChapterArticle.class);
         existingPublication.getEntityDescription().setNpiSubjectHeading(null);
@@ -1131,7 +1137,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         return eventHandlerObjectMapper.readValue(content, IMPORT_RESULT_JAVA_TYPE);
     }
 
-    private ResourceService resourceServiceThrowingExceptionWhenSavingResource() {
+    private ResourceService resourceServiceThrowingExceptionWhenSavingResource() throws GatewayTimeoutException {
         var resourceService = spy(getResourceServiceBuilder().build());
         doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE)).when(resourceService)
             .createPublicationFromImportedEntry(any());

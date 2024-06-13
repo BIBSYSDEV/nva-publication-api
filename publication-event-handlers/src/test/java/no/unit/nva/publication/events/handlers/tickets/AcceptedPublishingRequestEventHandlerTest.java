@@ -10,6 +10,7 @@ import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -143,7 +144,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldCreateDoiRequestTicketWhenPublicationWithDraftDoiIsPublished()
-        throws IOException, NotFoundException, BadRequestException {
+        throws IOException, NotFoundException, BadRequestException, GatewayTimeoutException {
         var publication = createDraftPublicationWithDoi();
         var pendingPublishingRequest = pendingPublishingRequest(publication);
         pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
@@ -160,7 +161,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldNotCreateNewDoiRequestTicketWhenTicketAlreadyExists()
-        throws NotFoundException, IOException, BadRequestException {
+        throws NotFoundException, IOException, BadRequestException, GatewayTimeoutException {
         var publication = createDraftPublicationWithDoi();
         var existingTicket = createDoiRequestTicket(publication);
         var pendingPublishingRequest = pendingPublishingRequest(publication);
@@ -215,7 +216,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
             () -> DoiRequest.fromPublication(publication).persistNewTicket(ticketService)).orElseThrow();
     }
 
-    private Publication createDraftPublicationWithDoi() throws BadRequestException {
+    private Publication createDraftPublicationWithDoi() throws BadRequestException, GatewayTimeoutException {
         var publication = randomPublication().copy()
                               .withStatus(PublicationStatus.DRAFT)
                               .withDoi(randomDoi())
@@ -242,7 +243,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
                    .toJsonString();
     }
     
-    private Publication createUnpublishablePublication() throws BadRequestException {
+    private Publication createUnpublishablePublication() throws BadRequestException, GatewayTimeoutException {
         var publication = randomPublication();
         publication.getEntityDescription().setMainTitle(null);
         return Resource.fromPublication(publication).persistNew(resourceService,
@@ -254,7 +255,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         return pendingPublishingRequest;
     }
     
-    private Publication createPublication() throws BadRequestException {
+    private Publication createPublication() throws BadRequestException, GatewayTimeoutException {
         var publication = randomPublication();
         return Resource.fromPublication(publication).persistNew(resourceService,
             UserInstance.fromPublication(publication));

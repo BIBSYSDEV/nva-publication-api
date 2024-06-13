@@ -34,6 +34,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -150,6 +151,7 @@ import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.model.business.Resource;
@@ -330,7 +332,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldAttachCertainMetadataFieldsToExistingPublicationWhenExistingPublicationDoesNotHaveThoseFields()
-        throws IOException {
+        throws IOException, GatewayTimeoutException {
         // The metadata fields are currently Description, Abstract and handle
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_REPORT_WORKING_PAPER)
                                  .withCristinIdentifier("123456")
@@ -357,7 +359,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldPrioritizeCristinImportedMetadataWhenMergingPublications() throws IOException {
+    void shouldPrioritizeCristinImportedMetadataWhenMergingPublications() throws IOException, GatewayTimeoutException {
         // The metadata fields are currently Description, Abstract and handle
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                  .withType(TYPE_REPORT_WORKING_PAPER)
@@ -908,7 +910,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldConvertCristinRecordToPublicationAndMergeWithExistingPublicationWithTheSameCristinId()
-        throws IOException {
+        throws IOException, GatewayTimeoutException {
         var cristinIdentifier = randomString();
         var publication = randomPublication(ConferencePoster.class);
         publication.setAdditionalIdentifiers(Set.of());
@@ -936,7 +938,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldInjectBrageHandleAsAdditionalIdentifierOnlyWhenMergingDegreeWithPublicationThatHasHandleInAdditionalIdentifiers()
-        throws IOException {
+        throws IOException, GatewayTimeoutException {
         var publicationInstance = new DegreeBachelor(new MonographPages.Builder().build(), null);
         var handle = randomUri();
         var expectedAdditionalIdentifier = new AdditionalIdentifier("handle", randomString());
@@ -965,7 +967,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldNotMergeDegreeWithABook() throws IOException, nva.commons.apigateway.exceptions.NotFoundException {
+    void shouldNotMergeDegreeWithABook()
+        throws IOException, nva.commons.apigateway.exceptions.NotFoundException, GatewayTimeoutException {
         var cristinIdentifier = randomString();
         var publication = randomPublication(DegreeBachelor.class);
         publication.setAdditionalIdentifiers(Set.of());
@@ -992,7 +995,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldNotMergeBookWithADegree() throws IOException, nva.commons.apigateway.exceptions.NotFoundException {
+    void shouldNotMergeBookWithADegree()
+        throws IOException, nva.commons.apigateway.exceptions.NotFoundException, GatewayTimeoutException {
         var cristinIdentifier = randomString();
         var publication = randomPublication(NonFictionMonograph.class);
         publication.setAdditionalIdentifiers(Set.of());
@@ -1020,7 +1024,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldMergePublicationContextAndUseCourseFromBragePublicationWhenPublicationContextIsDegree()
-        throws IOException, InvalidUnconfirmedSeriesException {
+        throws IOException, InvalidUnconfirmedSeriesException, GatewayTimeoutException {
         var cristinIdentifier = randomString();
         var publication = randomPublication(DegreeBachelor.class);
         publication.setAdditionalIdentifiers(Set.of());
@@ -1057,7 +1061,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldKeepOrderOfRelatedDocumentsWhenMergingDegreePhd()
-        throws IOException, InvalidUnconfirmedSeriesException {
+        throws IOException, InvalidUnconfirmedSeriesException, GatewayTimeoutException {
         var cristinIdentifier = randomString();
         var publication = randomPublication(DegreePhd.class);
         publication.setAdditionalIdentifiers(Set.of());
@@ -1095,7 +1099,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldMigrateAdministrativeAgreementFromIncomingPublicationWhenExistingPublicationDoesNotHaveAdministrativeAgreement()
-        throws IOException, InvalidUnconfirmedSeriesException {
+        throws IOException, InvalidUnconfirmedSeriesException, GatewayTimeoutException {
         var cristinIdentifier = randomString();
         var publication = randomPublication(DegreeBachelor.class);
         publication.setAdditionalIdentifiers(Set.of());
@@ -1170,7 +1174,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldStoreExceptionWhenConvertingCristinRecordAndPublicationWithMatchingCristinIdDoesExist()
-        throws IOException, BadRequestException {
+        throws IOException, BadRequestException, GatewayTimeoutException {
         var existingPublication = randomPublication().copy().withAdditionalIdentifiers(Set.of()).build();
         Resource.fromPublication(existingPublication)
             .persistNew(resourceService, UserInstance.fromPublication(existingPublication));
@@ -1333,7 +1337,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldSaveSuccessReportContainingIncomingHandleWhenUpdatingExistingPublication()
-        throws IOException {
+        throws IOException, GatewayTimeoutException {
         var cristinIdentifier = randomString();
         var publication = randomPublication(ConferencePoster.class);
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)));
@@ -1368,7 +1372,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldPersistMergeReport()
-        throws IOException, nva.commons.apigateway.exceptions.NotFoundException {
+        throws IOException, nva.commons.apigateway.exceptions.NotFoundException, GatewayTimeoutException {
         var cristinIdentifier = randomString();
         var publication = randomPublication(DataSet.class);
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)));
@@ -1404,7 +1408,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldMergePublicationsIfDoiDuplicateExists() throws IOException {
+    void shouldMergePublicationsIfDoiDuplicateExists() throws IOException, GatewayTimeoutException {
         var doi = randomDoi();
         var publication = randomPublication(ConferencePoster.class);
         publication.setAdditionalIdentifiers(Set.of());
@@ -1478,7 +1482,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void whenMergingWithExistingPublicationTheHandleReportShouldBeStoredUnderUpdatedPublicationsFolder()
-        throws IOException {
+        throws IOException, GatewayTimeoutException {
         var publication = randomPublication(ConferencePoster.class);
         publication.setAdditionalIdentifiers(Set.of());
         publication.getEntityDescription().getReference().setDoi(null);
@@ -1593,7 +1597,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldPersistReportContainingInformationRegardingDiscardedFilesDuringMerging()
-        throws IOException {
+        throws IOException, GatewayTimeoutException {
         var cristinIdentifier = randomString();
         var publication = randomPublication(NonFictionMonograph.class);
         publication.getEntityDescription().getReference().setPublicationContext(new Book.BookBuilder().withIsbnList(List.of(randomIsbn10())).build());
@@ -1628,7 +1632,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldMergeIncomingPublicationWithExistingOneWhenSearchByIsbnReturnsSingleHit() throws IOException {
+    void shouldMergeIncomingPublicationWithExistingOneWhenSearchByIsbnReturnsSingleHit()
+        throws IOException, GatewayTimeoutException {
         var isbn = randomIsbn10();
         var publication = randomPublication(NonFictionMonograph.class);
         publication.getEntityDescription().getReference().setPublicationContext(new Book.BookBuilder().withIsbnList(List.of(randomIsbn10())).build());
@@ -1660,7 +1665,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldNotMergeIncomingPublicationWithExistingOneWhenMainTitleLevenshteinDistanceIsTooLarge() throws IOException {
+    void shouldNotMergeIncomingPublicationWithExistingOneWhenMainTitleLevenshteinDistanceIsTooLarge()
+        throws IOException, GatewayTimeoutException {
         var publication = randomPublication(ConferencePoster.class);
         publication.setAdditionalIdentifiers(Set.of());
         publication.getEntityDescription().getReference().setDoi(null);
@@ -1689,7 +1695,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                  + "when levenshtein distance between titles is less than 10 and at least one contributor name"
                  + "has levenshtein distance less than 5 with another contributor")
     @Test
-    void shouldMergeIncomingPublicationWithExistingOneWhenPublicationsMatch() throws IOException {
+    void shouldMergeIncomingPublicationWithExistingOneWhenPublicationsMatch()
+        throws IOException, GatewayTimeoutException {
         var publication = randomPublication(ConferencePoster.class);
         publication.setAdditionalIdentifiers(Set.of());
         publication.getEntityDescription().getReference().setDoi(null);
@@ -1720,7 +1727,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldNotMergeIncomingPublicationWithExistingOneWhenAtLeastOneContributorDoesNotMatch() throws IOException {
+    void shouldNotMergeIncomingPublicationWithExistingOneWhenAtLeastOneContributorDoesNotMatch()
+        throws IOException, GatewayTimeoutException {
         var publication = randomPublication(ConferencePoster.class);
         publication.setAdditionalIdentifiers(Set.of());
         publication.getEntityDescription().getReference().setDoi(null);
@@ -1742,7 +1750,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldKeepBrageContributorsIfNvaPublicationIsMissingContributors() throws IOException {
+    void shouldKeepBrageContributorsIfNvaPublicationIsMissingContributors() throws IOException,
+                                                                                   GatewayTimeoutException {
         var cirstinIdentifier = "1234";
         var publication = randomPublication(ConferencePoster.class);
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier(SOURCE_CRISTIN, cirstinIdentifier)));
@@ -1785,7 +1794,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("emptyPublicationInstanceSupplier")
-    void shouldUpdateExistingPublicationByFillingUpInstanceTypeEmptyValues(PublicationInstance<?> publicationInstance, Type type) throws IOException {
+    void shouldUpdateExistingPublicationByFillingUpInstanceTypeEmptyValues(PublicationInstance<?> publicationInstance, Type type)
+        throws IOException, GatewayTimeoutException {
         var generator = generateBrageRecordAndPersistDuplicateByCristinIdentifier(publicationInstance, type, randomAdditionalIdentifier());
         var s3Event = createNewBrageRecordEvent(generator.getGeneratorBuilder().build().getBrageRecord());
         var updatedPublicationInstance = handler.handleRequest(s3Event, CONTEXT)
@@ -1796,7 +1806,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     private BrageTestRecord generateBrageRecordAndPersistDuplicateByCristinIdentifier(
-        PublicationInstance<?> publicationInstance, Type type, AdditionalIdentifier additionalIdentifier) {
+        PublicationInstance<?> publicationInstance, Type type, AdditionalIdentifier additionalIdentifier)
+        throws GatewayTimeoutException {
         var cristinIdentifier = "1234";
         var publication = randomPublication(publicationInstance.getClass());
 
@@ -1829,7 +1840,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     private BrageTestRecord generateBrageRecordAndPersistDuplicate(
-        PublicationInstance<?> publicationInstance, Type type) {
+        PublicationInstance<?> publicationInstance, Type type) throws GatewayTimeoutException {
         var publication = randomPublication(publicationInstance.getClass());
         publication.getEntityDescription().getReference().setDoi(null);
         publication.getEntityDescription().setContributors(List.of());
@@ -1858,7 +1869,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldSkipPostWhereThereExistNvaPostWithTheSameHandle() throws IOException {
+    void shouldSkipPostWhereThereExistNvaPostWithTheSameHandle() throws IOException, GatewayTimeoutException {
         var generator = new NvaBrageMigrationDataGenerator.Builder()
                             .withPublicationDate(new PublicationDate("2022",
                                                                      new PublicationDateNva.Builder().withYear("2022").build()))
@@ -1880,7 +1891,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldMergeConferenceReportWithEvent() throws IOException {
+    void shouldMergeConferenceReportWithEvent() throws IOException, GatewayTimeoutException {
         var generator = generateBrageRecordAndPersistDuplicate(new Lecture(), TYPE_CONFERENCE_REPORT);
         var existingPublication = generator.getExistingPublication();
 
@@ -1933,7 +1944,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     private Publication persistPublicationWithHandleInAdditionalIdentifiers(String cristinIdentifier, String year,
-                                                                            String title, String contributorName, Class<?> publicationInstanceClass) {
+                                                                            String title, String contributorName, Class<?> publicationInstanceClass)
+        throws GatewayTimeoutException {
         var publication = randomPublication(publicationInstanceClass);
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier),
                                                     new AdditionalIdentifier("handle", randomString())));
@@ -2061,7 +2073,11 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         IntStream.range(0, 5)
             .boxed()
             .map(i -> publicationThatMatchesRecord(record))
-            .forEach(publication -> resourceService.createPublicationFromImportedEntry(publication));
+            .forEach(this::createPublication);
+    }
+
+    private Publication createPublication(Publication publication) {
+        return attempt(() -> resourceService.createPublicationFromImportedEntry(publication)).orElseThrow() ;
     }
 
     private Publication publicationThatMatchesRecord(Record record) {

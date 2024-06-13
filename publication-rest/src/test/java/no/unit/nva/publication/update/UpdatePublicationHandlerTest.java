@@ -144,6 +144,7 @@ import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.delete.LambdaDestinationInvocationDetail;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -184,7 +185,6 @@ import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Named;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -464,7 +464,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void handlerUpdatesPublicationWhenInputIsValidAndUserIsExternalClient() throws IOException, BadRequestException {
+    void handlerUpdatesPublicationWhenInputIsValidAndUserIsExternalClient()
+        throws IOException, BadRequestException, GatewayTimeoutException {
         publication.setIdentifier(null);
         var savedPublication = createSamplePublication();
 
@@ -572,7 +573,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                        .fromPublication(publicationBuilder.build())
                        .persistNew(resourceService, UserInstance.fromPublication(publication))
                        .copy();
-        } catch (BadRequestException e) {
+        } catch (BadRequestException | GatewayTimeoutException e) {
             throw new RuntimeException(e);
         }
     }
@@ -624,7 +625,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void handlerThrowsExceptionWhenInputIsValidUserHasRightToEditAnyResourceInOwnInstButEditsResourceInOtherInst()
-        throws IOException, BadRequestException {
+        throws IOException, BadRequestException, GatewayTimeoutException {
         var savedPublication = createSamplePublication();
         var publicationUpdate = updateTitle(savedPublication);
 
@@ -641,7 +642,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void handlerReturnsForbiddenWhenExternalClientTriesToUpdateResourcesCreatedByOthers()
-        throws IOException, BadRequestException {
+        throws IOException, BadRequestException, GatewayTimeoutException {
         var savedPublication = createSamplePublication();
         var publicationUpdate = updateTitle(savedPublication);
 
@@ -657,7 +658,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnUnauthorizedWhenUserCannotBeIdentified() throws IOException, BadRequestException {
+    void shouldReturnUnauthorizedWhenUserCannotBeIdentified()
+        throws IOException, BadRequestException, GatewayTimeoutException {
         var savedPublication = createSamplePublication();
 
         var event = requestWithoutUsername(savedPublication);
@@ -669,7 +671,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldUpdateResourceWhenAuthorizedUserIsContributorAndHasCristinId()
-        throws BadRequestException, IOException, NotFoundException {
+        throws BadRequestException, IOException, NotFoundException, GatewayTimeoutException {
         var savedPublication = createAndPersistNonDegreePublication();
         var contributors = new ArrayList<>(savedPublication.getEntityDescription().getContributors());
         var cristinId = randomUri();
@@ -698,7 +700,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldReturnNotFoundWhenContributorUpdatesResourceThatDoesNotExist()
-        throws BadRequestException, IOException {
+        throws BadRequestException, IOException, GatewayTimeoutException {
         Publication savedPublication = createSamplePublication();
         var cristinId = randomUri();
         var contributor = createContributorForPublicationUpdate(cristinId);
@@ -714,7 +716,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldReturnForbiddenWhenContributorWithoutCristinIdUpdatesResource()
-        throws BadRequestException, IOException {
+        throws BadRequestException, IOException, GatewayTimeoutException {
         var savedPublication = createSamplePublication();
         var contributor = createContributorForPublicationUpdate(null);
         injectContributor(savedPublication, contributor);
@@ -729,7 +731,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     @DisplayName("Handler returns OK when thesis and is owner")
-    void shouldReturnOKWhenUserIsOwner() throws IOException, BadRequestException {
+    void shouldReturnOKWhenUserIsOwner() throws IOException, BadRequestException, GatewayTimeoutException {
         var thesisPublication = publication.copy().withEntityDescription(thesisPublishableEntityDescription()).build();
         var savedThesis = Resource
                               .fromPublication(thesisPublication)
@@ -743,7 +745,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     @DisplayName("Handler returns OK when thesis and user has PUBLISH_THESIS")
-    void shouldReturnOKWhenUserHasPublishThesis() throws IOException, BadRequestException {
+    void shouldReturnOKWhenUserHasPublishThesis() throws IOException, BadRequestException, GatewayTimeoutException {
         var thesisPublication = publication.copy().withEntityDescription(thesisPublishableEntityDescription()).build();
         var savedThesis = Resource
                               .fromPublication(thesisPublication)
@@ -873,7 +875,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "Should update degree publication when user has access rights to edit degree")
     @MethodSource("allProtectedDegreeInstances")
     void shouldUpdateDegreePublicationWhenUserHasAccessRightToEditDegree(Class<?> degree)
-        throws BadRequestException, IOException, NotFoundException {
+        throws BadRequestException, IOException, NotFoundException, GatewayTimeoutException {
         var degreePublication = savePublication(randomPublicationWithPublisher(customerId, degree));
         var publicationUpdate = updateTitle(degreePublication);
 
@@ -893,7 +895,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "Should update degree publication when user is resource owner")
     @MethodSource("allProtectedDegreeInstances")
     void shouldUpdateDegreePublicationWhenUserIsResourceOwner(Class<?> degree)
-        throws BadRequestException, IOException, NotFoundException {
+        throws BadRequestException, IOException, NotFoundException, GatewayTimeoutException {
         var degreePublication = savePublication(randomPublicationWithPublisher(customerId, degree));
         var publicationUpdate = updateTitle(degreePublication);
         var event = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
@@ -916,7 +918,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                               + "degree and is not publication owner and the publication is Degree")
     @MethodSource("allProtectedDegreeInstances")
     void shouldReturnForbiddenWhenUserDoesNotHasAccessRightToEditDegree(Class<?> degree)
-        throws BadRequestException, IOException {
+        throws BadRequestException, IOException, GatewayTimeoutException {
         var degreePublication = savePublication(randomPublicationWithPublisher(customerId, degree));
         var publicationUpdate = updateTitle(degreePublication);
 
@@ -929,7 +931,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void handlerUpdatesDegreePublicationWhenInputIsValidAndUserIsExternalClient()
-        throws IOException, BadRequestException {
+        throws IOException, BadRequestException, GatewayTimeoutException {
 
         var thesisPublication = publication.copy().withEntityDescription(thesisPublishableEntityDescription()).build();
         var savedThesis = Resource
@@ -1002,7 +1004,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void curatorShouldBeAbleToOverrideRrs() throws IOException, NotFoundException {
+    void curatorShouldBeAbleToOverrideRrs() throws IOException, NotFoundException, GatewayTimeoutException {
         var publishedFileRrs = File.builder()
                                    .withIdentifier(UUID.randomUUID())
                                    .withName(randomString())
@@ -1067,7 +1069,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldRejectUpdateIfSettingInstanceTypeNotAllowingFilesOnPublicationContainingFile()
-        throws BadRequestException, IOException {
+        throws BadRequestException, IOException, GatewayTimeoutException {
 
         WireMock.reset();
 
@@ -1624,7 +1626,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldSetUploadDetailsWhenFileIsUploaded() throws BadRequestException, IOException {
+    void shouldSetUploadDetailsWhenFileIsUploaded() throws BadRequestException, IOException, GatewayTimeoutException {
         var publication = createAndPersistNonDegreePublication();
         var cristinId = randomUri();
         var contributor = createContributorForPublicationUpdate(cristinId);
@@ -1654,7 +1656,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldNotOverrideUploadDetailsOnOtherFilesWhenFileIsUploaded() throws BadRequestException, IOException {
+    void shouldNotOverrideUploadDetailsOnOtherFilesWhenFileIsUploaded()
+        throws BadRequestException, IOException, GatewayTimeoutException {
         var publication = createAndPersistNonDegreePublication();
         var cristinId = randomUri();
         var contributor = createContributorForPublicationUpdate(cristinId);
@@ -1688,7 +1691,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldNotOverrideUploadDetailsWhenFileIsUpdated() throws BadRequestException, IOException {
+    void shouldNotOverrideUploadDetailsWhenFileIsUpdated()
+        throws BadRequestException, IOException, GatewayTimeoutException {
         var unpublishedFile = (File) randomUnpublishedFile();
         var publication = createAndPersistNonDegreePublicationWithFile(unpublishedFile);
 
@@ -1718,7 +1722,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(updatedFile.getUploadDetails().getUploadedBy().getValue(), is(not(equalTo(contributorName))));
     }
 
-    private Publication createAndPersistNonDegreePublicationWithFile(File file) throws BadRequestException {
+    private Publication createAndPersistNonDegreePublicationWithFile(File file)
+        throws BadRequestException, GatewayTimeoutException {
         return persistPublication(addFileToPublication(createAndPersistNonDegreePublication(), file).copy()).build();
     }
 
@@ -1872,7 +1877,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return createPublicationWithContributorAndDoi(contributorId, contributorName);
     }
 
-    private Publication createAndPersistDegreeWithoutDoi() throws BadRequestException {
+    private Publication createAndPersistDegreeWithoutDoi() throws BadRequestException, GatewayTimeoutException {
         var publication = randomPublication().copy().withDoi(null).build();
 
         var degreePhd = new DegreePhd(new MonographPages(), new PublicationDate(),
@@ -1886,7 +1891,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication createAndPersistPublicationWithoutDoiAndWithResourceOwner(String userName, URI institution)
-        throws BadRequestException {
+        throws BadRequestException, GatewayTimeoutException {
 
         var publication = randomPublication().copy()
                               .withEntityDescription(randomEntityDescription(JournalArticle.class))
@@ -1937,7 +1942,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .map(FileForApproval::fromFile).toList();
     }
 
-    private Publication savePublication(Publication publication) throws BadRequestException {
+    private Publication savePublication(Publication publication) throws BadRequestException, GatewayTimeoutException {
         UserInstance userInstance = UserInstance.fromPublication(publication);
         return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
     }
@@ -1989,12 +1994,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return ticketService.updateTicketStatus(ticket, TicketStatus.COMPLETED, new Username(randomString()));
     }
 
-    private Publication createSamplePublication() throws BadRequestException {
+    private Publication createSamplePublication() throws BadRequestException, GatewayTimeoutException {
         UserInstance userInstance = UserInstance.fromPublication(publication);
         return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
     }
 
-    private Publication createAndPersistNonDegreePublication() throws BadRequestException {
+    private Publication createAndPersistNonDegreePublication() throws BadRequestException, GatewayTimeoutException {
         var publication = randomNonDegreePublicationWithPublisher();
         UserInstance userInstance = UserInstance.fromPublication(publication);
         return Resource.fromPublication(publication).persistNew(resourceService, userInstance);

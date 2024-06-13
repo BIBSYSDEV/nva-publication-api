@@ -61,6 +61,7 @@ import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -477,7 +478,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                                                         ticketService);
         }
 
-        private static Publication createPublication(ResourceService resourceService) throws BadRequestException {
+        private static Publication createPublication(ResourceService resourceService)
+            throws BadRequestException, GatewayTimeoutException {
             var publication = randomPublicationWithoutDoi();
             publication = Resource.fromPublication(publication)
                               .persistNew(resourceService, UserInstance.fromPublication(publication));

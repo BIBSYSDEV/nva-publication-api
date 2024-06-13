@@ -25,6 +25,7 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingList;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.storage.Dao;
@@ -177,7 +178,7 @@ public class Resource implements Entity {
     }
 
     public Publication persistNew(ResourceService resourceService, UserInstance userInstance)
-        throws BadRequestException {
+        throws BadRequestException, GatewayTimeoutException {
         return resourceService.createPublication(userInstance, this.toPublication());
     }
 

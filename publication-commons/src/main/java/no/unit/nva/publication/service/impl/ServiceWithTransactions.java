@@ -1,6 +1,5 @@
 package no.unit.nva.publication.service.impl;
 
-import static no.unit.nva.publication.model.storage.DynamoEntry.CONTAINED_DATA_FIELD_NAME;
 import static no.unit.nva.publication.model.storage.JoinWithResource.Constants.DOI_REQUEST_INDEX_IN_QUERY_RESULT;
 import static no.unit.nva.publication.model.storage.JoinWithResource.Constants.RESOURCE_INDEX_IN_QUERY_RESULT;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
@@ -32,12 +31,8 @@ import nva.commons.core.attempt.FunctionWithException;
 public class ServiceWithTransactions {
 
     public static final String EMPTY_STRING = "";
-    public static final String DOUBLE_QUOTES = "\"";
-    public static final String RESOURCE_FIELD_IN_RESOURCE_DAO = CONTAINED_DATA_FIELD_NAME;
     public static final String STATUS_FIELD_IN_RESOURCE = "status";
-    public static final String MODIFIED_FIELD_IN_RESOURCE = "modifiedDate";
-    public static final String ASSOCIATED_ARIFACTS_FIELD = "associatedArtifacts";
-    private static final Integer MAX_FETCH_ATTEMPTS = 3;
+    private static final Integer MAX_FETCH_ATTEMPTS = 10;
 
     protected final AmazonDynamoDB client;
 

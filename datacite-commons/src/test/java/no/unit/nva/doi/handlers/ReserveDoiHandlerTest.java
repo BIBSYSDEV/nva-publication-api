@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.DataCiteDoiClient;
@@ -41,6 +40,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -230,7 +230,8 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
         return FakeHttpResponse.create(createResponse(expectedDoi.toString()), HTTP_CREATED);
     }
 
-    private Publication createPersistedDraftPublicationWithDoi() throws NotFoundException, BadRequestException {
+    private Publication createPersistedDraftPublicationWithDoi()
+        throws NotFoundException, BadRequestException, GatewayTimeoutException {
         var publication = PublicationGenerator.randomPublication();
         publication.setResourceOwner(new ResourceOwner(new Username(ReserveDoiHandlerTest.OWNER), randomUri()));
         var userInstance = UserInstance.fromPublication(publication);

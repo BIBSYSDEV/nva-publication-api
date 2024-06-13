@@ -26,6 +26,7 @@ import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.chapter.NonFictionChapter;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
@@ -59,7 +60,8 @@ class BragePatchEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldUpdateChapterPartOfValueWhenSearchApiReturnsPublicationWithTheSameIsbn() throws NotFoundException {
+    void shouldUpdateChapterPartOfValueWhenSearchApiReturnsPublicationWithTheSameIsbn()
+        throws NotFoundException, GatewayTimeoutException {
         var isbn = randomIsbn13();
         var existingParentPublication = persistBookWithIsbn(isbn);
         var partOfReport = persistChildAndPartOfReportWithIsbn(isbn);
@@ -75,7 +77,8 @@ class BragePatchEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldNotUpdateChaptersPartOfValueWhenFetchedPublicationDoesNotContainTheSameIsbnAsChapter() throws NotFoundException {
+    void shouldNotUpdateChaptersPartOfValueWhenFetchedPublicationDoesNotContainTheSameIsbnAsChapter()
+        throws NotFoundException, GatewayTimeoutException {
         var existingParentPublication = persistBookWithIsbn(randomIsbn13());
         var partOfReport = persistChildAndPartOfReportWithIsbn(randomIsbn13());
         var event = createSqsEvent(partOfReport.getLocation());
@@ -89,7 +92,8 @@ class BragePatchEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldNotUpdateChaptersPartOfValueWhenSearchApiReturnsMultiplePublications() throws NotFoundException {
+    void shouldNotUpdateChaptersPartOfValueWhenSearchApiReturnsMultiplePublications()
+        throws NotFoundException, GatewayTimeoutException {
         var existingParentPublication = persistBookWithIsbn(randomIsbn13());
         var partOfReport = persistChildAndPartOfReportWithIsbn(randomIsbn13());
         var event = createSqsEvent(partOfReport.getLocation());
@@ -103,7 +107,7 @@ class BragePatchEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldPersistErrorReportWhenCouldNotUpdatePartOfValue() {
+    void shouldPersistErrorReportWhenCouldNotUpdatePartOfValue() throws GatewayTimeoutException {
         var existingParentPublication = persistBookWithIsbn(randomIsbn13());
         var partOfReport = persistChildAndPartOfReportWithIsbn(randomIsbn13());
         var event = createSqsEvent(partOfReport.getLocation());
@@ -128,7 +132,7 @@ class BragePatchEventConsumerTest extends ResourcesLocalTest {
         return ((Anthology) updatedChild.getEntityDescription().getReference().getPublicationContext()).getId();
     }
 
-    private PartOfReport persistChildAndPartOfReportWithIsbn(String isbn) {
+    private PartOfReport persistChildAndPartOfReportWithIsbn(String isbn) throws GatewayTimeoutException {
         var publication = randomPublication(NonFictionChapter.class);
         publication.getEntityDescription().getReference().setPublicationContext(new Anthology());
         var persistedPublication = resourceService.createPublicationFromImportedEntry(publication);
@@ -148,7 +152,7 @@ class BragePatchEventConsumerTest extends ResourcesLocalTest {
         return record;
     }
 
-    private Publication persistBookWithIsbn(String isbn) {
+    private Publication persistBookWithIsbn(String isbn) throws GatewayTimeoutException {
         var publication = randomPublication(BookAnthology.class);
         var context = (Book) publication.getEntityDescription().getReference().getPublicationContext();
         var book = new Book(context.getSeries(), context.getSeriesNumber(), context.getPublisher(), List.of(isbn),

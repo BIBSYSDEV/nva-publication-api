@@ -29,6 +29,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -330,7 +331,8 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         return attempt(() -> createPublication(publicationRepresentation));
     }
 
-    private PublicationRepresentation createPublication(PublicationRepresentation publicationRepresentation) {
+    private PublicationRepresentation createPublication(PublicationRepresentation publicationRepresentation)
+        throws GatewayTimeoutException {
         var updatedPublication =
             resourceService.createPublicationFromImportedEntry(publicationRepresentation.publication());
         return new PublicationRepresentation(publicationRepresentation.brageRecord(), updatedPublication);

@@ -26,6 +26,7 @@ import no.unit.nva.cristin.mapper.Identifiable;
 import no.unit.nva.cristin.mapper.nva.NviReport;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.s3imports.ApplicationConstants;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
@@ -366,7 +367,7 @@ public class CristinEntryEventConsumer
         return attempt(() -> createPublication(publication));
     }
 
-    private Publication createPublication(Publication publication) {
+    private Publication createPublication(Publication publication) throws GatewayTimeoutException {
         return resourceService.createPublicationFromImportedEntry(publication);
     }
 

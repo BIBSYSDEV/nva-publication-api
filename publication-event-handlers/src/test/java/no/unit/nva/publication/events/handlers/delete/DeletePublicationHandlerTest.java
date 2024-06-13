@@ -7,9 +7,9 @@ import static org.hamcrest.Matchers.is;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.time.Clock;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.events.DeleteEntryEvent;
@@ -72,7 +72,7 @@ public class DeletePublicationHandlerTest extends ResourcesLocalTest {
         return resourceService.getPublication(resource);
     }
 
-    private Publication createPersistedPublicationWithoutDoi() throws BadRequestException {
+    private Publication createPersistedPublicationWithoutDoi() throws BadRequestException, GatewayTimeoutException {
         var publication = randomPublication().copy().withDoi(null).build();
         return Resource.fromPublication(publication).persistNew(resourceService,
                                                                 UserInstance.fromPublication(publication));

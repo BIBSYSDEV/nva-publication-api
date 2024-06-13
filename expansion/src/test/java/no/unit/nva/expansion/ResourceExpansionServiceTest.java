@@ -76,6 +76,7 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
@@ -899,7 +900,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
             Optional.of(stringFromResources(Path.of("organizations/20754.6.0.0.json"))));
     }
 
-    private Publication persistDraftPublicationWithoutDoi() throws BadRequestException {
+    private Publication persistDraftPublicationWithoutDoi() throws BadRequestException, GatewayTimeoutException {
         var publication = randomPublication().copy().withDoi(null).withStatus(DRAFT).build();
         return Resource.fromPublication(publication)
                    .persistNew(resourceService, UserInstance.fromPublication(publication));

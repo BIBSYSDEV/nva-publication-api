@@ -18,14 +18,13 @@ import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Clock;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -69,7 +68,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void handleRequestReturnsAcceptedWhenOnDraftPublication() throws IOException, BadRequestException {
+    void handleRequestReturnsAcceptedWhenOnDraftPublication()
+        throws IOException, BadRequestException, GatewayTimeoutException {
 
         var publication = createAndPersistPublication();
 
@@ -89,7 +89,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void handleRequestReturnsAcceptedWhenOnDraftPublicationAndClientIsExternal() throws IOException,
-                                                                                        BadRequestException {
+                                                                                        BadRequestException,
+                                                                                        GatewayTimeoutException {
         var createdPublication = createAndPersistPublicationWithExternalOwner();
 
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
@@ -128,7 +129,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void handleRequestReturnsErrorWhenCallerIsNotOwnerOfPublicationAndCalledIsExternalClient()
-        throws IOException, BadRequestException {
+        throws IOException, BadRequestException, GatewayTimeoutException {
         var createdPublication = createAndPersistPublication();
 
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
@@ -147,7 +148,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void handleRequestReturnsUnauthorizedWhenCallerIsMissingClientId()
-        throws IOException, NotFoundException, BadRequestException {
+        throws IOException, NotFoundException, BadRequestException, GatewayTimeoutException {
         prepareIdentityServiceClientForNotFound();
         Publication createdPublication = createAndPersistPublication();
 
@@ -214,7 +215,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         publicationService.markPublicationForDeletion(userInstance, publication.getIdentifier());
     }
 
-    private Publication createAndPersistPublication() throws BadRequestException {
+    private Publication createAndPersistPublication() throws BadRequestException, GatewayTimeoutException {
         var publication = PublicationGenerator.randomPublication();
         var userInstance = UserInstance
                                .create(publication.getResourceOwner().getOwner().getValue(),
@@ -222,7 +223,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         return Resource.fromPublication(publication).persistNew(publicationService, userInstance);
     }
 
-    private Publication createAndPersistPublicationWithExternalOwner() throws BadRequestException {
+    private Publication createAndPersistPublicationWithExternalOwner()
+        throws BadRequestException, GatewayTimeoutException {
         var publication = PublicationGenerator.randomPublication();
         var owner = new ResourceOwner(
             new Username(getExternalClientResponse.getActingUser()),

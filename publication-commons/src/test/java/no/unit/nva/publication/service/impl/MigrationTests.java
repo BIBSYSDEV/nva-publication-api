@@ -28,6 +28,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.storage.Dao;
@@ -53,7 +54,7 @@ class MigrationTests extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldWriteBackEntryAsIsWhenMigrating() throws NotFoundException {
+    void shouldWriteBackEntryAsIsWhenMigrating() throws NotFoundException, GatewayTimeoutException {
         var publication = PublicationGenerator.randomPublication();
         var savedPublication = resourceService.insertPreexistingPublication(publication);
         migrateResources();

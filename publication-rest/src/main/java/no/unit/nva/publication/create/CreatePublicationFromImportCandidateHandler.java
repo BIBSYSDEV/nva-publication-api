@@ -16,6 +16,7 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.create.pia.PiaClient;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.exception.NotAuthorizedException;
 import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
@@ -109,7 +110,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     }
 
     private Publication importCandidate(ImportCandidate input, RequestInfo requestInfo)
-        throws NotFoundException, UnauthorizedException {
+        throws NotFoundException, UnauthorizedException, GatewayTimeoutException {
         var nvaPublication = createNvaPublicationFromImportCandidateAndUserInput(input, requestInfo);
         updateImportCandidate(input, requestInfo, nvaPublication);
         return publicationService.getPublicationByIdentifier(nvaPublication.getIdentifier());
@@ -124,7 +125,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
 
     private Publication createNvaPublicationFromImportCandidateAndUserInput(ImportCandidate input,
                                                                             RequestInfo requestInfo)
-        throws NotFoundException, UnauthorizedException {
+        throws NotFoundException, UnauthorizedException, GatewayTimeoutException {
         var rawImportCandidate = candidateService.getImportCandidateByIdentifier(input.getIdentifier());
         var inputWithOwner = injectOrganizationAndOwner(requestInfo, input, rawImportCandidate);
         var nvaPublication = publicationService.autoImportPublication(inputWithOwner);

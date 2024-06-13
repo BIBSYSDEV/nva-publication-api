@@ -9,6 +9,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.exception.InvalidInputException;
 import no.unit.nva.publication.model.business.*;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -115,7 +116,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
 
     @Test
     void shouldNotPropagateEventWhenThereIsNoDoiRequestButThePublicationHasBeenAssignedANonFindableDoiByNvaPredecessor()
-        throws IOException, BadRequestException {
+        throws IOException, BadRequestException, GatewayTimeoutException {
         //Given a publication has a public Doi
         var publication = persistPublicationWithDoi();
         var publicationUpdate = updateTitle(publication);
@@ -191,7 +192,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "should ignore events when old and new image are identical")
     @MethodSource("entityProvider")
     void shouldIgnoreEventsWhenNewAndOldImageAreIdentical(Function<Publication, Entity> entityProvider)
-        throws IOException, BadRequestException {
+        throws IOException, BadRequestException, GatewayTimeoutException {
         var publication = persistPublicationWithDoi();
         var entity = entityProvider.apply(publication);
         var event = createEvent(entity, entity);
@@ -280,7 +281,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         return new DataEntryUpdateEvent(randomString(), draftRequest, approvedRequest);
     }
 
-    private Publication persistPublicationWithDoi() throws BadRequestException {
+    private Publication persistPublicationWithDoi() throws BadRequestException, GatewayTimeoutException {
         return persistPublication(randomPublication());
     }
 
@@ -318,7 +319,8 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         return DoiRequest.fromPublication(publication);
     }
 
-    private Publication persistPublication(Publication publication) throws BadRequestException {
+    private Publication persistPublication(Publication publication) throws BadRequestException,
+                                                                           GatewayTimeoutException {
         return Resource.fromPublication(publication).persistNew(resourceService,
                                                                 UserInstance.fromPublication(publication));
     }

@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
 import java.io.IOException;
 import java.net.URI;
-import java.time.Clock;
 import java.time.Instant;
 import no.sikt.nva.brage.migration.merger.BrageMergingReport;
 import no.sikt.nva.brage.migration.rollback.RollBackConflictException;
@@ -33,6 +32,7 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
@@ -101,7 +101,8 @@ public class BrageMergingRollbackHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldStoreExceptionWhenPublicationHasBeenModifiedSinceBrageMerging() throws IOException {
+    void shouldStoreExceptionWhenPublicationHasBeenModifiedSinceBrageMerging()
+        throws IOException, GatewayTimeoutException {
         var oldImage = PublicationGenerator.randomPublication();
         var newImageInReport = resourceService.createPublicationFromImportedEntry(
             PublicationGenerator.randomPublication());
@@ -119,7 +120,7 @@ public class BrageMergingRollbackHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void dummyTestShouldDoNothingWhenProcessingAPublication() throws IOException {
+    void dummyTestShouldDoNothingWhenProcessingAPublication() throws IOException, GatewayTimeoutException {
         var oldImage = PublicationGenerator.randomPublication();
         var newImageInReport = resourceService.createPublicationFromImportedEntry(
             PublicationGenerator.randomPublication());
@@ -130,7 +131,8 @@ public class BrageMergingRollbackHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldRollbackPublicationInDatabaseWhenReportPassesChecks() throws IOException, NotFoundException {
+    void shouldRollbackPublicationInDatabaseWhenReportPassesChecks()
+        throws IOException, NotFoundException, GatewayTimeoutException {
         var newImageInReport = resourceService.createPublicationFromImportedEntry(
             PublicationGenerator.randomPublication());
         var oldImageInReport = createFromNewImage(newImageInReport);
@@ -147,7 +149,8 @@ public class BrageMergingRollbackHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldPersistRollbackReportWhenPublicationWasRolledBackInDatabase() throws IOException {
+    void shouldPersistRollbackReportWhenPublicationWasRolledBackInDatabase() throws IOException,
+                                                                                    GatewayTimeoutException {
         var newImageInReport = resourceService.createPublicationFromImportedEntry(
             PublicationGenerator.randomPublication());
         var oldImageInReport = createFromNewImage(newImageInReport);

@@ -20,11 +20,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.exception.GatewayTimeoutException;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -123,7 +123,7 @@ class DeleteTicketHandlerTest extends ResourcesLocalTest {
                    .persistNewTicket(ticketService);
     }
 
-    private Publication createPublication() throws BadRequestException {
+    private Publication createPublication() throws BadRequestException, GatewayTimeoutException {
         var publication = randomPublication();
         return Resource.fromPublication(publication)
                    .persistNew(resourceService, UserInstance.fromPublication(publication));

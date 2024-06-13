@@ -11,12 +11,7 @@ class ExceptionsTest {
     
     public static final String MESSAGE = "Message";
     
-    @Test
-    void dynamoDBExceptionHasStatusCode() {
-        ApiGatewayException exception = new DynamoDBException(MESSAGE, new RuntimeException());
-        Assertions.assertEquals(HttpStatus.SC_BAD_GATEWAY, exception.getStatusCode());
-    }
-    
+
     @Test
     void errorResponseExceptionHasStatusCode() {
         ApiGatewayException exception = new ErrorResponseException(MESSAGE);
