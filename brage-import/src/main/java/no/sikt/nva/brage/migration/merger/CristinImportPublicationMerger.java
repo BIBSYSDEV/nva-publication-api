@@ -199,8 +199,8 @@ public class CristinImportPublicationMerger {
     private boolean brageFileIsPublishedVersion(List<PublishedFile> publishedFiles) {
         return publishedFiles
                    .stream()
-                   .anyMatch(publishedFile -> PublisherVersion.PUBLISHED_VERSION ==
-                                              publishedFile.getPublisherVersion());
+                   .map(File::getPublisherVersion)
+                   .anyMatch(PublisherVersion.PUBLISHED_VERSION::equals);
     }
 
     private boolean noneOfTheExistingFilesArePublishedVersion(List<PublishedFile> publishedFiles) {
