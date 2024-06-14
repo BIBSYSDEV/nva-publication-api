@@ -162,6 +162,7 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -1892,6 +1893,40 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                    is(equalTo(existingPublication.getIdentifier())));
     }
 
+    @Test
+    void whenSearchApiReturnsMultiplePublicationsButDynamoDbCannotFindTheFirstOneMergingShouldHappenWithNextInLine()
+        throws IOException {
+        // create a brage record and matching publication
+        var publication = randomPublication(ConferencePoster.class);
+        publication.setAdditionalIdentifiers(Set.of());
+        publication.getEntityDescription().getReference().setDoi(null);
+        publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder().withYear("2022").build());
+        publication.getEntityDescription().setMainTitle("Dynamic - Response of Floating Wind Turbines! Report");
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication);
+        var instanceType = existingPublication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
+        var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
+        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
+                                               "ARTIST", null, List.of());
+        var generator = new NvaBrageMigrationDataGenerator.Builder()
+                            .withMainTitle("Dynamic Response of Floating Wind Turbines")
+                            .withContributor(brageContributor)
+                            .withPublicationDate(new PublicationDate("2023",
+                                                                     new PublicationDateNva.Builder().withYear("2023").build()))
+                            .withType(new Type(List.of(), instanceType)).build();
+
+        //mock search response with first result being something that does not exist in database:
+        mockMultipleHitSearchApiResponse(List.of(SortableIdentifier.next() ,existingPublication.getIdentifier()));
+
+
+
+        var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
+        var updatedPublication = handler.handleRequest(s3Event, CONTEXT);
+
+        //assert that we have not created a new publication, but instead updated the existing one:
+        assertThat(updatedPublication.publication().getIdentifier(), is(equalTo(existingPublication.getIdentifier())));
+
+    }
+
     private static AdditionalIdentifier cristinAdditionalIdentifier(String cristinIdentifier) {
         return new AdditionalIdentifier("Cristin", cristinIdentifier);
     }
@@ -1956,6 +1991,21 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var searchResourceApiResponse = new SearchResourceApiResponse(1, List.of(new ResourceWithId(publicationId)));
         var response = mock(HttpResponse.class);
         when(response.statusCode()).thenReturn(statusCode);
+        when(response.body()).thenReturn(searchResourceApiResponse.toString());
+        when(this.uriRetriever.fetchResponse(any())).thenReturn(response);
+    }
+
+    private void mockMultipleHitSearchApiResponse(List<SortableIdentifier> identifiers) {
+        var resourceWithIds = identifiers.stream()
+                                  .map(identifier -> UriWrapper.fromHost(API_HOST)
+                                                         .addChild("publication")
+                                                         .addChild(identifier.toString())
+                                                         .getUri())
+                                  .map(ResourceWithId::new)
+                                  .toList();
+        var searchResourceApiResponse = new SearchResourceApiResponse(resourceWithIds.size(), resourceWithIds);
+        var response = mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(HttpStatus.SC_OK);
         when(response.body()).thenReturn(searchResourceApiResponse.toString());
         when(this.uriRetriever.fetchResponse(any())).thenReturn(response);
     }
