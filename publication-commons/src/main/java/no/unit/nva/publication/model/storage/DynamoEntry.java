@@ -21,7 +21,6 @@ import no.unit.nva.publication.storage.model.exceptions.EmptyValueMapException;
 public interface DynamoEntry {
 
     String CONTAINED_DATA_FIELD_NAME = "data";
-    boolean NO_WRAP = true;
 
     static <T> T parseAttributeValuesMap(Map<String, AttributeValue> valuesMap, Class<T> daoClass) {
         if (nonNull(valuesMap) && !valuesMap.isEmpty()) {
