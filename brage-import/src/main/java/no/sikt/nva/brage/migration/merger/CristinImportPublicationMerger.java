@@ -207,8 +207,8 @@ public class CristinImportPublicationMerger {
                    .stream()
                    .filter(associatedArtifact -> associatedArtifact instanceof File)
                    .map(associatedArtifact -> (File) associatedArtifact)
-                   .filter(file -> file instanceof PublishedFile)
-                   .map(file -> (PublishedFile) file)
+                   .filter(PublishedFile.class::isInstance)
+                   .map(PublishedFile.class::cast)
                    .toList();
     }
 
