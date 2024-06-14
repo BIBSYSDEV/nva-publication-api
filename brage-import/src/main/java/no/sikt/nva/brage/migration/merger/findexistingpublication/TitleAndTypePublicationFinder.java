@@ -86,14 +86,13 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
     private List<Publication> searchForPublicationsByTypeAndTitle(Publication publication) {
         var response = fetchResponse(searchByTypeAndTitleUri(publication));
         return response.map(this::toResponse)
-                   .filter(SearchResourceApiResponse::containsSingleHit)
                    .map(SearchResourceApiResponse::hits)
                    .orElse(List.of())
                    .stream()
                    .map(ResourceWithId::getIdentifier)
                    .map(this::getPublicationByIdentifier)
                    .filter(item -> PublicationComparator.publicationsMatch(item, publication))
-                   .collect(Collectors.toList()).reversed();
+                   .toList();
     }
 
     private Publication getPublicationByIdentifier(SortableIdentifier identifier) {
