@@ -39,14 +39,16 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
     private final ResourceService resourceService;
     private final UriRetriever uriRetriever;
     private final String apiHost;
-    private static final int SINGLE_PUBLICATION_SIZE = 1;
+    private final DuplicatePublicationReporter duplicatePublicationReporter;
 
     public TitleAndTypePublicationFinder(ResourceService resourceService,
                                          UriRetriever uriRetriever,
-                                         String apiHost) {
+                                         String apiHost,
+                                         DuplicatePublicationReporter duplicatePublicationReporter) {
         this.resourceService = resourceService;
         this.uriRetriever = uriRetriever;
         this.apiHost = apiHost;
+        this.duplicatePublicationReporter = duplicatePublicationReporter;
     }
 
     @Override
@@ -57,8 +59,12 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
         }
         var potentialExistingPublications = searchForPublicationsByTypeAndTitle(
             publicationRepresentation.publication());
-        if (potentialExistingPublications.size() != SINGLE_PUBLICATION_SIZE) {
+        if (potentialExistingPublications.isEmpty()) {
             return Optional.empty();
+        }
+        if (FindExistingPublicationService.moreThanOneDuplicateFound(potentialExistingPublications)) {
+            duplicatePublicationReporter.reportDuplicatePublications(potentialExistingPublications,
+                                                                            publicationRepresentation.brageRecord(), DuplicateDetectionCause.TITLE_DUPLICATES);
         }
         return Optional.of(new PublicationForUpdate(MergeSource.SEARCH, potentialExistingPublications.getFirst()));
     }
@@ -82,14 +88,13 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
     private List<Publication> searchForPublicationsByTypeAndTitle(Publication publication) {
         var response = fetchResponse(searchByTypeAndTitleUri(publication));
         return response.map(this::toResponse)
-                   .filter(SearchResourceApiResponse::containsSingleHit)
                    .map(SearchResourceApiResponse::hits)
                    .orElse(List.of())
                    .stream()
                    .map(ResourceWithId::getIdentifier)
                    .map(this::getPublicationByIdentifier)
                    .filter(item -> PublicationComparator.publicationsMatch(item, publication))
-                   .collect(Collectors.toList()).reversed();
+                   .toList();
     }
 
     private Publication getPublicationByIdentifier(SortableIdentifier identifier) {
