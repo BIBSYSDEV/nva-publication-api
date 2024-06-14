@@ -204,9 +204,13 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
     private List<EventReference> createEventReferences(
         Stream<FileContentsEvent<JsonNode>> eventBodies, EventReference input) {
         var s3Driver = new S3Driver(s3Client, input.extractBucketName());
-        if (input.getSubtopic().equals(SUBTOPIC_SEND_EVENT_TO_NVI_PATCH_EVENT_CONSUMER)) {
+        if (SUBTOPIC_SEND_EVENT_TO_NVI_PATCH_EVENT_CONSUMER.equals(input.getSubtopic())) {
             return eventBodies.map(attempt(FileContentsEvent::toCristinNviEventReference))
                 .map(Try::orElseThrow).collect(Collectors.toList());
+        }
+        if (SUBTOPIC_SEND_EVENT_TO_BRAGE_PATCH_EVENT_CONSUMER.equals(input.getSubtopic())) {
+            return eventBodies.map(attempt(FileContentsEvent::toBragePatchEventReference))
+                       .map(Try::orElseThrow).collect(Collectors.toList());
         } else {
             return eventBodies
                        .map(attempt(fileContents -> fileContents.toEventReference(s3Driver)))
