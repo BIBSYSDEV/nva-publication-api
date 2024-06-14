@@ -2,6 +2,7 @@ package no.sikt.nva.brage.migration.merger;
 
 import static java.util.Objects.nonNull;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -24,6 +25,9 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
+import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Degree;
@@ -38,6 +42,8 @@ import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
+
 import no.unit.nva.model.pages.Pages;
 import nva.commons.core.StringUtils;
 
@@ -45,6 +51,7 @@ public class CristinImportPublicationMerger {
 
     public static final String DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS
         = "dummy_handle_unis";
+    public static final String DUBLIN_CORE_XML = "dublin_core.xml";
 
     private final Publication existingPublication;
     private final PublicationRepresentation bragePublicationRepresentation;
@@ -69,13 +76,13 @@ public class CristinImportPublicationMerger {
 
     private Publication mergePublicationsMetadata()
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
-        var publicationForUpdating = existingPublication.copy()
+        return existingPublication.copy()
                                          .withAdditionalIdentifiers(mergeAdditionalIdentifiers())
                                          .withSubjects(determineSubject())
                                          .withRightsHolder(determineRightsHolder())
                                          .withEntityDescription(determineEntityDescription())
+                                         .withAssociatedArtifacts(determineAssociatedArtifacts())
                                          .build();
-        return fillNewPublicationWithMetadataFromBrage(publicationForUpdating);
     }
 
     private EntityDescription determineEntityDescription()
@@ -83,6 +90,8 @@ public class CristinImportPublicationMerger {
         return existingPublication.getEntityDescription().copy()
                    .withContributors(determineContributors())
                    .withReference(determineReference())
+                   .withDescription(getCorrectDescription())
+                   .withAbstract(getCorrectAbstract())
                    .build();
     }
 
@@ -152,33 +161,75 @@ public class CristinImportPublicationMerger {
         return additionalIdentifiers;
     }
 
-    private Publication fillNewPublicationWithMetadataFromBrage(Publication publicationForUpdating) {
-        publicationForUpdating.getEntityDescription().setDescription(getCorrectDescription());
-        publicationForUpdating.getEntityDescription().setAbstract(getCorrectAbstract());
-        publicationForUpdating.setAssociatedArtifacts(determineAssociatedArtifacts());
-        return publicationForUpdating;
-    }
-
     private AssociatedArtifactList determineAssociatedArtifacts() {
         if (existingPublication.getAssociatedArtifacts().isEmpty()) {
             return bragePublicationRepresentation.publication().getAssociatedArtifacts();
         }
-        if (!hasAdministrativeAgreement(existingPublication) && hasAdministrativeAgreement(bragePublicationRepresentation.publication())) {
-            var administrativeAgreements = extractAdministrativeAgreements(bragePublicationRepresentation.publication());
+        if (!hasAdministrativeAgreement(existingPublication) && hasAdministrativeAgreement(
+            bragePublicationRepresentation.publication())) {
+            var administrativeAgreements = extractAdministrativeAgreements(
+                bragePublicationRepresentation.publication());
             existingPublication.getAssociatedArtifacts().addAll(administrativeAgreements);
             return existingPublication.getAssociatedArtifacts();
         }
-        if (shouldUseBrageArtifacts()) {
-            return bragePublicationRepresentation.publication().getAssociatedArtifacts();
-        } else {
-            return existingPublication.getAssociatedArtifacts();
+        if (shouldOverWriteWithBrageArtifacts()) {
+            return keepBrageAssociatedArtifactAndKeepDublinCoreFromExistsing();
         }
+        return existingPublication.getAssociatedArtifacts();
     }
 
-    private boolean shouldUseBrageArtifacts() {
-        return bragePublicationHasAssociatedArtifacts()
-               && (existingPublication.getAssociatedArtifacts().isEmpty()
-                   || hasTheSameHandle());
+    private AssociatedArtifactList keepBrageAssociatedArtifactAndKeepDublinCoreFromExistsing() {
+        var associatedArtifacts = new ArrayList<>(bragePublicationRepresentation.publication().getAssociatedArtifacts());
+        var dublinCoresFromExisting = extractDublinCores(existingPublication.getAssociatedArtifacts());
+        associatedArtifacts.addAll(dublinCoresFromExisting);
+        return new AssociatedArtifactList(associatedArtifacts);
+    }
+
+    private List<File> extractDublinCores(AssociatedArtifactList associatedArtifacts) {
+        return associatedArtifacts.stream().filter(a -> a instanceof File)
+                   .map(a -> (File) a)
+                   .filter(file -> DUBLIN_CORE_XML.equals(file.getName()))
+                   .toList();
+    }
+
+    private boolean shouldOverWriteWithBrageArtifacts() {
+        return bragePublicationHasAssociatedArtifacts() && (hasTheSameHandle() || academicArticleRulesApply());
+    }
+
+    private boolean academicArticleRulesApply() {
+        return isAcademicArticle()
+               && noneOfTheExistingFilesArePublishedVersion(extractPublishedFiles(existingPublication))
+               && brageFileIsPublishedVersion(extractPublishedFiles(bragePublicationRepresentation.publication()));
+    }
+
+    private List<PublishedFile> extractPublishedFiles(Publication publication) {
+        return publication.getAssociatedArtifacts()
+                   .stream()
+                   .filter(associatedArtifact -> associatedArtifact instanceof File)
+                   .map(associatedArtifact -> (File) associatedArtifact)
+                   .filter(PublishedFile.class::isInstance)
+                   .map(PublishedFile.class::cast)
+                   .toList();
+    }
+
+    private boolean brageFileIsPublishedVersion(List<PublishedFile> publishedFiles) {
+        return publishedFiles
+                   .stream()
+                   .map(File::getPublisherVersion)
+                   .anyMatch(PublisherVersion.PUBLISHED_VERSION::equals);
+    }
+
+    private boolean noneOfTheExistingFilesArePublishedVersion(List<PublishedFile> publishedFiles) {
+        return publishedFiles
+                   .stream()
+                   .noneMatch(publishedFile -> PublisherVersion.PUBLISHED_VERSION == publishedFile.getPublisherVersion());
+    }
+
+    private boolean isAcademicArticle() {
+        return existingPublication.getEntityDescription()
+                        .getReference()
+                        .getPublicationInstance() instanceof AcademicArticle;
+
     }
 
     private boolean bragePublicationHasAssociatedArtifacts() {
