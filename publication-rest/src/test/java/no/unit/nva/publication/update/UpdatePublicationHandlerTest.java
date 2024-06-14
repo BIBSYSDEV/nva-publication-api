@@ -184,7 +184,6 @@ import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Named;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -1054,7 +1053,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var newUnpublishedFile = File.builder().withIdentifier(UUID.randomUUID())
                                      .withLicense(randomUri()).buildUnpublishedFile();
-        var files = publication.getAssociatedArtifacts();
+        var files =  new ArrayList<>( publication.getAssociatedArtifacts());
         files.add(newUnpublishedFile);
 
         publication.copy().withAssociatedArtifacts(files);
@@ -2159,9 +2158,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private Publication addFileToPublication(Publication savedPublication, AssociatedArtifact file) {
         Publication update = savedPublication.copy().build();
-        var associatedArtifacts = update.getAssociatedArtifacts();
+        var associatedArtifacts = new ArrayList<>(update.getAssociatedArtifacts());
         associatedArtifacts.add(file);
-        update.setAssociatedArtifacts(associatedArtifacts);
+        update.setAssociatedArtifacts(new AssociatedArtifactList( associatedArtifacts));
         return update;
     }
 

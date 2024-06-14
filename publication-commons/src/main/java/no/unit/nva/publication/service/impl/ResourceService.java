@@ -72,8 +72,6 @@ public class ResourceService extends ServiceWithTransactions {
     public static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_SUPPLIER = SortableIdentifier::next;
     public static final int AWAIT_TIME_BEFORE_FETCH_RETRY = 50;
     public static final String RESOURCE_REFRESHED_MESSAGE = "Resource has been refreshed successfully: {}";
-    public static final String INVALID_PATH_ERROR = "The document path provided in the update expression is invalid "
-                                                    + "for update";
     public static final String EMPTY_RESOURCE_IDENTIFIER_ERROR = "Empty resource identifier";
     public static final String DOI_FIELD_IN_RESOURCE = "doi";
     public static final String RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE = "Resource cannot be deleted: ";
@@ -451,7 +449,7 @@ public class ResourceService extends ServiceWithTransactions {
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(putRequest);
 
-        return fetchSavedPublication(newResource);
+        return newResource.toPublication();
     }
 
     private void setCuratingInstitutions(Resource newResource) {
@@ -464,7 +462,7 @@ public class ResourceService extends ServiceWithTransactions {
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(putRequest);
 
-        return fetchSavedImportCandidate(newResource);
+        return newResource.toImportCandidate();
     }
 
     private TransactWriteItem[] transactionItemsForNewImportCandidateInsertion(Resource newResource) {
@@ -472,18 +470,6 @@ public class ResourceService extends ServiceWithTransactions {
         TransactWriteItem uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(newResource,
                                                                                                           tableName);
         return new TransactWriteItem[]{resourceEntry, uniqueIdentifierEntry};
-    }
-
-    private ImportCandidate fetchSavedImportCandidate(Resource newResource) {
-        return Optional.ofNullable(fetchSavedResource(newResource)).map(Resource::toImportCandidate).orElse(null);
-    }
-
-    private Publication fetchSavedPublication(Resource newResource) {
-        return Optional.ofNullable(fetchSavedResource(newResource)).map(Resource::toPublication).orElse(null);
-    }
-
-    private Resource fetchSavedResource(Resource newResource) {
-        return fetchEventualConsistentDataEntry(newResource, readResourceService::getResource).orElse(null);
     }
 
     private List<TransactWriteItem> transactionItemsForDraftPublicationDeletion(List<Dao> daos)
