@@ -3,6 +3,7 @@ package no.sikt.nva.brage.migration.merger.findexistingpublication;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -39,6 +40,7 @@ public class SearchApiFinder{
                    .flatMap(List::stream)
                    .map(ResourceWithId::getIdentifier)
                    .map(this::getPublicationByIdentifier)
+                   .flatMap(Optional::stream)
                    .toList();
     }
 
@@ -56,8 +58,8 @@ public class SearchApiFinder{
                    .orElseThrow();
     }
 
-    private Publication getPublicationByIdentifier(SortableIdentifier identifier) {
-        return attempt(() -> resourceService.getPublicationByIdentifier(identifier)).orElseThrow();
+    private Optional<Publication> getPublicationByIdentifier(SortableIdentifier identifier) {
+        return attempt(() -> resourceService.getPublicationByIdentifier(identifier)).toOptional();
     }
 
 }

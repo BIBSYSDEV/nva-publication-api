@@ -39,7 +39,6 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
     private final ResourceService resourceService;
     private final UriRetriever uriRetriever;
     private final String apiHost;
-    private static final int SINGLE_PUBLICATION_SIZE = 1;
 
     public TitleAndTypePublicationFinder(ResourceService resourceService,
                                          UriRetriever uriRetriever,
@@ -57,7 +56,7 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
         }
         var potentialExistingPublications = searchForPublicationsByTypeAndTitle(
             publicationRepresentation.publication());
-        if (potentialExistingPublications.size() != SINGLE_PUBLICATION_SIZE) {
+        if (potentialExistingPublications.isEmpty()) {
             return Optional.empty();
         }
         return Optional.of(new PublicationForUpdate(MergeSource.SEARCH, potentialExistingPublications.getFirst()));
@@ -88,12 +87,13 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
                    .stream()
                    .map(ResourceWithId::getIdentifier)
                    .map(this::getPublicationByIdentifier)
+                   .flatMap(Optional::stream)
                    .filter(item -> PublicationComparator.publicationsMatch(item, publication))
                    .collect(Collectors.toList()).reversed();
     }
 
-    private Publication getPublicationByIdentifier(SortableIdentifier identifier) {
-        return attempt(() -> resourceService.getPublicationByIdentifier(identifier)).orElseThrow();
+    private Optional<Publication> getPublicationByIdentifier(SortableIdentifier identifier) {
+        return attempt(() -> resourceService.getPublicationByIdentifier(identifier)).toOptional();
     }
 
     private Optional<String> fetchResponse(URI uri) {
