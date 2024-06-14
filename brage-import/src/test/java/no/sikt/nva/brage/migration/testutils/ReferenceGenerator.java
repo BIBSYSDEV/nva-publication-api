@@ -3,9 +3,7 @@ package no.sikt.nva.brage.migration.testutils;
 import static java.util.Objects.nonNull;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.mapper.ChannelType;
@@ -287,14 +285,14 @@ public final class ReferenceGenerator {
             }
             if (NvaType.PERFORMING_ARTS.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder().withPublicationInstance(
-                        new PerformingArts(PerformingArtsSubtype.createOther(null), null, List.of()))
+                        new PerformingArts(PerformingArtsSubtype.createOther(null), null, Collections.emptyList()))
                            .withPublishingContext(new Artistic())
                            .withDoi(builder.getDoi())
                            .build();
             }
             if (NvaType.VISUAL_ARTS.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder().withPublicationInstance(
-                        new VisualArts(VisualArtsSubtype.createOther(null), null, Set.of()))
+                        new VisualArts(VisualArtsSubtype.createOther(null), null, Collections.emptySet()))
                            .withPublishingContext(new Artistic())
                            .withDoi(builder.getDoi())
                            .build();
@@ -320,14 +318,14 @@ public final class ReferenceGenerator {
             }
             if (NvaType.FILM.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder().withPublicationInstance(
-                        new MovingPicture(MovingPictureSubtype.createOther(null), null, List.of(), NullDuration.create()))
+                        new MovingPicture(MovingPictureSubtype.createOther(null), null, Collections.emptyList(), NullDuration.create()))
                            .withPublishingContext(new Artistic())
                            .withDoi(builder.getDoi())
                            .build();
             }
             if (NvaType.LITERARY_ARTS.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder().withPublicationInstance(
-                    new LiteraryArts(LiteraryArtsSubtypeOther.createOther(null), List.of(), null))
+                    new LiteraryArts(LiteraryArtsSubtypeOther.createOther(null), Collections.emptyList(), null))
                            .withPublishingContext(new Artistic())
                            .withDoi(builder.getDoi())
                            .build();
@@ -456,7 +454,7 @@ public final class ReferenceGenerator {
                                           builder.getIssnList().get(1));
         }
         if (builder.getIssnList().size() == 1) {
-            return new UnconfirmedJournal(builder.getPublication().getJournal(), builder.getIssnList().get(0), null);
+            return new UnconfirmedJournal(builder.getPublication().getJournal(), builder.getIssnList().getFirst(), null);
         } else {
             return new UnconfirmedJournal(builder.getPublication().getJournal(), null, null);
         }
