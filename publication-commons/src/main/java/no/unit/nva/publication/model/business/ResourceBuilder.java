@@ -2,17 +2,21 @@ package no.unit.nva.publication.model.business;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationNoteBase;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.funding.Funding;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 
 @SuppressWarnings("PMD.TooManyFields")
@@ -40,6 +44,7 @@ public final class ResourceBuilder {
     private List<PublicationNoteBase> publicationNotes;
     private URI duplicateOf;
     private Set<URI> curatingInstitutions;
+    private List<ImportDetail> importDetails;
 
     ResourceBuilder() {
     }
@@ -154,6 +159,11 @@ public final class ResourceBuilder {
         return this;
     }
 
+    public ResourceBuilder withImportDetails(Collection<ImportDetail> importDetails) {
+        this.importDetails = new ArrayList<>(importDetails);
+        return this;
+    }
+
     public Resource build() {
         Resource resource = new Resource();
         resource.setIdentifier(identifier);
@@ -178,6 +188,7 @@ public final class ResourceBuilder {
         resource.setPublicationNotes(publicationNotes);
         resource.setDuplicateOf(duplicateOf);
         resource.setCuratingInstitutions(curatingInstitutions);
+        resource.setImportDetails(importDetails);
         return resource;
     }
 }

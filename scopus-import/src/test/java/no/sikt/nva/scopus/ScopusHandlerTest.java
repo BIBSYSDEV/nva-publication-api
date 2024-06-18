@@ -57,6 +57,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -165,6 +166,7 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
@@ -1186,6 +1188,15 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         assertThat(importCandidate.getImportStatus(), is(equalTo(existingImportCandidate.getImportStatus())));
         assertThat(importCandidate.getEntityDescription(),
                    is(not(equalTo(existingImportCandidate.getEntityDescription()))));
+    }
+
+    @Test
+    void shouldAddImportDetailWhenImportingCandidate() throws IOException {
+        var s3Event = createNewScopusPublicationEvent();
+        var importCandidate = scopusHandler.handleRequest(s3Event, CONTEXT);
+        assertFalse(importCandidate.getImportDetails().isEmpty());
+        assertTrue(importCandidate.getImportDetails().stream().anyMatch(importDetail -> importDetail.source().equals(
+            ImportSource.SCOPUS)));
     }
 
     void hasBeenFetchedFromCristin(Contributor contributor, Set<Integer> cristinIds) {

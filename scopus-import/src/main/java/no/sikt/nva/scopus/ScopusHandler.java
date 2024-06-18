@@ -11,6 +11,7 @@ import java.io.StringReader;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
+import java.time.Instant;
 import java.util.Random;
 import no.scopus.generated.DocTp;
 import no.sikt.nva.scopus.conversion.CristinConnection;
@@ -23,6 +24,8 @@ import no.sikt.nva.scopus.exception.ExceptionMapper;
 import no.sikt.nva.scopus.update.ScopusUpdater;
 import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.ImportDetail;
+import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
@@ -207,6 +210,7 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     }
 
     private Try<ImportCandidate> persistOrUpdateInDatabase(ImportCandidate importCandidate) throws BadRequestException {
+        importCandidate.addImportDetail(new ImportDetail(Instant.now(), ImportSource.SCOPUS));
         if (nonNull(importCandidate.getIdentifier())) {
             return Try.of(resourceService.updateImportCandidate(importCandidate));
         }
@@ -251,7 +255,13 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     private ImportCandidate createImportCandidate(S3Event event) {
         return attempt(() -> readFile(event)).map(this::parseXmlFile)
                    .map(this::generateImportCandidate)
+//                   .map(this::addImportDetail)
                    .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
+    }
+
+    private ImportCandidate addImportDetail(ImportCandidate importCandidate) {
+        importCandidate.addImportDetail(new ImportDetail(Instant.now(), ImportSource.SCOPUS));
+        return importCandidate;
     }
 
     private RuntimeException logErrorAndThrowException(Exception exception) {

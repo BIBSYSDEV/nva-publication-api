@@ -56,3 +56,4 @@ link
 additionalIdentifiers
 rightsHolder
 curatingInstitutions
+importDetails

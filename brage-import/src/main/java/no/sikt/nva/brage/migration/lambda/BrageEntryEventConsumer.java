@@ -8,6 +8,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
@@ -25,11 +26,14 @@ import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.ImportDetail;
+import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
@@ -105,8 +109,6 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         var publicationFinderService = new FindExistingPublicationServiceImpl(resourceService, uriRetriever, apiHost);
         return publicationFinderService.findExistingPublication(publicationRepresentation);
     }
-
-
 
     private PublicationRepresentation createNewPublication(PublicationRepresentation publicationRepresentation,
                                                            S3Event s3Event) {
@@ -379,6 +381,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         throws JsonProcessingException, InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var brageRecord = getBrageRecordFromS3(event);
         var nvaPublication = BrageNvaMapper.toNvaPublication(brageRecord);
+        nvaPublication.addImportDetail(new ImportDetail(Instant.now(), ImportSource.BRAGE));
         return new PublicationRepresentation(brageRecord, nvaPublication);
     }
 

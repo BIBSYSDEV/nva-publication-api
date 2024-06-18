@@ -16,7 +16,8 @@ public class DeletedPublicationResponseTest {
     @Test
     void deletePublicationResponseShouldPreserveAllFieldsExceptAssociatedArtifacts() {
         var publication = randomPublication();
-        assertThat(publication, doesNotHaveEmptyValuesIgnoringFields(Set.of("entityDescription.reference")));
+        assertThat(publication, doesNotHaveEmptyValuesIgnoringFields(Set.of("entityDescription.reference",
+                                                                            "importDetails")));
         var deletedPublicationResponseJson = DeletedPublicationResponse.fromPublication(publication);
         var deletedPublicationResponse = JsonUtils.dtoObjectMapper.convertValue(deletedPublicationResponseJson,
                                                                                 PublicationResponseElevatedUser.class);

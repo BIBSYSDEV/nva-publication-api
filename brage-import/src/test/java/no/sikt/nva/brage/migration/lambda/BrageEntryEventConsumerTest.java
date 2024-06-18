@@ -46,6 +46,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.AssertionsKt.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
@@ -110,6 +111,7 @@ import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.UnconfirmedCourse;
@@ -1793,6 +1795,16 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                    doesNotHaveEmptyValuesIgnoringFields(Set.of(".pages.introduction", ".pages.illustrated")));
     }
 
+    @Test
+    void shouldAddImportDetailWhenImportingBrageRecord() throws IOException {
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_REPORT_WORKING_PAPER).build();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var publication = handler.handleRequest(s3Event, CONTEXT).publication();
+        assertFalse(publication.getImportDetails().isEmpty());
+        assertTrue(publication.getImportDetails().stream().anyMatch(importDetail -> importDetail.source().equals(
+            ImportSource.BRAGE)));
+    }
+
     private NvaBrageMigrationDataGenerator generateBrageRecordAndPersistDuplicateByCristinIdentifier(PublicationInstance<?> publicationInstance,
                                                                              Type type) {
         var cristinIdentifier = "1234";
@@ -1978,7 +1990,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private void assertThatPublicationsMatch(Publication actualPublication, Publication expectedPublication) {
         assertThat(actualPublication.getSubjects(), containsInAnyOrder(expectedPublication.getSubjects().toArray()));
         var ignoredFields = new String[]{"createdDate", "identifier", "modifiedDate", "publishedDate", "subjects",
-            "associatedArtifacts", "fundings"};
+            "associatedArtifacts", "fundings", "status", "importDetails"};
         assertThat(actualPublication, is(samePropertyValuesAs(expectedPublication, ignoredFields)));
         assertThat(actualPublication.getAssociatedArtifacts(),
                    hasSize(expectedPublication.getAssociatedArtifacts().size()));

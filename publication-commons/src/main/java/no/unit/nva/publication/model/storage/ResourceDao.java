@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
@@ -48,6 +49,7 @@ public class ResourceDao extends Dao
     private static final String STATUS_FIELD = "status";
     private static final String MODIFIED_DATA_FIELD = "modifiedDate";
     private static final String DOI_FIELD = "doi";
+    private static final String IMPORT_DETAILS_FIELD = "importDetails";
 
     @JsonProperty(STATUS_FIELD)
     private PublicationStatus status;
@@ -56,6 +58,8 @@ public class ResourceDao extends Dao
     private Instant modifiedDate;
     @JsonProperty(DOI_FIELD)
     private URI doi;
+    @JsonProperty(IMPORT_DETAILS_FIELD)
+    private List<ImportDetail> importDetails;
     
     public ResourceDao() {
         this(new Resource());
@@ -67,6 +71,7 @@ public class ResourceDao extends Dao
         this.status = resource.getStatus();
         this.modifiedDate = resource.getModifiedDate();
         this.doi = resource.getDoi();
+        this.importDetails = resource.getImportDetails();
     }
     
     public static ResourceDao queryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {

@@ -3,12 +3,15 @@ package no.unit.nva.publication.update;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.ArrayList;
+import java.util.Collection;
 import no.unit.nva.WithAssociatedArtifact;
 import no.unit.nva.WithContext;
 import no.unit.nva.WithIdentifier;
 import no.unit.nva.WithMetadata;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
@@ -37,6 +40,7 @@ public class UpdatePublicationRequest
     private List<URI> subjects;
     private List<Funding> fundings;
     private String rightsHolder;
+    private List<ImportDetail> importDetails;
 
     public Publication generatePublicationUpdate(Publication existingPublication) throws ForbiddenException {
         if (!this.identifier.equals(existingPublication.getIdentifier())) {
@@ -158,9 +162,19 @@ public class UpdatePublicationRequest
     }
 
     @Override
+    public List<ImportDetail> getImportDetails() {
+        return importDetails;
+    }
+
+    @Override
+    public void setImportDetails(Collection<ImportDetail> importDetails) {
+        this.importDetails = new ArrayList<>(importDetails);
+    }
+
+    @Override
     @JacocoGenerated
     public int hashCode() {
-        return Objects.hash(identifier, entityDescription, associatedArtifacts, subjects, context);
+        return Objects.hash(identifier, entityDescription, associatedArtifacts, subjects, context, importDetails);
     }
 
     @Override
@@ -177,7 +191,8 @@ public class UpdatePublicationRequest
                && Objects.equals(entityDescription, that.entityDescription)
                && Objects.equals(associatedArtifacts, that.associatedArtifacts)
                && Objects.equals(subjects, that.subjects)
-               && Objects.equals(context, that.context);
+               && Objects.equals(context, that.context)
+               && Objects.equals(importDetails, that.importDetails);
     }
 }
 

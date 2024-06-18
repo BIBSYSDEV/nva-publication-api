@@ -13,6 +13,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -25,6 +26,8 @@ import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.Identifiable;
 import no.unit.nva.cristin.mapper.nva.NviReport;
 import no.unit.nva.events.models.EventReference;
+import no.unit.nva.model.ImportDetail;
+import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.s3imports.ApplicationConstants;
@@ -138,13 +141,14 @@ public class CristinEntryEventConsumer
                    .map(cristinObject -> generatePublicationRepresentations(cristinObject, eventBody))
                    .map(this::upsertPublication)
                    .orElseThrow(fail -> handleSavingError(fail, eventBody, eventReference));
-
     }
 
     private Publication upsertPublication(PublicationRepresentations publicationRepresentation) {
-        return publicationAlreadyExists(publicationRepresentation)
+        var publication = publicationAlreadyExists(publicationRepresentation)
                    ? performUpdate(publicationRepresentation)
                    : createNew(publicationRepresentation);
+        publication.addImportDetail(new ImportDetail(Instant.now(), ImportSource.CRISTIN));
+        return publication;
     }
 
     private Publication createNew(PublicationRepresentations publicationRepresentation) {
