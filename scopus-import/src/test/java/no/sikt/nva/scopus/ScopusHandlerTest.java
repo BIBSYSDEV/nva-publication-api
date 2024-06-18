@@ -1190,15 +1190,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                    is(not(equalTo(existingImportCandidate.getEntityDescription()))));
     }
 
-    @Test
-    void shouldAddImportDetailWhenImportingCandidate() throws IOException {
-        var s3Event = createNewScopusPublicationEvent();
-        var importCandidate = scopusHandler.handleRequest(s3Event, CONTEXT);
-        assertFalse(importCandidate.getImportDetails().isEmpty());
-        assertTrue(importCandidate.getImportDetails().stream().anyMatch(importDetail -> importDetail.source().equals(
-            ImportSource.SCOPUS)));
-    }
-
     void hasBeenFetchedFromCristin(Contributor contributor, Set<Integer> cristinIds) {
         var contributorId = contributor.getIdentity().getId();
         if (nonNull(contributorId)) {

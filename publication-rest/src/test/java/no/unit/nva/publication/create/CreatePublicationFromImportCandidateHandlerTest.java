@@ -27,6 +27,8 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
@@ -53,6 +55,7 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
@@ -448,6 +451,19 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+    }
+
+    @Test
+    void shouldAddImportDetailWhenCreatingPublicationFromImportingCandidate() throws IOException, NotFoundException {
+        var importCandidate = createPersistedImportCandidate();
+        var request = createRequest(importCandidate);
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var publication = publicationService.getPublicationByIdentifier(getBodyObject(response).getIdentifier());
+
+        assertFalse(publication.getImportDetails().isEmpty());
+        assertTrue(publication.getImportDetails().stream().anyMatch(importDetail -> importDetail.source().equals(
+            ImportSource.SCOPUS)));
     }
 
     private static PublicationResponse getBodyObject(GatewayResponse<PublicationResponse> response)

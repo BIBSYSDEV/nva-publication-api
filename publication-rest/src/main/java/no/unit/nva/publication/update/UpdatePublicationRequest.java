@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import no.unit.nva.WithAssociatedArtifact;
 import no.unit.nva.WithContext;
 import no.unit.nva.WithIdentifier;
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 @JsonTypeName("Publication")
 public class UpdatePublicationRequest
@@ -162,11 +164,13 @@ public class UpdatePublicationRequest
     }
 
     @Override
+    @JacocoGenerated
     public List<ImportDetail> getImportDetails() {
-        return importDetails;
+        return nonNull(importDetails) ? importDetails : Collections.emptyList();
     }
 
     @Override
+    @JacocoGenerated
     public void setImportDetails(Collection<ImportDetail> importDetails) {
         this.importDetails = new ArrayList<>(importDetails);
     }

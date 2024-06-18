@@ -21,6 +21,7 @@ import com.google.common.collect.Lists;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.ImportDetail;
+import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -222,7 +225,14 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setModifiedDate(currentTime);
         newResource.setPublishedDate(currentTime);
         newResource.setStatus(PUBLISHED);
+        injectImportDetail(newResource, currentTime);
         return insertResource(newResource);
+    }
+
+    private void injectImportDetail(Resource resource, Instant currentTime) {
+        var importDetails = new ArrayList<>(resource.getImportDetails());
+        importDetails.add(new ImportDetail(currentTime, ImportSource.SCOPUS));
+        resource.setImportDetails(importDetails);
     }
 
     public void deleteDraftPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
