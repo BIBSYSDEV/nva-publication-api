@@ -22,6 +22,7 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
@@ -77,12 +78,17 @@ public class CristinImportPublicationMerger {
     private Publication mergePublicationsMetadata()
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
         return existingPublication.copy()
-                                         .withAdditionalIdentifiers(mergeAdditionalIdentifiers())
-                                         .withSubjects(determineSubject())
-                                         .withRightsHolder(determineRightsHolder())
-                                         .withEntityDescription(determineEntityDescription())
-                                         .withAssociatedArtifacts(determineAssociatedArtifacts())
-                                         .build();
+                   .withAdditionalIdentifiers(mergeAdditionalIdentifiers())
+                   .withSubjects(determineSubject())
+                   .withRightsHolder(determineRightsHolder())
+                   .withEntityDescription(determineEntityDescription())
+                   .withAssociatedArtifacts(determineAssociatedArtifacts())
+                   .withProjects(determineProjects())
+                   .build();
+    }
+
+    private List<ResearchProject> determineProjects() {
+        return e;
     }
 
     private EntityDescription determineEntityDescription()

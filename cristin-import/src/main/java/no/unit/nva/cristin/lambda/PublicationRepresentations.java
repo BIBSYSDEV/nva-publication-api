@@ -98,7 +98,6 @@ public class PublicationRepresentations {
         var incomingPublication = getIncomingPublication().copy().withModifiedDate(null).withIdentifier(null).build();
         return !existingPublication.equals(incomingPublication);
     }
-
     @JacocoGenerated
     @Override
     public int hashCode() {
