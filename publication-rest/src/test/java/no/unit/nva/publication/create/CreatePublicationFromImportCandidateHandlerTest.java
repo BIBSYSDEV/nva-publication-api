@@ -204,7 +204,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                     s3Client,
                                                     piaClientConfig);
         handler = new CreatePublicationFromImportCandidateHandler(configs);
-        when(publicationService.autoImportPublication(any())).thenThrow(
+        when(publicationService.autoImportPublicationFromScopus(any())).thenThrow(
             new TransactionFailedException(new Exception()));
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);

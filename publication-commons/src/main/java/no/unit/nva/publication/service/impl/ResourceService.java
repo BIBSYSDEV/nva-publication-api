@@ -166,15 +166,15 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public Publication createPublicationFromImportedEntry(Publication inputData, ImportSource importSource) {
+        if (nonNull(importSource)) {
+            inputData.addImportDetail(new ImportDetail(Instant.now(), importSource));
+        }
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
         newResource.setPublishedDate(inputData.getPublishedDate());
         newResource.setCreatedDate(inputData.getCreatedDate());
         newResource.setModifiedDate(inputData.getModifiedDate());
         newResource.setStatus(PUBLISHED);
-        if (importSource != null) {
-            injectImportDetail(newResource, Instant.now(), importSource);
-        }
         return insertResource(newResource);
     }
 
@@ -213,9 +213,10 @@ public class ResourceService extends ServiceWithTransactions {
         return updateResourceService.publishPublication(userInstance, resourceIdentifier);
     }
 
-    public Publication autoImportPublication(ImportCandidate inputData) {
+    public Publication autoImportPublicationFromScopus(ImportCandidate inputData) {
         var publication = inputData.toPublication();
         Instant currentTime = clockForTimestamps.instant();
+        publication.addImportDetail(new ImportDetail(currentTime, ImportSource.SCOPUS));
         var userInstance = UserInstance.fromPublication(publication);
         Resource newResource = Resource.fromPublication(publication);
         newResource.setIdentifier(identifierSupplier.get());
@@ -225,14 +226,7 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setModifiedDate(currentTime);
         newResource.setPublishedDate(currentTime);
         newResource.setStatus(PUBLISHED);
-        injectImportDetail(newResource, currentTime, ImportSource.SCOPUS);
         return insertResource(newResource);
-    }
-
-    private void injectImportDetail(Resource resource, Instant currentTime, ImportSource importSource) {
-        var importDetails = new ArrayList<>(resource.getImportDetails());
-        importDetails.add(new ImportDetail(currentTime, importSource));
-        resource.setImportDetails(importDetails);
     }
 
     public void deleteDraftPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
