@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.storage;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.CRISTIN_IDENTIFIER_INDEX_FIELD_PREFIX;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
@@ -20,7 +21,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -156,6 +159,14 @@ public class ResourceDao extends Dao
 
     public void setDoi(URI doi) {
         this.doi = doi;
+    }
+
+    public List<ImportDetail> getImportDetails() {
+        return nonNull(importDetails) ? importDetails : Collections.emptyList();
+    }
+
+    public void setImportDetails(Collection<ImportDetail> importDetails) {
+        this.importDetails = new ArrayList<>(importDetails);
     }
 
     @Override
