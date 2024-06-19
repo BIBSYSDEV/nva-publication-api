@@ -167,7 +167,6 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
     @Override
     @JacocoGenerated
     public List<ImportDetail> getImportDetails() {
-
         return nonNull(importDetails) ? importDetails : Collections.emptyList();
     }
 
