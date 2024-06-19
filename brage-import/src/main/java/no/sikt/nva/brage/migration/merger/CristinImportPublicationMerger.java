@@ -165,15 +165,15 @@ public class CristinImportPublicationMerger {
         if (existingPublication.getAssociatedArtifacts().isEmpty()) {
             return bragePublicationRepresentation.publication().getAssociatedArtifacts();
         }
-        if (!hasAdministrativeAgreement(existingPublication) && hasAdministrativeAgreement(
-            bragePublicationRepresentation.publication())) {
+
+        if (shouldOverWriteWithBrageArtifacts()) {
+            return keepBrageAssociatedArtifactAndKeepDublinCoreFromExistsing();
+        }
+        if (!hasAdministrativeAgreement(existingPublication)) {
             var administrativeAgreements = extractAdministrativeAgreements(
                 bragePublicationRepresentation.publication());
             existingPublication.getAssociatedArtifacts().addAll(administrativeAgreements);
             return existingPublication.getAssociatedArtifacts();
-        }
-        if (shouldOverWriteWithBrageArtifacts()) {
-            return keepBrageAssociatedArtifactAndKeepDublinCoreFromExistsing();
         }
         return existingPublication.getAssociatedArtifacts();
     }
