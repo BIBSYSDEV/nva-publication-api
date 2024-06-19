@@ -3,19 +3,19 @@ package no.sikt.nva.brage.migration.merger.publicationinstancemerger;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
 
-public final class DegreeLicentiateMerger extends PublicationInstanceMerger{
+public final class DegreeLicentiateMerger extends PublicationInstanceMerger<DegreeLicentiate> {
 
-    private DegreeLicentiateMerger() {
-        super();
+    public DegreeLicentiateMerger(DegreeLicentiate degreeLicentiate) {
+        super(degreeLicentiate);
     }
 
-    public static DegreeLicentiate merge(DegreeLicentiate degreeLicentiate,
-                                         PublicationInstance<?> publicationInstance) {
+    @Override
+    public DegreeLicentiate merge(PublicationInstance<?> publicationInstance) {
         if (publicationInstance instanceof DegreeLicentiate newDegreeBachelor) {
-            return new DegreeLicentiate(getPages(degreeLicentiate.getPages(), newDegreeBachelor.getPages()),
-                                        getDate(degreeLicentiate.getSubmittedDate(), newDegreeBachelor.getSubmittedDate()));
+            return new DegreeLicentiate(getPages(this.publicationInstance.getPages(), newDegreeBachelor.getPages()),
+                                        getDate(this.publicationInstance.getSubmittedDate(), newDegreeBachelor.getSubmittedDate()));
         } else {
-            return degreeLicentiate;
+            return this.publicationInstance;
         }
     }
 }

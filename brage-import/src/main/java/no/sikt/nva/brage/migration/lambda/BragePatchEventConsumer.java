@@ -21,6 +21,7 @@ import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.jetbrains.annotations.NotNull;
@@ -48,6 +49,10 @@ public class BragePatchEventConsumer implements RequestHandler<SQSEvent, Void> {
     private final ResourceService resourceService;
     private final S3Client s3Client;
 
+    @JacocoGenerated
+    public BragePatchEventConsumer() {
+    this(ResourceService.defaultService(), S3Driver.defaultS3Client().build(), new UriRetriever());
+    }
     public BragePatchEventConsumer(ResourceService resourceService, S3Client s3Client, UriRetriever uriRetriever) {
         this.resourceService = resourceService;
         this.s3Client = s3Client;

@@ -2,6 +2,8 @@ package no.sikt.nva.brage.migration.mapper;
 
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anEmptyMap;
+import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -62,6 +64,33 @@ class BrageNvaMapperTest {
         var degreePhd = (DegreePhd) publication.getEntityDescription().getReference().getPublicationInstance();
         var expectedRelatedDocuments = Set.of(new UnconfirmedDocument("1"), new UnconfirmedDocument("2"));
         assertThat(degreePhd.getRelated(), is(equalTo(expectedRelatedDocuments)));
+    }
+
+    @Test
+    void shouldMapFirstAlternativeAbstractAsAbstractAndAllOthersAsAlternativeAbstracts()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var firstAbstract = randomString();
+        var secondAbstract = randomString();
+        var thirdAbstract = randomString();
+        var generator =  new NvaBrageMigrationDataGenerator.Builder()
+                             .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
+                             .withAbstracts(List.of(firstAbstract, secondAbstract, thirdAbstract))
+                             .build();
+        var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord());
+        assertThat(publication.getEntityDescription().getAbstract(), is(equalTo(firstAbstract)));
+        assertThat(publication.getEntityDescription().getAlternativeAbstracts().get("und"),
+                   is(equalTo(secondAbstract + "\n\n" + thirdAbstract)));
+    }
+
+    @Test
+    void shouldNotCreateAlternativeAbstractsWhenSingleAbstractInBrage()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var generator =  new NvaBrageMigrationDataGenerator.Builder()
+                             .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
+                             .withAbstracts(List.of(randomString()))
+                             .build();
+        var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord());
+        assertThat(publication.getEntityDescription().getAlternativeAbstracts(), is(anEmptyMap()));
     }
 
     private ContentFile createRandomContentFileWithBundleType(BundleType bundleType) {

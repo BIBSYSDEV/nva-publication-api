@@ -961,7 +961,6 @@ Resources:
     Properties:
       CodeUri: brage-import
       Handler: no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer::handleRequest
-      ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
       Timeout: 900
       Environment:
@@ -1923,6 +1922,31 @@ Resources:
           Type: SQS
           Properties:
             Queue: !GetAtt CristinImportPatchQueue.Arn
+            BatchSize: 1
+      EventInvokeConfig:
+        MaximumRetryAttempts: 0
+
+  BrageEntriesPatchSqsConsumer:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: brage-import
+      Handler: no.sikt.nva.brage.migration.lambda.BragePatchEventConsumer::handleRequest
+      Timeout: 30
+      Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 1
+      Environment:
+        Variables:
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
+          AWC_ACCOUNT_ID: !Ref AWS::AccountId
+          TABLE_NAME: !Ref NvaResourcesTable
+          BATCH_EMISSION_INTERVAL_MILLIS: 0
+          DOMAIN_NAME: !Ref ApiDomain
+          BRAGE_MIGRATION_ERROR_BUCKET_NAME: !Sub "${BrageMigrationErrorBucketName}-${AWS::AccountId}"
+      Events:
+        SqsEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt BrageImportPatchQueue.Arn
             BatchSize: 1
       EventInvokeConfig:
         MaximumRetryAttempts: 0

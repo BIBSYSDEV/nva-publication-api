@@ -17,6 +17,7 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.report.ConferenceReport;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
@@ -34,17 +35,20 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
     private static final Logger logger = LoggerFactory.getLogger(TitleAndTypePublicationFinder.class);
     private static final String RESOURCES = "resources";
     private static final String SEARCH = "search";
+    public static final String EVENT = "Event";
     private final ResourceService resourceService;
     private final UriRetriever uriRetriever;
     private final String apiHost;
-    private static final int SINGLE_PUBLICATION_SIZE = 1;
+    private final DuplicatePublicationReporter duplicatePublicationReporter;
 
     public TitleAndTypePublicationFinder(ResourceService resourceService,
                                          UriRetriever uriRetriever,
-                                         String apiHost) {
+                                         String apiHost,
+                                         DuplicatePublicationReporter duplicatePublicationReporter) {
         this.resourceService = resourceService;
         this.uriRetriever = uriRetriever;
         this.apiHost = apiHost;
+        this.duplicatePublicationReporter = duplicatePublicationReporter;
     }
 
     @Override
@@ -55,8 +59,12 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
         }
         var potentialExistingPublications = searchForPublicationsByTypeAndTitle(
             publicationRepresentation.publication());
-        if (potentialExistingPublications.size() != SINGLE_PUBLICATION_SIZE) {
+        if (potentialExistingPublications.isEmpty()) {
             return Optional.empty();
+        }
+        if (FindExistingPublicationService.moreThanOneDuplicateFound(potentialExistingPublications)) {
+            duplicatePublicationReporter.reportDuplicatePublications(potentialExistingPublications,
+                                                                            publicationRepresentation.brageRecord(), DuplicateDetectionCause.TITLE_DUPLICATES);
         }
         return Optional.of(new PublicationForUpdate(MergeSource.SEARCH, potentialExistingPublications.getFirst()));
     }
@@ -80,14 +88,13 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
     private List<Publication> searchForPublicationsByTypeAndTitle(Publication publication) {
         var response = fetchResponse(searchByTypeAndTitleUri(publication));
         return response.map(this::toResponse)
-                   .filter(SearchResourceApiResponse::containsSingleHit)
                    .map(SearchResourceApiResponse::hits)
                    .orElse(List.of())
                    .stream()
                    .map(ResourceWithId::getIdentifier)
                    .map(this::getPublicationByIdentifier)
                    .filter(item -> PublicationComparator.publicationsMatch(item, publication))
-                   .collect(Collectors.toList()).reversed();
+                   .toList();
     }
 
     private Publication getPublicationByIdentifier(SortableIdentifier identifier) {
@@ -105,13 +112,26 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
     }
 
     private URI searchByTypeAndTitleUri(Publication publication) {
+        var additionalQueryParam = getAdditionalQueryParam(publication);
+        var searchUri = getStandardSearchUri(publication);
+        return additionalQueryParam.isPresent()
+                   ? searchUri.addQueryParameter(additionalQueryParam.get().name(), additionalQueryParam.get().value()).getUri()
+                   : searchUri.getUri();
+    }
+
+    private UriWrapper getStandardSearchUri(Publication publication) {
         return UriWrapper.fromHost(apiHost)
                    .addChild(SEARCH)
                    .addChild(RESOURCES)
                    .addQueryParameter(TITLE, getMainTitle(publication).get())
                    .addQueryParameter(CONTEXT_TYPE, getInstanceType(publication).get())
-                   .addQueryParameter(AGGREGATION, NONE)
-                   .getUri();
+                   .addQueryParameter(AGGREGATION, NONE);
+    }
+
+    private Optional<QueryParam> getAdditionalQueryParam(Publication publication) {
+        return publication.getEntityDescription().getReference().getPublicationInstance() instanceof ConferenceReport
+            ? Optional.of(new QueryParam(CONTEXT_TYPE, EVENT))
+            : Optional.empty();
     }
 
     private SearchResourceApiResponse toResponse(String response) {

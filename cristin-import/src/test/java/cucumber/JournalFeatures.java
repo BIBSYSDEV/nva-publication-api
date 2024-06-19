@@ -2,10 +2,9 @@ package cucumber;
 
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_CHANNEL_REGISTRY_V2;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
-import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.in;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
@@ -107,6 +106,7 @@ public class JournalFeatures {
                           .getEntityDescription()
                           .getReference()
                           .getPublicationContext();
+        assertThat(context, instanceOf(UnconfirmedJournal.class));
         var journal = (UnconfirmedJournal) context;
         var actualTitle = journal.getTitle();
         assertThat(actualTitle, is(equalTo(expectedTitle)));

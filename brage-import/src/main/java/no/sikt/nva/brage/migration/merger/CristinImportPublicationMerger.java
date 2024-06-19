@@ -2,28 +2,20 @@ package no.sikt.nva.brage.migration.merger;
 
 import static java.util.Objects.nonNull;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.ConferenceReportMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.ReportBasicMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.ReportBookOfAbstractMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.ReportResearchMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.ReportWorkingPaperMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.AnthologyMerger;
-import no.sikt.nva.brage.migration.merger.publicationcontextmerger.GeographicalContentMerger;
-import no.sikt.nva.brage.migration.merger.publicationcontextmerger.ResearchDataMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.BookMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.DegreeMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.EventMerger;
+import no.sikt.nva.brage.migration.merger.publicationcontextmerger.GeographicalContentMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.JournalMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.MediaContributionMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.ReportMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.DegreeBachelorMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.DegreeLicentiateMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.DegreeMasterMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.DegreePhdMerger;
-import no.sikt.nva.brage.migration.merger.publicationinstancemerger.OtherStudentWorkMerger;
+import no.sikt.nva.brage.migration.merger.publicationcontextmerger.ResearchDataMerger;
+import no.sikt.nva.brage.migration.merger.publicationinstancemerger.PublicationInstanceMerger;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
@@ -33,6 +25,9 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
+import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Degree;
@@ -47,16 +42,8 @@ import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.report.ConferenceReport;
-import no.unit.nva.model.instancetypes.report.ReportBasic;
-import no.unit.nva.model.instancetypes.report.ReportBookOfAbstract;
-import no.unit.nva.model.instancetypes.report.ReportResearch;
-import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
-import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
-import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
-import no.unit.nva.model.instancetypes.degree.DegreeMaster;
-import no.unit.nva.model.instancetypes.degree.DegreePhd;
-import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
+
 import no.unit.nva.model.pages.Pages;
 import nva.commons.core.StringUtils;
 
@@ -64,6 +51,7 @@ public class CristinImportPublicationMerger {
 
     public static final String DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS
         = "dummy_handle_unis";
+    public static final String DUBLIN_CORE_XML = "dublin_core.xml";
 
     private final Publication existingPublication;
     private final PublicationRepresentation bragePublicationRepresentation;
@@ -75,18 +63,26 @@ public class CristinImportPublicationMerger {
 
     public Publication mergePublications()
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
-        preMergeValidation();
-        var publicationForUpdating = existingPublication.copy()
+        return PreMergeValidator.shouldNotMergeMetadata(bragePublicationRepresentation, existingPublication)
+                   ? injectBrageHandleOnly()
+                   : mergePublicationsMetadata();
+    }
+
+    private Publication injectBrageHandleOnly() {
+        return existingPublication.copy()
+                   .withAdditionalIdentifiers(mergeAdditionalIdentifiers())
+                   .build();
+    }
+
+    private Publication mergePublicationsMetadata()
+        throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
+        return existingPublication.copy()
                                          .withAdditionalIdentifiers(mergeAdditionalIdentifiers())
                                          .withSubjects(determineSubject())
                                          .withRightsHolder(determineRightsHolder())
                                          .withEntityDescription(determineEntityDescription())
+                                         .withAssociatedArtifacts(determineAssociatedArtifacts())
                                          .build();
-        return fillNewPublicationWithMetadataFromBrage(publicationForUpdating);
-    }
-
-    private void preMergeValidation() {
-        PreMergeValidator.validate(existingPublication);
     }
 
     private EntityDescription determineEntityDescription()
@@ -94,6 +90,8 @@ public class CristinImportPublicationMerger {
         return existingPublication.getEntityDescription().copy()
                    .withContributors(determineContributors())
                    .withReference(determineReference())
+                   .withDescription(getCorrectDescription())
+                   .withAbstract(getCorrectAbstract())
                    .build();
     }
 
@@ -116,19 +114,7 @@ public class CristinImportPublicationMerger {
         var publicationInstance = reference.getPublicationInstance();
         var newPublicationInstance =
             bragePublicationRepresentation.publication().getEntityDescription().getReference().getPublicationInstance();
-        return switch (publicationInstance) {
-            case DegreePhd degreePhd -> DegreePhdMerger.merge(degreePhd, newPublicationInstance);
-            case DegreeBachelor degreeBachelor -> DegreeBachelorMerger.merge(degreeBachelor, newPublicationInstance);
-            case DegreeMaster degreeMaster -> DegreeMasterMerger.merge(degreeMaster, newPublicationInstance);
-            case DegreeLicentiate degreeLicentiate -> DegreeLicentiateMerger.merge(degreeLicentiate, newPublicationInstance);
-            case OtherStudentWork otherStudentWork -> OtherStudentWorkMerger.merge(otherStudentWork, newPublicationInstance);
-            case ConferenceReport conferenceReport -> ConferenceReportMerger.merge(conferenceReport, newPublicationInstance);
-            case ReportResearch reportResearch -> ReportResearchMerger.merge(reportResearch, newPublicationInstance);
-            case ReportWorkingPaper reportWorkingPaper -> ReportWorkingPaperMerger.merge(reportWorkingPaper, newPublicationInstance);
-            case ReportBookOfAbstract reportBookOfAbstract -> ReportBookOfAbstractMerger.merge(reportBookOfAbstract, newPublicationInstance);
-            case ReportBasic reportBasic -> ReportBasicMerger.merge(reportBasic, newPublicationInstance);
-            default -> publicationInstance;
-        };
+        return PublicationInstanceMerger.of(publicationInstance).merge(newPublicationInstance);
     }
 
     private URI determineDoi(Reference reference) {
@@ -175,33 +161,75 @@ public class CristinImportPublicationMerger {
         return additionalIdentifiers;
     }
 
-    private Publication fillNewPublicationWithMetadataFromBrage(Publication publicationForUpdating) {
-        publicationForUpdating.getEntityDescription().setDescription(getCorrectDescription());
-        publicationForUpdating.getEntityDescription().setAbstract(getCorrectAbstract());
-        publicationForUpdating.setAssociatedArtifacts(determineAssociatedArtifacts());
-        return publicationForUpdating;
-    }
-
     private AssociatedArtifactList determineAssociatedArtifacts() {
         if (existingPublication.getAssociatedArtifacts().isEmpty()) {
             return bragePublicationRepresentation.publication().getAssociatedArtifacts();
         }
-        if (!hasAdministrativeAgreement(existingPublication) && hasAdministrativeAgreement(bragePublicationRepresentation.publication())) {
-            var administrativeAgreements = extractAdministrativeAgreements(bragePublicationRepresentation.publication());
+        if (!hasAdministrativeAgreement(existingPublication) && hasAdministrativeAgreement(
+            bragePublicationRepresentation.publication())) {
+            var administrativeAgreements = extractAdministrativeAgreements(
+                bragePublicationRepresentation.publication());
             existingPublication.getAssociatedArtifacts().addAll(administrativeAgreements);
             return existingPublication.getAssociatedArtifacts();
         }
-        if (shouldUseBrageArtifacts()) {
-            return bragePublicationRepresentation.publication().getAssociatedArtifacts();
-        } else {
-            return existingPublication.getAssociatedArtifacts();
+        if (shouldOverWriteWithBrageArtifacts()) {
+            return keepBrageAssociatedArtifactAndKeepDublinCoreFromExistsing();
         }
+        return existingPublication.getAssociatedArtifacts();
     }
 
-    private boolean shouldUseBrageArtifacts() {
-        return bragePublicationHasAssociatedArtifacts()
-               && (existingPublication.getAssociatedArtifacts().isEmpty()
-                   || hasTheSameHandle());
+    private AssociatedArtifactList keepBrageAssociatedArtifactAndKeepDublinCoreFromExistsing() {
+        var associatedArtifacts = new ArrayList<>(bragePublicationRepresentation.publication().getAssociatedArtifacts());
+        var dublinCoresFromExisting = extractDublinCores(existingPublication.getAssociatedArtifacts());
+        associatedArtifacts.addAll(dublinCoresFromExisting);
+        return new AssociatedArtifactList(associatedArtifacts);
+    }
+
+    private List<File> extractDublinCores(AssociatedArtifactList associatedArtifacts) {
+        return associatedArtifacts.stream().filter(a -> a instanceof File)
+                   .map(a -> (File) a)
+                   .filter(file -> DUBLIN_CORE_XML.equals(file.getName()))
+                   .toList();
+    }
+
+    private boolean shouldOverWriteWithBrageArtifacts() {
+        return bragePublicationHasAssociatedArtifacts() && (hasTheSameHandle() || academicArticleRulesApply());
+    }
+
+    private boolean academicArticleRulesApply() {
+        return isAcademicArticle()
+               && noneOfTheExistingFilesArePublishedVersion(extractPublishedFiles(existingPublication))
+               && brageFileIsPublishedVersion(extractPublishedFiles(bragePublicationRepresentation.publication()));
+    }
+
+    private List<PublishedFile> extractPublishedFiles(Publication publication) {
+        return publication.getAssociatedArtifacts()
+                   .stream()
+                   .filter(associatedArtifact -> associatedArtifact instanceof File)
+                   .map(associatedArtifact -> (File) associatedArtifact)
+                   .filter(PublishedFile.class::isInstance)
+                   .map(PublishedFile.class::cast)
+                   .toList();
+    }
+
+    private boolean brageFileIsPublishedVersion(List<PublishedFile> publishedFiles) {
+        return publishedFiles
+                   .stream()
+                   .map(File::getPublisherVersion)
+                   .anyMatch(PublisherVersion.PUBLISHED_VERSION::equals);
+    }
+
+    private boolean noneOfTheExistingFilesArePublishedVersion(List<PublishedFile> publishedFiles) {
+        return publishedFiles
+                   .stream()
+                   .noneMatch(publishedFile -> PublisherVersion.PUBLISHED_VERSION == publishedFile.getPublisherVersion());
+    }
+
+    private boolean isAcademicArticle() {
+        return existingPublication.getEntityDescription()
+                        .getReference()
+                        .getPublicationInstance() instanceof AcademicArticle;
+
     }
 
     private boolean bragePublicationHasAssociatedArtifacts() {

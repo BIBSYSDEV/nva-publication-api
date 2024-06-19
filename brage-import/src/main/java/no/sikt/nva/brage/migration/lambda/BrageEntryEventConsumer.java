@@ -19,6 +19,7 @@ import no.sikt.nva.brage.migration.merger.BrageMergingReport;
 import no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger;
 import no.sikt.nva.brage.migration.merger.DiscardedFilesReport;
 import no.sikt.nva.brage.migration.merger.UnmappableCristinRecordException;
+import no.sikt.nva.brage.migration.merger.findexistingpublication.DuplicatePublicationReporter;
 import no.sikt.nva.brage.migration.merger.findexistingpublication.FindExistingPublicationServiceImpl;
 import no.sikt.nva.brage.migration.model.PublicationForUpdate;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
@@ -96,7 +97,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
     private PublicationRepresentation persistMetadataChange(S3Event s3Event,
                                                             PublicationRepresentation publicationRepresentation) {
-        var publicationForUpdateOptional = findExistingPublication(publicationRepresentation);
+        var publicationForUpdateOptional = findExistingPublication(s3Event ,publicationRepresentation);
         return publicationForUpdateOptional.map(
                 publicationForUpdate -> attemptToUpdateExistingPublication(publicationRepresentation,
                                                                            s3Event,
@@ -104,9 +105,10 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                    .orElseGet(() -> createNewPublication(publicationRepresentation, s3Event));
     }
 
-    private Optional<PublicationForUpdate> findExistingPublication(
+    private Optional<PublicationForUpdate> findExistingPublication(S3Event event,
         PublicationRepresentation publicationRepresentation) {
-        var publicationFinderService = new FindExistingPublicationServiceImpl(resourceService, uriRetriever, apiHost);
+        var duplicatePublicationReporter = new DuplicatePublicationReporter(s3Client, extractBucketName(event) );
+        var publicationFinderService = new FindExistingPublicationServiceImpl(resourceService, uriRetriever, apiHost, duplicatePublicationReporter);
         return publicationFinderService.findExistingPublication(publicationRepresentation);
     }
 

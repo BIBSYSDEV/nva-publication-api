@@ -1,5 +1,6 @@
 package cucumber.features;
 
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
@@ -18,6 +19,10 @@ import java.util.List;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.contexttypes.UnconfirmedJournal;
+import no.unit.nva.model.exceptions.InvalidIssnException;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
+import no.unit.nva.model.pages.Range;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 
@@ -111,6 +116,19 @@ public class FileMergerFeatures {
     public void theMergedNvaPublicationHasANullHandle() {
         var mergedPublication = scenarioContext.getMergedPublication();
         assertThat(mergedPublication.getHandle(), is(nullValue()));
+    }
+
+    @And("both the publication instance is academic article")
+    public void bothThePublicationInstanceIsAcademicArticle() throws InvalidIssnException {
+        var academicArticle = new AcademicArticle(new Range(null, null), "1", "1", "1");
+        var journal = new UnconfirmedJournal(randomString(), null, null);
+        var bragePublication = scenarioContext.getBragePublication();
+        bragePublication.publication().getEntityDescription().getReference().setPublicationInstance(academicArticle);
+        bragePublication.publication().getEntityDescription().getReference().setPublicationContext(journal);
+
+        var nvaPublication = scenarioContext.getNvaPublication();
+        nvaPublication.getEntityDescription().getReference().setPublicationInstance(academicArticle);
+        nvaPublication.getEntityDescription().getReference().setPublicationContext(journal);
     }
 
     private static URI createHandleFromCandidate(String candidate) {

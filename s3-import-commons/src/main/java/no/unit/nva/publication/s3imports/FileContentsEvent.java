@@ -104,6 +104,10 @@ public class FileContentsEvent<T> implements JsonSerializable {
     public EventReference toCristinNviEventReference() {
         return new EventReference(getTopic(), getSubtopic(), this.fileUri, timestamp);
     }
+
+    public EventReference toBragePatchEventReference() {
+        return new EventReference(getTopic(), getSubtopic(), this.fileUri, timestamp);
+    }
     
     private static <T> JavaType constructJavaType(Class<T> contentsClass) {
         return s3ImportsMapper.getTypeFactory().constructParametricType(FileContentsEvent.class, contentsClass);
