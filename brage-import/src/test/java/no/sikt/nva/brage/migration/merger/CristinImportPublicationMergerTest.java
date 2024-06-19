@@ -212,10 +212,10 @@ class CristinImportPublicationMergerTest {
     }
 
     @Test
-    void shouldUseIncomingPublicationsProjectsWhenExistingPublicationMissesProjects()
+    void shouldUseIncomingPublicationsFundingsWhenExistingPublicationMissesProjects()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var existingPublication = randomPublication(Map.class);
-        existingPublication.setProjects(List.of());
+        existingPublication.setFundings(List.of());
         var bragePublication = randomPublication(Map.class);
         var updatedPublication = mergePublications(existingPublication, bragePublication);
 

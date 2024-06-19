@@ -22,7 +22,6 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
-import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
@@ -42,9 +41,9 @@ import no.unit.nva.model.contexttypes.ResearchData;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
+import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
-
 import no.unit.nva.model.pages.Pages;
 import nva.commons.core.StringUtils;
 
@@ -83,14 +82,14 @@ public class CristinImportPublicationMerger {
                    .withRightsHolder(determineRightsHolder())
                    .withEntityDescription(determineEntityDescription())
                    .withAssociatedArtifacts(determineAssociatedArtifacts())
-                   .withProjects(determineProjects())
+                   .withFundings(determineFundings())
                    .build();
     }
 
-    private List<ResearchProject> determineProjects() {
-        return existingPublication.getProjects().isEmpty()
-            ? bragePublicationRepresentation.publication().getProjects()
-            : existingPublication.getProjects();
+    private List<Funding> determineFundings() {
+        return existingPublication.getFundings().isEmpty()
+            ? bragePublicationRepresentation.publication().getFundings()
+            : existingPublication.getFundings();
     }
 
     private EntityDescription determineEntityDescription()

@@ -69,7 +69,7 @@ public abstract class PublicationInstanceMerger<T extends PublicationInstance<?>
         };
     }
 
-    public abstract T merge(PublicationInstance<?> newInstance);
+    public abstract T merge(PublicationInstance<? extends Pages> newInstance);
 
     public static MonographPages getPages(MonographPages pages, MonographPages bragePages) {
         return nonNull(pages) ? pages : bragePages;
