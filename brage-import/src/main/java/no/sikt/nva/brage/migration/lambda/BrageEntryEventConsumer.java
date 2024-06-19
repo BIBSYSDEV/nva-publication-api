@@ -334,7 +334,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
     private PublicationRepresentation createPublication(PublicationRepresentation publicationRepresentation) {
         var updatedPublication =
-            resourceService.createPublicationFromImportedEntry(publicationRepresentation.publication());
+            resourceService.createPublicationFromImportedEntry(publicationRepresentation.publication(), ImportSource.BRAGE);
         return new PublicationRepresentation(publicationRepresentation.brageRecord(), updatedPublication);
     }
 
@@ -381,7 +381,6 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         throws JsonProcessingException, InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var brageRecord = getBrageRecordFromS3(event);
         var nvaPublication = BrageNvaMapper.toNvaPublication(brageRecord);
-        nvaPublication.addImportDetail(new ImportDetail(Instant.now(), ImportSource.BRAGE));
         return new PublicationRepresentation(brageRecord, nvaPublication);
     }
 

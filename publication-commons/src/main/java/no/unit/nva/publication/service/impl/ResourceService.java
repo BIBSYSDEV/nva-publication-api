@@ -21,7 +21,6 @@ import com.google.common.collect.Lists;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -168,13 +167,16 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResource(newResource);
     }
 
-    public Publication createPublicationFromImportedEntry(Publication inputData) {
+    public Publication createPublicationFromImportedEntry(Publication inputData, ImportSource importSource) {
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
         newResource.setPublishedDate(inputData.getPublishedDate());
         newResource.setCreatedDate(inputData.getCreatedDate());
         newResource.setModifiedDate(inputData.getModifiedDate());
         newResource.setStatus(PUBLISHED);
+        if (importSource != null) {
+            injectImportDetail(newResource, Instant.now(), importSource);
+        }
         return insertResource(newResource);
     }
 
@@ -225,13 +227,13 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setModifiedDate(currentTime);
         newResource.setPublishedDate(currentTime);
         newResource.setStatus(PUBLISHED);
-        injectImportDetail(newResource, currentTime);
+        injectImportDetail(newResource, currentTime, ImportSource.SCOPUS);
         return insertResource(newResource);
     }
 
-    private void injectImportDetail(Resource resource, Instant currentTime) {
+    private void injectImportDetail(Resource resource, Instant currentTime, ImportSource importSource) {
         var importDetails = new ArrayList<>(resource.getImportDetails());
-        importDetails.add(new ImportDetail(currentTime, ImportSource.SCOPUS));
+        importDetails.add(new ImportDetail(currentTime, importSource));
         resource.setImportDetails(importDetails);
     }
 

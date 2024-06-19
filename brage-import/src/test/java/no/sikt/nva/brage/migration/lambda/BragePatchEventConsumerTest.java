@@ -21,6 +21,7 @@ import no.sikt.nva.brage.migration.record.Customer;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
@@ -131,7 +132,7 @@ class BragePatchEventConsumerTest extends ResourcesLocalTest {
     private PartOfReport persistChildAndPartOfReportWithIsbn(String isbn) {
         var publication = randomPublication(NonFictionChapter.class);
         publication.getEntityDescription().getReference().setPublicationContext(new Anthology());
-        var persistedPublication = resourceService.createPublicationFromImportedEntry(publication);
+        var persistedPublication = resourceService.createPublicationFromImportedEntry(publication, ImportSource.BRAGE);
         var record = recordWithIsbn(isbn);
         var partOfReport = new PartOfReport(persistedPublication, record);
         partOfReport.persist(s3Client, TIME_STAMP);
@@ -154,7 +155,7 @@ class BragePatchEventConsumerTest extends ResourcesLocalTest {
         var book = new Book(context.getSeries(), context.getSeriesNumber(), context.getPublisher(), List.of(isbn),
                             context.getRevision());
         publication.getEntityDescription().getReference().setPublicationContext(book);
-        return resourceService.createPublicationFromImportedEntry(publication);
+        return resourceService.createPublicationFromImportedEntry(publication, ImportSource.BRAGE);
     }
 
     private SQSEvent createSqsEvent(URI location) {

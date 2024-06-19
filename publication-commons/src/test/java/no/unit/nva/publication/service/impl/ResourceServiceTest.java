@@ -74,6 +74,7 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationNote;
@@ -213,12 +214,15 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                    .withCuratingInstitutions(null)
                                    .withStatus(PUBLISHED)
                                    .build();
-        var savedPublicationIdentifier = resourceService.createPublicationFromImportedEntry(inputPublication)
+        var savedPublicationIdentifier = resourceService
+                                             .createPublicationFromImportedEntry(inputPublication, ImportSource.CRISTIN)
                                              .getIdentifier();
         var savedPublication = resourceService.getPublicationByIdentifier(savedPublicationIdentifier);
 
-        // inject publicationIdentifier for making the inputPublication and the savedPublication equal.
+        // inject publicationIdentifier and importDetails for making the inputPublication and the savedPublication
+        // equal.
         inputPublication.setIdentifier(savedPublicationIdentifier);
+        inputPublication.setImportDetails(savedPublication.getImportDetails());
 
         assertThat(savedPublication, is(equalTo(inputPublication)));
         assertThat(savedPublication.getStatus(), is(equalTo(PUBLISHED)));

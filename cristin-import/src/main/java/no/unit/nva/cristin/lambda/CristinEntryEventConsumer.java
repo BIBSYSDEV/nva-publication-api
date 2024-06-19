@@ -144,11 +144,9 @@ public class CristinEntryEventConsumer
     }
 
     private Publication upsertPublication(PublicationRepresentations publicationRepresentation) {
-        var publication = publicationAlreadyExists(publicationRepresentation)
+        return publicationAlreadyExists(publicationRepresentation)
                    ? performUpdate(publicationRepresentation)
                    : createNew(publicationRepresentation);
-        publication.addImportDetail(new ImportDetail(Instant.now(), ImportSource.CRISTIN));
-        return publication;
     }
 
     private Publication createNew(PublicationRepresentations publicationRepresentation) {
@@ -371,7 +369,7 @@ public class CristinEntryEventConsumer
     }
 
     private Publication createPublication(Publication publication) {
-        return resourceService.createPublicationFromImportedEntry(publication);
+        return resourceService.createPublicationFromImportedEntry(publication, ImportSource.CRISTIN);
     }
 
     private void avoidCongestionInDatabase() {

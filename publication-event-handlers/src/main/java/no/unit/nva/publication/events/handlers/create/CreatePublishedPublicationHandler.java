@@ -68,7 +68,7 @@ public class CreatePublishedPublicationHandler extends EventHandler<EventReferen
     }
     
     private Publication storeAsPublishedPublication(Publication publication) {
-        return resourceService.createPublicationFromImportedEntry(publication);
+        return resourceService.createPublicationFromImportedEntry(publication, null);
     }
     
     private String readEventBodyFromS3(EventReference eventBody) {

@@ -730,7 +730,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     private Publication persistPublicationWithCristinId(Integer id, Class<?> instance) {
         var publication = randomPublication(instance);
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", id.toString())));
-        return resourceService.createPublicationFromImportedEntry(publication);
+        return resourceService.createPublicationFromImportedEntry(publication, ImportSource.CRISTIN);
     }
 
     private Publication persistEmptyPublicationWithCristinId(Integer id) {
@@ -742,7 +742,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         publication.setEntityDescription(new EntityDescription().copy().withReference(new Reference()).build());
         publication.setProjects(null);
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", id.toString())));
-        return resourceService.createPublicationFromImportedEntry(publication);
+        return resourceService.createPublicationFromImportedEntry(publication, ImportSource.CRISTIN);
     }
 
     @Test
@@ -1148,7 +1148,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     private ResourceService resourceServiceThrowingExceptionWhenSavingResource() {
         var resourceService = spy(getResourceServiceBuilder().build());
         doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE)).when(resourceService)
-            .createPublicationFromImportedEntry(any());
+            .createPublicationFromImportedEntry(any(), any());
         return resourceService;
     }
 }
