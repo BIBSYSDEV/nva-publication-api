@@ -6,8 +6,11 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import java.util.List;
 import java.util.Set;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.sikt.nva.brage.migration.record.Record;
@@ -30,7 +33,6 @@ import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.Map;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
-import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.media.MediaInterview;
@@ -207,6 +209,17 @@ class CristinImportPublicationMergerTest {
 
         var researchData = (GeographicalContent) updatedPublication.getEntityDescription().getReference().getPublicationContext();
         assertThat(researchData.getPublisher(), is(instanceOf(Publisher.class)));
+    }
+
+    @Test
+    void shouldUseIncomingPublicationsProjectsWhenExistingPublicationMissesProjects()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var existingPublication = randomPublication(Map.class);
+        existingPublication.setProjects(List.of());
+        var bragePublication = randomPublication(Map.class);
+        var updatedPublication = mergePublications(existingPublication, bragePublication);
+
+        assertThat(updatedPublication.getProjects(), is(not(emptyIterable())));
     }
 
     private PublicationContext emptyUnconfirmedJournal() throws InvalidIssnException {

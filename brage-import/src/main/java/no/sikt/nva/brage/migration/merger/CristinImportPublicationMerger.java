@@ -88,7 +88,9 @@ public class CristinImportPublicationMerger {
     }
 
     private List<ResearchProject> determineProjects() {
-        return e;
+        return existingPublication.getProjects().isEmpty()
+            ? bragePublicationRepresentation.publication().getProjects()
+            : existingPublication.getProjects();
     }
 
     private EntityDescription determineEntityDescription()
