@@ -19,6 +19,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.ImportSource;
+import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.TestDataSource;
@@ -35,7 +36,7 @@ public final class DaoUtils extends TestDataSource {
     public static Resource sampleResource(Publication publication) {
         var additionalIdentifier = Set.of(new AdditionalIdentifier(CRISTIN_SOURCE, randomString()));
         publication.setAdditionalIdentifiers(additionalIdentifier);
-        publication.setImportDetails(List.of(new ImportDetail(Instant.now(), ImportSource.CRISTIN)));
+        publication.setImportDetails(List.of(new ImportDetail(Instant.now(), ImportSource.fromSource(Source.CRISTIN))));
         return Resource.fromPublication(publication);
     }
     

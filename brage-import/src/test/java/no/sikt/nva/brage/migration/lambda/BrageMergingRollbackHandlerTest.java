@@ -104,7 +104,7 @@ public class BrageMergingRollbackHandlerTest extends ResourcesLocalTest {
     void shouldStoreExceptionWhenPublicationHasBeenModifiedSinceBrageMerging() throws IOException {
         var oldImage = PublicationGenerator.randomPublication();
         var newImageInReport = resourceService.createPublicationFromImportedEntry(
-            PublicationGenerator.randomPublication(), ImportSource.BRAGE);
+            PublicationGenerator.randomPublication(), ImportSource.fromBrageArchive(randomString()));
         var updatedAfterMerge = newImageInReport.copy().withDoi(randomDoi()).build();
         resourceService.updatePublication(updatedAfterMerge);
 
@@ -122,7 +122,7 @@ public class BrageMergingRollbackHandlerTest extends ResourcesLocalTest {
     void dummyTestShouldDoNothingWhenProcessingAPublication() throws IOException {
         var oldImage = PublicationGenerator.randomPublication();
         var newImageInReport = resourceService.createPublicationFromImportedEntry(
-            PublicationGenerator.randomPublication(), ImportSource.BRAGE);
+            PublicationGenerator.randomPublication(), ImportSource.fromBrageArchive(randomString()));
         var mergeReport = new BrageMergingReport(oldImage, newImageInReport);
         var eventReference = createEventReference(mergeReport.toString());
         var awsEventBridgeEvent = createAwsEventBridgeEvent(eventReference);
@@ -132,7 +132,7 @@ public class BrageMergingRollbackHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldRollbackPublicationInDatabaseWhenReportPassesChecks() throws IOException, NotFoundException {
         var newImageInReport = resourceService.createPublicationFromImportedEntry(
-            PublicationGenerator.randomPublication(), ImportSource.BRAGE);
+            PublicationGenerator.randomPublication(), ImportSource.fromBrageArchive(randomString()));
         var oldImageInReport = createFromNewImage(newImageInReport);
         var mergeReport = new BrageMergingReport(oldImageInReport, newImageInReport);
 
@@ -149,7 +149,7 @@ public class BrageMergingRollbackHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldPersistRollbackReportWhenPublicationWasRolledBackInDatabase() throws IOException {
         var newImageInReport = resourceService.createPublicationFromImportedEntry(
-            PublicationGenerator.randomPublication(), ImportSource.BRAGE);
+            PublicationGenerator.randomPublication(), ImportSource.fromBrageArchive(randomString()));
         var oldImageInReport = createFromNewImage(newImageInReport);
         var mergeReport = new BrageMergingReport(oldImageInReport, newImageInReport);
 

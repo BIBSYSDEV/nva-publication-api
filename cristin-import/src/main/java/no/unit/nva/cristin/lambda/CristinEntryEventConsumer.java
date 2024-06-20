@@ -26,6 +26,7 @@ import no.unit.nva.cristin.mapper.Identifiable;
 import no.unit.nva.cristin.mapper.nva.NviReport;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.ImportSource;
+import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.s3imports.ApplicationConstants;
@@ -367,7 +368,7 @@ public class CristinEntryEventConsumer
     }
 
     private Publication createPublication(Publication publication) {
-        return resourceService.createPublicationFromImportedEntry(publication, ImportSource.CRISTIN);
+        return resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromSource(Source.CRISTIN));
     }
 
     private void avoidCongestionInDatabase() {

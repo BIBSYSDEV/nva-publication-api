@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.ImportSource;
+import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -216,7 +217,7 @@ public class ResourceService extends ServiceWithTransactions {
     public Publication autoImportPublicationFromScopus(ImportCandidate inputData) {
         var publication = inputData.toPublication();
         Instant currentTime = clockForTimestamps.instant();
-        publication.addImportDetail(new ImportDetail(currentTime, ImportSource.SCOPUS));
+        publication.addImportDetail(ImportDetail.fromSource(Source.SCOPUS, currentTime));
         var userInstance = UserInstance.fromPublication(publication);
         Resource newResource = Resource.fromPublication(publication);
         newResource.setIdentifier(identifierSupplier.get());

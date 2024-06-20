@@ -94,7 +94,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
     private PublicationRepresentation persistMetadataChange(S3Event s3Event,
                                                             PublicationRepresentation publicationRepresentation) {
-        var publicationForUpdateOptional = findExistingPublication(s3Event ,publicationRepresentation);
+        var publicationForUpdateOptional = findExistingPublication(s3Event, publicationRepresentation);
         return publicationForUpdateOptional.map(
                 publicationForUpdate -> attemptToUpdateExistingPublication(publicationRepresentation,
                                                                            s3Event,
@@ -103,9 +103,10 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private Optional<PublicationForUpdate> findExistingPublication(S3Event event,
-        PublicationRepresentation publicationRepresentation) {
-        var duplicatePublicationReporter = new DuplicatePublicationReporter(s3Client, extractBucketName(event) );
-        var publicationFinderService = new FindExistingPublicationServiceImpl(resourceService, uriRetriever, apiHost, duplicatePublicationReporter);
+                                                                   PublicationRepresentation publicationRepresentation) {
+        var duplicatePublicationReporter = new DuplicatePublicationReporter(s3Client, extractBucketName(event));
+        var publicationFinderService = new FindExistingPublicationServiceImpl(resourceService, uriRetriever, apiHost,
+                                                                              duplicatePublicationReporter);
         return publicationFinderService.findExistingPublication(publicationRepresentation);
     }
 
@@ -240,7 +241,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                                            Publication existingPublication)
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
         var cristinImportPublicationMerger = new CristinImportPublicationMerger(existingPublication,
-            publicationRepresentation);
+                                                                                publicationRepresentation);
         return cristinImportPublicationMerger.mergePublications();
     }
 
@@ -333,7 +334,12 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
     private PublicationRepresentation createPublication(PublicationRepresentation publicationRepresentation) {
         var updatedPublication =
-            resourceService.createPublicationFromImportedEntry(publicationRepresentation.publication(), ImportSource.BRAGE);
+            resourceService.createPublicationFromImportedEntry(publicationRepresentation.publication(),
+                                                               ImportSource.fromBrageArchive(
+                                                                   publicationRepresentation
+                                                                       .brageRecord()
+                                                                       .getCustomer()
+                                                                       .getName()));
         return new PublicationRepresentation(publicationRepresentation.brageRecord(), updatedPublication);
     }
 

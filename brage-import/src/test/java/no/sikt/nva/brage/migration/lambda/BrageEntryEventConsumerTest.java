@@ -23,8 +23,6 @@ import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.NOT_SU
 import static no.sikt.nva.brage.migration.merger.AssociatedArtifactMover.COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE;
 import static no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger.DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
-import static no.unit.nva.model.ImportSource.BRAGE;
-import static no.unit.nva.model.ImportSource.CRISTIN;
 import static no.unit.nva.model.testing.PublicationGenerator.randomAdditionalIdentifier;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
@@ -50,7 +48,8 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.junit.Assert.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.AssertionsKt.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
@@ -116,6 +115,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.ImportSource;
+import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.UnconfirmedCourse;
@@ -350,7 +350,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         cristinPublication.getEntityDescription().setAbstract(null);
         cristinPublication.setHandle(null);
         cristinPublication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("cristin", "123456")));
-        resourceService.createPublicationFromImportedEntry(cristinPublication, BRAGE);
+        resourceService.createPublicationFromImportedEntry(cristinPublication, ImportSource.fromBrageArchive(randomString()));
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
         assertThat(actualPublication.publication().getEntityDescription().getDescription(),
@@ -379,7 +379,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         cristinPublication.getEntityDescription().setAbstract(cristinAbstract);
         cristinPublication.setHandle(null);
         cristinPublication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier(CRISTIN_SOURCE, "123456")));
-        var existingPublication = resourceService.createPublicationFromImportedEntry(cristinPublication, CRISTIN);
+        var existingPublication = resourceService.createPublicationFromImportedEntry(cristinPublication,
+                                                                                     ImportSource.fromSource(Source.CRISTIN));
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
         assertThat(actualPublication.publication().getIdentifier(), is(equalTo(existingPublication.getIdentifier())));
@@ -924,7 +925,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)));
         publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder().withYear("2022").build());
         publication.getEntityDescription().setMainTitle("Dynamic - Response of Floating Wind Turbines! Report");
-        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, BRAGE);
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromBrageArchive(randomString()));
         var instanceType = existingPublication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
         var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
@@ -980,7 +981,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)));
         publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder().withYear("2022").build());
         publication.getEntityDescription().setMainTitle("Dynamic - Response of Floating Wind Turbines! Report");
-        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, BRAGE);
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromBrageArchive(randomString()));
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
         var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
                                                "ARTIST", null, List.of());
@@ -1007,7 +1008,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)));
         publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder().withYear("2022").build());
         publication.getEntityDescription().setMainTitle("Dynamic - Response of Floating Wind Turbines! Report");
-        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, BRAGE);
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromBrageArchive(randomString()));
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
         var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
                                                "ARTIST", null, List.of());
@@ -1037,7 +1038,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                                                            List.of(), null));
         publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder().withYear("2022").build());
         publication.getEntityDescription().setMainTitle("Dynamic - Response of Floating Wind Turbines! Report");
-        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, BRAGE);
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromBrageArchive(randomString()));
         var instanceType = existingPublication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
         var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
@@ -1074,7 +1075,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                                                            List.of(), null));
         publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder().withYear("2022").build());
         publication.getEntityDescription().setMainTitle("Dynamic - Response of Floating Wind Turbines! Report");
-        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, BRAGE);
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromBrageArchive(randomString()));
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
         var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
                                                "ARTIST", null, List.of());
@@ -1112,7 +1113,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                                                            List.of(), null));
         publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder().withYear("2022").build());
         publication.getEntityDescription().setMainTitle("Dynamic - Response of Floating Wind Turbines! Report");
-        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, BRAGE);
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromBrageArchive(randomString()));
         var instanceType = existingPublication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
         var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
@@ -1347,7 +1348,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         publication.getEntityDescription().getReference().setDoi(null);
         publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder().withYear("2022").build());
         publication.getEntityDescription().setMainTitle("Dynamic - Response of Floating Wind Turbines! Report");
-        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, BRAGE);
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromBrageArchive(randomString()));
         var instanceType = existingPublication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
         var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
@@ -1382,7 +1383,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder().withYear("2022").build());
         publication.getEntityDescription().setMainTitle("Dynamic - Response of Floating Wind Turbines! Report");
         publication.setHandle(null);
-        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, BRAGE);
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromBrageArchive(randomString()));
         var instanceType = existingPublication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
         var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
@@ -1420,12 +1421,12 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         publication.getEntityDescription().setMainTitle("Dynamic - Response of Floating Wind Turbines! Report");
         publication.getEntityDescription().getReference().setDoi(doi);
         publication.setHandle(null);
-        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, BRAGE);
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromBrageArchive(randomString()));
         var instanceType = existingPublication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
         var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
                                                "ARTIST", null, List.of());
-        resourceService.createPublicationFromImportedEntry(existingPublication, BRAGE);
+        resourceService.createPublicationFromImportedEntry(existingPublication, ImportSource.fromBrageArchive(randomString()));
         assertThat(existingPublication.getHandle(), is(nullValue()));
 
         var listOfExistingPublications =
@@ -1491,7 +1492,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         publication.getEntityDescription().getReference().setDoi(null);
         publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder().withYear("2022").build());
         publication.getEntityDescription().setMainTitle("Dynamic - Response of Floating Wind Turbines! Report");
-        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, BRAGE);
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromBrageArchive(randomString()));
         var instanceType = existingPublication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
         var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
@@ -1609,7 +1610,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(randomPublishedFile())));
         publication.getEntityDescription().setMainTitle("Dynamic - Response of Floating Wind Turbines! Report");
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)));
-        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, BRAGE);
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromBrageArchive(randomString()));
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
         var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
                                                "ARTIST", null, List.of());
@@ -1641,7 +1642,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         publication.getEntityDescription().getReference().setPublicationContext(new Book.BookBuilder().withIsbnList(List.of(randomIsbn10())).build());
         publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder().withYear("2022").build());
         publication.getEntityDescription().setMainTitle("Dynamic - Response of Floating Wind Turbines! Report");
-        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, BRAGE);
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromBrageArchive(randomString()));
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
         var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
                                                "ARTIST", null, List.of());
@@ -1672,7 +1673,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         publication.setAdditionalIdentifiers(Set.of());
         publication.getEntityDescription().getReference().setDoi(null);
         publication.getEntityDescription().setMainTitle("Sensitivity analysis of the dynamic response of floating wind turbines");
-        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, BRAGE);
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromBrageArchive(randomString()));
         var instanceType = existingPublication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
         var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
@@ -1702,7 +1703,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         publication.getEntityDescription().getReference().setDoi(null);
         publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder().withYear("2022").build());
         publication.getEntityDescription().setMainTitle("Dynamic - Response of Floating Wind Turbines! Report");
-        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, BRAGE);
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromBrageArchive(randomString()));
         var instanceType = existingPublication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
         var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
@@ -1732,7 +1733,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         publication.setAdditionalIdentifiers(Set.of());
         publication.getEntityDescription().getReference().setDoi(null);
         publication.getEntityDescription().setMainTitle("Dynamic - Response of Floating Wind Turbines! Report");
-        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, BRAGE);
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromBrageArchive(randomString()));
         var instanceType = existingPublication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
 
         mockSingleHitSearchApiResponse(existingPublication.getIdentifier(), 200);
@@ -1756,7 +1757,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         publication.getEntityDescription().getReference().setDoi(null);
         publication.getEntityDescription().setContributors(List.of());
         publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder().withYear("2022").build());
-        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, BRAGE);
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromBrageArchive(randomString()));
         var instanceType = existingPublication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
         var affiliationIdentifier = randomString();
         var contributor = new Contributor(new Identity(randomString(), null),
@@ -1807,8 +1808,16 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_REPORT_WORKING_PAPER).build();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var publication = handler.handleRequest(s3Event, CONTEXT).publication();
-        assertFalse(publication.getImportDetails().isEmpty());
-        assertTrue(publication.getImportDetails().stream().anyMatch(importDetail -> importDetail.source().equals(BRAGE)));
+
+        var importDetail = publication.getImportDetails()
+                               .stream()
+                               .filter(f -> f.importSource().getSource().equals(Source.BRAGE))
+                               .findFirst()
+                               .orElse(null);
+
+        assertNotNull(importDetail);
+        assertThat(importDetail.importSource().getArchive(),
+                   is(equalTo(brageGenerator.getBrageRecord().getCustomer().getName())));
     }
 
     private BrageTestRecord generateBrageRecordAndPersistDuplicateByCristinIdentifier(
@@ -1821,7 +1830,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         publication.getEntityDescription().setContributors(List.of());
         publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder().withYear("2022").withMonth("03").withDay("01").build());
         publication.getEntityDescription().getReference().setPublicationInstance(publicationInstance);
-        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, BRAGE);
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromBrageArchive(randomString()));
         var affiliationIdentifier = randomString();
         var contributor = new Contributor(new Identity(randomString(), null),
                                           "Creator",
@@ -1851,7 +1860,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         publication.getEntityDescription().setContributors(List.of());
         publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder().withYear("2022").withMonth("03").withDay("01").build());
         publication.getEntityDescription().getReference().setPublicationInstance(publicationInstance);
-        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, BRAGE);
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromBrageArchive(randomString()));
         var affiliationIdentifier = randomString();
         var contributor = new Contributor(new Identity(randomString(), null),
                                           "Creator",
@@ -1884,7 +1893,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var publication = randomPublication(ConferencePoster.class);
         publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder().withYear("2022").build());
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("handle", generator.getBrageRecord().getId().toString())));
-        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, BRAGE);
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromBrageArchive(randomString()));
 
         var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
         mockSearchPublicationByIsbnResponse(existingPublication.getIdentifier());
@@ -2061,7 +2070,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         return IntStream.range(0, 5)
                    .boxed()
                    .map(i -> publicationThatMatchesRecord(record))
-                   .map(publication -> resourceService.createPublicationFromImportedEntry(publication, CRISTIN))
+                   .map(publication -> resourceService.createPublicationFromImportedEntry(publication,
+                                                                                          ImportSource.fromSource(Source.CRISTIN)))
                    .map(Publication::getIdentifier).toList();
     }
 

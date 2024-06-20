@@ -85,6 +85,7 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportSource;
+import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
@@ -730,7 +731,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     private Publication persistPublicationWithCristinId(Integer id, Class<?> instance) {
         var publication = randomPublication(instance);
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", id.toString())));
-        return resourceService.createPublicationFromImportedEntry(publication, ImportSource.CRISTIN);
+        return resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromSource(Source.CRISTIN));
     }
 
     private Publication persistEmptyPublicationWithCristinId(Integer id) {
@@ -742,7 +743,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         publication.setEntityDescription(new EntityDescription().copy().withReference(new Reference()).build());
         publication.setProjects(null);
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", id.toString())));
-        return resourceService.createPublicationFromImportedEntry(publication, ImportSource.CRISTIN);
+        return resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromSource(Source.CRISTIN));
     }
 
     @Test
@@ -1035,9 +1036,15 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
         var publication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
-        assertFalse(publication.getImportDetails().isEmpty());
-        assertTrue(publication.getImportDetails().stream().anyMatch(importDetail -> importDetail.source().equals(
-            ImportSource.CRISTIN)));
+
+        var importDetail = publication.getImportDetails()
+                               .stream()
+                               .filter(f -> f.importSource().getSource().equals(Source.CRISTIN))
+                               .findFirst()
+                               .orElse(null);
+
+        assertNotNull(importDetail);
+        assertNull(importDetail.importSource().getArchive());
     }
 
     private static <T> FileContentsEvent<T> createEventBody(T cristinObject) {
