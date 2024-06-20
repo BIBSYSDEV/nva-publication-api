@@ -11,6 +11,7 @@ import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationNoteBase;
@@ -59,7 +60,8 @@ public class ImportCandidate extends Publication implements JsonSerializable {
                    .withPublicationNotes(getPublicationNotes())
                    .withImportStatus(getImportStatus())
                    .withRightsHolder(getRightsHolder())
-                   .withCuratingInstitutions(getCuratingInstitutions());
+                   .withCuratingInstitutions(getCuratingInstitutions())
+                   .withImportDetails(getImportDetails());
     }
 
     @Override
@@ -138,6 +140,7 @@ public class ImportCandidate extends Publication implements JsonSerializable {
             importCandidate.setPublicationNotes(publication.getPublicationNotes());
             importCandidate.setDuplicateOf(publication.getDuplicateOf());
             importCandidate.setCuratingInstitutions(publication.getCuratingInstitutions());
+            importCandidate.setImportDetails(publication.getImportDetails());
             return this;
         }
 
@@ -248,6 +251,11 @@ public class ImportCandidate extends Publication implements JsonSerializable {
 
         public Builder withCuratingInstitutions(Set<URI> curatingInstitutions) {
             this.importCandidate.setCuratingInstitutions(curatingInstitutions);
+            return this;
+        }
+
+        public Builder withImportDetails(List<ImportDetail> importDetails) {
+            this.importCandidate.setImportDetails(importDetails);
             return this;
         }
 

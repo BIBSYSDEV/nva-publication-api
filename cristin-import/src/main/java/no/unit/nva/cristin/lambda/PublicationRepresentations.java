@@ -4,10 +4,13 @@ import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOf;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
+import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import nva.commons.core.JacocoGenerated;
@@ -94,9 +97,22 @@ public class PublicationRepresentations {
     }
 
     public boolean updateHasEffectiveChanges() {
-        var existingPublication = getExistingPublication().copy().withModifiedDate(null).withIdentifier(null).build();
-        var incomingPublication = getIncomingPublication().copy().withModifiedDate(null).withIdentifier(null).build();
+        var existingPublication = getExistingPublication().copy()
+                                      .withModifiedDate(null)
+                                      .withIdentifier(null)
+                                      .withImportDetails(getConcatenatedImportDetailsFromExistingAndIncomingPublication())
+                                      .build();
+        var incomingPublication = getIncomingPublication().copy()
+                                      .withModifiedDate(null)
+                                      .withIdentifier(null)
+                                      .withImportDetails(getConcatenatedImportDetailsFromExistingAndIncomingPublication())
+                                      .build();
         return !existingPublication.equals(incomingPublication);
+    }
+
+    private List<ImportDetail> getConcatenatedImportDetailsFromExistingAndIncomingPublication() {
+        return Stream.concat(getExistingPublication().getImportDetails().stream(),
+                             getIncomingPublication().getImportDetails().stream()).toList();
     }
 
     @JacocoGenerated

@@ -127,7 +127,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
         throws NotFoundException, UnauthorizedException {
         var rawImportCandidate = candidateService.getImportCandidateByIdentifier(input.getIdentifier());
         var inputWithOwner = injectOrganizationAndOwner(requestInfo, input, rawImportCandidate);
-        var nvaPublication = publicationService.autoImportPublication(inputWithOwner);
+        var nvaPublication = publicationService.autoImportPublicationFromScopus(inputWithOwner);
         copyArtifacts(nvaPublication, rawImportCandidate);
         updatePiaContributors(input, rawImportCandidate);
         return nvaPublication;

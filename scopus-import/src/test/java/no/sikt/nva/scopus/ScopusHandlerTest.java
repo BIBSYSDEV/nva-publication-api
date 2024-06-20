@@ -87,7 +87,6 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
-import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1438,7 +1437,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private ResourceService resourceServiceThrowingExceptionWhenSavingResource() {
         var resourceService = spy(getResourceServiceBuilder().build());
         doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE)).when(resourceService)
-            .createPublicationFromImportedEntry(any());
+            .createPublicationFromImportedEntry(any(), any());
         doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE)).when(resourceService).persistImportCandidate(any());
         return resourceService;
     }
