@@ -2,9 +2,11 @@ package no.unit.nva.cristin.mapper.nva;
 
 import static java.util.Objects.nonNull;
 import java.util.List;
+import java.util.Optional;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.cristin.lambda.PublicationRepresentations;
 import no.unit.nva.cristin.mapper.CristinLocale;
+import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.ScientificResource;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
@@ -29,7 +31,7 @@ public record NviReport(String publicationIdentifier,
                    .withCristinIdentifier(publicationRepresentations.getCristinObject().getSourceRecordIdentifier())
                    .withCristinLocales(publicationRepresentations.getCristinObject().getCristinLocales())
                    .withScientificResource(publicationRepresentations.getCristinObject().getScientificResources())
-                   .withYearReported(publicationRepresentations.getCristinObject().getYearReported().toString())
+                   .withYearReported(getYearReported(publicationRepresentations))
                    .withPublicationDate(publication.getEntityDescription().getPublicationDate())
                    .withInstanceType(publication.getEntityDescription()
                                          .getReference()
@@ -37,6 +39,13 @@ public record NviReport(String publicationIdentifier,
                                          .getInstanceType())
                    .withReference(publication.getEntityDescription().getReference())
                    .build();
+    }
+
+    private static String getYearReported(PublicationRepresentations publicationRepresentations) {
+        return Optional.ofNullable(publicationRepresentations.getCristinObject())
+                   .map(CristinObject::getYearReported)
+                   .map(String::valueOf)
+                   .orElse(null);
     }
 
     private static Publication getPublication(PublicationRepresentations publicationRepresentations) {
