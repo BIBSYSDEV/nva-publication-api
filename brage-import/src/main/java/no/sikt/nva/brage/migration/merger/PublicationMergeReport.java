@@ -12,7 +12,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
-import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -60,14 +59,5 @@ public record PublicationMergeReport(Map<String, MergeResult> mergeReport, Sorta
         return UriWrapper.fromUri("PUBLICATION_UPDATE").addChild(publicationIdentifier).toS3bucketPath();
     }
 
-    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-    public record MergeResult(Publication institutionImage, Publication oldImage, Publication newImage)
-        implements JsonSerializable {
 
-        @JacocoGenerated
-        @Override
-        public String toString() {
-            return this.toJsonString();
-        }
-    }
 }
