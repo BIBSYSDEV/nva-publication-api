@@ -1044,6 +1044,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                                .orElse(null);
 
         assertNotNull(importDetail);
+        assertNotNull(importDetail.importDate());
         assertNull(importDetail.importSource().getArchive());
     }
 

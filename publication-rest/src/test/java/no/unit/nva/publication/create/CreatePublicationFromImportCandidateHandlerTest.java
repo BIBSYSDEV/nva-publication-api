@@ -469,6 +469,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                .orElse(null);
 
         assertNotNull(importDetail);
+        assertNotNull(importDetail.importDate());
         assertNull(importDetail.importSource().getArchive());
     }
 

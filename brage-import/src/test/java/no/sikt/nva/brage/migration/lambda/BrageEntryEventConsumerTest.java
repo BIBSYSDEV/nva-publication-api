@@ -1816,6 +1816,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                .orElse(null);
 
         assertNotNull(importDetail);
+        assertNotNull(importDetail.importDate());
         assertThat(importDetail.importSource().getArchive(),
                    is(equalTo(brageGenerator.getBrageRecord().getCustomer().getName())));
     }
