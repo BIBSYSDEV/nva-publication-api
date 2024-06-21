@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
+import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeBase;
@@ -165,7 +166,8 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
     public static PublishedFile randomFileWithEmbargo() {
         return new PublishedFile(UUID.randomUUID(), RandomDataGenerator.randomString(),
                                  RandomDataGenerator.randomString(), RandomDataGenerator.randomInteger().longValue(),
-                                 RandomDataGenerator.randomUri(), false, true, Instant.now().plusSeconds(60 * 60 * 24),
+                                 RandomDataGenerator.randomUri(), false, PublisherVersion.PUBLISHED_VERSION,
+                                 Instant.now().plusSeconds(60 * 60 * 24),
                                  RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
                                  RandomDataGenerator.randomString(), RandomDataGenerator.randomInstant(),
                                  new UploadDetails(new Username(RandomDataGenerator.randomString()),

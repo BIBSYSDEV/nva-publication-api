@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.storage;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.CRISTIN_IDENTIFIER_INDEX_FIELD_PREFIX;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
@@ -20,7 +21,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -29,6 +32,7 @@ import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
@@ -48,6 +52,7 @@ public class ResourceDao extends Dao
     private static final String STATUS_FIELD = "status";
     private static final String MODIFIED_DATA_FIELD = "modifiedDate";
     private static final String DOI_FIELD = "doi";
+    private static final String IMPORT_DETAILS_FIELD = "importDetails";
 
     @JsonProperty(STATUS_FIELD)
     private PublicationStatus status;
@@ -56,6 +61,8 @@ public class ResourceDao extends Dao
     private Instant modifiedDate;
     @JsonProperty(DOI_FIELD)
     private URI doi;
+    @JsonProperty(IMPORT_DETAILS_FIELD)
+    private List<ImportDetail> importDetails;
     
     public ResourceDao() {
         this(new Resource());
@@ -67,6 +74,7 @@ public class ResourceDao extends Dao
         this.status = resource.getStatus();
         this.modifiedDate = resource.getModifiedDate();
         this.doi = resource.getDoi();
+        this.importDetails = resource.getImportDetails();
     }
     
     public static ResourceDao queryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
@@ -151,6 +159,14 @@ public class ResourceDao extends Dao
 
     public void setDoi(URI doi) {
         this.doi = doi;
+    }
+
+    public List<ImportDetail> getImportDetails() {
+        return nonNull(importDetails) ? importDetails : Collections.emptyList();
+    }
+
+    public void setImportDetails(Collection<ImportDetail> importDetails) {
+        this.importDetails = new ArrayList<>(importDetails);
     }
 
     @Override

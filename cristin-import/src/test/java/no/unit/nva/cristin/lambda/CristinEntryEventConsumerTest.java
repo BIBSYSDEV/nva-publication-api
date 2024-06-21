@@ -37,6 +37,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -83,6 +84,8 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.ImportSource;
+import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
@@ -728,7 +731,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     private Publication persistPublicationWithCristinId(Integer id, Class<?> instance) {
         var publication = randomPublication(instance);
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", id.toString())));
-        return resourceService.createPublicationFromImportedEntry(publication);
+        return resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromSource(Source.CRISTIN));
     }
 
     private Publication persistEmptyPublicationWithCristinId(Integer id) {
@@ -740,7 +743,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         publication.setEntityDescription(new EntityDescription().copy().withReference(new Reference()).build());
         publication.setProjects(null);
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", id.toString())));
-        return resourceService.createPublicationFromImportedEntry(publication);
+        return resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromSource(Source.CRISTIN));
     }
 
     @Test
@@ -1027,6 +1030,24 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         assertThat(publication.getEntityDescription().getNpiSubjectHeading(), is(equalTo(expectedNpiSubjectHeading)));
     }
 
+    @Test
+    void shouldAddImportDetailWhenImportingCristinObject() throws IOException {
+        var cristinObject = CristinDataGenerator.randomObject();
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var publication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+
+        var importDetail = publication.getImportDetails()
+                               .stream()
+                               .filter(f -> f.importSource().getSource().equals(Source.CRISTIN))
+                               .findFirst()
+                               .orElse(null);
+
+        assertNotNull(importDetail);
+        assertNotNull(importDetail.importDate());
+        assertNull(importDetail.importSource().getArchive());
+    }
+
     private static <T> FileContentsEvent<T> createEventBody(T cristinObject) {
         return new FileContentsEvent<>(randomString(), EVENT_SUBTOPIC, randomUri(), Instant.now(),
                                        cristinObject);
@@ -1091,6 +1112,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         expectedPublication.setCreatedDate(actualPublication.getCreatedDate());
         expectedPublication.setModifiedDate(actualPublication.getModifiedDate());
         expectedPublication.setPublishedDate(actualPublication.getPublishedDate());
+        expectedPublication.setImportDetails(actualPublication.getImportDetails());
     }
 
     private Publication fetchPublicationDirectlyFromDatabase(String cristinIdentifier) {
@@ -1134,7 +1156,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     private ResourceService resourceServiceThrowingExceptionWhenSavingResource() {
         var resourceService = spy(getResourceServiceBuilder().build());
         doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE)).when(resourceService)
-            .createPublicationFromImportedEntry(any());
+            .createPublicationFromImportedEntry(any(), any());
         return resourceService;
     }
 }

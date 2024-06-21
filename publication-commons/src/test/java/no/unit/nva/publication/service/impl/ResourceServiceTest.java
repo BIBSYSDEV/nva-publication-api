@@ -73,6 +73,8 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.ImportSource;
+import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationNote;
@@ -212,12 +214,16 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                    .withCuratingInstitutions(null)
                                    .withStatus(PUBLISHED)
                                    .build();
-        var savedPublicationIdentifier = resourceService.createPublicationFromImportedEntry(inputPublication)
+        var savedPublicationIdentifier = resourceService.createPublicationFromImportedEntry(inputPublication,
+                                                                                            ImportSource.fromSource(
+                                                                                                Source.CRISTIN))
                                              .getIdentifier();
         var savedPublication = resourceService.getPublicationByIdentifier(savedPublicationIdentifier);
 
-        // inject publicationIdentifier for making the inputPublication and the savedPublication equal.
+        // inject publicationIdentifier and importDetails for making the inputPublication and the savedPublication
+        // equal.
         inputPublication.setIdentifier(savedPublicationIdentifier);
+        inputPublication.setImportDetails(savedPublication.getImportDetails());
 
         assertThat(savedPublication, is(equalTo(inputPublication)));
         assertThat(savedPublication.getStatus(), is(equalTo(PUBLISHED)));
@@ -268,13 +274,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(sampleResource.getResourceOwner().getOwner(),
                    is(not(equalTo(collidingResource.getResourceOwner().getOwner()))));
         assertThat(sampleResource.getPublisher().getId(), is(not(equalTo(collidingResource.getPublisher().getId()))));
-    }
-
-    private ResourceService getResourceServiceWithDuplicateIdentifier(SortableIdentifier identifier) {
-        return getResourceServiceBuilder(client)
-                   .withIdentifierSupplier(() -> identifier)
-                   .withUriRetriever(mock(UriRetriever.class))
-                   .build();
     }
 
     @Test
@@ -914,7 +913,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         resource.setCuratingInstitutions(Set.of(topLevelId));
         var publishedResource = publishResource(createPersistedPublicationWithoutDoi(resource));
 
-
         var updatedResource = resourceService.updatePublication(publishedResource);
 
         verify(uriRetriever, never()).getRawContent(eq(orgId), any());
@@ -935,7 +933,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var affiliation = (new Organization.Builder())
                               .withId(orgId)
                               .build();
-        persistedImportCandidate.getEntityDescription().setContributors(List.of(randomContributor(List.of(affiliation))));
+        persistedImportCandidate.getEntityDescription()
+            .setContributors(List.of(randomContributor(List.of(affiliation))));
 
         var updatedImportCandidate = resourceService.updateImportCandidate(persistedImportCandidate);
 
@@ -944,7 +943,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldNotSetCuratingInstitutionsWhenUpdatingImportCandidateWhenContributorsAreUnchanged() throws ApiGatewayException {
+    void shouldNotSetCuratingInstitutionsWhenUpdatingImportCandidateWhenContributorsAreUnchanged()
+        throws ApiGatewayException {
         var importCandidate = randomImportCandidate();
         var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
         var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
@@ -971,7 +971,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var entityDescription = template.build().getEntityDescription();
         var publication = template.withDoi(null).withEntityDescription(null).build();
         publication = Resource.fromPublication(publication).persistNew(resourceService,
-                                                                UserInstance.fromPublication(publication));
+                                                                       UserInstance.fromPublication(publication));
         var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
         var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
         when(uriRetriever.getRawContent(eq(orgId), any())).thenReturn(
@@ -1002,7 +1002,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldCreatePublicationWithStatusPublishedWhenUsingAutoImport() throws NotFoundException {
         var publication = randomImportCandidate();
-        var persistedPublication = resourceService.autoImportPublication(publication);
+        var persistedPublication = resourceService.autoImportPublicationFromScopus(publication);
         var fetchedPublication = resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
         assertThat(persistedPublication, is(equalTo(fetchedPublication)));
         assertThat(fetchedPublication.getStatus(), is(equalTo(PUBLISHED)));
@@ -1025,10 +1025,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                                       UserInstance.fromPublication(publication));
         var storedPublication = resourceService.getPublication(result);
         assertThat(storedPublication.getPublicationNotes(), is(equalTo(publication.getPublicationNotes())));
-    }
-
-    private Username randomPerson() {
-        return new Username(randomString());
     }
 
     @Test
@@ -1193,6 +1189,17 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     private static AssociatedArtifactList createEmptyArtifactList() {
         return new AssociatedArtifactList(emptyList());
+    }
+
+    private ResourceService getResourceServiceWithDuplicateIdentifier(SortableIdentifier identifier) {
+        return getResourceServiceBuilder(client)
+                   .withIdentifierSupplier(() -> identifier)
+                   .withUriRetriever(mock(UriRetriever.class))
+                   .build();
+    }
+
+    private Username randomPerson() {
+        return new Username(randomString());
     }
 
     private Set<Publication> createSamplePublicationsOfSingleCristinIdentifier(String cristinIdentifier) {

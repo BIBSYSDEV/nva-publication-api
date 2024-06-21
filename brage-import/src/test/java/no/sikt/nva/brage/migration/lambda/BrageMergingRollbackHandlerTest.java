@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
 import java.io.IOException;
 import java.net.URI;
-import java.time.Clock;
 import java.time.Instant;
 import no.sikt.nva.brage.migration.merger.BrageMergingReport;
 import no.sikt.nva.brage.migration.rollback.RollBackConflictException;
@@ -31,6 +30,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -104,7 +104,7 @@ public class BrageMergingRollbackHandlerTest extends ResourcesLocalTest {
     void shouldStoreExceptionWhenPublicationHasBeenModifiedSinceBrageMerging() throws IOException {
         var oldImage = PublicationGenerator.randomPublication();
         var newImageInReport = resourceService.createPublicationFromImportedEntry(
-            PublicationGenerator.randomPublication());
+            PublicationGenerator.randomPublication(), ImportSource.fromBrageArchive(randomString()));
         var updatedAfterMerge = newImageInReport.copy().withDoi(randomDoi()).build();
         resourceService.updatePublication(updatedAfterMerge);
 
@@ -122,7 +122,7 @@ public class BrageMergingRollbackHandlerTest extends ResourcesLocalTest {
     void dummyTestShouldDoNothingWhenProcessingAPublication() throws IOException {
         var oldImage = PublicationGenerator.randomPublication();
         var newImageInReport = resourceService.createPublicationFromImportedEntry(
-            PublicationGenerator.randomPublication());
+            PublicationGenerator.randomPublication(), ImportSource.fromBrageArchive(randomString()));
         var mergeReport = new BrageMergingReport(oldImage, newImageInReport);
         var eventReference = createEventReference(mergeReport.toString());
         var awsEventBridgeEvent = createAwsEventBridgeEvent(eventReference);
@@ -132,7 +132,7 @@ public class BrageMergingRollbackHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldRollbackPublicationInDatabaseWhenReportPassesChecks() throws IOException, NotFoundException {
         var newImageInReport = resourceService.createPublicationFromImportedEntry(
-            PublicationGenerator.randomPublication());
+            PublicationGenerator.randomPublication(), ImportSource.fromBrageArchive(randomString()));
         var oldImageInReport = createFromNewImage(newImageInReport);
         var mergeReport = new BrageMergingReport(oldImageInReport, newImageInReport);
 
@@ -149,7 +149,7 @@ public class BrageMergingRollbackHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldPersistRollbackReportWhenPublicationWasRolledBackInDatabase() throws IOException {
         var newImageInReport = resourceService.createPublicationFromImportedEntry(
-            PublicationGenerator.randomPublication());
+            PublicationGenerator.randomPublication(), ImportSource.fromBrageArchive(randomString()));
         var oldImageInReport = createFromNewImage(newImageInReport);
         var mergeReport = new BrageMergingReport(oldImageInReport, newImageInReport);
 

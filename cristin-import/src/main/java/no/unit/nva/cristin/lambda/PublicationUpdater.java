@@ -240,7 +240,7 @@ public final class PublicationUpdater {
         var existingPlace = getPlaceCountry(existingEvent);
         var incomingPlace = getPlaceCountry(incomingEvent);
         if (shouldBeUpdated(existingPlace, incomingPlace)
-            || shouldBeUpdated(existingPlace.getLabel(), incomingPlace.getLabel())) {
+            || shouldBeUpdated(getLabel(existingPlace), getLabel(incomingPlace))) {
             return new Event.Builder()
                        .withLabel(
                            nonNull(existingEvent.getLabel()) ? existingEvent.getLabel() : incomingEvent.getLabel())
@@ -254,6 +254,10 @@ public final class PublicationUpdater {
         } else {
             return existingEvent;
         }
+    }
+
+    private static String getLabel(UnconfirmedPlace existingPlace) {
+        return Optional.ofNullable(existingPlace).map(UnconfirmedPlace::getLabel).orElse(null);
     }
 
     private static UnconfirmedPlace getPlaceCountry(Event event) {

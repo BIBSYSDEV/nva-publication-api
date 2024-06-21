@@ -1,8 +1,12 @@
 package no.unit.nva.publication.events.bodies;
 
+import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -12,6 +16,7 @@ import no.unit.nva.WithContext;
 import no.unit.nva.WithMetadata;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.PublicationNoteBase;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.funding.Funding;
@@ -32,6 +37,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
     private List<Funding> fundings;
     private String rightsHolder;
     private PublicationStatus status;
+    private List<ImportDetail> importDetails;
 
     private List<PublicationNoteBase> publicationNotes;
     private URI duplicateOf;
@@ -48,6 +54,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
         createPublicationRequest.setStatus(publication.getStatus());
         createPublicationRequest.setPublicationNotes(publication.getPublicationNotes());
         createPublicationRequest.setDuplicateOf(publication.getDuplicateOf());
+        createPublicationRequest.setImportDetails(publication.getImportDetails());
         return createPublicationRequest;
     }
     
@@ -71,6 +78,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
         publication.setStatus(getStatus());
         publication.setDuplicateOf(getDuplicateOf());
         publication.setPublicationNotes(getPublicationNotes());
+        publication.setImportDetails(getImportDetails());
         return publication;
     }
 
@@ -156,6 +164,18 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
         this.context = context;
     }
 
+    @Override
+    @JacocoGenerated
+    public List<ImportDetail> getImportDetails() {
+        return nonNull(importDetails) ? importDetails : Collections.emptyList();
+    }
+
+    @JacocoGenerated
+    @Override
+    public void setImportDetails(Collection<ImportDetail> importDetails) {
+        this.importDetails = new ArrayList<>(importDetails);
+    }
+
     @JacocoGenerated
     public PublicationStatus getStatus() {
         return status;
@@ -193,7 +213,8 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
                             getAdditionalIdentifiers(),
                             getPublicationNotes(),
                             getDuplicateOf(),
-                            getStatus());
+                            getStatus(),
+                            getImportDetails());
     }
 
     @JacocoGenerated
@@ -214,7 +235,8 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
                && Objects.equals(getDuplicateOf(), that.getDuplicateOf())
                && Objects.equals(getAdditionalIdentifiers(), that.getAdditionalIdentifiers())
                && Objects.equals(getPublicationNotes(), that.getPublicationNotes())
-               && Objects.equals(getStatus(), that.getStatus());
+               && Objects.equals(getStatus(), that.getStatus())
+               && Objects.equals(getImportDetails(), that.getImportDetails());
     }
 
 }

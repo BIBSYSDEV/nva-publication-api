@@ -7,6 +7,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -16,6 +18,7 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationNoteBase;
@@ -85,6 +88,8 @@ public class Resource implements Entity {
     private URI duplicateOf;
     @JsonProperty
     private Set<URI> curatingInstitutions;
+    @JsonProperty
+    private List<ImportDetail> importDetails;
 
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         return emptyResource(userInstance.getUser(), userInstance.getCustomerId(),
@@ -136,35 +141,37 @@ public class Resource implements Entity {
                    .withPublicationNotes(publication.getPublicationNotes())
                    .withDuplicateOf(publication.getDuplicateOf())
                    .withCuratingInstitutions(publication.getCuratingInstitutions())
+                   .withImportDetails(publication.getImportDetails())
                    .build();
     }
 
     private static Resource convertToResource(ImportCandidate importCandidate) {
         return Resource.builder()
-                .withIdentifier(importCandidate.getIdentifier())
-                .withResourceOwner(Owner.fromResourceOwner(importCandidate.getResourceOwner()))
-                .withCreatedDate(importCandidate.getCreatedDate())
-                .withModifiedDate(importCandidate.getModifiedDate())
-                .withIndexedDate(importCandidate.getIndexedDate())
-                .withPublishedDate(importCandidate.getPublishedDate())
-                .withStatus(importCandidate.getStatus())
-                .withPublishedDate(importCandidate.getPublishedDate())
-                .withAssociatedArtifactsList(importCandidate.getAssociatedArtifacts())
-                .withPublisher(importCandidate.getPublisher())
-                .withLink(importCandidate.getLink())
-                .withProjects(importCandidate.getProjects())
-                .withEntityDescription(importCandidate.getEntityDescription())
-                .withDoi(importCandidate.getDoi())
-                .withHandle(importCandidate.getHandle())
-                .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
-                .withSubjects(importCandidate.getSubjects())
-                .withFundings(importCandidate.getFundings())
-                .withRightsHolder(importCandidate.getRightsHolder())
-                .withImportStatus(importCandidate.getImportStatus())
-                .withPublicationNotes(importCandidate.getPublicationNotes())
-                .withDuplicateOf(importCandidate.getDuplicateOf())
-                .withCuratingInstitutions(importCandidate.getCuratingInstitutions())
-                .build();
+                    .withIdentifier(importCandidate.getIdentifier())
+                    .withResourceOwner(Owner.fromResourceOwner(importCandidate.getResourceOwner()))
+                    .withCreatedDate(importCandidate.getCreatedDate())
+                    .withModifiedDate(importCandidate.getModifiedDate())
+                    .withIndexedDate(importCandidate.getIndexedDate())
+                    .withPublishedDate(importCandidate.getPublishedDate())
+                    .withStatus(importCandidate.getStatus())
+                    .withPublishedDate(importCandidate.getPublishedDate())
+                    .withAssociatedArtifactsList(importCandidate.getAssociatedArtifacts())
+                    .withPublisher(importCandidate.getPublisher())
+                    .withLink(importCandidate.getLink())
+                    .withProjects(importCandidate.getProjects())
+                    .withEntityDescription(importCandidate.getEntityDescription())
+                    .withDoi(importCandidate.getDoi())
+                    .withHandle(importCandidate.getHandle())
+                    .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
+                    .withSubjects(importCandidate.getSubjects())
+                    .withFundings(importCandidate.getFundings())
+                    .withRightsHolder(importCandidate.getRightsHolder())
+                    .withImportStatus(importCandidate.getImportStatus())
+                    .withPublicationNotes(importCandidate.getPublicationNotes())
+                    .withDuplicateOf(importCandidate.getDuplicateOf())
+                    .withCuratingInstitutions(importCandidate.getCuratingInstitutions())
+                   .withImportDetails(importCandidate.getImportDetails())
+                    .build();
     }
 
     public static ResourceBuilder builder() {
@@ -271,34 +278,36 @@ public class Resource implements Entity {
                    .withPublicationNotes(getPublicationNotes())
                    .withDuplicateOf(getDuplicateOf())
                    .withCuratingInstitutions(getCuratingInstitutions())
+                   .withImportDetails(getImportDetails())
                    .build();
     }
 
     public ImportCandidate toImportCandidate() {
         return new ImportCandidate.Builder()
-                .withIdentifier(getIdentifier())
-                .withResourceOwner(extractResourceOwner())
-                .withStatus(getStatus())
-                .withCreatedDate(getCreatedDate())
-                .withModifiedDate(getModifiedDate())
-                .withIndexedDate(getIndexedDate())
-                .withPublisher(getPublisher())
-                .withPublishedDate(getPublishedDate())
-                .withLink(getLink())
-                .withProjects(getProjects())
-                .withEntityDescription(getEntityDescription())
-                .withDoi(getDoi())
-                .withHandle(getHandle())
-                .withAdditionalIdentifiers(getAdditionalIdentifiers())
-                .withAssociatedArtifacts(getAssociatedArtifacts())
-                .withSubjects(getSubjects())
-                .withFundings(getFundings())
-                .withRightsHolder(getRightsHolder())
-                .withImportStatus(getImportStatus().orElse(null))
-                .withPublicationNotes(getPublicationNotes())
-                .withDuplicateOf(getDuplicateOf())
-                .withCuratingInstitutions(getCuratingInstitutions())
-                .build();
+                    .withIdentifier(getIdentifier())
+                    .withResourceOwner(extractResourceOwner())
+                    .withStatus(getStatus())
+                    .withCreatedDate(getCreatedDate())
+                    .withModifiedDate(getModifiedDate())
+                    .withIndexedDate(getIndexedDate())
+                    .withPublisher(getPublisher())
+                    .withPublishedDate(getPublishedDate())
+                    .withLink(getLink())
+                    .withProjects(getProjects())
+                    .withEntityDescription(getEntityDescription())
+                    .withDoi(getDoi())
+                    .withHandle(getHandle())
+                    .withAdditionalIdentifiers(getAdditionalIdentifiers())
+                    .withAssociatedArtifacts(getAssociatedArtifacts())
+                    .withSubjects(getSubjects())
+                    .withFundings(getFundings())
+                    .withRightsHolder(getRightsHolder())
+                    .withImportStatus(getImportStatus().orElse(null))
+                    .withPublicationNotes(getPublicationNotes())
+                    .withDuplicateOf(getDuplicateOf())
+                    .withCuratingInstitutions(getCuratingInstitutions())
+                    .withImportDetails(getImportDetails())
+                    .build();
     }
 
     private ResourceOwner extractResourceOwner() {
@@ -432,6 +441,14 @@ public class Resource implements Entity {
         this.handle = handle;
     }
 
+    public List<ImportDetail> getImportDetails() {
+        return nonNull(importDetails) ? importDetails : Collections.emptyList();
+    }
+
+    public void setImportDetails(Collection<ImportDetail> importDetails) {
+        this.importDetails = new ArrayList<>(importDetails);
+    }
+
     public ResourceBuilder copy() {
         return Resource.builder()
                    .withIdentifier(getIdentifier())
@@ -454,7 +471,8 @@ public class Resource implements Entity {
                    .withPublicationNotes(getPublicationNotes())
                    .withDuplicateOf(getDuplicateOf())
                    .withRightsHolder(getRightsHolder())
-                   .withCuratingInstitutions(getCuratingInstitutions());
+                   .withCuratingInstitutions(getCuratingInstitutions())
+                   .withImportDetails(getImportDetails());
     }
 
     public List<URI> getSubjects() {
@@ -493,7 +511,7 @@ public class Resource implements Entity {
                             getModifiedDate(), getPublishedDate(), getIndexedDate(), getLink(),
                             getProjects(), getEntityDescription(), getDoi(), getHandle(), getAdditionalIdentifiers(),
                             getSubjects(), getFundings(), getAssociatedArtifacts(), getPublicationNotes(),
-                            getDuplicateOf(), getCuratingInstitutions());
+                            getDuplicateOf(), getCuratingInstitutions(), getImportDetails());
     }
 
     /**
@@ -531,7 +549,8 @@ public class Resource implements Entity {
                && Objects.equals(getPublicationNotes(), resource.getPublicationNotes())
                && Objects.equals(getDuplicateOf(), resource.getDuplicateOf())
                && Objects.equals(getSubjects(), resource.getSubjects())
-               && Objects.equals(getCuratingInstitutions(), resource.getCuratingInstitutions());
+               && Objects.equals(getCuratingInstitutions(), resource.getCuratingInstitutions())
+               && Objects.equals(getImportDetails(), resource.getImportDetails());
     }
 
     public Stream<TicketEntry> fetchAllTickets(ResourceService resourceService) {

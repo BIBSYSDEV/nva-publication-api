@@ -27,6 +27,9 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
@@ -53,6 +56,7 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
@@ -201,7 +205,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                     s3Client,
                                                     piaClientConfig);
         handler = new CreatePublicationFromImportCandidateHandler(configs);
-        when(publicationService.autoImportPublication(any())).thenThrow(
+        when(publicationService.autoImportPublicationFromScopus(any())).thenThrow(
             new TransactionFailedException(new Exception()));
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);
@@ -448,6 +452,25 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+    }
+
+    @Test
+    void shouldAddImportDetailWhenCreatingPublicationFromImportingCandidate() throws IOException, NotFoundException {
+        var importCandidate = createPersistedImportCandidate();
+        var request = createRequest(importCandidate);
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var publication = publicationService.getPublicationByIdentifier(getBodyObject(response).getIdentifier());
+
+        var importDetail = publication.getImportDetails()
+                               .stream()
+                               .filter(f -> f.importSource().getSource().equals(Source.SCOPUS))
+                               .findFirst()
+                               .orElse(null);
+
+        assertNotNull(importDetail);
+        assertNotNull(importDetail.importDate());
+        assertNull(importDetail.importSource().getArchive());
     }
 
     private static PublicationResponse getBodyObject(GatewayResponse<PublicationResponse> response)
