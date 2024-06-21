@@ -1923,33 +1923,21 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     void whenSearchApiReturnsMultiplePublicationsButDynamoDbCannotFindTheFirstOneMergingShouldHappenWithNextInLine()
         throws IOException {
         // create a brage record and matching publication
-        var publication = randomPublication(ConferencePoster.class);
-        publication.setAdditionalIdentifiers(Set.of());
-        publication.getEntityDescription().getReference().setDoi(null);
-        publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder().withYear("2022").build());
-        publication.getEntityDescription().setMainTitle("Dynamic - Response of Floating Wind Turbines! Report");
-        var existingPublication = resourceService.createPublicationFromImportedEntry(publication);
-        var instanceType = existingPublication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
-        var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
-        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
-                                               "ARTIST", null, List.of());
-        var generator = new NvaBrageMigrationDataGenerator.Builder()
-                            .withMainTitle("Dynamic Response of Floating Wind Turbines")
-                            .withContributor(brageContributor)
-                            .withPublicationDate(new PublicationDate("2023",
-                                                                     new PublicationDateNva.Builder().withYear("2023").build()))
-                            .withType(new Type(List.of(), instanceType)).build();
+
+
+        var generator = generateBrageRecordAndPersistDuplicate(new Lecture(), TYPE_CONFERENCE_REPORT);
+        var existingPublicationIdentifier = generator.getExistingPublication().getIdentifier();
 
         //mock search response with first result being something that does not exist in database:
-        mockMultipleHitSearchApiResponse(List.of(SortableIdentifier.next() ,existingPublication.getIdentifier()));
+        mockMultipleHitSearchApiResponse(List.of(SortableIdentifier.next() ,existingPublicationIdentifier));
 
 
 
-        var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
+        var s3Event = createNewBrageRecordEvent(generator.getGeneratorBuilder().build().getBrageRecord());
         var updatedPublication = handler.handleRequest(s3Event, CONTEXT);
 
         //assert that we have not created a new publication, but instead updated the existing one:
-        assertThat(updatedPublication.publication().getIdentifier(), is(equalTo(existingPublication.getIdentifier())));
+        assertThat(updatedPublication.publication().getIdentifier(), is(equalTo(existingPublicationIdentifier)));
 
     }
 
