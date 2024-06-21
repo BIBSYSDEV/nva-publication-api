@@ -28,6 +28,7 @@ import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.pages.MonographPages;
+import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.JacocoGenerated;
 
@@ -40,7 +41,7 @@ public abstract class PublicationInstanceMerger<T extends PublicationInstance<?>
         this.publicationInstance = publicationInstance;
     }
 
-    public static PublicationInstanceMerger<?> of(PublicationInstance<?> instance) {
+    public static PublicationInstanceMerger<?> of(PublicationInstance<? extends Pages> instance) {
         return switch (instance) {
             case DegreePhd degreePhd -> new DegreePhdMerger(degreePhd);
             case DegreeBachelor degreeBachelor -> new DegreeBachelorMerger(degreeBachelor);
@@ -68,7 +69,7 @@ public abstract class PublicationInstanceMerger<T extends PublicationInstance<?>
         };
     }
 
-    public abstract T merge(PublicationInstance<?> newInstance);
+    public abstract T merge(PublicationInstance<? extends Pages> newInstance);
 
     public static MonographPages getPages(MonographPages pages, MonographPages bragePages) {
         return nonNull(pages) ? pages : bragePages;

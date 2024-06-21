@@ -41,9 +41,9 @@ import no.unit.nva.model.contexttypes.ResearchData;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
+import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
-
 import no.unit.nva.model.pages.Pages;
 import nva.commons.core.StringUtils;
 
@@ -77,12 +77,19 @@ public class CristinImportPublicationMerger {
     private Publication mergePublicationsMetadata()
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
         return existingPublication.copy()
-                                         .withAdditionalIdentifiers(mergeAdditionalIdentifiers())
-                                         .withSubjects(determineSubject())
-                                         .withRightsHolder(determineRightsHolder())
-                                         .withEntityDescription(determineEntityDescription())
-                                         .withAssociatedArtifacts(determineAssociatedArtifacts())
-                                         .build();
+                   .withAdditionalIdentifiers(mergeAdditionalIdentifiers())
+                   .withSubjects(determineSubject())
+                   .withRightsHolder(determineRightsHolder())
+                   .withEntityDescription(determineEntityDescription())
+                   .withAssociatedArtifacts(determineAssociatedArtifacts())
+                   .withFundings(determineFundings())
+                   .build();
+    }
+
+    private List<Funding> determineFundings() {
+        return existingPublication.getFundings().isEmpty()
+            ? bragePublicationRepresentation.publication().getFundings()
+            : existingPublication.getFundings();
     }
 
     private EntityDescription determineEntityDescription()
