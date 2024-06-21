@@ -112,6 +112,8 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.ImportSource;
+import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Publication.Builder;
@@ -1021,7 +1023,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                         .withId(customerId)
                                                         .build())
                                      .build();
-        publicationWithRrs = resourceService.createPublicationFromImportedEntry(publicationWithRrs);
+        publicationWithRrs = resourceService.createPublicationFromImportedEntry(publicationWithRrs,
+                                                                                ImportSource.fromSource(Source.CRISTIN));
 
         publishedFileRrs.setRightsRetentionStrategy(OverriddenRightsRetentionStrategy.create(
             OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, null));

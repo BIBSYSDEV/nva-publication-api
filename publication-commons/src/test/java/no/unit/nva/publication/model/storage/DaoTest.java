@@ -76,16 +76,16 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class DaoTest extends ResourcesLocalTest {
 
+    public static final String DATA_APPROVED_FILES = "data.approvedFiles";
+    private static final String DATA_ASSIGNEE = "data.assignee";
+    public static final String DATA_FILES_FOR_APPROVAL = "data.filesForApproval";
     private static final String DATA_FINALIZED_BY = "data.finalizedBy";
     private static final String DATA_FINALIZED_DATE = "data.finalizedDate";
-    private static final String DATA_ASSIGNEE = "data.assignee";
     public static final String DATA_IMPORT_STATUS = "data.importStatus";
-    public static final String RESOURCE_IMPORT_STATUS = "resource.importStatus";
     private static final String DATA_OWNER_AFFILIATION = "data.ownerAffiliation";
-    public static final String RESOURCE_REVISION = "resource.entityDescription.reference.publicationContext.revision";
     public static final String DATA_REVISION = "data.entityDescription.reference.publicationContext.revision";
-    public static final String DATA_APPROVED_FILES = "data.approvedFiles";
-    public static final String DATA_FILES_FOR_APPROVAL = "data.filesForApproval";
+    public static final String RESOURCE_IMPORT_STATUS = "resource.importStatus";
+    public static final String RESOURCE_REVISION = "resource.entityDescription.reference.publicationContext.revision";
 
     public static Stream<Class<?>> entityProvider() {
         return TypeProvider.listSubTypes(Entity.class);

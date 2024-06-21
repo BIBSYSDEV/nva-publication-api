@@ -10,11 +10,16 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
+import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.ImportDetail;
+import no.unit.nva.model.ImportSource;
+import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.TestDataSource;
@@ -31,6 +36,7 @@ public final class DaoUtils extends TestDataSource {
     public static Resource sampleResource(Publication publication) {
         var additionalIdentifier = Set.of(new AdditionalIdentifier(CRISTIN_SOURCE, randomString()));
         publication.setAdditionalIdentifiers(additionalIdentifier);
+        publication.setImportDetails(List.of(new ImportDetail(Instant.now(), ImportSource.fromSource(Source.CRISTIN))));
         return Resource.fromPublication(publication);
     }
     

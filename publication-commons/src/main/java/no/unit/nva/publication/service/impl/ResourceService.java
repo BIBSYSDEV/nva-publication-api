@@ -29,6 +29,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.ImportDetail;
+import no.unit.nva.model.ImportSource;
+import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -163,7 +166,10 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResource(newResource);
     }
 
-    public Publication createPublicationFromImportedEntry(Publication inputData) {
+    public Publication createPublicationFromImportedEntry(Publication inputData, ImportSource importSource) {
+        if (nonNull(importSource)) {
+            inputData.addImportDetail(new ImportDetail(Instant.now(), importSource));
+        }
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
         newResource.setPublishedDate(inputData.getPublishedDate());
@@ -208,9 +214,10 @@ public class ResourceService extends ServiceWithTransactions {
         return updateResourceService.publishPublication(userInstance, resourceIdentifier);
     }
 
-    public Publication autoImportPublication(ImportCandidate inputData) {
+    public Publication autoImportPublicationFromScopus(ImportCandidate inputData) {
         var publication = inputData.toPublication();
         Instant currentTime = clockForTimestamps.instant();
+        publication.addImportDetail(ImportDetail.fromSource(Source.SCOPUS, currentTime));
         var userInstance = UserInstance.fromPublication(publication);
         Resource newResource = Resource.fromPublication(publication);
         newResource.setIdentifier(identifierSupplier.get());

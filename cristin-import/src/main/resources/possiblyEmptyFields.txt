@@ -63,3 +63,4 @@ projects
 fundings
 rightsHolder
 curatingInstitutions
+importDetails
