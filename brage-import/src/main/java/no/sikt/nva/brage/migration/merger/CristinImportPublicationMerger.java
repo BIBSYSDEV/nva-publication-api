@@ -170,10 +170,11 @@ public class CristinImportPublicationMerger {
             return keepBrageAssociatedArtifactAndKeepDublinCoreFromExistsing();
         }
         if (!hasAdministrativeAgreement(existingPublication)) {
+            var associatedArtifacts = new ArrayList<>(existingPublication.getAssociatedArtifacts());
             var administrativeAgreements = extractAdministrativeAgreements(
                 bragePublicationRepresentation.publication());
-            existingPublication.getAssociatedArtifacts().addAll(administrativeAgreements);
-            return existingPublication.getAssociatedArtifacts();
+            associatedArtifacts.addAll(administrativeAgreements);
+            return new AssociatedArtifactList(associatedArtifacts);
         }
         return existingPublication.getAssociatedArtifacts();
     }
