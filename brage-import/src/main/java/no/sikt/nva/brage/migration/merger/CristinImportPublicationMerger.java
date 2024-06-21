@@ -111,10 +111,11 @@ public class CristinImportPublicationMerger {
     private Reference determineReference()
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
         var reference = existingPublication.getEntityDescription().getReference();
-        reference.setPublicationContext(determinePublicationContext(reference));
-        reference.setPublicationInstance(determincePublicationInstance(reference));
-        reference.setDoi(determineDoi(reference));
-        return reference;
+        return new Reference.Builder()
+                   .withPublicationInstance(determincePublicationInstance(reference))
+                   .withPublishingContext(determinePublicationContext(reference))
+                   .withDoi(determineDoi(reference))
+                   .build();
     }
 
     private PublicationInstance<? extends Pages> determincePublicationInstance(Reference reference) {

@@ -17,6 +17,7 @@ import no.sikt.nva.brage.migration.merger.AssociatedArtifactMover;
 import no.sikt.nva.brage.migration.merger.BrageMergingReport;
 import no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger;
 import no.sikt.nva.brage.migration.merger.DiscardedFilesReport;
+import no.sikt.nva.brage.migration.merger.PublicationMergeReport;
 import no.sikt.nva.brage.migration.merger.UnmappableCristinRecordException;
 import no.sikt.nva.brage.migration.merger.findexistingpublication.DuplicatePublicationReporter;
 import no.sikt.nva.brage.migration.merger.findexistingpublication.FindExistingPublicationServiceImpl;
@@ -196,6 +197,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                                                                                       existingPublication.existingPublication()))
                    .map(mergeReport -> persistMergeReports(mergeReport, s3Event, publicationRepresentation,
                                                            existingPublication))
+
                    .orElseThrow();
     }
 
@@ -209,7 +211,38 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                             s3Event,
                             UPDATED_PUBLICATIONS_REPORTS_PATH);
         persistDiscardedFilesReport(mergingReport, brageConversion, s3Event);
+        persistPublicationMergeReport(mergingReport, brageConversion, existingPublication);
         return mergingReport.newImage();
+    }
+
+    private PublicationMergeReport persistPublicationMergeReport(BrageMergingReport mergingReport,
+                                                                 PublicationRepresentation publicationRepresentation, PublicationForUpdate existingPublication) {
+
+        var publicationIdentifier = existingPublication.existingPublication().getIdentifier();
+        var existingReport = PublicationMergeReport.fetch(publicationIdentifier.toString(), s3Client);
+        if (existingReport.isPresent()) {
+            return updateExistingMergeReport(mergingReport, publicationRepresentation, existingReport.get());
+        } else {
+            return persistNewMergeReport(mergingReport, publicationRepresentation, publicationIdentifier);
+        }
+    }
+
+    private PublicationMergeReport updateExistingMergeReport(
+        BrageMergingReport mergingReport, PublicationRepresentation publicationRepresentation, PublicationMergeReport existingReport) {
+        var institutionImage = publicationRepresentation.publication();
+        var institution = publicationRepresentation.getCustomerName();
+        existingReport.addNewMergeResult(institution, institutionImage, mergingReport.oldImage(), mergingReport.newImage());
+        return existingReport.persist(s3Client);
+    }
+
+    private PublicationMergeReport persistNewMergeReport(
+        BrageMergingReport mergingReport, PublicationRepresentation publicationRepresentation,
+        SortableIdentifier publicationIdentifier) {
+        var institutionImage = publicationRepresentation.publication();
+        var report = PublicationMergeReport.createEmptyReport(publicationIdentifier);
+        var institution = publicationRepresentation.getCustomerName();
+        report.addNewMergeResult(institution, institutionImage, mergingReport.oldImage(), mergingReport.newImage());
+        return report.persist(s3Client);
     }
 
     private void persistDiscardedFilesReport(BrageMergingReport mergingReport,

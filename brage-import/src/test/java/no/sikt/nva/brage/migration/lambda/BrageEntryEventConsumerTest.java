@@ -86,10 +86,12 @@ import no.sikt.nva.brage.migration.mapper.InvalidIsmnRuntimeException;
 import no.sikt.nva.brage.migration.merger.AssociatedArtifactException;
 import no.sikt.nva.brage.migration.merger.BrageMergingReport;
 import no.sikt.nva.brage.migration.merger.DiscardedFilesReport;
+import no.sikt.nva.brage.migration.merger.PublicationMergeReport;
 import no.sikt.nva.brage.migration.merger.UnmappableCristinRecordException;
 import no.sikt.nva.brage.migration.merger.findexistingpublication.DuplicateDetectionCause;
 import no.sikt.nva.brage.migration.record.Affiliation;
 import no.sikt.nva.brage.migration.record.Contributor;
+import no.sikt.nva.brage.migration.record.Customer;
 import no.sikt.nva.brage.migration.record.EntityDescription;
 import no.sikt.nva.brage.migration.record.Identity;
 import no.sikt.nva.brage.migration.record.Pages;
@@ -1915,6 +1917,57 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
         assertThat(publicationRepresentation.publication().getIdentifier(),
                    is(equalTo(existingPublication.getIdentifier())));
+    }
+
+    @Test
+    void shouldPersistNewMergeReportWhenUpdatingPublicationForTheFirstTime()
+        throws IOException {
+        var generator = generateBrageRecordAndPersistDuplicate(new Lecture(), TYPE_CONFERENCE_REPORT);
+        var existingPublication = generator.getExistingPublication();
+
+        mockSingleHitSearchApiResponse(existingPublication.getIdentifier(), 200);
+        var brageRecord = generator.getGeneratorBuilder().build().getBrageRecord();
+        var s3Event = createNewBrageRecordEvent(brageRecord);
+        var publicationRepresentation = handler.handleRequest(s3Event, CONTEXT);
+        var s3Driver = new S3Driver(s3Client, new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
+        var uri = UriWrapper.fromUri("PUBLICATION_UPDATE")
+                                         .addChild(publicationRepresentation.publication().getIdentifier().toString())
+                                         .toS3bucketPath();
+        var content = s3Driver.getFile(uri);
+        var mergeReport = JsonUtils.dtoObjectMapper.readValue(content, PublicationMergeReport.class);
+        var result = mergeReport.mergeReport().get(brageRecord.getCustomer().getName());
+
+        assertThat(result.newImage(), is(equalTo(publicationRepresentation.publication())));
+        assertThat(result.oldImage(), is(equalTo(existingPublication)));
+        assertThat(result.institutionImage(), is(notNullValue()));
+    }
+
+    @Test
+    void shouldUpdateExistingMergeReportWhenUpdatingPublication() throws IOException {
+        var generator = generateBrageRecordAndPersistDuplicate(new Lecture(), TYPE_CONFERENCE_REPORT);
+        var existingPublication = generator.getExistingPublication();
+
+        mockSingleHitSearchApiResponse(existingPublication.getIdentifier(), 200);
+        var brageRecord = generator.getGeneratorBuilder().build().getBrageRecord();
+        var s3Event = createNewBrageRecordEvent(brageRecord);
+        handler.handleRequest(s3Event, CONTEXT);
+        var newBrageRecord = brageRecord;
+        newBrageRecord.setCustomer(new Customer("customer", randomUri()));
+        newBrageRecord.setId(randomUri());
+        var news3Event = createNewBrageRecordEvent(brageRecord);
+        var publicationRepresentation = handler.handleRequest(news3Event, CONTEXT);
+        var s3Driver = new S3Driver(s3Client, new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
+        var uri = UriWrapper.fromUri("PUBLICATION_UPDATE")
+                      .addChild(publicationRepresentation.publication().getIdentifier().toString())
+                      .toS3bucketPath();
+        var content = s3Driver.getFile(uri);
+        var mergeReport = JsonUtils.dtoObjectMapper.readValue(content, PublicationMergeReport.class);
+
+        var firstMergeResult = mergeReport.mergeReport().get(brageRecord.getCustomer().getName());
+        var secondMergeResult = mergeReport.mergeReport().get(newBrageRecord.getCustomer().getName());
+
+        assertThat(firstMergeResult, is(notNullValue()));
+        assertThat(secondMergeResult, is(notNullValue()));
     }
 
     private static AdditionalIdentifier cristinAdditionalIdentifier(String cristinIdentifier) {
