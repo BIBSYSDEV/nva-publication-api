@@ -52,12 +52,14 @@ import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -551,6 +553,20 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenAttemptingToPersistPublicationWithMultipleCristinIdentifiers() throws Exception {
+        var request = createEmptyPublicationRequest();
+        request.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", randomString()),
+                                                new AdditionalIdentifier("Cristin", randomString())));
+        var inputStream = createPublicationRequest(request);
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var actual = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+        assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
+        var publicationResponse = actual.getBodyObject(Problem.class);
+        assertThat(publicationResponse.getDetail(), containsString("Multiple Cristin identifiers are not allowed"));
     }
 
     private static String bodyWithNoReference() {

@@ -97,6 +97,7 @@ import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
+import no.unit.nva.publication.model.business.MultipleCristinIdentifiersException;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
@@ -1185,6 +1186,16 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         assertThrows(BadRequestException.class,
                      () -> resourceService.deletePublication(resourceService.getPublication(publication)));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenPersistingPublicationWithMultipleCristinIds() {
+        var publication = randomPublication();
+        publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", randomString()),
+                                                    new AdditionalIdentifier("Cristin", randomString())));
+
+        assertThrows(MultipleCristinIdentifiersException.class,
+                     () -> resourceService.createPublication(UserInstance.fromPublication(publication), publication));
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {

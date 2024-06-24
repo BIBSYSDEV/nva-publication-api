@@ -22,6 +22,7 @@ import no.unit.nva.publication.commons.customer.CustomerNotAvailableException;
 import no.unit.nva.publication.commons.customer.JavaHttpClientCustomerApiClient;
 import no.unit.nva.publication.events.bodies.CreatePublicationRequest;
 import no.unit.nva.publication.model.BackendClientCredentials;
+import no.unit.nva.publication.model.business.MultipleCristinIdentifiersException;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.rightsretention.RightsRetentionsApplier;
@@ -35,9 +36,11 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.attempt.Failure;
 import nva.commons.secrets.SecretsReader;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -52,6 +55,10 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     private static final Logger logger = LoggerFactory.getLogger(CreatePublicationHandler.class);
     private static final List<String> THESIS_INSTANCE_TYPES = List.of("DegreeBachelor", "DegreeMaster", "DegreePhd",
                                                                       "DegreeLicentiate");
+    public static final String MULTIPLE_CRISTIN_IDENTIFIERS_MESSAGE = "Publication is not valid! "
+                                                                      + "Multiple Cristin identifiers "
+                                                                      + "are not allowed";
+    public static final String SOMETHING_WENT_WRONG_MESSAGE = "An unknown exception occurred!";
     private final ResourceService publicationService;
     private final PublicationValidator publicationValidator;
     private final String apiHost;
@@ -110,12 +117,24 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         RightsRetentionsApplier.rrsApplierForNewPublication(newPublication, customer.getRightsRetentionStrategy(),
                                                             customerAwareUserContext.username()).handle();
 
-        var createdPublication = Resource.fromPublication(newPublication)
-                                     .persistNew(publicationService, customerAwareUserContext.userInstance());
-        setLocationHeader(createdPublication.getIdentifier());
+        var publicationResponse = attempt(() -> Resource.fromPublication(newPublication))
+            .map(resource -> resource.persistNew(publicationService, customerAwareUserContext.userInstance()))
+            .map(PublicationResponse::fromPublication)
+            .orElseThrow(this::mapException);
+        setLocationHeader(publicationResponse.getIdentifier());
 
-        return PublicationResponse.fromPublication(createdPublication);
+        return publicationResponse;
     }
+
+    private ApiGatewayException mapException(Failure<PublicationResponse> failure) {
+        return switch (failure.getException()) {
+            case NotFoundException ex -> ex;
+            case UnauthorizedException ex -> ex;
+            case MultipleCristinIdentifiersException ex -> new BadRequestException(MULTIPLE_CRISTIN_IDENTIFIERS_MESSAGE);
+            default -> new BadGatewayException(SOMETHING_WENT_WRONG_MESSAGE);
+        };
+    }
+
 
     private JavaHttpClientCustomerApiClient getJavaHttpClientCustomerApiClient() {
         var backendClientCredentials = secretsReader.fetchClassSecret(

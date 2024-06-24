@@ -142,7 +142,27 @@ public class Resource implements Entity {
                    .withDuplicateOf(publication.getDuplicateOf())
                    .withCuratingInstitutions(publication.getCuratingInstitutions())
                    .withImportDetails(publication.getImportDetails())
-                   .build();
+                   .build().validate();
+    }
+
+    private Resource validate() {
+        var cristinIdentifiers = getCristinIdentifiers();
+        if (hasMultipleEntries(cristinIdentifiers)) {
+            throw new MultipleCristinIdentifiersException("Multiple cristin identifiers are not allowed!");
+        } else {
+            return this;
+        }
+    }
+
+    private static boolean hasMultipleEntries(List<String> cristinIdentifiers) {
+        return cristinIdentifiers.size() > 1;
+    }
+
+    private List<String> getCristinIdentifiers() {
+        return this.getAdditionalIdentifiers().stream()
+                                    .map(AdditionalIdentifier::getSourceName)
+                                    .filter("Cristin"::equals)
+                                    .toList();
     }
 
     private static Resource convertToResource(ImportCandidate importCandidate) {
