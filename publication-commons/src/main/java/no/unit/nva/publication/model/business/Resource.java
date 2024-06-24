@@ -148,7 +148,7 @@ public class Resource implements Entity {
     private Resource validate() {
         var cristinIdentifiers = getCristinIdentifiers();
         if (hasMultipleEntries(cristinIdentifiers)) {
-            throw new MultipleCristinIdentifiersException("Multiple cristin identifiers are not allowed!");
+            throw new MultipleCristinIdentifiersException();
         } else {
             return this;
         }
