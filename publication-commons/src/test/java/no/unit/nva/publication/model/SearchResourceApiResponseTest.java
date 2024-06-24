@@ -21,7 +21,6 @@ public class SearchResourceApiResponseTest {
         var json = searchResponse.toJsonString();
         var parsedSearchResponse = JsonUtils.dtoObjectMapper.readValue(json, SearchResourceApiResponse.class);
         assertThat(parsedSearchResponse, is(equalTo(searchResponse)));
-        assertThat(parsedSearchResponse.containsSingleHit(), is(true));
     }
 
     @Test

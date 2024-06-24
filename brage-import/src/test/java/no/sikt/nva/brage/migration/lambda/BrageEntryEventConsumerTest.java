@@ -167,6 +167,7 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -1970,6 +1971,28 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         assertThat(secondMergeResult, is(notNullValue()));
     }
 
+    @Test
+    void whenSearchApiReturnsMultiplePublicationsButDynamoDbCannotFindTheFirstOneMergingShouldHappenWithNextInLine()
+        throws IOException {
+        // create a brage record and matching publication
+
+
+        var generator = generateBrageRecordAndPersistDuplicate(new Lecture(), TYPE_CONFERENCE_REPORT);
+        var existingPublicationIdentifier = generator.getExistingPublication().getIdentifier();
+
+        //mock search response with first result being something that does not exist in database:
+        mockMultipleHitSearchApiResponse(List.of(SortableIdentifier.next() ,existingPublicationIdentifier));
+
+
+
+        var s3Event = createNewBrageRecordEvent(generator.getGeneratorBuilder().build().getBrageRecord());
+        var updatedPublication = handler.handleRequest(s3Event, CONTEXT);
+
+        //assert that we have not created a new publication, but instead updated the existing one:
+        assertThat(updatedPublication.publication().getIdentifier(), is(equalTo(existingPublicationIdentifier)));
+
+    }
+
     private static AdditionalIdentifier cristinAdditionalIdentifier(String cristinIdentifier) {
         return new AdditionalIdentifier("Cristin", cristinIdentifier);
     }
@@ -2018,6 +2041,21 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var searchResourceApiResponse = new SearchResourceApiResponse(1, List.of(new ResourceWithId(publicationId)));
         var response = mock(HttpResponse.class);
         when(response.statusCode()).thenReturn(statusCode);
+        when(response.body()).thenReturn(searchResourceApiResponse.toString());
+        when(this.uriRetriever.fetchResponse(any())).thenReturn(response);
+    }
+
+    private void mockMultipleHitSearchApiResponse(List<SortableIdentifier> identifiers) {
+        var resourceWithIds = identifiers.stream()
+                                  .map(identifier -> UriWrapper.fromHost(API_HOST)
+                                                         .addChild("publication")
+                                                         .addChild(identifier.toString())
+                                                         .getUri())
+                                  .map(ResourceWithId::new)
+                                  .toList();
+        var searchResourceApiResponse = new SearchResourceApiResponse(resourceWithIds.size(), resourceWithIds);
+        var response = mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(HttpStatus.SC_OK);
         when(response.body()).thenReturn(searchResourceApiResponse.toString());
         when(this.uriRetriever.fetchResponse(any())).thenReturn(response);
     }

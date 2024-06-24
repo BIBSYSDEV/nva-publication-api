@@ -93,12 +93,13 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
                    .stream()
                    .map(ResourceWithId::getIdentifier)
                    .map(this::getPublicationByIdentifier)
+                   .flatMap(Optional::stream)
                    .filter(item -> PublicationComparator.publicationsMatch(item, publication))
                    .toList();
     }
 
-    private Publication getPublicationByIdentifier(SortableIdentifier identifier) {
-        return attempt(() -> resourceService.getPublicationByIdentifier(identifier)).orElseThrow();
+    private Optional<Publication> getPublicationByIdentifier(SortableIdentifier identifier) {
+        return attempt(() -> resourceService.getPublicationByIdentifier(identifier)).toOptional();
     }
 
     private Optional<String> fetchResponse(URI uri) {

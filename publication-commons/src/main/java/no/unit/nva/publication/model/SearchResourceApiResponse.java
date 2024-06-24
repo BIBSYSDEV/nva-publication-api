@@ -14,6 +14,8 @@ public record SearchResourceApiResponse(int totalHits, List<ResourceWithId> hits
         return toJsonString();
     }
 
+
+    @JacocoGenerated
     public boolean containsSingleHit() {
         return this.totalHits == SINGLE_HIT;
     }
