@@ -130,6 +130,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         return switch (failure.getException()) {
             case NotFoundException ex -> ex;
             case UnauthorizedException ex -> ex;
+            case BadRequestException ex -> ex;
             case MultipleCristinIdentifiersException ex -> new BadRequestException(MULTIPLE_CRISTIN_IDENTIFIERS_MESSAGE);
             default -> new BadGatewayException(SOMETHING_WENT_WRONG_MESSAGE);
         };
