@@ -1826,7 +1826,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldThrowMultipleCristinIdentifiersException() throws IOException {
+    void shouldThrowMultipleCristinIdentifiersExceptionWhenUpdatingPublicationWithSecondCristinIdentifier() throws IOException {
 
         var publication = randomPublication(ConferencePoster.class);
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier(SOURCE_CRISTIN, randomString())));

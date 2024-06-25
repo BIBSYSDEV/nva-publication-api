@@ -52,10 +52,6 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     private static final Logger logger = LoggerFactory.getLogger(CreatePublicationHandler.class);
     private static final List<String> THESIS_INSTANCE_TYPES = List.of("DegreeBachelor", "DegreeMaster", "DegreePhd",
                                                                       "DegreeLicentiate");
-    public static final String MULTIPLE_CRISTIN_IDENTIFIERS_MESSAGE = "Publication is not valid! "
-                                                                      + "Multiple Cristin identifiers "
-                                                                      + "are not allowed";
-    public static final String SOMETHING_WENT_WRONG_MESSAGE = "An unknown exception occurred!";
     private final ResourceService publicationService;
     private final PublicationValidator publicationValidator;
     private final String apiHost;
