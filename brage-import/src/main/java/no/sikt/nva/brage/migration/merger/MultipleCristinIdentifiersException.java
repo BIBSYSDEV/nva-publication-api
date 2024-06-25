@@ -1,4 +1,4 @@
-package no.unit.nva.publication.model.business;
+package no.sikt.nva.brage.migration.merger;
 
 public class MultipleCristinIdentifiersException extends RuntimeException {
 

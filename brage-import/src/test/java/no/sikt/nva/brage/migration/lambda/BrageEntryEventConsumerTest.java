@@ -86,6 +86,7 @@ import no.sikt.nva.brage.migration.mapper.InvalidIsmnRuntimeException;
 import no.sikt.nva.brage.migration.merger.AssociatedArtifactException;
 import no.sikt.nva.brage.migration.merger.BrageMergingReport;
 import no.sikt.nva.brage.migration.merger.DiscardedFilesReport;
+import no.sikt.nva.brage.migration.merger.MultipleCristinIdentifiersException;
 import no.sikt.nva.brage.migration.merger.PublicationMergeReport;
 import no.sikt.nva.brage.migration.merger.UnmappableCristinRecordException;
 import no.sikt.nva.brage.migration.merger.findexistingpublication.DuplicateDetectionCause;
@@ -155,6 +156,7 @@ import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.model.business.Resource;
@@ -1821,6 +1823,41 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         assertNotNull(importDetail.importDate());
         assertThat(importDetail.importSource().getArchive(),
                    is(equalTo(brageGenerator.getBrageRecord().getCustomer().getName())));
+    }
+
+    @Test
+    void shouldThrowMultipleCristinIdentifiersException() throws IOException {
+
+        var publication = randomPublication(ConferencePoster.class);
+        publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier(SOURCE_CRISTIN, randomString())));
+        publication.getEntityDescription().getReference().setDoi(null);
+        publication.getEntityDescription().setContributors(List.of());
+        publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder().withYear("2022").build());
+        var existingPublication = resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromBrageArchive(randomString()));
+        var instanceType = existingPublication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
+        var affiliationIdentifier = randomString();
+        var contributor = new Contributor(new Identity(randomString(), null),
+                                          "Creator",
+                                          "Creator",
+                                          List.of(new Affiliation(affiliationIdentifier, "ntnu",
+                                                                  null)));
+
+        mockSingleHitSearchApiResponse(existingPublication.getIdentifier(), 200);
+        var generator = new NvaBrageMigrationDataGenerator.Builder()
+                            .withCristinIdentifier(randomString())
+                            .withMainTitle(publication.getEntityDescription().getMainTitle())
+                            .withContributor(contributor)
+                            .withPublicationDate(new PublicationDate("2022",
+                                                                     new PublicationDateNva.Builder().withYear("2022").build()))
+                            .withType(new Type(List.of(), instanceType))
+                            .build();
+        var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
+        handler.handleRequest(s3Event, CONTEXT);
+
+        var errorReport = extractActualReportFromS3Client(s3Event, MultipleCristinIdentifiersException.class.getSimpleName(),
+                                                          generator.getBrageRecord());
+        assertThat(errorReport, is(notNullValue()));
+
     }
 
     private BrageTestRecord generateBrageRecordAndPersistDuplicateByCristinIdentifier(
