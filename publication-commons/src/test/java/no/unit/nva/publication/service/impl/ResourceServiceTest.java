@@ -1194,6 +1194,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var updatedPublication = resourceService.updatePublicationByImportEntry(publication,
                                                                    ImportSource.fromSource(Source.CRISTIN));
 
+        assertThat(updatedPublication.getImportDetails().size(), is(equalTo(1)));
         assertThat(updatedPublication.getImportDetails().getFirst().importSource().getSource(),
                    is(equalTo(Source.CRISTIN)));
 

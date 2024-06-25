@@ -115,7 +115,6 @@ import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
-import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
@@ -974,6 +973,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                              .build();
 
         assertThat(publicationRepresentation.publication(), is(equalTo(expectedUpdatedPublication)));
+        assertThat(publicationRepresentation.publication().getImportDetails().size(), is(equalTo(2)));
     }
 
     @Test
