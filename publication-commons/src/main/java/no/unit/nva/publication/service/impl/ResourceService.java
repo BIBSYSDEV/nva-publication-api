@@ -179,6 +179,13 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResource(newResource);
     }
 
+    public Publication updatePublicationByImportEntry(Publication publication, ImportSource importSource) {
+        if (nonNull(importSource)) {
+            publication.addImportDetail(new ImportDetail(Instant.now(), importSource));
+        }
+        return updateResourceService.updatePublicationButDoNotChangeStatus(publication);
+    }
+
     /**
      * Persists importCandidate with updated database metadata fields.
      *
