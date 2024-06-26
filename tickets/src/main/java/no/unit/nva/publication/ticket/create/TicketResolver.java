@@ -84,14 +84,14 @@ public class TicketResolver {
     }
 
     private PublishingRequestCase createPublishingRequestForNonCurator(PublishingRequestCase publishingRequestCase,
-                                                           Publication publication, Username finalizedBy) throws ApiGatewayException {
+                                                           Publication publication, Username curator) throws ApiGatewayException {
         if (REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(publishingRequestCase.getWorkflow())) {
             publishPublicationAndFiles(publication);
-            return createAutoApprovedTicket(publishingRequestCase, publication, finalizedBy);
+            return createAutoApprovedTicket(publishingRequestCase, publication, curator);
         }
         if (REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(publishingRequestCase.getWorkflow())) {
             publishMetadata(publication);
-            return createAutoApprovedTicketWhenPublicationContainsMetadataOnly(publishingRequestCase, publication, finalizedBy);
+            return createAutoApprovedTicketWhenPublicationContainsMetadataOnly(publishingRequestCase, publication, curator);
         } else {
             return (PublishingRequestCase) publishingRequestCase.persistNewTicket(ticketService);
         }
