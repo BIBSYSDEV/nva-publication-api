@@ -8,6 +8,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
@@ -17,6 +18,7 @@ import no.sikt.nva.brage.migration.merger.AssociatedArtifactMover;
 import no.sikt.nva.brage.migration.merger.BrageMergingReport;
 import no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger;
 import no.sikt.nva.brage.migration.merger.DiscardedFilesReport;
+import no.sikt.nva.brage.migration.merger.MultipleCristinIdentifiersException;
 import no.sikt.nva.brage.migration.merger.PublicationMergeReport;
 import no.sikt.nva.brage.migration.merger.UnmappableCristinRecordException;
 import no.sikt.nva.brage.migration.merger.findexistingpublication.DuplicatePublicationReporter;
@@ -61,8 +63,6 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     public static final String UPDATE_REPORTS_PATH = "UPDATE_REPORTS";
     public static final String CRISTIN_RECORD_EXCEPTION =
         "Cristin record has not been merged with existing publication: ";
-    public static final String DUPLICATE_PUBLICATIONS_MESSAGE =
-        "More than one publication with this cristin identifier already exists";
     private static final int MAX_SLEEP_TIME = 100;
     private static final String S3_URI_TEMPLATE = "s3://%s/%s";
     private static final String ERROR_SAVING_BRAGE_IMPORT = "Error saving brage import for record with object key: ";
@@ -267,10 +267,22 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private BrageMergingReport persistInDatabaseAndCreateMergeReport(Publication publicationForUpdate,
                                                                      Publication existinPublication,
                                                                      PublicationRepresentation publicationRepresentation) {
+        validateBeforeUpdate(publicationForUpdate);
         var customerName = publicationRepresentation.brageRecord().getCustomer().getName();
         var importSource = ImportSource.fromBrageArchive(customerName);
         var newImage = resourceService.updatePublicationByImportEntry(publicationForUpdate, importSource);
         return new BrageMergingReport(existinPublication, newImage);
+    }
+
+    private void validateBeforeUpdate(Publication publication) {
+        var cristinIdentifiers = getCristinIdentifiers(publication);
+        if (hasMultipleEntries(cristinIdentifiers)) {
+            throw new MultipleCristinIdentifiersException();
+        }
+    }
+
+    private static boolean hasMultipleEntries(Collection<String> collection) {
+        return collection.size() > 1;
     }
 
     private Publication updatedPublication(PublicationRepresentation publicationRepresentation,

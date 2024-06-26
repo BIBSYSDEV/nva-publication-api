@@ -109,13 +109,13 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
 
         RightsRetentionsApplier.rrsApplierForNewPublication(newPublication, customer.getRightsRetentionStrategy(),
                                                             customerAwareUserContext.username()).handle();
-
         var createdPublication = Resource.fromPublication(newPublication)
                                      .persistNew(publicationService, customerAwareUserContext.userInstance());
         setLocationHeader(createdPublication.getIdentifier());
 
         return PublicationResponse.fromPublication(createdPublication);
     }
+
 
     private JavaHttpClientCustomerApiClient getJavaHttpClientCustomerApiClient() {
         var backendClientCredentials = secretsReader.fetchClassSecret(
@@ -125,8 +125,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         var cognitoCredentials = new CognitoCredentials(backendClientCredentials::getId,
                                                         backendClientCredentials::getSecret,
                                                         cognitoServerUri);
-        var customerApiClient = new JavaHttpClientCustomerApiClient(httpClient, cognitoCredentials);
-        return customerApiClient;
+        return new JavaHttpClientCustomerApiClient(httpClient, cognitoCredentials);
     }
 
     private static Customer fetchCustomerOrFailWithBadGateway(CustomerApiClient customerApiClient,
