@@ -100,7 +100,7 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
     }
 
     private static boolean hasValidAccessRights(RequestInfo requestInfo) {
-        return requestInfo.userIsAuthorized(AccessRight.MANAGE_DOI) || requestInfo.userIsAuthorized(AccessRight.MANAGE_PUBLISHING_REQUESTS);
+        return requestInfo.userIsAuthorized(AccessRight.MANAGE_DOI);
     }
 
     private Publication fetchPublication(SortableIdentifier publicationIdentifier, UserInstance user,
