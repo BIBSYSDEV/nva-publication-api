@@ -2,6 +2,7 @@ package no.sikt.nva.brage.migration.merger.publicationcontextmerger;
 
 import static java.util.Objects.nonNull;
 import java.net.URI;
+import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.Agent;
 import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.PublicationContext;
@@ -9,8 +10,8 @@ import no.unit.nva.model.contexttypes.place.Place;
 
 public final class EventMerger extends PublicationContextMerger {
 
-    private EventMerger() {
-        super();
+    private EventMerger(Record record) {
+        super(record);
     }
 
     public static Event merge(Event event, PublicationContext publicationContext) {

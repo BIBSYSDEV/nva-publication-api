@@ -1,15 +1,16 @@
 package no.sikt.nva.brage.migration.merger.publicationcontextmerger;
 
+import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.contexttypes.GeographicalContent;
 import no.unit.nva.model.contexttypes.PublicationContext;
 
-public final class GeographicalContentMerger extends PublicationContextMerger{
+public class GeographicalContentMerger extends PublicationContextMerger{
 
-    private GeographicalContentMerger() {
-        super();
+    public GeographicalContentMerger(Record record) {
+        super(record);
     }
 
-    public static PublicationContext merge(GeographicalContent geographicalContent,
+    public PublicationContext merge(GeographicalContent geographicalContent,
                                            PublicationContext publicationContext) {
         if (publicationContext instanceof GeographicalContent newGeographicalContent) {
             return new GeographicalContent(getPublisher(

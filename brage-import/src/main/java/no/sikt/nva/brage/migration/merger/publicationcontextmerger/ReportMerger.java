@@ -1,17 +1,18 @@
 package no.sikt.nva.brage.migration.merger.publicationcontextmerger;
 
+import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 
-public final class ReportMerger extends PublicationContextMerger {
+public class ReportMerger extends PublicationContextMerger {
 
-    private ReportMerger() {
-        super();
+    public ReportMerger(Record record) {
+        super(record);
     }
 
-    public static Report merge(Report report, PublicationContext publicationContext)
+    public Report merge(Report report, PublicationContext publicationContext)
         throws InvalidIssnException, InvalidUnconfirmedSeriesException {
         if (publicationContext instanceof Report newReport) {
             return new Report.Builder().withSeriesNumber(
