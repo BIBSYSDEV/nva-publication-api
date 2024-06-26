@@ -194,7 +194,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                                              S3Event s3Event) {
         return attempt(() -> updatedPublication(publicationRepresentation, existingPublication.existingPublication()))
                    .map(publicationForUpdate -> persistInDatabaseAndCreateMergeReport(publicationForUpdate,
-                                                                                      existingPublication.existingPublication()))
+                                                                                      existingPublication.existingPublication(), publicationRepresentation))
                    .map(mergeReport -> persistMergeReports(mergeReport, s3Event, publicationRepresentation,
                                                            existingPublication))
 
@@ -265,9 +265,12 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private BrageMergingReport persistInDatabaseAndCreateMergeReport(Publication publicationForUpdate,
-                                                                     Publication existinPublication) {
+                                                                     Publication existinPublication,
+                                                                     PublicationRepresentation publicationRepresentation) {
         validateBeforeUpdate(publicationForUpdate);
-        var newImage = resourceService.updatePublication(publicationForUpdate);
+        var customerName = publicationRepresentation.brageRecord().getCustomer().getName();
+        var importSource = ImportSource.fromBrageArchive(customerName);
+        var newImage = resourceService.updatePublicationByImportEntry(publicationForUpdate, importSource);
         return new BrageMergingReport(existinPublication, newImage);
     }
 

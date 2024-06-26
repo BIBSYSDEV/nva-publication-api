@@ -1,5 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
@@ -177,6 +178,14 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setModifiedDate(inputData.getModifiedDate());
         newResource.setStatus(PUBLISHED);
         return insertResource(newResource);
+    }
+
+    public Publication updatePublicationByImportEntry(Publication publication, ImportSource importSource) {
+        if (isNull(importSource)) {
+            throw new IllegalArgumentException();
+        }
+        publication.addImportDetail(new ImportDetail(Instant.now(), importSource));
+        return updateResourceService.updatePublicationButDoNotChangeStatus(publication);
     }
 
     /**

@@ -1187,6 +1187,19 @@ class ResourceServiceTest extends ResourcesLocalTest {
                      () -> resourceService.deletePublication(resourceService.getPublication(publication)));
     }
 
+    @Test
+    void shouldUpdatePublicationByImportedEntry() throws ApiGatewayException {
+        var publication = createPublishedResource();
+        publication.setDoi(randomDoi());
+        var updatedPublication = resourceService.updatePublicationByImportEntry(publication,
+                                                                   ImportSource.fromSource(Source.CRISTIN));
+
+        assertThat(updatedPublication.getImportDetails().size(), is(equalTo(1)));
+        assertThat(updatedPublication.getImportDetails().getFirst().importSource().getSource(),
+                   is(equalTo(Source.CRISTIN)));
+
+    }
+
     private static AssociatedArtifactList createEmptyArtifactList() {
         return new AssociatedArtifactList(emptyList());
     }
