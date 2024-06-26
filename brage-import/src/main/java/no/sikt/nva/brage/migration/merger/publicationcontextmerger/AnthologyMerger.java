@@ -6,7 +6,7 @@ import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.PublicationContext;
 
-public abstract class AnthologyMerger extends PublicationContextMerger {
+public final class AnthologyMerger extends PublicationContextMerger {
 
     private AnthologyMerger(Record record) {
         super(record);
