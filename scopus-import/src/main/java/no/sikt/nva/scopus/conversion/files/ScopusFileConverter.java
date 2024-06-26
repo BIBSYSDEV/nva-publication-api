@@ -7,6 +7,7 @@ import static java.util.Objects.nonNull;
 import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toCollection;
+import static no.sikt.nva.scopus.ScopusConstants.UPLOAD_DETAILS_USERNAME;
 import static no.sikt.nva.scopus.conversion.files.model.ContentVersion.AM;
 import static no.sikt.nva.scopus.conversion.files.model.ContentVersion.VOR;
 import static nva.commons.core.attempt.Try.attempt;
@@ -48,6 +49,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
+import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
@@ -373,7 +375,12 @@ public class ScopusFileConverter {
                                       .withMimeType(mimeType)
                                       .withSize(inputStreamToSave.getLength())
                                       .withLicense(DEFAULT_LICENSE)
+                                      .withUploadDetails(createUploadDetails())
                                       .buildPublishedFile());
+    }
+
+    private UploadDetails createUploadDetails() {
+        return new UploadDetails(UPLOAD_DETAILS_USERNAME, Instant.now());
     }
 
     private List<AssociatedArtifact> extractAssociatedArtifactsFromFileReference(DocTp docTp) {

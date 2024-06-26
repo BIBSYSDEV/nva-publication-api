@@ -191,6 +191,27 @@ public class ScopusFileConverterTest {
         assertThat(file.getName(), is(notNullValue()));
     }
 
+    @Test
+    void shouldSetUploadDetailsWhenFetchingAssociatedArtifactsFromXml() throws IOException, InterruptedException {
+        var firstUrl = randomUri();
+        scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccessWithDownloadUrl(firstUrl));
+        mockDownloadUrlResponse();
+        var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
+        var expectedUserName = "central-import@20754.0.0.0";
+        assertThat(file.getUploadDetails().getUploadedBy().getValue(), is(equalTo(expectedUserName)));
+        assertThat(file.getUploadDetails().getUploadedDate(), is(notNullValue()));
+    }
+
+    @Test
+    void shouldSetUploadDetailsWhenFetchingFileFromDoi() throws IOException, InterruptedException {
+        var responseBody = "crossrefResponseMissingFields.json";
+        mockResponsesWithHeader(responseBody, Map.of());
+        var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
+        var expectedUserName = "central-import@20754.0.0.0";
+        assertThat(file.getUploadDetails().getUploadedBy().getValue(), is(equalTo(expectedUserName)));
+        assertThat(file.getUploadDetails().getUploadedDate(), is(notNullValue()));
+    }
+
     private void mockDownloadUrlResponse() throws IOException, InterruptedException {
         var fetchDownloadUrlResponse = (HttpResponse<InputStream>) mock(HttpResponse.class);
         var body = mock(ByteArrayInputStream.class);
