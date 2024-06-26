@@ -71,53 +71,55 @@ public class TicketResolver {
                                                           Publication publication,
                                                           RequestUtils requestUtils)
         throws ApiGatewayException {
+        var username = new Username(requestUtils.username());
         return requestUtils.isAuthorizedToManage(publishingRequestCase)
-                   ? createPublishingRequestForCurator(publishingRequestCase, publication)
-                   : createPublishingRequestForNonCurator(publishingRequestCase, publication);
+                   ? createPublishingRequestForCurator(publishingRequestCase, publication, username)
+                   : createPublishingRequestForNonCurator(publishingRequestCase, publication, username);
     }
 
     private PublishingRequestCase createPublishingRequestForCurator(PublishingRequestCase publishingRequestCase,
-                                                           Publication publication) throws ApiGatewayException {
+                                                           Publication publication, Username curator) throws ApiGatewayException {
         publishPublicationAndFiles(publication);
-        return createAutoApprovedTicketForCurator(publishingRequestCase, publication);
+        return createAutoApprovedTicketForCurator(publishingRequestCase, publication, curator);
     }
 
     private PublishingRequestCase createPublishingRequestForNonCurator(PublishingRequestCase publishingRequestCase,
-                                                           Publication publication) throws ApiGatewayException {
+                                                           Publication publication, Username finalizedBy) throws ApiGatewayException {
         if (REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(publishingRequestCase.getWorkflow())) {
             publishPublicationAndFiles(publication);
-            return createAutoApprovedTicket(publishingRequestCase, publication);
+            return createAutoApprovedTicket(publishingRequestCase, publication, finalizedBy);
         }
         if (REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(publishingRequestCase.getWorkflow())) {
             publishMetadata(publication);
-            return createAutoApprovedTicketWhenPublicationContainsMetadataOnly(publishingRequestCase, publication);
+            return createAutoApprovedTicketWhenPublicationContainsMetadataOnly(publishingRequestCase, publication, finalizedBy);
         } else {
             return (PublishingRequestCase) publishingRequestCase.persistNewTicket(ticketService);
         }
     }
 
     private PublishingRequestCase createAutoApprovedTicketForCurator(PublishingRequestCase publishingRequestCase,
-                                                                     Publication publication)
+                                                                     Publication publication, Username curator)
         throws ApiGatewayException {
-        publishingRequestCase.setAssignee(new Username(publishingRequestCase.getOwner().toString()));
+        publishingRequestCase.setAssignee(curator);
         publishingRequestCase.emptyFilesForApproval();
-        return publishingRequestCase.persistAutoComplete(ticketService, publication);
+        return publishingRequestCase.persistAutoComplete(ticketService, publication, curator);
     }
 
     private PublishingRequestCase createAutoApprovedTicketWhenPublicationContainsMetadataOnly(
-        PublishingRequestCase ticket, Publication publication)
+        PublishingRequestCase ticket, Publication publication, Username finalizedBy)
         throws ApiGatewayException {
         if (hasNoFiles(publication)) {
-            return createAutoApprovedTicket(ticket, publication);
+            return createAutoApprovedTicket(ticket, publication, finalizedBy);
         } else {
             return (PublishingRequestCase) ticket.persistNewTicket(ticketService);
         }
     }
 
-    private PublishingRequestCase createAutoApprovedTicket(PublishingRequestCase ticket, Publication publication)
+    private PublishingRequestCase createAutoApprovedTicket(PublishingRequestCase ticket, Publication publication,
+                                                           Username finalizedBy)
         throws ApiGatewayException {
         ticket.emptyFilesForApproval();
-        return ticket.persistAutoComplete(ticketService, publication);
+        return ticket.persistAutoComplete(ticketService, publication, finalizedBy);
     }
 
     private PublishingRequestCase updatePublishingRequestWorkflow(PublishingRequestCase ticket, URI customerId)

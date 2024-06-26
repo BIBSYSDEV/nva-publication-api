@@ -14,6 +14,7 @@ import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_SECRET_NAME;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.LOCATION_HEADER;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
@@ -657,6 +658,26 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(file, is(instanceOf(UnpublishedFile.class)));
     }
 
+    @Test
+    void shouldSetFinalizedByFromRequestUtilsWhenTicketIsAutoApproved()
+        throws ApiGatewayException, IOException {
+        var publication = createPersistedPublishedPublication();
+        var publicationPublisher = publication.getPublisher().getId();
+        var curatorName = randomString();
+        var requestBody = constructDto(PublishingRequestCase.class);
+        var request = createHttpTicketCreationRequestWithApprovedAccessRight(requestBody, publication, curatorName,
+                                                                             publicationPublisher,
+                                                                             MANAGE_PUBLISHING_REQUESTS, MANAGE_DOI);
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+
+        var ticket = fetchTicket(response);
+
+        assertThat(ticket.getFinalizedBy().toString(), is(not(equalTo(publication.getResourceOwner().getOwner()))));
+        assertThat(ticket.getFinalizedBy().toString(), is(equalTo(curatorName)));
+    }
+
     private PublishingRequestCase fetchTicket(Publication publishedPublication,
                                               Class<PublishingRequestCase> ticketType) {
         return ticketService.fetchTicketByResourceIdentifier(publishedPublication.getPublisher().getId(),
@@ -844,12 +865,22 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                                                                                URI customerId,
                                                                                AccessRight accessRight)
         throws JsonProcessingException {
+        return createHttpTicketCreationRequestWithApprovedAccessRight(ticketDto, publication, randomString(), customerId,
+                                                                      accessRight);
+    }
+
+    private InputStream createHttpTicketCreationRequestWithApprovedAccessRight(TicketDto ticketDto,
+                                                                               Publication publication,
+                                                                               String userName,
+                                                                               URI customerId,
+                                                                               AccessRight... accessRight)
+        throws JsonProcessingException {
         return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
                    .withBody(ticketDto)
                    .withAuthorizerClaim(PERSON_AFFILIATION_CLAIM, customerId.toString())
                    .withAccessRights(customerId, accessRight)
                    .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
-                   .withUserName(randomString())
+                   .withUserName(userName)
                    .withCurrentCustomer(customerId)
                    .withPersonCristinId(randomUri())
                    .build();

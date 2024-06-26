@@ -557,7 +557,8 @@ public class UpdatePublicationHandler
         throws ApiGatewayException {
         return requestInfo.userIsAuthorized(MANAGE_PUBLISHING_REQUESTS)
                || useIsAllowedToPublishFiles(customer)
-                   ? publishingRequest.persistAutoComplete(ticketService, publicationUpdate)
+                   ? publishingRequest.persistAutoComplete(ticketService, publicationUpdate,
+                                                           new Username(requestInfo.getUserName()))
                    : publishingRequest.persistNewTicket(ticketService);
     }
 

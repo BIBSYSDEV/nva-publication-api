@@ -353,9 +353,10 @@ public class PublishingRequestCase extends TicketEntry {
                && Objects.equals(getApprovedFiles(), that.getApprovedFiles());
     }
 
-    public PublishingRequestCase persistAutoComplete(TicketService ticketService, Publication publication)
+    public PublishingRequestCase persistAutoComplete(TicketService ticketService, Publication publication,
+                                                     Username finalizedBy)
         throws ApiGatewayException {
-        var completed = this.complete(publication, publication.getResourceOwner().getOwner());
+        var completed = this.complete(publication, finalizedBy);
         return ticketService.createTicket(completed);
     }
 
