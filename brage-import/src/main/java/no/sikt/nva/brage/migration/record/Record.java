@@ -1,10 +1,12 @@
 package no.sikt.nva.brage.migration.record;
 
+import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import java.net.URI;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -42,6 +44,7 @@ public class Record implements JsonSerializable {
     private String subjectCode;
     private String accessCode;
     private List<Project> projects;
+    private Set<String> prioritizedProperties;
 
     @JsonCreator
     public Record() {
@@ -325,6 +328,14 @@ public class Record implements JsonSerializable {
 
     public void setEntityDescription(EntityDescription entityDescription) {
         this.entityDescription = entityDescription;
+    }
+
+    public Set<String> getPrioritizedProperties(){
+        return nonNull(prioritizedProperties) ? prioritizedProperties : new HashSet<>();
+    }
+
+    public void setPrioritizedProperties(Set<String> prioritizedProperties){
+        this.prioritizedProperties = prioritizedProperties;
     }
 
     @JsonProperty("subjects")

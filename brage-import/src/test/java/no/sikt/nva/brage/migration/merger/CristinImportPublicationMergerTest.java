@@ -3,10 +3,12 @@ package no.sikt.nva.brage.migration.merger;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyIterable;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -18,6 +20,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Book.BookBuilder;
+import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.GeographicalContent;
 import no.unit.nva.model.contexttypes.Journal;
@@ -33,6 +36,7 @@ import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.Map;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
+import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.media.MediaInterview;
@@ -222,6 +226,26 @@ class CristinImportPublicationMergerTest {
         assertThat(updatedPublication.getProjects(), is(not(emptyIterable())));
     }
 
+    @Test
+    void shouldPrioritizePublisherIfRecordHasPublisherPrioritized()
+        throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
+        var existingPublication = randomPublication(DegreeBachelor.class);
+        var shouldBeOverWrittenDuringMerging = new Degree.Builder().withPublisher(new Publisher(randomUri())).build();
+        existingPublication.getEntityDescription().getReference().setPublicationContext(shouldBeOverWrittenDuringMerging);
+        var prioritizedPublisher = new Publisher(randomUri());
+        var bragePublication = randomPublication(DegreeBachelor.class);
+        bragePublication.getEntityDescription().getReference().setPublicationContext(new Degree.Builder().withPublisher(prioritizedPublisher).build());
+        var record = new Record();
+        record.setId(bragePublication.getHandle());
+        record.setPrioritizedProperties(Set.of("publisher"));
+        var updatedPublication = mergePublications(existingPublication, bragePublication, record);
+
+        var actualPublicationContext =
+            (Degree)   updatedPublication.getEntityDescription().getReference().getPublicationContext();
+        var actualPublisher = (Publisher) actualPublicationContext.getPublisher();
+        assertThat(actualPublisher.getId(), is(equalTo(prioritizedPublisher.getId())));
+    }
+
     private PublicationContext emptyUnconfirmedJournal() throws InvalidIssnException {
         return new UnconfirmedJournal(null, null, null);
     }
@@ -230,9 +254,16 @@ class CristinImportPublicationMergerTest {
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
         var record = new Record();
         record.setId(bragePublication.getHandle());
+        return mergePublications(existingPublication, bragePublication, record);
+    }
+
+    private static Publication mergePublications(Publication existingPublication, Publication bragePublication,
+                                                 Record record)
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var representation = new PublicationRepresentation(record, bragePublication);
         return new CristinImportPublicationMerger(existingPublication,
                                                   representation).mergePublications();
+
     }
 
     private static Book emptyBook() throws InvalidUnconfirmedSeriesException {

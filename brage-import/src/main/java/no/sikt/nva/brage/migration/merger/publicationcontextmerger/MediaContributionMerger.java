@@ -1,16 +1,19 @@
 package no.sikt.nva.brage.migration.merger.publicationcontextmerger;
 
 import static java.util.Objects.nonNull;
+import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.contexttypes.MediaContribution;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.media.MediaFormat;
 import no.unit.nva.model.contexttypes.media.MediaSubType;
 import no.unit.nva.model.contexttypes.media.SeriesEpisode;
+import nva.commons.core.JacocoGenerated;
 
 public final class MediaContributionMerger extends PublicationContextMerger {
 
-    private MediaContributionMerger() {
-        super();
+    @JacocoGenerated
+    private MediaContributionMerger(Record record) {
+        super(record);
     }
 
     public static MediaContribution merge(MediaContribution mediaContribution, PublicationContext publicationContext) {

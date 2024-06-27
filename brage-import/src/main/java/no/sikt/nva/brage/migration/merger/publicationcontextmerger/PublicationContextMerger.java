@@ -2,6 +2,7 @@ package no.sikt.nva.brage.migration.merger.publicationcontextmerger;
 
 import static java.util.Objects.nonNull;
 import java.util.List;
+import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.contexttypes.BookSeries;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.PublishingHouse;
@@ -13,8 +14,15 @@ import nva.commons.core.JacocoGenerated;
 
 public class PublicationContextMerger {
 
+    private final boolean shouldPrioritizeBragePublisher;
+
     @JacocoGenerated
-    public PublicationContextMerger() {
+    public PublicationContextMerger(Record record) {
+        this.shouldPrioritizeBragePublisher = checkPrioritizedPublisher(record);
+    }
+
+    private static boolean checkPrioritizedPublisher(Record record) {
+        return record.getPrioritizedProperties().contains("publisher");
     }
 
     public static List<String> getIsbnList(List<String> existingList, List<String> newList) {
@@ -35,7 +43,10 @@ public class PublicationContextMerger {
         }
     }
 
-    public static PublishingHouse getPublisher(PublishingHouse oldPublisher, PublishingHouse newPublisher) {
+    public PublishingHouse getPublisher(PublishingHouse oldPublisher, PublishingHouse newPublisher) {
+        if (shouldPrioritizeBragePublisher) {
+            return newPublisher;
+        }
         if (nonNull(oldPublisher) && oldPublisher instanceof Publisher publisher) {
             return publisher;
         }
