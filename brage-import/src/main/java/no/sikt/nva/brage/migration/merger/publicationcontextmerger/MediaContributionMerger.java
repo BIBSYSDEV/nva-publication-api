@@ -7,9 +7,11 @@ import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.media.MediaFormat;
 import no.unit.nva.model.contexttypes.media.MediaSubType;
 import no.unit.nva.model.contexttypes.media.SeriesEpisode;
+import nva.commons.core.JacocoGenerated;
 
 public final class MediaContributionMerger extends PublicationContextMerger {
 
+    @JacocoGenerated
     private MediaContributionMerger(Record record) {
         super(record);
     }

@@ -7,9 +7,11 @@ import no.unit.nva.model.Agent;
 import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.place.Place;
+import nva.commons.core.JacocoGenerated;
 
 public final class EventMerger extends PublicationContextMerger {
 
+    @JacocoGenerated
     private EventMerger(Record record) {
         super(record);
     }

@@ -7,9 +7,11 @@ import no.unit.nva.model.contexttypes.Periodical;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.exceptions.InvalidIssnException;
+import nva.commons.core.JacocoGenerated;
 
 public final class JournalMerger extends PublicationContextMerger {
 
+    @JacocoGenerated
     private JournalMerger(Record record) {
         super(record);
     }

@@ -5,9 +5,11 @@ import no.unit.nva.model.Revision;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.sikt.nva.brage.migration.record.Record;
+import nva.commons.core.JacocoGenerated;
 
 public class BookMerger extends PublicationContextMerger {
 
+    @JacocoGenerated
     public BookMerger(Record record) {
         super(record);
     }

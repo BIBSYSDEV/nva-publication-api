@@ -5,9 +5,11 @@ import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
+import nva.commons.core.JacocoGenerated;
 
 public class ReportMerger extends PublicationContextMerger {
 
+    @JacocoGenerated
     public ReportMerger(Record record) {
         super(record);
     }

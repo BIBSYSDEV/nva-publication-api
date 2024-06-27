@@ -8,9 +8,11 @@ import no.unit.nva.model.contexttypes.Degree.Builder;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
+import nva.commons.core.JacocoGenerated;
 
 public class DegreeMerger extends PublicationContextMerger {
 
+    @JacocoGenerated
     public DegreeMerger(Record record) {
         super(record);
     }

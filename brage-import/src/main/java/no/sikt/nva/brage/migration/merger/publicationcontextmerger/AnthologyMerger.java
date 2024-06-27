@@ -5,9 +5,11 @@ import java.net.URI;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import nva.commons.core.JacocoGenerated;
 
 public final class AnthologyMerger extends PublicationContextMerger {
 
+    @JacocoGenerated
     private AnthologyMerger(Record record) {
         super(record);
     }
