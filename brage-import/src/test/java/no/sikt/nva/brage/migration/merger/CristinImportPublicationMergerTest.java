@@ -1,5 +1,6 @@
 package no.sikt.nva.brage.migration.merger;
 
+import static no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger.PRIORITIZE_CONTRIBUTORS_WITH_CREATOR_ROLE;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
@@ -9,6 +10,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -16,6 +18,8 @@ import java.util.List;
 import java.util.Set;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.sikt.nva.brage.migration.record.Record;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
@@ -42,6 +46,8 @@ import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.media.MediaInterview;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import org.junit.jupiter.api.Test;
 
 class CristinImportPublicationMergerTest {
@@ -244,6 +250,51 @@ class CristinImportPublicationMergerTest {
             (Degree)   updatedPublication.getEntityDescription().getReference().getPublicationContext();
         var actualPublisher = (Publisher) actualPublicationContext.getPublisher();
         assertThat(actualPublisher.getId(), is(equalTo(prioritizedPublisher.getId())));
+    }
+
+    @Test
+    void shouldPrioritizeAuthorsFromBrageIfRecordHasContributorsWithRoleCreatorPrioritized()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var existingPublication = randomPublication(DegreeBachelor.class);
+        var contributorThatShouldBeOverWrittenDuringMerging = new Contributor.Builder()
+                                                                  .withIdentity(new Identity.Builder()
+                                                                                    .withName(randomString())
+                                                                                    .build())
+                                                                  .withAffiliations(List.of())
+                                                                  .withSequence(1)
+                                                                  .withRole(new RoleType(Role.CREATOR))
+                                                                  .build();
+        var contributorThatShouldBeKept = new Contributor.Builder()
+                                              .withIdentity(new Identity.Builder().withName(randomString()).build())
+                                              .withAffiliations(List.of())
+                                              .withSequence(2)
+                                              .withRole(new RoleType(Role.ADVISOR))
+                                              .build();
+        existingPublication.getEntityDescription().setContributors(List.of(contributorThatShouldBeOverWrittenDuringMerging,
+                                                                           contributorThatShouldBeKept));
+        var bragePublication = randomPublication(DegreeBachelor.class);
+        var contributorThatShouldBePrioritized = new Contributor.Builder()
+                                                     .withIdentity(new Identity.Builder().withName(randomString()).build())
+                                                     .withAffiliations(List.of())
+                                                     .withSequence(1)
+                                                     .withRole(new RoleType(Role.CREATOR))
+                                                     .build();
+        var contributorThatShouldBeIgnored = new Contributor.Builder()
+                                                 .withIdentity(new Identity.Builder().withName(randomString()).build())
+                                                 .withAffiliations(List.of())
+                                                 .withSequence(2)
+                                                 .withRole(new RoleType(Role.ADVISOR))
+                                                 .build();
+        bragePublication.getEntityDescription().setContributors(List.of(contributorThatShouldBePrioritized, contributorThatShouldBeIgnored));
+        var record = new Record();
+        record.setId(bragePublication.getHandle());
+        record.setPrioritizedProperties(Set.of(PRIORITIZE_CONTRIBUTORS_WITH_CREATOR_ROLE));
+        var updatedPublication = mergePublications(existingPublication, bragePublication, record);
+        var contributors = updatedPublication.getEntityDescription().getContributors();
+        assertThat(contributors, hasItem(contributorThatShouldBePrioritized));
+        assertThat(contributors, hasItem(contributorThatShouldBeKept));
+        assertThat(contributors, not(hasItem(contributorThatShouldBeIgnored)));
+        assertThat(contributors, not(hasItem(contributorThatShouldBeOverWrittenDuringMerging)));
     }
 
     private PublicationContext emptyUnconfirmedJournal() throws InvalidIssnException {
