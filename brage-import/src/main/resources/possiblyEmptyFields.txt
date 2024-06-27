@@ -50,6 +50,8 @@ subjects
 projects
 fundings
 status
+publishedDate
+createdDate
 modifiedDate
 link
 additionalIdentifiers

@@ -19,7 +19,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import java.net.URI;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.Month;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -70,8 +69,7 @@ import software.amazon.awssdk.services.s3.S3Client;
     "PMD.ReturnEmptyCollectionRatherThanNull"})
 public class CristinMapper extends CristinMappingModule {
 
-    public static final String EMPTY_STRING = "";
-    public static final int FIRST_DAY_OF_MONTH = 1;
+
     public static final String CRISTIN_INSTITUTION_CODE = "CRIS";
     public static final String UNIT_INSTITUTION_CODE = "UNIT";
     public static final ResourceOwner SIKT_OWNER = new CristinLocale("SIKT", "20754", "0", "0",
@@ -108,9 +106,6 @@ public class CristinMapper extends CristinMappingModule {
                 .withHandle(extractHandle())
                 .withAdditionalIdentifiers(extractAdditionalIdentifiers())
                 .withEntityDescription(entityDescription)
-                .withCreatedDate(extractDate())
-                .withModifiedDate(extractEntryLastModifiedDate())
-                .withPublishedDate(extractDate())
                 .withPublisher(extractOrganization())
                 .withResourceOwner(extractResourceOwner())
                 .withStatus(PublicationStatus.PUBLISHED)
@@ -300,41 +295,6 @@ public class CristinMapper extends CristinMappingModule {
 
     private String getSiktCustomerId() {
         return Optional.ofNullable(CUSTOMER_MAP.get(DOMAIN_NAME)).orElseThrow();
-    }
-
-    private Instant extractDate() {
-        return Optional.ofNullable(cristinObject.getEntryCreationDate())
-                   .map(this::localDateToInstant)
-                   .orElseGet(() -> extractPublishedDate(cristinObject));
-    }
-
-    private Instant extractPublishedDate(CristinObject cristinObject) {
-        return Optional.ofNullable(cristinObject.getEntryPublishedDate())
-                   .map(this::localDateToInstant)
-                   .orElseGet(() -> convertPublishedYearInstant(cristinObject));
-    }
-
-    private Instant convertPublishedYearInstant(CristinObject cristinObject) {
-
-        return Optional.ofNullable(cristinObject.getPublicationYear())
-                   .map(this::yearToFirstDayOfYear)
-                   .orElse(null);
-    }
-
-    private Instant yearToFirstDayOfYear(int year) {
-        return LocalDate.of(year, Month.JANUARY, FIRST_DAY_OF_MONTH)
-                   .atStartOfDay()
-                   .toInstant(zoneOffset());
-    }
-
-    private Instant localDateToInstant(LocalDate localDate) {
-        return localDate.atStartOfDay().toInstant(zoneOffset());
-    }
-
-    private Instant extractEntryLastModifiedDate() {
-        return Optional.ofNullable(cristinObject.getEntryLastModifiedDate())
-                   .map(ld -> ld.atStartOfDay().toInstant(zoneOffset()))
-                   .orElseGet(this::extractDate);
     }
 
     private EntityDescription generateEntityDescription() {

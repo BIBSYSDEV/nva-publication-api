@@ -205,12 +205,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldKeepImportedEntryCreationAndModifiedDates() throws NotFoundException {
-        var createdDate = randomInstant();
-        var modifiedDate = randomInstant();
+    void shouldSetImportedEntryCreationModifiedAndPublishedDates() throws NotFoundException {
+        var startOfTest = Instant.now();
         var inputPublication = randomPublication().copy()
-                                   .withCreatedDate(createdDate)
-                                   .withModifiedDate(modifiedDate)
                                    .withCuratingInstitutions(null)
                                    .withStatus(PUBLISHED)
                                    .build();
@@ -220,13 +217,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                              .getIdentifier();
         var savedPublication = resourceService.getPublicationByIdentifier(savedPublicationIdentifier);
 
-        // inject publicationIdentifier and importDetails for making the inputPublication and the savedPublication
-        // equal.
-        inputPublication.setIdentifier(savedPublicationIdentifier);
-        inputPublication.setImportDetails(savedPublication.getImportDetails());
-
-        assertThat(savedPublication, is(equalTo(inputPublication)));
-        assertThat(savedPublication.getStatus(), is(equalTo(PUBLISHED)));
+        assertThat(savedPublication.getCreatedDate(), is(greaterThan(startOfTest)));
+        assertThat(savedPublication.getModifiedDate(), is(greaterThan(startOfTest)));
+        assertThat(savedPublication.getPublishedDate(), is(greaterThan(startOfTest)));
     }
 
     @Test
