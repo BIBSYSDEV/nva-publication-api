@@ -1,5 +1,6 @@
 package no.sikt.nva.scopus.conversion;
 
+import static no.sikt.nva.scopus.ScopusConstants.UPLOAD_DETAILS_USERNAME;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -189,6 +190,27 @@ public class ScopusFileConverterTest {
         var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
 
         assertThat(file.getName(), is(notNullValue()));
+    }
+
+    @Test
+    void shouldSetUploadDetailsWhenFetchingAssociatedArtifactsFromXml() throws IOException, InterruptedException {
+        var firstUrl = randomUri();
+        scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccessWithDownloadUrl(firstUrl));
+        mockDownloadUrlResponse();
+        var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
+        var expectedUserName = UPLOAD_DETAILS_USERNAME;
+        assertThat(file.getUploadDetails().getUploadedBy(), is(equalTo(expectedUserName)));
+        assertThat(file.getUploadDetails().getUploadedDate(), is(notNullValue()));
+    }
+
+    @Test
+    void shouldSetUploadDetailsWhenFetchingFileFromDoi() throws IOException, InterruptedException {
+        var responseBody = "crossrefResponseMissingFields.json";
+        mockResponsesWithHeader(responseBody, Map.of());
+        var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
+        var expectedUserName = UPLOAD_DETAILS_USERNAME;
+        assertThat(file.getUploadDetails().getUploadedBy(), is(equalTo(expectedUserName)));
+        assertThat(file.getUploadDetails().getUploadedDate(), is(notNullValue()));
     }
 
     private void mockDownloadUrlResponse() throws IOException, InterruptedException {
