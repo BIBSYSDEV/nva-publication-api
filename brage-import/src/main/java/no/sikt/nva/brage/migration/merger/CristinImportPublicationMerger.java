@@ -136,17 +136,24 @@ public class CristinImportPublicationMerger {
     private PublicationContext determinePublicationContext(Reference reference)
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
         var publicationContext = reference.getPublicationContext();
-        var bragePublicationContext = bragePublicationRepresentation.publication().getEntityDescription().getReference().getPublicationContext();
+        var record = bragePublicationRepresentation.brageRecord();
+        var bragePublicationContext = bragePublicationRepresentation.publication()
+                                          .getEntityDescription()
+                                          .getReference()
+                                          .getPublicationContext();
         return switch (publicationContext) {
-            case Degree degree -> DegreeMerger.merge(degree, bragePublicationContext);
-            case Report report -> ReportMerger.merge(report, bragePublicationContext);
-            case Book book -> BookMerger.merge(book, bragePublicationContext);
+            case Degree degree -> new DegreeMerger(record).merge(degree, bragePublicationContext);
+            case Report report -> new ReportMerger(record).merge(report, bragePublicationContext);
+            case Book book -> new BookMerger(record).merge(book, bragePublicationContext);
             case Periodical journal -> JournalMerger.merge(journal, bragePublicationContext);
             case Event event -> EventMerger.merge(event, publicationContext);
             case Anthology anthology -> AnthologyMerger.merge(anthology, publicationContext);
-            case MediaContribution mediaContribution -> MediaContributionMerger.merge(mediaContribution, publicationContext);
-            case ResearchData researchData -> ResearchDataMerger.merge(researchData, publicationContext);
-            case GeographicalContent geographicalContent -> GeographicalContentMerger.merge(geographicalContent, publicationContext);
+            case MediaContribution mediaContribution ->
+                MediaContributionMerger.merge(mediaContribution, publicationContext);
+            case ResearchData researchData -> new ResearchDataMerger(record).merge(researchData, publicationContext);
+            case GeographicalContent geographicalContent ->
+                new GeographicalContentMerger(record).merge(geographicalContent,
+                                                            publicationContext);
             default -> publicationContext;
         };
     }

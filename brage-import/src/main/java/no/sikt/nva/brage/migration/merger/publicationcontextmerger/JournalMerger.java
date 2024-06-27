@@ -1,15 +1,19 @@
 package no.sikt.nva.brage.migration.merger.publicationcontextmerger;
 
 import static java.util.Objects.nonNull;
+import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Periodical;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.exceptions.InvalidIssnException;
+import nva.commons.core.JacocoGenerated;
 
 public final class JournalMerger extends PublicationContextMerger {
 
-    private JournalMerger() {
+    @JacocoGenerated
+    private JournalMerger(Record record) {
+        super(record);
     }
 
     public static PublicationContext merge(Periodical journal, PublicationContext publicationContext)
