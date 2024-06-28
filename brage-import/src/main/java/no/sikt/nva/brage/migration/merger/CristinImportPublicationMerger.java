@@ -1,11 +1,14 @@
 package no.sikt.nva.brage.migration.merger;
 
 import static java.util.Objects.nonNull;
+import static java.util.function.Predicate.not;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.AnthologyMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.BookMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.DegreeMerger;
@@ -17,6 +20,7 @@ import no.sikt.nva.brage.migration.merger.publicationcontextmerger.ReportMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.ResearchDataMerger;
 import no.sikt.nva.brage.migration.merger.publicationinstancemerger.PublicationInstanceMerger;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
+import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -45,12 +49,15 @@ import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.pages.Pages;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import nva.commons.core.StringUtils;
 
 public class CristinImportPublicationMerger {
 
     public static final String DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS
         = "dummy_handle_unis";
+    public static final String PRIORITIZE_CONTRIBUTORS_WITH_CREATOR_ROLE = "contributorsWithCreatorRole";
     public static final String DUBLIN_CORE_XML = "dublin_core.xml";
 
     private final Publication existingPublication;
@@ -105,7 +112,39 @@ public class CristinImportPublicationMerger {
     private List<Contributor> determineContributors() {
         return existingPublication.getEntityDescription().getContributors().isEmpty()
                ? bragePublicationRepresentation.publication().getEntityDescription().getContributors()
-               : existingPublication.getEntityDescription().getContributors();
+               : mergeContributors();
+    }
+
+    private List<Contributor> mergeContributors() {
+        if (shouldPrioritizeContributorsWithCreatorRole(bragePublicationRepresentation.brageRecord())){
+            return replaceExistingCreatorsWithBrageCreators();
+        }
+        return existingPublication.getEntityDescription().getContributors();
+    }
+
+    private List<Contributor> replaceExistingCreatorsWithBrageCreators() {
+        var nonCreatorExistingContributors = filterByNonCreatorContributors(existingPublication);
+        var creatorBrageContributors = filterByCreatorContributors(bragePublicationRepresentation.publication());
+        return Stream.concat(nonCreatorExistingContributors, creatorBrageContributors).toList();
+    }
+
+    private Stream<Contributor> filterByCreatorContributors(Publication publication) {
+        return publication.getEntityDescription().getContributors().stream().filter(this::isCreator);
+    }
+
+    private Stream<Contributor> filterByNonCreatorContributors(Publication existingPublication) {
+        return existingPublication.getEntityDescription().getContributors().stream().filter(not(this::isCreator));
+    }
+
+    private boolean isCreator(Contributor contributor) {
+        return Optional.ofNullable(contributor.getRole())
+                   .map(RoleType::getType)
+                   .map(role -> Role.CREATOR == role)
+                   .orElse(false);
+    }
+
+    private boolean shouldPrioritizeContributorsWithCreatorRole(Record record) {
+        return record.getPrioritizedProperties().contains(PRIORITIZE_CONTRIBUTORS_WITH_CREATOR_ROLE);
     }
 
     private Reference determineReference()
