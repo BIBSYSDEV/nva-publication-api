@@ -24,7 +24,6 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import java.net.URI;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
@@ -132,18 +131,6 @@ public class GeneralMappingRules {
         scenarioContext.getCristinEntry().setPublicationYear(publicationYear);
     }
 
-    @Given("that Cristin Result has created date equal to the local date {string}")
-    public void thatCristinEntryHasCreatedDateEqualToTheLocalDate(String dateString) {
-        LocalDate localDate = LocalDate.parse(dateString);
-        scenarioContext.getCristinEntry().setEntryCreationDate(localDate);
-    }
-
-    @Given("that Cristin Result has modified date equal to the local date {string}")
-    public void thatCristinResultHasModifiedDateEqualToTheLocalDate(String dateString) {
-        LocalDate localDate = LocalDate.parse(dateString);
-        scenarioContext.getCristinEntry().setEntryLastModifiedDate(localDate);
-    }
-
     @When("the Cristin Result is converted to an NVA Resource")
     public void is_converted_to_an_nva_entry() {
         scenarioContext.convertToNvaEntry();
@@ -186,24 +173,6 @@ public class GeneralMappingRules {
         assertThat(actualDate.getYear(), is(equalTo(year)));
         assertThat(actualDate.getMonth(), is(equalTo("null".equals(month) ? null : month)));
         assertThat(actualDate.getDay(), is("null".equals(day) ? null : day));
-    }
-
-    @Then("the NVA Resource has a Creation Date equal to {string}")
-    public void theNvaResourceHasACreationDateEqualTo(String expectedIsoInstant) {
-        Instant expectedInstant = Instant.parse(expectedIsoInstant);
-        assertThat(scenarioContext.getNvaEntry().getCreatedDate(), is(equalTo(expectedInstant)));
-    }
-
-    @Then("the NVA Resource has a Published Date equal to {string}")
-    public void theNvaResourceHasAPublishedDateEqualTo(String expectedIsoInstant) {
-        Instant expectedInstant = Instant.parse(expectedIsoInstant);
-        assertThat(scenarioContext.getNvaEntry().getPublishedDate(), is(equalTo(expectedInstant)));
-    }
-
-    @Then("the NVA Resource has a Modified Date equal to {string}")
-    public void theNvaResourceHasAModifiedDateEqualTo(String expectedIsoInstant) {
-        Instant expectedInstant = Instant.parse(expectedIsoInstant);
-        assertThat(scenarioContext.getNvaEntry().getModifiedDate(), is(equalTo(expectedInstant)));
     }
 
     @Given("the Cristin Result has an array of CristinTitles with values:")
@@ -526,11 +495,6 @@ public class GeneralMappingRules {
     public void publicationShouldHaveANvaFundings(List<Funding> fundings) {
         var nvaFundings = scenarioContext.getNvaEntry().getFundings();
         assertThat(nvaFundings, containsInAnyOrder(fundings.toArray()));
-    }
-
-    @Given("that Cristin Result has created date equal to null")
-    public void thatCristinResultHasCreatedDateEqualToNull() {
-        scenarioContext.getCristinEntry().setEntryCreationDate(null);
     }
 
     @And("that the Cristin Result has published date equal to the local date {string}")

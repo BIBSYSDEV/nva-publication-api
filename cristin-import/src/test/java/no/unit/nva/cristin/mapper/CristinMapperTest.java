@@ -2,7 +2,6 @@ package no.unit.nva.cristin.mapper;
 
 import static no.unit.nva.cristin.CristinDataGenerator.largeRandomNumber;
 import static no.unit.nva.cristin.CristinDataGenerator.randomAffiliation;
-import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import static no.unit.nva.cristin.mapper.CristinObject.IDENTIFIER_ORIGIN;
 import static no.unit.nva.cristin.mapper.CristinPresentationalWork.PROSJEKT;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -23,10 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import java.net.URI;
 import java.nio.file.Path;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -230,24 +225,6 @@ class CristinMapperTest extends AbstractCristinImportTest {
                                          .collect(Collectors.toList());
         assertThat(expectedPublicationYear, is(not(empty())));
         assertThat(actualPublicationDates, containsInAnyOrder(expectedPublicationYear.toArray(Integer[]::new)));
-    }
-
-    @Test
-    @DisplayName("map returns resource with createdDate equal to \"dato_opprettet\"")
-    void mapReturnsResourceWithCreatedDateEqualToCristinDateAssumedToBeUtcDate() {
-        ZoneOffset utc = ZoneId.of("UTC").getRules().getOffset(Instant.now());
-        List<Instant> expectedCreatedDates = cristinObjects.stream()
-                                                 .map(CristinObject::getEntryCreationDate)
-                                                 .map(LocalDate::atStartOfDay)
-                                                 .map(time -> time.toInstant(utc))
-                                                 .toList();
-
-        var actualCreatedDates = cristinObjects.stream()
-                                     .map(this::mapToPublication)
-                                     .map(Publication::getCreatedDate)
-                                     .collect(Collectors.toList());
-
-        assertThat(actualCreatedDates, containsInAnyOrder(expectedCreatedDates.toArray(Instant[]::new)));
     }
 
     @Test
@@ -664,15 +641,6 @@ class CristinMapperTest extends AbstractCristinImportTest {
         return new PublicationDate.Builder().withYear(year.toString()).build();
     }
 
-    //We do not use any more complex logic to make the tests fail if anything changes
-    private String explicitFormattingOfCristinAffiliationCode(CristinContributorsAffiliation c) {
-        return String.format("%s.%s.%s.%s", c.getInstitutionIdentifier(), c.getDepartmentIdentifier(),
-                             c.getSubdepartmentIdentifier(), c.getGroupNumber());
-    }
-
-    private String addCristinOrgHostPrefix(String cristinAffiliationCode) {
-        return NVA_API_DOMAIN + "/cristin/organization/" + cristinAffiliationCode;
-    }
 
     private List<ContributionReference> extractContributions(Publication publication) {
 

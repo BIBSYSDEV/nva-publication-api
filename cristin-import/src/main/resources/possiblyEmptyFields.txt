@@ -64,3 +64,6 @@ fundings
 rightsHolder
 curatingInstitutions
 importDetails
+publishedDate
+createdDate
+modifiedDate

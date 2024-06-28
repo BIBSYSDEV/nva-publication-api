@@ -168,14 +168,15 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public Publication createPublicationFromImportedEntry(Publication inputData, ImportSource importSource) {
+        var now = clockForTimestamps.instant();
         if (nonNull(importSource)) {
-            inputData.addImportDetail(new ImportDetail(Instant.now(), importSource));
+            inputData.addImportDetail(new ImportDetail(now, importSource));
         }
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
-        newResource.setPublishedDate(inputData.getPublishedDate());
-        newResource.setCreatedDate(inputData.getCreatedDate());
-        newResource.setModifiedDate(inputData.getModifiedDate());
+        newResource.setPublishedDate(now);
+        newResource.setCreatedDate(now);
+        newResource.setModifiedDate(now);
         newResource.setStatus(PUBLISHED);
         return insertResource(newResource);
     }
@@ -195,11 +196,12 @@ public class ResourceService extends ServiceWithTransactions {
      * @return updated importCandidate that has been sent to persistence
      */
     public ImportCandidate persistImportCandidate(ImportCandidate inputData) {
+        var now = clockForTimestamps.instant();
         Resource newResource = Resource.fromImportCandidate(inputData);
         newResource.setIdentifier(identifierSupplier.get());
-        newResource.setPublishedDate(inputData.getPublishedDate());
-        newResource.setCreatedDate(inputData.getCreatedDate());
-        newResource.setModifiedDate(inputData.getModifiedDate());
+        newResource.setPublishedDate(now);
+        newResource.setCreatedDate(now);
+        newResource.setModifiedDate(now);
         return insertResourceFromImportCandidate(newResource);
     }
 

@@ -97,15 +97,20 @@ public class PublicationRepresentations {
     }
 
     public boolean updateHasEffectiveChanges() {
+        var importDetails = getConcatenatedImportDetailsFromExistingAndIncomingPublication();
         var existingPublication = getExistingPublication().copy()
+                                      .withCreatedDate(null)
                                       .withModifiedDate(null)
+                                      .withPublishedDate(null)
                                       .withIdentifier(null)
-                                      .withImportDetails(getConcatenatedImportDetailsFromExistingAndIncomingPublication())
+                                      .withImportDetails(importDetails)
                                       .build();
         var incomingPublication = getIncomingPublication().copy()
+                                      .withCreatedDate(null)
                                       .withModifiedDate(null)
                                       .withIdentifier(null)
-                                      .withImportDetails(getConcatenatedImportDetailsFromExistingAndIncomingPublication())
+                                      .withPublishedDate(null)
+                                      .withImportDetails(importDetails)
                                       .build();
         return !existingPublication.equals(incomingPublication);
     }

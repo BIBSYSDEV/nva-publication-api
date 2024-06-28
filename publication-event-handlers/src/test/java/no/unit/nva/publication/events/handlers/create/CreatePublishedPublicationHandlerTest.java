@@ -2,6 +2,7 @@ package no.unit.nva.publication.events.handlers.create;
 
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -9,7 +10,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.time.Clock;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.commons.json.JsonUtils;
@@ -72,8 +72,10 @@ class CreatePublishedPublicationHandlerTest extends ResourcesLocalTest {
         var expectedPublication = copyFieldsCreatedByHandler(copy, savedPublication)
                                       .withStatus(PublicationStatus.PUBLISHED)
                                       .build();
-        
-        assertThat(savedPublication, is(equalTo(expectedPublication)));
+
+        var ignoredFields = new String[]{"createdDate", "modifiedDate",
+            "publishedDate"};
+        assertThat(savedPublication, samePropertyValuesAs(expectedPublication, ignoredFields));
     }
     
     private Publication extractSavedPublicationFromDatabase() throws JsonProcessingException, NotFoundException {
