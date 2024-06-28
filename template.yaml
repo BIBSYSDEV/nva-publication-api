@@ -1019,7 +1019,6 @@ Resources:
       CodeUri: scopus-import
       Handler: no.sikt.nva.scopus.ScopusHandler::handleRequest
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 50
       Timeout: 900
       Environment:
         Variables:
@@ -1051,7 +1050,6 @@ Resources:
       CodeUri: s3-import-commons
       Handler: no.unit.nva.publication.s3imports.DeleteImportCandidatesEventEmitter::handleRequest
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 50
       Timeout: 900
       Environment:
         Variables:
@@ -1077,7 +1075,6 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.delete.DeleteImportCandidateEventConsumer::handleRequest
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 50
       Timeout: 900
       Environment:
         Variables:
@@ -1197,7 +1194,6 @@ Resources:
       Handler: no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler::handleRequest
       Timeout: 200
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 64
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
@@ -1236,7 +1232,6 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.expandresources.ExpandImportCandidateHandler::handleRequest
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 64
       Timeout: 900
       Environment:
         Variables:
@@ -1302,7 +1297,6 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.persistence.ExpandedDataEntriesPersistenceHandler::handleRequest
-      ReservedConcurrentExecutions: 64
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
@@ -1332,7 +1326,6 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.persistence.AnalyticsIntegrationHandler::handleRequest
-      ReservedConcurrentExecutions: 5
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
@@ -1359,7 +1352,6 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.tickets.AcceptedPublishingRequestEventHandler::handleRequest
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 64
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
@@ -1658,7 +1650,6 @@ Resources:
       Handler: no.unit.nva.publication.s3imports.FileEntriesEventEmitter::handleRequest
       Timeout: 600 # 10 min timeout
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 6
       Environment:
         Variables:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
@@ -1825,7 +1816,6 @@ Resources:
       Handler: index.lambda_handler
       Runtime: python3.8
       Timeout: 900
-      ReservedConcurrentExecutions: 10
       Environment:
         Variables:
           XML_BUCKET_NAME: !Ref ScopusXmlBucket
