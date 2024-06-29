@@ -6,7 +6,6 @@ import java.net.URI;
 import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.lambda.MergeSource;
 import no.sikt.nva.brage.migration.lambda.PublicationComparator;
 import no.sikt.nva.brage.migration.model.PublicationForUpdate;
@@ -125,8 +124,12 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
                    .addChild(SEARCH)
                    .addChild(RESOURCES)
                    .addQueryParameter(TITLE, getMainTitle(publication).get())
-                   .addQueryParameter(CONTEXT_TYPE, getInstanceType(publication).get())
+                   .addQueryParameter(CONTEXT_TYPE, getPublicationContext(publication))
                    .addQueryParameter(AGGREGATION, NONE);
+    }
+
+    private String getPublicationContext(Publication publication) {
+        return publication.getEntityDescription().getReference().getPublicationContext().getClass().getSimpleName();
     }
 
     private Optional<QueryParam> getAdditionalQueryParam(Publication publication) {
