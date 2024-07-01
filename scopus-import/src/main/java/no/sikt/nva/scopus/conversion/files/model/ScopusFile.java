@@ -16,6 +16,7 @@ public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, Tika
                          String mimeType, URI license, PublisherVersion publisherVersion, Instant embargo) {
 
     private static final List<String> UNSUPPORTED_MIME_TYPES = List.of("text/html", "application/octet-stream");
+
     public static Builder builder() {
         return new Builder();
     }

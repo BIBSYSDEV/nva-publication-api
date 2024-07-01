@@ -94,6 +94,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -1532,15 +1533,16 @@ class ScopusHandlerTest extends ResourcesLocalTest {
             .forEach(this::createPiaAuthorMock);
     }
 
-    private int getCristinIdentifier(CristinPerson person) {
-        return Integer.parseInt(UriWrapper.fromUri(person.getId()).getLastPathElement());
-    }
-
     private void generatePiaAuthorResponse(ArrayList<List<Author>> authors,
-                                           Integer cristinId, AuthorTp authorTp) {
+                                           Integer cristinId,
+                                           AuthorTp authorTp) {
         var authorList = PiaResponseGenerator.generateAuthors(authorTp.getAuid(), cristinId);
         authors.add(authorList);
         createPiaAuthorMock(authorList);
+    }
+
+    private int getCristinIdentifier(CristinPerson person) {
+        return Integer.parseInt(UriWrapper.fromUri(person.getId()).getLastPathElement());
     }
 
     private void generatePiaAndCristinAffiliationResponse(AuthorGroupTp authorGroupTp, String cristinOrganizationId) {
@@ -1595,7 +1597,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     private void assertThatContributorHasCorrectCristinPersonData(Contributor contributor,
-                                                                  HashMap<CristinPerson, AuthorTp> piaCristinIdAndAuthors) {
+                                                                  Map<CristinPerson, AuthorTp> piaCristinIdAndAuthors) {
         var actualCristinId = contributor.getIdentity().getId();
         assertThat(actualCristinId, hasProperty("path", containsString("/cristin/person")));
         var expectedCristinPerson = getPersonByCristinNumber(piaCristinIdAndAuthors.keySet(),

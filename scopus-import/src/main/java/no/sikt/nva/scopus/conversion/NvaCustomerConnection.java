@@ -30,6 +30,7 @@ public class NvaCustomerConnection {
     public NvaCustomerConnection(AuthorizedBackendUriRetriever uriRetriever) {
         this.uriRetriever = uriRetriever;
     }
+
     public boolean atLeastOneNvaCustomerPresent(Collection<CristinOrganization> cristinOrganizations) {
         return cristinOrganizations
                    .stream()
