@@ -297,6 +297,19 @@ class CristinImportPublicationMergerTest {
         assertThat(contributors, not(hasItem(contributorThatShouldBeOverWrittenDuringMerging)));
     }
 
+    @Test
+    void shouldMergeWhenPublicationContextAndPublicationInstanceIsMissingOnIncomingPublication()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var existingPublication = randomPublication(Map.class);
+        var bragePublication = randomPublication(Map.class);
+        bragePublication.getEntityDescription().getReference().setPublicationContext(null);
+        bragePublication.getEntityDescription().getReference().setPublicationInstance(null);
+        var updatedPublication = mergePublications(existingPublication, bragePublication);
+
+        assertThat(updatedPublication.getEntityDescription().getReference(),
+                   is(equalTo(existingPublication.getEntityDescription().getReference())));
+    }
+
     private PublicationContext emptyUnconfirmedJournal() throws InvalidIssnException {
         return new UnconfirmedJournal(null, null, null);
     }

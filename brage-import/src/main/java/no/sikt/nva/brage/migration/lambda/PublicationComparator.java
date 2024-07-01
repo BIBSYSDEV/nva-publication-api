@@ -1,5 +1,6 @@
 package no.sikt.nva.brage.migration.lambda;
 
+import static java.util.Objects.isNull;
 import java.util.List;
 import java.util.stream.Stream;
 import no.unit.nva.model.Contributor;
@@ -33,6 +34,9 @@ public final class PublicationComparator {
     }
 
     private static boolean publicationContextTypeMatches(Publication existingPublication, Publication incomingPublication) {
+        if (typesAreMissing(incomingPublication)) {
+            return true;
+        }
         var existingPublicationContext = getPublicationContext(existingPublication);
         var incomingPublicationContext = getPublicationContext(incomingPublication);
         var existingPublicationInstance = getPublicationInstance(existingPublication);
@@ -43,6 +47,11 @@ public final class PublicationComparator {
         } else {
             return existingPublicationContext.equals(incomingPublicationContext);
         }
+    }
+
+    private static boolean typesAreMissing(Publication incomingPublication) {
+        return isNull(incomingPublication.getEntityDescription().getReference().getPublicationContext())
+               && isNull(incomingPublication.getEntityDescription().getReference().getPublicationInstance());
     }
 
     private static PublicationInstance<? extends Pages> getPublicationInstance(Publication publication) {
