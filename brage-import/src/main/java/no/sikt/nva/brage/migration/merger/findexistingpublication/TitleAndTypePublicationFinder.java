@@ -124,11 +124,11 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
                    .addChild(SEARCH)
                    .addChild(RESOURCES)
                    .addQueryParameter(TITLE, getMainTitle(publication).get())
-                   .addQueryParameter(CONTEXT_TYPE, getPublicationContext(publication))
+                   .addQueryParameter(CONTEXT_TYPE, getPublicationContextType(publication))
                    .addQueryParameter(AGGREGATION, NONE);
     }
 
-    private String getPublicationContext(Publication publication) {
+    private String getPublicationContextType(Publication publication) {
         return publication.getEntityDescription().getReference().getPublicationContext().getClass().getSimpleName();
     }
 
