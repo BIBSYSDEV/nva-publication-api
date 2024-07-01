@@ -370,6 +370,19 @@ class CristinImportPublicationMergerTest {
     }
 
     @Test
+    void shouldMergeWhenPublicationContextAndPublicationInstanceIsMissingOnIncomingPublication()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var existingPublication = randomPublication(Map.class);
+        var bragePublication = randomPublication(Map.class);
+        bragePublication.getEntityDescription().getReference().setPublicationContext(null);
+        bragePublication.getEntityDescription().getReference().setPublicationInstance(null);
+        var updatedPublication = mergePublications(existingPublication, bragePublication);
+
+        assertThat(updatedPublication.getEntityDescription().getReference(),
+                   is(equalTo(existingPublication.getEntityDescription().getReference())));
+    }
+
+    @Test
     void shouldPrioritizeMainTitleIfRecordHasMainTitleSetAsPrioritized()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var existingPublication = randomPublication(DegreeBachelor.class);

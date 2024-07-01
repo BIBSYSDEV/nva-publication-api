@@ -38,6 +38,16 @@ class PublicationComparatorTest {
         assertTrue(PublicationComparator.publicationsMatch(existingLecture, incomingConferenceReport));
     }
 
+    @Test
+    void shouldReturnTrueWhenIncomingPublicationIsMissingPublicationContextAndPublicationInstance() {
+        var existingPublication = randomPublication(Lecture.class);
+        existingPublication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear("2022").build());
+        var incomingConferenceReport = existingPublication.copy()
+                                           .withEntityDescription(existingPublication.getEntityDescription().copy().withReference(new Reference.Builder().build()).build())
+                                           .build();
+        assertTrue(PublicationComparator.publicationsMatch(existingPublication, incomingConferenceReport));
+    }
+
     private EntityDescription createConferenceReport(Publication publication)
         throws InvalidIssnException, InvalidUnconfirmedSeriesException {
         var entityDescription = publication.getEntityDescription();
