@@ -8,6 +8,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
@@ -16,11 +17,15 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Book.BookBuilder;
@@ -295,6 +300,36 @@ class CristinImportPublicationMergerTest {
         assertThat(contributors, hasItem(contributorThatShouldBeKept));
         assertThat(contributors, not(hasItem(contributorThatShouldBeIgnored)));
         assertThat(contributors, not(hasItem(contributorThatShouldBeOverWrittenDuringMerging)));
+    }
+
+    @Test
+    void shouldKeepFileFromNewPublicationWhenExistingPublicationHasAssociatedLinkOnly()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var associatedLink = randomAssociatedLink();
+        var newPublishedFile = randomPublishedFile();
+
+        var existingPublication = randomPublication(Map.class);
+        existingPublication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(associatedLink)));
+        var bragePublication = randomPublication(Map.class);
+        bragePublication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(newPublishedFile)));
+
+        var updatedPublication = mergePublications(existingPublication, bragePublication);
+
+        assertThat(updatedPublication.getAssociatedArtifacts(),
+                   containsInAnyOrder(associatedLink, newPublishedFile));
+    }
+
+    private File randomPublishedFile() {
+        return File.builder()
+                   .withName(randomString())
+                   .withIdentifier(UUID.randomUUID())
+                   .withLicense(randomUri())
+                   .buildPublishedFile();
+    }
+
+    private static AssociatedLink randomAssociatedLink() {
+        var associatedLink = new AssociatedLink(randomUri(), null, null);
+        return associatedLink;
     }
 
     private PublicationContext emptyUnconfirmedJournal() throws InvalidIssnException {
