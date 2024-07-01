@@ -99,7 +99,8 @@ public class CorporationWithContributors {
     private List<Corporation> generateCorporationFromAuthorGroupTp() {
         var name = getOrganizationNameFromAuthorGroup();
         var labels = name.isPresent() && !name.get().isEmpty() ? name.map(
-            organizationName -> Map.of(guessTheLanguageOfTheInputStringAsIso6391Code(organizationName), organizationName))
+            organizationName -> Map.of(guessTheLanguageOfTheInputStringAsIso6391Code(organizationName),
+                                       organizationName))
                          : extractCountryNameAsAffiliation();
         return isNotNorway(labels.orElse(Map.of()))
                    ? List.of(new UnconfirmedOrganization(name.orElse(null)))

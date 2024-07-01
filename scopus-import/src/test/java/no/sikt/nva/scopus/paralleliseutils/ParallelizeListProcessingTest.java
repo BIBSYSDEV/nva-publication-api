@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 
-public class ParallelizeListProcessingTest {
+class ParallelizeListProcessingTest {
 
     @Test
     void shouldHandleEmptyList() {
@@ -54,7 +54,7 @@ public class ParallelizeListProcessingTest {
     }
 
     @Test
-    void SingleFailingJobWillCauseTheEntireProcessToFail() {
+    void singleFailingJobWillCauseTheEntireProcessToFail() {
         var someIrrelevantInputListWithElements =
             IntStream.range(0, DEFAULT_NUMBER_OF_VIRTUAL_THREADS_FOR_NETWORKING_OPERATIONS)
                 .mapToObj(ignored -> randomString().toLowerCase())

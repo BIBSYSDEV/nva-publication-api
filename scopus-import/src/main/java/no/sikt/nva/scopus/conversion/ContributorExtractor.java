@@ -61,13 +61,13 @@ public class ContributorExtractor {
     public List<Contributor> generateContributors() {
         var cristinAffiliationsAuthorgroupsTps = affiliationGenerator.getCorporations(authorGroupTps);
         var cristinPersons = cristinPersonRetriever.retrieveCristinPersons(authorGroupTps);
-        var contributors = cristinAffiliationsAuthorgroupsTps.stream()
+        var contributorList = cristinAffiliationsAuthorgroupsTps.stream()
                                .map(cristinAffiliationsAuthorgroup -> generateContributorsFromAuthorGroup(
                                    cristinAffiliationsAuthorgroup, cristinPersons))
                                .flatMap(List::stream)
                                .toList();
         if (noContributorsBelongingToNvaCustomer(cristinAffiliationsAuthorgroupsTps)) {
-            var affiliationsIds = getAllAffiliationIds(contributors);
+            var affiliationsIds = getAllAffiliationIds(contributorList);
             throw new MissingNvaContributorException(MISSING_CONTRIBUTORS_OF_NVA_CUSTOMERS_MESSAGE + affiliationsIds);
         } else {
             return getContributors();
@@ -122,8 +122,8 @@ public class ContributorExtractor {
         Map<AuthorIdentifiers, CristinPerson> cristinPersons) {
         corporationWithContributors.getScopusAuthors().getAuthorOrCollaboration()
             .forEach(authorOrCollaboration -> extractContributorFromAuthorOrCollaboration(authorOrCollaboration,
-                                                                                          corporationWithContributors
-                , cristinPersons));
+                                                                                          corporationWithContributors,
+                                                                                          cristinPersons));
         return contributors;
     }
 
@@ -210,14 +210,14 @@ public class ContributorExtractor {
     }
 
     private void generateContributorFromAuthorOrCollaboration(Object authorOrCollaboration,
-                                                              CorporationWithContributors corporationWithContributors
-        ,
+                                                              CorporationWithContributors corporationWithContributors,
                                                               Map<AuthorIdentifiers, CristinPerson> cristinPersons) {
         if (authorOrCollaboration instanceof AuthorTp authorTp) {
             generateContributorFromAuthorTp(authorTp, corporationWithContributors,
                                             cristinPersons);
         } else {
-            generateContributorFromCollaborationTp((CollaborationTp) authorOrCollaboration, corporationWithContributors,
+            generateContributorFromCollaborationTp((CollaborationTp) authorOrCollaboration,
+                                                   corporationWithContributors,
                                                    getCorrespondencePerson());
         }
     }

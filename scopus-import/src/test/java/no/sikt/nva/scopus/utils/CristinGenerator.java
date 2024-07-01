@@ -82,7 +82,7 @@ public class CristinGenerator {
     }
 
     public static String convertPersonToJson(CristinPerson cristinPerson) {
-        return attempt(()-> JsonUtils.dtoObjectMapper.writeValueAsString(cristinPerson)).orElseThrow() ;
+        return attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(cristinPerson)).orElseThrow();
     }
 
     private static Set<Affiliation> generateAffiliations() {

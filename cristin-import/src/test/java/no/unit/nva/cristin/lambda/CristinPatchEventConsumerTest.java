@@ -283,8 +283,9 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         var eventReference = createInputEventForFile(fileUri);
         var sqsEvent = createSqsEvent(eventReference);
         handler.handleRequest(sqsEvent, CONTEXT);
+        var exceptionName = ChildPatchPublicationInstanceMismatchException.class.getSimpleName();
         var actualReport = extractActualReportFromS3Client(eventReference,
-                                                           ChildPatchPublicationInstanceMismatchException.class.getSimpleName(),
+                                                           exceptionName,
                                                            bookMonographChild.getIdentifier().toString());
         assertThat(actualReport.getInput().getChildPublication(), is(Matchers.equalTo(bookMonographChild)));
         assertThat(actualReport.getInput().getPartOf().getParentPublication(),
@@ -292,8 +293,8 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldAddChildPublicationIdentifierAsRelatedDocumentForParentPublicationWhenSuccess() throws ApiGatewayException,
-                                                                                          IOException {
+    void shouldAddChildPublicationIdentifierAsRelatedDocumentForParentPublicationWhenSuccess()
+        throws ApiGatewayException, IOException {
         var childPublication =
             createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString(),
                                                                                 NonFictionMonograph.class);
@@ -333,11 +334,13 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         var eventReference = createInputEventForFile(fileUri);
         var sqsEvent = createSqsEvent(eventReference);
         handler.handleRequest(sqsEvent, CONTEXT);
+        var childMismatchExceptionName = ChildPatchPublicationInstanceMismatchException.class.getSimpleName();
         var childPatchReport = extractActualReportFromS3Client(eventReference,
-                                                           ChildPatchPublicationInstanceMismatchException.class.getSimpleName(),
+                                                               childMismatchExceptionName,
                                                            child.getIdentifier().toString());
+        var parentMismatchExceptionName = ParentPatchPublicationInstanceMismatchException.class.getSimpleName();
         var parentPatchReport = extractActualReportFromS3Client(eventReference,
-                                                               ParentPatchPublicationInstanceMismatchException.class.getSimpleName(),
+                                                                parentMismatchExceptionName,
                                                                child.getIdentifier().toString());
         assertThat(childPatchReport.getInput().getChildPublication(), is(Matchers.equalTo(child)));
         assertThat(parentPatchReport.getInput().getChildPublication(), is(Matchers.equalTo(child)));
@@ -365,8 +368,8 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         EventReference eventBody,
         String exceptionName, String childPublicationIdentifier) throws JsonProcessingException {
         var errorFileUri = constructErrorFileUri(eventBody, exceptionName, childPublicationIdentifier);
-        var s3Driver = new S3Driver(s3Client, errorFileUri.getUri().getHost());
-        var content = s3Driver.getFile(errorFileUri.toS3bucketPath());
+        var s3DriverReturningErrorFile = new S3Driver(s3Client, errorFileUri.getUri().getHost());
+        var content = s3DriverReturningErrorFile.getFile(errorFileUri.toS3bucketPath());
         return eventHandlerObjectMapper.readValue(content, new TypeReference<>() {
         });
     }
@@ -438,8 +441,8 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
 
     private String extractSuccessReportFromS3Client(EventReference eventReference, Publication childPublication) {
         var successFileUri = constructSuccessFileUri(eventReference, childPublication);
-        var s3Driver = new S3Driver(s3Client, successFileUri.getUri().getHost());
-        return s3Driver.getFile(successFileUri.toS3bucketPath());
+        var s3DriverReturningSuccessFile = new S3Driver(s3Client, successFileUri.getUri().getHost());
+        return s3DriverReturningSuccessFile.getFile(successFileUri.toS3bucketPath());
     }
 
     private UriWrapper constructSuccessFileUri(EventReference eventReference, Publication childPublication) {

@@ -100,8 +100,9 @@ public class AffiliationGenerator {
     private CorporationWithContributors fetCristinOrganizationsById(CorporationWithContributors corporation) {
         var organization = cristinConnection.fetchCristinOrganizationByCristinId(
             corporation.getCristinOrganizationId());
-        List<CristinOrganization> validOrganizations = isValidOrganization(organization) ?
-                                                           List.of(organization) : List.of();
+        List<CristinOrganization> validOrganizations = isValidOrganization(organization)
+                                                           ? List.of(organization)
+                                                           : List.of();
         return corporation.copy().withCristinCorporations(validOrganizations).build();
     }
 

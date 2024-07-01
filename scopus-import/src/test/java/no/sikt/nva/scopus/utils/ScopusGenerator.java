@@ -82,6 +82,7 @@ import no.unit.nva.language.Language;
 import no.unit.nva.language.LanguageConstants;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
+import org.jetbrains.annotations.NotNull;
 
 public final class ScopusGenerator {
 
@@ -244,31 +245,17 @@ public final class ScopusGenerator {
     }
 
     private HeadTp randomHeadTpWithContributorsFromAuthorTp(AuthorTp authorTp) {
+
+        var affiliationTp = randomAffiliationTp();
+
         var correspondenceTp = new CorrespondenceTp();
-        var authorGroup = new AuthorGroupTp();
-        var organization = new OrganizationTp();
-        organization.getContent().add(randomString());
-
-        var affiliationTp = new AffiliationTp();
-        affiliationTp.setCountry(randomString());
-        affiliationTp.setAfid(randomString());
-        affiliationTp.getOrganization().add(organization);
-
-        var initials = randomString();
-        var indexedName = randomString();
-        var surname = randomString();
-        var givenName = randomString();
-
-        var person = new PersonalnameType();
-        person.setInitials(initials);
-        person.setIndexedName(indexedName);
-        person.setSurname(surname);
-        person.setGivenName(givenName);
         correspondenceTp.setAffiliation(affiliationTp);
-        correspondenceTp.setPerson(person);
+        correspondenceTp.setPerson(randomPersonalnameType());
 
+        var authorGroup = new AuthorGroupTp();
         authorGroup.setAffiliation(affiliationTp);
         authorGroup.getAuthorOrCollaboration().add(authorTp);
+
         var head = new HeadTp();
         head.getAuthorGroup().add(authorGroup);
         head.getCorrespondence().add(correspondenceTp);
@@ -277,6 +264,35 @@ public final class ScopusGenerator {
         head.setCitationInfo(randomCitationInfo());
         head.setSource(randomSource());
         return head;
+    }
+
+    private HeadTp randomHeadTpWithContributorsFromAuthorTp(int numberOfContributors) {
+        var correspondenceTp = new CorrespondenceTp();
+        var authorGroup = new AuthorGroupTp();
+        generateContributorsForAuthorTp(numberOfContributors, authorGroup, correspondenceTp);
+        var head = new HeadTp();
+        head.getAuthorGroup().add(authorGroup);
+        head.getCorrespondence().add(correspondenceTp);
+        head.setCitationTitle(randomCitationTitle());
+        head.setAbstracts(abstractsTp);
+        head.setCitationInfo(randomCitationInfo());
+        head.setSource(randomSource());
+        return head;
+    }
+
+    private static @NotNull AffiliationTp randomAffiliationTp() {
+        var organization = randomOrganizationTp();
+        var affiliationTp = new AffiliationTp();
+        affiliationTp.setCountry(randomString());
+        affiliationTp.setAfid(randomString());
+        affiliationTp.getOrganization().add(organization);
+        return affiliationTp;
+    }
+
+    private static @NotNull OrganizationTp randomOrganizationTp() {
+        var organization = new OrganizationTp();
+        organization.getContent().add(randomString());
+        return organization;
     }
 
     public static ScopusGenerator createWithSpecifiedAbstract(AbstractsTp abstractsTp) {
@@ -828,20 +844,6 @@ public final class ScopusGenerator {
         authorGroupTp.setAffiliation(affiliationTp);
     }
 
-    private HeadTp randomHeadTpWithContributorsFromAuthorTp(int numberOfContributors) {
-        var correspondenceTp = new CorrespondenceTp();
-        var authorGroup = new AuthorGroupTp();
-        generateContributorsForAuthorTp(numberOfContributors, authorGroup, correspondenceTp);
-        var head = new HeadTp();
-        head.getAuthorGroup().add(authorGroup);
-        head.getCorrespondence().add(correspondenceTp);
-        head.setCitationTitle(randomCitationTitle());
-        head.setAbstracts(abstractsTp);
-        head.setCitationInfo(randomCitationInfo());
-        head.setSource(randomSource());
-        return head;
-    }
-
     private void generateContributorsForAuthorTp(int numberOfContributors, AuthorGroupTp authorGroup,
                                                  CorrespondenceTp correspondenceTp) {
         IntStream.range(0, numberOfContributors)
@@ -850,13 +852,6 @@ public final class ScopusGenerator {
 
     private void createContributorWithAuthorTp(int contributorSequence, AuthorGroupTp authorGroup,
                                                CorrespondenceTp correspondenceTp) {
-        var organization = new OrganizationTp();
-        organization.getContent().add(randomString());
-
-        var affiliationTp = new AffiliationTp();
-        affiliationTp.setCountry(randomString());
-        affiliationTp.setAfid(randomString());
-        affiliationTp.getOrganization().add(organization);
 
         var initials = randomString();
         var indexedName = randomString();
@@ -868,7 +863,7 @@ public final class ScopusGenerator {
         person.setIndexedName(indexedName);
         person.setSurname(surname);
         person.setGivenName(givenName);
-        correspondenceTp.setAffiliation(affiliationTp);
+        correspondenceTp.setAffiliation(randomAffiliationTp());
         correspondenceTp.setPerson(person);
 
         var authorTp = new AuthorTp();
@@ -879,7 +874,7 @@ public final class ScopusGenerator {
         authorTp.setAuid(randomString());
         authorTp.setSeq(String.valueOf(contributorSequence + 1));
         authorTp.setOrcid(randomPotentialOrcidUriString());
-        authorGroup.setAffiliation(affiliationTp);
+        authorGroup.setAffiliation(randomAffiliationTp());
         authorGroup.getAuthorOrCollaboration().add(authorTp);
     }
 

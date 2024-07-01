@@ -71,12 +71,16 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     @JacocoGenerated
     public ScopusHandler() {
         this(S3Driver.defaultS3Client().build(), defaultPiaConnection(), defaultCristinConnection(),
-             new PublicationChannelConnection(
-                 new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME)),
+             new PublicationChannelConnection(new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL,
+                                                                                BACKEND_CLIENT_SECRET_NAME)),
              new NvaCustomerConnection(new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL,
                                                                          BACKEND_CLIENT_SECRET_NAME)),
-             ResourceService.defaultService(), new ScopusUpdater(ResourceService.defaultService(), UriRetriever.defaultUriRetriever()),
-             new ScopusFileConverter(defaultHttpClientWithRedirect(), S3Driver.defaultS3Client().build(), new TikaUtils()));
+             ResourceService.defaultService(),
+             new ScopusUpdater(ResourceService.defaultService(),
+                               UriRetriever.defaultUriRetriever()),
+             new ScopusFileConverter(defaultHttpClientWithRedirect(),
+                                     S3Driver.defaultS3Client().build(),
+                                     new TikaUtils()));
     }
 
     public ScopusHandler(S3Client s3Client, PiaConnection piaConnection, CristinConnection cristinConnection,
