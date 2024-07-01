@@ -292,10 +292,14 @@ public class CristinImportPublicationMerger {
     }
 
     private AssociatedArtifactList determineAssociatedArtifacts() {
-        if (existingPublication.getAssociatedArtifacts().isEmpty()) {
+        if (existingAssociatedArtifactsAreEmpty()) {
             return bragePublicationRepresentation.publication().getAssociatedArtifacts();
         }
-
+        if (existingPublicationHasNoPublishedFiles()) {
+            var mergedAssociatedArtifacts = new ArrayList<>(existingPublication.getAssociatedArtifacts());
+            mergedAssociatedArtifacts.addAll(bragePublicationRepresentation.publication().getAssociatedArtifacts());
+            return new AssociatedArtifactList(mergedAssociatedArtifacts);
+        }
         if (shouldOverWriteWithBrageArtifacts()) {
             return keepBrageAssociatedArtifactAndKeepDublinCoreFromExistsing();
         }
@@ -307,6 +311,16 @@ public class CristinImportPublicationMerger {
             return new AssociatedArtifactList(associatedArtifacts);
         }
         return existingPublication.getAssociatedArtifacts();
+    }
+
+    private boolean existingAssociatedArtifactsAreEmpty() {
+        return existingPublication.getAssociatedArtifacts().isEmpty();
+    }
+
+    private boolean existingPublicationHasNoPublishedFiles() {
+        return existingPublication.getAssociatedArtifacts()
+                   .stream()
+                   .noneMatch(PublishedFile.class::isInstance);
     }
 
     private AssociatedArtifactList keepBrageAssociatedArtifactAndKeepDublinCoreFromExistsing() {
