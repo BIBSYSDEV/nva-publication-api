@@ -219,7 +219,7 @@ public class CristinImportPublicationMerger {
         if (existingAssociatedArtifactsAreEmpty()) {
             return bragePublicationRepresentation.publication().getAssociatedArtifacts();
         }
-        if (existingPublicationHasNoFiles()) {
+        if (existingPublicationHasNoPublishedFiles()) {
             var mergedAssociatedArtifacts = new ArrayList<>(existingPublication.getAssociatedArtifacts());
             mergedAssociatedArtifacts.addAll(bragePublicationRepresentation.publication().getAssociatedArtifacts());
             return new AssociatedArtifactList(mergedAssociatedArtifacts);
@@ -241,10 +241,10 @@ public class CristinImportPublicationMerger {
         return existingPublication.getAssociatedArtifacts().isEmpty();
     }
 
-    private boolean existingPublicationHasNoFiles() {
+    private boolean existingPublicationHasNoPublishedFiles() {
         return existingPublication.getAssociatedArtifacts()
                    .stream()
-                   .noneMatch(File.class::isInstance);
+                   .noneMatch(PublishedFile.class::isInstance);
     }
 
     private AssociatedArtifactList keepBrageAssociatedArtifactAndKeepDublinCoreFromExistsing() {

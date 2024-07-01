@@ -319,12 +319,38 @@ class CristinImportPublicationMergerTest {
                    containsInAnyOrder(associatedLink, newPublishedFile));
     }
 
+    @Test
+    void shouldKeepFileFromNewPublicationWhenExistingPublicationHasAdministrativeAgreementOnly()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var administrativeAgreement = randomAdministrativeAgreement();
+        var newPublishedFile = randomPublishedFile();
+
+        var existingPublication = randomPublication(Map.class);
+        existingPublication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(administrativeAgreement)));
+        var bragePublication = randomPublication(Map.class);
+        bragePublication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(newPublishedFile)));
+
+        var updatedPublication = mergePublications(existingPublication, bragePublication);
+
+        assertThat(updatedPublication.getAssociatedArtifacts(),
+                   containsInAnyOrder(administrativeAgreement, newPublishedFile));
+    }
+
     private File randomPublishedFile() {
         return File.builder()
                    .withName(randomString())
                    .withIdentifier(UUID.randomUUID())
                    .withLicense(randomUri())
                    .buildPublishedFile();
+    }
+
+    private File randomAdministrativeAgreement() {
+        return File.builder()
+                   .withName(randomString())
+                   .withIdentifier(UUID.randomUUID())
+                   .withLicense(randomUri())
+                   .withAdministrativeAgreement(true)
+                   .buildUnpublishableFile();
     }
 
     private static AssociatedLink randomAssociatedLink() {
