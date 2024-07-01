@@ -6,6 +6,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -20,7 +21,6 @@ import no.sikt.nva.brage.migration.merger.publicationcontextmerger.ReportMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.ResearchDataMerger;
 import no.sikt.nva.brage.migration.merger.publicationinstancemerger.PublicationInstanceMerger;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
-import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -58,7 +58,14 @@ public class CristinImportPublicationMerger {
     public static final String DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS
         = "dummy_handle_unis";
     public static final String PRIORITIZE_CONTRIBUTORS_WITH_CREATOR_ROLE = "contributorsWithCreatorRole";
+    public static final String PRIORITIZE_MAIN_TITLE = "mainTitle";
+    public static final String PRIORITIZE_ALTERNATIVE_TITLES = "alternativeTitles";
+    public static final String PRIORITIZE_ABSTRACT = "abstract";
+    public static final String PRIORITIZE_ALTERNATIVE_ABSTRACTS = "alternativeAbstracts";
+    public static final String PRIORITIZE_REFERENCE = "reference";
+    public static final String PRIORITIZE_TAGS = "tags";
     public static final String DUBLIN_CORE_XML = "dublin_core.xml";
+    public static final String PRIORITIZE_FUNDINGS = "fundings";
 
     private final Publication existingPublication;
     private final PublicationRepresentation bragePublicationRepresentation;
@@ -94,29 +101,91 @@ public class CristinImportPublicationMerger {
     }
 
     private List<Funding> determineFundings() {
-        return existingPublication.getFundings().isEmpty()
-            ? bragePublicationRepresentation.publication().getFundings()
-            : existingPublication.getFundings();
+        if (existingPublication.getFundings().isEmpty()) {
+            return bragePublicationRepresentation.publication().getFundings();
+        }
+        if (shouldPrioritizeField(PRIORITIZE_FUNDINGS)) {
+            return mergeFundings();
+        }
+        return existingPublication.getFundings();
+    }
+
+    private List<Funding> mergeFundings() {
+        var fundings = new ArrayList<>(existingPublication.getFundings());
+        fundings.addAll(bragePublicationRepresentation.publication().getFundings());
+        return fundings;
     }
 
     private EntityDescription determineEntityDescription()
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
         return existingPublication.getEntityDescription().copy()
+                   .withMainTitle(determineMainTitle())
+                   .withAlternativeTitles(determineAlternativeTitles())
                    .withContributors(determineContributors())
                    .withReference(determineReference())
                    .withDescription(getCorrectDescription())
                    .withAbstract(getCorrectAbstract())
+                   .withAlternativeAbstracts(determineAlternativeAbstracts())
+                   .withTags(determineTags())
                    .build();
+    }
+
+    private List<String> determineTags() {
+        return shouldPrioritizeField(PRIORITIZE_TAGS)
+                   ? mergeTags()
+                   : existingPublication.getEntityDescription().getTags();
+    }
+
+    private List<String> mergeTags() {
+        var tags = new HashSet<>(existingPublication.getEntityDescription().getTags());
+        bragePublicationRepresentation.publication().getEntityDescription().getTags().stream()
+            .filter(tag -> tags.stream().noneMatch(exTag -> exTag.equalsIgnoreCase(tag)))
+            .forEach(tags::add);
+        return tags.stream().toList();
+    }
+
+    private Map<String, String> determineAlternativeAbstracts() {
+        return shouldPrioritizeAlternativeAbstractsFromBrage()
+                   ? bragePublicationRepresentation.publication().getEntityDescription().getAlternativeAbstracts()
+                   : existingPublication.getEntityDescription().getAlternativeAbstracts();
+    }
+
+    private boolean shouldPrioritizeAlternativeAbstractsFromBrage() {
+        return shouldPrioritizeField(PRIORITIZE_ALTERNATIVE_ABSTRACTS);
+    }
+
+    private Map<String, String> determineAlternativeTitles() {
+        return shouldPrioritizeAlternativeTitlesFromBrage()
+                   ? bragePublicationRepresentation.publication().getEntityDescription().getAlternativeTitles()
+                   : existingPublication.getEntityDescription().getAlternativeTitles();
+    }
+
+    private boolean shouldPrioritizeAlternativeTitlesFromBrage() {
+        return shouldPrioritizeField(PRIORITIZE_ALTERNATIVE_TITLES);
+    }
+
+    private boolean shouldPrioritizeField(String field) {
+        return bragePublicationRepresentation.brageRecord().getPrioritizedProperties().contains(field);
+    }
+
+    private String determineMainTitle() {
+        return shouldPrioritizeMainTitleFromBrage()
+                   ? bragePublicationRepresentation.publication().getEntityDescription().getMainTitle()
+                   : existingPublication.getEntityDescription().getMainTitle();
+    }
+
+    private boolean shouldPrioritizeMainTitleFromBrage() {
+        return shouldPrioritizeField(PRIORITIZE_MAIN_TITLE);
     }
 
     private List<Contributor> determineContributors() {
         return existingPublication.getEntityDescription().getContributors().isEmpty()
-               ? bragePublicationRepresentation.publication().getEntityDescription().getContributors()
-               : mergeContributors();
+                   ? bragePublicationRepresentation.publication().getEntityDescription().getContributors()
+                   : mergeContributors();
     }
 
     private List<Contributor> mergeContributors() {
-        if (shouldPrioritizeContributorsWithCreatorRole(bragePublicationRepresentation.brageRecord())){
+        if (shouldPrioritizeContributorsWithCreatorRole()) {
             return replaceExistingCreatorsWithBrageCreators();
         }
         return existingPublication.getEntityDescription().getContributors();
@@ -143,18 +212,25 @@ public class CristinImportPublicationMerger {
                    .orElse(false);
     }
 
-    private boolean shouldPrioritizeContributorsWithCreatorRole(Record record) {
-        return record.getPrioritizedProperties().contains(PRIORITIZE_CONTRIBUTORS_WITH_CREATOR_ROLE);
+    private boolean shouldPrioritizeContributorsWithCreatorRole() {
+        return shouldPrioritizeField(PRIORITIZE_CONTRIBUTORS_WITH_CREATOR_ROLE);
     }
 
     private Reference determineReference()
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
+        if (shouldPrioritizeReferenceFromBrage()) {
+            return bragePublicationRepresentation.publication().getEntityDescription().getReference();
+        }
         var reference = existingPublication.getEntityDescription().getReference();
         return new Reference.Builder()
                    .withPublicationInstance(determincePublicationInstance(reference))
                    .withPublishingContext(determinePublicationContext(reference))
                    .withDoi(determineDoi(reference))
                    .build();
+    }
+
+    private boolean shouldPrioritizeReferenceFromBrage() {
+        return shouldPrioritizeField(PRIORITIZE_REFERENCE);
     }
 
     private PublicationInstance<? extends Pages> determincePublicationInstance(Reference reference) {
@@ -248,7 +324,8 @@ public class CristinImportPublicationMerger {
     }
 
     private AssociatedArtifactList keepBrageAssociatedArtifactAndKeepDublinCoreFromExistsing() {
-        var associatedArtifacts = new ArrayList<>(bragePublicationRepresentation.publication().getAssociatedArtifacts());
+        var associatedArtifacts = new ArrayList<>(
+            bragePublicationRepresentation.publication().getAssociatedArtifacts());
         var dublinCoresFromExisting = extractDublinCores(existingPublication.getAssociatedArtifacts());
         associatedArtifacts.addAll(dublinCoresFromExisting);
         return new AssociatedArtifactList(associatedArtifacts);
@@ -291,14 +368,14 @@ public class CristinImportPublicationMerger {
     private boolean noneOfTheExistingFilesArePublishedVersion(List<PublishedFile> publishedFiles) {
         return publishedFiles
                    .stream()
-                   .noneMatch(publishedFile -> PublisherVersion.PUBLISHED_VERSION == publishedFile.getPublisherVersion());
+                   .noneMatch(
+                       publishedFile -> PublisherVersion.PUBLISHED_VERSION == publishedFile.getPublisherVersion());
     }
 
     private boolean isAcademicArticle() {
         return existingPublication.getEntityDescription()
-                        .getReference()
-                        .getPublicationInstance() instanceof AcademicArticle;
-
+                   .getReference()
+                   .getPublicationInstance() instanceof AcademicArticle;
     }
 
     private boolean bragePublicationHasAssociatedArtifacts() {
@@ -327,8 +404,16 @@ public class CristinImportPublicationMerger {
     }
 
     private String getCorrectAbstract() {
-        return StringUtils.isNotEmpty(existingPublication.getEntityDescription().getAbstract())
-                   ? existingPublication.getEntityDescription().getAbstract()
-                   : bragePublicationRepresentation.publication().getEntityDescription().getAbstract();
+        if (StringUtils.isEmpty(existingPublication.getEntityDescription().getAbstract())) {
+            return bragePublicationRepresentation.publication().getEntityDescription().getAbstract();
+        }
+        if (shouldPrioritizeAbstractFromBrage()) {
+            return bragePublicationRepresentation.publication().getEntityDescription().getAbstract();
+        }
+        return existingPublication.getEntityDescription().getAbstract();
+    }
+
+    private boolean shouldPrioritizeAbstractFromBrage() {
+        return shouldPrioritizeField(PRIORITIZE_ABSTRACT);
     }
 }
