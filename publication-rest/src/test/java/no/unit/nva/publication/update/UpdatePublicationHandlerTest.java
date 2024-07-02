@@ -974,6 +974,29 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldSetFinalizedByForPublishingRequestToUserWhoUpdatesPublication()
+        throws IOException, ApiGatewayException {
+        var publication = createAndPersistNonDegreePublication();
+        var cristinId = randomUri();
+        var contributor = createContributorForPublicationUpdate(cristinId);
+        var publicationWithoutFiles = publication.copy().withAssociatedArtifacts(List.of()).build();
+        injectContributor(publicationWithoutFiles, contributor);
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        var publicationUpdate = publicationWithoutFiles.copy().withDoi(randomUri()).build();
+
+        var username = contributor.getIdentity().getName();
+        var event = contributorUpdatesPublicationAndHasRightsToUpdate(publicationUpdate, cristinId,
+                                                                      username);
+        var pendingTicket = PublishingRequestCase.createOpeningCaseObject(publication).persistNewTicket(ticketService);
+        updatePublicationHandler.handleRequest(event, output, context);
+
+        var completedTicket = ticketService.fetchTicket(pendingTicket);
+
+        assertThat(completedTicket.getFinalizedBy(), is(equalTo(new Username(username))));
+        assertThat(completedTicket.getFinalizedBy(), is(not(equalTo(publication.getResourceOwner().getOwner()))));
+    }
+
+    @Test
     void shouldUpdateFilesForApprovalWhenPublicationUpdateHasFileChanges() throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
             customerId, PUBLISHED, resourceService);
