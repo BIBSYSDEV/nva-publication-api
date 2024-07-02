@@ -169,8 +169,7 @@ public class UpdatePublicationHandler
         var permissionStrategy = PublicationPermissionStrategy.create(existingPublication, userInstance);
         Publication updatedPublication = switch (input) {
             case UpdatePublicationRequest publicationMetadata ->
-                updateMetadata(publicationMetadata, identifierInPath, existingPublication, permissionStrategy,
-                               requestInfo, userInstance);
+                updateMetadata(publicationMetadata, identifierInPath, existingPublication, permissionStrategy, userInstance);
 
             case UnpublishPublicationRequest unpublishPublicationRequest ->
                 unpublishPublication(unpublishPublicationRequest,
@@ -295,7 +294,6 @@ public class UpdatePublicationHandler
                                        SortableIdentifier identifierInPath,
                                        Publication existingPublication,
                                        PublicationPermissionStrategy permissionStrategy,
-                                       RequestInfo requestInfo,
                                        UserInstance userInstance)
         throws ApiGatewayException {
         validateRequest(identifierInPath, input);
@@ -312,7 +310,7 @@ public class UpdatePublicationHandler
                                      publicationUpdate.getAssociatedArtifacts(),
                                      extractUploadDetails(userInstance));
         setRrsOnFiles(publicationUpdate, existingPublication, customer, userInstance.getUsername(), permissionStrategy);
-        upsertPublishingRequestIfNeeded(existingPublication, publicationUpdate, customer, requestInfo);
+        upsertPublishingRequestIfNeeded(existingPublication, publicationUpdate, customer, userInstance);
 
         return resourceService.updatePublication(publicationUpdate);
     }
@@ -401,12 +399,12 @@ public class UpdatePublicationHandler
     private void upsertPublishingRequestIfNeeded(Publication existingPublication,
                                                  Publication publicationUpdate,
                                                  Customer customer,
-                                                 RequestInfo requestInfo) {
+                                                 UserInstance userInstance) {
         if (isAlreadyPublished(existingPublication) && !thereIsRelatedPendingPublishingRequest(publicationUpdate)) {
-            createPublishingRequestOnFileUpdate(publicationUpdate, customer, requestInfo);
+            createPublishingRequestOnFileUpdate(publicationUpdate, customer, userInstance);
         }
         if (isAlreadyPublished(existingPublication) && thereAreNoFiles(publicationUpdate)) {
-            autoCompletePendingPublishingRequestsIfNeeded(publicationUpdate);
+            autoCompletePendingPublishingRequestsIfNeeded(publicationUpdate, userInstance);
         }
         if (isAlreadyPublished(existingPublication) && updateHasFileChanges(existingPublication, publicationUpdate)) {
             updateFilesForApproval(publicationUpdate);
@@ -452,10 +450,10 @@ public class UpdatePublicationHandler
         }
     }
 
-    private void autoCompletePendingPublishingRequestsIfNeeded(Publication publication) {
+    private void autoCompletePendingPublishingRequestsIfNeeded(Publication publication, UserInstance userInstance) {
         fetchPendingPublishingRequest(publication)
             .map(PublishingRequestCase.class::cast)
-            .forEach(ticket -> ticket.complete(publication, getOwner(publication)).persistUpdate(ticketService));
+            .forEach(ticket -> ticket.complete(publication, new Username(userInstance.getUsername())).persistUpdate(ticketService));
     }
 
     private Stream<PublishingRequestCase> fetchPendingPublishingRequest(Publication publication) {
@@ -465,10 +463,6 @@ public class UpdatePublicationHandler
                    .map(PublishingRequestCase.class::cast);
     }
 
-    private static Username getOwner(Publication publication) {
-        return publication.getResourceOwner().getOwner();
-    }
-
     private boolean thereAreNoFiles(Publication publicationUpdate) {
         return publicationUpdate.getAssociatedArtifacts().stream()
                    .noneMatch(File.class::isInstance);
@@ -476,20 +470,12 @@ public class UpdatePublicationHandler
 
     @Override
     protected Integer getSuccessStatusCode(PublicationRequest input, PublicationResponseElevatedUser output) {
-        switch (input) {
-            case UpdatePublicationRequest ignored -> {
-                return HttpStatus.SC_OK;
-            }
-            case UnpublishPublicationRequest ignored -> {
-                return HttpStatus.SC_ACCEPTED;
-            }
-            case DeletePublicationRequest ignored -> {
-                return HttpStatus.SC_ACCEPTED;
-            }
-            default -> {
-                return HttpStatus.SC_BAD_REQUEST;
-            }
-        }
+        return switch (input) {
+            case UpdatePublicationRequest ignored -> HttpStatus.SC_OK;
+            case UnpublishPublicationRequest ignored -> HttpStatus.SC_ACCEPTED;
+            case DeletePublicationRequest ignored -> HttpStatus.SC_ACCEPTED;
+            default -> HttpStatus.SC_BAD_REQUEST;
+        };
     }
 
     private boolean containsNewPublishableFiles(Publication publicationUpdate) {
@@ -540,25 +526,25 @@ public class UpdatePublicationHandler
     }
 
     private void createPublishingRequestOnFileUpdate(Publication publicationUpdate, Customer customer,
-                                                     RequestInfo requestInfo) {
+                                                     UserInstance userInstance) {
         if (containsNewPublishableFiles(publicationUpdate)) {
-            persistPendingPublishingRequest(publicationUpdate, customer, requestInfo);
+            persistPendingPublishingRequest(publicationUpdate, customer, userInstance);
         }
     }
 
-    private void persistPendingPublishingRequest(Publication publicationUpdate, Customer customer, RequestInfo requestInfo) {
+    private void persistPendingPublishingRequest(Publication publicationUpdate, Customer customer, UserInstance userInstance) {
         attempt(() -> TicketEntry.requestNewTicket(publicationUpdate, PublishingRequestCase.class))
             .map(publishingRequest -> injectPublishingWorkflow((PublishingRequestCase) publishingRequest, customer))
-            .map(publishingRequest -> persistPublishingRequest(publicationUpdate, requestInfo, customer, publishingRequest));
+            .map(publishingRequest -> persistPublishingRequest(publicationUpdate, userInstance, customer, publishingRequest));
     }
 
-    private TicketEntry persistPublishingRequest(Publication publicationUpdate, RequestInfo requestInfo,
+    private TicketEntry persistPublishingRequest(Publication publicationUpdate, UserInstance userInstance,
                                                  Customer customer, PublishingRequestCase publishingRequest)
         throws ApiGatewayException {
-        return requestInfo.userIsAuthorized(MANAGE_PUBLISHING_REQUESTS)
+        return userInstance.getAccessRights().contains(MANAGE_PUBLISHING_REQUESTS)
                || useIsAllowedToPublishFiles(customer)
                    ? publishingRequest.persistAutoComplete(ticketService, publicationUpdate,
-                                                           new Username(requestInfo.getUserName()))
+                                                           new Username(userInstance.getUsername()))
                    : publishingRequest.persistNewTicket(ticketService);
     }
 
