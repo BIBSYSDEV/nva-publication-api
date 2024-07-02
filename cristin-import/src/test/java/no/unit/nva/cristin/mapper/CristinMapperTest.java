@@ -36,6 +36,7 @@ import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
 import no.unit.nva.cristin.mapper.nva.NvaBookBuilder;
 import no.unit.nva.cristin.mapper.nva.NvaBookSeriesBuilder;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
@@ -127,7 +128,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
                                      .map(Publication::getAdditionalIdentifiers)
                                      .flatMap(Collection::stream)
                                      .filter(this::isCristinIdentifier)
-                                     .map(AdditionalIdentifier::getValue)
+                                     .map(AdditionalIdentifierBase::value)
                                      .map(Integer::parseInt)
                                      .collect(Collectors.toSet());
 
@@ -144,7 +145,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
                 .map(this::createExspectedAdditionalIdentifier)
                 .toList();
 
-        List<AdditionalIdentifier> actualIds = cristinObjects.stream()
+        List<AdditionalIdentifierBase> actualIds = cristinObjects.stream()
                                                    .map(this::mapToPublication)
                                                    .map(Publication::getAdditionalIdentifiers)
                                                    .flatMap(Collection::stream)
@@ -644,10 +645,10 @@ class CristinMapperTest extends AbstractCristinImportTest {
 
     private List<ContributionReference> extractContributions(Publication publication) {
 
-        AdditionalIdentifier cristinIdentifier = publication.getAdditionalIdentifiers().stream()
+        AdditionalIdentifierBase cristinIdentifier = publication.getAdditionalIdentifiers().stream()
                                                      .filter(this::isCristinIdentifier)
                                                      .collect(SingletonCollector.collect());
-        Integer cristinIdentifierValue = Integer.parseInt(cristinIdentifier.getValue());
+        Integer cristinIdentifierValue = Integer.parseInt(cristinIdentifier.value());
 
         return publication.getEntityDescription()
                    .getContributors().stream()
@@ -663,8 +664,8 @@ class CristinMapperTest extends AbstractCristinImportTest {
                    .collect(Collectors.toList());
     }
 
-    private boolean isCristinIdentifier(AdditionalIdentifier identifier) {
-        return identifier.getSourceName().equals(IDENTIFIER_ORIGIN);
+    private boolean isCristinIdentifier(AdditionalIdentifierBase identifier) {
+        return identifier.sourceName().equals(IDENTIFIER_ORIGIN);
     }
 
     private ContributionReference extractContributionReference(Integer cristinIdentifierValue,

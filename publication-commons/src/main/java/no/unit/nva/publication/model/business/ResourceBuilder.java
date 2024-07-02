@@ -7,7 +7,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.Organization;
@@ -35,7 +35,7 @@ public final class ResourceBuilder {
     private EntityDescription entityDescription;
     private URI doi;
     private URI handle;
-    private Set<AdditionalIdentifier> additionalIdentifiers;
+    private Set<AdditionalIdentifierBase> additionalIdentifiers;
     private List<URI> subjects;
     private List<Funding> fundings;
     private String rightsHolder;
@@ -118,7 +118,7 @@ public final class ResourceBuilder {
         return this;
     }
 
-    public ResourceBuilder withAdditionalIdentifiers(Set<AdditionalIdentifier> additionalIdentifiers) {
+    public ResourceBuilder withAdditionalIdentifiers(Set<AdditionalIdentifierBase> additionalIdentifiers) {
         this.additionalIdentifiers = additionalIdentifiers;
         return this;
     }

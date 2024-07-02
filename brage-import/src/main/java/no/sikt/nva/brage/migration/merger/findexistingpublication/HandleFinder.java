@@ -8,7 +8,7 @@ import java.util.Optional;
 import no.sikt.nva.brage.migration.lambda.MergeSource;
 import no.sikt.nva.brage.migration.model.PublicationForUpdate;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
-import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -55,8 +55,8 @@ public class HandleFinder implements FindExistingPublicationService {
                                                                                                               additionalIdentifier));
     }
 
-    private boolean matchesHandle(URI handle, AdditionalIdentifier additionalIdentifier) {
-        return "handle".equalsIgnoreCase(additionalIdentifier.getSourceName()) && additionalIdentifier.getValue()
+    private boolean matchesHandle(URI handle, AdditionalIdentifierBase additionalIdentifier) {
+        return "handle".equalsIgnoreCase(additionalIdentifier.sourceName()) && additionalIdentifier.value()
                                                                                       .equals(handle.toString());
     }
 }

@@ -41,6 +41,7 @@ import no.sikt.nva.brage.migration.record.Type;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
@@ -91,8 +92,8 @@ public class NvaBrageMigrationDataGenerator {
                                                                     resourceOwner.getOwnerAffiliation());
     }
 
-    private static Set<AdditionalIdentifier> generateCristinIdentifier(Builder builder) {
-        var additionalIdentifiers = new HashSet<AdditionalIdentifier>();
+    private static Set<AdditionalIdentifierBase> generateCristinIdentifier(Builder builder) {
+        var additionalIdentifiers = new HashSet<AdditionalIdentifierBase>();
         if (nonNull(builder.handle)) {
             additionalIdentifiers.add(new AdditionalIdentifier("handle", builder.handle.toString()));
         }

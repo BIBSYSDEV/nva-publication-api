@@ -28,7 +28,7 @@ import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
@@ -305,12 +305,12 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         return publication.getAdditionalIdentifiers()
                    .stream()
                    .filter(this::isCristinIdentifier)
-                   .map(AdditionalIdentifier::getValue)
+                   .map(AdditionalIdentifierBase::value)
                    .collect(Collectors.toSet());
     }
 
-    private boolean isCristinIdentifier(AdditionalIdentifier identifier) {
-        return SOURCE_CRISTIN.equals(identifier.getSourceName());
+    private boolean isCristinIdentifier(AdditionalIdentifierBase identifier) {
+        return SOURCE_CRISTIN.equals(identifier.sourceName());
     }
 
     private void persistHandleReport(SortableIdentifier nvaPublicationIdentifier,

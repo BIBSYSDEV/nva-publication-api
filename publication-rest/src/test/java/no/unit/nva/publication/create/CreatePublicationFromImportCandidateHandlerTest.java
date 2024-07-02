@@ -29,7 +29,6 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
@@ -53,6 +52,7 @@ import java.util.UUID;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
@@ -482,9 +482,8 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         return
             importCandidate.getAdditionalIdentifiers()
                 .stream()
-                .filter(additionalIdentifier -> "scopus".equalsIgnoreCase(additionalIdentifier.getSourceName()))
-                .map(
-                    AdditionalIdentifier::getValue).findFirst().get();
+                .filter(additionalIdentifier -> "scopus".equalsIgnoreCase(additionalIdentifier.sourceName()))
+                .map(AdditionalIdentifierBase::value).findFirst().get();
     }
 
     private PiaClientConfig createPiaConfig(WireMockRuntimeInfo wireMockRuntimeInfo) {

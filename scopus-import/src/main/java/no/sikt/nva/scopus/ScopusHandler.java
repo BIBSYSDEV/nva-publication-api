@@ -22,7 +22,7 @@ import no.sikt.nva.scopus.conversion.files.TikaUtils;
 import no.sikt.nva.scopus.exception.ExceptionMapper;
 import no.sikt.nva.scopus.update.ScopusUpdater;
 import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
-import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
@@ -156,13 +156,13 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
         return importCandidate.getAdditionalIdentifiers()
                    .stream()
                    .filter(this::isScopusIdentifier)
-                   .map(AdditionalIdentifier::getValue)
+                   .map(AdditionalIdentifierBase::value)
                    .findFirst()
                    .orElse(null);
     }
 
-    private boolean isScopusIdentifier(AdditionalIdentifier identifier) {
-        return SCOPUS_IDENTIFIER.equals(identifier.getSourceName());
+    private boolean isScopusIdentifier(AdditionalIdentifierBase identifier) {
+        return SCOPUS_IDENTIFIER.equals(identifier.sourceName());
     }
 
     private RuntimeException handleSavingError(Failure<ImportCandidate> fail, S3Event event) {
