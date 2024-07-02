@@ -21,7 +21,7 @@ import no.sikt.nva.brage.migration.merger.publicationcontextmerger.ReportMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.ResearchDataMerger;
 import no.sikt.nva.brage.migration.merger.publicationinstancemerger.PublicationInstanceMerger;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
-import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
@@ -285,7 +285,7 @@ public class CristinImportPublicationMerger {
                    : existingPublication.getSubjects();
     }
 
-    private Set<AdditionalIdentifier> mergeAdditionalIdentifiers() {
+    private Set<AdditionalIdentifierBase> mergeAdditionalIdentifiers() {
         var additionalIdentifiers = new HashSet<>(existingPublication.getAdditionalIdentifiers());
         additionalIdentifiers.addAll(bragePublicationRepresentation.publication().getAdditionalIdentifiers());
         return additionalIdentifiers;

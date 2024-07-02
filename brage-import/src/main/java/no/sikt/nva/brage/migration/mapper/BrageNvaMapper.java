@@ -34,6 +34,7 @@ import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import no.sikt.nva.brage.migration.record.content.ResourceContent.BundleType;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
@@ -155,7 +156,7 @@ public final class BrageNvaMapper {
         return nonNull(brageRecord.getLink()) ? new AssociatedLink(brageRecord.getLink(), null, null) : null;
     }
 
-    private static Set<AdditionalIdentifier> extractAdditionalIdentifiers(Record brageRecord) {
+    private static Set<AdditionalIdentifierBase> extractAdditionalIdentifiers(Record brageRecord) {
         return Stream.of(extractCristinAdditionalIdentifier(brageRecord), extractBrageHandle(brageRecord))
                    .filter(Optional::isPresent)
                    .map(Optional::get)

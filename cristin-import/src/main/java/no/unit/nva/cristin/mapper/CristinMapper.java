@@ -41,6 +41,7 @@ import no.unit.nva.cristin.mapper.exhibition.CristinExhibition;
 import no.unit.nva.cristin.mapper.nva.CristinMappingModule;
 import no.unit.nva.cristin.mapper.nva.ReferenceBuilder;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
@@ -411,7 +412,7 @@ public class CristinMapper extends CristinMappingModule {
                    : LanguageMapper.LEXVO_URI_UNDEFINED;
     }
 
-    private Set<AdditionalIdentifier> extractAdditionalIdentifiers() {
+    private Set<AdditionalIdentifierBase> extractAdditionalIdentifiers() {
         var cristinId = new AdditionalIdentifier(CristinObject.IDENTIFIER_ORIGIN, cristinObject.getId().toString());
         var additionalIdentifiers = extractCristinSourceids(cristinObject);
         additionalIdentifiers.add(cristinId);
@@ -426,18 +427,18 @@ public class CristinMapper extends CristinMappingModule {
         return new AdditionalIdentifier(cristinObject.getSourceCode(), cristinObject.getSourceRecordIdentifier());
     }
 
-    private boolean sourceCodeHasNotBeenMappedAlready(Set<AdditionalIdentifier> additionalIdentifiers,
+    private boolean sourceCodeHasNotBeenMappedAlready(Set<AdditionalIdentifierBase> additionalIdentifiers,
                                                       String sourceCode) {
         return additionalIdentifiers
                    .stream()
                    .noneMatch(additionalIdentifier -> hasIdenticalSourceCode(sourceCode, additionalIdentifier));
     }
 
-    private boolean hasIdenticalSourceCode(String sourceCode, AdditionalIdentifier additionalIdentifier) {
-        return additionalIdentifier.getSourceName().equals(sourceCode);
+    private boolean hasIdenticalSourceCode(String sourceCode, AdditionalIdentifierBase additionalIdentifier) {
+        return additionalIdentifier.sourceName().equals(sourceCode);
     }
 
-    private Set<AdditionalIdentifier> extractCristinSourceids(CristinObject cristinObject) {
+    private Set<AdditionalIdentifierBase> extractCristinSourceids(CristinObject cristinObject) {
         if (isNull(cristinObject.getCristinSources())) {
             return new HashSet<>();
         }

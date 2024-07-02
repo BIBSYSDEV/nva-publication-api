@@ -9,7 +9,7 @@ import java.util.Objects;
 import java.util.Set;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.Organization;
@@ -219,7 +219,7 @@ public class ImportCandidate extends Publication implements JsonSerializable {
             return this;
         }
 
-        public Builder withAdditionalIdentifiers(Set<AdditionalIdentifier> additionalIdentifiers) {
+        public Builder withAdditionalIdentifiers(Set<AdditionalIdentifierBase> additionalIdentifiers) {
             importCandidate.setAdditionalIdentifiers(additionalIdentifiers);
             return this;
         }

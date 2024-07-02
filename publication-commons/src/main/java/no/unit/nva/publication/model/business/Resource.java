@@ -16,7 +16,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.Organization;
@@ -73,7 +73,7 @@ public class Resource implements Entity {
     @JsonProperty
     private URI handle;
     @JsonProperty
-    private Set<AdditionalIdentifier> additionalIdentifiers;
+    private Set<AdditionalIdentifierBase> additionalIdentifiers;
     @JsonProperty
     private List<URI> subjects;
     @JsonProperty
@@ -204,11 +204,11 @@ public class Resource implements Entity {
         this.resourceOwner = resourceOwner;
     }
 
-    public Set<AdditionalIdentifier> getAdditionalIdentifiers() {
+    public Set<AdditionalIdentifierBase> getAdditionalIdentifiers() {
         return nonNull(additionalIdentifiers) ? additionalIdentifiers : Collections.emptySet();
     }
 
-    public void setAdditionalIdentifiers(Set<AdditionalIdentifier> additionalIdentifiers) {
+    public void setAdditionalIdentifiers(Set<AdditionalIdentifierBase> additionalIdentifiers) {
         this.additionalIdentifiers = additionalIdentifiers;
     }
 

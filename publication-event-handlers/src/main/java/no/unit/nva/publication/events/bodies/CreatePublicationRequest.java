@@ -14,7 +14,7 @@ import java.util.Set;
 import no.unit.nva.WithAssociatedArtifact;
 import no.unit.nva.WithContext;
 import no.unit.nva.WithMetadata;
-import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.PublicationNoteBase;
@@ -33,7 +33,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
     private JsonNode context;
     private List<ResearchProject> projects;
     private List<URI> subjects;
-    private Set<AdditionalIdentifier> additionalIdentifiers;
+    private Set<AdditionalIdentifierBase> additionalIdentifiers;
     private List<Funding> fundings;
     private String rightsHolder;
     private PublicationStatus status;
@@ -58,11 +58,11 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
         return createPublicationRequest;
     }
     
-    public Set<AdditionalIdentifier> getAdditionalIdentifiers() {
+    public Set<AdditionalIdentifierBase> getAdditionalIdentifiers() {
         return additionalIdentifiers;
     }
     
-    public void setAdditionalIdentifiers(Set<AdditionalIdentifier> additionalIdentifiers) {
+    public void setAdditionalIdentifiers(Set<AdditionalIdentifierBase> additionalIdentifiers) {
         this.additionalIdentifiers = additionalIdentifiers;
     }
     

@@ -2,7 +2,7 @@ package no.sikt.nva.brage.migration.merger;
 
 import no.sikt.nva.brage.migration.lambda.HandleDuplicateException;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
-import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Degree;
 import nva.commons.core.JacocoGenerated;
@@ -39,19 +39,19 @@ public final class PreMergeValidator {
 
     private static boolean hasBrageHandle(Publication publication) {
         return publication.getAdditionalIdentifiers().stream()
-                   .map(AdditionalIdentifier::getSourceName)
+                   .map(AdditionalIdentifierBase::sourceName)
                    .anyMatch(HANDLE::equals);
     }
 
     private static boolean containsHandle(Publication publication, String handle) {
         return publication.getAdditionalIdentifiers().stream()
                    .filter(PreMergeValidator::isHandle)
-                   .map(AdditionalIdentifier::getValue)
+                   .map(AdditionalIdentifierBase::value)
                    .anyMatch(handle::equals);
     }
 
-    private static boolean isHandle(AdditionalIdentifier additionalIdentifier) {
-        return HANDLE.equals(additionalIdentifier.getSourceName());
+    private static boolean isHandle(AdditionalIdentifierBase additionalIdentifier) {
+        return HANDLE.equals(additionalIdentifier.sourceName());
     }
 
     private static boolean isDegree(Publication publication) {

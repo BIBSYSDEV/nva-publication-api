@@ -30,7 +30,7 @@ public record PiaUpdateRequest(PiaPublication publication,
     }
 
     private static String extractScopusAuid(Contributor contributor) {
-        return extractAuid(contributor).get().getValue();
+        return extractAuid(contributor).get().value();
     }
 
     private static String extractContributorCristinIdentifier(Contributor contributor) {
@@ -44,7 +44,7 @@ public record PiaUpdateRequest(PiaPublication publication,
                    .getAdditionalIdentifiers()
                    .stream()
                    .filter(additionalIdentifier ->
-                               "scopus-auid".equalsIgnoreCase(additionalIdentifier.getSourceName()))
+                               "scopus-auid".equalsIgnoreCase(additionalIdentifier.sourceName()))
                    .findFirst();
     }
 }

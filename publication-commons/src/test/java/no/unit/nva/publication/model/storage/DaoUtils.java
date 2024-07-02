@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
@@ -32,20 +33,21 @@ import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.core.attempt.Try;
 
 public final class DaoUtils extends TestDataSource {
-    
+
     public static Resource sampleResource(Publication publication) {
-        var additionalIdentifier = Set.of(new AdditionalIdentifier(CRISTIN_SOURCE, randomString()));
+        var additionalIdentifier = Set.of(
+            (AdditionalIdentifierBase) new AdditionalIdentifier(CRISTIN_SOURCE, randomString()));
         publication.setAdditionalIdentifiers(additionalIdentifier);
         publication.setImportDetails(List.of(new ImportDetail(Instant.now(), ImportSource.fromSource(Source.CRISTIN))));
         return Resource.fromPublication(publication);
     }
-    
+
     public static ResourceDao sampleResourceDao() {
         return Try.of(sampleResource(randomPublication()))
                    .map(ResourceDao::new)
                    .orElseThrow();
     }
-    
+
     public static Stream<Dao> instanceProvider() {
         ResourceDao resourceDao = sampleResourceDao();
         DoiRequestDao doiRequestDao = doiRequestDao();
@@ -53,42 +55,42 @@ public final class DaoUtils extends TestDataSource {
         PublishingRequestDao approvePublicationRequestDao = sampleApprovePublishingRequestDao();
         return Stream.of(resourceDao, doiRequestDao, messageDao, approvePublicationRequestDao);
     }
-    
+
     public static DoiRequestDao doiRequestDao() {
         var publication = randomPublicationEligibleForDoiRequest();
         var doiRequest = DoiRequest.fromPublication(publication);
         return new DoiRequestDao(doiRequest);
     }
-    
+
     public static DoiRequestDao doiRequestDao(ResourceDao resourceDao) {
         var resource = (Resource) resourceDao.getData();
         var doiRequest = DoiRequest.newDoiRequestForResource(resource);
         return new DoiRequestDao(doiRequest);
     }
-    
+
     @SuppressWarnings("unchecked")
     public static Class<? extends TicketEntry> randomTicketType() {
         return (Class<? extends TicketEntry>)
                    randomElement(TypeProvider.listSubTypes(TicketEntry.class).collect(Collectors.toList()));
     }
-    
+
     static PutItemRequest toPutItemRequest(Dao resource) {
         return new PutItemRequest().withTableName(RESOURCES_TABLE_NAME)
                    .withItem(resource.toDynamoFormat());
     }
-    
+
     private static Publication randomPublicationEligibleForDoiRequest() {
         return randomPublication().copy()
                    .withStatus(PublicationStatus.DRAFT)
                    .withDoi(null)
                    .build();
     }
-    
+
     private static PublishingRequestDao sampleApprovePublishingRequestDao() {
         var publishingRequest = randomPublishingRequest();
         return (PublishingRequestDao) publishingRequest.toDao();
     }
-    
+
     private static MessageDao sampleMessageDao() {
         var publication = randomPublicationEligibleForDoiRequest();
         var ticket = randomTicket(publication);
@@ -96,7 +98,7 @@ public final class DaoUtils extends TestDataSource {
         assertThat(message, doesNotHaveEmptyValues());
         return new MessageDao(message);
     }
-    
+
     private static TicketEntry randomTicket(Publication publication) {
         return attempt(() -> TicketEntry.createNewTicket(publication, randomTicketType(), SortableIdentifier::next))
                    .orElseThrow();

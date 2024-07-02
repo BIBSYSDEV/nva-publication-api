@@ -8,7 +8,7 @@ import no.sikt.nva.brage.migration.lambda.MergeSource;
 import no.sikt.nva.brage.migration.lambda.PublicationComparator;
 import no.sikt.nva.brage.migration.model.PublicationForUpdate;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
-import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.service.impl.ResourceService;
 
@@ -57,11 +57,11 @@ public class CristinIdentifierFinder implements FindExistingPublicationService {
         return publication.getAdditionalIdentifiers()
                    .stream()
                    .filter(this::isCristinIdentifier)
-                   .map(AdditionalIdentifier::getValue)
+                   .map(AdditionalIdentifierBase::value)
                    .collect(Collectors.toSet());
     }
 
-    private boolean isCristinIdentifier(AdditionalIdentifier identifier) {
-        return SOURCE_CRISTIN.equals(identifier.getSourceName());
+    private boolean isCristinIdentifier(AdditionalIdentifierBase identifier) {
+        return SOURCE_CRISTIN.equals(identifier.sourceName());
     }
 }

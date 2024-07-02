@@ -8,7 +8,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 import no.unit.nva.api.PublicationResponse;
-import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
@@ -148,9 +148,9 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
         return rawImportCandidate
                    .getAdditionalIdentifiers()
                    .stream()
-                   .filter(additionalIdentifier -> "scopus".equalsIgnoreCase(additionalIdentifier.getSourceName()))
+                   .filter(additionalIdentifier -> "scopus".equalsIgnoreCase(additionalIdentifier.sourceName()))
                    .findFirst()
-                   .map(AdditionalIdentifier::getValue)
+                   .map(AdditionalIdentifierBase::value)
                    .orElseThrow();
     }
 
@@ -172,9 +172,9 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
         return Objects.equals(userAuid, rawAuid);
     }
 
-    private AdditionalIdentifier extractAuid(Contributor contributor) {
+    private AdditionalIdentifierBase extractAuid(Contributor contributor) {
         return contributor.getIdentity().getAdditionalIdentifiers().stream().filter(
-            additionalIdentifier -> "scopus-auid".equals(additionalIdentifier.getSourceName())
+            additionalIdentifier -> "scopus-auid".equals(additionalIdentifier.sourceName())
         ).findFirst().orElse(null);
     }
 
@@ -254,13 +254,13 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
         return importCandidate.getAdditionalIdentifiers()
                    .stream()
                    .filter(this::isScopusIdentifier)
-                   .map(AdditionalIdentifier::getValue)
+                   .map(AdditionalIdentifierBase::value)
                    .findFirst()
                    .orElse(null);
     }
 
-    private boolean isScopusIdentifier(AdditionalIdentifier identifier) {
-        return SCOPUS_IDENTIFIER.equals(identifier.getSourceName());
+    private boolean isScopusIdentifier(AdditionalIdentifierBase identifier) {
+        return SCOPUS_IDENTIFIER.equals(identifier.sourceName());
     }
 
     private BadGatewayException rollbackImportStatusUpdate(ImportCandidate importCandidate)
