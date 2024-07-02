@@ -169,8 +169,7 @@ public class UpdatePublicationHandler
         var permissionStrategy = PublicationPermissionStrategy.create(existingPublication, userInstance);
         Publication updatedPublication = switch (input) {
             case UpdatePublicationRequest publicationMetadata ->
-                updateMetadata(publicationMetadata, identifierInPath, existingPublication, permissionStrategy,
-                               requestInfo, userInstance);
+                updateMetadata(publicationMetadata, identifierInPath, existingPublication, permissionStrategy, userInstance);
 
             case UnpublishPublicationRequest unpublishPublicationRequest ->
                 unpublishPublication(unpublishPublicationRequest,
@@ -295,7 +294,6 @@ public class UpdatePublicationHandler
                                        SortableIdentifier identifierInPath,
                                        Publication existingPublication,
                                        PublicationPermissionStrategy permissionStrategy,
-                                       RequestInfo requestInfo,
                                        UserInstance userInstance)
         throws ApiGatewayException {
         validateRequest(identifierInPath, input);
