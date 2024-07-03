@@ -116,6 +116,7 @@ import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
@@ -156,7 +157,6 @@ import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.model.business.Resource;
@@ -961,7 +961,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var publicationRepresentation = handler.handleRequest(s3Event, CONTEXT);
         var handles = publicationRepresentation.publication()
                           .getAdditionalIdentifiers().stream()
-                          .filter(additionalIdentifier -> "handle".equals(additionalIdentifier.getSourceName()))
+                          .filter(additionalIdentifier -> "handle".equals(additionalIdentifier.sourceName()))
                           .toList();
 
 
@@ -1879,7 +1879,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     private BrageTestRecord generateBrageRecordAndPersistDuplicateByCristinIdentifier(
-        PublicationInstance<?> publicationInstance, Type type, AdditionalIdentifier additionalIdentifier) {
+        PublicationInstance<?> publicationInstance, Type type, AdditionalIdentifierBase additionalIdentifier) {
         var cristinIdentifier = "1234";
         var publication = randomPublication(publicationInstance.getClass());
 

@@ -22,6 +22,7 @@ import java.util.Set;
 import no.unit.nva.expansion.model.ExpandedImportCandidate;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
@@ -112,14 +113,14 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
         return Optional.of(new ImportCandidateSearchApiResponse(List.of(), ZERO_HITS).toString());
     }
 
-    private static boolean isScopus(AdditionalIdentifier identifier) {
-        return identifier.getSourceName().equals(SCOPUS_IDENTIFIER);
+    private static boolean isScopus(AdditionalIdentifierBase identifier) {
+        return identifier.sourceName().equals(SCOPUS_IDENTIFIER);
     }
 
     private String getScopusIdentifier(ImportCandidate importCandidate) {
         return importCandidate.getAdditionalIdentifiers().stream()
                    .filter(DeleteImportCandidateEventConsumerTest::isScopus)
-                   .map(AdditionalIdentifier::getValue)
+                   .map(AdditionalIdentifierBase::value)
                    .findFirst()
                    .orElseGet(RandomDataGenerator::randomString);
     }

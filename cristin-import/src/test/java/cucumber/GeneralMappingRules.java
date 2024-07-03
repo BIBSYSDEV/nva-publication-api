@@ -43,6 +43,7 @@ import no.unit.nva.cristin.mapper.CristinPresentationalWork;
 import no.unit.nva.cristin.mapper.CristinTags;
 import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.PublicationDate;
@@ -139,7 +140,7 @@ public class GeneralMappingRules {
     @Then("the NVA Resource has an additional identifier with key {string} and value {int}")
     public void theNvaEntryHasAnAdditionalIdentifierWithKeyAndValue(String cristinAdditionalIdentifierKey,
                                                                     int expectedCristinId) {
-        Set<AdditionalIdentifier> actualAdditionalIdentifiers =
+        Set<AdditionalIdentifierBase> actualAdditionalIdentifiers =
             scenarioContext.getNvaEntry().getAdditionalIdentifiers();
         AdditionalIdentifier expectedIdentifier =
             new AdditionalIdentifier(cristinAdditionalIdentifierKey, Integer.toString(expectedCristinId));
@@ -150,7 +151,7 @@ public class GeneralMappingRules {
     @Then("the NVA Resource has an additional identifier with key {string} and value {string}")
     public void theNvaEntryHasAnAdditionalIdentifierWithKeyAndValue(String cristinAdditionalIdentifierKey,
                                                                     String expectedCristinId) {
-        Set<AdditionalIdentifier> actualAdditionalIdentifiers =
+        Set<AdditionalIdentifierBase> actualAdditionalIdentifiers =
             scenarioContext.getNvaEntry().getAdditionalIdentifiers();
         AdditionalIdentifier expectedIdentifier =
             new AdditionalIdentifier(cristinAdditionalIdentifierKey, expectedCristinId);
@@ -458,7 +459,7 @@ public class GeneralMappingRules {
     @And("the NVA Resource does not have an additional identifier with key {string} and value "
          + "{string}")
     public void theNvaResourceDoesNotHaveAnAdditionalIdentifierWithKeyAndValue(String key, String value) {
-        Set<AdditionalIdentifier> actualAdditionalIdentifiers =
+        Set<AdditionalIdentifierBase> actualAdditionalIdentifiers =
             scenarioContext.getNvaEntry().getAdditionalIdentifiers();
         AdditionalIdentifier expectedIdentifier =
             new AdditionalIdentifier(key, value);

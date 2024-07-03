@@ -9,7 +9,7 @@ import no.sikt.nva.scopus.conversion.model.ImportCandidateSearchApiResponse;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.ExpandedImportCandidate;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -98,7 +98,7 @@ public class ScopusUpdater {
     private String getScopusIdentifier(ImportCandidate importCandidate) {
         return importCandidate.getAdditionalIdentifiers().stream()
                    .filter(this::isScopusIdentifier)
-                   .map(AdditionalIdentifier::getValue)
+                   .map(AdditionalIdentifierBase::value)
                    .findFirst()
                    .orElse(null);
     }
@@ -107,7 +107,7 @@ public class ScopusUpdater {
         return uriRetriever.getRawContent(uri, APPLICATION_JSON);
     }
 
-    private boolean isScopusIdentifier(AdditionalIdentifier identifier) {
-        return ScopusHandler.SCOPUS_IDENTIFIER.equals(identifier.getSourceName());
+    private boolean isScopusIdentifier(AdditionalIdentifierBase identifier) {
+        return ScopusHandler.SCOPUS_IDENTIFIER.equals(identifier.sourceName());
     }
 }

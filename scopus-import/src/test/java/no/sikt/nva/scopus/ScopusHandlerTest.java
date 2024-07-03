@@ -161,6 +161,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.language.Language;
 import no.unit.nva.language.LanguageConstants;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.EntityDescription;
@@ -1261,9 +1262,9 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private static String getScopusIdentifier(Publication publication) {
         return publication.getAdditionalIdentifiers()
                    .stream()
-                   .filter(id -> SCOPUS_IDENTIFIER.equals(id.getSourceName()))
+                   .filter(id -> SCOPUS_IDENTIFIER.equals(id.sourceName()))
                    .findFirst()
-                   .map(AdditionalIdentifier::getValue)
+                   .map(AdditionalIdentifierBase::value)
                    .orElse(null);
     }
 
@@ -1283,7 +1284,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                    .getAdditionalIdentifiers()
                    .stream()
                    .anyMatch(additionalIdentifier ->
-                                 "scopus-auid".equals(additionalIdentifier.getSourceName()));
+                                 "scopus-auid".equals(additionalIdentifier.sourceName()));
     }
 
     private String getEid() {
@@ -1590,8 +1591,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var authorId = contributor.getIdentity().getAdditionalIdentifiers()
                            .stream()
                            .filter(additionalIdentifier ->
-                                       "scopus-auid".equalsIgnoreCase(additionalIdentifier.getSourceName()))
-                           .map(AdditionalIdentifier::getValue)
+                                       "scopus-auid".equalsIgnoreCase(additionalIdentifier.sourceName()))
+                           .map(AdditionalIdentifierBase::value)
                            .collect(SingletonCollector.collectOrElse(""));
         return authorTp.getAuid().equals(authorId);
     }

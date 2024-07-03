@@ -43,6 +43,7 @@ import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
 import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
@@ -296,7 +297,7 @@ public class ScopusConverter {
         return nonNull(titletextTp) && titletextTp.getOriginal().equals(YesnoAtt.Y);
     }
 
-    private Set<AdditionalIdentifier> generateAdditionalIdentifiers() {
+    private Set<AdditionalIdentifierBase> generateAdditionalIdentifiers() {
         return Set.of(extractScopusIdentifier());
     }
 

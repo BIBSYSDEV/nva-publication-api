@@ -20,7 +20,7 @@ import no.unit.nva.expansion.JournalExpansionServiceImpl;
 import no.unit.nva.expansion.PublisherExpansionServiceImpl;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.EntityDescription;
@@ -86,7 +86,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     @JsonProperty(ID_FIELD)
     private URI identifier;
     @JsonProperty(ADDITIONAL_IDENTIFIERS_FIELD)
-    private Set<AdditionalIdentifier> additionalIdentifiers;
+    private Set<AdditionalIdentifierBase> additionalIdentifiers;
     @JsonProperty(DOI_FIELD)
     private URI doi;
     @JsonProperty(PUBLICATION_INSTANCE_FIELD)
@@ -205,11 +205,11 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     @JacocoGenerated
-    public Set<AdditionalIdentifier> getAdditionalIdentifiers() {
+    public Set<AdditionalIdentifierBase> getAdditionalIdentifiers() {
         return additionalIdentifiers;
     }
 
-    public void setAdditionalIdentifiers(Set<AdditionalIdentifier> additionalIdentifiers) {
+    public void setAdditionalIdentifiers(Set<AdditionalIdentifierBase> additionalIdentifiers) {
         this.additionalIdentifiers = additionalIdentifiers;
     }
 
@@ -558,7 +558,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
             return this;
         }
 
-        public Builder withAdditionalIdentifiers(Set<AdditionalIdentifier> additionalIdentifiers) {
+        public Builder withAdditionalIdentifiers(Set<AdditionalIdentifierBase> additionalIdentifiers) {
             expandedImportCandidate.setAdditionalIdentifiers(additionalIdentifiers);
             return this;
         }
