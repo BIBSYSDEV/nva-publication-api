@@ -678,6 +678,39 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(ticket.getFinalizedBy().toString(), is(equalTo(curatorName)));
     }
 
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#invalidAccessRightForTicketTypeProvider")
+    void shouldNotAllowCuratorWithoutValidAccessRightToCreateTicket(Class<? extends TicketEntry> ticketType,
+                                                                    AccessRight accessRight)
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(DRAFT, resourceService);
+        var requestBody = constructDto(ticketType);
+        var user = UserInstance.create(randomString(), publication.getPublisher().getId());
+        var input = createHttpTicketCreationRequestWithApprovedAccessRight(
+            requestBody, publication, user.getUsername(), user.getCustomerId(), accessRight);
+        handler.handleRequest(input, output, CONTEXT);
+
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+    }
+
+    @ParameterizedTest
+    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndAccessRightProvider")
+    void shouldAllowCuratorWithValidAccessRightToCreateTicket(PublicationStatus status,
+                                                              Class<? extends TicketEntry> ticketType,
+                                                                    AccessRight accessRight)
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+        var requestBody = constructDto(ticketType);
+        var user = UserInstance.create(randomString(), publication.getPublisher().getId());
+        var input = createHttpTicketCreationRequestWithApprovedAccessRight(
+            requestBody, publication, user.getUsername(), user.getCustomerId(), accessRight);
+        handler.handleRequest(input, output, CONTEXT);
+
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+    }
+
     private PublishingRequestCase fetchTicket(Publication publishedPublication,
                                               Class<PublishingRequestCase> ticketType) {
         return ticketService.fetchTicketByResourceIdentifier(publishedPublication.getPublisher().getId(),
