@@ -73,12 +73,15 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     }
 
     @Override
+    protected void validateRequest(ImportCandidate importCandidate, RequestInfo requestInfo, Context context)
+        throws ApiGatewayException {
+        validateAccessRight(requestInfo);
+        validateImportCandidate(importCandidate);
+    }
+
+    @Override
     protected PublicationResponse processInput(ImportCandidate input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-
-        validateAccessRight(requestInfo);
-        validateImportCandidate(input);
-
         return attempt(() -> importCandidate(input, requestInfo))
                    .map(PublicationResponse::fromPublication)
                    .orElseThrow(fail -> rollbackAndThrowException(input));

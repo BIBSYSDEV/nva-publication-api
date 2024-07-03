@@ -49,6 +49,11 @@ public class ImportCandidatePresignedUrlHandler extends ApiGatewayHandler<Void, 
     }
 
     @Override
+    protected void validateRequest(Void unused, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+        //Do nothing
+    }
+
+    @Override
     protected PresignedUri processInput(Void unused, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
         var importCandidateIdentifier = RequestUtil.getImportCandidateIdentifier(requestInfo);

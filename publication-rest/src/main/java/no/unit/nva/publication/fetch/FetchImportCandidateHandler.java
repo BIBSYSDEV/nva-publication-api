@@ -2,9 +2,7 @@ package no.unit.nva.publication.fetch;
 
 import static java.net.HttpURLConnection.HTTP_OK;
 import static nva.commons.core.attempt.Try.attempt;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.time.Clock;
 import java.util.function.Function;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
@@ -30,6 +28,11 @@ public class FetchImportCandidateHandler extends ApiGatewayHandler<Void, ImportC
     public FetchImportCandidateHandler(ResourceService resourceService) {
         super(Void.class);
         this.resourceService = resourceService;
+    }
+
+    @Override
+    protected void validateRequest(Void unused, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+        //Do nothing
     }
 
     @Override

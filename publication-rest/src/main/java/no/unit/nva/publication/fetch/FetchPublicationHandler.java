@@ -90,6 +90,11 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     }
 
     @Override
+    protected void validateRequest(Void unused, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+        //Do nothing
+    }
+
+    @Override
     protected String processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
 
         statusCode = HttpURLConnection.HTTP_OK; // make sure to reset to default on each invocation

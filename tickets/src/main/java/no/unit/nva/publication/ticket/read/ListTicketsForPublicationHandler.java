@@ -38,6 +38,11 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
     }
 
     @Override
+    protected void validateRequest(Void unused, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+        //Do nothing
+    }
+
+    @Override
     protected TicketCollection processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
         var publicationIdentifier = extractPublicationIdentifierFromPath(requestInfo);

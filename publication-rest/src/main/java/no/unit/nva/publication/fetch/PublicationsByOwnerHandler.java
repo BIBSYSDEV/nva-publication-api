@@ -37,7 +37,12 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
         this.resourceService = resourceService;
         this.identityServiceClient = identityServiceClient;
     }
-    
+
+    @Override
+    protected void validateRequest(Void unused, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+        //Do nothing
+    }
+
     @Override
     protected PublicationsByOwnerResponse processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {

@@ -157,6 +157,12 @@ public class UpdatePublicationHandler
     }
 
     @Override
+    protected void validateRequest(PublicationRequest publicationRequest, RequestInfo requestInfo, Context context)
+        throws ApiGatewayException {
+        //Do nothing
+    }
+
+    @Override
     protected PublicationResponseElevatedUser processInput(PublicationRequest input,
                                                            RequestInfo requestInfo,
                                                            Context context)

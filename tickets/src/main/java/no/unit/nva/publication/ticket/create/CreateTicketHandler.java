@@ -65,6 +65,12 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
     }
 
     @Override
+    protected void validateRequest(TicketDto ticketDto, RequestInfo requestInfo, Context context)
+        throws ApiGatewayException {
+        //Do nothing
+    }
+
+    @Override
     protected Void processInput(TicketDto input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
         var publicationIdentifier = new SortableIdentifier(requestInfo.getPathParameter(PUBLICATION_IDENTIFIER));

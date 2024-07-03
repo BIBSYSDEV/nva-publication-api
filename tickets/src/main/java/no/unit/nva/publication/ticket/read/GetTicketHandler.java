@@ -33,7 +33,12 @@ public class GetTicketHandler extends ApiGatewayHandler<Void, TicketDto> {
         super(Void.class);
         this.ticketService = ticketService;
     }
-    
+
+    @Override
+    protected void validateRequest(Void unused, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+        //Do nothing
+    }
+
     @Override
     protected TicketDto processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
         var ticketIdentifier = extractTicketIdentifierFromPath(requestInfo);

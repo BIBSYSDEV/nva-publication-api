@@ -17,7 +17,6 @@ import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.utils.RequestUtils;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -45,6 +44,12 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
         this.messageService = messageService;
         this.ticketService = ticketService;
         this.uriRetriever = uriRetriever;
+    }
+
+    @Override
+    protected void validateRequest(CreateMessageRequest createMessageRequest, RequestInfo requestInfo, Context context)
+        throws ApiGatewayException {
+        //Do nothing
     }
 
     @Override
