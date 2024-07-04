@@ -1,5 +1,6 @@
 package no.unit.nva.publication.permission.strategy;
 
+import static java.util.Objects.isNull;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
@@ -67,7 +68,7 @@ public abstract class PermissionStrategy {
     }
 
     protected boolean userIsFromSameInstitutionAsPublication() {
-        if (userInstance.getTopLevelOrgCristinId() == null || publication.getResourceOwner() == null) {
+        if (isNull(userInstance.getTopLevelOrgCristinId()) || isNull(publication.getResourceOwner())) {
             return false;
         }
 
