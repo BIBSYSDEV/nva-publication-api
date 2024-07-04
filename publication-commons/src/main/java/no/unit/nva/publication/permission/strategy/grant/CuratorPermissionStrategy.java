@@ -35,8 +35,7 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
     }
 
     private boolean userRelatesToPublication() {
-        return userIsFromSameInstitutionAsPublication() || (userSharesTopLevelOrgWithAtLeastOneContributor()
-                                                            && !isProtectedDegreeInstanceType());
+        return userIsFromSameInstitutionAsPublication() || userSharesTopLevelOrgWithAtLeastOneContributor();
     }
 
     private boolean canManagePublishingRequests() {
