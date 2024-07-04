@@ -85,6 +85,12 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     }
 
     @Override
+    protected void validateRequest(UpdateTicketRequest updateTicketRequest, RequestInfo requestInfo, Context context)
+        throws ApiGatewayException {
+        //Do nothing
+    }
+
+    @Override
     protected Void processInput(UpdateTicketRequest input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
         var ticketIdentifier = extractTicketIdentifierFromPath(requestInfo);

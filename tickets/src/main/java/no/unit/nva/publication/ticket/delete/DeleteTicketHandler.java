@@ -33,6 +33,11 @@ public class DeleteTicketHandler extends TicketHandler<Void, Void> {
     }
 
     @Override
+    protected void validateRequest(Void unused, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+        //Do nothing
+    }
+
+    @Override
     protected Void processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
 
         var userInstance = UserInstance.fromRequestInfo(requestInfo);

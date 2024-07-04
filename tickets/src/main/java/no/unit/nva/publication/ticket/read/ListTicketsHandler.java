@@ -9,6 +9,7 @@ import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketDto;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.JacocoGenerated;
 
@@ -25,7 +26,12 @@ public class ListTicketsHandler extends ApiGatewayHandler<Void, TicketCollection
         super(Void.class);
         this.ticketService = ticketService;
     }
-    
+
+    @Override
+    protected void validateRequest(Void unused, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+        //Do nothing
+    }
+
     @Override
     protected TicketCollection processInput(Void input, RequestInfo requestInfo, Context context)
         throws UnauthorizedException {

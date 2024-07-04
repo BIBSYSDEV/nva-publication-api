@@ -55,4 +55,8 @@ public class FetchPublicationContextHandler extends ApiGatewayHandler<Void, Stri
         );
     }
 
+    @Override
+    protected void validateRequest(Void unused, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+        //Do nothing
+    }
 }

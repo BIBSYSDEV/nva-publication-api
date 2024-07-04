@@ -33,9 +33,14 @@ public class UpdateImportStatusHandler extends ApiGatewayHandler<ImportStatusDto
     }
 
     @Override
-    protected ImportCandidate processInput(ImportStatusDto input, RequestInfo requestInfo, Context context)
+    protected void validateRequest(ImportStatusDto importStatusDto, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
         validateAccessRights(requestInfo);
+    }
+
+    @Override
+    protected ImportCandidate processInput(ImportStatusDto input, RequestInfo requestInfo, Context context)
+        throws ApiGatewayException {
         var identifier = getIdentifier(requestInfo);
         var importStatus = input.toImportStatus().copy()
                                .withSetBy(new Username(requestInfo.getUserName()))

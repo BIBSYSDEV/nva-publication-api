@@ -35,6 +35,11 @@ public class ReserveDoiHandler extends ApiGatewayHandler<Void, DoiResponse> {
     }
 
     @Override
+    protected void validateRequest(Void unused, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+        //Do nothing
+    }
+
+    @Override
     protected DoiResponse processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
         var owner = RequestUtil.getOwner(requestInfo);

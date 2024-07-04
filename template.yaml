@@ -122,6 +122,10 @@ Parameters:
   CristinUnitsS3ObjectUri:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/S3/CristinIntermediateStorage/Units'
+  AllowedOrigins:
+    Type: String
+    Description: comma separated list of external clients that are allowed to contact the HTTP APIs, "*" indicates that all origins are allowed
+    Default: '*'
 
 Conditions:
   WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ] ]
@@ -570,7 +574,7 @@ Resources:
       Handler: no.unit.nva.publication.create.CreatePublicationHandler::handleRequest
       Environment:
         Variables:
-          ALLOWED_ORIGIN: '*'
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
       Role: !GetAtt LambdaRole.Arn
@@ -594,7 +598,7 @@ Resources:
         ProvisionedConcurrentExecutions: 1
       Environment:
         Variables:
-          ALLOWED_ORIGIN: '*'
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
           NVA_FRONTEND_DOMAIN: !Ref NvaApplicationDomain
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
@@ -614,7 +618,7 @@ Resources:
       Handler: no.unit.nva.publication.fetch.FetchPublicationContextHandler::handleRequest
       Environment:
         Variables:
-          ALLOWED_ORIGIN: '*'
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
           CUSTOM_DOMAIN_BASE_PATH: !Ref CustomDomainBasePath
       Role: !GetAtt LambdaRole.Arn
       Events:
@@ -655,7 +659,7 @@ Resources:
       MemorySize: 8192
       Environment:
         Variables:
-          ALLOWED_ORIGIN: '*'
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
           NVA_EVENT_BUS_NAME: !Ref NewNvaEventBusName
@@ -681,7 +685,7 @@ Resources:
       Handler: no.unit.nva.publication.delete.DeletePublicationHandler::handleRequest
       Environment:
         Variables:
-          ALLOWED_ORIGIN: '*'
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
           DOMAIN_NAME: !Ref ApiDomain
       Policies:
@@ -702,7 +706,7 @@ Resources:
       Handler: no.unit.nva.publication.fetch.PublicationsByOwnerHandler::handleRequest
       Environment:
         Variables:
-          ALLOWED_ORIGIN: '*'
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
       Role: !GetAtt LambdaRole.Arn
       Events:
@@ -720,7 +724,7 @@ Resources:
       Handler: no.unit.nva.publication.messages.create.NewCreateMessageHandler::handleRequest
       Environment:
         Variables:
-          ALLOWED_ORIGIN: '*'
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
       Role: !GetAtt LambdaRole.Arn
       Events:
@@ -738,7 +742,7 @@ Resources:
       Handler: no.unit.nva.publication.messages.delete.DeleteMessageHandler::handleRequest
       Environment:
         Variables:
-          ALLOWED_ORIGIN: '*'
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
       Role: !GetAtt LambdaRole.Arn
       Events:
@@ -756,7 +760,7 @@ Resources:
       Handler: no.unit.nva.publication.ticket.read.ListTicketsHandler::handleRequest
       Environment:
         Variables:
-          ALLOWED_ORIGIN: '*'
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
       Role: !GetAtt LambdaRole.Arn
       Events:
@@ -774,7 +778,7 @@ Resources:
       Handler: no.unit.nva.publication.ticket.update.UpdateTicketHandler::handleRequest
       Environment:
         Variables:
-          ALLOWED_ORIGIN: '*'
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
       Role: !GetAtt LambdaRole.Arn
@@ -793,7 +797,7 @@ Resources:
       Handler: no.unit.nva.publication.ticket.delete.DeleteTicketHandler::handleRequest
       Environment:
         Variables:
-          ALLOWED_ORIGIN: '*'
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
       Role: !GetAtt LambdaRole.Arn
       Events:
@@ -812,7 +816,7 @@ Resources:
       Timeout: 10
       Environment:
         Variables:
-          ALLOWED_ORIGIN: '*'
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
       Role: !GetAtt LambdaRole.Arn
@@ -832,7 +836,7 @@ Resources:
       Timeout: 10
       Environment:
         Variables:
-          ALLOWED_ORIGIN: '*'
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
       Role: !GetAtt LambdaRole.Arn
       Events:
@@ -851,7 +855,7 @@ Resources:
       Timeout: 10
       Environment:
         Variables:
-          ALLOWED_ORIGIN: '*'
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
       Role: !GetAtt LambdaRole.Arn
       Events:
@@ -872,7 +876,7 @@ Resources:
         Type: AllAtOnce
       Environment:
         Variables:
-          ALLOWED_ORIGIN: '*'
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaImportCandidatesTable
       Role: !GetAtt LambdaRole.Arn
       Events:
@@ -893,7 +897,7 @@ Resources:
         Type: AllAtOnce
       Environment:
         Variables:
-          ALLOWED_ORIGIN: '*'
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaImportCandidatesTable
           IMPORT_CANDIDATES_STORAGE_BUCKET: !Ref ImportCandidateStorageBucket
       Role: !GetAtt LambdaRole.Arn
@@ -915,7 +919,7 @@ Resources:
         Type: AllAtOnce
       Environment:
         Variables:
-          ALLOWED_ORIGIN: '*'
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaImportCandidatesTable
       Role: !GetAtt LambdaRole.Arn
       Events:
@@ -936,7 +940,7 @@ Resources:
         Type: AllAtOnce
       Environment:
         Variables:
-          ALLOWED_ORIGIN: '*'
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
           IMPORT_CANDIDATES_TABLE_NAME: !Ref NvaImportCandidatesTable
           RESOURCE_TABLE_NAME: !Ref NvaResourcesTable
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
@@ -1082,7 +1086,7 @@ Resources:
           TABLE_NAME: !Ref NvaImportCandidatesTable
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
-          ALLOWED_ORIGIN: '*'
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -1678,7 +1682,7 @@ Resources:
       Handler: no.unit.nva.publication.events.handlers.create.CreatePublishedPublicationHandler::handleRequest
       Environment:
         Variables:
-          ALLOWED_ORIGIN: '*'
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
       Role: !GetAtt LambdaRole.Arn
       Events:
@@ -1757,7 +1761,7 @@ Resources:
         - !GetAtt S3AccessManagedPolicy.PolicyArn
       Environment:
         Variables:
-          ALLOWED_ORIGIN: '*'
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
           CRISTIN_IMPORT_BUCKET: !Sub 'cristin-import-${AWS::AccountId}'
           CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL: !Ref CristinImportDataEntryQueue
 
@@ -1798,7 +1802,7 @@ Resources:
       Environment:
         Variables:
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
-          ALLOWED_ORIGIN: '*'
+          ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
       Role: !GetAtt LambdaRole.Arn
       Events:

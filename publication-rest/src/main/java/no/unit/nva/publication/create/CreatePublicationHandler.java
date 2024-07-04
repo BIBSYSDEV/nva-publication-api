@@ -94,6 +94,12 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     }
 
     @Override
+    protected void validateRequest(CreatePublicationRequest createPublicationRequest, RequestInfo requestInfo,
+                                   Context context) throws ApiGatewayException {
+        //Do nothing
+    }
+
+    @Override
     protected PublicationResponse processInput(CreatePublicationRequest input, RequestInfo requestInfo,
                                                Context context) throws ApiGatewayException {
         if (isThesisAndHasNoRightsToPublishThesisAndIsNotExternalClient(input, requestInfo)) {

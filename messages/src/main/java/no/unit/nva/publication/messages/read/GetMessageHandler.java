@@ -14,6 +14,7 @@ import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
@@ -23,7 +24,12 @@ public class GetMessageHandler extends ApiGatewayHandler<Void, Void> {
     public GetMessageHandler() {
         super(Void.class);
     }
-    
+
+    @Override
+    protected void validateRequest(Void unused, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+        //Do nothing
+    }
+
     @Override
     protected Void processInput(Void input, RequestInfo requestInfo, Context context) {
         var redirectUri = constructAssociatedTicketUri(requestInfo);

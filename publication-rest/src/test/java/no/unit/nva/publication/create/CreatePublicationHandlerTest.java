@@ -140,7 +140,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         environmentMock = mock(Environment.class);
         identityServiceClient = mock(IdentityServiceClient.class);
 
-        when(environmentMock.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
+        lenient().when(environmentMock.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
         when(environmentMock.readEnv(API_HOST)).thenReturn(NVA_UNIT_NO);
         lenient().when(environmentMock.readEnv("BACKEND_CLIENT_SECRET_NAME")).thenReturn("secret");
 
@@ -384,7 +384,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnBadGatewayIfCustomerApiDoesNotRespondWithSuccessOk() throws IOException, InterruptedException {
+    void shouldReturnBadGatewayIfCustomerApiDoesNotRespondWithSuccessOk() throws IOException {
         var event = prepareRequestWithFileForTypeWhereNotAllowed();
 
         WireMock.reset();

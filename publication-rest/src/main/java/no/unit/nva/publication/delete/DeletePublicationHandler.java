@@ -50,6 +50,11 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     }
 
     @Override
+    protected void validateRequest(Void unused, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+        //Do nothing
+    }
+
+    @Override
     protected Void processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
         var userInstance = createUserInstanceFromRequest(requestInfo, identityServiceClient);
         var publicationIdentifier = RequestUtil.getIdentifier(requestInfo);
