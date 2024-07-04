@@ -87,14 +87,14 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
     void shouldThrowExceptionWhenUpdatingImportedImportCandidate() throws NotFoundException {
         var importCandidate = resourceService.persistImportCandidate(randomImportCandidate());
         resourceService.updateImportStatus(importCandidate.getIdentifier(),
-                                           ImportStatusFactory.createImported(new Username(randomString()), randomUri()));
+                                           ImportStatusFactory.createImported(new Username(randomString()),
+                                                                              randomUri()));
         var updatedImportCandidate = update(importCandidate);
         assertThrows(BadRequestException.class, () -> resourceService.updateImportCandidate(updatedImportCandidate));
     }
 
     @Test
-    void shouldThrowExceptionWhenCanNotFetchImportCandidateWhenUpdatingIt() throws NotFoundException,
-                                                                                  BadRequestException {
+    void shouldThrowExceptionWhenCanNotFetchImportCandidateWhenUpdatingIt() {
         var importCandidate = randomImportCandidate();
         assertThrows(TransactionFailedException.class, () -> resourceService.updateImportCandidate(importCandidate));
     }

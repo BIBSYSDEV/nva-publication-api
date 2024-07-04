@@ -82,7 +82,9 @@ class MessageServiceTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldMarkTicketAsUnreadForEveryoneExceptSenderWhenMessageIsCreated(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
+    void shouldMarkTicketAsUnreadForEveryoneExceptSenderWhenMessageIsCreated(Class<? extends TicketEntry> ticketType,
+                                                                             PublicationStatus status)
+        throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var persistedMessage = messageService.createMessage(ticket, owner, randomString());
@@ -147,7 +149,8 @@ class MessageServiceTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("ticketTypeAccessRightsProvider")
-    void shouldAllowCuratorToDeleteMessageWhenTicketHasCorrectType(Class<? extends TicketEntry> ticketType, AccessRight accessRight) throws ApiGatewayException {
+    void shouldAllowCuratorToDeleteMessageWhenTicketHasCorrectType(Class<? extends TicketEntry> ticketType,
+                                                                   AccessRight accessRight) throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(
             PublicationStatus.PUBLISHED, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
@@ -159,7 +162,8 @@ class MessageServiceTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("ticketTypeAccessRightsProvider")
-    void shouldNotAllowWrongTypeOfCuratorToDeleteMessage(Class<? extends TicketEntry> ticketType, AccessRight accessRight) throws ApiGatewayException {
+    void shouldNotAllowWrongTypeOfCuratorToDeleteMessage(Class<? extends TicketEntry> ticketType,
+                                                         AccessRight accessRight) throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(
             PublicationStatus.PUBLISHED, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
@@ -177,14 +181,17 @@ class MessageServiceTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("ticketTypeAccessRightsProvider")
-    void shouldNotAllowCuratorFromAnotherInstitutionToDeleteMessage(Class<? extends TicketEntry> ticketType, AccessRight accessRight) throws ApiGatewayException {
+    void shouldNotAllowCuratorFromAnotherInstitutionToDeleteMessage(Class<? extends TicketEntry> ticketType,
+                                                                    AccessRight accessRight)
+        throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(
             PublicationStatus.PUBLISHED, owner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var persistedMessage = messageService.createMessage(ticket, owner, randomString());
         var curatorFromRandomInstitution = randomUserInstance(accessRight, randomUri());
 
-        assertThrows(UnauthorizedException.class, () -> messageService.deleteMessage(curatorFromRandomInstitution, persistedMessage));
+        assertThrows(UnauthorizedException.class, () -> messageService.deleteMessage(curatorFromRandomInstitution,
+                                                                                     persistedMessage));
     }
 
     private UserInstance randomUserInstance() {

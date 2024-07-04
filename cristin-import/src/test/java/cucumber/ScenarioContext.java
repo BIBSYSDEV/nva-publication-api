@@ -63,7 +63,8 @@ public class ScenarioContext {
 
     public void convertToNvaEntry() {
         mappingAttempt =
-            attempt(() -> new CristinMapper(cristinEntry, cristinUnitsUtil, mock(S3Client.class)).generatePublication());
+            attempt(() -> new CristinMapper(cristinEntry, cristinUnitsUtil, mock(S3Client.class))
+                              .generatePublication());
     }
 
     public Publication getNvaEntry() {

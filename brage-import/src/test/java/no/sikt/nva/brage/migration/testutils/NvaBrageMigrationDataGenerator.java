@@ -97,7 +97,7 @@ public class NvaBrageMigrationDataGenerator {
         if (nonNull(builder.handle)) {
             additionalIdentifiers.add(new AdditionalIdentifier("handle", builder.handle.toString()));
         }
-        if (nonNull(builder.cristinIdentifier)){
+        if (nonNull(builder.cristinIdentifier)) {
             additionalIdentifiers.add(new AdditionalIdentifier(SOURCE_CRISTIN, builder.cristinIdentifier));
         }
         return additionalIdentifiers;
@@ -112,8 +112,10 @@ public class NvaBrageMigrationDataGenerator {
     }
 
     private static no.unit.nva.model.Identity createIdentity(Contributor contributor) {
+        var personUri =
+            URI.create("https://test.nva.aws.unit.no/cristin/person/" + contributor.getIdentity().getIdentifier());
         return new no.unit.nva.model.Identity.Builder().withName(contributor.getIdentity().getName())
-                   .withId(URI.create("https://test.nva.aws.unit.no/cristin/person/" + contributor.getIdentity().getIdentifier()))
+                   .withId(personUri)
                    .build();
     }
 
@@ -142,8 +144,9 @@ public class NvaBrageMigrationDataGenerator {
 
     private EntityDescription createEntityDescription(Builder builder) {
         return new EntityDescription.Builder().withLanguage(builder.getLanguage().getNva())
-                   .withContributors(builder.noContributors ? List.of() :
-                                                                            List.of(createCorrespondingContributor(builder.getContributor())))
+                   .withContributors(builder.noContributors
+                                         ? List.of()
+                                         : List.of(createCorrespondingContributor(builder.getContributor())))
                    .withReference(ReferenceGenerator.generateReference(builder))
                    .withDescription(builder.getDescriptionsForPublication())
                    .withAbstract(builder.getEntityAbstractsForPublication())

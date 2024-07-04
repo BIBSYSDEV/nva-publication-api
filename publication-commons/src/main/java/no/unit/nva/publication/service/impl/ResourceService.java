@@ -120,7 +120,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     /**
-     * Should not be used initiating resourceService for resource-table
+     * Should not be used initiating resourceService for resource-table.
      *
      * @param tableName name of table
      * @return ResourceService
@@ -205,9 +205,8 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResourceFromImportCandidate(newResource);
     }
 
-    /**
-     * @deprecated Only here for existing tests
-     */
+
+    // @deprecated Only here for existing tests.
     @Deprecated(forRemoval = true)
     public Publication insertPreexistingPublication(Publication publication) {
         Resource resource = Resource.fromPublication(publication);

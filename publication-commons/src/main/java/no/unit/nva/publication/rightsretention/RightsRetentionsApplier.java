@@ -131,21 +131,25 @@ public final class RightsRetentionsApplier {
 
 
     public static RightsRetentionsApplier rrsApplierForNewPublication(Publication newPublication,
-                                                                      CustomerApiRightsRetention configuredRrsOnCustomer,
+                                                                      CustomerApiRightsRetention customerRrs,
                                                                       String actingUser) {
-        return new RightsRetentionsApplier(Optional.empty(), newPublication, configuredRrsOnCustomer, actingUser, null);
+        return new RightsRetentionsApplier(Optional.empty(),
+                                           newPublication,
+                                           customerRrs,
+                                           actingUser,
+                                           null);
     }
 
     public static RightsRetentionsApplier rrsApplierForUpdatedPublication(Publication existingPublication,
                                                                           Publication updatedPublication,
-                                                                          CustomerApiRightsRetention configuredRrsOnCustomer,
+                                                                          CustomerApiRightsRetention customerRrs,
                                                                           String actingUser,
-                                                                          PublicationPermissionStrategy permissionStrategy) {
+                                                                          PublicationPermissionStrategy strategy) {
         return new RightsRetentionsApplier(Optional.of(existingPublication),
                                            updatedPublication,
-                                           configuredRrsOnCustomer,
+                                           customerRrs,
                                            actingUser,
-                                           permissionStrategy);
+                                           strategy);
     }
 
 

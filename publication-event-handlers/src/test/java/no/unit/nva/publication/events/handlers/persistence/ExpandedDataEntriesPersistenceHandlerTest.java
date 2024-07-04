@@ -170,7 +170,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldPersistRecoveryMessageForPublicationWhenSomethingGoesWrong() throws IOException, ApiGatewayException {
-        var expectedPersistedEntry = generateExpandedEntry(ExpandedResource.class);
+        final var expectedPersistedEntry = generateExpandedEntry(ExpandedResource.class);
         s3Writer = mock(S3Driver.class);
         when(s3Writer.insertFile(any(), (String) any())).thenThrow(new RuntimeException());
         handler = new ExpandedDataEntriesPersistenceHandler(s3Reader, s3Writer, fakeSqsClient);
@@ -187,7 +187,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldPersistRecoveryMessageForTicketWhenSomethingGoesWrong() throws IOException, ApiGatewayException {
-        var expectedPersistedEntry = generateExpandedPublishingRequestWithWorkflowSetToNull();
+        final var expectedPersistedEntry = generateExpandedPublishingRequestWithWorkflowSetToNull();
         s3Writer = mock(S3Driver.class);
         when(s3Writer.insertFile(any(), (String) any())).thenThrow(new RuntimeException());
         handler = new ExpandedDataEntriesPersistenceHandler(s3Reader, s3Writer, fakeSqsClient);

@@ -60,7 +60,8 @@ public class ExpandedDataEntriesPersistenceHandler
                    .orElse(failure -> persistRecoveryMessage(failure, expandedResourceUpdate));
     }
 
-    private EventReference persistRecoveryMessage(Failure<EventReference> failure, ExpandedDataEntry expandedDataEntry) {
+    private EventReference persistRecoveryMessage(Failure<EventReference> failure,
+                                                  ExpandedDataEntry expandedDataEntry) {
         var identifier = expandedDataEntry.identifyExpandedEntry();
         RecoveryEntry.fromExpandedDataEntry(expandedDataEntry)
             .withIdentifier(identifier)

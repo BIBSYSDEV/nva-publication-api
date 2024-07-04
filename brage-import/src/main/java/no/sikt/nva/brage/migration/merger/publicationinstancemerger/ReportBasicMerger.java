@@ -11,8 +11,8 @@ public final class ReportBasicMerger extends PublicationInstanceMerger<ReportBas
 
     @Override
     public ReportBasic merge(PublicationInstance<?> publicationInstance) {
-        if (publicationInstance instanceof ReportBasic newReportBasic) {
-            return new ReportBasic(getPages(this.publicationInstance.getPages(), newReportBasic.getPages()));
+        if (publicationInstance instanceof ReportBasic reportBasic) {
+            return new ReportBasic(getPages(this.publicationInstance.getPages(), reportBasic.getPages()));
         } else {
             return this.publicationInstance;
         }

@@ -23,7 +23,7 @@ public final class DeletedPublicationResponse {
                                                         .build();
         var tombstone = PublicationResponseElevatedUser.fromPublication(publicationWithoutAssociatedArtifacts);
         return attempt(() -> JsonUtils.dtoObjectMapper.convertValue(tombstone,
-                                                                    new TypeReference<Map<String, Object>>() {})).orElseThrow();
-
+                                                                    new TypeReference<Map<String, Object>>() {}))
+                   .orElseThrow();
     }
 }

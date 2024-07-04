@@ -77,8 +77,9 @@ public class PublicationInstanceMergerTest {
 
     @ParameterizedTest
     @MethodSource("emptyPublicationInstanceSupplier")
-    void shouldUseExistingPublicationInstanceWhenNewPublicationInstanceIsEmpty(PublicationInstance<?> publicationInstance)
-        throws InvalidUnconfirmedSeriesException, InvalidIsbnException, InvalidIssnException {
+    void shouldUseExistingPublicationInstanceWhenNewPublicationInstanceIsEmpty(
+        PublicationInstance<?> publicationInstance) throws InvalidUnconfirmedSeriesException, InvalidIsbnException,
+                                                           InvalidIssnException {
         var existingPublication = randomPublication(publicationInstance.getClass());
         var bragePublication = randomPublication(publicationInstance.getClass());
         bragePublication.getEntityDescription().getReference().setPublicationInstance(publicationInstance);
@@ -90,8 +91,9 @@ public class PublicationInstanceMergerTest {
 
     @ParameterizedTest
     @MethodSource("emptyPublicationInstanceSupplier")
-    void shouldUseNewPublicationInstanceWhenExistingPublicationInstanceIsEmpty(PublicationInstance<?>  publicationInstance)
-        throws InvalidUnconfirmedSeriesException, InvalidIsbnException, InvalidIssnException {
+    void shouldUseNewPublicationInstanceWhenExistingPublicationInstanceIsEmpty(
+        PublicationInstance<?>  publicationInstance) throws InvalidUnconfirmedSeriesException, InvalidIsbnException,
+                                                            InvalidIssnException {
         var existingPublication = randomPublication(publicationInstance.getClass());
         existingPublication.getEntityDescription().getReference().setPublicationInstance(publicationInstance);
         var bragePublication = randomPublication(publicationInstance.getClass());

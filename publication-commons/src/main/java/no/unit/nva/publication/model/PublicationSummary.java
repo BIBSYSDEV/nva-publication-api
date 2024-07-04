@@ -62,18 +62,18 @@ public class PublicationSummary {
         return publicationSummary;
     }
 
-    private static String extractAbstract(Publication publication) {
-        return Optional.ofNullable(publication.getEntityDescription())
-                   .map(EntityDescription::getAbstract)
-                   .orElse(null);
-    }
-
     public static PublicationSummary create(URI publicationId, String publicationTitle) {
         var publicationSummary = new PublicationSummary();
         publicationSummary.setIdentifier(extractPublicationIdentifier(publicationId));
         publicationSummary.setPublicationId(publicationId);
         publicationSummary.setTitle(publicationTitle);
         return publicationSummary;
+    }
+
+    private static String extractAbstract(Publication publication) {
+        return Optional.ofNullable(publication.getEntityDescription())
+                   .map(EntityDescription::getAbstract)
+                   .orElse(null);
     }
 
     @JsonProperty("abstract")
@@ -153,6 +153,10 @@ public class PublicationSummary {
         return extractPublicationIdentifier(publicationId);
     }
 
+    private static SortableIdentifier extractPublicationIdentifier(URI publicationId) {
+        return new SortableIdentifier(UriWrapper.fromUri(publicationId).getLastPathElement());
+    }
+
     @Override
     @JacocoGenerated
     public int hashCode() {
@@ -200,10 +204,6 @@ public class PublicationSummary {
                    .map(EntityDescription::getReference)
                    .map(Reference::getPublicationInstance)
                    .orElse(null);
-    }
-
-    private static SortableIdentifier extractPublicationIdentifier(URI publicationId) {
-        return new SortableIdentifier(UriWrapper.fromUri(publicationId).getLastPathElement());
     }
 
     private static URI toPublicationId(SortableIdentifier identifier) {

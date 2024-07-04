@@ -56,7 +56,8 @@ class CristinRerunEventEmitterTest {
             .addChild("nullpointer");
 
         s3Driver.insertFile(errorsLocation.addChild("12345").toS3bucketPath(), getFailure(CRISTIN_ENTRY_LOCATION));
-        var input = IoUtils.stringToStream(new RerunFailedEntriesEvent(URI.create(errorsLocation.toString())).toJsonString());
+        var errorLocation = URI.create(errorsLocation.toString());
+        var input = IoUtils.stringToStream(new RerunFailedEntriesEvent(errorLocation).toJsonString());
         handler.handleRequest(input, output, CONTEXT);
         var expectedMessageBody = new EventReference("PublicationService.DataImport.DataEntry",
                                                      "PublicationService.CristinData.DataEntry",
@@ -67,11 +68,12 @@ class CristinRerunEventEmitterTest {
     }
 
     @Test
-    void shouldReadErrorReportFromCristinErrorLocationAndDoNotEmitEventWhenNoErrors() throws IOException {
+    void shouldReadErrorReportFromCristinErrorLocationAndDoNotEmitEventWhenNoErrors() {
         var errorsLocation = UnixPath.of(new Environment().readEnv("CRISTIN_IMPORT_BUCKET"))
                                  .addChild("errors")
                                  .addChild("nullpointer");
-        var input = IoUtils.stringToStream(new RerunFailedEntriesEvent(URI.create(errorsLocation.toString())).toJsonString());
+        var errorLocation = URI.create(errorsLocation.toString());
+        var input = IoUtils.stringToStream(new RerunFailedEntriesEvent(errorLocation).toJsonString());
         handler.handleRequest(input, output, CONTEXT);
 
         assertTrue(sqsClient.getMessageBodies().isEmpty());
@@ -85,7 +87,8 @@ class CristinRerunEventEmitterTest {
 
         var errorReport = errorsLocation.addChild("12345").toS3bucketPath();
         s3Driver.insertFile(errorReport, getFailure(CRISTIN_ENTRY_LOCATION));
-        var input = IoUtils.stringToStream(new RerunFailedEntriesEvent(URI.create(errorsLocation.toString())).toJsonString());
+        var errorLocation = URI.create(errorsLocation.toString());
+        var input = IoUtils.stringToStream(new RerunFailedEntriesEvent(errorLocation).toJsonString());
         handler.handleRequest(input, output, CONTEXT);
 
         assertThrows(NoSuchKeyException.class, () -> s3Driver.getFile(errorReport));
@@ -100,7 +103,8 @@ class CristinRerunEventEmitterTest {
         var failure = getFailure(CRISTIN_ENTRY_LOCATION);
         sqsClient = amazonSqsThatFailsToSendMessages();
         s3Driver.insertFile(errorReport, failure);
-        var input = IoUtils.stringToStream(new RerunFailedEntriesEvent(URI.create(errorsLocation.toString())).toJsonString());
+        var errorLocation = URI.create(errorsLocation.toString());
+        var input = IoUtils.stringToStream(new RerunFailedEntriesEvent(errorLocation).toJsonString());
         new CristinRerunErrorsEventEmitter(s3Client, sqsClient).handleRequest(input, output, CONTEXT);
         var notDeleteReport = s3Driver.getFile(errorReport);
 

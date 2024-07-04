@@ -11,8 +11,8 @@ public final class ConferenceReportMerger extends PublicationInstanceMerger<Conf
 
     @Override
     public ConferenceReport merge(PublicationInstance<?> publicationInstance) {
-        if (publicationInstance instanceof ConferenceReport newConferenceReport) {
-            return new ConferenceReport(getPages(this.publicationInstance.getPages(), newConferenceReport.getPages()));
+        if (publicationInstance instanceof ConferenceReport conferenceReport) {
+            return new ConferenceReport(getPages(this.publicationInstance.getPages(), conferenceReport.getPages()));
         } else {
             return this.publicationInstance;
         }

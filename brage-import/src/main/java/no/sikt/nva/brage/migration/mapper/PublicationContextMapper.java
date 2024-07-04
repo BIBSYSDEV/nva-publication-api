@@ -80,8 +80,9 @@ public final class PublicationContextMapper {
         if (isSupportedReportType(brageRecord)) {
             return buildPublicationContextWhenReport(brageRecord);
         }
-        if (isUnconfirmedJournal(brageRecord) || isUnconfirmedScientificArticle(brageRecord)
-        || isUnconfirmedJournalIssue(brageRecord)) {
+        if (isUnconfirmedJournal(brageRecord)
+            || isUnconfirmedScientificArticle(brageRecord)
+            || isUnconfirmedJournalIssue(brageRecord)) {
             return buildPublicationContextForUnconfirmedJournal(brageRecord);
         }
         if (isArticle(brageRecord)) {

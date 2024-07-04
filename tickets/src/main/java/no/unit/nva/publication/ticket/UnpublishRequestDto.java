@@ -48,7 +48,15 @@ public class UnpublishRequestDto extends TicketDto {
                                @JsonProperty(OWNER_AFFILIATION_FIELD) URI ownerAffiliation,
                                @JsonProperty(FINALIZED_BY_FIELD) Username finalizedBy,
                                @JsonProperty(FINALIZED_DATE_FIELD) Instant finalizedDate) {
-        super(status, messages, viewedBy, assignee, publicationIdentifier, owner, ownerAffiliation, finalizedBy, finalizedDate);
+        super(status,
+              messages,
+              viewedBy,
+              assignee,
+              publicationIdentifier,
+              owner,
+              ownerAffiliation,
+              finalizedBy,
+              finalizedDate);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
@@ -56,7 +64,19 @@ public class UnpublishRequestDto extends TicketDto {
     }
 
     public static TicketDto empty() {
-        return new UnpublishRequestDto(null, null, null, null, null, null, null, null, null, null, null, null, null);
+        return new UnpublishRequestDto(null,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null);
     }
 
     public Instant getCreatedDate() {

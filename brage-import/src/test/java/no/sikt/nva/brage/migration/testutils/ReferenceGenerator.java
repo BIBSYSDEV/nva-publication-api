@@ -241,7 +241,8 @@ public final class ReferenceGenerator {
             }
             if (NvaType.RECORDING_MUSICAL.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder().withPublishingContext(new Artistic())
-                           .withPublicationInstance(new MusicPerformance(Collections.emptyList(), NullDuration.create()))
+                           .withPublicationInstance(new MusicPerformance(Collections.emptyList(),
+                                                                         NullDuration.create()))
                            .withDoi(builder.getDoi())
                            .build();
             }
@@ -318,7 +319,8 @@ public final class ReferenceGenerator {
             }
             if (NvaType.FILM.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder().withPublicationInstance(
-                        new MovingPicture(MovingPictureSubtype.createOther(null), null, Collections.emptyList(), NullDuration.create()))
+                        new MovingPicture(MovingPictureSubtype.createOther(null),
+                                          null, Collections.emptyList(), NullDuration.create()))
                            .withPublishingContext(new Artistic())
                            .withDoi(builder.getDoi())
                            .build();
@@ -357,8 +359,10 @@ public final class ReferenceGenerator {
             }
             if (NvaType.JOURNAL_ISSUE.getValue().equals(builder.getType().getNva())) {
                 return new Reference.Builder()
-                           .withPublicationInstance(new JournalIssue(builder.getVolume(), builder.getIssue(),
-                                                                     builder.getArticleNumber(), generateRange(builder)))
+                           .withPublicationInstance(new JournalIssue(builder.getVolume(),
+                                                                     builder.getIssue(),
+                                                                     builder.getArticleNumber(),
+                                                                     generateRange(builder)))
                            .withPublishingContext(new UnconfirmedJournal(builder.getJournalTitle(),
                                                                          builder.getIssnList().get(0),
                                                                          builder.getIssnList().get(1)))
@@ -454,7 +458,9 @@ public final class ReferenceGenerator {
                                           builder.getIssnList().get(1));
         }
         if (builder.getIssnList().size() == 1) {
-            return new UnconfirmedJournal(builder.getPublication().getJournal(), builder.getIssnList().getFirst(), null);
+            return new UnconfirmedJournal(builder.getPublication().getJournal(),
+                                          builder.getIssnList().getFirst(),
+                                          null);
         } else {
             return new UnconfirmedJournal(builder.getPublication().getJournal(), null, null);
         }

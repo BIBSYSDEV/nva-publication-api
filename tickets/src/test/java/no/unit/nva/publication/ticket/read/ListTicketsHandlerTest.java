@@ -1,6 +1,9 @@
 package no.unit.nva.publication.ticket.read;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.publication.ticket.test.TicketTestUtils.createPersistedPublication;
+import static no.unit.nva.publication.ticket.test.TicketTestUtils.createPersistedPublicationWithOwner;
+import static no.unit.nva.publication.ticket.test.TicketTestUtils.createPersistedTicket;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -15,8 +18,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.time.Clock;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
@@ -24,7 +25,6 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketDto;
@@ -35,7 +35,6 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import no.unit.nva.publication.ticket.test.TicketTestUtils;
 
 class ListTicketsHandlerTest extends ResourcesLocalTest {
     
@@ -57,10 +56,11 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldReturnAllPendingTicketsOfUser(Class<? extends TicketEntry> ticketType, PublicationStatus status) throws IOException {
+    void shouldReturnAllPendingTicketsOfUser(Class<? extends TicketEntry> ticketType,
+                                             PublicationStatus status) throws IOException {
         var user = randomResourcesOwner();
         var expectedTickets =
-            generateTickets(ticketType, status, user).map(this::constructDto).collect(Collectors.toList());
+            generateTickets(ticketType, status, user).map(this::constructDto).toList();
         var request = buildHttpRequest(user);
         handler.handleRequest(request, outputStream, CONTEXT);
         var response = GatewayResponse.fromOutputStream(outputStream, TicketCollection.class);
@@ -73,7 +73,7 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldNotReturnRemovedTicket(Class<? extends TicketEntry> ticketType,
                                       PublicationStatus status)
-        throws IOException, ApiGatewayException {
+        throws IOException {
         var user = randomResourcesOwner();
         generateTickets(ticketType, status, user);
         var request = buildHttpRequest(user);
@@ -89,7 +89,7 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
     void shouldReturnEmptyListWhenUserHasNoTickets(Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws IOException, ApiGatewayException {
         var user = randomResourcesOwner();
-        TicketTestUtils.createPersistedPublication(status, resourceService);
+        createPersistedPublication(status, resourceService);
         var request = buildHttpRequest(user);
         handler.handleRequest(request, outputStream, CONTEXT);
         var response = GatewayResponse.fromOutputStream(outputStream, TicketCollection.class);
@@ -113,9 +113,10 @@ class ListTicketsHandlerTest extends ResourcesLocalTest {
                                                 UserInstance owner) {
         return IntStream.range(0, SMALL_PUBLICATIONS_NUMBER)
                    .boxed()
-                   .map(ignored -> attempt(() -> TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService)).orElseThrow())
-                   .map(publication -> attempt(() -> TicketTestUtils.createPersistedTicket(publication, ticketType,
-                                                                                ticketService)).orElseThrow());
+                   .map(ignored -> attempt(() -> createPersistedPublicationWithOwner(status, owner, resourceService))
+                                       .orElseThrow())
+                   .map(publication -> attempt(() -> createPersistedTicket(publication, ticketType, ticketService))
+                                           .orElseThrow());
     }
     
     private TicketDto constructDto(TicketEntry ticketEntry) {

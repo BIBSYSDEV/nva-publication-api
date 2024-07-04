@@ -966,7 +966,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         publication = Resource.fromPublication(publication).persistNew(resourceService,
                                                                        UserInstance.fromPublication(publication));
         var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
-        var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
+        final var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
         when(uriRetriever.getRawContent(eq(orgId), any())).thenReturn(
             Optional.of(IoUtils.stringFromResources(Path.of("cristin-orgs/20754.6.0.0.json"))));
 
@@ -1080,8 +1080,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
         resourceService.unpublishPublication(publication);
         var tickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
         assertThat(tickets, hasSize(1));
-        assertThat(tickets, hasItem(allOf(instanceOf(UnpublishRequest.class)
-            , hasProperty("status", is(equalTo(TicketStatus.PENDING))))));
+        assertThat(tickets, hasItem(allOf(instanceOf(UnpublishRequest.class),
+                                          hasProperty("status", is(equalTo(TicketStatus.PENDING))))));
     }
 
     @Test
@@ -1101,16 +1101,16 @@ class ResourceServiceTest extends ResourcesLocalTest {
         resourceService.unpublishPublication(publication);
         var tickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
         assertThat(tickets, hasSize(5));
-        assertThat(tickets, hasItem(allOf(instanceOf(GeneralSupportRequest.class)
-            , hasProperty("status", is(equalTo(TicketStatus.CLOSED))))));
-        assertThat(tickets, hasItem(allOf(instanceOf(GeneralSupportRequest.class)
-            , hasProperty("status", is(equalTo(TicketStatus.NOT_APPLICABLE))))));
-        assertThat(tickets, hasItem(allOf(instanceOf(DoiRequest.class)
-            , hasProperty("status", is(equalTo(TicketStatus.NOT_APPLICABLE))))));
-        assertThat(tickets, hasItem(allOf(instanceOf(UnpublishRequest.class)
-            , hasProperty("status", is(equalTo(TicketStatus.PENDING))))));
-        assertThat(tickets, hasItem(allOf(instanceOf(PublishingRequestCase.class)
-            , hasProperty("status", is(equalTo(TicketStatus.COMPLETED))))));
+        assertThat(tickets, hasItem(allOf(instanceOf(GeneralSupportRequest.class),
+                                          hasProperty("status", is(equalTo(TicketStatus.CLOSED))))));
+        assertThat(tickets, hasItem(allOf(instanceOf(GeneralSupportRequest.class),
+                                          hasProperty("status", is(equalTo(TicketStatus.NOT_APPLICABLE))))));
+        assertThat(tickets, hasItem(allOf(instanceOf(DoiRequest.class),
+                                          hasProperty("status", is(equalTo(TicketStatus.NOT_APPLICABLE))))));
+        assertThat(tickets, hasItem(allOf(instanceOf(UnpublishRequest.class),
+                                          hasProperty("status", is(equalTo(TicketStatus.PENDING))))));
+        assertThat(tickets, hasItem(allOf(instanceOf(PublishingRequestCase.class),
+                                          hasProperty("status", is(equalTo(TicketStatus.COMPLETED))))));
         assertThat(resourceService.getPublication(publication).getStatus(), is(equalTo(UNPUBLISHED)));
     }
 

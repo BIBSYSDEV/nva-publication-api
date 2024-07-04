@@ -466,7 +466,9 @@ class CristinMapperTest extends AbstractCristinImportTest {
         cristinObject.getBookOrReportMetadata().getCristinPublisher().setNsdCode(null);
         cristinObject.getBookOrReportMetadata().getCristinPublisher().setPublisherName("NORD UniverSITet");
         var book =
-            new NvaBookBuilder(cristinObject, ChannelRegistryMapper.getInstance(), mock(S3Client.class)).buildBookForPublicationContext();
+            new NvaBookBuilder(cristinObject,
+                               ChannelRegistryMapper.getInstance(),
+                               mock(S3Client.class)).buildBookForPublicationContext();
         assertThat(book.getPublisher(), is(instanceOf(Publisher.class)));
     }
 
@@ -501,7 +503,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
         cristinObject.getBookOrReportMetadata().setPublisherName(null);
         var book = new NvaBookBuilder(cristinObject, ChannelRegistryMapper.getInstance(), mock(S3Client.class))
                        .buildBookForPublicationContext();
-        assertThat( book.getPublisher(), is(instanceOf(NullPublisher.class)));
+        assertThat(book.getPublisher(), is(instanceOf(NullPublisher.class)));
     }
 
     @Test
@@ -564,7 +566,8 @@ class CristinMapperTest extends AbstractCristinImportTest {
     void shouldLookupForSeriesByTitleWhenNsdCodeIsMissing() {
         var cristinObject = CristinDataGenerator.randomBook();
         cristinObject.getBookOrReportMetadata().getBookSeries().setNsdCode(null);
-        cristinObject.getBookOrReportMetadata().getBookSeries().setJournalTitle("Physical Review E. Statistical, Nonlinear, and Soft Matter Physics");
+        cristinObject.getBookOrReportMetadata().getBookSeries()
+            .setJournalTitle("Physical Review E. Statistical, Nonlinear, and Soft Matter Physics");
         var periodical = new NvaBookSeriesBuilder(cristinObject, ChannelRegistryMapper.getInstance(),
                                                   mock(S3Client.class)).createBookSeries();
         assertThat(((Series) periodical).getId().toString(),

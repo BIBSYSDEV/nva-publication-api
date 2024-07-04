@@ -212,9 +212,14 @@ class DaoTest extends ResourcesLocalTest {
         Dao retrievedResource = parseAttributeValuesMap(getItemResult.getItem(), originalResource.getClass());
         
         assertThat(originalResource, doesNotHaveEmptyValuesIgnoringFields(Set.of(DATA_OWNER_AFFILIATION,
-                                                                                 DATA_ASSIGNEE, DATA_FINALIZED_BY,
-                                                                                 DATA_FINALIZED_DATE, DATA_IMPORT_STATUS,
-                RESOURCE_IMPORT_STATUS, RESOURCE_REVISION, DATA_REVISION, DATA_APPROVED_FILES,
+                                                                                 DATA_ASSIGNEE,
+                                                                                 DATA_FINALIZED_BY,
+                                                                                 DATA_FINALIZED_DATE,
+                                                                                 DATA_IMPORT_STATUS,
+                                                                                 RESOURCE_IMPORT_STATUS,
+                                                                                 RESOURCE_REVISION,
+                                                                                 DATA_REVISION,
+                                                                                 DATA_APPROVED_FILES,
                                                                                  DATA_FILES_FOR_APPROVAL)));
         assertThat(originalResource, is(equalTo(retrievedResource)));
     }

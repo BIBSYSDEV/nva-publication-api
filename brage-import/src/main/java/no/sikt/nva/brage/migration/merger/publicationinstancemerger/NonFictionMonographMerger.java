@@ -12,7 +12,8 @@ public final class NonFictionMonographMerger extends PublicationInstanceMerger<N
     @Override
     public NonFictionMonograph merge(PublicationInstance<?> publicationInstance) {
         if (publicationInstance instanceof NonFictionMonograph newNonFictionMonograph) {
-            return new NonFictionMonograph(getPages(this.publicationInstance.getPages(), newNonFictionMonograph.getPages()));
+            return new NonFictionMonograph(getPages(this.publicationInstance.getPages(),
+                                                    newNonFictionMonograph.getPages()));
         } else {
             return this.publicationInstance;
         }

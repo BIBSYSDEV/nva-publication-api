@@ -493,7 +493,7 @@ public class JournalFeatures {
 
     @Then("NVA resource has article number {int}.")
     public void nvaResourceHasArticleNumber(int articleNumber) {
-        var instance= scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
+        var instance = scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationInstance();
         assertThat(((ProfessionalArticle) instance).getArticleNumber(), is(equalTo(String.valueOf(articleNumber))));
     }
 

@@ -104,11 +104,11 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private Optional<PublicationForUpdate> findExistingPublication(S3Event event,
-                                                                   PublicationRepresentation publicationRepresentation) {
+                                                                   PublicationRepresentation representation) {
         var duplicatePublicationReporter = new DuplicatePublicationReporter(s3Client, extractBucketName(event));
         var publicationFinderService = new FindExistingPublicationServiceImpl(resourceService, uriRetriever, apiHost,
                                                                               duplicatePublicationReporter);
-        return publicationFinderService.findExistingPublication(publicationRepresentation);
+        return publicationFinderService.findExistingPublication(representation);
     }
 
     private PublicationRepresentation createNewPublication(PublicationRepresentation publicationRepresentation,
@@ -142,13 +142,11 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         }
     }
 
-    private PublicationRepresentation unableToMergeCristinRecordException(
-        PublicationRepresentation publicationRepresentation,
-        S3Event s3Event) {
+    private PublicationRepresentation unableToMergeCristinRecordException(PublicationRepresentation representation,
+                                                                          S3Event s3Event) {
         handleSavingError(new Failure<>(
-                              new UnmappableCristinRecordException(CRISTIN_RECORD_EXCEPTION
-                                                                   + getCristinIdentifier(publicationRepresentation.publication()))),
-                          s3Event);
+            new UnmappableCristinRecordException(CRISTIN_RECORD_EXCEPTION
+                                                 + getCristinIdentifier(representation.publication()))), s3Event);
         return null;
     }
 
@@ -162,8 +160,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         PublicationRepresentation publicationRepresentation,
         S3Event s3Event,
         PublicationForUpdate publicationForUpdate) {
-        return attempt(() -> mergeTwoPublications(publicationRepresentation, publicationForUpdate
-            , s3Event))
+        return attempt(() -> mergeTwoPublications(publicationRepresentation, publicationForUpdate, s3Event))
                    .map(publication -> new PublicationRepresentation(publicationRepresentation.brageRecord(),
                                                                      publication))
                    .orElseThrow();
@@ -193,11 +190,14 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                                              PublicationForUpdate existingPublication,
                                              S3Event s3Event) {
         return attempt(() -> updatedPublication(publicationRepresentation, existingPublication.existingPublication()))
-                   .map(publicationForUpdate -> persistInDatabaseAndCreateMergeReport(publicationForUpdate,
-                                                                                      existingPublication.existingPublication(), publicationRepresentation))
-                   .map(mergeReport -> persistMergeReports(mergeReport, s3Event, publicationRepresentation,
+                   .map(publicationForUpdate ->
+                            persistInDatabaseAndCreateMergeReport(publicationForUpdate,
+                                                                  existingPublication.existingPublication(),
+                                                                  publicationRepresentation))
+                   .map(mergeReport -> persistMergeReports(mergeReport,
+                                                           s3Event,
+                                                           publicationRepresentation,
                                                            existingPublication))
-
                    .orElseThrow();
     }
 
@@ -216,7 +216,8 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private PublicationMergeReport persistPublicationMergeReport(BrageMergingReport mergingReport,
-                                                                 PublicationRepresentation publicationRepresentation, PublicationForUpdate existingPublication) {
+                                                                 PublicationRepresentation publicationRepresentation,
+                                                                 PublicationForUpdate existingPublication) {
 
         var publicationIdentifier = existingPublication.existingPublication().getIdentifier();
         var existingReport = PublicationMergeReport.fetch(publicationIdentifier.toString(), s3Client);
@@ -227,17 +228,21 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         }
     }
 
-    private PublicationMergeReport updateExistingMergeReport(
-        BrageMergingReport mergingReport, PublicationRepresentation publicationRepresentation, PublicationMergeReport existingReport) {
+    private PublicationMergeReport updateExistingMergeReport(BrageMergingReport mergingReport,
+                                                             PublicationRepresentation publicationRepresentation,
+                                                             PublicationMergeReport existingReport) {
         var institutionImage = publicationRepresentation.publication();
         var institution = publicationRepresentation.getCustomerName();
-        existingReport.addNewMergeResult(institution, institutionImage, mergingReport.oldImage(), mergingReport.newImage());
+        existingReport.addNewMergeResult(institution,
+                                         institutionImage,
+                                         mergingReport.oldImage(),
+                                         mergingReport.newImage());
         return existingReport.persist(s3Client);
     }
 
-    private PublicationMergeReport persistNewMergeReport(
-        BrageMergingReport mergingReport, PublicationRepresentation publicationRepresentation,
-        SortableIdentifier publicationIdentifier) {
+    private PublicationMergeReport persistNewMergeReport(BrageMergingReport mergingReport,
+                                                         PublicationRepresentation publicationRepresentation,
+                                                         SortableIdentifier publicationIdentifier) {
         var institutionImage = publicationRepresentation.publication();
         var report = PublicationMergeReport.createEmptyReport(publicationIdentifier);
         var institution = publicationRepresentation.getCustomerName();
@@ -266,9 +271,9 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
     private BrageMergingReport persistInDatabaseAndCreateMergeReport(Publication publicationForUpdate,
                                                                      Publication existinPublication,
-                                                                     PublicationRepresentation publicationRepresentation) {
+                                                                     PublicationRepresentation representation) {
         validateBeforeUpdate(publicationForUpdate);
-        var customerName = publicationRepresentation.brageRecord().getCustomer().getName();
+        var customerName = representation.brageRecord().getCustomer().getName();
         var importSource = ImportSource.fromBrageArchive(customerName);
         var newImage = resourceService.updatePublicationByImportEntry(publicationForUpdate, importSource);
         return new BrageMergingReport(existinPublication, newImage);

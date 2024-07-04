@@ -87,14 +87,17 @@ public class CristinPatchEventConsumer implements RequestHandler<SQSEvent, Void>
 
     private ParentAndChild persistChangesInParent(ParentAndChild parentAndChild, EventReference input) {
         attempt(() -> resourceService.updatePublication(parentAndChild.getParentPublication()))
-            .map(updatedPublication -> storeSuccessReport(updatedPublication, parentAndChild.getParentPublication(), input))
+            .map(updatedPublication -> storeSuccessReport(updatedPublication,
+                                                          parentAndChild.getParentPublication(),
+                                                          input))
             .orElseThrow();
         return parentAndChild;
     }
 
     private ParentAndChild persistChangesInChild(ParentAndChild parentAndChild, EventReference input) {
         attempt(() -> resourceService.updatePublication(parentAndChild.getChildPublication()))
-            .map(updatedPublication -> storeSuccessReport(updatedPublication, parentAndChild.getParentPublication(), input))
+            .map(updatedPublication ->
+                     storeSuccessReport(updatedPublication, parentAndChild.getParentPublication(), input))
             .orElseThrow();
         return parentAndChild;
     }

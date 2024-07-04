@@ -46,7 +46,8 @@ public class CustomerApiStubs {
     }
 
     public static void stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(URI customerId) {
-        stubCustomSuccessfulCustomerResponse(customerId, customerAcceptingFilesForAllTypesNotAllowingAutoPublishingFiles());
+        stubCustomSuccessfulCustomerResponse(customerId,
+                                             customerAcceptingFilesForAllTypesNotAllowingAutoPublishingFiles());
     }
 
     public static void stubCustomerResponseAcceptingFilesForAllTypesAndOverridableRrs(URI customerId) {

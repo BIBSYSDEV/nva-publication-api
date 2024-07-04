@@ -14,9 +14,12 @@ public final class AcademicArticleMerger extends PublicationInstanceMerger<Acade
         if (publicationInstance instanceof AcademicArticle newAcademicArticle) {
             return new AcademicArticle(getRange(this.publicationInstance.getPages(),
                                                 newAcademicArticle.getPages()),
-                                                getNonNullValue(this.publicationInstance.getVolume(), newAcademicArticle.getVolume()),
-                                                getNonNullValue(this.publicationInstance.getIssue(), newAcademicArticle.getIssue()),
-                                                getNonNullValue(this.publicationInstance.getArticleNumber(), newAcademicArticle.getArticleNumber()));
+                                                getNonNullValue(this.publicationInstance.getVolume(),
+                                                                newAcademicArticle.getVolume()),
+                                                getNonNullValue(this.publicationInstance.getIssue(),
+                                                                newAcademicArticle.getIssue()),
+                                                getNonNullValue(this.publicationInstance.getArticleNumber(),
+                                                                newAcademicArticle.getArticleNumber()));
         } else {
             return this.publicationInstance;
         }

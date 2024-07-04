@@ -40,7 +40,8 @@ public class GeneralSupportRequestDto extends TicketDto {
                                     @JsonProperty(CREATED_DATE_FIELD) Instant createdDate,
                                     @JsonProperty(MODIFIED_DATE_FIELD) Instant modifiedDate,
                                     @JsonProperty(IDENTIFIER_FIELD) SortableIdentifier identifier,
-                                    @JsonProperty(PUBLICATION_IDENTIFIER_FIELD) SortableIdentifier publicationIdentifier,
+                                    @JsonProperty(PUBLICATION_IDENTIFIER_FIELD)
+                                        SortableIdentifier publicationIdentifier,
                                     @JsonProperty(ID_FIELD) URI id,
                                     @JsonProperty(MESSAGES_FIELD) List<MessageDto> messages,
                                     @JsonProperty(VIEWED_BY) Set<User> viewedBy,
@@ -49,7 +50,15 @@ public class GeneralSupportRequestDto extends TicketDto {
                                     @JsonProperty(OWNER_AFFILIATION_FIELD) URI ownerAffiliation,
                                     @JsonProperty(FINALIZED_BY_FIELD) Username finalizedBy,
                                     @JsonProperty(FINALIZED_DATE_FIELD) Instant finalizedDate) {
-        super(status, messages, viewedBy, assignee, publicationIdentifier, owner, ownerAffiliation, finalizedBy, finalizedDate);
+        super(status,
+              messages,
+              viewedBy,
+              assignee,
+              publicationIdentifier,
+              owner,
+              ownerAffiliation,
+              finalizedBy,
+              finalizedDate);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
@@ -57,7 +66,18 @@ public class GeneralSupportRequestDto extends TicketDto {
     }
 
     public static GeneralSupportRequestDto empty() {
-        return new GeneralSupportRequestDto(null, null, null, null, null, null, null, null, null, null, null, null,
+        return new GeneralSupportRequestDto(null,
+                                            null,
+                                            null,
+                                            null,
+                                            null,
+                                            null,
+                                            null,
+                                            null,
+                                            null,
+                                            null,
+                                            null,
+                                            null,
                                             null);
     }
 
@@ -97,10 +117,9 @@ public class GeneralSupportRequestDto extends TicketDto {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof GeneralSupportRequestDto)) {
+        if (!(o instanceof GeneralSupportRequestDto that)) {
             return false;
         }
-        GeneralSupportRequestDto that = (GeneralSupportRequestDto) o;
         return Objects.equals(getId(), that.getId())
                && getStatus() == that.getStatus()
                && Objects.equals(getCreatedDate(), that.getCreatedDate())

@@ -28,10 +28,10 @@ public class BrageMergingRollbackHandler extends EventHandler<EventReference, Vo
 
     private static final Logger logger = LoggerFactory.getLogger(BrageMergingRollbackHandler.class);
 
-    public final static String TOPIC = "BrageMerging.Rollback.Request";
-    public final static String ERROR_MERGING_ROLLBACK = "ERROR_MERGING_ROLLBACK";
-    public final static String SUCCESS_MERGING_ROLLBACK = "SUCCESS_MERGING_ROLLBACK";
-    public final static String NEWER_VERSION_OF_THE_PUBLICATION_EXISTS = "Newer version of the publication exists";
+    public static final String TOPIC = "BrageMerging.Rollback.Request";
+    public static final String ERROR_MERGING_ROLLBACK = "ERROR_MERGING_ROLLBACK";
+    public static final String SUCCESS_MERGING_ROLLBACK = "SUCCESS_MERGING_ROLLBACK";
+    public static final String NEWER_VERSION_OF_THE_PUBLICATION_EXISTS = "Newer version of the publication exists";
     private static final String INIT_VALUE = null;
     private final S3Client s3Client;
     private final ResourceService resourceService;

@@ -63,7 +63,9 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     @JacocoGenerated
     public FetchPublicationHandler() {
-        this(ResourceService.defaultService(), new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME), new Environment(),
+        this(ResourceService.defaultService(),
+             new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME),
+             new Environment(),
              IdentityServiceClient.prepare());
     }
 

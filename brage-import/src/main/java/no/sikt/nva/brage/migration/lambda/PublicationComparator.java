@@ -33,7 +33,8 @@ public final class PublicationComparator {
                          publicationContextTypeMatches).allMatch(Boolean::valueOf);
     }
 
-    private static boolean publicationContextTypeMatches(Publication existingPublication, Publication incomingPublication) {
+    private static boolean publicationContextTypeMatches(Publication existingPublication,
+                                                         Publication incomingPublication) {
         if (typesAreMissing(incomingPublication)) {
             return true;
         }
@@ -66,19 +67,21 @@ public final class PublicationComparator {
         var existingPublicationDate = existingPublication.getEntityDescription().getPublicationDate();
         var incomingPublicationDate = incomingPublication.getEntityDescription().getPublicationDate();
         var difference =
-            Math.abs(Integer.parseInt(existingPublicationDate.getYear()) - Integer.parseInt(incomingPublicationDate.getYear()));
+            Math.abs(Integer.parseInt(existingPublicationDate.getYear())
+                     - Integer.parseInt(incomingPublicationDate.getYear()));
         return difference <= ALLOWED_PUBLICATION_YEAR_DIFFERENCE;
     }
 
     private static boolean contributorsMatch(Publication existingPublication, Publication incomingPublication) {
         var existingContributors = existingPublication.getEntityDescription().getContributors();
-        if (existingContributors.isEmpty()){
+        if (existingContributors.isEmpty()) {
             return true;
         }
         return atleasOneContributorMatch(incomingPublication, existingContributors);
     }
 
-    private static boolean atleasOneContributorMatch(Publication incomingPublication, List<Contributor> existingContributors) {
+    private static boolean atleasOneContributorMatch(Publication incomingPublication,
+                                                     List<Contributor> existingContributors) {
         var incomingContributors = incomingPublication.getEntityDescription().getContributors();
         return existingContributors.stream()
                    .flatMap(contributor -> containsContributor(incomingContributors, contributor))

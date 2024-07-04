@@ -11,10 +11,10 @@ public final class MapMerger extends PublicationInstanceMerger<Map> {
 
     @Override
     public Map merge(PublicationInstance<?> publicationInstance) {
-        if (publicationInstance instanceof Map newMap) {
+        if (publicationInstance instanceof Map map) {
             return new Map(
-                getNonNullValue(this.publicationInstance.getDescription(), newMap.getDescription()),
-                getPages(this.publicationInstance.getPages(), newMap.getPages()));
+                getNonNullValue(this.publicationInstance.getDescription(), map.getDescription()),
+                getPages(this.publicationInstance.getPages(), map.getPages()));
         } else {
             return this.publicationInstance;
         }

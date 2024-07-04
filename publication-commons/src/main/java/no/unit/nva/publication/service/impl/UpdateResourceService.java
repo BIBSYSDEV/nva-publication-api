@@ -139,13 +139,14 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     private static boolean isContributorsChanged(Publication publicationUpdate, Publication persistedPublication) {
-        return nonNull(publicationUpdate.getEntityDescription()) &&
-               !getContributors(publicationUpdate).equals(getContributors(persistedPublication));
+        return nonNull(publicationUpdate.getEntityDescription())
+               && !getContributors(publicationUpdate).equals(getContributors(persistedPublication));
     }
 
     private static List<Contributor> getContributors(Publication persistedPublication) {
-        return nonNull(persistedPublication.getEntityDescription()) ?
-                   persistedPublication.getEntityDescription().getContributors() : List.of();
+        return nonNull(persistedPublication.getEntityDescription())
+                   ? persistedPublication.getEntityDescription().getContributors()
+                   : List.of();
     }
 
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
@@ -286,6 +287,18 @@ public class UpdateResourceService extends ServiceWithTransactions {
         }
     }
 
+    /**
+     * Associated artifacts are NOT updated anymore. For now all files are just files, i.e. we do not use
+     * Published/Unpublished temporary.
+     **/
+
+    private void publishPublication(Publication publication) throws InvalidPublicationException {
+        assertThatPublicationHasMinimumMandatoryFields(publication);
+        publication.setStatus(PublicationStatus.PUBLISHED);
+        publication.setPublishedDate(clockForTimestamps.instant());
+        updatePublicationIncludingStatus(publication);
+    }
+
     DeletePublicationStatusResponse updatePublishedStatusToDeleted(SortableIdentifier resourceIdentifier)
         throws NotFoundException {
         var publication =
@@ -325,18 +338,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
         return attempt(() -> readResourceService.getResourceByIdentifier(importCandidate.getIdentifier()))
                    .map(Resource::toImportCandidate)
                    .orElseThrow(fail -> new TransactionFailedException(fail.getException()));
-    }
-
-    /**
-     * Associated artifacts are NOT updated anymore. For now all files are just files, i.e. we do not use
-     * Published/Unpublished temporary.
-     **/
-
-    private void publishPublication(Publication publication) throws InvalidPublicationException {
-        assertThatPublicationHasMinimumMandatoryFields(publication);
-        publication.setStatus(PublicationStatus.PUBLISHED);
-        publication.setPublishedDate(clockForTimestamps.instant());
-        updatePublicationIncludingStatus(publication);
     }
 
     private Publication fetchExistingPublication(Publication publication) {

@@ -13,9 +13,6 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
-import no.unit.nva.model.associatedartifacts.file.PublishedFile;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
@@ -27,10 +24,7 @@ import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.MessageDao;
-import no.unit.nva.publication.utils.RequestUtils;
 import nva.commons.apigateway.AccessRight;
-import nva.commons.apigateway.RequestInfo;
-import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.JacocoGenerated;
@@ -68,7 +62,7 @@ public class MessageService extends ServiceWithTransactions {
         getClient().transactWriteItems(transactionRequest);
         
         markTicketUnreadForEveryoneExceptSender(ticketEntry, sender);
-        return fetchEventualConsistentDataEntry(newMessage, this::getMessageByIdentifier).orElseThrow();
+        return fetchEventualConsistentDataEntry(newMessage, this::extractMessageByIdentifier).orElseThrow();
     }
     
     public Message getMessage(UserInstance owner, SortableIdentifier identifier) throws NotFoundException {
@@ -113,10 +107,12 @@ public class MessageService extends ServiceWithTransactions {
 
         var ticket = ticketService.fetchTicketByIdentifier(message.getTicketIdentifier());
         return switch (ticket) {
-            case PublishingRequestCase publishingRequest -> userInstance.getAccessRights().contains(AccessRight.MANAGE_PUBLISHING_REQUESTS);
+            case PublishingRequestCase publishingRequest -> userInstance.getAccessRights()
+                                                                .contains(AccessRight.MANAGE_PUBLISHING_REQUESTS);
             case GeneralSupportRequest supportRequest -> userInstance.getAccessRights().contains(AccessRight.SUPPORT);
             case DoiRequest doiRequest -> userInstance.getAccessRights().contains(AccessRight.MANAGE_DOI);
-            case UnpublishRequest unpublishRequest -> userInstance.getAccessRights().contains(AccessRight.MANAGE_RESOURCES_STANDARD);
+            case UnpublishRequest unpublishRequest -> userInstance.getAccessRights()
+                                                          .contains(AccessRight.MANAGE_RESOURCES_STANDARD);
             default -> false;
         };
     }
@@ -134,7 +130,7 @@ public class MessageService extends ServiceWithTransactions {
         }
     }
 
-    private Message getMessageByIdentifier(Message message) {
+    private Message extractMessageByIdentifier(Message message) {
         return getMessageByIdentifier(message.getIdentifier()).orElseThrow();
     }
     

@@ -8,6 +8,7 @@ public enum ContentVersion {
     VOR("vor"), AM("am"), TDM("tdm"), UNSPECIFIED("unspecified");
 
     private final String value;
+
     ContentVersion(String type) {
         this.value = type;
     }

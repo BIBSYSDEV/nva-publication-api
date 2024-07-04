@@ -144,11 +144,11 @@ public class PublicationRepresentations {
 
     @Override
     public String toString() {
-        return "PublicationRepresentations{" +
-               "cristinObject=" + cristinObject +
-               ", eventBody=" + eventBody +
-               ", incomingPublication=" + incomingPublication +
-               ", existingPublication=" + existingPublication +
-               '}';
+        return "PublicationRepresentations{"
+               + "cristinObject=" + cristinObject
+               + ", eventBody=" + eventBody
+               + ", incomingPublication=" + incomingPublication
+               + ", existingPublication=" + existingPublication
+               + '}';
     }
 }

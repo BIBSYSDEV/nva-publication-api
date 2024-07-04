@@ -59,7 +59,8 @@ public class ArtBuilder extends AbstractPublicationInstanceBuilder {
 
     private MusicPerformance createMusicPerformance() {
         var cristinObject = getCristinObject();
-        return cristinObject.getCristinArtisticProduction().toMusicPerformance(cristinObject.getId(), super.getS3Client());
+        return cristinObject.getCristinArtisticProduction()
+                   .toMusicPerformance(cristinObject.getId(), super.getS3Client());
     }
 
     private MovingPicture createMovingPicture() {

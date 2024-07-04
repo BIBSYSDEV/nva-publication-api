@@ -94,6 +94,7 @@ public enum CristinSecondaryCategory {
                || CristinSecondaryCategory.EXHIBITION_CATALOG.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.ACADEMIC_COMMENTARY.equals(cristinObject.getSecondaryCategory());
     }
+
     public static boolean isJournalLetter(CristinObject cristinObject) {
         return CristinSecondaryCategory.JOURNAL_LETTER.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.READER_OPINION.equals(cristinObject.getSecondaryCategory());

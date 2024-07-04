@@ -72,7 +72,7 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldDeleteImportCandidateSuccessfully() throws NotFoundException {
-        var appender = LogUtils.getTestingAppenderForRootLogger();
+        final var appender = LogUtils.getTestingAppenderForRootLogger();
         var importCandidate = persistedImportCandidate();
         var event = emulateImportCandidateDeleteEvent(getScopusIdentifier(importCandidate));
         when(uriRetriever.getRawContent(any(), any())).thenReturn(

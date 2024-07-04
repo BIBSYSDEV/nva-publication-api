@@ -3,6 +3,14 @@ package no.unit.nva.publication;
 import static java.util.UUID.randomUUID;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
+import static no.unit.nva.publication.RequestUtil.FILE_IDENTIFIER;
+import static no.unit.nva.publication.RequestUtil.IMPORT_CANDIDATE_IDENTIFIER;
+import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
+import static no.unit.nva.publication.RequestUtil.createUserInstanceFromRequest;
+import static no.unit.nva.publication.RequestUtil.getFileIdentifier;
+import static no.unit.nva.publication.RequestUtil.getIdentifier;
+import static no.unit.nva.publication.RequestUtil.getImportCandidateIdentifier;
+import static no.unit.nva.publication.RequestUtil.getOwner;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -56,10 +64,14 @@ class RequestUtilTest {
 
     private static Stream<Arguments> provideIdentifiersForTesting() {
         return Stream.of(
-            Arguments.of(RequestUtil.PUBLICATION_IDENTIFIER,
-                         (Function<RequestInfo, SortableIdentifier>) req -> attempt(() -> RequestUtil.getIdentifier(req)).orElseThrow()),
-            Arguments.of(RequestUtil.IMPORT_CANDIDATE_IDENTIFIER,
-                         (Function<RequestInfo, SortableIdentifier>) req -> attempt(() -> RequestUtil.getImportCandidateIdentifier(req)).orElseThrow())
+            Arguments.of(PUBLICATION_IDENTIFIER,
+                         (Function<RequestInfo, SortableIdentifier>) req -> attempt(() -> getIdentifier(req))
+                                                                                .orElseThrow()),
+            Arguments.of(IMPORT_CANDIDATE_IDENTIFIER,
+                         (Function<RequestInfo, SortableIdentifier>) req ->
+                                                                         attempt(() ->
+                                                                                     getImportCandidateIdentifier(req))
+                                                                             .orElseThrow())
         );
     }
 
@@ -67,9 +79,9 @@ class RequestUtilTest {
     void canGetFileIdentifierFromRequest() throws ApiGatewayException {
         var uuid = randomUUID();
         var requestInfo = new RequestInfo();
-        requestInfo.setPathParameters(Map.of(RequestUtil.FILE_IDENTIFIER, uuid.toString()));
+        requestInfo.setPathParameters(Map.of(FILE_IDENTIFIER, uuid.toString()));
 
-        var identifier = RequestUtil.getFileIdentifier(requestInfo);
+        var identifier = getFileIdentifier(requestInfo);
 
         assertEquals(uuid, identifier);
     }
@@ -77,9 +89,9 @@ class RequestUtilTest {
     @Test
     void getIdentifierOnInvalidRequestThrowsException() {
         RequestInfo requestInfo = new RequestInfo();
-        assertThrows(BadRequestException.class, () -> RequestUtil.getIdentifier(requestInfo));
-        assertThrows(BadRequestException.class, () -> RequestUtil.getImportCandidateIdentifier(requestInfo));
-        assertThrows(BadRequestException.class, () -> RequestUtil.getFileIdentifier(requestInfo));
+        assertThrows(BadRequestException.class, () -> getIdentifier(requestInfo));
+        assertThrows(BadRequestException.class, () -> getImportCandidateIdentifier(requestInfo));
+        assertThrows(BadRequestException.class, () -> getFileIdentifier(requestInfo));
     }
     
     @Test
@@ -87,7 +99,7 @@ class RequestUtilTest {
         RequestInfo requestInfo = new RequestInfo();
         requestInfo.setRequestContext(getRequestContextForClaim(INJECT_NVA_USERNAME_CLAIM, VALUE));
         
-        String owner = RequestUtil.getOwner(requestInfo);
+        String owner = getOwner(requestInfo);
         
         assertEquals(VALUE, owner);
     }
@@ -95,7 +107,7 @@ class RequestUtilTest {
     @Test
     void getOwnerThrowsUnauthorizedExceptionWhenOwnerCannotBeRetrieved() {
         RequestInfo requestInfo = new RequestInfo();
-        assertThrows(UnauthorizedException.class, () -> RequestUtil.getOwner(requestInfo));
+        assertThrows(UnauthorizedException.class, () -> getOwner(requestInfo));
     }
 
     @Test
@@ -111,7 +123,7 @@ class RequestUtilTest {
         var identityServiceClient = mock(IdentityServiceClient.class);
         when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
 
-        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+        var userInstance = createUserInstanceFromRequest(requestInfo, identityServiceClient);
         assertNotNull(userInstance);
     }
 
@@ -127,7 +139,8 @@ class RequestUtilTest {
         var identityServiceClient = mock(IdentityServiceClient.class);
         when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
 
-        assertThrows(UnauthorizedException.class, () -> RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient));
+        assertThrows(UnauthorizedException.class, () -> createUserInstanceFromRequest(requestInfo,
+                                                                                      identityServiceClient));
     }
 
     @Test
@@ -142,7 +155,7 @@ class RequestUtilTest {
 
         var identityServiceClient = mock(IdentityServiceClient.class);
 
-        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+        var userInstance = createUserInstanceFromRequest(requestInfo, identityServiceClient);
         assertEquals(username, userInstance.getUsername());
         assertEquals(customer, userInstance.getCustomerId());
     }

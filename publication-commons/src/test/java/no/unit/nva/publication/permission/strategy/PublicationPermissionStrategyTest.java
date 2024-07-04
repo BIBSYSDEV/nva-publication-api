@@ -108,11 +108,12 @@ class PublicationPermissionStrategyTest {
         var requestInfo = createUserRequestInfo(null, URI.create(""), cristinId, randomUri());
         var publication = createPublication(randomString(), randomUri(), randomUri());
 
-        Assertions.assertThrows(UnauthorizedException.class, () -> PublicationPermissionStrategy
-                                                                       .create(publication,
-                                                                               RequestUtil.createUserInstanceFromRequest(
-                                                                                   requestInfo, identityServiceClient))
-                                                                       .allowsAction(UNPUBLISH));
+        Assertions.assertThrows(UnauthorizedException.class, () ->
+                                                                 PublicationPermissionStrategy
+                                                                     .create(publication,
+                                                                             RequestUtil.createUserInstanceFromRequest(
+                                                                                 requestInfo, identityServiceClient))
+                                                                     .allowsAction(UNPUBLISH));
     }
 
     @Test
@@ -204,6 +205,7 @@ class PublicationPermissionStrategyTest {
                    .withStatus(PUBLISHED)
                    .build();
     }
+
     Publication createNonDegreePublication(String resourceOwner, URI customer, URI ownerAffiliation) {
         return fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES)
                    .copy()
@@ -344,15 +346,6 @@ class PublicationPermissionStrategyTest {
         return requestInfo;
     }
 
-    private JsonNode getRequestContextForClaim(Map<String, String> claimKeyValuePairs) throws JsonProcessingException {
-        Map<String, Map<String, Map<String, String>>> map = Map.of(
-            AUTHORIZER, Map.of(
-                CLAIMS, claimKeyValuePairs
-            )
-        );
-        return dtoObjectMapper.readTree(dtoObjectMapper.writeValueAsString(map));
-    }
-
     protected RequestInfo createThirdPartyRequestInfo()
         throws JsonProcessingException {
 
@@ -365,5 +358,14 @@ class PublicationPermissionStrategyTest {
         requestInfo.setHeaders(Map.of(AUTHORIZATION, BEARER_TOKEN));
 
         return requestInfo;
+    }
+
+    private JsonNode getRequestContextForClaim(Map<String, String> claimKeyValuePairs) throws JsonProcessingException {
+        Map<String, Map<String, Map<String, String>>> map = Map.of(
+            AUTHORIZER, Map.of(
+                CLAIMS, claimKeyValuePairs
+            )
+        );
+        return dtoObjectMapper.readTree(dtoObjectMapper.writeValueAsString(map));
     }
 }

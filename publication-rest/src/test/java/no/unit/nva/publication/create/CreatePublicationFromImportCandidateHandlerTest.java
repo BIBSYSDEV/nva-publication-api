@@ -225,7 +225,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                                    WireMockRuntimeInfo wireMockRuntimeInfo)
         throws IOException, ApiGatewayException {
         var importCandidate = createPersistedImportCandidate();
-        var request = createRequest(importCandidate);
+        final var request = createRequest(importCandidate);
 
         importCandidateService = resourceService;
         configs = new ImportCandidateHandlerConfigs(SOME_PERSISTED_BUCKET,
@@ -271,7 +271,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     void shouldReturnBadGatewayWhenRollbackFails(@Mock ResourceService resourceService)
         throws NotFoundException, IOException {
         var importCandidate = createPersistedImportCandidate();
-        var request = createRequest(importCandidate);
+        final var request = createRequest(importCandidate);
         publicationService = resourceService;
         importCandidateService = resourceService;
         configs = new ImportCandidateHandlerConfigs(SOME_PERSISTED_BUCKET,
@@ -385,7 +385,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                                              IOException {
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);
-        var start = Instant.now();
+        final var start = Instant.now();
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
         var publication = publicationService.getPublicationByIdentifier(getBodyObject(response).getIdentifier());
@@ -587,6 +587,20 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
     }
 
+    private ImportCandidate createPersistedImportCandidate() throws NotFoundException {
+        var candidate = createImportCandidate();
+        var importCandidate = importCandidateService.persistImportCandidate(candidate);
+        return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
+    }
+
+    private ImportCandidate createPersistedImportCandidate(AssociatedArtifactList associatedArtifacts)
+        throws NotFoundException {
+        var candidate = createImportCandidate();
+        candidate.setAssociatedArtifacts(associatedArtifacts);
+        var importCandidate = importCandidateService.persistImportCandidate(candidate);
+        return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
+    }
+
     private Username randomPerson() {
         return new Username(randomString());
     }
@@ -612,20 +626,6 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                    .withCurrentCustomer(user.getCustomerId())
                    .withAccessRights(user.getCustomerId(), AccessRight.MANAGE_IMPORT)
                    .build();
-    }
-
-    private ImportCandidate createPersistedImportCandidate() throws NotFoundException {
-        var candidate = createImportCandidate();
-        var importCandidate = importCandidateService.persistImportCandidate(candidate);
-        return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
-    }
-
-    private ImportCandidate createPersistedImportCandidate(AssociatedArtifactList associatedArtifacts)
-        throws NotFoundException {
-        var candidate = createImportCandidate();
-        candidate.setAssociatedArtifacts(associatedArtifacts);
-        var importCandidate = importCandidateService.persistImportCandidate(candidate);
-        return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
     }
 
     private ImportCandidate createImportCandidate() {

@@ -52,8 +52,8 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
 
     @Override
     public Optional<PublicationForUpdate> findExistingPublication(PublicationRepresentation publicationRepresentation) {
-        if (getMainTitle(publicationRepresentation.publication()).isEmpty() ||
-            getInstanceType(publicationRepresentation.publication()).isEmpty()) {
+        if (getMainTitle(publicationRepresentation.publication()).isEmpty()
+            || getInstanceType(publicationRepresentation.publication()).isEmpty()) {
             return Optional.empty();
         }
         var potentialExistingPublications = searchForPublicationsByTypeAndTitle(
@@ -63,7 +63,8 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
         }
         if (FindExistingPublicationService.moreThanOneDuplicateFound(potentialExistingPublications)) {
             duplicatePublicationReporter.reportDuplicatePublications(potentialExistingPublications,
-                                                                            publicationRepresentation.brageRecord(), DuplicateDetectionCause.TITLE_DUPLICATES);
+                                                                            publicationRepresentation.brageRecord(),
+                                                                     DuplicateDetectionCause.TITLE_DUPLICATES);
         }
         return Optional.of(new PublicationForUpdate(MergeSource.SEARCH, potentialExistingPublications.getFirst()));
     }
@@ -115,7 +116,8 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
         var additionalQueryParam = getAdditionalQueryParam(publication);
         var searchUri = getStandardSearchUri(publication);
         return additionalQueryParam.isPresent()
-                   ? searchUri.addQueryParameter(additionalQueryParam.get().name(), additionalQueryParam.get().value()).getUri()
+                   ? searchUri.addQueryParameter(additionalQueryParam.get().name(),
+                                                 additionalQueryParam.get().value()).getUri()
                    : searchUri.getUri();
     }
 

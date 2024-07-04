@@ -78,7 +78,8 @@ class BragePatchEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldNotUpdateChaptersPartOfValueWhenFetchedPublicationDoesNotContainTheSameIsbnAsChapter() throws NotFoundException {
+    void shouldNotUpdateChaptersPartOfValueWhenFetchedPublicationDoesNotContainTheSameIsbnAsChapter()
+        throws NotFoundException {
         var existingParentPublication = persistBookWithIsbn(randomIsbn13());
         var partOfReport = persistChildAndPartOfReportWithIsbn(randomIsbn13());
         var event = createSqsEvent(partOfReport.getLocation());
@@ -134,8 +135,9 @@ class BragePatchEventConsumerTest extends ResourcesLocalTest {
     private PartOfReport persistChildAndPartOfReportWithIsbn(String isbn) {
         var publication = randomPublication(NonFictionChapter.class);
         publication.getEntityDescription().getReference().setPublicationContext(new Anthology());
-        var persistedPublication = resourceService.createPublicationFromImportedEntry(publication,
-                                                                                      ImportSource.fromBrageArchive(randomString()));
+        var persistedPublication =
+            resourceService.createPublicationFromImportedEntry(publication,
+                                                               ImportSource.fromBrageArchive(randomString()));
         var record = recordWithIsbn(isbn);
         var partOfReport = new PartOfReport(persistedPublication, record);
         partOfReport.persist(s3Client, TIME_STAMP);
@@ -155,10 +157,13 @@ class BragePatchEventConsumerTest extends ResourcesLocalTest {
     private Publication persistBookWithIsbn(String isbn) {
         var publication = randomPublication(BookAnthology.class);
         var context = (Book) publication.getEntityDescription().getReference().getPublicationContext();
-        var book = new Book(context.getSeries(), context.getSeriesNumber(), context.getPublisher(), List.of(isbn),
+        var book = new Book(context.getSeries(),
+                            context.getSeriesNumber(),
+                            context.getPublisher(), List.of(isbn),
                             context.getRevision());
         publication.getEntityDescription().getReference().setPublicationContext(book);
-        return resourceService.createPublicationFromImportedEntry(publication, ImportSource.fromBrageArchive(randomString()));
+        return resourceService.createPublicationFromImportedEntry(publication,
+                                                                  ImportSource.fromBrageArchive(randomString()));
     }
 
     private SQSEvent createSqsEvent(URI location) {

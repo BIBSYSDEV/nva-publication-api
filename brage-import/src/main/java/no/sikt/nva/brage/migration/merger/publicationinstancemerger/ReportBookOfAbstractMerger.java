@@ -12,7 +12,8 @@ public final class ReportBookOfAbstractMerger extends PublicationInstanceMerger<
     @Override
     public ReportBookOfAbstract merge(PublicationInstance<?> publicationInstance) {
         if (publicationInstance instanceof ReportBookOfAbstract newReportBookOfAbstract) {
-            return new ReportBookOfAbstract(getPages(this.publicationInstance.getPages(), newReportBookOfAbstract.getPages()));
+            return new ReportBookOfAbstract(getPages(this.publicationInstance.getPages(),
+                                                     newReportBookOfAbstract.getPages()));
         } else {
             return this.publicationInstance;
         }

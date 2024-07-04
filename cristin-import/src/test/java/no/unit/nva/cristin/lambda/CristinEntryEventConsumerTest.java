@@ -600,7 +600,8 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldNotUpdateExistingPublicationWhenImportingCristinPostTwiceAndPublicationsAreIdentical() throws IOException {
+    void shouldNotUpdateExistingPublicationWhenImportingCristinPostTwiceAndPublicationsAreIdentical()
+        throws IOException {
         var cristinObject = CristinDataGenerator.randomObject();
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
@@ -616,7 +617,8 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void shouldAddNewAssociatedArtifactsToExistingCristinPublicationWhenAssociatedArtifactHasNotBeenImported() throws IOException {
+    void shouldAddNewAssociatedArtifactsToExistingCristinPublicationWhenAssociatedArtifactHasNotBeenImported()
+        throws IOException {
         var cristinObject =
             CristinDataGenerator.createRandomMediaWithSpecifiedSecondaryCategory(INTERVIEW);
         var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), Lecture.class);
@@ -659,29 +661,37 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     void shouldUpdateExistingPublicationEventWithEventPlaceWhenMissing() throws IOException {
         var cristinObject = CristinDataGenerator.createObjectWithCategory(EVENT, CONFERENCE_LECTURE);
         var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), Lecture.class);
-        existingPublication.getEntityDescription().getReference().setPublicationContext(new Event.Builder().withPlace(null).build());
+        existingPublication.getEntityDescription()
+            .getReference().setPublicationContext(new Event.Builder().withPlace(null).build());
         resourceService.updatePublication(existingPublication);
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
         var updatedPublication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
 
-        assertNull(((Event) existingPublication.getEntityDescription().getReference().getPublicationContext()).getPlace());
-        assertNotNull(((Event) updatedPublication.getEntityDescription().getReference().getPublicationContext()).getPlace());
+        assertNull(((Event) existingPublication.getEntityDescription()
+                                .getReference().getPublicationContext()).getPlace());
+        assertNotNull(((Event) updatedPublication.getEntityDescription()
+                                   .getReference().getPublicationContext()).getPlace());
     }
 
     @Test
     void shouldUpdateExistingPublicationEventWithEventPlaceWhenPlaceMissingLabel() throws IOException {
         var cristinObject = CristinDataGenerator.createObjectWithCategory(EVENT, CONFERENCE_LECTURE);
         var existingPublication = persistPublicationWithCristinId(cristinObject.getId(), Lecture.class);
-        existingPublication.getEntityDescription().getReference().setPublicationContext(new Event.Builder().withPlace(new UnconfirmedPlace(null, null)).build());
+        existingPublication.getEntityDescription()
+            .getReference().setPublicationContext(new Event.Builder()
+                                                      .withPlace(new UnconfirmedPlace(null, null)).build());
         resourceService.updatePublication(existingPublication);
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
         var updatedPublication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
 
-        assertNotNull(((Event) existingPublication.getEntityDescription().getReference().getPublicationContext()).getPlace());
-        assertNotEquals(((Event) updatedPublication.getEntityDescription().getReference().getPublicationContext()).getPlace(),
-                        ((Event) existingPublication.getEntityDescription().getReference().getPublicationContext()).getPlace());
+        assertNotNull(((Event) existingPublication.getEntityDescription()
+                                   .getReference().getPublicationContext()).getPlace());
+        assertNotEquals(((Event) updatedPublication.getEntityDescription()
+                                     .getReference().getPublicationContext()).getPlace(),
+                        ((Event) existingPublication.getEntityDescription()
+                                     .getReference().getPublicationContext()).getPlace());
     }
 
     @Test
@@ -725,7 +735,8 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var sqsEvent = createSqsEvent(eventBody);
         var updatedPublication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
 
-        assertNotNull(((JournalArticle) updatedPublication.getEntityDescription().getReference().getPublicationInstance()).getArticleNumber());
+        assertNotNull(((JournalArticle) updatedPublication.getEntityDescription().getReference()
+                                            .getPublicationInstance()).getArticleNumber());
     }
 
     private Publication persistPublicationWithCristinId(Integer id, Class<?> instance) {
@@ -854,7 +865,8 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
         handler.handleRequest(sqsEvent, CONTEXT);
-        var expectedErrorFileLocation =  UnixPath.of(ERROR_REPORT).addChild("WrongChannelTypeException").addChild(String.valueOf(cristinObject.getId()));
+        var expectedErrorFileLocation =  UnixPath.of(ERROR_REPORT).addChild("WrongChannelTypeException")
+                                             .addChild(String.valueOf(cristinObject.getId()));
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
         var file = s3Driver.getFile(expectedErrorFileLocation);
 
@@ -866,7 +878,8 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         names = {"ANTHOLOGY", "MONOGRAPH", "NON_FICTION_BOOK", "TEXTBOOK", "ENCYCLOPEDIA",
             "POPULAR_BOOK", "REFERENCE_MATERIAL", "RESEARCH_REPORT", "DEGREE_PHD",
             "DEGREE_MASTER", "SECOND_DEGREE_THESIS", "MEDICAL_THESIS"})
-    void shouldPersistNoPublisherReportWhenCristinObjectMissesPublisherName(CristinSecondaryCategory category) throws IOException {
+    void shouldPersistNoPublisherReportWhenCristinObjectMissesPublisherName(CristinSecondaryCategory category)
+        throws IOException {
         var cristinObject = CristinDataGenerator.randomObject(category.getValue());
         cristinObject.setSecondaryCategory(category);
         cristinObject.getBookOrReportMetadata().getCristinPublisher().setNsdCode(null);
@@ -876,7 +889,8 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var sqsEvent = createSqsEvent(eventBody);
         handler.handleRequest(sqsEvent, CONTEXT);
         var expectedReportFileLocation =
-            UnixPath.of(ERROR_REPORT).addChild("ChannelRegistryException").addChild(String.valueOf(cristinObject.getId()));
+            UnixPath.of(ERROR_REPORT).addChild("ChannelRegistryException")
+                .addChild(String.valueOf(cristinObject.getId()));
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
         var file = s3Driver.getFile(expectedReportFileLocation);
         assertThat(file, is(not(emptyString())));
@@ -885,7 +899,8 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     @ParameterizedTest(name = "Cristin entry with secondary category {arguments}")
     @EnumSource(value = CristinSecondaryCategory.class, mode = Mode.INCLUDE,
         names = {"ANTHOLOGY", "MONOGRAPH"})
-    void shouldPersistChannelRegistryExceptionReportWhenNsdCodeIsNotInChannelRegistry(CristinSecondaryCategory category) throws IOException {
+    void shouldPersistChannelRegistryExceptionReportWhenNsdCodeIsNotInChannelRegistry(CristinSecondaryCategory category)
+        throws IOException {
         var cristinObject = CristinDataGenerator.randomObject(category.getValue());
         cristinObject.setSecondaryCategory(category);
         cristinObject.getBookOrReportMetadata().getCristinPublisher().setPublisherName(randomString());

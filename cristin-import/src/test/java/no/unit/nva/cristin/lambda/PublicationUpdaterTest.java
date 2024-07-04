@@ -15,7 +15,8 @@ class PublicationUpdaterTest {
         var incomingPublication = randomPublication(ConferenceLecture.class);
         incomingPublication.getEntityDescription().getReference().setPublicationContext(emptyEvent());
         var publicationRepresentations =
-            new PublicationRepresentations(null, incomingPublication, null).withExistingPublication(existingPublication);
+            new PublicationRepresentations(null, incomingPublication, null)
+                .withExistingPublication(existingPublication);
         var publication = PublicationUpdater.update(publicationRepresentations).getExistingPublication();
 
         assertEquals(publication.getEntityDescription().getReference().getPublicationContext(), emptyEvent());

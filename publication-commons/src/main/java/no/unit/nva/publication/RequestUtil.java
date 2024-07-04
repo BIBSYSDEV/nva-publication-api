@@ -47,10 +47,10 @@ public final class RequestUtil {
     }
 
     public static SortableIdentifier getImportCandidateIdentifier(RequestInfo requestInfo) throws ApiGatewayException {
-            return Optional.ofNullable(requestInfo.getPathParameters())
-                       .map(params -> params.get(IMPORT_CANDIDATE_IDENTIFIER))
-                       .map(SortableIdentifier::new)
-                       .orElseThrow(() -> new BadRequestException("Could not get import candidate identifier!"));
+        return Optional.ofNullable(requestInfo.getPathParameters())
+                   .map(params -> params.get(IMPORT_CANDIDATE_IDENTIFIER))
+                   .map(SortableIdentifier::new)
+                   .orElseThrow(() -> new BadRequestException("Could not get import candidate identifier!"));
     }
 
     public static UUID getFileIdentifier(RequestInfo requestInfo) throws ApiGatewayException {

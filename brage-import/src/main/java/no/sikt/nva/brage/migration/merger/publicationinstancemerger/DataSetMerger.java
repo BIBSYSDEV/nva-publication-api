@@ -20,12 +20,16 @@ public final class DataSetMerger extends PublicationInstanceMerger<DataSet> {
 
     @Override
     public DataSet merge(PublicationInstance<?> publicationInstance) {
-        if (publicationInstance instanceof DataSet newDataSet) {
+        if (publicationInstance instanceof DataSet dataSet) {
             return new DataSet(this.publicationInstance.isUserAgreesToTermsAndConditions(),
-                               getGeographicalCoverage(this.publicationInstance.getGeographicalCoverage(), newDataSet.getGeographicalCoverage()),
-                               new ReferencedByUris(getUriSet(this.publicationInstance.getReferencedBy(), newDataSet.getReferencedBy())),
-                               mergeCollections(this.publicationInstance.getRelated(), newDataSet.getRelated(), LinkedHashSet::new),
-                               new CompliesWithUris(getUriSet(this.publicationInstance.getCompliesWith(), newDataSet.getCompliesWith())));
+                               getGeographicalCoverage(this.publicationInstance.getGeographicalCoverage(),
+                                                       dataSet.getGeographicalCoverage()),
+                               new ReferencedByUris(getUriSet(this.publicationInstance.getReferencedBy(),
+                                                              dataSet.getReferencedBy())),
+                               mergeCollections(this.publicationInstance.getRelated(),
+                                                dataSet.getRelated(), LinkedHashSet::new),
+                               new CompliesWithUris(getUriSet(this.publicationInstance.getCompliesWith(),
+                                                              dataSet.getCompliesWith())));
         } else {
             return this.publicationInstance;
         }

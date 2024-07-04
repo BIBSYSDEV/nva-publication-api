@@ -11,11 +11,12 @@ public final class JournalIssueMerger extends PublicationInstanceMerger<JournalI
 
     @Override
     public JournalIssue merge(PublicationInstance<?> publicationInstance) {
-        if (publicationInstance instanceof JournalIssue newJournalIssue) {
-            return new JournalIssue(getNonNullValue(this.publicationInstance.getVolume(), newJournalIssue.getVolume()),
-                                    getNonNullValue(this.publicationInstance.getIssue(), newJournalIssue.getIssue()),
-                                    getNonNullValue(this.publicationInstance.getArticleNumber(), newJournalIssue.getArticleNumber()),
-                                    getRange(this.publicationInstance.getPages(), newJournalIssue.getPages()));
+        if (publicationInstance instanceof JournalIssue journalIssue) {
+            return new JournalIssue(getNonNullValue(this.publicationInstance.getVolume(), journalIssue.getVolume()),
+                                    getNonNullValue(this.publicationInstance.getIssue(), journalIssue.getIssue()),
+                                    getNonNullValue(this.publicationInstance.getArticleNumber(),
+                                                    journalIssue.getArticleNumber()),
+                                    getRange(this.publicationInstance.getPages(), journalIssue.getPages()));
         } else {
             return this.publicationInstance;
         }

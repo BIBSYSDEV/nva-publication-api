@@ -12,6 +12,7 @@ import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.report.ConferenceReport;
 import no.unit.nva.model.pages.MonographPages;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 class PublicationComparatorTest {
@@ -20,7 +21,7 @@ class PublicationComparatorTest {
     void shouldReturnTrueWhenComparingBrageConferenceReportWithExistingLecture()
         throws InvalidIssnException, InvalidUnconfirmedSeriesException {
         var existingLecture = randomPublication(Lecture.class);
-        existingLecture.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear("2022").build());
+        existingLecture.getEntityDescription().setPublicationDate(publicationDateWithYear());
         var incomingConferenceReport = existingLecture.copy()
                                            .withEntityDescription(createConferenceReport(existingLecture))
                                            .build();
@@ -31,7 +32,7 @@ class PublicationComparatorTest {
     void shouldReturnTrueWhenComparingBrageConferenceReportWithExistingConferenceReport()
         throws InvalidIssnException, InvalidUnconfirmedSeriesException {
         var existingLecture = randomPublication(ConferenceReport.class);
-        existingLecture.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear("2022").build());
+        existingLecture.getEntityDescription().setPublicationDate(publicationDateWithYear());
         var incomingConferenceReport = existingLecture.copy()
                                            .withEntityDescription(createConferenceReport(existingLecture))
                                            .build();
@@ -41,11 +42,24 @@ class PublicationComparatorTest {
     @Test
     void shouldReturnTrueWhenIncomingPublicationIsMissingPublicationContextAndPublicationInstance() {
         var existingPublication = randomPublication(Lecture.class);
-        existingPublication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear("2022").build());
+        existingPublication.getEntityDescription().setPublicationDate(publicationDateWithYear());
         var incomingConferenceReport = existingPublication.copy()
-                                           .withEntityDescription(existingPublication.getEntityDescription().copy().withReference(new Reference.Builder().build()).build())
+                                           .withEntityDescription(addEmptyReference(existingPublication))
                                            .build();
         assertTrue(PublicationComparator.publicationsMatch(existingPublication, incomingConferenceReport));
+    }
+
+    private static EntityDescription addEmptyReference(Publication existingPublication) {
+        return existingPublication
+                   .getEntityDescription().copy()
+                   .withReference(new Reference.Builder().build())
+                   .build();
+    }
+
+    private static PublicationDate publicationDateWithYear() {
+        return new PublicationDate.Builder()
+                   .withYear("2022")
+                   .build();
     }
 
     private EntityDescription createConferenceReport(Publication publication)

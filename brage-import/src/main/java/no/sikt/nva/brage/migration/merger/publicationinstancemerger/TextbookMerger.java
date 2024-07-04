@@ -11,8 +11,8 @@ public final class TextbookMerger extends PublicationInstanceMerger<Textbook> {
 
     @Override
     public Textbook merge(PublicationInstance<?> publicationInstance) {
-        if (publicationInstance instanceof Textbook newTextBook) {
-            return new Textbook(getPages(this.publicationInstance.getPages(), newTextBook.getPages()));
+        if (publicationInstance instanceof Textbook textbook) {
+            return new Textbook(getPages(this.publicationInstance.getPages(), textbook.getPages()));
         } else {
             return this.publicationInstance;
         }

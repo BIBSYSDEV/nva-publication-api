@@ -161,7 +161,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
     @Test
     void shouldExpandImportCandidateJournalSuccessfullyWhenBadResponseFromChannelRegistry() {
-        var logAppender = LogUtils.getTestingAppender(JournalExpansionServiceImpl.class);
+        final var logAppender = LogUtils.getTestingAppender(JournalExpansionServiceImpl.class);
         var journalId = randomUri();
         var journalContext = new Journal(journalId);
         mockBadRequestForChannelRegistry(journalId);
@@ -198,7 +198,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldExpandUnconfirmedPublisher(){
+    void shouldExpandUnconfirmedPublisher() {
         var publisherName = randomString();
         var publisher = new UnconfirmedPublisher(publisherName);
         var bookContext = new Book(null, null, publisher, null, null);
@@ -209,7 +209,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldSkipExpandingNullPublisher(){
+    void shouldSkipExpandingNullPublisher() {
         var publisher = new NullPublisher();
         var bookContext = new Book(null, null, publisher, null, null);
         var importCandidate = randomImportCandidate(bookContext);
@@ -230,12 +230,13 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
         assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
 
-        assertThat(expandedImportCandidate.getPublisher(), is((equalTo(new ExpandedPublisher(publisherId, expectedPublisherTitle)))));
+        assertThat(expandedImportCandidate.getPublisher(),
+                   is((equalTo(new ExpandedPublisher(publisherId, expectedPublisherTitle)))));
     }
 
     @Test
     void shouldLogFailureToParseChannelRegistryResponse() {
-        var logAppender = LogUtils.getTestingAppender(JournalExpansionServiceImpl.class);
+        final var logAppender = LogUtils.getTestingAppender(JournalExpansionServiceImpl.class);
         var journalId = randomUri();
         var journalContext = new Journal(journalId);
         mockUnparsableResponseForChannelRegistry(journalId);
@@ -274,8 +275,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
     @SuppressWarnings("unchecked")
     private void mockOrganizations(Organization org) {
-        when(uriRetriever.getRawContent(any(), anyString())).
-            thenReturn(Optional.of(new CristinOrganization(org.getId(), null, null, List.of(randomCristinOrg()),
+        when(uriRetriever.getRawContent(any(), anyString()))
+            .thenReturn(Optional.of(new CristinOrganization(org.getId(), null, null, List.of(randomCristinOrg()),
                                                            null, Map.of()).toJsonString()));
         var response = (HttpResponse<String>) mock(HttpResponse.class);
         when(response.statusCode()).thenReturn(200);
@@ -284,8 +285,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     }
 
     private void mockOrganizationCristinResponseOnly(Organization org) {
-        when(uriRetriever.getRawContent(any(), anyString())).
-            thenReturn(Optional.of(new CristinOrganization(org.getId(), null, null, List.of(randomCristinOrg()),
+        when(uriRetriever.getRawContent(any(), anyString()))
+            .thenReturn(Optional.of(new CristinOrganization(org.getId(), null, null, List.of(randomCristinOrg()),
                                                            null, Map.of()).toJsonString()));
 
     }

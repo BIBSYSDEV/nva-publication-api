@@ -191,8 +191,14 @@ class ExpandedResourceTest {
         publication.getEntityDescription().setContributors(List.of(contributor1, contributor2));
 
         final var mockUriRetriever = mock(UriRetriever.class);
-        mockOrganizationResponseWithParents(mockUriRetriever, contributor1org, contributor1parentOrg, sharedGrandParent);
-        mockOrganizationResponseWithParents(mockUriRetriever, contributor2org, contributor2parentOrg, sharedGrandParent);
+        mockOrganizationResponseWithParents(mockUriRetriever,
+                                            contributor1org,
+                                            contributor1parentOrg,
+                                            sharedGrandParent);
+        mockOrganizationResponseWithParents(mockUriRetriever,
+                                            contributor2org,
+                                            contributor2parentOrg,
+                                            sharedGrandParent);
 
         var framedResultNode = fromPublication(mockUriRetriever, publication).asJsonNode();
         var contributorOrganizationsNode = framedResultNode.at(JSON_CONTRIBUTOR_ORGANIZATIONS);
@@ -201,18 +207,24 @@ class ExpandedResourceTest {
 
 
         var expectedOrganizations = Stream.of(contributor1org, contributor2org, contributor1parentOrg,
-                                              contributor2parentOrg, sharedGrandParent).map(Organization::getId).map(URI::toString).toArray();
+                                              contributor2parentOrg, sharedGrandParent)
+                                        .map(Organization::getId)
+                                        .map(URI::toString)
+                                        .toArray();
 
 
         assertThat(actualOrganizations, containsInAnyOrder(expectedOrganizations));
     }
 
-    private static void mockOrganizationResponseWithParents(UriRetriever uriRetriever, Organization org, Organization parentOrg,
+    private static void mockOrganizationResponseWithParents(UriRetriever uriRetriever,
+                                                            Organization org,
+                                                            Organization parentOrg,
                                                             Organization grandParentOrg) {
         mockGetRawContentResponse(uriRetriever, org.getId(),
-                                  getCristinResponseWithNestedPartOfsForOrganization( org.getId().toString(),
+                                  getCristinResponseWithNestedPartOfsForOrganization(org.getId().toString(),
                                                                                       parentOrg.getId().toString(),
-                                                                                      grandParentOrg.getId().toString()));
+                                                                                      grandParentOrg
+                                                                                          .getId().toString()));
     }
 
     private static Contributor contributorWithOneAffiliation(Organization contributor1org) {
@@ -620,9 +632,10 @@ class ExpandedResourceTest {
             .filter(Organization.class::isInstance)
             .map(Organization.class::cast)
             .map(Organization::getId)
-            .forEach(id -> mockGetRawContentResponse(mockUriRetriever, id,
-                                                     getCristinResponseWithCountryCodeForOrganization(id.toString(),
-                                                                                                      COUNTRY_CODE_NO)));
+            .forEach(id ->
+                         mockGetRawContentResponse(mockUriRetriever, id,
+                                                   getCristinResponseWithCountryCodeForOrganization(id.toString(),
+                                                                                                    COUNTRY_CODE_NO)));
     }
 
     private static void assertHasExpectedFundings(URI sourceUri0, URI sourceUri1, ObjectNode framedResultNode) {

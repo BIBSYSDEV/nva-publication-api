@@ -11,10 +11,10 @@ public final class OtherStudentWorkMerger extends PublicationInstanceMerger<Othe
 
     @Override
     public OtherStudentWork merge(PublicationInstance<?> publicationInstance) {
-        if (publicationInstance instanceof OtherStudentWork newDegreeBachelor) {
-            return new OtherStudentWork(getPages(this.publicationInstance.getPages(), newDegreeBachelor.getPages()),
+        if (publicationInstance instanceof OtherStudentWork studentWork) {
+            return new OtherStudentWork(getPages(this.publicationInstance.getPages(), studentWork.getPages()),
                                         getDate(this.publicationInstance.getSubmittedDate(),
-                                                newDegreeBachelor.getSubmittedDate()));
+                                                studentWork.getSubmittedDate()));
         } else {
             return this.publicationInstance;
         }

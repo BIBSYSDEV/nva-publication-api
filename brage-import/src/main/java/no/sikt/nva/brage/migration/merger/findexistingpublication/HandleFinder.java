@@ -46,13 +46,15 @@ public class HandleFinder implements FindExistingPublicationService {
                                              List<Publication> publicationsWithHandleInAdditionalIdentifiers) {
         if (FindExistingPublicationService.moreThanOneDuplicateFound(publicationsWithHandleInAdditionalIdentifiers)) {
             duplicatePublicationReporter.reportDuplicatePublications(publicationsWithHandleInAdditionalIdentifiers,
-                                                                     publicationRepresentation.brageRecord(), DuplicateDetectionCause.HANDLE_DUPLICATES);
+                                                                     publicationRepresentation.brageRecord(),
+                                                                     DuplicateDetectionCause.HANDLE_DUPLICATES);
         }
     }
 
     private boolean hasHandleInAdditionalIdentifiers(URI handle, Publication publication) {
-        return publication.getAdditionalIdentifiers().stream().anyMatch(additionalIdentifier -> matchesHandle(handle,
-                                                                                                              additionalIdentifier));
+        return publication.getAdditionalIdentifiers().stream().anyMatch(additionalIdentifier ->
+                                                                            matchesHandle(handle,
+                                                                                          additionalIdentifier));
     }
 
     private boolean matchesHandle(URI handle, AdditionalIdentifierBase additionalIdentifier) {

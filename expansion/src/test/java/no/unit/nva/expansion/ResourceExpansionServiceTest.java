@@ -239,16 +239,16 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldReturnIndexDocumentWithoutLicenseWhenNoLicense() throws JsonProcessingException, NotFoundException {
-            var fileWithLicense = File.builder().buildPublishedFile();
-            var publication = PublicationGenerator.randomPublication()
-                                  .copy()
-                                  .withAssociatedArtifacts(List.of(fileWithLicense))
-                                  .build();
+        var fileWithLicense = File.builder().buildPublishedFile();
+        var publication = PublicationGenerator.randomPublication()
+                              .copy()
+                              .withAssociatedArtifacts(List.of(fileWithLicense))
+                              .build();
 
-            var resourceUpdate = Resource.fromPublication(publication);
-            var indexDoc = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
-            var license = indexDoc.asJsonNode().get("associatedArtifacts").get(0).get("license");
-            assertThat(license, is(nullValue()));
+        var resourceUpdate = Resource.fromPublication(publication);
+        var indexDoc = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
+        var license = indexDoc.asJsonNode().get("associatedArtifacts").get(0).get("license");
+        assertThat(license, is(nullValue()));
     }
 
     private static String getLicenseForFile(ExpandedResource indexDoc) {
@@ -665,7 +665,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var response = mock(HttpResponse.class);
         when(response.statusCode()).thenReturn(statusCode);
         when(response.body()).thenReturn(responseBody);
-        when(mockUriRetriver.fetchResponse(fetchNviCandidateUri(publication), "application/json")).thenReturn(Optional.of(response));
+        when(mockUriRetriver.fetchResponse(fetchNviCandidateUri(publication), "application/json"))
+            .thenReturn(Optional.of(response));
         return new ResourceExpansionServiceImpl(getResourceServiceBuilder().build(),
                                                             new TicketService(client, mockUriRetriver),
                                                             mockUriRetriver,
@@ -674,16 +675,16 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     private String nviCandidateResponse() {
         return """
-            {
-             "type": "NviCandidate",
-             "status": "Reported",
-             "period": {
-                    "type": "NviReportingPeriod",
-                    "id": "https://api.sandbox.nva.aws.unit.no/scientific-index/period/2024",
-                    "year": "2024"
+                {
+                    "type": "NviCandidate",
+                    "status": "Reported",
+                    "period": {
+                        "type": "NviReportingPeriod",
+                        "id": "https://api.sandbox.nva.aws.unit.no/scientific-index/period/2024",
+                        "year": "2024"
+                    }
                 }
-           }
-           """;
+                """;
     }
 
     private URI fetchNviCandidateUri(Publication publication) {
@@ -948,18 +949,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         return publishingRequest;
     }
 
-    private Set<FileForApproval> extractFilesForApproval(ExpandedPublishingRequest expandedPublishingRequest) {
-        return expandedPublishingRequest.getFilesForApproval().stream()
-                   .map(FileForApproval::fromFile)
-                   .collect(Collectors.toSet());
-    }
-
-    private static Set<UUID> extractApprovedFiles(ExpandedPublishingRequest expandedPublishingRequest) {
-        return expandedPublishingRequest.getApprovedFiles().stream().map(
-            File::getIdentifier).collect(
-            Collectors.toSet());
-    }
-
     private UnpublishRequest toTicketEntry(ExpandedUnpublishRequest expandedUnpublishRequest) {
         var ticketEntry = new UnpublishRequest();
         ticketEntry.setModifiedDate(expandedUnpublishRequest.getModifiedDate());
@@ -974,17 +963,26 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     private TicketEntry toTicketEntry(ExpandedTicket expandedTicket) {
-        if (expandedTicket instanceof ExpandedDoiRequest expandedDoiRequest) {
-            return toTicketEntry(expandedDoiRequest);
-        } else if (expandedTicket instanceof ExpandedPublishingRequest expandedPublishingRequest) {
-            return toTicketEntry(expandedPublishingRequest);
-        } else if (expandedTicket instanceof ExpandedGeneralSupportRequest expandedGeneralSupportRequest) {
-            return toTicketEntry(expandedGeneralSupportRequest);
-        } else if (expandedTicket instanceof ExpandedUnpublishRequest expandedUnpublishRequest) {
-            return toTicketEntry(expandedUnpublishRequest);
-        } else {
-            return null;
-        }
+        return switch (expandedTicket) {
+            case ExpandedDoiRequest expandedDoiRequest -> toTicketEntry(expandedDoiRequest);
+            case ExpandedPublishingRequest expandedPublishingRequest -> toTicketEntry(expandedPublishingRequest);
+            case ExpandedGeneralSupportRequest expandedGeneralSupportRequest ->
+                toTicketEntry(expandedGeneralSupportRequest);
+            case ExpandedUnpublishRequest expandedUnpublishRequest -> toTicketEntry(expandedUnpublishRequest);
+            case null, default -> null;
+        };
+    }
+
+    private Set<FileForApproval> extractFilesForApproval(ExpandedPublishingRequest expandedPublishingRequest) {
+        return expandedPublishingRequest.getFilesForApproval().stream()
+                   .map(FileForApproval::fromFile)
+                   .collect(Collectors.toSet());
+    }
+
+    private static Set<UUID> extractApprovedFiles(ExpandedPublishingRequest expandedPublishingRequest) {
+        return expandedPublishingRequest.getApprovedFiles().stream().map(
+            File::getIdentifier).collect(
+            Collectors.toSet());
     }
 
     private Username extractUsername(ExpandedPerson expandedPerson) {

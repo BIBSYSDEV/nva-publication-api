@@ -21,5 +21,7 @@ public class FakeDoiClient implements DoiClient {
     }
 
     @Override
-    public void deleteDraftDoi(Publication publication) {}
+    public void deleteDraftDoi(Publication publication) {
+
+    }
 }

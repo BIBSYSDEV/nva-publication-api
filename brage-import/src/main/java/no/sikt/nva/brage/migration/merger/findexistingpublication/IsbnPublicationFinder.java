@@ -40,17 +40,23 @@ public class IsbnPublicationFinder implements FindExistingPublicationService {
         }
     }
 
-    private Optional<PublicationForUpdate> existingPublicationHasSameIsbn(PublicationRepresentation publicationRepresentation) {
+    private Optional<PublicationForUpdate> existingPublicationHasSameIsbn(
+        PublicationRepresentation publicationRepresentation) {
         var isbnList =
-            ((Book) publicationRepresentation.publication().getEntityDescription().getReference().getPublicationContext()).getIsbnList();
+            ((Book) publicationRepresentation.publication().getEntityDescription()
+                        .getReference().getPublicationContext()).getIsbnList();
         var publicationsToMerge = isbnList.stream()
                                       .map(isbn -> searchApiFinder.fetchPublicationsByParam(ISBN, isbn))
                                       .flatMap(List::stream)
-                                      .filter(item -> PublicationComparator.publicationsMatch(item, publicationRepresentation.publication()))
+                                      .filter(item ->
+                                                  PublicationComparator.publicationsMatch(item,
+                                                                                          publicationRepresentation
+                                                                                              .publication()))
                                       .toList();
         if (FindExistingPublicationService.moreThanOneDuplicateFound(publicationsToMerge)) {
             duplicatePublicationReporter.reportDuplicatePublications(publicationsToMerge,
-                                                                     publicationRepresentation.brageRecord(), DuplicateDetectionCause.ISBN_DUPLICATES);
+                                                                     publicationRepresentation.brageRecord(),
+                                                                     DuplicateDetectionCause.ISBN_DUPLICATES);
         }
         if (publicationsToMerge.isEmpty()) {
             return Optional.empty();

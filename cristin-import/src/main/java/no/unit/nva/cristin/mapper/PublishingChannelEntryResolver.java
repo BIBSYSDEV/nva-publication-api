@@ -49,7 +49,7 @@ public class PublishingChannelEntryResolver {
                                         .orElse(persistChannelRegistryExceptionReport("Publisher")));
     }
 
-    private Optional<? extends URI> lookupCristinPublisherByhName() {
+    private Optional<URI> lookupCristinPublisherByhName() {
         return channelNames.stream().map(channelRegistryMapper::convertPublisherNameToPid)
                    .flatMap(Optional::stream)
                    .findFirst()
@@ -143,8 +143,7 @@ public class PublishingChannelEntryResolver {
     private Optional<URI> lookupNsdJournalOrSeriesProxyUri() {
         return Optional.ofNullable(nsdCode)
                    .flatMap(integer -> channelRegistryMapper.convertNsdJournalCodeToPid(integer)
-                                           .map(channelRegistryEntry -> getNsdProxyUri(channelRegistryEntry.getEntryPath(),
-                                                                                       channelRegistryEntry.id())));
+                                           .map(channel -> getNsdProxyUri(channel.getEntryPath(), channel.id())));
     }
 
     private URI getNsdProxyUri(String nsdProxyPath, String pid) {

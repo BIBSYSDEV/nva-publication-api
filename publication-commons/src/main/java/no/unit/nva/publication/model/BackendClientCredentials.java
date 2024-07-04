@@ -30,9 +30,11 @@ public class BackendClientCredentials {
 
     @Override
     public String toString() {
-        return "{" +
-               "\"backendClientId\": \"" + id + "\"" +
-               ", \"backendClientSecret\": \"" + secret + "\"" +
-               "}";
+        return """
+               {
+                 "backendClientId": "%s",
+                 "backendClientSecret": "%s"
+               }
+               """.formatted(id, secret);
     }
 }

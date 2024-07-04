@@ -110,7 +110,9 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
             var partOf = RdfUtils.getAllNestedPartOfs(uriRetriever, organizationId)
                              .stream()
-                             .map(uri -> new ExpandedOrganization(uri, UriWrapper.fromUri(uri).getLastPathElement(), null))
+                             .map(uri -> new ExpandedOrganization(uri,
+                                                                  UriWrapper.fromUri(uri).getLastPathElement(),
+                                                                  null))
                              .toList();
 
             return new ExpandedOrganization(organizationId, organizationIdentifier, partOf);
