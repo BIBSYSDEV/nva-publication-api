@@ -51,17 +51,17 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
     void shouldAllowCuratorOnNonDegreeBasedOnContributors(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
-        var usersTopCristinOrg = uriFromTestCase(TEST_ORG_NTNU_ROOT);
-        var institution = uriFromTestCase(TEST_ORG_NTNU_DEPARTMENT_OF_LANGUAGES);
+        var customer = randomUri();
         var contributor = randomString();
         var contributorCristinId = randomUri();
         var curatorUsername = randomString();
-        var cristinId = randomUri();
+        var personCristinId = randomUri();
+        var topLevelCristinOrgId = randomUri();
 
-        var requestInfo = createUserRequestInfo(curatorUsername, randomUri(), getAccessRightsForCurator(), cristinId,
-                                                usersTopCristinOrg);
+        var requestInfo = createUserRequestInfo(curatorUsername, customer, getAccessRightsForCurator(), personCristinId,
+                                                topLevelCristinOrgId);
         var publication = createPublicationWithContributor(contributor, contributorCristinId, Role.CREATOR,
-                                                           institution, usersTopCristinOrg).copy()
+                                                           customer, topLevelCristinOrgId).copy()
                               .withAssociatedArtifacts(List.of(PublishedFileGenerator.random().toUnpublishedFile()))
                               .build();
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
@@ -153,5 +153,46 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
                                   .allowsAction(operation));
     }
 
+    @ParameterizedTest(name = "Should deny Curator {0} operation on degree resources with no matching resource owner "
+                              + "affiliation")
+    @EnumSource(value = PublicationOperation.class)
+    void shouldDenyCuratorOnDegreeWithNoResourceOwnerAffiliation(PublicationOperation operation)
+        throws JsonProcessingException, UnauthorizedException {
+
+        var cristinTopLevelId = randomUri();
+
+        var requestInfo = createUserRequestInfo(randomString(), randomUri(), getAccessRightsForThesisCurator(),
+                                                randomUri(), cristinTopLevelId);
+
+        var publication = createDegreePublicationWithContributor(randomString(), randomUri(), Role.CREATOR,
+                                                                 randomUri(), cristinTopLevelId);
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+
+        Assertions.assertFalse(PublicationPermissionStrategy
+                                   .create(publication, userInstance)
+                                   .allowsAction(operation));
+    }
+
+    @ParameterizedTest(name = "Should allow Curator {0} operation on degree resources with matching resource owner "
+                              + "affiliation")
+    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "TERMINATE"})
+    void shouldAllowCuratorOnDegreeWithResourceOwnerAffiliation(PublicationOperation operation)
+        throws JsonProcessingException, UnauthorizedException {
+
+        var cristinTopLevelId = randomUri();
+
+        var requestInfo = createUserRequestInfo(randomString(), randomUri(), getAccessRightsForThesisCurator(),
+                                                randomUri(), cristinTopLevelId);
+
+        var publication = createDegreePhd(randomString(), randomUri(), cristinTopLevelId);
+        unpublishFiles(publication);
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+
+        Assertions.assertTrue(PublicationPermissionStrategy
+                                  .create(publication, userInstance)
+                                  .allowsAction(operation));
+    }
     //endregion
 }

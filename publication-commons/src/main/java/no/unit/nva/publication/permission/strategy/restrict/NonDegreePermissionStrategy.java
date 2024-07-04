@@ -25,6 +25,9 @@ public class NonDegreePermissionStrategy extends DenyPermissionStrategy {
             if (isProtectedDegreeInstanceTypeWithEmbargo() && !hasAccessRight(MANAGE_DEGREE_EMBARGO)) {
                 return true; // deny
             }
+            if (!userIsFromSameInstitutionAsPublication()) {
+                return true; // deny
+            }
         }
 
         return false; // allow

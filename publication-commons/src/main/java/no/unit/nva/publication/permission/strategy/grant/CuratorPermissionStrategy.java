@@ -35,26 +35,8 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
     }
 
     private boolean userRelatesToPublication() {
-        return userIsFromSameInstitutionAsPublication() || userSharesTopLevelOrgWithAtLeastOneContributor();
-    }
-
-    private boolean userIsFromSameInstitutionAsPublication() {
-        if (userInstance.getTopLevelOrgCristinId() == null || publication.getResourceOwner() == null) {
-            return false;
-        }
-
-        return userInstance.getTopLevelOrgCristinId().equals(publication.getResourceOwner().getOwnerAffiliation());
-    }
-
-    private boolean userSharesTopLevelOrgWithAtLeastOneContributor() {
-        var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
-
-        logger.info("found topLevels {} for user {} of {}.",
-                    publication.getCuratingInstitutions(),
-                    userInstance.getUser(),
-                    userTopLevelOrg);
-
-        return publication.getCuratingInstitutions().stream().anyMatch(org -> org.equals(userTopLevelOrg));
+        return userIsFromSameInstitutionAsPublication() || (userSharesTopLevelOrgWithAtLeastOneContributor()
+                                                            && !isProtectedDegreeInstanceType());
     }
 
     private boolean canManagePublishingRequests() {
