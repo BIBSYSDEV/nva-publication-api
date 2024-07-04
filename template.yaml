@@ -1579,14 +1579,14 @@ Resources:
           MAX_ATTEMPT: !Ref EventBridgeMaxAttempt
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           OUTPUT_EVENT_TOPIC: 'PublicationService.Database.Update'
-#      Events:
-#        FanoutSource:
-#          Type: DynamoDB
-#          Properties:
-#            Stream: !GetAtt NvaResourcesTable.StreamArn
-#            StartingPosition: TRIM_HORIZON
-#            BatchSize: 1
-#            Enabled: true
+      Events:
+        FanoutSource:
+          Type: DynamoDB
+          Properties:
+            Stream: !GetAtt NvaResourcesTable.StreamArn
+            StartingPosition: TRIM_HORIZON
+            BatchSize: 1
+            Enabled: true
 
   ImportCandidateDynamodbStreamToEventBridgeHandler:
     Type: AWS::Serverless::Function
