@@ -1024,6 +1024,7 @@ Resources:
       Handler: no.sikt.nva.scopus.ScopusHandler::handleRequest
       Role: !GetAtt LambdaRole.Arn
       Timeout: 900
+      ReservedConcurrentExecutions: 50
       Environment:
         Variables:
           API_HOST: !Ref ApiDomain
