@@ -87,10 +87,6 @@ class PublicationPermissionStrategyTest {
             new GetExternalClientResponse(randomString(), randomString(), EXTERNAL_CLIENT_CUSTOMER_URI, randomUri()));
     }
 
-    protected URI uriFromTestCase(String testCase) {
-        return URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/" + testCase);
-    }
-
     @Test
     void shouldDenyPermissionToUnpublishPublicationWhenUserHasNoAccessRights()
         throws JsonProcessingException, UnauthorizedException {
@@ -280,10 +276,10 @@ class PublicationPermissionStrategyTest {
     }
 
     public Publication createDegreePublicationWithContributor(String contributorName, URI contributorId,
-                                                       Role contributorRole, URI institutionId,
+                                                       Role contributorRole, URI customerId,
                                                        URI topLevelCristinOrgId) {
         var publication = createPublicationWithContributor(contributorName, contributorId, contributorRole,
-                                         institutionId, topLevelCristinOrgId);
+                                         customerId, topLevelCristinOrgId);
         publication.getEntityDescription()
             .getReference()
             .setPublicationInstance(new DegreePhd(new MonographPages(), new PublicationDate(),
