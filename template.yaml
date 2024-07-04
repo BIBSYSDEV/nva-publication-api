@@ -1654,6 +1654,7 @@ Resources:
       CodeUri: s3-import-commons
       Handler: no.unit.nva.publication.s3imports.FileEntriesEventEmitter::handleRequest
       Timeout: 600 # 10 min timeout
+      ReservedConcurrentExecutions: 50
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
@@ -1877,7 +1878,7 @@ Resources:
       Handler: no.unit.nva.cristin.lambda.CristinEntryEventConsumer::handleRequest
       Timeout: 30
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 1
+      ReservedConcurrentExecutions: 50
       Environment:
         Variables:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
@@ -1904,7 +1905,7 @@ Resources:
       Handler: no.unit.nva.cristin.lambda.CristinPatchEventConsumer::handleRequest
       Timeout: 30
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 1
+      ReservedConcurrentExecutions: 50
       Environment:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
@@ -1928,7 +1929,7 @@ Resources:
       Handler: no.sikt.nva.brage.migration.lambda.BragePatchEventConsumer::handleRequest
       Timeout: 30
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 1
+      ReservedConcurrentExecutions: 50
       Environment:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
