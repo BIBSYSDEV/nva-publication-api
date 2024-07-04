@@ -3,8 +3,6 @@ package no.unit.nva.publication.events.bodies;
 import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.net.URI;
@@ -228,10 +226,9 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
         if (this == o) {
             return true;
         }
-        if (!(o instanceof CreatePublicationRequest)) {
+        if (!(o instanceof CreatePublicationRequest that)) {
             return false;
         }
-        CreatePublicationRequest that = (CreatePublicationRequest) o;
         return Objects.equals(getEntityDescription(), that.getEntityDescription())
                && Objects.equals(getAssociatedArtifacts(), that.getAssociatedArtifacts())
                && Objects.equals(getContext(), that.getContext())

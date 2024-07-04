@@ -113,6 +113,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         = "Customer API not responding or not responding as expected!";
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
     private static final String EXTERNAL_CLIENT_ID = "external-client-id";
+    private static final Integer HTTP_STATUS_UNPROCESSABLE_CONTENT = 422;
     private final Context context = new FakeContext();
     private String testUserName;
     private CreatePublicationHandler handler;
@@ -546,7 +547,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(inputStream, outputStream, context);
 
         var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
-        assertThat(actual.getStatusCode(), is(equalTo(422)));
+        assertThat(actual.getStatusCode(), is(equalTo(HTTP_STATUS_UNPROCESSABLE_CONTENT)));
     }
 
     @Test
@@ -559,7 +560,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(inputStream, outputStream, context);
 
         var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
-        assertThat(actual.getStatusCode(), is(equalTo(422)));
+        assertThat(actual.getStatusCode(), is(equalTo(HTTP_STATUS_UNPROCESSABLE_CONTENT)));
     }
 
     @Test
@@ -572,7 +573,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(inputStream, outputStream, context);
 
         var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
-        assertThat(actual.getStatusCode(), is(equalTo(422)));
+        assertThat(actual.getStatusCode(), is(equalTo(HTTP_STATUS_UNPROCESSABLE_CONTENT)));
     }
 
     @Test
@@ -585,7 +586,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(inputStream, outputStream, context);
 
         var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
-        assertThat(actual.getStatusCode(), is(equalTo(201)));
+        assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
     }
 
     @Test
