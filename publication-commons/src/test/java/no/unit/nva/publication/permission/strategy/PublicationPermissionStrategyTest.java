@@ -29,10 +29,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -40,6 +42,9 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
 import no.unit.nva.model.pages.MonographPages;
@@ -65,8 +70,6 @@ class PublicationPermissionStrategyTest {
     public static final String INJECT_COGNITO_GROUPS_CLAIM = "cognito:groups";
     public static final String INJECT_CRISTIN_ID_CLAIM = "custom:cristinId";
     public static final String INJECT_TOP_ORG_CRISTIN_ID_CLAIM = "custom:topOrgCristinId";
-    protected static final String TEST_ORG_NTNU_ROOT = "194.0.0.0";
-    protected static final String TEST_ORG_NTNU_DEPARTMENT_OF_LANGUAGES = "194.62.60.0";
     public static final String AUTHORIZATION = "Authorization";
     public static final String BEARER_TOKEN = "Bearer token";
     IdentityServiceClient identityServiceClient;
@@ -82,10 +85,6 @@ class PublicationPermissionStrategyTest {
 
         when(this.identityServiceClient.getExternalClient(any())).thenReturn(
             new GetExternalClientResponse(randomString(), randomString(), EXTERNAL_CLIENT_CUSTOMER_URI, randomUri()));
-    }
-
-    protected URI uriFromTestCase(String testCase) {
-        return URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/" + testCase);
     }
 
     @Test
@@ -149,11 +148,12 @@ class PublicationPermissionStrategyTest {
         var editorName = randomString();
         var editorInstitution = randomUri();
         var resourceOwner = randomString();
-        var cristinId = randomUri();
+        var personCristinId = randomUri();
+        var topLevelCristinOrgId = randomUri();
 
         var allAccessRights = List.of(AccessRight.values());
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, allAccessRights, cristinId, null);
-        var publication = createPublication(resourceOwner, editorInstitution, randomUri());
+        var requestInfo = createUserRequestInfo(editorName, editorInstitution, allAccessRights, personCristinId, topLevelCristinOrgId);
+        var publication = createPublication(resourceOwner, editorInstitution, topLevelCristinOrgId);
 
         assertThat(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
@@ -198,12 +198,22 @@ class PublicationPermissionStrategyTest {
                    .build();
     }
 
-    static Publication createPublication(String resourceOwner, URI customer, URI cristinId) {
+    static Publication createPublication(String resourceOwner, URI customer, URI topLevelCristinOrgId) {
         return randomPublication().copy()
-                   .withResourceOwner(new ResourceOwner(new Username(resourceOwner), cristinId))
+                   .withResourceOwner(new ResourceOwner(new Username(resourceOwner), topLevelCristinOrgId))
                    .withPublisher(new Organization.Builder().withId(customer).build())
                    .withStatus(PUBLISHED)
                    .build();
+    }
+
+    static void unpublishFiles(Publication publication) {
+        var list = publication.getAssociatedArtifacts()
+                       .stream()
+                       .filter(File.class::isInstance)
+                       .map(File.class::cast)
+                       .map(File::toUnpublishedFile)
+                       .collect(Collectors.toCollection(() -> new ArrayList<AssociatedArtifact>()));
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(list));
     }
 
     Publication createNonDegreePublication(String resourceOwner, URI customer, URI ownerAffiliation) {
@@ -242,16 +252,18 @@ class PublicationPermissionStrategyTest {
     }
 
     protected Publication createPublicationWithContributor(String contributorName, URI contributorId,
-                                                           Role contributorRole, URI institutionId,
+                                                           Role contributorRole, URI customerId,
                                                            URI topLevelCristinOrgId) {
         var publication = fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES);
+        publication.setPublisher(new Organization.Builder().withId(customerId).build());
         var identity = new Identity.Builder()
                            .withName(contributorName)
                            .withId(contributorId)
+                           .withVerificationStatus(ContributorVerificationStatus.VERIFIED)
                            .build();
         var contributor = new Contributor.Builder()
                               .withIdentity(identity)
-                              .withAffiliations(List.of(new Organization.Builder().withId(institutionId).build()))
+                              .withAffiliations(List.of(new Organization.Builder().withId(topLevelCristinOrgId).build()))
                               .withRole(new RoleType(contributorRole))
                               .build();
         var entityDescription = publication.getEntityDescription().copy()
@@ -259,9 +271,22 @@ class PublicationPermissionStrategyTest {
                                     .build();
 
         return publication.copy().withEntityDescription(entityDescription)
-                   .withResourceOwner(new ResourceOwner(new Username(randomString()), topLevelCristinOrgId))
+                   .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withCuratingInstitutions(Set.of(topLevelCristinOrgId))
                    .withStatus(PUBLISHED).build();
+    }
+
+    public Publication createDegreePublicationWithContributor(String contributorName, URI contributorId,
+                                                       Role contributorRole, URI customerId,
+                                                       URI topLevelCristinOrgId) {
+        var publication = createPublicationWithContributor(contributorName, contributorId, contributorRole,
+                                         customerId, topLevelCristinOrgId);
+        publication.getEntityDescription()
+            .getReference()
+            .setPublicationInstance(new DegreePhd(new MonographPages(), new PublicationDate(),
+                                                  Set.of(new UnconfirmedDocument(randomString()))));
+
+        return publication;
     }
 
     protected List<AccessRight> getAccessRightsForEditor() {

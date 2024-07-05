@@ -1052,7 +1052,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var newUnpublishedFile = File.builder().withIdentifier(UUID.randomUUID())
                                      .withLicense(randomUri()).buildUnpublishedFile();
-        var files =  new ArrayList<>(publication.getAssociatedArtifacts());
+        var files = new ArrayList<>(publication.getAssociatedArtifacts());
         files.add(newUnpublishedFile);
 
         publication.copy().withAssociatedArtifacts(files);
@@ -1527,9 +1527,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     void shouldDeleteUnpublishedPublicationWhenUserIsEditor()
         throws ApiGatewayException, IOException {
         var publication = createUnpublishedPublication();
-        var publisherUri = publication.getPublisher().getId();
-        var request = creatDeleteHandlerRequest(publication.getIdentifier(), randomString(),
-                                                publisherUri, null, MANAGE_RESOURCES_ALL,
+        var customer = publication.getPublisher().getId();
+
+        var request = creatDeleteHandlerRequest(publication.getIdentifier(),
+                                                publication.getResourceOwner().getOwner().getValue(), customer,
+                                                publication.getResourceOwner().getOwnerAffiliation(), null,
+                                                MANAGE_RESOURCES_ALL,
                                                 MANAGE_DEGREE);
         updatePublicationHandler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -1552,7 +1555,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publisherUri = publication.getPublisher().getId();
         var request = creatDeleteHandlerRequest(publication.getIdentifier(),
                                                 publication.getResourceOwner().getOwner().getValue(),
-                                                publisherUri, null);
+                                                publisherUri, publication.getResourceOwner().getOwnerAffiliation(),
+                                                null);
         updatePublicationHandler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
@@ -1754,14 +1758,15 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private InputStream creatDeleteHandlerRequest(SortableIdentifier publicationIdentifier, String username,
-                                                  URI institutionId, URI cristinId, AccessRight... accessRight)
+                                                  URI customer, URI topLevelCristinOrgId, URI cristinId,
+                                                  AccessRight... accessRight)
         throws JsonProcessingException {
         var request = new HandlerRequestBuilder<DeletePublicationRequest>(restApiMapper)
                           .withUserName(username)
-                          .withCurrentCustomer(institutionId)
-                          .withAccessRights(institutionId, accessRight)
+                          .withCurrentCustomer(customer)
+                          .withTopLevelCristinOrgId(topLevelCristinOrgId)
+                          .withAccessRights(customer, accessRight)
                           .withBody(new DeletePublicationRequest())
-                          .withTopLevelCristinOrgId(randomUri())
                           .withPersonCristinId(randomUri())
                           .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString()));
 
@@ -1989,7 +1994,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .withCurrentCustomer(customerId)
                    .withBody(publicationUpdate)
                    .withAccessRights(customerId, MANAGE_DEGREE, MANAGE_RESOURCES_ALL)
-                   .withTopLevelCristinOrgId(randomUri())
+                   .withTopLevelCristinOrgId(publicationUpdate.getResourceOwner().getOwnerAffiliation())
                    .withPersonCristinId(randomUri())
                    .build();
     }

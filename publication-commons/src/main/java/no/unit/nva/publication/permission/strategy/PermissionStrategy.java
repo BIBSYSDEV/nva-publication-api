@@ -1,5 +1,6 @@
 package no.unit.nva.publication.permission.strategy;
 
+import static java.util.Objects.isNull;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
@@ -21,8 +22,12 @@ import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.AccessRight;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class PermissionStrategy {
+
+    public static final Logger logger = LoggerFactory.getLogger(PermissionStrategy.class);
 
     public static final Class<?>[] PROTECTED_DEGREE_INSTANCE_TYPES = {
         DegreeLicentiate.class,
@@ -50,6 +55,26 @@ public abstract class PermissionStrategy {
                    .map(PermissionStrategy::publicationInstanceIsDegree)
                    .orElse(false);
     }
+
+    protected boolean userSharesTopLevelOrgWithAtLeastOneContributor() {
+        var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
+
+        logger.info("found topLevels {} for user {} of {}.",
+                    publication.getCuratingInstitutions(),
+                    userInstance.getUser(),
+                    userTopLevelOrg);
+
+        return publication.getCuratingInstitutions().stream().anyMatch(org -> org.equals(userTopLevelOrg));
+    }
+
+    protected boolean userIsFromSameInstitutionAsPublication() {
+        if (isNull(userInstance.getTopLevelOrgCristinId()) || isNull(publication.getResourceOwner())) {
+            return false;
+        }
+
+        return userInstance.getTopLevelOrgCristinId().equals(publication.getResourceOwner().getOwnerAffiliation());
+    }
+
 
     protected boolean isProtectedDegreeInstanceTypeWithEmbargo() {
         return isProtectedDegreeInstanceType() && publication.getAssociatedArtifacts().stream()
