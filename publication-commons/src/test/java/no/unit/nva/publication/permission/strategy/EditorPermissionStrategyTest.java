@@ -10,6 +10,7 @@ import java.net.URI;
 import java.util.stream.Stream;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
+import no.unit.nva.model.role.Role;
 import no.unit.nva.publication.RequestUtil;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
@@ -106,5 +107,48 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
                                       requestInfo, identityServiceClient))
                                   .allowsAction(UNPUBLISH));
+    }
+
+
+    @ParameterizedTest(name = "Should allow Editor {0} operation on degree resources with matching resource owner "
+                              + "affiliation")
+    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "TERMINATE", "TICKET_PUBLISH"})
+    void shouldAllowEditorOnDegreeWithResourceOwnerAffiliation(PublicationOperation operation)
+        throws JsonProcessingException, UnauthorizedException {
+
+        var cristinTopLevelId = randomUri();
+
+        var requestInfo = createUserRequestInfo(randomString(), randomUri(), getAccessRightsForEditor(),
+                                                randomUri(), cristinTopLevelId);
+
+        var publication = createDegreePhd(randomString(), randomUri(), cristinTopLevelId);
+        unpublishFiles(publication);
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+
+        Assertions.assertTrue(PublicationPermissionStrategy
+                                  .create(publication, userInstance)
+                                  .allowsAction(operation));
+    }
+
+    @ParameterizedTest(name = "Should deny Editor {0} operation on degree resources with no matching resource owner "
+                              + "affiliation")
+    @EnumSource(value = PublicationOperation.class)
+    void shouldDenyEditorOnDegreeWithNoResourceOwnerAffiliation(PublicationOperation operation)
+        throws JsonProcessingException, UnauthorizedException {
+
+        var cristinTopLevelId = randomUri();
+
+        var requestInfo = createUserRequestInfo(randomString(), randomUri(), getAccessRightsForEditor(),
+                                                randomUri(), cristinTopLevelId);
+
+        var publication = createDegreePublicationWithContributor(randomString(), randomUri(), Role.CREATOR,
+                                                                 randomUri(), cristinTopLevelId);
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+
+        Assertions.assertFalse(PublicationPermissionStrategy
+                                   .create(publication, userInstance)
+                                   .allowsAction(operation));
     }
 }
