@@ -324,14 +324,14 @@ class PublicationPermissionStrategyTest {
         return createUserRequestInfo(username, institutionId, new ArrayList<>(), cristinId, topLevelCristinOrgId);
     }
 
-    RequestInfo createUserRequestInfo(String username, URI institutionId, List<AccessRight> accessRights,
+    RequestInfo createUserRequestInfo(String username, URI customerId, List<AccessRight> accessRights,
                                       URI personCristinId, URI topLevelCristinOrgId)
         throws JsonProcessingException {
 
-        var cognitoGroups = accessRights.stream().map(getCognitoGroup(institutionId)).toList();
+        var cognitoGroups = accessRights.stream().map(getCognitoGroup(customerId)).toList();
 
         var claims = new HashMap<String, String>();
-        claims.put(INJECT_CUSTOMER_ID_CLAIM, institutionId.toString());
+        claims.put(INJECT_CUSTOMER_ID_CLAIM, customerId.toString());
 
         claims.put(INJECT_COGNITO_GROUPS_CLAIM, String.join(",", cognitoGroups));
 
