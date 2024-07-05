@@ -27,7 +27,7 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
@@ -113,6 +113,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         = "Customer API not responding or not responding as expected!";
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
     private static final String EXTERNAL_CLIENT_ID = "external-client-id";
+    private static final Integer HTTP_STATUS_UNPROCESSABLE_CONTENT = 422;
     private final Context context = new FakeContext();
     private String testUserName;
     private CreatePublicationHandler handler;
@@ -514,9 +515,87 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var actualFile = (File)
                              Lists.newArrayList(publicationResponse.getAssociatedArtifacts().stream().iterator())
                                  .getFirst();
-        assertTrue(actualFile.getRightsRetentionStrategy() instanceof OverriddenRightsRetentionStrategy);
+        assertInstanceOf(OverriddenRightsRetentionStrategy.class, actualFile.getRightsRetentionStrategy());
         assertThat(((OverriddenRightsRetentionStrategy) actualFile.getRightsRetentionStrategy()).getOverriddenBy(),
                    is(equalTo(testUserName)));
+    }
+
+    @Test
+    void shouldAllowNullRightsHolder() throws IOException {
+        var request = createEmptyPublicationRequest();
+
+        var inputStream = createPublicationRequest(request);
+
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
+    }
+
+    @Test
+    void shouldNotAllowEmptyRightsHolder() throws IOException {
+        var request = createEmptyPublicationRequest();
+        // Completely empty string in transformed to null during serialization/deserialization
+        request.setRightsHolder(" ");
+
+        var inputStream = createPublicationRequest(request);
+
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        assertThat(actual.getStatusCode(), is(equalTo(HTTP_STATUS_UNPROCESSABLE_CONTENT)));
+    }
+
+    @Test
+    void shouldNotAllowLeadingWhitespaceForRightsHolder() throws IOException {
+        var request = createEmptyPublicationRequest();
+        request.setRightsHolder(" abc");
+
+        var inputStream = createPublicationRequest(request);
+
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        assertThat(actual.getStatusCode(), is(equalTo(HTTP_STATUS_UNPROCESSABLE_CONTENT)));
+    }
+
+    @Test
+    void shouldNotAllowTrailingWhitespaceForRightsHolder() throws IOException {
+        var request = createEmptyPublicationRequest();
+        request.setRightsHolder("abcåøæ ");
+
+        var inputStream = createPublicationRequest(request);
+
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        assertThat(actual.getStatusCode(), is(equalTo(HTTP_STATUS_UNPROCESSABLE_CONTENT)));
+    }
+
+    @Test
+    void shouldNotAllowExecutableScriptForRightsHolder() throws IOException {
+        var request = createEmptyPublicationRequest();
+        request.setRightsHolder("<script>alert('Oh no!');</script>");
+
+        var inputStream = createPublicationRequest(request);
+
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        assertThat(actual.getStatusCode(), is(equalTo(HTTP_STATUS_UNPROCESSABLE_CONTENT)));
+    }
+
+    @Test
+    void shouldAllowUnicodeLettersAndDigitsInRightsHolder() throws IOException {
+        var request = createEmptyPublicationRequest();
+        request.setRightsHolder("1234567890ÅØÆåøæ AOEaoe");
+
+        var inputStream = createPublicationRequest(request);
+
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
     }
 
     @Test

@@ -16,6 +16,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.publication.ValidatingApiGatewayHandler;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.commons.customer.CustomerNotAvailableException;
@@ -29,7 +30,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.validation.DefaultPublicationValidator;
 import no.unit.nva.publication.validation.PublicationValidationException;
 import no.unit.nva.publication.validation.PublicationValidator;
-import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
@@ -44,7 +44,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
-public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicationRequest, PublicationResponse> {
+public class CreatePublicationHandler
+    extends ValidatingApiGatewayHandler<CreatePublicationRequest, PublicationResponse> {
 
     public static final String LOCATION_TEMPLATE = "%s://%s/publication/%s";
     public static final String API_SCHEME = "https";
@@ -58,7 +59,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     private final IdentityServiceClient identityServiceClient;
     private final SecretsReader secretsReader;
     private final HttpClient httpClient;
-    private JavaHttpClientCustomerApiClient customerApiClient;
+    private final JavaHttpClientCustomerApiClient customerApiClient;
 
     /**
      * Default constructor for CreatePublicationHandler.
@@ -100,8 +101,9 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     }
 
     @Override
-    protected PublicationResponse processInput(CreatePublicationRequest input, RequestInfo requestInfo,
-                                               Context context) throws ApiGatewayException {
+    protected PublicationResponse processValidatedInput(CreatePublicationRequest input,
+                                                        RequestInfo requestInfo,
+                                                        Context context) throws ApiGatewayException {
         if (isThesisAndHasNoRightsToPublishThesisAndIsNotExternalClient(input, requestInfo)) {
             throw new ForbiddenException();
         }
@@ -121,7 +123,6 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
 
         return PublicationResponse.fromPublication(createdPublication);
     }
-
 
     private JavaHttpClientCustomerApiClient getJavaHttpClientCustomerApiClient() {
         var backendClientCredentials = secretsReader.fetchClassSecret(
@@ -183,7 +184,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     }
 
     private boolean isThesisAndHasNoRightsToPublishThesisAndIsNotExternalClient(CreatePublicationRequest request,
-                                                                              RequestInfo requestInfo) {
+                                                                                RequestInfo requestInfo) {
 
         return isThesis(request) && !requestInfo.userIsAuthorized(MANAGE_DEGREE) && !requestInfo.clientIsThirdParty();
     }

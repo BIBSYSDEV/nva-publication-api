@@ -36,6 +36,7 @@ dependencies {
     implementation libs.zalando
     implementation libs.aws.sdk2.eventbridge
     implementation libs.aws.sdk2.urlconnectionclient
+    implementation libs.bundles.validation
 
     testImplementation project(":publication-testing")
     testImplementation project(path: ':tickets-test')

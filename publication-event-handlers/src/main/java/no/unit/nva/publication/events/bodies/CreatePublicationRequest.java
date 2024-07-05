@@ -3,6 +3,8 @@ package no.unit.nva.publication.events.bodies;
 import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -10,19 +12,18 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-
 import no.unit.nva.WithAssociatedArtifact;
 import no.unit.nva.WithContext;
 import no.unit.nva.WithMetadata;
 import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportDetail;
+import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationNoteBase;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.funding.Funding;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.funding.Funding;
 import nva.commons.core.JacocoGenerated;
 
 public class CreatePublicationRequest implements WithMetadata, WithAssociatedArtifact, WithContext {
@@ -35,6 +36,8 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
     private List<URI> subjects;
     private Set<AdditionalIdentifierBase> additionalIdentifiers;
     private List<Funding> fundings;
+    @Size(min = 1, max = 256)
+    @Pattern(regexp = "^[\\p{L}\\d][\\p{L}\\d\\s]*\\S$")
     private String rightsHolder;
     private PublicationStatus status;
     private List<ImportDetail> importDetails;
@@ -223,10 +226,9 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
         if (this == o) {
             return true;
         }
-        if (!(o instanceof CreatePublicationRequest)) {
+        if (!(o instanceof CreatePublicationRequest that)) {
             return false;
         }
-        CreatePublicationRequest that = (CreatePublicationRequest) o;
         return Objects.equals(getEntityDescription(), that.getEntityDescription())
                && Objects.equals(getAssociatedArtifacts(), that.getAssociatedArtifacts())
                && Objects.equals(getContext(), that.getContext())
