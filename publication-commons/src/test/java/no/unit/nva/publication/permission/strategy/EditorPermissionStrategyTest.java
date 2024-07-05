@@ -98,10 +98,10 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
 
         var editorName = randomString();
         var cristinId = randomUri();
-        var editorInstitution = URI.create("https://editorInstitution");
+        var editorCustomer = URI.create("https://editorInstitution");
 
-        var requestInfo = createUserRequestInfo(editorName, editorInstitution, getAccessRightsForEditor(),
-                                                cristinId, randomUri());
+        var requestInfo = createUserRequestInfo(editorName, editorCustomer, getAccessRightsForEditor(),
+                                                cristinId, publication.getResourceOwner().getOwnerAffiliation());
 
         Assertions.assertTrue(PublicationPermissionStrategy
                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
