@@ -27,7 +27,7 @@ public class DeleteResourceService extends ServiceWithTransactions {
     public void deleteImportCandidate(ImportCandidate candidate) throws NotFoundException, BadMethodException {
         var importCandidate = readResourceService.getResourceByIdentifier(candidate.getIdentifier())
                                   .toImportCandidate();
-        if (CandidateStatus.IMPORTED.equals( importCandidate.getImportStatus().candidateStatus())) {
+        if (CandidateStatus.IMPORTED.equals(importCandidate.getImportStatus().candidateStatus())) {
             throw new BadMethodException(CAN_NOT_DELETE_IMPORT_CANDIDATE_MESSAGE);
         } else {
             var transactionWriteItem = deleteResource(Resource.fromImportCandidate(importCandidate));

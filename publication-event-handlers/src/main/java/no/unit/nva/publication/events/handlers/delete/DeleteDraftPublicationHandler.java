@@ -1,9 +1,7 @@
 package no.unit.nva.publication.events.handlers.delete;
 
 import static java.util.Objects.nonNull;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.time.Clock;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -26,7 +24,7 @@ public class DeleteDraftPublicationHandler
      */
     @JacocoGenerated
     public DeleteDraftPublicationHandler() {
-        this( ResourceService.defaultService() );
+        this(ResourceService.defaultService());
     }
     
     /**

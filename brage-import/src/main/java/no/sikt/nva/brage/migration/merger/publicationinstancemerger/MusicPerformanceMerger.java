@@ -16,8 +16,10 @@ public final class MusicPerformanceMerger extends PublicationInstanceMerger<Musi
     @Override
     public MusicPerformance merge(PublicationInstance<?> publicationInstance) {
         if (publicationInstance instanceof MusicPerformance newMusicPerformance) {
-            return new MusicPerformance(mergeCollections(this.publicationInstance.getManifestations(), newMusicPerformance.getManifestations(), ArrayList::new),
-                                        getDuration(this.publicationInstance.getDuration(), newMusicPerformance.getDuration()));
+            return new MusicPerformance(mergeCollections(this.publicationInstance.getManifestations(),
+                                                         newMusicPerformance.getManifestations(), ArrayList::new),
+                                        getDuration(this.publicationInstance.getDuration(),
+                                                    newMusicPerformance.getDuration()));
         } else {
             return this.publicationInstance;
         }

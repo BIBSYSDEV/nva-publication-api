@@ -32,7 +32,8 @@ public class ExpandImportCandidateHandler extends DestinationsEventBridgeEventHa
     public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
     public static final String PERSISTED_ENTRIES_BUCKET = ENVIRONMENT.readEnv("PERSISTED_ENTRIES_BUCKET");
     public static final int PUBLICATION_YEAR_2018 = 2018;
-    public static final String EMPTY_EVENT_MESSAGE = "Candidate {} should not be expanded because of publication year: {}";
+    public static final String EMPTY_EVENT_MESSAGE =
+        "Candidate {} should not be expanded because of publication year: {}";
     public static final String EXPANSION_ERROR_MESSAGE = "Something went wrong expanding import candidate: {}";
     public static final String EXPANSION_MESSAGE = "Import candidate with identifier has been expanded: {}";
     private final Logger logger = LoggerFactory.getLogger(ExpandImportCandidateHandler.class);

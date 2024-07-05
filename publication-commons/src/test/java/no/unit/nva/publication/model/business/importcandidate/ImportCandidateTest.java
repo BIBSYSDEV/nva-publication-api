@@ -40,8 +40,8 @@ import java.util.stream.Stream;
 public class ImportCandidateTest {
 
     public static Stream<Arguments> importStatuses() {
-        return Stream.of(Arguments.of( ImportStatusFactory.createImported(randomPerson(), randomUri())),
-                Arguments.of( ImportStatusFactory.createNotApplicable(randomPerson(), randomString())));
+        return Stream.of(Arguments.of(ImportStatusFactory.createImported(randomPerson(), randomUri())),
+                Arguments.of(ImportStatusFactory.createNotApplicable(randomPerson(), randomString())));
     }
 
     private static Username randomPerson() {
@@ -53,17 +53,17 @@ public class ImportCandidateTest {
         var randomImportCandidate = randomImportCandidate();
         var expectedPublication = createExpectedPublication(randomImportCandidate);
         var actualImportedPublication = randomImportCandidate.toPublication();
-        assertThat(randomImportCandidate.getImportStatus().candidateStatus(), is(equalTo(CandidateStatus.NOT_IMPORTED)));
+        assertThat(randomImportCandidate.getImportStatus().candidateStatus(),
+                   is(equalTo(CandidateStatus.NOT_IMPORTED)));
         assertThat(actualImportedPublication, is(equalTo(expectedPublication)));
     }
 
     @Test
     void builderShouldAcceptPublication() {
         var randomPublication = createPublicationWithoutStatus();
-        var importCandidate =
-            new ImportCandidate.Builder().withPublication(randomPublication.copy().build())
-                    .withImportStatus( ImportStatusFactory.createNotImported())
-                .build();
+        var importCandidate = new ImportCandidate.Builder().withPublication(randomPublication.copy().build())
+                                  .withImportStatus(ImportStatusFactory.createNotImported())
+                                  .build();
 
         var importCandidateCastedToPublication = Resource.fromPublication(importCandidate).toPublication();
         assertThat(importCandidate.getImportStatus().candidateStatus(), is(equalTo(CandidateStatus.NOT_IMPORTED)));
@@ -106,7 +106,7 @@ public class ImportCandidateTest {
 
     private ImportCandidate randomImportCandidate() {
         return new ImportCandidate.Builder()
-                .withImportStatus( ImportStatusFactory.createNotImported())
+                .withImportStatus(ImportStatusFactory.createNotImported())
                    .withEntityDescription(randomEntityDescription())
                    .withLink(randomUri())
                    .withDoi(randomDoi())

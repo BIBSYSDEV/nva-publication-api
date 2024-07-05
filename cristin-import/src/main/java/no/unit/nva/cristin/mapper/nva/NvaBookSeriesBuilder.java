@@ -19,7 +19,9 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class NvaBookSeriesBuilder extends CristinMappingModule {
 
-    public NvaBookSeriesBuilder(CristinObject cristinObject, ChannelRegistryMapper channelRegistryMapper, S3Client s3Client) {
+    public NvaBookSeriesBuilder(CristinObject cristinObject,
+                                ChannelRegistryMapper channelRegistryMapper,
+                                S3Client s3Client) {
         super(cristinObject, channelRegistryMapper, s3Client);
     }
 

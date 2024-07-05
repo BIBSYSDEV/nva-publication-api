@@ -37,6 +37,7 @@ public class RdfUtils {
                    .orElseThrow();
 
     }
+
     public static URI getTopLevelOrgUri(UriRetriever uriRetriever, URI id) {
         var data = attempt(() -> uriRetriever.getRawContent(id, APPLICATION_JSON)).orElseThrow();
 

@@ -68,13 +68,21 @@ class ContributorPermissionStrategyTest extends PublicationPermissionStrategyTes
         var contributorInstitutionId = randomUri();
         var topLevelCristinOrgId = randomUri();
 
-        var requestInfo = createUserRequestInfo(contributorName, contributorInstitutionId, contributorCristinId, topLevelCristinOrgId);
-        var publication = createPublicationWithContributor(contributorName, contributorCristinId, Role.CREATOR,
-                                                           randomUri(), topLevelCristinOrgId);
+        var requestInfo = createUserRequestInfo(contributorName,
+                                                contributorInstitutionId,
+                                                contributorCristinId,
+                                                topLevelCristinOrgId);
+        var publication = createPublicationWithContributor(contributorName,
+                                                           contributorCristinId,
+                                                           Role.CREATOR,
+                                                           randomUri(),
+                                                           topLevelCristinOrgId);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                       requestInfo, identityServiceClient))
+                                   .create(publication,
+                                           RequestUtil.createUserInstanceFromRequest(
+                                               requestInfo,
+                                               identityServiceClient))
                                    .allowsAction(UNPUBLISH));
     }
 }

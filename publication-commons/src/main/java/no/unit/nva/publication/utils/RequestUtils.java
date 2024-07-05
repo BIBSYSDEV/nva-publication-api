@@ -32,7 +32,8 @@ public record RequestUtils(List<AccessRight> accessRights,
     public static final String TICKET_IDENTIFIER = "ticketIdentifier";
     public static final String MISSING_PATH_PARAM_MESSAGE = "Missing from pathParameters: %s";
 
-    public static RequestUtils fromRequestInfo(RequestInfo requestInfo, UriRetriever uriRetriever) throws UnauthorizedException {
+    public static RequestUtils fromRequestInfo(RequestInfo requestInfo, UriRetriever uriRetriever)
+        throws UnauthorizedException {
         return new RequestUtils(requestInfo.getAccessRights(),
                                 requestInfo.getCurrentCustomer(),
                                 requestInfo.getTopLevelOrgCristinId().orElse(null),
@@ -59,7 +60,8 @@ public record RequestUtils(List<AccessRight> accessRights,
     public SortableIdentifier publicationIdentifier() {
         return Optional.ofNullable(pathParameters().get(PUBLICATION_IDENTIFIER))
                    .map(SortableIdentifier::new)
-                   .orElseThrow(() -> new IllegalArgumentException(missingPathParamErrorMessage(PUBLICATION_IDENTIFIER)));
+                   .orElseThrow(() -> new IllegalArgumentException(
+                       missingPathParamErrorMessage(PUBLICATION_IDENTIFIER)));
     }
 
     public boolean hasAccessRight(AccessRight accessRight) {

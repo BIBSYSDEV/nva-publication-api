@@ -19,7 +19,8 @@ public class CristinIdentifierFinder implements FindExistingPublicationService {
     private final ResourceService resourceService;
     private final DuplicatePublicationReporter duplicatePublicationReporter;
 
-    public CristinIdentifierFinder(ResourceService resourceService, DuplicatePublicationReporter duplicatePublicationReporter) {
+    public CristinIdentifierFinder(ResourceService resourceService,
+                                   DuplicatePublicationReporter duplicatePublicationReporter) {
         this.resourceService = resourceService;
         this.duplicatePublicationReporter = duplicatePublicationReporter;
     }
@@ -29,12 +30,14 @@ public class CristinIdentifierFinder implements FindExistingPublicationService {
         var cristinIdentifier = getCristinIdentifier(publicationRepresentation.publication());
         if (nonNull(cristinIdentifier)) {
             var publications = resourceService.getPublicationsByCristinIdentifier(cristinIdentifier).stream()
-                                   .filter(item -> PublicationComparator.publicationsMatch(item,
-                                                                                           publicationRepresentation.publication()))
+                                   .filter(item -> PublicationComparator
+                                                       .publicationsMatch(item,
+                                                                          publicationRepresentation.publication()))
                                    .toList();
             if (FindExistingPublicationService.moreThanOneDuplicateFound(publications)) {
                 duplicatePublicationReporter.reportDuplicatePublications(publications,
-                                                                         publicationRepresentation.brageRecord(), DuplicateDetectionCause.CRISTIN_DUPLICATES);
+                                                                         publicationRepresentation.brageRecord(),
+                                                                         DuplicateDetectionCause.CRISTIN_DUPLICATES);
             }
             return publications.isEmpty()
                        ? Optional.empty()

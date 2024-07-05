@@ -13,7 +13,7 @@ import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.paths.UriWrapper;
 
-public class SearchApiFinder{
+public class SearchApiFinder {
 
     private static final String APPLICATION_JSON = "application/json";
     private static final String SEARCH = "search";
@@ -25,7 +25,7 @@ public class SearchApiFinder{
     private final String apiHost;
     private final UriRetriever uriRetriever;
 
-    protected SearchApiFinder(ResourceService resourceService, UriRetriever uriRetriever, String apiHost){
+    protected SearchApiFinder(ResourceService resourceService, UriRetriever uriRetriever, String apiHost) {
         this.resourceService = resourceService;
         this.apiHost = apiHost;
         this.uriRetriever = uriRetriever;

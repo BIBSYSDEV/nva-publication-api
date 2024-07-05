@@ -48,6 +48,13 @@ public final class S3MultipartCopier {
         return builder().withSourceKey(sourceKey).build();
     }
 
+    private Builder copy() {
+        return builder().withSourceKey(this.sourceS3Key)
+                   .withSourceBucket(this.sourceS3Bucket)
+                   .withDestinationKey(this.destinationS3Key)
+                   .withDestinationBucket(this.destinationS3Bucket);
+    }
+
     public void copy(S3Client s3Client) {
         validateRequest();
         performCopying(s3Client);
@@ -75,13 +82,6 @@ public final class S3MultipartCopier {
 
     private static CompletedPart createCompletedPart(int partNumber, UploadPartCopyResponse uploadPartResponse) {
         return CompletedPart.builder().partNumber(partNumber).eTag(uploadPartResponse.copyPartResult().eTag()).build();
-    }
-
-    private Builder copy() {
-        return builder().withSourceKey(this.sourceS3Key)
-                   .withSourceBucket(this.sourceS3Bucket)
-                   .withDestinationKey(this.destinationS3Key)
-                   .withDestinationBucket(this.destinationS3Bucket);
     }
 
     private CompletedMultipartUpload completeMultipartUpload() {

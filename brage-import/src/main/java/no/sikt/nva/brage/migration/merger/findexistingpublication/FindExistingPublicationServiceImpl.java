@@ -30,8 +30,14 @@ public class FindExistingPublicationServiceImpl implements FindExistingPublicati
         var handleFinder = new HandleFinder(resourceService, uriRetriever, apiHost, duplicatePublicationReporter);
         var cristinIdentifierFinder = new CristinIdentifierFinder(resourceService, duplicatePublicationReporter);
         var doiFinder = new DoiPublicationFinder(resourceService, uriRetriever, apiHost, duplicatePublicationReporter);
-        var isbnFinder = new IsbnPublicationFinder(resourceService, uriRetriever, apiHost, duplicatePublicationReporter);
-        var titleAndTypeFinder = new TitleAndTypePublicationFinder(resourceService, uriRetriever, apiHost, duplicatePublicationReporter);
+        var isbnFinder = new IsbnPublicationFinder(resourceService,
+                                                   uriRetriever,
+                                                   apiHost,
+                                                   duplicatePublicationReporter);
+        var titleAndTypeFinder = new TitleAndTypePublicationFinder(resourceService,
+                                                                   uriRetriever,
+                                                                   apiHost,
+                                                                   duplicatePublicationReporter);
 
         List<Supplier<Optional<PublicationForUpdate>>> updatePublicationSuppliers = List.of(
             () -> handleFinder.findExistingPublication(publicationRepresentation),

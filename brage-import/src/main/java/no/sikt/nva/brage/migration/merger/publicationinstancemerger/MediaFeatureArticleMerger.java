@@ -12,9 +12,12 @@ public final class MediaFeatureArticleMerger extends PublicationInstanceMerger<M
     @Override
     public MediaFeatureArticle merge(PublicationInstance<?> publicationInstance) {
         if (publicationInstance instanceof MediaFeatureArticle newAcademicArticle) {
-            return new MediaFeatureArticle(getNonNullValue(this.publicationInstance.getVolume(), newAcademicArticle.getVolume()),
-                                    getNonNullValue(this.publicationInstance.getIssue(), newAcademicArticle.getIssue()),
-                                    getNonNullValue(this.publicationInstance.getArticleNumber(), newAcademicArticle.getArticleNumber()),
+            return new MediaFeatureArticle(getNonNullValue(this.publicationInstance.getVolume(),
+                                                           newAcademicArticle.getVolume()),
+                                    getNonNullValue(this.publicationInstance.getIssue(),
+                                                    newAcademicArticle.getIssue()),
+                                    getNonNullValue(this.publicationInstance.getArticleNumber(),
+                                                    newAcademicArticle.getArticleNumber()),
                                     getRange(this.publicationInstance.getPages(), newAcademicArticle.getPages()));
         } else {
             return this.publicationInstance;

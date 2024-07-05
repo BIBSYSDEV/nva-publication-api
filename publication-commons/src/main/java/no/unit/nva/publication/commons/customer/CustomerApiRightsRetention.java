@@ -11,6 +11,7 @@ public class CustomerApiRightsRetention {
     private final String type;
     @JsonProperty(FIELD_ID)
     private final String id;
+
     @JsonCreator
     public CustomerApiRightsRetention(@JsonProperty(FIELD_TYPE) String type,
                                       @JsonProperty(FIELD_ID) String id) {

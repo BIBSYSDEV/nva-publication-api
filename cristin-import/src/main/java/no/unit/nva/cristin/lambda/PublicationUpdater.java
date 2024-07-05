@@ -53,14 +53,14 @@ public final class PublicationUpdater {
         return nonNull(oldList) && oldList.isEmpty() && !newList.isEmpty();
     }
 
+    private static boolean shouldBeUpdated(Object oldEntry, Object newEntry) {
+        return isNull(oldEntry) && nonNull(newEntry);
+    }
+
     private static URI updateLink(PublicationRepresentations publicationRepresentations) {
         var existingLink = publicationRepresentations.getExistingPublication().getLink();
         var incomingLink = publicationRepresentations.getIncomingPublication().getLink();
         return shouldBeUpdated(existingLink, incomingLink) ? incomingLink : existingLink;
-    }
-
-    private static boolean shouldBeUpdated(Object oldEntry, Object newEntry) {
-        return isNull(oldEntry) && nonNull(newEntry);
     }
 
     private static URI updateHandle(PublicationRepresentations publicationRepresentations) {
@@ -118,7 +118,10 @@ public final class PublicationUpdater {
     }
 
     private static Reference updateReference(PublicationRepresentations publicationRepresentations) {
-        var existinReference = publicationRepresentations.getExistingPublication().getEntityDescription().getReference();
+        var existinReference = publicationRepresentations
+                                   .getExistingPublication()
+                                   .getEntityDescription()
+                                   .getReference();
         existinReference.setPublicationContext(updatePublicationContext(publicationRepresentations));
         existinReference.setPublicationInstance(updatePublicationInstance(publicationRepresentations));
         existinReference.setDoi(updateDoi(publicationRepresentations));
@@ -144,7 +147,7 @@ public final class PublicationUpdater {
         if (existingPublicationInstance instanceof JournalArticle existingJournalArticle
             && incomingPublicationInstance instanceof JournalArticle incomingJournalArticle
             && existingPublicationInstance.getInstanceType().equals(incomingPublicationInstance.getInstanceType())) {
-                return updateJournalArticle(existingJournalArticle, incomingJournalArticle);
+            return updateJournalArticle(existingJournalArticle, incomingJournalArticle);
         } else {
             return existingPublicationInstance;
         }
@@ -214,7 +217,8 @@ public final class PublicationUpdater {
 
     private static PublicationContext updatePublicationContext(PublicationContext existingPublicationContext,
                                                             PublicationContext incomingPublicationContext) {
-        if (existingPublicationContext instanceof Event existingEvent && incomingPublicationContext instanceof Event incomingEvent) {
+        if (existingPublicationContext instanceof Event existingEvent
+            && incomingPublicationContext instanceof Event incomingEvent) {
             return updateEvent(existingEvent, incomingEvent);
         }
         if (existingPublicationContext instanceof MediaContribution existingMediaContribution
@@ -222,7 +226,8 @@ public final class PublicationUpdater {
             return new MediaContribution.Builder()
                        .withFormat(existingMediaContribution.getFormat())
                        .withMedium(existingMediaContribution.getMedium())
-                       .withDisseminationChannel(updateDisseminationChannel(existingMediaContribution, incomingMediaContribution))
+                       .withDisseminationChannel(updateDisseminationChannel(existingMediaContribution,
+                                                                            incomingMediaContribution))
                        .build();
         } else {
             return existingPublicationContext;
@@ -231,8 +236,8 @@ public final class PublicationUpdater {
 
     private static String updateDisseminationChannel(MediaContribution existingMediaContribution,
                                                   MediaContribution incomingMediaContribution) {
-        return nonNull(existingMediaContribution.getDisseminationChannel()) ?
-                   existingMediaContribution.getDisseminationChannel()
+        return nonNull(existingMediaContribution.getDisseminationChannel())
+                   ? existingMediaContribution.getDisseminationChannel()
                    : incomingMediaContribution.getDisseminationChannel();
     }
 

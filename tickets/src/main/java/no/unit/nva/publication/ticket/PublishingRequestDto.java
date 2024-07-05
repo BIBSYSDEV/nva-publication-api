@@ -67,7 +67,15 @@ public class PublishingRequestDto extends TicketDto {
                                 @JsonProperty(FILES_FOR_APPROVAL) Set<UUID> filesForApproval,
                                 @JsonProperty(FINALIZED_BY_FIELD) Username finalizedBy,
                                 @JsonProperty(FINALIZED_DATE_FIELD) Instant finalizedDate) {
-        super(status, messages, viewedBy, assignee, publicationIdentifier, owner, ownerAffiliation, finalizedBy, finalizedDate);
+        super(status,
+              messages,
+              viewedBy,
+              assignee,
+              publicationIdentifier,
+              owner,
+              ownerAffiliation,
+              finalizedBy,
+              finalizedDate);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
@@ -78,8 +86,22 @@ public class PublishingRequestDto extends TicketDto {
     }
 
     public static TicketDto empty() {
-        return new PublishingRequestDto(null, null, null, null, null, null, null, null, null, null, null, null,
-                                        Set.of(), Set.of(), null, null);
+        return new PublishingRequestDto(null,
+                                        null,
+                                        null,
+                                        null,
+                                        null,
+                                        null,
+                                        null,
+                                        null,
+                                        null,
+                                        null,
+                                        null,
+                                        null,
+                                        Set.of(),
+                                        Set.of(),
+                                        null,
+                                        null);
     }
 
     public Instant getCreatedDate() {
@@ -126,10 +148,9 @@ public class PublishingRequestDto extends TicketDto {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof PublishingRequestDto)) {
+        if (!(o instanceof PublishingRequestDto that)) {
             return false;
         }
-        PublishingRequestDto that = (PublishingRequestDto) o;
         return getStatus() == that.getStatus()
                && Objects.equals(getCreatedDate(), that.getCreatedDate())
                && Objects.equals(getModifiedDate(), that.getModifiedDate())

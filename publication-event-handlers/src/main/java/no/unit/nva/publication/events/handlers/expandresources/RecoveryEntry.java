@@ -39,13 +39,13 @@ public final class RecoveryEntry {
     }
 
     public static RecoveryEntry fromExpandedDataEntry(ExpandedDataEntry expandedDataEntry) {
-        var type = getType(expandedDataEntry);
+        var type = findType(expandedDataEntry);
         return builder().withType(type).build();
     }
 
     public static RecoveryEntry fromDataEntryUpdateEvent(DataEntryUpdateEvent event) {
         var entity = getEntity(event);
-        var type = getType(entity);
+        var type = findType(entity);
         return builder().withType(type).build();
     }
 
@@ -65,7 +65,7 @@ public final class RecoveryEntry {
         return this.copy().withException(getStackTrace(exception)).build();
     }
 
-    private static String getType(ExpandedDataEntry expandedDataEntry) {
+    private static String findType(ExpandedDataEntry expandedDataEntry) {
         return switch (expandedDataEntry) {
             case ExpandedResource resource -> RESOURCE;
             case ExpandedTicket ticket -> TICKET;
@@ -74,7 +74,7 @@ public final class RecoveryEntry {
         };
     }
 
-    private static String getType(Entity entity) {
+    private static String findType(Entity entity) {
         return switch (entity) {
             case Resource resource -> RESOURCE;
             case TicketEntry ticket -> TICKET;

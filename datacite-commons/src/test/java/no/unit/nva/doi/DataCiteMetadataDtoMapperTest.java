@@ -62,7 +62,7 @@ public class DataCiteMetadataDtoMapperTest {
     public static final String PUBLISHER_NAME = "publisher name";
 
     private static final String SAMPLE_DOI = "https://doi.org/10.5194/tc-8-1885-2014";
-    private final Set<String> POSSIBLY_EMPTY_DATACITE_XML_FIELDS = readAllIngnoredAndPossiblyEmptyFields();
+    private static final Set<String> POSSIBLY_EMPTY_DATACITE_XML_FIELDS = readAllIngnoredAndPossiblyEmptyFields();
     public Organization somePublisher;
     private UriRetriever uriRetriever;
 

@@ -109,7 +109,7 @@ public class FileMergerFeatures {
     @And("the merged nva publication has a root level handle equal to {string}")
     public void theMergedNvaPublicationHasARootLevelHandleEqualTo(String handle) {
         var mergedPublication = scenarioContext.getMergedPublication();
-        assertThat(mergedPublication.getHandle().toString(), equalTo(handle) );
+        assertThat(mergedPublication.getHandle().toString(), equalTo(handle));
     }
 
     @And("the merged nva publication has a null handle")

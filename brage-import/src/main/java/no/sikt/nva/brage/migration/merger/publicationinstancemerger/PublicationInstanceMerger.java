@@ -87,7 +87,9 @@ public abstract class PublicationInstanceMerger<T extends PublicationInstance<?>
         return nonNull(oldValue) ? oldValue : newValue;
     }
 
-    public static <T, C extends Collection<T>> C mergeCollections(C oldCollection, C newCollection, Supplier<C> collectionFactory) {
+    public static <T, C extends Collection<T>> C mergeCollections(C oldCollection,
+                                                                  C newCollection,
+                                                                  Supplier<C> collectionFactory) {
         var result = collectionFactory.get();
         if (nonNull(oldCollection)) {
             result.addAll(oldCollection);

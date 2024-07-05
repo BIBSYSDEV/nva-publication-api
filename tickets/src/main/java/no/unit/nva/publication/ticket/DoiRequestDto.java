@@ -52,7 +52,15 @@ public class DoiRequestDto extends TicketDto {
                          @JsonProperty(OWNER_AFFILIATION_FIELD) URI ownerAffiliation,
                          @JsonProperty(FINALIZED_BY_FIELD) Username finalizedBy,
                          @JsonProperty(FINALIZED_DATE_FIELD) Instant finalizedDate) {
-        super(status, messages, viewedBy, assignee, publicationIdentifier, owner, ownerAffiliation, finalizedBy, finalizedDate);
+        super(status,
+              messages,
+              viewedBy,
+              assignee,
+              publicationIdentifier,
+              owner,
+              ownerAffiliation,
+              finalizedBy,
+              finalizedDate);
         this.createdDate = createdDate;
         this.modifiedDate = modifiedDate;
         this.identifier = identifier;
@@ -60,7 +68,19 @@ public class DoiRequestDto extends TicketDto {
     }
 
     public static TicketDto empty() {
-        return new DoiRequestDto(null, null, null, null, null, null, null, null, null, null, null, null, null);
+        return new DoiRequestDto(null,
+                                 null,
+                                 null,
+                                 null,
+                                 null,
+                                 null,
+                                 null,
+                                 null,
+                                 null,
+                                 null,
+                                 null,
+                                 null,
+                                 null);
     }
 
     public Instant getCreatedDate() {
@@ -94,10 +114,9 @@ public class DoiRequestDto extends TicketDto {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof DoiRequestDto)) {
+        if (!(o instanceof DoiRequestDto that)) {
             return false;
         }
-        DoiRequestDto that = (DoiRequestDto) o;
         return getStatus() == that.getStatus()
                && Objects.equals(getCreatedDate(), that.getCreatedDate())
                && Objects.equals(getModifiedDate(), that.getModifiedDate())

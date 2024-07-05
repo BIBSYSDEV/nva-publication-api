@@ -183,6 +183,63 @@ public final class CristinDataGenerator {
         return newCristinObject(largeRandomNumber());
     }
 
+    public static CristinObject randomObject(String secondaryCategory) {
+        CristinSecondaryCategory category = CristinSecondaryCategory.fromString(secondaryCategory);
+        return switch (category) {
+            case MONOGRAPH,
+                 TEXTBOOK,
+                 NON_FICTION_BOOK,
+                 ENCYCLOPEDIA,
+                 POPULAR_BOOK,
+                 REFERENCE_MATERIAL,
+                 ACADEMIC_COMMENTARY -> randomBook(category);
+            case ANTHOLOGY -> randomBookAnthology();
+            case FEATURE_ARTICLE -> randomFeatureArticle();
+            case JOURNAL_LETTER,
+                 READER_OPINION -> randomJournalLetter(category);
+            case JOURNAL_REVIEW -> randomJournalReview();
+            case JOURNAL_LEADER -> randomJournalLeader();
+            case JOURNAL_CORRIGENDUM -> randomJournalCorrigendum();
+            case JOURNAL_ARTICLE,
+                 ARTICLE,
+                 POPULAR_ARTICLE,
+                 ACADEMIC_REVIEW,
+                 SHORT_COMMUNICATION,
+                 ABSTRACT -> randomJournalArticle(category);
+            case RESEARCH_REPORT -> randomResearchReport();
+            case DEGREE_PHD, MAGISTER_THESIS -> randomDegreePhd(category);
+            case DEGREE_LICENTIATE -> randomDegreeLicentiate();
+            case DEGREE_MASTER,
+                 SECOND_DEGREE_THESIS,
+                 MEDICAL_THESIS -> randomDegreeMaster(category);
+            case CHAPTER_ACADEMIC,
+                 CHAPTER,
+                 POPULAR_CHAPTER_ARTICLE,
+                 FOREWORD,
+                 INTRODUCTION,
+                 LEXICAL_IMPORT -> randomChapterArticle(category);
+            case EXHIBITION_CATALOG -> randomExhibitCatalogue();
+            case CONFERENCE_LECTURE,
+                 CONFERENCE_POSTER,
+                 POPULAR_SCIENTIFIC_LECTURE,
+                 LECTURE,
+                 OTHER_PRESENTATION,
+                 INTERNET_EXHIBIT -> randomEvent(category);
+            case INTERVIEW, PROGRAM_MANAGEMENT -> randomMedia(category);
+            case PROGRAM_PARTICIPATION -> randomTvOrMedia(category);
+            case WRITTEN_INTERVIEW -> randomWrittenInterview();
+            case MUSICAL_PERFORMANCE,
+                 FILM_PRODUCTION,
+                 THEATRICAL_PRODUCTION,
+                 MUSICAL_PIECE -> randomArtisticProduction(category);
+            case VISUAL_ARTS,
+                 ARCHITECT_DESIGN -> randomCristinProductWithSecondaryCategory(category);
+            case MUSEUM -> randomCristinMuseum();
+            default -> throw new IllegalStateException(String.format("The secondary category %s is not covered",
+                                                                     secondaryCategory));
+        };
+    }
+
     public static CristinObject randomObjectWithReportedYear(int year) {
         var cristinObject = newCristinObject(largeRandomNumber());
         cristinObject.setYearReported(year);
@@ -207,63 +264,6 @@ public final class CristinDataGenerator {
                    .withInstitutionIdentifier(randomString())
                    .withSubDepartmentIdentifier(randomString())
                    .build();
-    }
-
-    public static CristinObject randomObject(String secondaryCategory) {
-        CristinSecondaryCategory category = CristinSecondaryCategory.fromString(secondaryCategory);
-        return switch (category) {
-            case MONOGRAPH,
-                     TEXTBOOK,
-                     NON_FICTION_BOOK,
-                     ENCYCLOPEDIA,
-                     POPULAR_BOOK,
-                     REFERENCE_MATERIAL,
-                     ACADEMIC_COMMENTARY -> randomBook(category);
-            case ANTHOLOGY -> randomBookAnthology();
-            case FEATURE_ARTICLE -> randomFeatureArticle();
-            case JOURNAL_LETTER,
-                     READER_OPINION -> randomJournalLetter(category);
-            case JOURNAL_REVIEW -> randomJournalReview();
-            case JOURNAL_LEADER -> randomJournalLeader();
-            case JOURNAL_CORRIGENDUM -> randomJournalCorrigendum();
-            case JOURNAL_ARTICLE,
-                 ARTICLE,
-                 POPULAR_ARTICLE,
-                 ACADEMIC_REVIEW,
-                 SHORT_COMMUNICATION,
-                 ABSTRACT -> randomJournalArticle(category);
-            case RESEARCH_REPORT -> randomResearchReport();
-            case DEGREE_PHD, MAGISTER_THESIS -> randomDegreePhd(category);
-            case DEGREE_LICENTIATE -> randomDegreeLicentiate();
-            case DEGREE_MASTER,
-                     SECOND_DEGREE_THESIS,
-                     MEDICAL_THESIS -> randomDegreeMaster(category);
-            case CHAPTER_ACADEMIC,
-                     CHAPTER,
-                     POPULAR_CHAPTER_ARTICLE,
-                     FOREWORD,
-                     INTRODUCTION,
-                     LEXICAL_IMPORT -> randomChapterArticle(category);
-            case EXHIBITION_CATALOG -> randomExhibitCatalogue();
-            case CONFERENCE_LECTURE,
-                     CONFERENCE_POSTER,
-                     POPULAR_SCIENTIFIC_LECTURE,
-                     LECTURE,
-                     OTHER_PRESENTATION,
-                     INTERNET_EXHIBIT -> randomEvent(category);
-            case INTERVIEW, PROGRAM_MANAGEMENT -> randomMedia(category);
-            case PROGRAM_PARTICIPATION -> randomTvOrMedia(category);
-            case WRITTEN_INTERVIEW -> randomWrittenInterview();
-            case MUSICAL_PERFORMANCE,
-                     FILM_PRODUCTION,
-                     THEATRICAL_PRODUCTION,
-                     MUSICAL_PIECE -> randomArtisticProduction(category);
-            case VISUAL_ARTS,
-                     ARCHITECT_DESIGN -> randomCristinProductWithSecondaryCategory(category);
-            case MUSEUM -> randomCristinMuseum();
-            default -> throw new IllegalStateException(String.format("The secondary category %s is not covered",
-                                                                     secondaryCategory));
-        };
     }
 
     public static CristinObject randomBookAnthology() {

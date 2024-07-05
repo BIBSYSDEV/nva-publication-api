@@ -26,7 +26,7 @@ import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.JacocoGenerated;
 
 /**
- * Finds out which RRS a given file should have when a new RRS is set
+ * Finds out which RRS a given file should have when a new RRS is set.
  */
 public class RightsRetentionsValueFinder {
 
@@ -97,7 +97,7 @@ public class RightsRetentionsValueFinder {
 
     private boolean isAllowedToOverrideRrs(RightsRetentionStrategy rrs,
                                            PublicationPermissionStrategy permissionStrategy) {
-        if (nonNull(permissionStrategy) && rrs instanceof OverriddenRightsRetentionStrategy){
+        if (nonNull(permissionStrategy) && rrs instanceof OverriddenRightsRetentionStrategy) {
             return permissionStrategy.isCuratorOnPublication();
         }
         return false;

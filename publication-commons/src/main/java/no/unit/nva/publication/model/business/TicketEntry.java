@@ -313,9 +313,10 @@ public abstract class TicketEntry implements Entity {
         }
     }
 
-    private static <T extends TicketEntry> TicketEntry createNewTicketEntry(Publication publication,
-                                                                            Class<T> ticketType,
-                                                                            Supplier<SortableIdentifier> identifierProvider) {
+    private static <T extends TicketEntry> TicketEntry createNewTicketEntry(
+        Publication publication,
+        Class<T> ticketType,
+        Supplier<SortableIdentifier> identifierProvider) {
 
         if (DoiRequest.class.equals(ticketType)) {
             return createNewDoiRequest(publication, identifierProvider);

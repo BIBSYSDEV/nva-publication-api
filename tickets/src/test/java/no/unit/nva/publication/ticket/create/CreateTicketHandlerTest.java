@@ -45,7 +45,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -272,8 +271,8 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
 
-        var createdTicket = fetchTicket(response).copy();
-        var secondRequest = createHttpTicketCreationRequest(requestBody, publication, owner);
+        final var createdTicket = fetchTicket(response).copy();
+        final var secondRequest = createHttpTicketCreationRequest(requestBody, publication, owner);
         output = new ByteArrayOutputStream();
         ticketResolver = new TicketResolver(resourceService, ticketService,
                                             getUriRetriever(getHttpClientWithUnresolvableClient(),
@@ -718,6 +717,12 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                                                              ticketType).orElseThrow();
     }
 
+    private TicketEntry fetchTicket(GatewayResponse<Void> response) throws NotFoundException {
+        var ticketIdentifier = new SortableIdentifier(UriWrapper.fromUri(response.getHeaders().get(LOCATION_HEADER))
+                                                          .getLastPathElement());
+        return ticketService.fetchTicketByIdentifier(ticketIdentifier);
+    }
+
     private static Username getResourceOwner(Publication publication) {
         return publication.getResourceOwner().getOwner();
     }
@@ -726,7 +731,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         return publishedPublication.getAssociatedArtifacts()
                    .stream()
                    .filter(artifact -> artifact instanceof File)
-                   .collect(Collectors.toList());
+                   .toList();
     }
 
     private static FakeHttpClient<String> getHttpClientWithUnresolvableClient() {
@@ -736,7 +741,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
 
     private static FakeHttpClient<String> getHttpClientWithPublisherAllowingPublishing() {
         return new FakeHttpClient<>(FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY, HTTP_OK),
-                                    mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsApproval());
+                                    mockIdentityServiceResponseForPublisherAllowingAutomaticPublishing());
     }
 
     private static FakeHttpClient<String> getHttpClientWithCustomerAllowingPublishingMetadataOnly() {
@@ -755,11 +760,11 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     }
 
     private static FakeHttpResponse<String> mockIdentityServiceResponseForNonResolvedPublishingWorkflow() {
-        return FakeHttpResponse.create(IoUtils.stringFromResources(Path.of("unrecognizable_publishing_workflow.json")),
-                                       HTTP_OK);
+        var path = Path.of("unrecognizable_publishing_workflow.json");
+        return FakeHttpResponse.create(IoUtils.stringFromResources(path), HTTP_OK);
     }
 
-    private static FakeHttpResponse<String> mockIdentityServiceResponseForPublisherAllowingAutomaticPublishingRequestsApproval() {
+    private static FakeHttpResponse<String> mockIdentityServiceResponseForPublisherAllowingAutomaticPublishing() {
         return FakeHttpResponse.create(IoUtils.stringFromResources(Path.of("customer_allowing_publishing.json")),
                                        HTTP_OK);
     }
@@ -819,12 +824,6 @@ class CreateTicketHandlerTest extends TicketTestLocal {
 
     private TicketStatus getTicketStatusForPublication(Publication publication) {
         return getPublishingRequestCase(publication).getStatus();
-    }
-
-    private TicketEntry fetchTicket(GatewayResponse<Void> response) throws NotFoundException {
-        var ticketIdentifier = new SortableIdentifier(UriWrapper.fromUri(response.getHeaders().get(LOCATION_HEADER))
-                                                          .getLastPathElement());
-        return ticketService.fetchTicketByIdentifier(ticketIdentifier);
     }
 
     private void assertThatLocationHeaderPointsToCreatedTicket(URI ticketUri)
@@ -898,7 +897,10 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                                                                                URI customerId,
                                                                                AccessRight accessRight)
         throws JsonProcessingException {
-        return createHttpTicketCreationRequestWithApprovedAccessRight(ticketDto, publication, randomString(), customerId,
+        return createHttpTicketCreationRequestWithApprovedAccessRight(ticketDto,
+                                                                      publication,
+                                                                      randomString(),
+                                                                      customerId,
                                                                       accessRight);
     }
 

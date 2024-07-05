@@ -246,7 +246,7 @@ public class DataEntryUpdateHandlerTest {
         public PutObjectResponse putObject(PutObjectRequest putObjectRequest, RequestBody requestBody) {
             if (invocation != currentInvocation) {
                 currentInvocation++;
-             return super.putObject(putObjectRequest, requestBody);
+                return super.putObject(putObjectRequest, requestBody);
             } else {
                 throw new RuntimeException();
             }

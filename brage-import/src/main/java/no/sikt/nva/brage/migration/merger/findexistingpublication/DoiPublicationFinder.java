@@ -39,11 +39,15 @@ public class DoiPublicationFinder implements FindExistingPublicationService {
         return nonNull(publication.getEntityDescription().getReference().getDoi());
     }
 
-    private Optional<PublicationForUpdate> existingPublicationHasSameDoi(PublicationRepresentation publicationRepresentation ) {
+    private Optional<PublicationForUpdate> existingPublicationHasSameDoi(
+        PublicationRepresentation publicationRepresentation) {
         var doi = publicationRepresentation.publication().getEntityDescription().getReference().getDoi();
 
         var publicationsByDoi = searchApiFinder.fetchPublicationsByParam(DOI, doi.toString()).stream()
-                                    .filter(item -> PublicationComparator.publicationsMatch(item, publicationRepresentation.publication()))
+                                    .filter(item ->
+                                                PublicationComparator.publicationsMatch(item,
+                                                                                        publicationRepresentation
+                                                                                            .publication()))
                                     .toList();
         if (publicationsByDoi.isEmpty()) {
             return Optional.empty();
@@ -54,8 +58,10 @@ public class DoiPublicationFinder implements FindExistingPublicationService {
     }
 
     private void reportMultipleDuplicatesIfNecessary(List<Publication> publicationsByDoi, Record record) {
-        if (FindExistingPublicationService.moreThanOneDuplicateFound(publicationsByDoi)){
-            duplicatePublicationReporter.reportDuplicatePublications(publicationsByDoi, record, DuplicateDetectionCause.DOI_DUPLICATES);
+        if (FindExistingPublicationService.moreThanOneDuplicateFound(publicationsByDoi)) {
+            duplicatePublicationReporter.reportDuplicatePublications(publicationsByDoi,
+                                                                     record,
+                                                                     DuplicateDetectionCause.DOI_DUPLICATES);
         }
     }
 }

@@ -329,7 +329,8 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
     @ParameterizedTest(name = "should allow creating protected degree instance type {0} when done by external client")
     @MethodSource("protectedDegreeInstanceTypeClassesProvider")
-    void shouldPersistDegreePublicationWhenUserIsExternalClient(Class<?> protectedDegreeInstanceClass) throws IOException {
+    void shouldPersistDegreePublicationWhenUserIsExternalClient(Class<?> protectedDegreeInstanceClass)
+        throws IOException {
         var thesisPublication = samplePublication.copy()
                                     .withEntityDescription(publishableEntityDescription(protectedDegreeInstanceClass))
                                     .build();
@@ -385,7 +386,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldReturnBadGatewayIfCustomerApiDoesNotRespondWithSuccessOk() throws IOException {
-        var event = prepareRequestWithFileForTypeWhereNotAllowed();
+        final var event = prepareRequestWithFileForTypeWhereNotAllowed();
 
         WireMock.reset();
 
@@ -401,9 +402,8 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"", "[]", "{\"allowFileUploadForTypes\": {}}"})
-    void shouldReturnBadRequestIfMalformedConfigReceivedFromCustomerApi(String customerResponse)
-        throws IOException {
-        var event = prepareRequestWithFileForTypeWhereNotAllowed();
+    void shouldReturnBadRequestIfMalformedConfigReceivedFromCustomerApi(String customerResponse) throws IOException {
+        final var event = prepareRequestWithFileForTypeWhereNotAllowed();
         WireMock.reset();
 
         stubSuccessfulTokenResponse();
@@ -419,9 +419,8 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnBadRequestIfProvidingOneOrMoreFilesWhenNotAllowedInCustomerConfiguration()
-        throws IOException {
-        var event = prepareRequestWithFileForTypeWhereNotAllowed();
+    void shouldReturnBadRequestIfProvidingOneOrMoreFilesWhenNotAllowedInCustomerConfiguration() throws IOException {
+        final var event = prepareRequestWithFileForTypeWhereNotAllowed();
         WireMock.reset();
 
         stubSuccessfulTokenResponse();
@@ -474,8 +473,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnFileWithOverridenByRRSIfConfiguredOnCustomerAndSetOnFile()
-        throws IOException {
+    void shouldReturnFileWithOverriddenByRrsIfConfiguredOnCustomerAndSetOnFile() throws IOException {
 
         WireMock.reset();
         stubSuccessfulTokenResponse();
@@ -576,9 +574,8 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
             """;
     }
 
-    private static void
-    updateCreatePublicationRequestWithInvalidAssociatedArtifact(ObjectNode publicationRequestJsonObject)
-        throws JsonProcessingException {
+    private static void updateCreatePublicationRequestWithInvalidAssociatedArtifact(
+        ObjectNode publicationRequestJsonObject) throws JsonProcessingException {
         var associatedArtifacts = (ArrayNode) publicationRequestJsonObject.get(ASSOCIATED_ARTIFACTS_FIELD);
         associatedArtifacts.add(createNullAssociatedArtifact());
     }

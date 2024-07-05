@@ -5,7 +5,7 @@ import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.ResearchData;
 import nva.commons.core.JacocoGenerated;
 
-public class ResearchDataMerger extends PublicationContextMerger{
+public class ResearchDataMerger extends PublicationContextMerger {
 
     @JacocoGenerated
     public ResearchDataMerger(Record record) {

@@ -160,8 +160,8 @@ class UpdateDoiStatusHandlerTest {
     void handlerLogsExceptionWhenUnknownErrorFetchingPublication() throws NotFoundException, IOException {
         final TestAppender testAppender = LogUtils.getTestingAppender(EventHandler.class);
         var unknownExceptionMessage = "Unknown exception: ";
-        when(resourceService.getPublicationByIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)).thenThrow(new RuntimeException(
-            unknownExceptionMessage));
+        when(resourceService.getPublicationByIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES))
+            .thenThrow(new RuntimeException(unknownExceptionMessage));
 
         try (var eventInputStream = IoUtils.inputStreamFromResources(OK_EVENT)) {
             var actualException = assertThrows(RuntimeException.class,

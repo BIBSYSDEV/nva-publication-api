@@ -92,7 +92,8 @@ public class UpdatePublicationHandler
     private static final String ENV_KEY_BACKEND_CLIENT_SECRET_NAME = "BACKEND_CLIENT_SECRET_NAME";
     private static final String ENV_KEY_BACKEND_CLIENT_AUTH_URL = "BACKEND_CLIENT_AUTH_URL";
     public static final String UNPUBLISH_REQUEST_REQUIRES_A_COMMENT = "Unpublish request requires a comment";
-    public static final String DUPLICATE_OF_MUST_BE_A_PUBLICATION_API_URI = "The duplicateOf field must be a valid publication API URI";
+    public static final String DUPLICATE_OF_MUST_BE_A_PUBLICATION_API_URI =
+        "The duplicateOf field must be a valid publication API URI";
     private final TicketService ticketService;
     private final ResourceService resourceService;
     private final IdentityServiceClient identityServiceClient;
@@ -174,8 +175,11 @@ public class UpdatePublicationHandler
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         var permissionStrategy = PublicationPermissionStrategy.create(existingPublication, userInstance);
         Publication updatedPublication = switch (input) {
-            case UpdatePublicationRequest publicationMetadata ->
-                updateMetadata(publicationMetadata, identifierInPath, existingPublication, permissionStrategy, userInstance);
+            case UpdatePublicationRequest publicationMetadata -> updateMetadata(publicationMetadata,
+                                                                                identifierInPath,
+                                                                                existingPublication,
+                                                                                permissionStrategy,
+                                                                                userInstance);
 
             case UnpublishPublicationRequest unpublishPublicationRequest ->
                 unpublishPublication(unpublishPublicationRequest,
@@ -257,22 +261,18 @@ public class UpdatePublicationHandler
     private void updateNvaDoi(Publication publication) {
         if (nonNull(publication.getDoi())) {
             logger.info("Publication {} has NVA-DOI, sending event to EventBridge", publication.getIdentifier());
+            var putEventsRequest = PutEventsRequest.builder()
+                                       .entries(PutEventsRequestEntry.builder()
+                                                    .eventBusName(nvaEventBusName)
+                                                    .source(NVA_PUBLICATION_DELETE_SOURCE)
+                                                    .detailType(LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS)
+                                                    .detail(new LambdaDestinationInvocationDetail<>(
+                                                        DoiMetadataUpdateEvent.createUpdateDoiEvent(publication))
+                                                                .toJsonString())
+                                                    .resources(publication.getIdentifier().toString()).build())
+                                       .build();
             var ebResult =
-                eventBridgeClient.putEvents(PutEventsRequest.builder().entries(PutEventsRequestEntry.builder()
-                                                                                   .eventBusName(nvaEventBusName)
-                                                                                   .source(
-                                                                                       NVA_PUBLICATION_DELETE_SOURCE)
-                                                                                   .detailType(
-                                                                                       LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS)
-                                                                                   .detail(
-                                                                                       new LambdaDestinationInvocationDetail<>(
-                                                                                           DoiMetadataUpdateEvent.createUpdateDoiEvent(
-                                                                                               publication)
-                                                                                       ).toJsonString())
-                                                                                   .resources(
-                                                                                       publication.getIdentifier()
-                                                                                           .toString())
-                                                                                   .build()).build());
+                eventBridgeClient.putEvents(putEventsRequest);
 
             logger.info("failedEntryCount={}", ebResult.failedEntryCount());
         } else {
@@ -355,8 +355,10 @@ public class UpdatePublicationHandler
     private static File updateFileWithUploadDetails(File file, UploadDetails uploadDetails) throws BadRequestException {
         return switch (file) {
             case PublishedFile publishedFile -> addUploadDetails(publishedFile, uploadDetails).buildPublishedFile();
-            case UnpublishedFile unpublishedFile -> addUploadDetails(unpublishedFile, uploadDetails).buildUnpublishedFile();
-            case AdministrativeAgreement unpublishableFile -> addUploadDetails(unpublishableFile, uploadDetails).buildUnpublishableFile();
+            case UnpublishedFile unpublishedFile -> addUploadDetails(unpublishedFile, uploadDetails)
+                                                        .buildUnpublishedFile();
+            case AdministrativeAgreement unpublishableFile -> addUploadDetails(unpublishableFile, uploadDetails)
+                                                                  .buildUnpublishableFile();
             default -> throw new BadRequestException("Unsupported file type: " + file);
         };
     }
@@ -367,7 +369,8 @@ public class UpdatePublicationHandler
 
     private void validateRemovalOfPublishedFiles(Publication existingPublication,
                                                  UpdatePublicationRequest input,
-                                                 PublicationPermissionStrategy permissionStrategy) throws ForbiddenException {
+                                                 PublicationPermissionStrategy permissionStrategy)
+        throws ForbiddenException {
         var inputFiles = input.getAssociatedArtifacts().stream()
                              .filter(PublishedFile.class::isInstance)
                              .map(PublishedFile.class::cast).toList();
@@ -459,7 +462,8 @@ public class UpdatePublicationHandler
     private void autoCompletePendingPublishingRequestsIfNeeded(Publication publication, UserInstance userInstance) {
         fetchPendingPublishingRequest(publication)
             .map(PublishingRequestCase.class::cast)
-            .forEach(ticket -> ticket.complete(publication, new Username(userInstance.getUsername())).persistUpdate(ticketService));
+            .forEach(ticket -> ticket.complete(publication, new Username(userInstance.getUsername()))
+                                   .persistUpdate(ticketService));
     }
 
     private Stream<PublishingRequestCase> fetchPendingPublishingRequest(Publication publication) {
@@ -538,10 +542,13 @@ public class UpdatePublicationHandler
         }
     }
 
-    private void persistPendingPublishingRequest(Publication publicationUpdate, Customer customer, UserInstance userInstance) {
+    private void persistPendingPublishingRequest(Publication publicationUpdate,
+                                                 Customer customer,
+                                                 UserInstance userInstance) {
         attempt(() -> TicketEntry.requestNewTicket(publicationUpdate, PublishingRequestCase.class))
             .map(publishingRequest -> injectPublishingWorkflow((PublishingRequestCase) publishingRequest, customer))
-            .map(publishingRequest -> persistPublishingRequest(publicationUpdate, userInstance, customer, publishingRequest));
+            .map(publishingRequest ->
+                     persistPublishingRequest(publicationUpdate, userInstance, customer, publishingRequest));
     }
 
     private TicketEntry persistPublishingRequest(Publication publicationUpdate, UserInstance userInstance,

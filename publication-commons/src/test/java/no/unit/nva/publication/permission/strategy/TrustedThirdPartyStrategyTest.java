@@ -33,7 +33,8 @@ class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         var publication =
             createNonDegreePublication(randomString(), EXTERNAL_CLIENT_CUSTOMER_URI).copy()
-                .withResourceOwner(new ResourceOwner(new Username(userInstance.getUsername()), userInstance.getTopLevelOrgCristinId()))
+                .withResourceOwner(new ResourceOwner(new Username(userInstance.getUsername()),
+                                                     userInstance.getTopLevelOrgCristinId()))
                 .withStatus(PublicationOperation.UNPUBLISH == operation ? PUBLISHED : UNPUBLISHED)
                 .build();
 

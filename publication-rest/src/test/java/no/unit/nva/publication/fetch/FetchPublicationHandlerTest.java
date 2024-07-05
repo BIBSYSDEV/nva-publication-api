@@ -299,7 +299,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
                                               context);
         var gatewayResponse = parseFailureResponse();
         var expectedTombstone =
-            PublicationResponseElevatedUser.fromPublication(publication.copy().withAssociatedArtifacts(List.of()).build());
+            PublicationResponseElevatedUser.fromPublication(publication.copy()
+                                                                .withAssociatedArtifacts(List.of()).build());
         var problem = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(), Problem.class);
         var actualPublication = JsonUtils.dtoObjectMapper.convertValue(problem.getParameters().get(RESOURCE),
                                                                        PublicationResponseElevatedUser.class);
@@ -313,7 +314,9 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString()), output,
                                               context);
         var gatewayResponse = parseFailureResponse();
-        var expectedTombstone = PublicationResponseElevatedUser.fromPublication(publication.copy().withAssociatedArtifacts(List.of()).build());
+        var expectedTombstone =
+            PublicationResponseElevatedUser.fromPublication(publication.copy()
+                                                                .withAssociatedArtifacts(List.of()).build());
 
         var problem = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(), Problem.class);
         var actualPublication = JsonUtils.dtoObjectMapper.convertValue(problem.getParameters().get(RESOURCE),
@@ -358,7 +361,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
                                               output,
                                               context);
         var expectedTombstone =
-            PublicationResponseElevatedUser.fromPublication(publication.copy().withAssociatedArtifacts(List.of()).build());
+            PublicationResponseElevatedUser.fromPublication(publication.copy()
+                                                                .withAssociatedArtifacts(List.of()).build());
         var gatewayResponse = parseFailureResponse();
         var problem = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(), Problem.class);
         var actualPublication = JsonUtils.dtoObjectMapper.convertValue(problem.getParameters().get(RESOURCE),
@@ -491,19 +495,19 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         return publicationService.getPublicationByIdentifier(publicationIdentifier);
     }
 
-    private Publication createDraftForDeletion() throws ApiGatewayException {
-        var publication = PublicationGenerator.randomPublication();
-        var userInstance = UserInstance.fromPublication(publication);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(publicationService, userInstance);
-        return publicationService.markPublicationForDeletion(userInstance, persistedPublication.getIdentifier());
-    }
-
     private Publication createPublication(Class<? extends PublicationInstance<?>> instance) throws ApiGatewayException {
         Publication publication = PublicationGenerator.randomPublication(instance);
         UserInstance userInstance = UserInstance.fromPublication(publication);
         SortableIdentifier publicationIdentifier =
             Resource.fromPublication(publication).persistNew(publicationService, userInstance).getIdentifier();
         return publicationService.getPublicationByIdentifier(publicationIdentifier);
+    }
+
+    private Publication createDraftForDeletion() throws ApiGatewayException {
+        var publication = PublicationGenerator.randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var persistedPublication = Resource.fromPublication(publication).persistNew(publicationService, userInstance);
+        return publicationService.markPublicationForDeletion(userInstance, persistedPublication.getIdentifier());
     }
 
     private void createCustomerMock(Organization organization) {

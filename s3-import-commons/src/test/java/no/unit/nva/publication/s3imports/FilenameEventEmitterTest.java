@@ -142,7 +142,8 @@ class FilenameEventEmitterTest {
 
     @ParameterizedTest(
         name = "should emit suptopic from importRequest when valid subtopics are supplied")
-    @ValueSource(strings = {"PublicationService.CristinData.DataEntry", "PublicationService.CristinData.PatchEntry", "PublicationService.BrageData.PatchEntry"})
+    @ValueSource(strings = {"PublicationService.CristinData.DataEntry", "PublicationService.CristinData.PatchEntry",
+        "PublicationService.BrageData.PatchEntry"})
     void shouldEmitSubtopicFromImportRequestIfSupported(String subtopic) {
         var importRequest = new EventReference(FILENAME_EMISSION_EVENT_TOPIC,
                                                subtopic,

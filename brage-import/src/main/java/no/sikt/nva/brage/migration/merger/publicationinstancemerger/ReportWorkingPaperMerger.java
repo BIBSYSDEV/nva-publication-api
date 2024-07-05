@@ -11,8 +11,8 @@ public final class ReportWorkingPaperMerger extends PublicationInstanceMerger<Re
 
     @Override
     public ReportWorkingPaper merge(PublicationInstance<?> publicationInstance) {
-        if (publicationInstance instanceof ReportWorkingPaper newReportWorkingPaper) {
-            return new ReportWorkingPaper(getPages(this.publicationInstance.getPages(), newReportWorkingPaper.getPages()));
+        if (publicationInstance instanceof ReportWorkingPaper ReportWorkingPaper) {
+            return new ReportWorkingPaper(getPages(this.publicationInstance.getPages(), ReportWorkingPaper.getPages()));
         } else {
             return this.publicationInstance;
         }

@@ -81,7 +81,9 @@ class DynamodbStreamToEventBridgeHandlerTest {
     @Test
     void shouldThrowExceptionWhenStoringAnyEventRecordInS3Fails() {
         var event = randomEventWithMultipleDynamoRecords();
-        handler = new DynamodbStreamToEventBridgeHandler(createFailingS3Client(), eventBridgeClient, DYNAMODB_UPDATE_EVENT_TOPIC);
+        handler = new DynamodbStreamToEventBridgeHandler(createFailingS3Client(),
+                                                         eventBridgeClient,
+                                                         DYNAMODB_UPDATE_EVENT_TOPIC);
         Executable action = () -> handler.handleRequest(event, context);
         var exception = assertThrows(RuntimeException.class, action);
         assertThat(exception.getMessage(), containsString(EXPECTED_EXCEPTION_MESSAGE));

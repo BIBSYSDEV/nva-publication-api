@@ -68,7 +68,9 @@ public class ReferenceBuilder extends CristinMappingModule {
 
     private final DoiConverter doiConverter;
 
-    public ReferenceBuilder(CristinObject cristinObject, ChannelRegistryMapper channelRegistryMapper, S3Client s3Client) {
+    public ReferenceBuilder(CristinObject cristinObject,
+                            ChannelRegistryMapper channelRegistryMapper,
+                            S3Client s3Client) {
         super(cristinObject, channelRegistryMapper, s3Client);
         doiConverter = new DoiConverter(DoiValidator::validateOffline);
 
@@ -94,7 +96,8 @@ public class ReferenceBuilder extends CristinMappingModule {
             return new NvaBookBuilder(cristinObject, channelRegistryMapper, s3Client).buildBookForPublicationContext();
         }
         if (isJournal(cristinObject)) {
-            return new PeriodicalBuilder(cristinObject, channelRegistryMapper, s3Client).buildPeriodicalForPublicationContext();
+            return new PeriodicalBuilder(cristinObject, channelRegistryMapper, s3Client)
+                       .buildPeriodicalForPublicationContext();
         }
         if (isMediaFeatureArticle(cristinObject)) {
             return new MediaPeriodicalBuilder(cristinObject,

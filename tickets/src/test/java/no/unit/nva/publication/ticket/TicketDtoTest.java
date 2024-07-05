@@ -56,7 +56,8 @@ class TicketDtoTest extends TicketTestLocal {
         PublishingRequestCase.class,
         UnpublishRequest.class
     })
-    void shouldSerializeAllFieldsWhenConvertingToTicketDto(Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
+    void shouldSerializeAllFieldsWhenConvertingToTicketDto(Class<? extends TicketEntry> ticketType)
+        throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
         var ticket = TicketTestUtils.createCompletedTicket(publication, ticketType, ticketService);
         ticket.setOwnerAffiliation(randomUri());

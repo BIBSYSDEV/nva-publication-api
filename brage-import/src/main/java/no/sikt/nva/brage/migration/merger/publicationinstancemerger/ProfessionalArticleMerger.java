@@ -11,11 +11,15 @@ public final class ProfessionalArticleMerger extends PublicationInstanceMerger<P
 
     @Override
     public ProfessionalArticle merge(PublicationInstance<?> publicationInstance) {
-        if (publicationInstance instanceof ProfessionalArticle newProfessionalArticle) {
-            return new ProfessionalArticle(getRange(this.publicationInstance.getPages(), newProfessionalArticle.getPages()),
-                                           getNonNullValue(this.publicationInstance.getVolume(), newProfessionalArticle.getVolume()),
-                                           getNonNullValue(this.publicationInstance.getIssue(), newProfessionalArticle.getIssue()),
-                                           getNonNullValue(this.publicationInstance.getArticleNumber(), newProfessionalArticle.getArticleNumber()));
+        if (publicationInstance instanceof ProfessionalArticle professionalArticle) {
+            return new ProfessionalArticle(getRange(this.publicationInstance.getPages(),
+                                                    professionalArticle.getPages()),
+                                           getNonNullValue(this.publicationInstance.getVolume(),
+                                                           professionalArticle.getVolume()),
+                                           getNonNullValue(this.publicationInstance.getIssue(),
+                                                           professionalArticle.getIssue()),
+                                           getNonNullValue(this.publicationInstance.getArticleNumber(),
+                                                           professionalArticle.getArticleNumber()));
         } else {
             return this.publicationInstance;
         }

@@ -327,7 +327,7 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         var child =
             createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(randomString(), Textbook.class);
         var partOfCristinId = randomString();
-        var parent =
+        final var parent =
             createPersistedPublicationWithStatusPublishedWithSpecifiedCristinId(partOfCristinId, DegreePhd.class);
         var partOfEventReference = createPartOfEventReference(child.getIdentifier().toString(),
                                                               partOfCristinId);

@@ -10,7 +10,13 @@ import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
-import no.unit.nva.publication.model.business.*;
+import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingWorkflow;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -110,8 +116,8 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     @ParameterizedTest
     @EnumSource(value = PublishingWorkflow.class,
         names = {"REGISTRATOR_PUBLISHES_METADATA_ONLY",
-        "REGISTRATOR_PUBLISHES_METADATA_AND_FILES",
-        "REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES"},
+            "REGISTRATOR_PUBLISHES_METADATA_AND_FILES",
+            "REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES"},
         mode = Mode.INCLUDE)
     void shouldPublishFilesWhenPublishingRequestIsApproved(PublishingWorkflow value) throws ApiGatewayException,
                                                                                          IOException {
@@ -128,7 +134,8 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldNotPublishAdministrativeAgreementWhenPublishingRequestIsApproved() throws ApiGatewayException, IOException {
+    void shouldNotPublishAdministrativeAgreementWhenPublishingRequestIsApproved()
+        throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithAdministrativeAgreement(resourceService);
         var pendingPublishingRequest = pendingPublishingRequest(publication);
         pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
@@ -137,7 +144,8 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(event, outputStream, CONTEXT);
         var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
 
-        assertThat(updatedPublication.getAssociatedArtifacts().getFirst(), is(instanceOf(AdministrativeAgreement.class)));
+        assertThat(updatedPublication.getAssociatedArtifacts().getFirst(),
+                   is(instanceOf(AdministrativeAgreement.class)));
         assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
     }
 
@@ -162,7 +170,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     void shouldNotCreateNewDoiRequestTicketWhenTicketAlreadyExists()
         throws NotFoundException, IOException, BadRequestException {
         var publication = createDraftPublicationWithDoi();
-        var existingTicket = createDoiRequestTicket(publication);
+        final var existingTicket = createDoiRequestTicket(publication);
         var pendingPublishingRequest = pendingPublishingRequest(publication);
         pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
         var approvedPublishingRequest = pendingPublishingRequest.complete(publication, USERNAME);
@@ -257,7 +265,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     private Publication createPublication() throws BadRequestException {
         var publication = randomPublication();
         return Resource.fromPublication(publication).persistNew(resourceService,
-            UserInstance.fromPublication(publication));
+                                                                UserInstance.fromPublication(publication));
     }
     
     private PublishingRequestCase pendingPublishingRequest(Publication publication) {

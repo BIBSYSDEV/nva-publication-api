@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Organization.Builder;
@@ -116,22 +117,16 @@ public final class TicketTestUtils {
         publication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
         publication.getEntityDescription().getContributors().forEach(contributor ->
                                                                          contributor.getAffiliations()
-                                                                             .forEach(
-                                                                                 affiliation -> ((Organization) affiliation).setId(
-                                                                                     URI.create(
-                                                                                         "https://api.dev.nva.aws"
-                                                                                         + ".unit.no/cristin"
-                                                                                         + "/organization/20754.6.0"
-                                                                                         + ".0")))
+                                                                             .forEach(TicketTestUtils::setAffiliation)
         );
         publication.setCuratingInstitutions(
             Set.of(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0")));
         return persistPublication(resourceService, publication);
     }
 
-    public static Publication createPersistedPublishedPublicationWithUnpublishedFilesAndContributor(URI userCristinId,
-                                                                                                    ResourceService resourceService)
-        throws ApiGatewayException {
+    public static Publication createPersistedPublishedPublicationWithUnpublishedFilesAndContributor(
+        URI userCristinId,
+        ResourceService resourceService) throws ApiGatewayException {
         var publication = randomPublication().copy()
                               .withEntityDescription(randomEntityDescription(JournalArticle.class))
                               .withStatus(PUBLISHED)
@@ -146,9 +141,9 @@ public final class TicketTestUtils {
         return persistPublication(resourceService, publicationWithContributor);
     }
 
-    public static Publication createPersistedPublishedPublicationWithUnpublishedFilesAndOwner(String owner,
-                                                                                              ResourceService resourceService)
-        throws ApiGatewayException {
+    public static Publication createPersistedPublishedPublicationWithUnpublishedFilesAndOwner(
+        String owner,
+        ResourceService resourceService) throws ApiGatewayException {
         var publication = randomPublication().copy()
                               .withEntityDescription(randomEntityDescription(JournalArticle.class))
                               .withStatus(PUBLISHED)
@@ -202,6 +197,14 @@ public final class TicketTestUtils {
         return persistPublication(resourceService, publication);
     }
 
+    public static Publication createPersistedPublicationWithUnpublishedFiles(URI publisher,
+                                                                             PublicationStatus status,
+                                                                             ResourceService resourceService)
+        throws ApiGatewayException {
+        var publication = randomPublicationWithUnpublishedFiles(publisher, status);
+        return persistPublication(resourceService, publication);
+    }
+
     public static Publication createdPersistedPublicationWithoutMainTitle(PublicationStatus status,
                                                                           ResourceService resourceService)
         throws ApiGatewayException {
@@ -215,22 +218,6 @@ public final class TicketTestUtils {
         throws ApiGatewayException {
         var publisher = new Builder().withId(customerId).build();
         var publication = randomPublicationWithPublishedFiles(status).copy().withPublisher(publisher).build();
-        return persistPublication(resourceService, publication);
-    }
-
-    private static Publication randomPublicationWithPublishedFiles(PublicationStatus status) {
-        var publication = fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES).copy()
-                              .withStatus(status)
-                              .build();
-        publishFiles(publication);
-        return publication;
-    }
-
-    public static Publication createPersistedPublicationWithUnpublishedFiles(URI publisher,
-                                                                             PublicationStatus status,
-                                                                             ResourceService resourceService)
-        throws ApiGatewayException {
-        var publication = randomPublicationWithUnpublishedFiles(publisher, status);
         return persistPublication(resourceService, publication);
     }
 
@@ -293,6 +280,19 @@ public final class TicketTestUtils {
     public static TicketEntry createNonPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType)
         throws ConflictException {
         return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next);
+    }
+
+    private static void setAffiliation(Corporation affiliation) {
+        ((Organization) affiliation).setId(
+            URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0"));
+    }
+
+    private static Publication randomPublicationWithPublishedFiles(PublicationStatus status) {
+        var publication = fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES).copy()
+                              .withStatus(status)
+                              .build();
+        publishFiles(publication);
+        return publication;
     }
 
     private static boolean isPublished(Publication publication) {

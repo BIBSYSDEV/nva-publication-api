@@ -5,7 +5,7 @@ import no.unit.nva.model.contexttypes.GeographicalContent;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import nva.commons.core.JacocoGenerated;
 
-public class GeographicalContentMerger extends PublicationContextMerger{
+public class GeographicalContentMerger extends PublicationContextMerger {
 
     @JacocoGenerated
     public GeographicalContentMerger(Record record) {

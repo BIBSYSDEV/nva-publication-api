@@ -22,7 +22,7 @@ public record License(URI value, String name, Map<String, String> labels) implem
         return attempt(() -> JsonUtils.dtoObjectMapper.readTree(this.toJsonString())).orElseThrow();
     }
 
-    public enum LicenseType{
+    public enum LicenseType {
 
         CC_NC_ND("CC-NC-ND", "by-nc-nd", Constants.CC_NC_ND_LABELS),
         CC_NC_SA("CC-NC-SA", "by-nc-sa", Constants.CC_NC_SA_LABELS),

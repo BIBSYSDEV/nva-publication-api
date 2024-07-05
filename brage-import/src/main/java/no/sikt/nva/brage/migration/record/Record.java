@@ -330,11 +330,11 @@ public class Record implements JsonSerializable {
         this.entityDescription = entityDescription;
     }
 
-    public Set<String> getPrioritizedProperties(){
+    public Set<String> getPrioritizedProperties() {
         return nonNull(prioritizedProperties) ? prioritizedProperties : new HashSet<>();
     }
 
-    public void setPrioritizedProperties(Set<String> prioritizedProperties){
+    public void setPrioritizedProperties(Set<String> prioritizedProperties) {
         this.prioritizedProperties = prioritizedProperties;
     }
 

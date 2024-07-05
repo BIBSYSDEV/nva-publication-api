@@ -51,8 +51,9 @@ public class BragePatchEventConsumer implements RequestHandler<SQSEvent, Void> {
 
     @JacocoGenerated
     public BragePatchEventConsumer() {
-    this(ResourceService.defaultService(), S3Driver.defaultS3Client().build(), new UriRetriever());
+        this(ResourceService.defaultService(), S3Driver.defaultS3Client().build(), new UriRetriever());
     }
+
     public BragePatchEventConsumer(ResourceService resourceService, S3Client s3Client, UriRetriever uriRetriever) {
         this.resourceService = resourceService;
         this.s3Client = s3Client;

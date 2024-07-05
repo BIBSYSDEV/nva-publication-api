@@ -24,7 +24,8 @@ public final class DegreePhdMerger extends PublicationInstanceMerger<DegreePhd> 
         }
     }
 
-    private static Set<RelatedDocument> getRelated(Set<RelatedDocument> documents, Set<RelatedDocument> brageDocuments) {
+    private static Set<RelatedDocument> getRelated(Set<RelatedDocument> documents,
+                                                   Set<RelatedDocument> brageDocuments) {
         if (nonNull(documents) && !documents.isEmpty()) {
             var mergedDocuments = new LinkedHashSet<RelatedDocument>();
             mergedDocuments.addAll(documents);

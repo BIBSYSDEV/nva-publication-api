@@ -12,7 +12,8 @@ public final class ExhibitionCatalogMerger extends PublicationInstanceMerger<Exh
     @Override
     public ExhibitionCatalog merge(PublicationInstance<?> publicationInstance) {
         if (publicationInstance instanceof ExhibitionCatalog newExhibitionCatalog) {
-            return new ExhibitionCatalog(getPages(this.publicationInstance.getPages(), newExhibitionCatalog.getPages()));
+            return new ExhibitionCatalog(getPages(this.publicationInstance.getPages(),
+                                                  newExhibitionCatalog.getPages()));
         } else {
             return this.publicationInstance;
         }

@@ -11,9 +11,10 @@ public final class DegreeLicentiateMerger extends PublicationInstanceMerger<Degr
 
     @Override
     public DegreeLicentiate merge(PublicationInstance<?> publicationInstance) {
-        if (publicationInstance instanceof DegreeLicentiate newDegreeBachelor) {
-            return new DegreeLicentiate(getPages(this.publicationInstance.getPages(), newDegreeBachelor.getPages()),
-                                        getDate(this.publicationInstance.getSubmittedDate(), newDegreeBachelor.getSubmittedDate()));
+        if (publicationInstance instanceof DegreeLicentiate licentiate) {
+            return new DegreeLicentiate(getPages(this.publicationInstance.getPages(), licentiate.getPages()),
+                                        getDate(this.publicationInstance.getSubmittedDate(),
+                                                licentiate.getSubmittedDate()));
         } else {
             return this.publicationInstance;
         }

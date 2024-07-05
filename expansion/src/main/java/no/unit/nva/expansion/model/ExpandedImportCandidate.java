@@ -376,7 +376,8 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
                    .orElse(null);
     }
 
-    private static ExpandedPublisher extractPublisher(ImportCandidate importCandidate, RawContentRetriever uriRetriever) {
+    private static ExpandedPublisher extractPublisher(ImportCandidate importCandidate,
+                                                      RawContentRetriever uriRetriever) {
         return Optional.ofNullable(importCandidate.getEntityDescription())
                    .map(EntityDescription::getReference)
                    .map(Reference::getPublicationContext)
@@ -390,10 +391,11 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
      * types where PublishingHouse is present: Book and Report.
      */
 
-    private static ExpandedPublisher extractPublishingHouse(PublicationContext publicationContext, RawContentRetriever uriRetriever) {
+    private static ExpandedPublisher extractPublishingHouse(PublicationContext publicationContext,
+                                                            RawContentRetriever uriRetriever) {
         return isBook(publicationContext)
-                   ? expandPublisher( ((Book) publicationContext).getPublisher(), uriRetriever)
-                   : expandPublisher( ((Report) publicationContext).getPublisher(), uriRetriever);
+                   ? expandPublisher(((Book) publicationContext).getPublisher(), uriRetriever)
+                   : expandPublisher(((Report) publicationContext).getPublisher(), uriRetriever);
     }
 
     private static ExpandedPublisher expandPublisher(PublishingHouse publisher, RawContentRetriever uriRetriever) {
@@ -417,7 +419,8 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
         return isJournalContent(importCandidate) ? getPublicationContext(importCandidate, uriRetriever) : null;
     }
 
-    private static ExpandedJournal getPublicationContext(ImportCandidate importCandidate, RawContentRetriever uriRetriever) {
+    private static ExpandedJournal getPublicationContext(ImportCandidate importCandidate,
+                                                         RawContentRetriever uriRetriever) {
         return Optional.ofNullable(importCandidate.getEntityDescription())
                    .map(EntityDescription::getReference)
                    .map(Reference::getPublicationContext)

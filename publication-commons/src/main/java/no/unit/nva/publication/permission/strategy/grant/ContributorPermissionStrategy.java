@@ -24,12 +24,13 @@ public class ContributorPermissionStrategy extends GrantPermissionStrategy {
     }
 
     private boolean userIsVerifiedContributor() {
-        return nonNull(this.userInstance.getPersonCristinId()) &&
-               Optional.ofNullable(publication.getEntityDescription())
-                   .map(EntityDescription::getContributors)
-                   .stream().flatMap(List::stream)
-                   .filter(this::isVerifiedContributor)
-                   .anyMatch(contributor -> contributor.getIdentity().getId().equals(this.userInstance.getPersonCristinId()));
+        return nonNull(this.userInstance.getPersonCristinId())
+               && Optional.ofNullable(publication.getEntityDescription())
+                      .map(EntityDescription::getContributors)
+                      .stream().flatMap(List::stream)
+                      .filter(this::isVerifiedContributor)
+                      .anyMatch(contributor ->
+                                    contributor.getIdentity().getId().equals(this.userInstance.getPersonCristinId()));
     }
 
 }

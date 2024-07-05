@@ -156,7 +156,9 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
         var publication = createPersistedDraftPublication();
         var expectedDoi = URI.create("https://doiHost/10.0000/" + randomString());
         var httpClient = new FakeHttpClient<>(tokenResponse(), doiBadResponse(expectedDoi, HTTP_GATEWAY_TIMEOUT));
-        var reserveDoiClient = new DataCiteDoiClient(httpClient, secretsManagerClient, wireMockRuntimeInfo.getHttpsBaseUrl());
+        var reserveDoiClient = new DataCiteDoiClient(httpClient,
+                                                     secretsManagerClient,
+                                                     wireMockRuntimeInfo.getHttpsBaseUrl());
         this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
         var request = generateRequestWithOwner(publication, OWNER);
         handler.handleRequest(request, output, context);
@@ -171,7 +173,9 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
         var publication = createPersistedDraftPublication();
         var expectedDoi = URI.create("https://doiHost/10.0000/" + randomString());
         var httpClient = new FakeHttpClient<>(tokenResponse(), doiBadResponse(expectedDoi, HTTP_FORBIDDEN));
-        var reserveDoiClient = new DataCiteDoiClient(httpClient, secretsManagerClient, wireMockRuntimeInfo.getHttpsBaseUrl());
+        var reserveDoiClient = new DataCiteDoiClient(httpClient,
+                                                     secretsManagerClient,
+                                                     wireMockRuntimeInfo.getHttpsBaseUrl());
         this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
         var request = generateRequestWithOwner(publication, OWNER);
         handler.handleRequest(request, output, context);
@@ -181,12 +185,14 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnBadResponseWhenResponseFromFromDoiRegistrarIsNotHttpCreated(WireMockRuntimeInfo wireMockRuntimeInfo)
-        throws ApiGatewayException, IOException {
+    void shouldReturnBadResponseWhenResponseFromFromDoiRegistrarIsNotHttpCreated(
+        WireMockRuntimeInfo wireMockRuntimeInfo) throws ApiGatewayException, IOException {
         var publication = createPersistedDraftPublication();
         var expectedDoi = URI.create("https://doiHost/10.0000/" + randomString());
         var httpClient = new FakeHttpClient<>(tokenResponse(), doiBadResponse(expectedDoi, HTTP_USE_PROXY));
-        var reserveDoiClient = new DataCiteDoiClient(httpClient, secretsManagerClient, wireMockRuntimeInfo.getHttpsBaseUrl());
+        var reserveDoiClient = new DataCiteDoiClient(httpClient,
+                                                     secretsManagerClient,
+                                                     wireMockRuntimeInfo.getHttpsBaseUrl());
         this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
         var request = generateRequestWithOwner(publication, OWNER);
         handler.handleRequest(request, output, context);
@@ -201,7 +207,9 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
         var publication = createPersistedDraftPublication();
         var expectedDoi = URI.create("https://doiHost/10.0000/" + randomString());
         var httpClient = new FakeHttpClient<>(tokenResponse(), doiResponse(expectedDoi));
-        var reserveDoiClient = new DataCiteDoiClient(httpClient, secretsManagerClient, wireMockRuntimeInfo.getHttpsBaseUrl());
+        var reserveDoiClient = new DataCiteDoiClient(httpClient,
+                                                     secretsManagerClient,
+                                                     wireMockRuntimeInfo.getHttpsBaseUrl());
         this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
         var request = generateRequestWithOwner(publication, OWNER);
         handler.handleRequest(request, output, context);

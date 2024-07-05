@@ -685,6 +685,11 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                    .build();
     }
 
+    private InputStream assigneeMarksTicket(Publication publication, TicketEntry ticket, ViewStatus viewStatus)
+        throws JsonProcessingException {
+        return assigneeMarksTicket(publication, ticket, viewStatus, ticket.getCustomerId());
+    }
+
     private static Map<String, String> createPathParameters(TicketEntry ticket,
                                                             SortableIdentifier publicationIdentifier) {
         return Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME, publicationIdentifier.toString(),
@@ -765,9 +770,8 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                    .build();
     }
 
-    private InputStream curatorAttemptsToMarkExistingTicketConnectedToWrongPublication(TicketEntry ticket,
-                                                                                       SortableIdentifier wrongPublicationIdentifier)
-        throws JsonProcessingException {
+    private InputStream curatorAttemptsToMarkExistingTicketConnectedToWrongPublication(
+        TicketEntry ticket, SortableIdentifier wrongPublicationIdentifier) throws JsonProcessingException {
         return new HandlerRequestBuilder<UpdateTicketRequest>(JsonUtils.dtoObjectMapper).withCurrentCustomer(
                 ticket.getCustomerId())
                    .withUserName(randomString())
@@ -776,11 +780,6 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                    .withAccessRights(ticket.getCustomerId(), AccessRight.MANAGE_DOI)
                    .withPersonCristinId(randomUri())
                    .build();
-    }
-
-    private InputStream assigneeMarksTicket(Publication publication, TicketEntry ticket, ViewStatus viewStatus)
-        throws JsonProcessingException {
-        return assigneeMarksTicket(publication, ticket, viewStatus, ticket.getCustomerId());
     }
 
     private InputStream alienCuratorMarksTicket(Publication publication, TicketEntry ticket)
@@ -807,9 +806,8 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         return doi.getPath().split("/")[1];
     }
 
-    private InputStream ownerAttemptsToMarkExistingTicketConnectedToWrongPublication(TicketEntry ticket,
-                                                                                     SortableIdentifier wrongPublicationIdentifier)
-        throws JsonProcessingException {
+    private InputStream ownerAttemptsToMarkExistingTicketConnectedToWrongPublication(
+        TicketEntry ticket, SortableIdentifier wrongPublicationIdentifier) throws JsonProcessingException {
         return new HandlerRequestBuilder<UpdateTicketRequest>(JsonUtils.dtoObjectMapper).withBody(
                 new UpdateTicketRequest(ticket.getStatus(), null, ViewStatus.UNREAD))
                    .withCurrentCustomer(ticket.getCustomerId())

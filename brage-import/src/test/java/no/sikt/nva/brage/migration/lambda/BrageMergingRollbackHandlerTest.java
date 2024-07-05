@@ -44,10 +44,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
-public class BrageMergingRollbackHandlerTest extends ResourcesLocalTest {
+class BrageMergingRollbackHandlerTest extends ResourcesLocalTest {
 
     private static final String INPUT_BUCKET_NAME = "some-input-bucket-name";
-    private final Context CONTEXT = mock(Context.class);
+    private static final Context CONTEXT = mock(Context.class);
     private BrageMergingRollbackHandler brageMergingRollbackHandler;
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
@@ -211,12 +211,12 @@ public class BrageMergingRollbackHandlerTest extends ResourcesLocalTest {
     }
 
     private UnixPath getRandomMergeReportUnixPath() {
-        return UnixPath.of(UPDATE_REPORTS_PATH +
-                           "/" + randomInstitutionShortName() +
-                           "/" + randomInstant().toString() +
-                           "/" + randomHandlePart() +
-                           "/" + randomHandlePart() +
-                           "/" + randomNvaIdentifier());
+        return UnixPath.of(UPDATE_REPORTS_PATH
+                           + "/" + randomInstitutionShortName()
+                           + "/" + randomInstant().toString()
+                           + "/" + randomHandlePart()
+                           + "/" + randomHandlePart()
+                           + "/" + randomNvaIdentifier());
     }
 
     private String randomNvaIdentifier() {

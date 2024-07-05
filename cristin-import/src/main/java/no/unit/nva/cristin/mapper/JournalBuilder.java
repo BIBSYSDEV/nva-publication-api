@@ -43,8 +43,7 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
             return createJournalArticle();
         } else if (isAbstract(getCristinObject())) {
             return createAbstract();
-        }
-        else {
+        } else {
             throw unknownSecondaryCategory();
         }
     }

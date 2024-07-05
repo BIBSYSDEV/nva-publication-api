@@ -57,7 +57,9 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
              UriRetriever.defaultUriRetriever());
     }
 
-    public CreateTicketHandler(ResourceService resourceService, TicketResolver ticketResolver, UriRetriever uriRetriever) {
+    public CreateTicketHandler(ResourceService resourceService,
+                               TicketResolver ticketResolver,
+                               UriRetriever uriRetriever) {
         super(TicketDto.class);
         this.resourceService = resourceService;
         this.ticketResolver = ticketResolver;
@@ -134,7 +136,8 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
     }
 
     private Publication fetchPublicationForPrivilegedUser(SortableIdentifier publicationIdentifier,
-                                                          RequestUtils requestUtils, TicketDto ticketDto) throws ApiGatewayException {
+                                                          RequestUtils requestUtils,
+                                                          TicketDto ticketDto) throws ApiGatewayException {
         var publication = resourceService.getPublicationByIdentifier(publicationIdentifier);
         if (!userIsAuthorized(requestUtils, publication, ticketDto)) {
             throw new ForbiddenException();

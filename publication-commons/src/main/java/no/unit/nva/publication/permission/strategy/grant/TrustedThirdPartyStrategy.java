@@ -20,9 +20,9 @@ public class TrustedThirdPartyStrategy extends GrantPermissionStrategy {
     }
 
     private boolean canModify() {
-        return userInstance.isExternalClient() &&
-               attempt(
+        return userInstance.isExternalClient()
+               && attempt(
                    () -> userInstance.getCustomerId().equals(publication.getPublisher().getId()))
-                   .orElse(fail -> false);
+                      .orElse(fail -> false);
     }
 }

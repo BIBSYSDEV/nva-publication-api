@@ -10,9 +10,9 @@ public final class DegreeBachelorMerger extends PublicationInstanceMerger<Degree
     }
 
     public DegreeBachelor merge(PublicationInstance<?> publicationInstance) {
-        if (publicationInstance instanceof DegreeBachelor newDegreeBachelor) {
-            return new DegreeBachelor(getPages(this.publicationInstance.getPages(), newDegreeBachelor.getPages()),
-                                 getDate(this.publicationInstance.getSubmittedDate(), newDegreeBachelor.getSubmittedDate()));
+        if (publicationInstance instanceof DegreeBachelor bachelor) {
+            return new DegreeBachelor(getPages(this.publicationInstance.getPages(), bachelor.getPages()),
+                                 getDate(this.publicationInstance.getSubmittedDate(), bachelor.getSubmittedDate()));
         } else {
             return this.publicationInstance;
         }

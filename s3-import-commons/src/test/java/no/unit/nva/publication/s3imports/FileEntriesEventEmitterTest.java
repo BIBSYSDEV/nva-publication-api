@@ -405,7 +405,8 @@ class FileEntriesEventEmitterTest {
     void shouldSendMessageWithBragePatchSubtopicAndSqsMessageShouldContainNviEntryS3location() throws IOException {
         var sampleEntry = SampleObject.random().toJsonString();
         var fileUri = s3Driver.insertFile(randomPath(), sampleEntry);
-        var inputEvent = createInputEventForFileWithSubtopic(fileUri, SUBTOPIC_SEND_EVENT_TO_BRAGE_PATCH_EVENT_CONSUMER);
+        var inputEvent = createInputEventForFileWithSubtopic(fileUri,
+                                                             SUBTOPIC_SEND_EVENT_TO_BRAGE_PATCH_EVENT_CONSUMER);
         handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
 
         var eventReferences = amazonSQS.getMessageBodies().stream()
