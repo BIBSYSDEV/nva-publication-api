@@ -526,14 +526,12 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     void shouldAllowNullRightsHolder() throws IOException {
         var request = createEmptyPublicationRequest();
 
-
         var inputStream = createPublicationRequest(request);
 
         handler.handleRequest(inputStream, outputStream, context);
 
         var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
-
     }
 
     @Test
@@ -551,9 +549,9 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldNotAllowBlankRightsHolder() throws IOException {
+    void shouldNotAllowLeadingWhitespaceForRightsHolder() throws IOException {
         var request = createEmptyPublicationRequest();
-        request.setRightsHolder(" ");
+        request.setRightsHolder(" abc");
 
         var inputStream = createPublicationRequest(request);
 
@@ -567,6 +565,19 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     void shouldNotAllowTrailingWhitespaceForRightsHolder() throws IOException {
         var request = createEmptyPublicationRequest();
         request.setRightsHolder("abcåøæ ");
+
+        var inputStream = createPublicationRequest(request);
+
+        handler.handleRequest(inputStream, outputStream, context);
+
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
+        assertThat(actual.getStatusCode(), is(equalTo(HTTP_STATUS_UNPROCESSABLE_CONTENT)));
+    }
+
+    @Test
+    void shouldNotAllowExecutableScriptForRightsHolder() throws IOException {
+        var request = createEmptyPublicationRequest();
+        request.setRightsHolder("<script>alert('Oh no!');</script>");
 
         var inputStream = createPublicationRequest(request);
 
