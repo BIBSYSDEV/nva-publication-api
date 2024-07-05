@@ -7,6 +7,11 @@ Feature:
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Publication Instance of type "ReportResearch"
 
+  Scenario: Cristin Result with main type "Report"  and secondary type Compendium is converted to an NVA publication.
+    Given a valid Cristin Result with main category "RAPPORT" and secondary category "KOMPENDIUM"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a Publication Instance of type "ReportWorkingPaper"
+
 
   Scenario Outline: Map does not fail for a Cristin Result without subjectField when the secondary category does not require it.
     Given a valid Cristin Result with secondary category "<secondaryCategory>"
