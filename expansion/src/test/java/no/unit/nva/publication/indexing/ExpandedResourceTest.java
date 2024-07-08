@@ -32,7 +32,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -815,7 +814,12 @@ class ExpandedResourceTest {
             return null;
         }
         while (hasPartHasContent(jsonNode)) {
-            jsonNode = jsonNode.at(JSON_PTR_HAS_PART);
+            var hasPartArrayNode = (ArrayNode) jsonNode.at(JSON_PTR_HAS_PART);
+            if (hasPartArrayNode.size() == 1) {
+                jsonNode = hasPartArrayNode.get(0);
+            } else {
+                hasPartArrayNode.forEach(node -> findDeepestNestedSubUnit(node.at(JSON_PTR_HAS_PART)));
+            }
         }
         return jsonNode;
     }
