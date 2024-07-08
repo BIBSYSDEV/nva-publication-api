@@ -61,6 +61,7 @@ public enum CristinSecondaryCategory {
     VISUAL_ARTS("KUNST_OG_BILDE", "VISUAL_ARTS"),
     WRITTEN_INTERVIEW("INTERVJUSKRIFTL", "WRITTEN INTERVIEW"),
     ABSTRACT("SAMMENDRAG", "ABSTRACT"),
+    BRIEFS("BRIEFS", "BRIEFS"),
     UNMAPPED;
 
     public static final int DEFAULT_VALUE = 0;
