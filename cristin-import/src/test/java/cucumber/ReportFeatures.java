@@ -7,6 +7,9 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
+import no.unit.nva.cristin.CristinDataGenerator;
+import no.unit.nva.cristin.mapper.CristinMainCategory;
+import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.Report;
@@ -51,5 +54,13 @@ public class ReportFeatures {
     @And("the cristin Book Report has a DOI equal to {string}")
     public void theCristinBookReportHasADoiEqualTo(String doi) {
         scenarioContext.getCristinEntry().getBookOrReportMetadata().setDoi(doi);
+    }
+
+    @Given("a valid Cristin Result with main category {string} and secondary category {string}")
+    public void aValidCristinResultWithMainCategoryAndSecondaryCategory(String mainCategory, String secondaryCategory) {
+
+        this.scenarioContext.newCristinEntry(
+            () -> CristinDataGenerator.createObjectWithCategory(
+                CristinMainCategory.fromString(mainCategory), CristinSecondaryCategory.fromString(secondaryCategory)));
     }
 }
