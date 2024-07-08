@@ -273,8 +273,8 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                                                                      Publication existinPublication,
                                                                      PublicationRepresentation representation) {
         validateBeforeUpdate(publicationForUpdate);
-        var customerName = representation.brageRecord().getCustomer().getName();
-        var importSource = ImportSource.fromBrageArchive(customerName);
+        var customerName = representation.brageRecord().getCustomer();
+        var importSource = ImportSource.fromBrageArchive(customerName.getName());
         var newImage = resourceService.updatePublicationByImportEntry(publicationForUpdate, importSource);
         return new BrageMergingReport(existinPublication, newImage);
     }
@@ -391,8 +391,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                                                                ImportSource.fromBrageArchive(
                                                                    publicationRepresentation
                                                                        .brageRecord()
-                                                                       .getCustomer()
-                                                                       .getName()));
+                                                                       .getCustomer().getName()));
         return new PublicationRepresentation(publicationRepresentation.brageRecord(), updatedPublication);
     }
 
@@ -438,7 +437,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private PublicationRepresentation parseBrageRecord(S3Event event)
         throws JsonProcessingException, InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var brageRecord = getBrageRecordFromS3(event);
-        var nvaPublication = BrageNvaMapper.toNvaPublication(brageRecord);
+        var nvaPublication = BrageNvaMapper.toNvaPublication(brageRecord, apiHost);
         return new PublicationRepresentation(brageRecord, nvaPublication);
     }
 

@@ -25,7 +25,7 @@ import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.lambda.MappingConstants;
 import no.sikt.nva.brage.migration.lambda.MissingFieldsException;
 import no.sikt.nva.brage.migration.record.Affiliation;
-import no.sikt.nva.brage.migration.record.Customer;
+import no.sikt.nva.brage.migration.record.CustomerConfig;
 import no.sikt.nva.brage.migration.record.Language;
 import no.sikt.nva.brage.migration.record.Project;
 import no.sikt.nva.brage.migration.record.PublisherAuthority;
@@ -44,7 +44,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationDate.Builder;
 import no.unit.nva.model.Reference;
-import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
@@ -84,17 +83,17 @@ public final class BrageNvaMapper {
     public static final String NO_ABSTRACT = null;
 
     private BrageNvaMapper() {
-
     }
 
-    public static Publication toNvaPublication(Record brageRecord)
+    public static Publication toNvaPublication(Record brageRecord, String host)
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var customer = CustomerConfig.fromRecord(brageRecord);
         validateBrageRecord(brageRecord);
         var publication = new Publication.Builder()
                               .withEntityDescription(extractEntityDescription(brageRecord))
-                              .withPublisher(extractPublisher(brageRecord))
-                              .withAssociatedArtifacts(extractAssociatedArtifacts(brageRecord))
-                              .withResourceOwner(extractResourceOwner(brageRecord))
+                              .withPublisher(customer.toPublisher(host))
+                              .withResourceOwner(customer.toResourceOwner(host))
+                              .withAssociatedArtifacts(extractAssociatedArtifacts(brageRecord, customer))
                               .withAdditionalIdentifiers(extractAdditionalIdentifiers(brageRecord))
                               .withRightsHolder(brageRecord.getRightsholder())
                               .withSubjects(extractSubjects(brageRecord))
@@ -146,8 +145,8 @@ public final class BrageNvaMapper {
         return descriptions.stream().filter(StringUtils::isNotBlank).toList();
     }
 
-    private static List<AssociatedArtifact> extractAssociatedArtifacts(Record brageRecord) {
-        var associatedArtifacts = new ArrayList<>(extractAssociatedFiles(brageRecord));
+    private static List<AssociatedArtifact> extractAssociatedArtifacts(Record brageRecord, CustomerConfig customer) {
+        var associatedArtifacts = new ArrayList<>(extractAssociatedFiles(brageRecord, customer));
         associatedArtifacts.add(extractAssociatedLink(brageRecord));
         return associatedArtifacts.stream().filter(Objects::nonNull).toList();
     }
@@ -192,64 +191,55 @@ public final class BrageNvaMapper {
         }
     }
 
-    private static ResourceOwner extractResourceOwner(Record brageRecord) {
-        return Optional.ofNullable(brageRecord)
-                   .map(Record::getResourceOwner)
-                   .map(BrageNvaMapper::generateResourceOwner)
-                   .orElse(null);
-    }
-
-    private static ResourceOwner generateResourceOwner(no.sikt.nva.brage.migration.record.ResourceOwner resourceOwner) {
-        return new ResourceOwner(new Username(resourceOwner.getOwner()), resourceOwner.getOwnerAffiliation());
-    }
-
-    private static List<AssociatedArtifact> extractAssociatedFiles(Record brageRecord) {
+    private static List<AssociatedArtifact> extractAssociatedFiles(Record brageRecord, CustomerConfig customer) {
         return Optional.ofNullable(brageRecord.getContentBundle())
                    .map(ResourceContent::getContentFiles)
-                   .map(list -> convertFilesToAssociatedArtifact(list, brageRecord))
+                   .map(list -> convertFilesToAssociatedArtifact(list, brageRecord, customer))
                    .orElse(Collections.emptyList());
     }
 
     private static List<AssociatedArtifact> convertFilesToAssociatedArtifact(List<ContentFile> files,
-                                                                             Record brageRecord) {
-        return files.stream().map(file -> generateFile(file, brageRecord)).toList();
+                                                                             Record brageRecord, CustomerConfig customer) {
+        return files.stream().map(file -> generateFile(file, brageRecord, customer)).toList();
     }
 
-    private static AssociatedArtifact generateFile(ContentFile file, Record brageRecord) {
+    private static AssociatedArtifact generateFile(ContentFile file, Record brageRecord, CustomerConfig customer) {
         var legalNote = extractLegalNote(brageRecord);
         var embargoDate = defineEmbargoDate(legalNote, file);
         return switch (file.getBundleType()) {
-            case BundleType.ORIGINAL -> createPublishedFile(file, brageRecord, embargoDate, legalNote);
-            case BundleType.LICENSE -> createAdministrativeAgreement(file, brageRecord);
-            case BundleType.IGNORED -> createAdministrativeAgreementForDublinCore(file, brageRecord);
+            case BundleType.ORIGINAL -> createPublishedFile(file, brageRecord, embargoDate, legalNote, customer);
+            case BundleType.LICENSE -> createAdministrativeAgreement(file, brageRecord, customer);
+            case BundleType.IGNORED -> createAdministrativeAgreementForDublinCore(file, brageRecord, customer);
             default -> new NullAssociatedArtifact();
         };
     }
 
-    private static AssociatedArtifact createAdministrativeAgreementForDublinCore(ContentFile file, Record record) {
+    private static AssociatedArtifact createAdministrativeAgreementForDublinCore(ContentFile file, Record record,
+                                                                                 CustomerConfig customer) {
         return AdministrativeAgreement.builder()
                    .withName(file.getFilename())
                    .withIdentifier(file.getIdentifier())
-                   .withUploadDetails(createUploadDetails(record))
+                   .withUploadDetails(createUploadDetails(customer))
                    .withAdministrativeAgreement(true)
                    .buildUnpublishableFile();
     }
 
-    private static AssociatedArtifact createAdministrativeAgreement(ContentFile file, Record brageRecord) {
+    private static AssociatedArtifact createAdministrativeAgreement(ContentFile file, Record brageRecord,
+                                                                    CustomerConfig customer) {
         return AdministrativeAgreement.builder()
                    .withName(file.getFilename())
                    .withIdentifier(file.getIdentifier())
-                   .withUploadDetails(createUploadDetails(brageRecord))
+                   .withUploadDetails(createUploadDetails(customer))
                    .withAdministrativeAgreement(true)
                    .buildUnpublishableFile();
     }
 
-    private static UploadDetails createUploadDetails(Record brageRecord) {
-        return new UploadDetails(new Username(brageRecord.getResourceOwner().getOwner()), Instant.now());
+    private static UploadDetails createUploadDetails(CustomerConfig customer) {
+        return new UploadDetails(new Username(customer.username()), Instant.now());
     }
 
     private static File createPublishedFile(ContentFile file, Record brageRecord, Instant embargoDate,
-                                            String legalNote) {
+                                            String legalNote, CustomerConfig customer) {
         return File.builder()
                    .withName(file.getFilename())
                    .withIdentifier(file.getIdentifier())
@@ -257,7 +247,7 @@ public final class BrageNvaMapper {
                    .withPublisherVersion(extractPublisherAuthority(brageRecord))
                    .withEmbargoDate(embargoDate)
                    .withLegalNote(legalNote)
-                   .withUploadDetails(createUploadDetails(brageRecord))
+                   .withUploadDetails(createUploadDetails(customer))
                    .buildPublishedFile();
     }
 
@@ -283,17 +273,6 @@ public final class BrageNvaMapper {
 
     private static URI getLicenseUri(ContentFile file) {
         return file.getLicense().getNvaLicense().getLicense();
-    }
-
-    private static Organization extractPublisher(Record brageRecord) {
-        return Optional.ofNullable(brageRecord.getCustomer())
-                   .map(Customer::getId)
-                   .map(BrageNvaMapper::generateOrganization)
-                   .orElse(null);
-    }
-
-    private static Organization generateOrganization(URI customerUri) {
-        return new Organization.Builder().withId(customerUri).build();
     }
 
     private static EntityDescription extractEntityDescription(Record brageRecord)
