@@ -90,6 +90,10 @@
     "handle": {
       "@type": "@id"
     },
+    "hasPart": {
+      "@container": "@set",
+      "@id": "hasPart"
+    },
     "id": "@id",
     "indexedDate": {
       "@type": "xsd:dateTime"
@@ -182,8 +186,8 @@
       "@id": "topLevelOrganization"
     },
     "contributorOrganizations": {
-      "@container" : "@set",
-      "@id" : "contributorOrganization",
+      "@container": "@set",
+      "@id": "contributorOrganization",
       "@type": "@id"
     },
     "nviType": {
@@ -235,7 +239,7 @@
         }
       }
     },
-    "reference":  {
+    "reference": {
       "@type": "Reference",
       "doi": {
         "@embed": "@never",
