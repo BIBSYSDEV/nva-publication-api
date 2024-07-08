@@ -58,6 +58,10 @@ public enum CristinMainCategory {
         return CristinMainCategory.ARTISTIC_PRODUCTION.equals(cristinObject.getMainCategory());
     }
 
+    public static boolean isInformationMaterial(CristinObject cristinObject) {
+        return CristinMainCategory.INFORMATION_MATERIAL.equals(cristinObject.getMainCategory());
+    }
+
     public static boolean isExhibition(CristinObject cristinObject) {
         return CristinMainCategory.EXHIBITION.equals(cristinObject.getMainCategory());
     }

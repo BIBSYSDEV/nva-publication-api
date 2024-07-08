@@ -39,6 +39,8 @@ dependencies {
     implementation libs.jackson.databind
     implementation libs.jackson.core
 
+    implementation libs.jakarta.validation.api
+
     implementation libs.bundles.logging
 
     testImplementation libs.wiremock

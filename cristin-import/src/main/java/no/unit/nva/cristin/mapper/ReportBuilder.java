@@ -3,6 +3,7 @@ package no.unit.nva.cristin.mapper;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreeLicentiate;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreeMaster;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreePhd;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isReportWorkingPaper;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isResearchReport;
 import java.util.Set;
 import no.unit.nva.model.instancetypes.PublicationInstance;
@@ -10,6 +11,7 @@ import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
+import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
 import no.unit.nva.model.pages.Pages;
 
 public class ReportBuilder extends AbstractBookReportBuilder {
@@ -28,6 +30,8 @@ public class ReportBuilder extends AbstractBookReportBuilder {
             return createDegreeMaster();
         } else if (isDegreeLicentiate(getCristinObject())) {
             return createDegreeLicentiate();
+        } else if (isReportWorkingPaper(getCristinObject())) {
+            return new ReportWorkingPaper(createMonographPages());
         } else {
             throw unknownSecondaryCategory();
         }

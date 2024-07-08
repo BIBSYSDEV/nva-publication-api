@@ -471,6 +471,7 @@ public final class CristinDataGenerator {
                    .withCristinAssociatedUris(List.of(new CristinAssociatedUri("DATA", randomUri().toString())))
                    .withLectureOrPosterMetaData(randomLectureOrPosterMetaData())
                    .withBookOrReportPartMetadata(randomBookOrReportPartMetadata())
+                   .withBookOrReportMetadata(randomBookOrReportMetadata())
                    .withJournalPublication(randomJournalPublication())
                    .build();
     }
@@ -478,6 +479,9 @@ public final class CristinDataGenerator {
     private static CristinBookOrReportPartMetadata randomBookOrReportPartMetadata() {
         return CristinBookOrReportPartMetadata.builder()
                    .withSubjectField(CristinSubjectField.builder().withSubjectFieldCode(randomInteger()).build())
+                   .withPagesStart("1")
+                   .withPagesEnd("10")
+                   .withPartOf(randomString())
                    .build();
     }
 

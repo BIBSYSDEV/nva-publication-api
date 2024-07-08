@@ -62,6 +62,7 @@ public enum CristinSecondaryCategory {
     WRITTEN_INTERVIEW("INTERVJUSKRIFTL", "WRITTEN INTERVIEW"),
     ABSTRACT("SAMMENDRAG", "ABSTRACT"),
     BRIEFS("BRIEFS", "BRIEFS"),
+    COMPENDIUM("KOMPENDIUM", "COMPENDIUM"),
     UNMAPPED;
 
     public static final int DEFAULT_VALUE = 0;
@@ -142,6 +143,10 @@ public enum CristinSecondaryCategory {
 
     public static boolean isDegreeLicentiate(CristinObject cristinObject) {
         return CristinSecondaryCategory.DEGREE_LICENTIATE.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static boolean isReportWorkingPaper(CristinObject cristinObject) {
+        return CristinSecondaryCategory.COMPENDIUM.equals(cristinObject.getSecondaryCategory());
     }
 
     public static boolean isInterview(CristinObject cristinObject) {
