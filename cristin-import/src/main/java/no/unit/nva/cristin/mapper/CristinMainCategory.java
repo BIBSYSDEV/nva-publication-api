@@ -15,6 +15,7 @@ public enum CristinMainCategory {
     EXHIBITION("UTSTILLING", "EXHIBITION"),
     MEDIA_CONTRIBUTION("MEDIEBIDRAG", "MEDIA_CONTRIBUTION"),
     ARTISTIC_PRODUCTION("KUNST_PRODUKSJON", "ARTISTIC_PRODUCTION"),
+    INFORMATION_MATERIAL("INFORMASJONSMATR", "INFORMATION_MATERIAL"),
     UNMAPPED;
 
     public static final int DEFAULT_VALUE = 0;
@@ -55,6 +56,10 @@ public enum CristinMainCategory {
 
     public static boolean isArt(CristinObject cristinObject) {
         return CristinMainCategory.ARTISTIC_PRODUCTION.equals(cristinObject.getMainCategory());
+    }
+
+    public static boolean isInformationMaterial(CristinObject cristinObject) {
+        return CristinMainCategory.INFORMATION_MATERIAL.equals(cristinObject.getMainCategory());
     }
 
     public static boolean isExhibition(CristinObject cristinObject) {

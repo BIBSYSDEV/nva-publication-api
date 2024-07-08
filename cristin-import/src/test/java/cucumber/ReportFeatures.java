@@ -58,9 +58,13 @@ public class ReportFeatures {
 
     @Given("a valid Cristin Result with main category {string} and secondary category {string}")
     public void aValidCristinResultWithMainCategoryAndSecondaryCategory(String mainCategory, String secondaryCategory) {
-
         this.scenarioContext.newCristinEntry(
             () -> CristinDataGenerator.createObjectWithCategory(
                 CristinMainCategory.fromString(mainCategory), CristinSecondaryCategory.fromString(secondaryCategory)));
+    }
+
+    @And("publication owner is {string}")
+    public void publicationOwnerIs(String ownerCodeCreated) {
+        this.scenarioContext.getCristinEntry().setOwnerCodeCreated(ownerCodeCreated);
     }
 }

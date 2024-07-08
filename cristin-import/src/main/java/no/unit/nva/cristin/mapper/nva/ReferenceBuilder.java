@@ -6,6 +6,7 @@ import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isChapter;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isEvent;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isExhibition;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isInformationMaterial;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isJournal;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isMediaContribution;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
@@ -66,6 +67,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class ReferenceBuilder extends CristinMappingModule {
 
+    public static final String NIFU_CUSTOMER_NAME = "NIFU";
     private final DoiConverter doiConverter;
 
     public ReferenceBuilder(CristinObject cristinObject,
@@ -104,7 +106,7 @@ public class ReferenceBuilder extends CristinMappingModule {
                                               channelRegistryMapper, s3Client)
                        .buildMediaPeriodicalForPublicationContext();
         }
-        if (isReport(cristinObject)) {
+        if (isReport(cristinObject) || isInformationalMaterialThatShouldBeMapped()) {
             return buildPublicationContextWhenMainCategoryIsReport();
         }
         if (isChapter(cristinObject)) {
@@ -123,6 +125,10 @@ public class ReferenceBuilder extends CristinMappingModule {
             return new Artistic();
         }
         return null;
+    }
+
+    private boolean isInformationalMaterialThatShouldBeMapped() {
+        return isInformationMaterial(cristinObject) && NIFU_CUSTOMER_NAME.equals(cristinObject.getOwnerCodeCreated());
     }
 
     private PublicationContext buildMediaContributionForPublicationContext() {

@@ -12,6 +12,16 @@ Feature:
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Publication Instance of type "ReportWorkingPaper"
 
+  Scenario: Cristin Result with main type InformationMaterial and secondary type Briefs is converted to an NVA publication for given customer.
+    Given a valid Cristin Result with main category "INFORMASJONSMATR" and secondary category "BRIEFS"
+    And publication owner is "NIFU"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a Publication Instance of type "ReportPolicy"
+
+  Scenario: Cristin Result with main type InformationMaterial and secondary type Briefs is not converted to an NVA publication for not provided customer.
+    Given a valid Cristin Result with main category "INFORMASJONSMATR" and secondary category "BRIEFS"
+    When the Cristin Result is converted to an NVA Resource
+    Then an error is reported.
 
   Scenario Outline: Map does not fail for a Cristin Result without subjectField when the secondary category does not require it.
     Given a valid Cristin Result with secondary category "<secondaryCategory>"
