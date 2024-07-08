@@ -1,4 +1,4 @@
-package no.sikt.nva.brage.migration.record;
+package no.sikt.nva.brage.migration.mapper;
 
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -7,6 +7,7 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Map;
+import no.sikt.nva.brage.migration.record.UnknownCustomerException;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.ResourceOwner;
@@ -14,28 +15,29 @@ import no.unit.nva.model.Username;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
+import no.sikt.nva.brage.migration.record.Record;
 
-public record CustomerConfig(String name,
-                             String cristinIdentifier,
-                             String username,
-                             Map<Environment, String> identifiers) {
+public record Customer(String name,
+                       String cristinIdentifier,
+                       String username,
+                       Map<Environment, String> identifiers) {
 
     public static final String CUSTOMERS_JSON_STRING = IoUtils.stringFromResources(Path.of("customers.json"));
     public static final String CUSTOMER = "customer";
     public static final String CRISTIN = "cristin";
     public static final String ORGANIZATION = "organization";
 
-    public static CustomerConfig fromRecord(Record record) {
+    public static Customer fromShortName(String customerShortName) {
         var customers = readCustomers();
         return Arrays.stream(customers)
-                   .filter(entry -> entry.name().equals(record.getCustomer().getName()))
+                   .filter(entry -> entry.name().equals(customerShortName))
                    .findFirst()
-                   .orElseThrow(() -> new UnknownCustomerException(record.getCustomer().getName()));
+                   .orElseThrow(() -> new UnknownCustomerException(customerShortName));
     }
 
-    private static CustomerConfig[] readCustomers() {
+    private static Customer[] readCustomers() {
         return attempt(
-            () -> JsonUtils.dtoObjectMapper.readValue(CUSTOMERS_JSON_STRING, CustomerConfig[].class)).orElseThrow();
+            () -> JsonUtils.dtoObjectMapper.readValue(CUSTOMERS_JSON_STRING, Customer[].class)).orElseThrow();
     }
 
     public Organization toPublisher(String host) {

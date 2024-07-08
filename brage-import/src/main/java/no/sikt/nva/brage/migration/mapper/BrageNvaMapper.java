@@ -25,7 +25,6 @@ import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.lambda.MappingConstants;
 import no.sikt.nva.brage.migration.lambda.MissingFieldsException;
 import no.sikt.nva.brage.migration.record.Affiliation;
-import no.sikt.nva.brage.migration.record.CustomerConfig;
 import no.sikt.nva.brage.migration.record.Language;
 import no.sikt.nva.brage.migration.record.Project;
 import no.sikt.nva.brage.migration.record.PublisherAuthority;
@@ -87,7 +86,7 @@ public final class BrageNvaMapper {
 
     public static Publication toNvaPublication(Record brageRecord, String host)
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        var customer = CustomerConfig.fromRecord(brageRecord);
+        var customer = Customer.fromShortName(brageRecord.getCustomer().getName());
         validateBrageRecord(brageRecord);
         var publication = new Publication.Builder()
                               .withEntityDescription(extractEntityDescription(brageRecord))
@@ -145,7 +144,7 @@ public final class BrageNvaMapper {
         return descriptions.stream().filter(StringUtils::isNotBlank).toList();
     }
 
-    private static List<AssociatedArtifact> extractAssociatedArtifacts(Record brageRecord, CustomerConfig customer) {
+    private static List<AssociatedArtifact> extractAssociatedArtifacts(Record brageRecord, Customer customer) {
         var associatedArtifacts = new ArrayList<>(extractAssociatedFiles(brageRecord, customer));
         associatedArtifacts.add(extractAssociatedLink(brageRecord));
         return associatedArtifacts.stream().filter(Objects::nonNull).toList();
@@ -191,7 +190,7 @@ public final class BrageNvaMapper {
         }
     }
 
-    private static List<AssociatedArtifact> extractAssociatedFiles(Record brageRecord, CustomerConfig customer) {
+    private static List<AssociatedArtifact> extractAssociatedFiles(Record brageRecord, Customer customer) {
         return Optional.ofNullable(brageRecord.getContentBundle())
                    .map(ResourceContent::getContentFiles)
                    .map(list -> convertFilesToAssociatedArtifact(list, brageRecord, customer))
@@ -199,23 +198,23 @@ public final class BrageNvaMapper {
     }
 
     private static List<AssociatedArtifact> convertFilesToAssociatedArtifact(List<ContentFile> files,
-                                                                             Record brageRecord, CustomerConfig customer) {
+                                                                             Record brageRecord, Customer customer) {
         return files.stream().map(file -> generateFile(file, brageRecord, customer)).toList();
     }
 
-    private static AssociatedArtifact generateFile(ContentFile file, Record brageRecord, CustomerConfig customer) {
+    private static AssociatedArtifact generateFile(ContentFile file, Record brageRecord, Customer customer) {
         var legalNote = extractLegalNote(brageRecord);
         var embargoDate = defineEmbargoDate(legalNote, file);
         return switch (file.getBundleType()) {
             case BundleType.ORIGINAL -> createPublishedFile(file, brageRecord, embargoDate, legalNote, customer);
-            case BundleType.LICENSE -> createAdministrativeAgreement(file, brageRecord, customer);
-            case BundleType.IGNORED -> createAdministrativeAgreementForDublinCore(file, brageRecord, customer);
+            case BundleType.LICENSE -> createAdministrativeAgreement(file, customer);
+            case BundleType.IGNORED -> createAdministrativeAgreementForDublinCore(file, customer);
             default -> new NullAssociatedArtifact();
         };
     }
 
-    private static AssociatedArtifact createAdministrativeAgreementForDublinCore(ContentFile file, Record record,
-                                                                                 CustomerConfig customer) {
+    private static AssociatedArtifact createAdministrativeAgreementForDublinCore(ContentFile file,
+                                                                                 Customer customer) {
         return AdministrativeAgreement.builder()
                    .withName(file.getFilename())
                    .withIdentifier(file.getIdentifier())
@@ -224,8 +223,8 @@ public final class BrageNvaMapper {
                    .buildUnpublishableFile();
     }
 
-    private static AssociatedArtifact createAdministrativeAgreement(ContentFile file, Record brageRecord,
-                                                                    CustomerConfig customer) {
+    private static AssociatedArtifact createAdministrativeAgreement(ContentFile file,
+                                                                    Customer customer) {
         return AdministrativeAgreement.builder()
                    .withName(file.getFilename())
                    .withIdentifier(file.getIdentifier())
@@ -234,12 +233,12 @@ public final class BrageNvaMapper {
                    .buildUnpublishableFile();
     }
 
-    private static UploadDetails createUploadDetails(CustomerConfig customer) {
+    private static UploadDetails createUploadDetails(Customer customer) {
         return new UploadDetails(new Username(customer.username()), Instant.now());
     }
 
     private static File createPublishedFile(ContentFile file, Record brageRecord, Instant embargoDate,
-                                            String legalNote, CustomerConfig customer) {
+                                            String legalNote, Customer customer) {
         return File.builder()
                    .withName(file.getFilename())
                    .withIdentifier(file.getIdentifier())
