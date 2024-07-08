@@ -15,7 +15,6 @@ import no.unit.nva.model.Username;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
-import no.sikt.nva.brage.migration.record.Record;
 
 public record Customer(String name,
                        String cristinIdentifier,
