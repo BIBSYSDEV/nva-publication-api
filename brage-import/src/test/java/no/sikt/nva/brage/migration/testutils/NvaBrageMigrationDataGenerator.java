@@ -153,6 +153,7 @@ public class NvaBrageMigrationDataGenerator {
                    .withAlternativeTitles(builder.getAlternativeTitlesMap())
                    .withMainTitle(builder.getMainTitle())
                    .withPublicationDate(builder.getPublicationDateForPublication())
+                   .withTags(List.of())
                    .build();
     }
 
@@ -203,6 +204,7 @@ public class NvaBrageMigrationDataGenerator {
         entityDescription.setPublicationDate(builder.getPublicationDate());
         entityDescription.setPublicationInstance(createPublicationInstance(builder));
         entityDescription.setLanguage(builder.getLanguage());
+        entityDescription.setTags(List.of());
         return entityDescription;
     }
 
