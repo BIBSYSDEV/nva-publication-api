@@ -1,5 +1,7 @@
 dependencies {
     implementation project(":publication-constants")
+    implementation project(":publication-model")
+
     implementation libs.nva.apigateway
     implementation libs.nva.core
     implementation libs.nva.json
@@ -7,11 +9,6 @@ dependencies {
     implementation libs.nva.auth
     implementation libs.nva.secrets
     implementation libs.nva.clients
-
-    implementation ( project(':publication-model') )
-    //implementation(libs.nva.datamodel.core) {
-    //    exclude group: 'com.github.bibsysdev', module: 'nva-commons'
-    //}
 
     implementation libs.aws.java.sdk.core
     implementation libs.aws.sdk.dynamodb
@@ -21,7 +18,6 @@ dependencies {
     implementation libs.aws.sdk2.s3
     implementation libs.aws.sdk2.sqs
 
-
     implementation libs.guava
     implementation libs.zalando
     implementation libs.bundles.jena
@@ -29,18 +25,15 @@ dependencies {
         exclude group: 'org.zalando', module : 'jackson-datatype-problem'
     }
 
-    implementation (libs.jackson.datatype.problem){
-
-    }
-
+    implementation libs.jackson.datatype.problem
     implementation libs.vavr
     implementation libs.resilience4j.retry
 
     implementation libs.bundles.logging
 
-    testImplementation project(path: ':tickets-test')
+    testImplementation project(":tickets-test")
     testImplementation libs.bundles.testing
-    testImplementation project(':publication-model-testing')
+    testImplementation project(":publication-model-testing")
     testImplementation project(":publication-testing")
 }
 
@@ -52,7 +45,3 @@ test {
     environment "BACKEND_CLIENT_AUTH_URL", "https://auth.example.com"
     environment "EXTERNAL_USER_POOL_URI", "https://external-user-pool.example.com"
 }
-
-
-
-

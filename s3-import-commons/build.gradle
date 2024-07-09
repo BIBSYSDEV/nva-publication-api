@@ -2,9 +2,6 @@ dependencies {
     implementation project(":publication-constants")
     implementation project(":publication-commons")
     implementation project(":publication-model")
-    //{
-    //    exclude group: 'com.github.bibsysdev', module: 'nva-commons'
-    //}
 
     implementation libs.nva.s3
     implementation libs.nva.core
@@ -71,6 +68,3 @@ test {
     environment "CRISTIN_IMPORT_NVI_PATCH_QUEUE_URL", "https://sqs.eu-west-1.amazonaws.com/someAccount/someQueue"
     environment "BRAGE_IMPORT_PATCH_QUEUE_URL", "https://sqs.eu-west-1.amazonaws.com/someAccount/someQueue"
 }
-
-
-

@@ -5,9 +5,6 @@ dependencies {
     implementation project(":tickets-test")
 
     implementation project(":publication-model")
-    //{
-    //    exclude group: 'com.github.bibsysdev', module: 'nva-commons'
-    //}
 
     implementation libs.nva.eventhandlers
     implementation libs.nva.core
@@ -49,7 +46,6 @@ dependencies {
     testImplementation libs.bundles.testing
     testImplementation libs.nva.identifiers
     testImplementation project(":publication-model-testing")
-    testImplementation project(":publication-model")
     testImplementation project(":publication-testing")
 
     compileOnly(libs.nva.identifiers) {

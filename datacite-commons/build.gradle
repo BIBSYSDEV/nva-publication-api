@@ -14,10 +14,7 @@ dependencies {
     implementation libs.bundles.jackson
 
     implementation project(":publication-model")
-    //{
-    //    exclude group: 'com.github.bibsysdev', module: 'nva-commons'
-    //}
-    implementation project(path: ':publication-commons')
+    implementation project(":publication-commons")
 
     implementation libs.aws.sdk.dynamodb
     implementation libs.aws.lambda.java.core
@@ -31,7 +28,6 @@ dependencies {
         exclude group: 'org.apache.commons', module: 'commons-lang3'
     }
 }
-
 
 test {
     environment "TABLE_NAME", "ResourcesTable"

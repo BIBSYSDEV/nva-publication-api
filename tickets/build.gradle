@@ -1,4 +1,3 @@
-
 dependencies {
     implementation project(":publication-commons")
     implementation project(":publication-doi-commons")
@@ -11,9 +10,6 @@ dependencies {
     implementation libs.nva.json
     implementation libs.nva.auth
     implementation project(":publication-model")
-    //{
-    //    exclude group: 'com.github.bibsysdev', module: 'nva-commons'
-    //}
     implementation libs.aws.sdk.dynamodb
     implementation libs.aws.sdk2.secrets
 
@@ -30,18 +26,16 @@ dependencies {
     testImplementation libs.jackson.core
     testImplementation project(':publication-testing')
     testImplementation libs.nva.testutils
-    testImplementation project(path: ':tickets-test')
+    testImplementation project(":tickets-test")
     testImplementation libs.logutils
     testImplementation libs.wiremock
     testImplementation libs.bundles.testing
-
 
     compileOnly libs.zalando
     compileOnly libs.aws.lambda.java.core
 }
 
 test {
-
     environment "AWS_REGION", "eu-west-1"
     environment "COGNITO_HOST", "https://example.com"
     environment "ALLOWED_ORIGIN", "*"
