@@ -7,8 +7,7 @@ dependencies {
     implementation libs.nva.apigateway
     implementation libs.nva.identifiers
     implementation libs.nva.secrets
-    implementation libs.nva.datamodel.core
-    implementation libs.nva.datamodel.testutils
+    implementation project(":publication-model")
     implementation libs.jsonld
     implementation libs.guava
     implementation libs.aws.sdk.dynamodb
@@ -16,6 +15,7 @@ dependencies {
     implementation libs.bundles.logging
 
     testImplementation(project(':publication-testing'))
+    testImplementation project(":publication-model-testing")
     testImplementation project(path: ':tickets-test')
     testImplementation libs.bundles.testing
     testImplementation libs.jsonassert

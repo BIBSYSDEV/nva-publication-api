@@ -1,7 +1,7 @@
 dependencies {
     implementation libs.nva.core
     implementation libs.nva.json
-    implementation libs.nva.datamodel.core
+    implementation project(":publication-model")
 
     implementation libs.bundles.jackson
 
@@ -11,6 +11,7 @@ dependencies {
     testImplementation libs.bundles.testing
     testImplementation libs.nva.identifiers
     testImplementation project(':publication-testing')
+    testImplementation project(":publication-model-testing")
     testImplementation 'uk.co.datumedge:hamcrest-json:0.2'
 }
 

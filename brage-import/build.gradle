@@ -1,7 +1,7 @@
 dependencies {
     implementation project(":publication-commons")
     testImplementation libs.nva.testutils
-    testImplementation libs.nva.datamodel.testutils
+    testImplementation project(":publication-model-testing")
     implementation project(":s3-import-commons")
 
     implementation libs.aws.sdk2.s3
@@ -21,7 +21,7 @@ dependencies {
     implementation libs.nva.json
     implementation libs.nva.language
     implementation libs.nva.identifiers
-    implementation(libs.nva.datamodel.core)
+    implementation project(":publication-model")
     implementation(libs.dynamodDbLocal) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'

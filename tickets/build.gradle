@@ -10,9 +10,10 @@ dependencies {
     implementation libs.nva.core
     implementation libs.nva.json
     implementation libs.nva.auth
-    implementation(libs.nva.datamodel.core) {
-        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
-    }
+    implementation project(":publication-model")
+    //{
+    //    exclude group: 'com.github.bibsysdev', module: 'nva-commons'
+    //}
     implementation libs.aws.sdk.dynamodb
     implementation libs.aws.sdk2.secrets
 
@@ -25,7 +26,7 @@ dependencies {
 
     runtimeOnly libs.jackson.core
 
-    testImplementation libs.nva.datamodel.testutils
+    testImplementation project(":publication-model-testing")
     testImplementation libs.jackson.core
     testImplementation project(':publication-testing')
     testImplementation libs.nva.testutils

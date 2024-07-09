@@ -1,0 +1,2040 @@
+@prefix nva: <https://nva.sikt.no/ontology/publication#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <https://schema.org/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+
+nva:ClothingDesign a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:ArtisticDesignSubtype .
+
+nva:Exhibition a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:ArtisticDesignSubtype .
+
+nva:Funding a rdfs:Class ;
+  rdfs:comment "A source of financial support" ;
+  rdfs:isDefinedBy nva: .
+
+nva:ConfirmedFunding a rdfs:Class ;
+  rdfs:comment "A source of financial support that is confirmed by the funder" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Funding .
+
+nva:UnconfirmedFunding a rdfs:Class ;
+  rdfs:comment "A source of financial support that is reported, but not confirmed by the funder" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Funding .
+
+nva:MonetaryAmount a rdfs:Class ;
+  rdfs:comment "A sum of money in a given currency" ;
+  rdfs:isDefinedBy nva: .
+
+nva:GraphicDesign a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:ArtisticDesignSubtype .
+
+nva:Illustration a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:ArtisticDesignSubtype .
+
+nva:InteractionDesign a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:ArtisticDesignSubtype .
+
+nva:InteriorDesign a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:ArtisticDesignSubtype .
+
+nva:LightDesign a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:ArtisticDesignSubtype .
+
+nva:ProductDesign a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:ArtisticDesignSubtype .
+
+nva:ServiceDesign a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:ArtisticDesignSubtype .
+
+nva:WebDesign a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:ArtisticDesignSubtype .
+
+nva:UnconfirmedMediaContributionPeriodical a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:UnconfirmedJournal .
+
+nva:UnconfirmedJournal a rdfs:Class ;
+                         rdfs:comment "" ;
+                         rdfs:isDefinedBy nva: ;
+                         rdfs:subClassOf nva:Periodical .
+
+nva:Course a rdfs:Class ;
+               rdfs:comment "A course of study" ;
+               rdfs:isDefinedBy nva: ;
+               rdfs:subClassOf nva:Course .
+
+nva:UnconfirmedCourse a rdf:Property ;
+               rdfs:comment "A course that cannot be verified to exist in any source system" ;
+               rdfs:isDefinedBy nva: ;
+               rdfs:subClassOf nva:Course ;
+               rdfs:domain nva:Degree .
+
+nva:Duration a rdfs:Class ;
+                 rdfs:comment "The length of time that something is scheduled to last" ;
+                 rdfs:isDefinedBy nva: ;
+                 rdfs:subClassOf nva:Duration .
+
+nva:NullDuration a rdfs:Class ;
+                 rdfs:comment "A duration with no defined value" ;
+                 rdfs:isDefinedBy nva: ;
+                 rdfs:subClassOf nva:Duration .
+
+nva:UndefinedDuration a rdfs:Class ;
+                      rdfs:comment "A duration with a value that is not clearly defined" ;
+                      rdfs:isDefinedBy nva: ;
+                      rdfs:subClassOf nva:Duration .
+
+nva:DefinedDuration a rdfs:Class ;
+                    rdfs:comment "A duration with a clearly defined value" ;
+                    rdfs:isDefinedBy nva: ;
+                    rdfs:subClassOf nva:Duration .
+
+nva:ArchitectureSubtype a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Architecture .
+
+nva:Building a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:ArchitectureSubtype .
+
+nva:PlanningProposal a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:ArchitectureSubtype .
+
+nva:LandscapeArchitecture a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:ArchitectureSubtype .
+
+nva:Interior a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:ArchitectureSubtype .
+
+nva:Periodical a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Periodical .
+
+nva:NOTAPPLIED a rdfs:Class ;
+                 rdfs:comment "" ;
+                 rdfs:isDefinedBy nva: .
+
+nva:APPLIED a rdfs:Class ;
+                     rdfs:comment "" ;
+                     rdfs:isDefinedBy nva: .
+
+nva:APPROVED a rdfs:Class ;
+                     rdfs:comment "" ;
+                     rdfs:isDefinedBy nva: .
+
+nva:DECLINED a rdfs:Class ;
+                     rdfs:comment "" ;
+                     rdfs:isDefinedBy nva: .
+
+nva:REJECTION a rdfs:Class ;
+                     rdfs:comment "" ;
+                     rdfs:isDefinedBy nva: .
+
+
+nva:Organizational a rdfs:Class ;
+                     rdfs:comment "" ;
+                     rdfs:isDefinedBy nva: .
+
+nva:Personal a rdfs:Class ;
+              rdfs:comment "" ;
+              rdfs:isDefinedBy nva: .
+
+nva:Text a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: .
+
+nva:Sound a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: .
+
+nva:Video a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: .
+
+nva:CompactDisc a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: .
+
+nva:DVD a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: .
+
+nva:Streaming a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: .
+
+nva:DigitalFile a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: .
+
+nva:Vinyl a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: .
+
+
+nva:PublicationStatus a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: .
+
+nva:NEW a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:PublicationStatus .
+
+nva:DRAFT a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:PublicationStatus .
+
+nva:PUBLISHED a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:PublicationStatus .
+
+nva:DRAFT_FOR_DELETION a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:PublicationStatus .
+
+nva:ReportWorkingPaper a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Report .
+
+nva:Lecture a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Event .
+
+nva:DataSet a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:ResearchData .
+
+nva:License a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: .
+
+nva:MediaBlogPost a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:MediaContribution .
+
+nva:DegreePhd a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Degree .
+
+nva:PublishedFile a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:File .
+
+nva:ResearchProject a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Project .
+
+
+nva:JournalIssue a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Journal .
+
+nva:Book a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Publication .
+
+nva:LiteraryArtsWeb a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Artistic .
+
+nva:Identity a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: .
+
+nva:Approval a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: .
+
+nva:ChapterConferenceAbstract a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Chapter .
+
+nva:Degree a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Publication .
+
+nva:Instant a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Time .
+
+nva:Time a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf skos:Concept .
+
+nva:Publication a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf owl:Thing .
+
+nva:ReportBasic a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Report .
+
+nva:MusicScore a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Artistic .
+
+nva:MediaContribution a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Publication .
+
+nva:EntityDescription a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:DescriptiveMetadata .
+
+nva:DescriptiveMetadata a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf skos:Concept .
+
+nva:LiteraryArtsPerformance a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Artistic .
+
+nva:ConferenceLecture a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Event .
+
+nva:MusicalWork a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Artistic .
+
+nva:GeographicalDescription a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:DescriptiveMetadata .
+
+nva:Map a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:GeographicalContent .
+
+nva:BookAnthology a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Book .
+
+nva:OtherRelease a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: .
+
+nva:JournalInterview a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Journal .
+
+nva:Organization a rdfs:Class ;
+  rdfs:comment "Administrative grouping of people working towards a shared goal" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Corporation  .
+
+nva:UnconfirmedOrganization a rdfs:Class ;
+                 rdfs:comment "Unverified administrative grouping of people working towards a shared goal" ;
+                 rdfs:isDefinedBy nva: ;
+                 rdfs:subClassOf nva:Corporation  .
+
+nva:Corporation a rdfs:Class ;
+                rdfs:comment "Organized grouping of people working towards a shared goal" ;
+                rdfs:isDefinedBy nva: ;
+                rdfs:subClassOf nva:Agent .
+
+nva:Agent a rdfs:Class ;
+  rdfs:comment "Any person or group of persons doing something" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf owl:Thing .
+
+nva:VisualArts a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Artistic .
+
+nva:DataManagementPlan a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:ResearchData .
+
+nva:ConferencePoster a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Event .
+
+nva:Ismn a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Identifier .
+
+nva:Identifier a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf owl:Thing .
+
+nva:PerformingArts a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Artistic .
+
+nva:ReportResearch a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Report .
+
+nva:AdditionalIdentifier a rdfs:Class ;
+  rdfs:comment "Any identifier that is not a primary identifier and does not fall conveniently into any other identifier category" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Identifier .
+
+nva:HandleIdentifier a rdfs:Class ;
+  rdfs:comment "Persistent URI resolvable by handle.net" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Identifier .
+
+nva:CristinIdentifier a rdfs:Class ;
+  rdfs:comment "An integer identifier from Cristin, an external system, typically representing a result, but may also represent other entities" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Identifier .
+
+nva:ScopusIdentifier a rdfs:Class ;
+  rdfs:comment "Scopus EID provided by Scopus, an external bibliographic database" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Identifier .
+
+nva:PublicationNote a rdfs:Class ;
+  rdfs:comment     "An historical string containing information pertaining to the Cristin verification process" ;
+  rdfs:isDefinedBy nva: ;
+  rdf:type owl:DeprecatedClass ;
+  owl:deprecated "true"^^xsd:boolean ;
+  rdfs:domain nva:Publication .
+
+nva:UnpublishingNote a rdfs:Class ;
+  rdfs:comment     "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Publication .
+
+nva:Broadcast a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:MediaContribution .
+
+nva:TheatricalProduction a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:MediaContribution .
+
+nva:BookMonograph a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Book .
+
+nva:AcademicMonograph a rdfs:Class ;
+  rdfs:comment "A long-form scholarly text" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:BookMonograph .
+
+nva:Encyclopedia a rdfs:Class ;
+  rdfs:comment "A collection of shorter articles typically on a single topic domain serving as a reference work" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:BookMonograph .
+
+nva:ExhibitionCatalog a rdfs:Class ;
+  rdfs:comment "A list of exhibits at an organized event" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:BookMonograph .
+
+nva:NonFictionMonograph a rdfs:Class ;
+  rdfs:comment "A long-form text on a real-world topic" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:BookMonograph .
+
+nva:PopularScienceMonograph a rdfs:Class ;
+  rdfs:comment "A long-form text on a scientific topic for a non-academic audience" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:BookMonograph .
+
+nva:Textbook a rdfs:Class ;
+  rdfs:comment "A long-form text on created for the purposes of education" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:BookMonograph .
+
+nva:DegreeMaster a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Degree .
+
+nva:MediaReaderOpinion a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:MediaContributionPeriodical .
+
+nva:MediaContributionPeriodical a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:MediaContribution .
+
+nva:UnconfirmedPublisher a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Publisher .
+
+nva:Artistic a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Publication .
+
+nva:GeographicalContent a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Publication .
+
+nva:Reference a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:DescriptiveMetadata .
+
+nva:JournalLeader a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Journal .
+
+nva:Chapter a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Publication .
+
+nva:MediaPodcast a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Media .
+
+nva:Radio a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Media .
+
+nva:Publisher a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Organization .
+
+nva:LiteraryArtsAudioVisual a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Artistic .
+
+nva:JournalLetter a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Journal .
+
+nva:Concert a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Artistic .
+
+nva:AudioVisualPublication a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Artistic .
+
+
+nva:CinematicRelease a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Artistic .
+
+nva:MovingPicture a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Artistic .
+
+nva:Event a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Publication .
+
+nva:MonographPages a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Pages .
+
+nva:Pages a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Extent .
+
+nva:Extent a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:DescriptiveMetadata .
+
+nva:AssociatedLink a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf rdf:Resource .
+
+nva:Other a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: .
+  # rdfs:subClassOf nva: This is a long list
+
+nva:Competition a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: .
+
+nva:TV a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: .
+
+nva:Journal a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Publication .
+
+nva:MusicPerformance a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Artistic .
+
+
+nva:BookAbstracts a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Book .
+
+nva:NullPages a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Pages .
+
+nva:OtherPerformance a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Artistic .
+
+nva:Venue a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: .
+
+nva:Architecture a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Artistic .
+
+nva:Period a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Time .
+
+nva:Range a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Pages .
+
+nva:UnconfirmedPlace a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Place .
+
+nva:LiteraryArts a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Artistic .
+
+nva:DegreeBachelor a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Degree .
+
+nva:MentionInPublication a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: .
+
+nva:Internet a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: .
+
+nva:SeriesEpisode a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: .
+
+nva:ResearchData a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Publication .
+
+nva:MediaParticipationInRadioOrTv a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Media .
+
+nva:MusicalWorkPerformance a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Artistic .
+
+nva:IndividualExhibition a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:VisualArts .
+
+nva:Novel a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:LiteraryArts .
+
+nva:Poetry a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:LiteraryArts .
+
+nva:Novella a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:LiteraryArts .
+
+nva:ShortFiction a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:LiteraryArts .
+
+nva:Essay a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:LiteraryArts .
+
+nva:Translation a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:LiteraryArts .
+
+nva:Retelling a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:LiteraryArts .
+
+nva:Play a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:LiteraryArts .
+
+nva:Film a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:MovingPicture .
+
+nva:ShortFilm a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:MovingPicture .
+
+nva:SerialFilmProduction a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:MovingPicture .
+
+nva:InteractiveFilm a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:MovingPicture .
+
+nva:AugmentedVirtualRealityFilm a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:MovingPicture .
+
+
+nva:CollectiveExhibition a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:VisualArts .
+
+nva:Installation a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:VisualArts .
+
+nva:ArtInPublicSpace a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:VisualArts .
+
+nva:Performance a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:VisualArts .
+
+nva:AudioArt a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:VisualArts .
+
+nva:ArtistBook a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:VisualArts .
+
+nva:MediaInterview a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Media .
+
+nva:Contributor a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: .
+
+nva:OtherStudentWork a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Degree .
+
+nva:ChapterArticle a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Chapter .
+
+nva:ChapterInReport a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Chapter .
+
+nva:ReportBookOfAbstract a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Report .
+
+nva:PerformingArtsVenue a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Venue .
+
+nva:ConferenceAbstract a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Event .
+
+
+nva:Isrc a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Identifier .
+
+nva:MediaFeatureArticle a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Media .
+
+nva:JournalArticle a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Journal .
+
+nva:JournalReview a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Journal .
+
+nva:PublicationDate a rdfs:Class ;
+  rdfs:comment "The date the thing was first published for public consumption" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Time .
+
+nva:Report a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Publication .
+
+nva:JournalCorrigendum a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Journal .
+
+nva:Series a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: .
+
+nva:MusicTrack a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: .
+
+nva:Award a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: .
+
+nva:ArtisticDesign a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Publication .
+
+nva:LiteraryArtsMonograph a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:LiteraryArts .
+
+nva:FeatureArticle a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:MediaContribution .
+
+nva:OtherPresentation a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Event .
+
+nva:ReportPolicy a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Report .
+
+nva:DegreeLicentiate a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Degree .
+
+nva:extent a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain rdfs:Class ;
+  rdfs:range nva:Extent .
+
+nva:year a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:PublicationDate ;
+  rdfs:range xsd:string .
+
+nva:additionalIdentifier a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Publication ;
+  rdfs:range nva:AdditionalIdentifier, nva:ScopusIdentifier, nva:HandleIdentifier, nva:CristinIdentifier.
+
+nva:submittedDate a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Degree ;
+  rdfs:range nva:PublicationDate .
+
+nva:performanceType a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:MusicPerformanceManifestation ;
+  rdfs:range xsd:string .
+
+nva:publicationContext a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Reference ;
+  rdfs:range nva:PublicationContext .
+
+nva:output a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:PerformingArts, nva:MovingPicture ;
+  rdfs:range rdf:Resource .
+
+nva:entityDescription a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Publication ;
+  rdfs:range nva:EntityDescription .
+
+nva:ownerAffiliation a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:ResourceOwner ;
+  rdfs:range xsd:anyURI .
+
+nva:identifier a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain rdfs:Class ;
+  rdfs:range xsd:string .
+
+nva:issue a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:PublicationInstance ;
+  rdfs:range xsd:string .
+
+nva:handle a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Publication ;
+  rdfs:range xsd:anyURI .
+
+nva:illustrated a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:MonographPages ;
+  rdfs:range xsd:boolean .
+
+nva:size a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:File ;
+  rdfs:range xsd:long .
+
+nva:metadataSource a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:EntityDescription ;
+  rdfs:range xsd:anyURI .
+
+nva:compliesWith a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:DataSet;
+  rdfs:range xsd:anyURI .
+
+nva:begin a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Range ;
+  rdfs:range xsd:string .
+
+nva:doi a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Publication, nva:Reference ;
+  rdfs:range xsd:anyURI .
+
+nva:duplicateOf a rdf:Property ;
+  rdfs:comment "Denotes that a publication is a duplicate of another publication" ;
+  rdfs:label "duplicateOf" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Publication ;
+  rdfs:range nva:Publication .
+
+nva:status a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Publication  ;
+  rdfs:range nva:PublicationStatus.
+
+nva:architectureOutput a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Architecture ;
+  rdfs:range nva:ArchitectureOutput .
+
+nva:role a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Contributor ;
+  rdfs:range nva:AcademicCoordinator,
+             nva:Actor,
+             nva:Advisor,
+             nva:Architect,
+             nva:ArchitecturalPlanner,
+             nva:Artist,
+             nva:ArtisticDirector,
+             nva:Choreographer,
+             nva:Composer,
+             nva:Conductor,
+             nva:Consultant,
+             nva:ContactPerson,
+             nva:CostumeDesigner,
+             nva:Creator,
+             nva:Curator,
+             nva:CuratorOrganizer,
+             nva:Dancer,
+             nva:DataCollector,
+             nva:DataCurator,
+             nva:DataManager,
+             nva:Designer,
+             nva:Director,
+             nva:Distributor,
+             nva:Dramatist,
+             nva:Dramaturge,
+             nva:Editor,
+             nva:EditorialBoardMember,
+             nva:Funder,
+             nva:HostingInstitution,
+             nva:Illustrator,
+             nva:InteriorArchitect,
+             nva:InterviewSubject,
+             nva:Journalist,
+             nva:LandscapeArchitect,
+             nva:Librettist,
+             nva:LightDesigner,
+             nva:Musician,
+             nva:Organizer,
+             nva:Other,
+             nva:Producer,
+             nva:Photographer,
+             nva:ProductionDesigner,
+             nva:ProgrammeLeader,
+             nva:ProgrammeParticipant,
+             nva:ProjectLeader,
+             nva:ProjectManager,
+             nva:ProjectMember,
+             nva:RegistrationAgency,
+             nva:RegistrationAuthority,
+             nva:RelatedPerson,
+             nva:Researcher,
+             nva:ResearchGroup,
+             nva:RightsHolder,
+             nva:Scenographer,
+             nva:Screenwriter,
+             nva:Soloist,
+             nva:SoundDesigner,
+             nva:Sponsor,
+             nva:Supervisor,
+             nva:TranslatorAdapter,
+             nva:VfxSupervisor,
+             nva:VideoEditor,
+             nva:WorkPackageLeader,
+             nva:Writer .
+
+nva:AcademicCoordinator a rdfs:Class .
+nva:Actor a rdfs:Class .
+nva:Advisor a rdfs:Class .
+nva:Architect a rdfs:Class .
+nva:ArchitecturalPlanner a rdfs:Class .
+nva:Artist a rdfs:Class .
+nva:ArtisticDirector a rdfs:Class .
+nva:Choreographer a rdfs:Class .
+nva:Composer a rdfs:Class .
+nva:Conductor a rdfs:Class .
+nva:Consultant a rdfs:Class .
+nva:ContactPerson a rdfs:Class .
+nva:CostumeDesigner a rdfs:Class .
+nva:Creator a rdfs:Class .
+nva:Curator a rdfs:Class .
+nva:CuratorOrganizer a rdfs:Class .
+nva:Dancer a rdfs:Class .
+nva:DataCollector a rdfs:Class .
+nva:DataCurator a rdfs:Class .
+nva:DataManager a rdfs:Class .
+nva:Designer a rdfs:Class .
+nva:Director a rdfs:Class .
+nva:Distributor a rdfs:Class .
+nva:Dramatist a rdfs:Class .
+nva:Dramaturge a rdfs:Class .
+nva:Editor a rdfs:Class .
+nva:EditorialBoardMember a rdfs:Class .
+nva:Funder a rdfs:Class .
+nva:HostingInstitution a rdfs:Class .
+nva:Illustrator a rdfs:Class .
+nva:InteriorArchitect a rdfs:Class .
+nva:InterviewSubject a rdfs:Class .
+nva:Journalist a rdfs:Class .
+nva:LandscapeArchitect a rdfs:Class .
+nva:Librettist a rdfs:Class .
+nva:LightDesigner a rdfs:Class .
+nva:Musician a rdfs:Class .
+nva:Organizer a rdfs:Class .
+nva:Other a rdfs:Class .
+nva:Producer a rdfs:Class .
+nva:Photographer a rdfs:Class .
+nva:ProductionDesigner a rdfs:Class .
+nva:ProgrammeLeader a rdfs:Class .
+nva:ProgrammeParticipant a rdfs:Class .
+nva:ProjectLeader a rdfs:Class .
+nva:ProjectManager a rdfs:Class .
+nva:ProjectMember a rdfs:Class .
+nva:RegistrationAgency a rdfs:Class .
+nva:RegistrationAuthority a rdfs:Class .
+nva:RelatedPerson a rdfs:Class .
+nva:Researcher a rdfs:Class .
+nva:ResearchGroup a rdfs:Class .
+nva:RightsHolder a rdfs:Class .
+nva:Scenographer a rdfs:Class .
+nva:Screenwriter a rdfs:Class .
+nva:Soloist a rdfs:Class .
+nva:SoundDesigner a rdfs:Class .
+nva:Sponsor a rdfs:Class .
+nva:Supervisor a rdfs:Class .
+nva:TranslatorAdapter a rdfs:Class .
+nva:VfxSupervisor a rdfs:Class .
+nva:VideoEditor a rdfs:Class .
+nva:WorkPackageLeader a rdfs:Class .
+nva:Writer a rdfs:Class .
+
+nva:formatted a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Ismn ;
+  rdfs:range xsd:string .
+
+nva:alternativeTitle a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Publication ;
+  rdfs:range rdf:langString .
+
+nva:orcId a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Identity ;
+  rdfs:range xsd:anyURI .
+
+nva:userAgreesToTermsAndConditions a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:DataSet ;
+  rdfs:range xsd:boolean .
+
+nva:publicationInstance a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Reference ;
+  rdfs:range nva:PublicationInstance .
+
+# Probably one missing from the domain here .
+nva:articleNumber a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:ConferenceAbstract, nva:JournalArticle, nva:JournalCorrigendum, nva:JournalInterview, nva:JournalIssue,
+              nva:JournalLeader, nva:JournalLetter, nva:JournalReview, nva:MediaFeatureArticle, nva:MediaReaderOpinion ;
+  rdfs:range xsd:string .
+
+nva:identity a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Contributor ;
+  rdfs:range nva:Identity .
+
+nva:place a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:CinematicRelease, nva:Concert, nva:Event, nva:Exhibition, nva:LiteraryArtsPerformance,
+              nva:OtherPerformance, nva:OtherRelease, nva:PerformingArtsVenue, nva:Venue ;
+  rdfs:range nva:Place .
+
+# should probably just be "date"
+nva:publicationDate a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:LiteraryArtsManifestation ;
+  rdfs:range nva:PublicationDate.
+
+nva:product a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Event ;
+  rdfs:range xsd:anyURI .
+
+# Really? Sounds like a contribution (pun intended)
+nva:composer a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:MusicTrack, nva:MusicalWork, nva:MusicalWorkPerformance ;
+  rdfs:range xsd:string .
+
+nva:abstract a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:EntityDescription;
+  rdfs:range xsd:string .
+
+nva:embargoDate a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:File ;
+  rdfs:range xsd:dateTime .
+
+nva:seriesNumber a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Report, nva:Book, nva:Degree ;
+  rdfs:range xsd:string .
+
+nva:revision a rdf:Property ;
+  rdfs:comment "Indicates if the book has been revised." ;
+  rdfs:label "Revision of a book" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Book ;
+  rdfs:range xsd:string .
+
+nva:createdDate a rdf:Property ;
+  rdfs:comment "The date that the thing was originally recorded in the documenting system" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Publication ;
+  rdfs:range xsd:dateTime .
+
+nva:mainTitle a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:EntityDescription ;
+  rdfs:range xsd:string .
+
+# probably an issue that SeriesEpisode uses this property c.f. seriesNumber .
+nva:series a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Book, nva:Degree, nva:Report, nva:SeriesEpisode;
+  rdfs:range xsd:string .
+
+nva:organizer a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Award, nva:Exhibition ;
+  rdfs:range xsd:string .
+
+nva:ismn a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:MusicScore ;
+  rdfs:range nva:Ismn .
+
+nva:ranking a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Award ;
+  rdfs:range xsd:nonNegativeInteger .
+
+nva:concertProgramme a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Concert ;
+  rdfs:range nva:MusicalWorkPerformance .
+
+nva:publishedDate a rdf:Property ;
+  rdfs:comment "The date that the thing was originally published for public consumption in the documenting system" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Publication ;
+  rdfs:range xsd:dateTime .
+
+nva:to a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Period ;
+  rdfs:range xsd:dateTime .
+
+# This is a bit problematic since the range is just about any possible date class.
+nva:date a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Venue, nva:Approval, nva:Award, nva:Broadcast, nva:CinematicRelease, nva:Competition,
+              nva:EntityDescription, nva:Exhibition, nva:MentionInPublication, nva:OtherRelease, nva:PerformingArtsVenue;
+  rdfs:range rdf:Resource .
+
+nva:country a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:UnconfirmedPlace ;
+  rdfs:range xsd:string .
+
+nva:isbn a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Book, nva:Degree, nva:Report, nva:LiteraryArtsAudioVisual, nva:LiteraryArtsMonograph ;
+  rdfs:range xsd:string .
+
+nva:partOf a rdf:Property ;
+  rdfs:comment "Denotes a relation to a greater part, which wholly encompasses the thing" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Chapter, nva:MediaContribution;
+  rdfs:range rdf:Resource .
+
+nva:agent a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Event ;
+  rdfs:range nva:Agent .
+
+nva:subject a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Publication ;
+  rdfs:range xsd:anyURI .
+
+nva:approvedBy a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Approval ;
+  rdfs:range rdf:Resource .
+
+nva:project a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Publication ;
+  rdfs:range nva:ResearchProject .
+
+nva:funding a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Publication ;
+  rdfs:range nva:Funding .
+
+nva:fundingAmount a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:UnconfirmedFunding, nva:ConfirmedFunding ;
+  rdfs:range nva:MonetaryAmount .
+
+nva:amount a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:MonetaryAmount ;
+  rdfs:range xsd:long .
+
+nva:currency a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:MonetaryAmount ;
+  rdfs:range xsd:string .
+
+nva:activeFrom a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:UnconfirmedFunding, nva:ConfirmedFunding ;
+  rdfs:range xsd:dateTime .
+
+nva:activeTo a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:UnconfirmedFunding, nva:ConfirmedFunding ;
+  rdfs:range xsd:dateTime .
+
+nva:administrativeAgreement a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:File ;
+  rdfs:range xsd:boolean .
+
+nva:language a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:EntityDescription;
+  rdfs:range xsd:anyURI .
+
+nva:mimeType a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:File ;
+  rdfs:range xsd:string .
+
+nva:printIssn a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:UnconfirmedJournal, nva:UnconfirmedMediaContributionPeriodical ;
+  rdfs:range xsd:string .
+
+nva:seriesPart a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:SeriesEpisode ;
+  rdfs:range xsd:string .
+
+nva:reference a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:EntityDescription ;
+  rdfs:range nva:Reference .
+
+nva:pages a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:BookAbstracts, nva:BookAnthology, nva:BookMonograph, nva:ChapterArticle, nva:ChapterConferenceAbstract,
+              nva:ChapterInReport, nva:ConferenceAbstract, nva:DataManagementPlan, nva:DegreeBachelor,
+              nva:DegreeLicentiate, nva:DegreeMaster, nva:DegreePhd, nva:FeatureArticle, nva:JournalArticle,
+              nva:JournalCorrigendum, nva:JournalInterview, nva:JournalIssue, nva:JournalLeader, nva:JournalLetter,
+              nva:JournalReview, nva:LiteraryArtsMonograph, nva:Map, nva:MediaFeatureArticle, nva:MediaReaderOpinion,
+              nva:MonographPages, nva:OtherStudentWork, nva:PublicationInstancePages, nva:ReportBasic,
+              nva:ReportBookOfAbstract, nva:ReportPolicy, nva:ReportResearch, nva:ReportWorkingPaper ;
+  rdfs:range nva:Pages .
+
+nva:affiliation a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Contributor ;
+  rdfs:range nva:Organization .
+
+nva:publisherVersion a rdf:Property ;
+  rdfs:comment "Denotes if a file is the Accepted version or the Published version. Usually only applicable for articles submitted to a journal or publisher." ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:File ;
+  rdfs:range nva: .
+
+nva:from a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Period ;
+  rdfs:range xsd:dateTime .
+
+nva:tag a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:EntityDescription ;
+  rdfs:range xsd:string .
+
+nva:day a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:PublicationDate ;
+  rdfs:range xsd:string .
+
+nva:contentType a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:JournalArticle ;
+  rdfs:range nva:AcademicArticle, nva:AcademicLiteratureReview, nva:CaseReport, nva:StudyProtocol,
+             nva:ProfessionalArticle, nva:PopularScienceArticle  .
+
+nva:npiSubjectHeading a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:EntityDescription ;
+  rdfs:range xsd:String .
+
+nva:manifestation a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:LiteraryArts ;
+  rdfs:range nva:LiteraryArtsManifestation .
+
+nva:format a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:MediaContribution ;
+  rdfs:range nva:Text, nva:Sound, nva:Video .
+
+nva:mediaType a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:AudioVisualPublication ;
+  rdfs:range nva:CompactDisc, nva:DVD, nva:Streaming, nva:DigitalFile, nva:Vinyl, nva:Other .
+
+nva:otherInformation a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Award, nva:Exhibition, nva:MentionInPublication ;
+  rdfs:range xsd:string .
+
+nva:disseminationChannel a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:MediaContribution ;
+  rdfs:range xsd:string .
+
+# Probably one missing from the domain here .
+
+nva:volume a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:ConferenceAbstract, nva:JournalArticle, nva:JournalCorrigendum, nva:JournalInterview, nva:JournalIssue,
+              nva:JournalLeader, nva:JournalLetter, nva:JournalReview, nva:MediaFeatureArticle, nva:MediaReaderOpinion;
+  rdfs:range xsd:string .
+
+nva:sequence a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:MovingPictureOutput, nva:PerformingArtsVenue, nva:Venue, nva:ArchitectureOutput, nva:Contributor;
+  rdfs:range xsd:nonNegativeInteger .
+
+nva:license a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:File ;
+  rdfs:range nva:License .
+
+nva:month a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:PublicationDate ;
+  rdfs:range xsd:string .
+
+nva:name a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Identity, nva:ResearchProject, nva:UnconfirmedOrganization,
+              nva:UnconfirmedPublisher, nva:AssociatedLink, nva:Award, nva:Competition,
+              nva:Exhibition, nva:File ;
+  rdfs:range xsd:string .
+
+nva:modifiedDate a rdf:Property ;
+  rdfs:comment "The date that the thing was last modified in the documenting system" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Publication ;
+  rdfs:range xsd:dateTime .
+
+nva:publisher a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:AudioVisualPublication, nva:Book, nva:BroadCast, nva:Degree, nva:GeographicalContent,
+              nva:LiteraryArtsAudioVisual, nva:LiteraryArtsMonograph, nva:LiteraryArtsWeb, nva:MusicScore,
+              nva:OtherRelease, nva:Publisher, nva:Report, nva:ResearchData;
+  rdfs:range nva:Organization .
+
+nva:referencedBy a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:DataSet ;
+  rdfs:range xsd:anyURI .
+
+nva:RelatedDocument a rdfs:Class ;
+           rdfs:comment "A document representing material associated with a NVA publication." ;
+           rdfs:isDefinedBy nva: ;
+           rdfs:subClassOf nva:RelatedDocument .
+
+nva:ConfirmedDocument a rdf:Property ;
+            rdfs:comment "A document representing verified URI identifier of NVA publication that are related to the other NVA publication." ;
+            rdfs:isDefinedBy nva: ;
+            rdfs:subClassOf nva:RelatedDocument .
+
+nva:UnconfirmedDocument a rdf:Property ;
+            rdfs:comment "A document representing unverified material related to the NVA publication." ;
+            rdfs:isDefinedBy nva: ;
+            rdfs:subClassOf nva:RelatedDocument .
+
+nva:visibleForNonOwner a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:File ;
+  rdfs:range xsd:boolean .
+
+nva:venue a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:VisualArts, nva:ArtisticDesign;
+  rdfs:range nva:Venue .
+
+nva:resourceOwner a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Publication ;
+  rdfs:range nva:ResourceOwner .
+
+nva:modelVersion a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Publication ;
+  rdfs:range xsd:string .
+
+nva:geographicalCoverage a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:DataSet ;
+  rdfs:range nva:GeographicalDescription .
+
+nva:link a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:License, nva:Publication ;
+  rdfs:range xsd:anyURI .
+
+nva:description a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Architecture, nva:ArchitectureSubtype, nva:ArtisticDesign, nva:ArtisticDesignSubtype,
+              nva:AssociatedLink, nva:Competition, nva:Concert, nva:EntityDescription, nva:GeographicalDescription,
+              nva:LiteraryArts, nva:LiteraryArtsSubtype, nva:Map, nva:MediaSubType, nva:MovingPicture,
+              nva:MovingPictureSubtype, nva:OtherRelease, nva:PerformingArts, nva:PerformingArtsSubtype,
+              nva:VisualArts, nva:VisualArtsSubtype ;
+  rdfs:range xsd:string .
+
+nva:movements a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:MusicScore ;
+  rdfs:range xsd:string .
+
+nva:ensemble a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:MusicScore ;
+  rdfs:range xsd:string .
+
+nva:medium a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:MediaContribution ;
+  rdfs:range nva:MediaSubType .
+
+nva:title a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:MentionInPublication, nva:MusicTrack, nva:MusicalWork, nva:MusicalWorkPerformance,
+              nva:UnconfirmedJournal, nva:UnconfirmedMediaContributionPeriodical, nva:UnconfirmedSeries ;
+  rdfs:range xsd:string .
+
+nva:nameType a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Identity;
+  rdfs:range nva:Organizational, nva:Personal .
+
+nva:contributor a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:EntityDescription ;
+  rdfs:range nva:Contributor .
+
+nva:related a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:DataSet, nva:DataManagementPlan ;
+  rdfs:range xsd:anyURI .
+
+nva:subtype a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Architecture, nva:ArtisticDesign, nva:LiteraryArts, nva:LiteraryArtsAudioVisual, nva:MovingPicture,
+              nva:PerformingArts, nva:VisualArts ;
+  rdfs:range rdf:Resource . # This is an issue — we have many, many types here .
+
+nva:correspondingAuthor a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Contributor ;
+  rdfs:range xsd:boolean .
+
+nva:end a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Range ;
+  rdfs:range xsd:nonNegativeInteger .
+
+nva:corrigendumFor a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:JournalCorrigendum ;
+  rdfs:range xsd:anyURI .
+
+nva:value a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain rdf:Class ;
+  rdfs:range rdf:Literal .
+
+nva:introduction a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:MonographPages;
+  rdfs:range nva:Range .
+
+nva:owner a rdf:Property ;
+  rdfs:comment "The identifier for the person who owns the publication resource" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:ResourceOwner ;
+  rdfs:range xsd:string .
+
+nva:approvalStatus a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Approval ;
+  rdfs:range nva:NOTAPPLIED, nva:APPLIED, nva:APPROVED, nva:DECLINED, nva:REJECTION .
+
+nva:approval a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:ResearchProject ;
+  rdfs:range nva:Approval .
+
+nva:isrc a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:MusicScore ;
+  rdfs:range nva:Isrc .
+
+nva:label a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain rdfs:Class ;
+  rdfs:range rdf:langString .
+
+nva:indexedDate a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Publication ;
+  rdfs:range xsd:dateTime .
+
+nva:onlineIssn a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:UnconfirmedJournal, nva:UnconfirmedMediaContributionPeriodical, nva:UnconfirmedSeries ;
+  rdfs:range xsd:string .
+
+nva:premiere a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:MusicalWorkPerformance ;
+  rdfs:range xsd:boolean .
+
+nva:musicalWork a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:OtherPerformance ;
+  rdfs:range nva:MusicalWork .
+
+nva:trackList a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:AudioVisualPublication ;
+  rdfs:range nva:MusicTrack .
+
+nva:partOfSeries a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Concert ;
+  rdfs:range xsd:boolean .
+
+nva:catalogueNumber a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:AudioVisualPublication ;
+  rdfs:range xsd:string .
+
+nva:associatedArtifact a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Publication ;
+  rdfs:range nva:AssociatedLink, nva:AssociatedFile, nva:NullAssociatedArtifact .
+
+nva:time a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Concert, nva:Event ;
+  rdfs:range nva:Time .
+
+nva:applicationCode a rdf:Property ;
+  rdfs:comment "" ;
+  rdfs:label "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Approval ;
+  rdfs:range xsd:string .
+
+nva:curatingInstitution a rdf:Property ;
+  rdfs:comment "Institution that can curate the publication" ;
+  rdfs:label "Curating institution" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Publication ;
+  rdfs:range xsd:anyURI .
+
+nva:contributorOrganization a rdf:Property ;
+  rdfs:comment "Any organization that has a relation the publication via a contributor affiliation" ;
+  rdfs:label "Contributor Organization" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Publication ;
+  rdfs:range xsd:anyURI .
+
+nva:ImportDetail a rdfs:Class ;
+                 rdfs:comment "Information about provenance of an imported publication" ;
+                 rdfs:isDefinedBy nva: .
+
+nva:ImportSource a rdfs:Class ;
+                 rdfs:comment "Information about a source of an imported publication" ;
+                 rdfs:isDefinedBy nva: .
+
+nva:importDetail a rdf:Property ;
+  rdfs:comment "Information about the provenance of the an imported Publication" ;
+  rdfs:label "Import detail" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Publication ;
+  rdfs:range nva:ImportDetail .
+
+nva:importSource a rdf:Property ;
+                 rdfs:comment "The source of an imported Publication" ;
+                 rdfs:label "Import source" ;
+                 rdfs:isDefinedBy nva: ;
+                 rdfs:domain nva:ImportDetail ;
+                 rdfs:range xsd:ImportSource .
+
+nva:importDate a rdf:Property ;
+  rdfs:comment "The date at which a Publication was imported" ;
+  rdfs:label "Import date" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:ImportDetail ;
+  rdfs:range xsd:dateTime .
+
+nva:source a rdf:Property ;
+           rdfs:comment "A description of the origin for a thing" ;
+           rdfs:label "" ;
+           rdfs:isDefinedBy nva: ;
+           rdfs:domain nva:ImportSource ;
+           rdfs:range xsd:string .
+
+nva:sourceName a rdf:Property ;
+           rdfs:comment "A description of the origin for a thing" ;
+           rdfs:label "" ;
+           rdfs:isDefinedBy nva: ;
+           rdfs:domain nva:AdditionalIdentifier ;
+           rdfs:range xsd:string .
+
+nva:archive a rdf:Property ;
+            rdfs:comment "The source archive of an imported Publication" ;
+            rdfs:label "Import source archive" ;
+            rdfs:isDefinedBy nva: ;
+            rdfs:domain nva:ImportSource ;
+            rdfs:range xsd:string .

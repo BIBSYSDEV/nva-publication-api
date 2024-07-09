@@ -1,0 +1,39 @@
+plugins {
+    id "com.github.gmazzo.buildconfig"
+}
+
+dependencies {
+    implementation( libs.nva.core )
+    implementation( libs.nva.json )
+    implementation( libs.nva.identifiers )
+    implementation( libs.nva.testutils )
+
+    implementation ( libs.jsonld )
+    implementation ( libs.commons.validator )
+    implementation( libs.jackson.databind )
+
+    testImplementation( libs.jena.core )
+    testImplementation( libs.jena.arq )
+
+    testImplementation( libs.nva.testutils )
+    testImplementation( libs.javers )
+    testImplementation( libs.swagger.core )
+    testImplementation( project(":publication-model-testing") )
+}
+
+test {
+    environment "ID_NAMESPACE", "https://www.example.org"
+}
+
+def modelVersion = '0.23.2'
+
+buildConfig {
+    className("ResourcesBuildConfig")   // forces the class name. Defaults to 'BuildConfig'
+    packageName("no.unit.nva.model.config")  // forces the package. Defaults to '${project.group}'
+    useJavaOutput() //forces the output to be Java
+    buildConfigField("String", "RESOURCES_MODEL_VERSION", "\"${modelVersion}\"")
+}
+
+tasks.named('check').configure {
+    dependsOn -= [jacocoTestCoverageVerification]
+}

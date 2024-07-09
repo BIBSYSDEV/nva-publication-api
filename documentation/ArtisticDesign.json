@@ -1,0 +1,243 @@
+{
+  "type" : "Publication",
+  "identifier" : "c443030e-9d56-43d8-afd1-8c89105af555",
+  "status" : "PUBLISHED",
+  "resourceOwner" : {
+    "owner" : "CkjI6CrWfElJi8KoizG",
+    "ownerAffiliation" : "https://www.example.org/63a2a0d6-c789-47ef-8bcf-8b0d0dbad16c"
+  },
+  "publisher" : {
+    "type" : "Organization",
+    "id" : "https://www.example.org/e8a1074f-d0f6-4075-b1ca-38d4fa30ad76"
+  },
+  "createdDate" : "1999-06-19T05:28:13.138Z",
+  "modifiedDate" : "1988-02-05T06:13:06.660Z",
+  "publishedDate" : "1991-01-31T20:32:01.371Z",
+  "indexedDate" : "1974-05-28T08:47:14.415Z",
+  "handle" : "https://www.example.org/d740d4aa-b80c-40b6-a2f7-83c98e997d3e",
+  "doi" : "https://doi.org/10.1234/itaque",
+  "link" : "https://www.example.org/aaa0d0ba-23f5-49c4-a42c-5735c2303f92",
+  "entityDescription" : {
+    "type" : "EntityDescription",
+    "mainTitle" : "YcAqFYkIqaqg0mV2gh",
+    "alternativeTitles" : {
+      "fr" : "3ts2q7TwAcW"
+    },
+    "language" : "http://lexvo.org/id/iso639-3/und",
+    "publicationDate" : {
+      "type" : "PublicationDate",
+      "year" : "iq7VxNnN3W03",
+      "month" : "bvwonrjGk7L7",
+      "day" : "4QHgpVTGEXKft"
+    },
+    "contributors" : [ {
+      "type" : "Contributor",
+      "identity" : {
+        "type" : "Identity",
+        "id" : "https://www.example.org/6e754c7e-64eb-4dbf-a5db-80c7371542d1",
+        "name" : "dnqr9Edp3InwRwbixBW",
+        "nameType" : "Personal",
+        "orcId" : "D0VLM9xtQSrQab",
+        "verificationStatus" : "NotVerified",
+        "additionalIdentifiers" : [ {
+          "type" : "AdditionalIdentifier",
+          "sourceName" : "eazeV0y4hCJ",
+          "value" : "Mh5klByB1A8xojPqi"
+        }, {
+          "type" : "AdditionalIdentifier",
+          "sourceName" : "qUKKvxZ3TZY7z2g",
+          "value" : "ivAQKyoMJ9RsjE"
+        } ]
+      },
+      "affiliations" : [ {
+        "type" : "Organization",
+        "id" : "https://www.example.org/c74c98be-4c2d-421f-8955-30fed6cbbbb0"
+      } ],
+      "role" : {
+        "type" : "LightDesigner"
+      },
+      "sequence" : 1,
+      "correspondingAuthor" : false
+    }, {
+      "type" : "Contributor",
+      "identity" : {
+        "type" : "Identity",
+        "id" : "https://www.example.org/2a821592-cd16-4864-be0b-5cf7ecfd0770",
+        "name" : "jlFBANWJ0KRRhMo",
+        "nameType" : "Personal",
+        "orcId" : "E4GtjWY2g9c",
+        "verificationStatus" : "NotVerified",
+        "additionalIdentifiers" : [ {
+          "type" : "AdditionalIdentifier",
+          "sourceName" : "vtGtqhCtRmwlIa1HW7",
+          "value" : "t7H4U2yi6Yyb"
+        }, {
+          "type" : "AdditionalIdentifier",
+          "sourceName" : "fTOreoOaZxASlkev",
+          "value" : "I5I8l8rmDXAgFf8"
+        } ]
+      },
+      "affiliations" : [ {
+        "type" : "Organization",
+        "id" : "https://www.example.org/aef94310-a45d-454a-8d76-2e6b6d1aaa3c"
+      } ],
+      "role" : {
+        "type" : "InteriorArchitect"
+      },
+      "sequence" : 2,
+      "correspondingAuthor" : false
+    } ],
+    "alternativeAbstracts" : {
+      "ca" : "uLvpsSPDNXAaJVb4"
+    },
+    "npiSubjectHeading" : "gQ46EPxCKdp70O",
+    "tags" : [ "fQaT8QFfetzlx3pQK" ],
+    "description" : "zjYx1K9fQonL9nl7",
+    "reference" : {
+      "type" : "Reference",
+      "publicationContext" : {
+        "type" : "Artistic"
+      },
+      "doi" : "https://www.example.org/13534131-54fa-4e8a-8286-b9fe33928612",
+      "publicationInstance" : {
+        "type" : "ArtisticDesign",
+        "subtype" : {
+          "type" : "GraphicDesign"
+        },
+        "description" : "AsmodnV3E3",
+        "venues" : [ {
+          "type" : "Venue",
+          "place" : {
+            "type" : "UnconfirmedPlace",
+            "label" : "WgYaxXETCcAiAPi",
+            "country" : "13EaF6UpQ93M0Mi"
+          },
+          "date" : {
+            "type" : "Period",
+            "from" : "1976-11-12T10:51:39.063Z",
+            "to" : "2002-05-25T13:10:36.142Z"
+          },
+          "sequence" : 1984076816
+        }, {
+          "type" : "Venue",
+          "place" : {
+            "type" : "UnconfirmedPlace",
+            "label" : "GXZ08bml66Qnz1KL5",
+            "country" : "1WyKvj6CTq0NWdx24kx"
+          },
+          "date" : {
+            "type" : "Period",
+            "from" : "1997-07-19T12:53:07.223Z",
+            "to" : "2003-10-13T02:12:43.107Z"
+          },
+          "sequence" : 758918519
+        } ],
+        "pages" : {
+          "type" : "NullPages"
+        }
+      }
+    },
+    "metadataSource" : "https://www.example.org/db611c69-21ad-4a3f-88d9-e7be41c22e55",
+    "abstract" : "lfH9JFfHNGPqiA"
+  },
+  "projects" : [ {
+    "type" : "ResearchProject",
+    "id" : "https://www.example.org/f473fbe7-1924-4106-9104-97ee98ded7ae",
+    "name" : "dDG9FEOTk1ZzOdkJAV",
+    "approvals" : [ {
+      "type" : "Approval",
+      "approvalDate" : "2012-02-26T18:42:34.709Z",
+      "approvedBy" : "DIRHEALTH",
+      "approvalStatus" : "DECLINED",
+      "applicationCode" : "wokOe3VHbeyVmk"
+    } ]
+  } ],
+  "fundings" : [ {
+    "type" : "UnconfirmedFunding",
+    "source" : "https://www.example.org/ebf33031-5f9c-47bf-936f-2d452cd2a0ae",
+    "identifier" : "BGqMiHlOGu34S7wkb",
+    "labels" : {
+      "pl" : "bLlqelHfPO7XOPYoKn"
+    },
+    "fundingAmount" : {
+      "currency" : "USD",
+      "amount" : 1023177645
+    },
+    "activeFrom" : "2010-03-28T23:49:10.573Z",
+    "activeTo" : "2017-10-09T12:04:46.366Z"
+  }, {
+    "type" : "ConfirmedFunding",
+    "source" : "https://www.example.org/7fe2dff4-a463-43ac-b4bd-813757e5e631",
+    "id" : "https://www.example.org/f975f6f8-56e1-4566-8716-13e5f705412b",
+    "identifier" : "wSmq67HqvZkcJ2DPm",
+    "labels" : {
+      "nl" : "9XWAyF3c1uUZwsb"
+    },
+    "fundingAmount" : {
+      "currency" : "USD",
+      "amount" : 1502734248
+    },
+    "activeFrom" : "2006-12-16T03:50:08.652Z",
+    "activeTo" : "2014-11-12T02:36:11.615Z"
+  } ],
+  "additionalIdentifiers" : [ {
+    "type" : "ScopusIdentifier",
+    "value" : "0CEGyjWB9AE",
+    "sourceName" : "zidefxkvdqy@8xhrhc4odif"
+  }, {
+    "type" : "CristinIdentifier",
+    "value" : "701101961",
+    "sourceName" : "4mxmopuamaeak@rxxqyoxk2x6r"
+  }, {
+    "type" : "AdditionalIdentifier",
+    "sourceName" : "WwuupOKgnWMW",
+    "value" : "HP9R7GNiFvI"
+  }, {
+    "type" : "HandleIdentifier",
+    "value" : "https://www.example.org/d6c64495-c12b-433c-b5ec-c4c916a3ffa4",
+    "sourceName" : "2oth2haazjg@ttjueghh46euhf6v39"
+  } ],
+  "subjects" : [ "https://www.example.org/b06494ea-00c8-498f-aada-8de400d8b9bb" ],
+  "associatedArtifacts" : [ {
+    "type" : "PublishedFile",
+    "identifier" : "cc12adc0-915e-478e-860e-841d85462404",
+    "name" : "coCgdcSvXGOQ",
+    "mimeType" : "H3YSx3VcM50H",
+    "size" : 162803321,
+    "license" : "https://www.example.com/hsxuf79kwbygzuzp18",
+    "administrativeAgreement" : false,
+    "publisherVersion" : "AcceptedVersion",
+    "rightsRetentionStrategy" : {
+      "type" : "OverriddenRightsRetentionStrategy",
+      "configuredType" : "Unknown",
+      "overriddenBy" : "FaYrLUJ2FdX7"
+    },
+    "legalNote" : "85Fw7Sb9h2a1qA",
+    "publishedDate" : "2017-09-27T18:49:57.870Z",
+    "uploadDetails" : {
+      "type" : "UploadDetails",
+      "uploadedBy" : "fWrQEJAi7i203FvT",
+      "uploadedDate" : "2011-04-19T13:07:31.152Z"
+    },
+    "visibleForNonOwner" : true
+  }, {
+    "type" : "AssociatedLink",
+    "id" : "https://www.example.com/DqQONOFsoZ",
+    "name" : "7EZDkQHFXyTycQSKdS",
+    "description" : "k5bvk48Oe0BH9KglZp6"
+  } ],
+  "rightsHolder" : "LlAGHOcQ5ofs5h",
+  "duplicateOf" : "https://www.example.org/cde27fab-fd34-4b08-8568-3ca043efe934",
+  "publicationNotes" : [ {
+    "type" : "PublicationNote",
+    "note" : "tlBqawsl5Lahpqi6R"
+  }, {
+    "type" : "UnpublishingNote",
+    "note" : "TL3mnFZas8Eyi3l5kb",
+    "createdBy" : "aywh3UiVZNoPDrUNv",
+    "createdDate" : "2005-10-27T05:58:05.543Z"
+  } ],
+  "curatingInstitutions" : [ "https://www.example.org/200e29b4-14c3-4be3-9f63-901368bbb7fd" ],
+  "importDetails" : [ ],
+  "modelVersion" : "0.23.2"
+}

@@ -13,9 +13,10 @@ dependencies {
     implementation libs.bundles.logging
     implementation libs.bundles.jackson
 
-    implementation(libs.nva.datamodel.core) {
-        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
-    }
+    implementation project(":publication-model")
+    //{
+    //    exclude group: 'com.github.bibsysdev', module: 'nva-commons'
+    //}
     implementation project(path: ':publication-commons')
 
     implementation libs.aws.sdk.dynamodb
@@ -23,6 +24,7 @@ dependencies {
     implementation libs.aws.sdk2.secrets
     implementation libs.aws.sdk2.httpClientApi
 
+    testImplementation project(":publication-model-testing")
     testImplementation project(":publication-testing")
     testImplementation libs.bundles.testing
     testImplementation(libs.wiremock) {
