@@ -1878,7 +1878,6 @@ Resources:
       Handler: no.unit.nva.cristin.lambda.CristinEntryEventConsumer::handleRequest
       Timeout: 30
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 50
       Environment:
         Variables:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
@@ -1894,6 +1893,8 @@ Resources:
           Properties:
             Queue: !GetAtt CristinImportDataEntryQueue.Arn
             BatchSize: 1
+            ScalingConfig:
+              MaximumConcurrency: 50
       EventInvokeConfig:
         MaximumRetryAttempts: 0
 
@@ -1905,7 +1906,6 @@ Resources:
       Handler: no.unit.nva.cristin.lambda.CristinPatchEventConsumer::handleRequest
       Timeout: 30
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 50
       Environment:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
@@ -1919,6 +1919,8 @@ Resources:
           Properties:
             Queue: !GetAtt CristinImportPatchQueue.Arn
             BatchSize: 1
+            ScalingConfig:
+              MaximumConcurrency: 50
       EventInvokeConfig:
         MaximumRetryAttempts: 0
 
@@ -1929,7 +1931,6 @@ Resources:
       Handler: no.sikt.nva.brage.migration.lambda.BragePatchEventConsumer::handleRequest
       Timeout: 30
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 50
       Environment:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
@@ -1944,6 +1945,8 @@ Resources:
           Properties:
             Queue: !GetAtt BrageImportPatchQueue.Arn
             BatchSize: 1
+            ScalingConfig:
+              MaximumConcurrency: 50
       EventInvokeConfig:
         MaximumRetryAttempts: 0
 
