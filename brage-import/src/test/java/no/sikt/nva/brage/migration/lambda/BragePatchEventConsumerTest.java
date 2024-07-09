@@ -21,9 +21,7 @@ import no.sikt.nva.brage.migration.record.Customer;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.ImportSource;
-import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
@@ -147,7 +145,7 @@ class BragePatchEventConsumerTest extends ResourcesLocalTest {
     private static  Record recordWithIsbn(String isbn) {
         var record = new Record();
         record.setId(randomUri());
-        record.setCustomer(new Customer(randomString(), randomUri()));
+        record.setCustomer(new Customer("ntnu", null));
         var recordPublication = new no.sikt.nva.brage.migration.record.Publication();
         recordPublication.setIsbnList(List.of(isbn));
         record.setPublication(recordPublication);

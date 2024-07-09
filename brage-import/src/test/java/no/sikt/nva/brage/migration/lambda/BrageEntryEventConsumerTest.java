@@ -31,7 +31,6 @@ import static no.unit.nva.publication.model.storage.ResourceDao.CRISTIN_SOURCE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
-import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -104,6 +103,7 @@ import no.sikt.nva.brage.migration.record.Range;
 import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.record.ResourceOwner;
 import no.sikt.nva.brage.migration.record.Type;
+import no.sikt.nva.brage.migration.record.UnknownCustomerException;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import no.sikt.nva.brage.migration.record.content.ResourceContent.BundleType;
@@ -270,6 +270,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private static final String INPUT_BUCKET_NAME = "some-input-bucket-name";
     public static final int ALMOST_HUNDRED_YEARS = 36487;
     public static final ResourceOwner RESOURCE_OWNER = new ResourceOwner("someOwner", randomUri());
+    private static final String NTNU_CUSTOMER_NAME = "ntnu";
     private final String persistedStorageBucket = new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME");
     private BrageEntryEventConsumer handler;
     private S3Driver s3Driver;
@@ -1278,9 +1279,9 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         assertThat(publication, is(nullValue()));
         var errorReport =
             extractActualReportFromS3ClientForInvalidRecord(s3Event,
-                                                            IllegalArgumentException.class.getSimpleName());
+                                                            UnknownCustomerException.class.getSimpleName());
         var exception = errorReport.get("exception").asText();
-        assertThat(exception, containsString("Record must contain a handle"));
+        assertThat(exception, containsString("Unknown customer"));
     }
 
     @Test
@@ -1994,7 +1995,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var contributor = new Contributor(new Identity(randomString(), null),
                                           "Creator",
                                           "Creator",
-                                          List.of(new Affiliation(affiliationIdentifier, "ntnu",
+                                          List.of(new Affiliation(affiliationIdentifier, NTNU_CUSTOMER_NAME,
                                                                   null)));
 
         mockSingleHitSearchApiResponse(existingPublication.getIdentifier(), 200);
@@ -2040,7 +2041,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var contributor = new Contributor(new Identity(randomString(), null),
                                           "Creator",
                                           "Creator",
-                                          List.of(new Affiliation(affiliationIdentifier, "ntnu",
+                                          List.of(new Affiliation(affiliationIdentifier, NTNU_CUSTOMER_NAME,
                                                                   null)));
         var generatorBuilder = new NvaBrageMigrationDataGenerator.Builder()
                             .withCristinIdentifier(cristinIdentifier)
@@ -2076,7 +2077,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var contributor = new Contributor(new Identity(randomString(), null),
                                           "Creator",
                                           "Creator",
-                                          List.of(new Affiliation(affiliationIdentifier, "ntnu",
+                                          List.of(new Affiliation(affiliationIdentifier, NTNU_CUSTOMER_NAME,
                                                                   null)));
         var generator = new NvaBrageMigrationDataGenerator.Builder()
                             .withMainTitle(publication.getEntityDescription().getMainTitle())
@@ -2168,7 +2169,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Event = createNewBrageRecordEvent(brageRecord);
         handler.handleRequest(s3Event, CONTEXT);
         var newBrageRecord = brageRecord;
-        newBrageRecord.setCustomer(new Customer("customer", randomUri()));
+        newBrageRecord.setCustomer(new Customer(NTNU_CUSTOMER_NAME, null));
         newBrageRecord.setId(randomUri());
         var news3Event = createNewBrageRecordEvent(brageRecord);
         var publicationRepresentation = handler.handleRequest(news3Event, CONTEXT);
@@ -2239,7 +2240,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                    Publication actualPublication) {
         var timestamp = s3Event.getRecords().getFirst().getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
         var uri = UriWrapper.fromUri("PART_OF")
-                      .addChild("institution")
+                      .addChild(NTNU_CUSTOMER_NAME)
                       .addChild(timestamp)
                       .addChild(brageGenerator.getBrageRecord().getId().getPath())
                       .addChild(String.valueOf(actualPublication.getIdentifier()));
@@ -2298,7 +2299,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
         var timestamp = s3Event.getRecords().getFirst().getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
         return UriWrapper.fromUri("DISCARDED_CONTENT_FILES")
-                   .addChild("institution")
+                   .addChild(NTNU_CUSTOMER_NAME)
                    .addChild(timestamp)
                    .addChild(brageRecord.getId().getPath())
                    .addChild(String.valueOf(cristinPublication.getIdentifier()));
@@ -2318,7 +2319,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         minimalRecord.setId(fakeDummyHandle);
         minimalRecord.setPublisherAuthority(new PublisherAuthority(List.of(),
                                                                    PublisherVersion.PUBLISHED_VERSION));
-        minimalRecord.setResourceOwner(new ResourceOwner("unis@186.0.0.0", randomUri()));
+        minimalRecord.setCustomer(new Customer("unis", null));
         minimalRecord.setCristinId(cristinIdentifier);
         minimalRecord.setEntityDescription(new EntityDescription());
         minimalRecord.setType(new Type(List.of(), CRISTIN_RECORD.getValue()));
@@ -2340,7 +2341,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var timestamp = s3Event.getRecords().getFirst().getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
         var uri = UriWrapper.fromUri(UPDATE_REPORTS_PATH)
                       .addChild(updateSource)
-                      .addChild("institution")
+                      .addChild(NTNU_CUSTOMER_NAME)
                       .addChild(timestamp)
                       .addChild(brageHandle.getPath())
                       .addChild(String.valueOf(publication.getIdentifier()));
@@ -2534,7 +2535,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                     URI brageHandle) {
         var timestamp = s3Event.getRecords().getFirst().getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
         return UriWrapper.fromUri(destinationFolder)
-                   .addChild("institution")
+                   .addChild(NTNU_CUSTOMER_NAME)
                    .addChild(timestamp)
                    .addChild(brageHandle.getPath())
                    .addChild(actualPublication.getIdentifier().toString());
@@ -2556,7 +2557,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     private UriWrapper constructWarnFileUri(Record record) {
         return UriWrapper.fromUri("DUPLICATES_DETECTED")
-                   .addChild(record.getResourceOwner().getOwner().split("@")[0])
+                   .addChild(record.getCustomer().getName())
                    .addChild(DuplicateDetectionCause.CRISTIN_DUPLICATES.getValue())
                    .addChild(UriWrapper.fromUri(record.getId()).getLastPathElement());
     }
@@ -2565,7 +2566,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var fileUri = UriWrapper.fromUri(extractFilename(event));
         var timestamp = event.getRecords().getFirst().getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
         return UriWrapper.fromUri(ERROR_BUCKET_PATH)
-                   .addChild(brageRecord.getResourceOwner().getOwner().split("@")[0])
+                   .addChild(brageRecord.getCustomer().getName())
                    .addChild(timestamp)
                    .addChild(exceptionSimpleName)
                    .addChild(fileUri.getLastPathElement());
@@ -2575,7 +2576,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var fileUri = UriWrapper.fromUri(extractFilename(event));
         var timestamp = event.getRecords().getFirst().getEventTime().toString(YYYY_MM_DD_HH_FORMAT);
         return UriWrapper.fromUri(ERROR_BUCKET_PATH)
-                   .addChild(fileUri.getLastPathElement())
+                   .addChild(NTNU_CUSTOMER_NAME)
                    .addChild(timestamp)
                    .addChild(exceptionSimpleName)
                    .addChild(fileUri.getLastPathElement());
@@ -2612,14 +2613,15 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     private S3Event createNewInvalidBrageRecordEvent() throws IOException {
-        var invalidBrageRecord = randomJson();
-        var uri = s3Driver.insertFile(randomS3Path(), invalidBrageRecord);
+        var record = new Record();
+        record.setCustomer(new Customer(randomString(), null));
+        var uri = s3Driver.insertFile(UnixPath.of(NTNU_CUSTOMER_NAME + "/" + randomString()), record.toString());
         return createS3Event(uri);
     }
 
     private S3Event createNewBrageRecordEvent(Record brageRecord) throws IOException {
         var recordAsJson = JsonUtils.dtoObjectMapper.writeValueAsString(brageRecord);
-        var uri = s3Driver.insertFile(UnixPath.of("institution/" + randomString()), recordAsJson);
+        var uri = s3Driver.insertFile(UnixPath.of(NTNU_CUSTOMER_NAME + "/" + randomString()), recordAsJson);
         return createS3Event(uri);
     }
 

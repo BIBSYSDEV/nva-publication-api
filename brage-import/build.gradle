@@ -48,4 +48,5 @@ test {
     environment "DOMAIN_NAME", "test.nva.aws.unit.no"
     environment "EVENT_BUS_NAME", "eventBusName"
     environment "AWS_REGION", "eu-west-1"
+    environment "API_HOST", "test.nva.aws.unit.no"
 }
