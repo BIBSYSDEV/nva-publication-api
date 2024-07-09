@@ -365,7 +365,7 @@ public final class BrageNvaMapper {
     }
 
     private static List<String> extractTags(Record brageRecord) {
-        return brageRecord.getEntityDescription().getTags();
+        return brageRecord.getEntityDescription().getTags().stream().filter(Objects::nonNull).toList();
     }
 
     private static List<Contributor> extractContributors(Record brageRecord) {
