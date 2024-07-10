@@ -47,6 +47,7 @@ import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.ExhibitionContent;
 import no.unit.nva.model.contexttypes.MediaContribution;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.media.MediaFormat;
 import no.unit.nva.model.contexttypes.media.MediaSubType;
 import no.unit.nva.model.contexttypes.media.MediaSubTypeEnum;
@@ -106,7 +107,7 @@ public class ReferenceBuilder extends CristinMappingModule {
                                               channelRegistryMapper, s3Client)
                        .buildMediaPeriodicalForPublicationContext();
         }
-        if (isReport(cristinObject) || isInformationalMaterialThatShouldBeMapped()) {
+        if (isReport(cristinObject)) {
             return buildPublicationContextWhenMainCategoryIsReport();
         }
         if (isChapter(cristinObject)) {
@@ -123,6 +124,9 @@ public class ReferenceBuilder extends CristinMappingModule {
         }
         if (isArt(cristinObject)) {
             return new Artistic();
+        }
+        if (isInformationalMaterialThatShouldBeMapped()) {
+            return new Report.Builder().build();
         }
         return null;
     }
