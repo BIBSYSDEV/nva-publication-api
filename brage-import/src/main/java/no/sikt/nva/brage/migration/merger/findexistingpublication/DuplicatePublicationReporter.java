@@ -34,7 +34,7 @@ public class DuplicatePublicationReporter {
 
     private UriWrapper constructFileUri(Record brageRecord, DuplicateDetectionCause cause) {
         return UriWrapper.fromUri(DUPLICATE_WARNING_PATH)
-                   .addChild(brageRecord.getResourceOwner().getOwner().split("@")[0])
+                   .addChild(brageRecord.getCustomer().getName())
                    .addChild(cause.getValue())
                    .addChild(UriWrapper.fromUri(brageRecord.getId()).getLastPathElement());
     }

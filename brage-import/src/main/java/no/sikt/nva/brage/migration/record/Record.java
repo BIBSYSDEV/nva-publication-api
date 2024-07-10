@@ -15,13 +15,12 @@ import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import no.unit.nva.commons.json.JsonSerializable;
 import nva.commons.core.JacocoGenerated;
 
-@JsonPropertyOrder({"customer", "resourceOwner", "brageLocation", "id", "cristinId", "doi", "link", "publishedDate",
+@JsonPropertyOrder({"customer", "brageLocation", "id", "cristinId", "doi", "link", "publishedDate",
     "publisherAuthority", "rightsholder", "type", "partOf", "hasPart", "publisherAuthority", "spatialCoverage", "date",
     "language", "publication", "entityDescription", "recordContent", "errors", "warnings"})
 @SuppressWarnings({"PMD.TooManyFields", "PMD.GodClass"})
 public class Record implements JsonSerializable {
 
-    private ResourceOwner resourceOwner;
     private EntityDescription entityDescription;
     private Customer customer;
     private URI id;
@@ -54,7 +53,7 @@ public class Record implements JsonSerializable {
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getResourceOwner(), getEntityDescription(), getCustomer(), getId(), getDoi(), getLink(),
+        return Objects.hash(getEntityDescription(), getCustomer(), getId(), getDoi(), getLink(),
                             getType(), getPublisherAuthority(), getRightsholder(), getSpatialCoverage(), getPartOf(),
                             getPart(), getPublication(), getContentBundle(), getPublishedDate(), getCristinId(),
                             getBrageLocation(), getErrors(), getWarnings(), getSubjects(), getAccessCode(),
@@ -71,8 +70,7 @@ public class Record implements JsonSerializable {
             return false;
         }
         Record record = (Record) object;
-        return Objects.equals(getResourceOwner(), record.getResourceOwner())
-               && Objects.equals(getEntityDescription(), record.getEntityDescription())
+        return Objects.equals(getEntityDescription(), record.getEntityDescription())
                && Objects.equals(getCustomer(), record.getCustomer())
                && Objects.equals(getId(), record.getId())
                && Objects.equals(getDoi(), record.getDoi())
@@ -129,17 +127,6 @@ public class Record implements JsonSerializable {
     @JacocoGenerated
     public void setLink(URI link) {
         this.link = link;
-    }
-
-    @JacocoGenerated
-    @JsonProperty("resourceOwner")
-    public ResourceOwner getResourceOwner() {
-        return resourceOwner;
-    }
-
-    @JacocoGenerated
-    public void setResourceOwner(ResourceOwner resourceOwner) {
-        this.resourceOwner = resourceOwner;
     }
 
     @JacocoGenerated

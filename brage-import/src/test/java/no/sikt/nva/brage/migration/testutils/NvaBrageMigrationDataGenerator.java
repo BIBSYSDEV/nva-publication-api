@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.record.Affiliation;
 import no.sikt.nva.brage.migration.record.Contributor;
@@ -63,6 +62,11 @@ import org.joda.time.Instant;
 public class NvaBrageMigrationDataGenerator {
 
     public static final String SOURCE_CRISTIN = "Cristin";
+    private static final URI HARDCODED_NTNU_CUSTOMER_VALUE = URI.create(
+        "https://test.nva.aws.unit.no/customer/33c17ef6-864b-4267-bc9d-0cee636e247e");
+    private static final URI HARDCODED_NTNU_CRISTIN_ID = URI.create(
+        "https://test.nva.aws.unit.no/cristin/organization/194.0.0.0");
+    private static final String HARDCODED_NTNU_USERNAME = "ntnu@194.0.0.0";
     private final Record brageRecord;
     private final Publication correspondingNvaPublication;
 
@@ -81,15 +85,6 @@ public class NvaBrageMigrationDataGenerator {
 
     private static java.time.Instant convertPublishedDateToInstant(Builder builder) {
         return Instant.parse((builder.publishedDate.getNvaDate())).toDate().toInstant();
-    }
-
-    private static no.unit.nva.model.ResourceOwner getResourceOwnerIfPresent(Builder builder) {
-        return Optional.ofNullable(builder).map(Builder::getResourceOwner).map(generateResourceOwner()).orElse(null);
-    }
-
-    private static Function<ResourceOwner, no.unit.nva.model.ResourceOwner> generateResourceOwner() {
-        return resourceOwner -> new no.unit.nva.model.ResourceOwner(new Username(resourceOwner.getOwner()),
-                                                                    resourceOwner.getOwnerAffiliation());
     }
 
     private static Set<AdditionalIdentifierBase> generateCristinIdentifier(Builder builder) {
@@ -125,9 +120,9 @@ public class NvaBrageMigrationDataGenerator {
                    .withCreatedDate(convertPublishedDateToInstant(builder))
                    .withPublishedDate(convertPublishedDateToInstant(builder))
                    .withStatus(PublicationStatus.PUBLISHED)
-                   .withPublisher(new Organization.Builder().withId(builder.getCustomer().getId()).build())
+                   .withPublisher(new Organization.Builder().withId(HARDCODED_NTNU_CUSTOMER_VALUE).build())
                    .withAssociatedArtifacts(builder.getAssociatedArtifacts())
-                   .withResourceOwner(getResourceOwnerIfPresent(builder))
+                   .withResourceOwner(new no.unit.nva.model.ResourceOwner(new Username(HARDCODED_NTNU_USERNAME), HARDCODED_NTNU_CRISTIN_ID))
                    .withAdditionalIdentifiers(generateCristinIdentifier(builder))
                    .withRightsHolder(builder.getRightsHolder())
                    .withSubjects(builder.subjects.stream().toList())
@@ -153,12 +148,12 @@ public class NvaBrageMigrationDataGenerator {
                    .withAlternativeTitles(builder.getAlternativeTitlesMap())
                    .withMainTitle(builder.getMainTitle())
                    .withPublicationDate(builder.getPublicationDateForPublication())
+                   .withTags(List.of())
                    .build();
     }
 
     private Record createRecord(Builder builder) {
         var brageRecord = new Record();
-        brageRecord.setResourceOwner(builder.getResourceOwner());
         brageRecord.setSpatialCoverage(builder.getSpatialCoverage());
         brageRecord.setCustomer(builder.getCustomer());
         brageRecord.setDoi(builder.getDoi());
@@ -203,6 +198,7 @@ public class NvaBrageMigrationDataGenerator {
         entityDescription.setPublicationDate(builder.getPublicationDate());
         entityDescription.setPublicationInstance(createPublicationInstance(builder));
         entityDescription.setLanguage(builder.getLanguage());
+        entityDescription.setTags(List.of());
         return entityDescription;
     }
 
@@ -649,7 +645,7 @@ public class NvaBrageMigrationDataGenerator {
                 abstracts = List.of(randomString());
             }
             if (isNull(customer)) {
-                customer = new Customer("institution", CUSTOMER_URi);
+                customer = new Customer("ntnu", null);
             }
             if (isNull(resourceOwner)) {
                 resourceOwner = new ResourceOwner("institution@someOwner", RESOURCE_OWNER_URI);
