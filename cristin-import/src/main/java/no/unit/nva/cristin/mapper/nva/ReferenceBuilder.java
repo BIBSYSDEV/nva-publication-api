@@ -47,7 +47,6 @@ import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.ExhibitionContent;
 import no.unit.nva.model.contexttypes.MediaContribution;
 import no.unit.nva.model.contexttypes.PublicationContext;
-import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.media.MediaFormat;
 import no.unit.nva.model.contexttypes.media.MediaSubType;
 import no.unit.nva.model.contexttypes.media.MediaSubTypeEnum;
@@ -126,7 +125,7 @@ public class ReferenceBuilder extends CristinMappingModule {
             return new Artistic();
         }
         if (isInformationalMaterialThatShouldBeMapped()) {
-            return new Report.Builder().build();
+            return InformationMaterialBuilder.buildPublicationContext(cristinObject);
         }
         return null;
     }

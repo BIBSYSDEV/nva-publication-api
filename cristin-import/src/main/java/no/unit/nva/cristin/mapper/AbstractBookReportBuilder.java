@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
+import java.util.Optional;
 import no.unit.nva.model.pages.MonographPages;
 
 public abstract class AbstractBookReportBuilder extends AbstractPublicationInstanceBuilder {
@@ -15,6 +16,9 @@ public abstract class AbstractBookReportBuilder extends AbstractPublicationInsta
     }
     
     private String extractNumberOfPages() {
-        return getCristinObject().getBookOrReportMetadata().getNumberOfPages();
+        return Optional.ofNullable(getCristinObject())
+                   .map(CristinObject::getBookOrReportMetadata)
+                   .map(CristinBookOrReportMetadata::getNumberOfPages)
+                   .orElse(null);
     }
 }
