@@ -6,7 +6,7 @@ dependencies {
     implementation libs.nva.core
     implementation libs.nva.json
     implementation libs.nva.identifiers
-    implementation libs.nva.datamodel.core
+    implementation project(":publication-model")
 
     implementation libs.aws.sdk.dynamodb
     implementation libs.aws.lambda.java.core
@@ -19,7 +19,7 @@ dependencies {
     testImplementation libs.jackson.core
 
     testImplementation project(":publication-testing")
-    testImplementation libs.nva.datamodel.testutils
+    testImplementation project(":publication-model-testing")
 
 
     testImplementation libs.zalando

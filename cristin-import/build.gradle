@@ -4,10 +4,7 @@ dependencies {
     implementation project(":publication-constants")
     implementation project(":publication-commons")
     implementation project(":s3-import-commons")
-
-    implementation(libs.nva.datamodel.core) {
-        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
-    }
+    implementation project(":publication-model")
 
     implementation libs.nva.s3
     implementation libs.nva.core
@@ -16,12 +13,10 @@ dependencies {
     implementation libs.nva.doi
     implementation libs.nva.apigateway
 
-
     implementation libs.bundles.jackson
 
     implementation libs.hamcrest.base
     implementation libs.nva.testutils
-
 
     implementation libs.aws.sdk.dynamodb
     implementation libs.aws.sdk.sqs
@@ -37,7 +32,7 @@ dependencies {
 
     implementation libs.open.csv
 
-    testImplementation libs.nva.datamodel.testutils
+    testImplementation project(":publication-model-testing")
     testImplementation project(":publication-testing")
     testImplementation libs.nva.testutils
     testImplementation libs.logutils

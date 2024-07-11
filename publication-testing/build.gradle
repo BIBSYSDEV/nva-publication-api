@@ -1,9 +1,8 @@
 dependencies {
     implementation project(":publication-constants")
     implementation project(":publication-commons")
-    implementation(libs.nva.datamodel.core) {
-        exclude group: 'com.github.bibsysdev', module: 'core'
-    }
+    implementation project(":publication-model")
+    implementation project(":publication-model-testing")
     implementation libs.nva.core
     implementation libs.nva.json
     implementation libs.nva.identifiers
@@ -30,10 +29,4 @@ dependencies {
     implementation(libs.httpcore) {
         because "aws-java-sdk-dynamodb needs and we are using it indirectly"
     }
-
-    // https://mvnrepository.com/artifact/uk.co.jemos.podam/podam
- //   testImplementation group: 'uk.co.jemos.podam', name: 'podam', version: '8.0.0.RELEASE'
-
-
 }
-

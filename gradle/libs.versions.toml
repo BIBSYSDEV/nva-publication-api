@@ -2,7 +2,6 @@
 
 
 nva = { strictly = '1.40.5' }
-nvaDatamodel = { strictly = '0.23.2' }
 nvaDoiPartnerData = { strictly = '0.5.8' }
 jackson = { strictly = '2.16.1' }
 awsSdk = { strictly = '1.12.668' }
@@ -41,6 +40,7 @@ jakarta-validation-api = { strictly = '3.1.0' }
 jakarta-el-api = { strictly = '6.0.0' }
 glassfish-el = { strictly = '4.0.2' }
 apache-bval = { strictly = '3.0.0' }
+swaggerCoreVersion = { strictly = '2.2.15' }
 
 [libraries]
 nva-core = { group = 'com.github.bibsysdev', name = 'core', version.ref = 'nva' }
@@ -54,8 +54,6 @@ nva-events = { group = "com.github.bibsysdev", name = "eventhandlers", version.r
 nva-clients = { group = "com.github.bibsysdev", name = "clients", version.ref = "nva" }
 logutils = { group = 'com.github.bibsysdev', name = 'logutils', version.ref = 'nva' }
 
-nva-datamodel-core = { group = 'com.github.bibsysdev', name = 'nva-datamodel-java', version.ref = 'nvaDatamodel' }
-nva-datamodel-testutils = { group = 'com.github.bibsysdev', name = 'nva-datamodel-testutils', version.ref = 'nvaDatamodel' }
 nva-doi = { group = 'com.github.bibsysdev', name = 'doi', version.ref = 'nva' }
 nva-secrets = { group = 'com.github.bibsysdev', name = 'secrets', version.ref = 'nva' }
 nva-language = { group = 'com.github.bibsysdev', name = 'nva-language', version.ref = 'nva-language' }
@@ -80,7 +78,6 @@ apache-bval = { group= 'org.apache.bval', name= 'bval-jsr', version.ref= 'apache
 aws-lambda-java-core = { group = 'com.amazonaws', name = 'aws-lambda-java-core', version.ref = 'awsLambdaCore' }
 aws-lambda-events = { group = 'com.amazonaws', name = 'aws-lambda-java-events', version.ref = 'awsLambdaEvents' }
 
-
 aws-sdk-dynamodb = { group = 'com.amazonaws', name = 'aws-java-sdk-dynamodb', version.ref = 'awsSdk' }
 aws-java-sdk-core = { group = 'com.amazonaws', name = 'aws-java-sdk-core', version.ref = 'awsSdk' }
 aws-sdk-apigateway = { group = 'com.amazonaws', name = 'aws-java-sdk-api-gateway', version.ref = 'awsSdk' }
@@ -100,7 +97,6 @@ aws-sdk2-auth = { group = 'software.amazon.awssdk', name = 'auth', version.ref =
 aws-sdk2-sqs = { group = 'software.amazon.awssdk', name = 'sqs', version.ref = 'awsSdk2' }
 aws-apache-client = { group = 'software.amazon.awssdk', name = 'apache-client', version.ref = 'awsSdk2' }
 aws-sdk2-secrets = { group = 'software.amazon.awssdk', name = 'secretsmanager', version.ref = 'awsSdk2' }
-
 
 aws-ion = { group = 'software.amazon.ion', name = 'ion-java', version.ref = 'awsIon' }
 
@@ -158,6 +154,8 @@ tika-langdetect-optimaize = { group = 'org.apache.tika', name = 'tika-langdetect
 vavr = { group = 'io.vavr', name = 'vavr', version.ref = 'vavrVersion' }
 resilience4j-retry = { group = 'io.github.resilience4j', name = 'resilience4j-retry', version.ref = 'resilience4jRetry' }
 
+swagger-core = { group = 'io.swagger.core.v3', name = 'swagger-core', version.ref = 'swaggerCoreVersion' }
+
 mockito-junit-jupiter = {group= 'org.mockito', name= 'mockito-junit-jupiter', version= '5.3.1'}
 
 
@@ -167,7 +165,7 @@ open-csv = { group = 'com.opencsv', name = 'opencsv', version = '5.8' } # open-c
 validation = ['jakarta-validation-api', 'jakarta-el-api', 'glassfish-el', 'apache-bval']
 testing = ['junit-jupiter-params', 'junit-jupiter-api', 'junit-vintage-engine', 'guava',
     'junit-jupiter-engine', 'mockito-core', 'mockito-junit', 'hamcrest-base', 'hamcrest-core',
-    'hamcrest-optional', 'logutils', 'nva-testutils', 'nva-datamodel-testutils', 'javers', 'zalando',
+    'hamcrest-optional', 'logutils', 'nva-testutils', 'javers', 'zalando',
     'mockito-junit-jupiter','datafaker']
 logging = ['log4j-core', 'log4j-api', 'log4j-slf4j-impl', 'slf4j-api']
 jackson = ['jackson-core', 'jackson-datatype-jdk8', 'jackson-datatype-jsr310', 'jackson-databind', 'jackson-annotations', 'jackson-module-parameter-names', 'jackson-datatype-problem']

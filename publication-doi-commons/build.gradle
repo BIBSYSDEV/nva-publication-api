@@ -1,11 +1,11 @@
 dependencies {
-    implementation libs.nva.datamodel.core
+    implementation project(":publication-model")
     implementation libs.nva.core
     implementation libs.nva.json
     implementation libs.nva.identifiers
     implementation libs.bundles.jackson
 
     testImplementation libs.nva.testutils
-    testImplementation libs.nva.datamodel.testutils
+    testImplementation project(":publication-model-testing")
     testImplementation project(":publication-testing")
 }

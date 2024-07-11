@@ -1,0 +1,15 @@
+dependencies {
+    implementation project(":publication-model")
+    implementation( libs.nva.core )
+    implementation( libs.nva.language )
+    implementation( libs.nva.identifiers )
+    implementation ( libs.nva.json )
+    implementation( libs.nva.testutils )
+    implementation( libs.datafaker )
+    implementation( libs.javers )
+    implementation( libs.jackson.annotations )
+}
+
+tasks.named('check').configure {
+    dependsOn -= [jacocoTestCoverageVerification]
+}

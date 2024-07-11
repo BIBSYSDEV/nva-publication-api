@@ -15,9 +15,7 @@ dependencies {
     implementation libs.nva.s3
     implementation libs.nva.identifiers
     implementation libs.nva.clients
-    implementation(libs.nva.datamodel.core) {
-        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
-    }
+    implementation project(":publication-model")
     implementation libs.nva.secrets
 
     implementation libs.nva.doi.partner.data
@@ -39,9 +37,9 @@ dependencies {
     implementation libs.bundles.validation
 
     testImplementation project(":publication-testing")
-    testImplementation project(path: ':tickets-test')
+    testImplementation project(":tickets-test")
     testImplementation libs.bundles.testing
-    testImplementation libs.nva.datamodel.testutils
+    testImplementation project(":publication-model-testing")
     testImplementation libs.logutils
     testImplementation libs.nva.testutils
     testImplementation libs.zalando
@@ -73,4 +71,3 @@ test {
     environment "IMPORT_CANDIDATES_STORAGE_BUCKET", "some-candidate-bucket"
     environment "NVA_EVENT_BUS_NAME" , "some-nva-event-bus"
 }
-

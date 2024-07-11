@@ -1,0 +1,12 @@
+{
+  "@context": {
+    "@vocab": "https://nva.sikt.no/ontology/publication#",
+    "type": "@type",
+    "id": "@id",
+    "graph": "@graph",
+    "value": "@value",
+    "language": "@language"
+
+  },
+  "@type": "Publication"
+}

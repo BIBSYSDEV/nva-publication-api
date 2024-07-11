@@ -6,8 +6,8 @@ dependencies {
     implementation libs.nva.apigateway
     implementation libs.nva.identifiers
     implementation libs.nva.secrets
-    implementation libs.nva.datamodel.core
-    implementation libs.nva.datamodel.testutils
+    implementation project(":publication-model")
+    implementation project(":publication-model-testing")
     implementation libs.jsonld
     implementation libs.guava
     implementation libs.aws.sdk.dynamodb

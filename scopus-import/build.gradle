@@ -1,9 +1,7 @@
 apply plugin: 'io.freefair.lombok'
 
 dependencies {
-    implementation(libs.nva.datamodel.core) {
-        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
-    }
+    implementation project(":publication-model")
     implementation libs.tika.core
     implementation libs.tika.langdetect
     implementation libs.tika.langdetect.optimaize
@@ -31,7 +29,7 @@ dependencies {
     implementation libs.aws.lambda.events
     implementation libs.bundles.logging
     implementation libs.bundles.jackson
-    implementation project(path: ':publication-commons')
+    implementation project(":publication-commons")
     implementation project(":s3-import-commons")
     implementation project(":expansion")
 
@@ -39,9 +37,9 @@ dependencies {
     testImplementation libs.nva.json
 
     testImplementation libs.wiremock
-    testImplementation project(path: ':brage-import')
-    testImplementation project(path: ':brage-import')
-    testImplementation project(path: ':publication-testing')
+    testImplementation project(":brage-import")
+    testImplementation project(":brage-import")
+    testImplementation project(":publication-testing")
 
 }
 
