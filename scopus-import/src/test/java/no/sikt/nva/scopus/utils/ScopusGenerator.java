@@ -78,8 +78,8 @@ import no.scopus.generated.VolissTp;
 import no.scopus.generated.VolisspagTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.ScopusConstants;
-import no.unit.nva.language.Language;
 import no.unit.nva.language.LanguageConstants;
+import no.unit.nva.language.LanguageDescription;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.jetbrains.annotations.NotNull;
@@ -1016,10 +1016,14 @@ public final class ScopusGenerator {
         return languages.getLanguages().stream().map(this::generateCitationLanguage).collect(Collectors.toList());
     }
 
-    private CitationLanguageTp generateCitationLanguage(Language language) {
+    private CitationLanguageTp generateCitationLanguage(LanguageDescription language) {
         var citationLanguageTp = new CitationLanguageTp();
         citationLanguageTp.setLanguage(language.getEng());
-        citationLanguageTp.setLang(language.getIso6393Code());
+        if (nonNull(language.getIso6393Code())) {
+            citationLanguageTp.setLang(language.getIso6393Code());
+        } else {
+            citationLanguageTp.setLang(language.getIso6395Code());
+        }
         return citationLanguageTp;
     }
 

@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import no.unit.nva.language.LanguageDescription;
 
 public final class RandomLanguageUtil {
 
@@ -19,21 +20,21 @@ public final class RandomLanguageUtil {
 
     public static String randomBcp47CompatibleLanguage() {
         var languages = getLanguageStream()
-                            .map(Language::getIso6391Code)
+                            .map(LanguageDescription::getIso6391Code)
                             .filter(Objects::nonNull)
                             .collect(Collectors.toList());
         return randomElement(languages);
     }
 
     public static URI randomLexvoUri() {
-        return getLanguageStream().map(Language::getLexvoUri).filter(Objects::nonNull).findAny().orElseThrow();
+        return getLanguageStream().map(LanguageDescription::getLexvoUri).filter(Objects::nonNull).findAny().orElseThrow();
     }
 
-    private static Stream<Language> getLanguageStream() {
+    private static Stream<LanguageDescription> getLanguageStream() {
         return LanguageConstants.ALL_LANGUAGES.stream().filter(RandomLanguageUtil::isUsedLanguageInNva);
     }
 
-    private static boolean isUsedLanguageInNva(Language f) {
+    private static boolean isUsedLanguageInNva(LanguageDescription f) {
         return !unused.contains(f);
     }
 }
