@@ -7,6 +7,7 @@ import java.util.List;
 import no.scopus.generated.CitationLanguageTp;
 import no.unit.nva.language.LanguageConstants;
 import no.unit.nva.language.LanguageMapper;
+import nva.commons.core.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,24 +21,18 @@ public class LanguageExtractor {
     }
 
     public URI extractLanguage() {
-        switch (citationLanguageTps.size()) {
-            case 0:
-                return UNDEFINED_LANGUAGE.getLexvoUri();
-            case 1:
-                return convertToSupportedLanguage(citationLanguageTps.get(0));
-            default:
-                return LanguageConstants.MULTIPLE.getLexvoUri();
-        }
+        return switch (citationLanguageTps.size()) {
+            case 0 -> UNDEFINED_LANGUAGE.getLexvoUri();
+            case 1 -> convertToSupportedLanguage(citationLanguageTps.getFirst());
+            default -> LanguageConstants.MULTIPLE.getLexvoUri();
+        };
     }
 
     private URI convertToSupportedLanguage(CitationLanguageTp citationLanguageTp) {
-        var language = LanguageMapper.getLanguageByIso6393Code(citationLanguageTp.getLang());
-        if (UNDEFINED_LANGUAGE.equals(language)) {
-            language = LanguageMapper.getLanguageByIso6392Code(citationLanguageTp.getLang());
-        }
-        if (UNDEFINED_LANGUAGE.equals(language)) {
-            language = LanguageMapper.getLanguageByIso6391Code(citationLanguageTp.getLang());
-        }
+        var languageCode = StringUtils.isBlank(citationLanguageTp.getLang())
+                               ? StringUtils.EMPTY_STRING
+                               : citationLanguageTp.getLang();
+        var language = LanguageMapper.getLanguageByPotentialIsoCode(languageCode);
         if (UNDEFINED_LANGUAGE.equals(language)) {
             logger.info(String.format(
                 UNKNOWN_LANGUAGE_DETECTED,

@@ -158,8 +158,8 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.models.Doi;
 import no.unit.nva.expansion.model.ExpandedImportCandidate;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.language.Language;
 import no.unit.nva.language.LanguageConstants;
+import no.unit.nva.language.LanguageDescription;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
@@ -997,9 +997,9 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                    startsWith(correspondingAuthorTp.getGivenName()));
     }
 
-    @ParameterizedTest(name = "Should have entityDescription with language:{1}")
-    @MethodSource("providedLanguagesAndExpectedOutput")
-    void shouldExtractLanguage(List<Language> languageCodes, URI expectedLanguageUri) throws IOException {
+   @ParameterizedTest(name = "Should have entityDescription with language:{1}")
+   @MethodSource("providedLanguagesAndExpectedOutput")
+    void shouldExtractLanguage(List<LanguageDescription> languageCodes, URI expectedLanguageUri) throws IOException {
         createEmptyPiaMock();
         scopusData = ScopusGenerator.createScopusGeneratorWithSpecificLanguage(new LanguagesWrapper(languageCodes));
         var s3Event = createNewScopusPublicationEvent();
@@ -1248,7 +1248,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                          Arguments.of(List.of(ENGLISH, NORWEGIAN), MULTIPLE.getLexvoUri()));
     }
 
-    private static Arguments createArguments(Language language) {
+    private static Arguments createArguments(LanguageDescription language) {
         var languageUri = language.getLexvoUri();
         if (MISCELLANEOUS.equals(language)) {
             languageUri = MULTIPLE.getLexvoUri();

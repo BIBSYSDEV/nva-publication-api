@@ -1,17 +1,17 @@
 package no.sikt.nva.scopus.utils;
 
 import java.util.List;
-import no.unit.nva.language.Language;
+import no.unit.nva.language.LanguageDescription;
 
 public class LanguagesWrapper {
 
-    private final List<Language> languages;
+    private final List<LanguageDescription> languages;
 
-    public LanguagesWrapper(List<Language> languages) {
+    public LanguagesWrapper(List<LanguageDescription> languages) {
         this.languages = languages;
     }
 
-    public List<Language> getLanguages() {
+    public List<LanguageDescription> getLanguages() {
         return languages;
     }
 }
