@@ -51,7 +51,7 @@ public class EntityDescription {
 
     @JsonProperty("tags")
     public List<String> getTags() {
-        return this.tags;
+        return nonNull(this.tags) ? this.tags : List.of();
     }
 
     @JacocoGenerated
@@ -79,7 +79,7 @@ public class EntityDescription {
 
     @JsonProperty
     public List<String> getDescriptions() {
-        return descriptions;
+        return nonNull(descriptions) ? descriptions : List.of();
     }
 
     public void setDescriptions(List<String> descriptions) {
@@ -88,7 +88,7 @@ public class EntityDescription {
 
     @JsonProperty
     public List<String> getAbstracts() {
-        return abstracts;
+        return nonNull(abstracts) ? abstracts : List.of();
     }
 
     public void setAbstracts(List<String> abstracts) {
@@ -97,7 +97,7 @@ public class EntityDescription {
 
     @JsonProperty("alternativeTitles")
     public List<String> getAlternativeTitles() {
-        return alternativeTitles;
+        return nonNull(alternativeTitles) ? alternativeTitles : List.of();
     }
 
     public void setAlternativeTitles(List<String> alternativeTitles) {
