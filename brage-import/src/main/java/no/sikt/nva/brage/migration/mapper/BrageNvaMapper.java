@@ -343,7 +343,9 @@ public final class BrageNvaMapper {
     }
 
     private static List<String> extractTags(Record brageRecord) {
-        return brageRecord.getEntityDescription().getTags().stream().filter(StringUtils::isNotBlank).toList();
+        return Optional.ofNullable(brageRecord.getEntityDescription())
+                   .map(no.sikt.nva.brage.migration.record.EntityDescription::getTags)
+                   .orElse(List.of());
     }
 
     private static List<Contributor> extractContributors(Record brageRecord) {
