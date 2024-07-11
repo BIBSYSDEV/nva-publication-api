@@ -106,7 +106,7 @@ public class ReferenceBuilder extends CristinMappingModule {
                                               channelRegistryMapper, s3Client)
                        .buildMediaPeriodicalForPublicationContext();
         }
-        if (isReport(cristinObject) || isInformationalMaterialThatShouldBeMapped()) {
+        if (isReport(cristinObject)) {
             return buildPublicationContextWhenMainCategoryIsReport();
         }
         if (isChapter(cristinObject)) {
@@ -123,6 +123,9 @@ public class ReferenceBuilder extends CristinMappingModule {
         }
         if (isArt(cristinObject)) {
             return new Artistic();
+        }
+        if (isInformationalMaterialThatShouldBeMapped()) {
+            return InformationMaterialBuilder.buildPublicationContext(cristinObject);
         }
         return null;
     }

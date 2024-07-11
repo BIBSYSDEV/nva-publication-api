@@ -149,6 +149,10 @@ public enum CristinSecondaryCategory {
         return CristinSecondaryCategory.COMPENDIUM.equals(cristinObject.getSecondaryCategory());
     }
 
+    public static boolean isBriefs(CristinObject cristinObject) {
+        return CristinSecondaryCategory.BRIEFS.equals(cristinObject.getSecondaryCategory());
+    }
+
     public static boolean isInterview(CristinObject cristinObject) {
         return CristinSecondaryCategory.INTERVIEW.equals(cristinObject.getSecondaryCategory())
                || CristinSecondaryCategory.WRITTEN_INTERVIEW.equals(cristinObject.getSecondaryCategory());
