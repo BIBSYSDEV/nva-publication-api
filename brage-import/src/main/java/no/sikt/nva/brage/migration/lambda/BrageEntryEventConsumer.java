@@ -8,7 +8,6 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
-import java.util.Collection;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
@@ -18,7 +17,6 @@ import no.sikt.nva.brage.migration.merger.AssociatedArtifactMover;
 import no.sikt.nva.brage.migration.merger.BrageMergingReport;
 import no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger;
 import no.sikt.nva.brage.migration.merger.DiscardedFilesReport;
-import no.sikt.nva.brage.migration.merger.MultipleCristinIdentifiersException;
 import no.sikt.nva.brage.migration.merger.PublicationMergeReport;
 import no.sikt.nva.brage.migration.merger.UnmappableCristinRecordException;
 import no.sikt.nva.brage.migration.merger.findexistingpublication.DuplicatePublicationReporter;
@@ -29,6 +27,7 @@ import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifierBase;
+import no.unit.nva.model.CristinIdentifier;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
@@ -272,22 +271,10 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private BrageMergingReport persistInDatabaseAndCreateMergeReport(Publication publicationForUpdate,
                                                                      Publication existinPublication,
                                                                      PublicationRepresentation representation) {
-        validateBeforeUpdate(publicationForUpdate);
         var customerName = representation.brageRecord().getCustomer();
         var importSource = ImportSource.fromBrageArchive(customerName.getName());
         var newImage = resourceService.updatePublicationByImportEntry(publicationForUpdate, importSource);
         return new BrageMergingReport(existinPublication, newImage);
-    }
-
-    private void validateBeforeUpdate(Publication publication) {
-        var cristinIdentifiers = getCristinIdentifiers(publication);
-        if (hasMultipleEntries(cristinIdentifiers)) {
-            throw new MultipleCristinIdentifiersException();
-        }
-    }
-
-    private static boolean hasMultipleEntries(Collection<String> collection) {
-        return collection.size() > 1;
     }
 
     private Publication updatedPublication(PublicationRepresentation publicationRepresentation,
@@ -309,13 +296,9 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private Set<String> getCristinIdentifiers(Publication publication) {
         return publication.getAdditionalIdentifiers()
                    .stream()
-                   .filter(this::isCristinIdentifier)
+                   .filter(identifier -> identifier instanceof CristinIdentifier)
                    .map(AdditionalIdentifierBase::value)
                    .collect(Collectors.toSet());
-    }
-
-    private boolean isCristinIdentifier(AdditionalIdentifierBase identifier) {
-        return SOURCE_CRISTIN.equals(identifier.sourceName());
     }
 
     private void persistHandleReport(SortableIdentifier nvaPublicationIdentifier,

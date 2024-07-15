@@ -2,7 +2,6 @@ package no.sikt.nva.brage.migration.mapper;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.SOURCE_CRISTIN;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.HTTPS_PREFIX;
 import static no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger.DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
@@ -36,6 +35,7 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
+import no.unit.nva.model.CristinIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
@@ -43,6 +43,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationDate.Builder;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.SourceName;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
@@ -171,10 +172,11 @@ public final class BrageNvaMapper {
         return brageRecord.getId().toString().contains(DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS);
     }
 
-    private static Optional<AdditionalIdentifier> extractCristinAdditionalIdentifier(Record brageRecord) {
+    private static Optional<CristinIdentifier> extractCristinAdditionalIdentifier(Record brageRecord) {
         return isNull(brageRecord.getCristinId())
                    ? Optional.empty()
-                   : Optional.of(new AdditionalIdentifier(SOURCE_CRISTIN, brageRecord.getCristinId()));
+                   : Optional.of(new CristinIdentifier(SourceName.fromBrage(brageRecord.getCustomer().getName()),
+                                                       brageRecord.getCristinId()));
     }
 
     private static void assertPublicationDoesNotHaveEmptyFields(Publication publication) {
