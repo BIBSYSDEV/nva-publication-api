@@ -128,17 +128,17 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
 
     private PublicationRepresentation persistReports(S3Event s3Event,
                                                      PublicationRepresentation publicationRepresentation) {
-        persistPartOfReport(publicationRepresentation.publication(), s3Client, s3Event);
+        persistPartOfReport(publicationRepresentation.publication(), s3Client);
         persistHandleReport(publicationRepresentation.publication().getIdentifier(),
                             publicationRepresentation.brageRecord().getId(), s3Event,
                             HANDLE_REPORTS_PATH);
         return publicationRepresentation;
     }
 
-    private void persistPartOfReport(Publication publication, S3Client s3Client, S3Event s3Event) {
+    private void persistPartOfReport(Publication publication, S3Client s3Client) {
         var record = attempt(() -> JsonUtils.dtoObjectMapper.readValue(brageRecordFile, Record.class)).orElseThrow();
         if (record.hasParentPublication()) {
-            new PartOfReport(publication, record).persist(s3Client, timePath(s3Event));
+            new PartOfReport(publication, record).persist(s3Client);
         }
     }
 
@@ -334,10 +334,8 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                                                       SortableIdentifier publicationIdentifier,
                                                       String destinationFolder,
                                                       URI brageHandle) {
-        var timestamp = timePath(s3Event);
         return UriWrapper.fromUri(destinationFolder)
                    .addChild(extractInstitutionName(s3Event))
-                   .addChild(timestamp)
                    .addChild(brageHandle.getPath())
                    .addChild(publicationIdentifier.toString());
     }
@@ -425,7 +423,6 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
                                              Exception exception) {
         return UriWrapper.fromUri(ERROR_BUCKET_PATH)
                    .addChild(extractInstitutionName(event))
-                   .addChild(timePath(event))
                    .addChild(exception.getClass().getSimpleName())
                    .addChild(UriWrapper.fromUri(extractObjectKey(event)).getLastPathElement());
     }

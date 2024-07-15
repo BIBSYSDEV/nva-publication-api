@@ -71,17 +71,16 @@ public class PartOfReport implements JsonSerializable {
         return this.toJsonString();
     }
 
-    public void persist(S3Client s3Client, String timeStamp) {
-        var fileUri = createPartOfReportS3Location(timeStamp);
+    public void persist(S3Client s3Client) {
+        var fileUri = createPartOfReportS3Location();
         var s3Driver = new S3Driver(s3Client, new Environment().readEnv(BRAGE_MIGRATION_BUCKET));
         var uri = attempt(() -> s3Driver.insertFile(fileUri.toS3bucketPath(), this.toJsonString())).orElseThrow();
         setLocation(uri);
     }
 
-    private UriWrapper createPartOfReportS3Location(String timeStamp) {
+    private UriWrapper createPartOfReportS3Location() {
         return UriWrapper.fromUri(PART_OF)
                    .addChild(record.getCustomer().getName())
-                   .addChild(timeStamp)
                    .addChild(record.getId().getPath())
                    .addChild(publication.getIdentifier().toString());
     }

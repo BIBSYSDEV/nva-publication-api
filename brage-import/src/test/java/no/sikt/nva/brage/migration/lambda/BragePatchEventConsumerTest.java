@@ -43,7 +43,6 @@ import org.junit.jupiter.api.Test;
 
 class BragePatchEventConsumerTest extends ResourcesLocalTest {
 
-    public static final String TIME_STAMP = randomString();
     public static final Context CONTEXT = mock(Context.class);
     private ResourceService resourceService;
     private UriRetriever uriRetriever;
@@ -138,7 +137,7 @@ class BragePatchEventConsumerTest extends ResourcesLocalTest {
                                                                ImportSource.fromBrageArchive(randomString()));
         var record = recordWithIsbn(isbn);
         var partOfReport = new PartOfReport(persistedPublication, record);
-        partOfReport.persist(s3Client, TIME_STAMP);
+        partOfReport.persist(s3Client);
         return partOfReport;
     }
 
