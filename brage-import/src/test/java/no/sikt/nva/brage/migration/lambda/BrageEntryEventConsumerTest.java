@@ -85,7 +85,6 @@ import no.sikt.nva.brage.migration.mapper.InvalidIsmnRuntimeException;
 import no.sikt.nva.brage.migration.merger.AssociatedArtifactException;
 import no.sikt.nva.brage.migration.merger.BrageMergingReport;
 import no.sikt.nva.brage.migration.merger.DiscardedFilesReport;
-import no.sikt.nva.brage.migration.merger.MultipleCristinIdentifiersException;
 import no.sikt.nva.brage.migration.merger.PublicationMergeReport;
 import no.sikt.nva.brage.migration.merger.UnmappableCristinRecordException;
 import no.sikt.nva.brage.migration.merger.findexistingpublication.DuplicateDetectionCause;
@@ -117,10 +116,12 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.AdditionalIdentifierBase;
+import no.unit.nva.model.CristinIdentifier;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.SourceName;
 import no.unit.nva.model.UnconfirmedCourse;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
@@ -995,6 +996,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                                     .getImportDetails())
                                              .build();
 
+        assertThat(publicationRepresentation.publication().getAdditionalIdentifiers(),
+                   is(equalTo(expectedUpdatedPublication.getAdditionalIdentifiers())));
         assertThat(publicationRepresentation.publication(), is(equalTo(expectedUpdatedPublication)));
         assertThat(publicationRepresentation.publication().getImportDetails().size(), is(equalTo(2)));
     }
@@ -1976,8 +1979,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldThrowMultipleCristinIdentifiersExceptionWhenUpdatingPublicationWithSecondCristinIdentifier()
-        throws IOException {
+    void shouldNotThrowExceptionWhenUpdatingPublicationWithSecondCristinIdentifier()
+        throws IOException, nva.commons.apigateway.exceptions.NotFoundException {
 
         var publication = randomPublication(ConferencePoster.class);
         publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier(SOURCE_CRISTIN, randomString())));
@@ -1999,8 +2002,9 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                                   null)));
 
         mockSingleHitSearchApiResponse(existingPublication.getIdentifier(), 200);
+        var brageCristinIdentifier = randomString();
         var generator = new NvaBrageMigrationDataGenerator.Builder()
-                            .withCristinIdentifier(randomString())
+                            .withCristinIdentifier(brageCristinIdentifier)
                             .withMainTitle(publication.getEntityDescription().getMainTitle())
                             .withContributor(contributor)
                             .withPublicationDate(new PublicationDate("2022",
@@ -2011,12 +2015,11 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                             .build();
         var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
         handler.handleRequest(s3Event, CONTEXT);
-
-        var errorReport = extractActualReportFromS3Client(s3Event,
-                                                          MultipleCristinIdentifiersException.class.getSimpleName(),
-                                                          generator.getBrageRecord());
-        assertThat(errorReport, is(notNullValue()));
-
+        var updatedPublication = resourceService.getPublication(existingPublication);
+        var expectedCristinIdentifierFromBrage =
+            new CristinIdentifier(SourceName.fromBrage(generator.getBrageRecord().getCustomer().getName()), brageCristinIdentifier);
+        assertThat(updatedPublication.getAdditionalIdentifiers(),
+                   hasItem(expectedCristinIdentifierFromBrage));
     }
 
     private BrageTestRecord generateBrageRecordAndPersistDuplicateByCristinIdentifier(
@@ -2629,10 +2632,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var recordAsJson = JsonUtils.dtoObjectMapper.writeValueAsString(brageRecord);
         var uri = s3Driver.insertFile(UnixPath.of("my/path/some.json"), recordAsJson);
         return createS3Event(uri);
-    }
-
-    private UnixPath randomS3Path() {
-        return UnixPath.of(randomString());
     }
 
     private S3Event createS3Event(URI uri) {

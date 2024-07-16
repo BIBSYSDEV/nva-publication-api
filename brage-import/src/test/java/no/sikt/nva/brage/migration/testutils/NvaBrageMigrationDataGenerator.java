@@ -42,10 +42,12 @@ import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Corporation;
+import no.unit.nva.model.CristinIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.SourceName;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
@@ -93,7 +95,8 @@ public class NvaBrageMigrationDataGenerator {
             additionalIdentifiers.add(new AdditionalIdentifier("handle", builder.handle.toString()));
         }
         if (nonNull(builder.cristinIdentifier)) {
-            additionalIdentifiers.add(new AdditionalIdentifier(SOURCE_CRISTIN, builder.cristinIdentifier));
+            additionalIdentifiers.add(new CristinIdentifier(SourceName.fromBrage(builder.customer.getName()),
+                                                            builder.cristinIdentifier));
         }
         return additionalIdentifiers;
     }
@@ -213,8 +216,6 @@ public class NvaBrageMigrationDataGenerator {
 
     public static class Builder {
 
-        public static final URI CUSTOMER_URi = URI.create(
-            "https://dev.nva.sikt.no/registration/0184ebf2c2ad" + "-0b4cd833-2f8c-4bd6-b11b-7b9cb15e9c05/edit");
         public static final URI RESOURCE_OWNER_URI = URI.create("https://api.nva.unit.no/customer/test");
         public ResourceOwner resourceOwner;
         private boolean noContributors;

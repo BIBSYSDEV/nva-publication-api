@@ -69,8 +69,10 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
+import no.unit.nva.model.CristinIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.ImportSource;
@@ -81,6 +83,7 @@ import no.unit.nva.model.PublicationNote;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.SourceName;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
@@ -448,6 +451,38 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(actualResourcesSet,
                    containsInAnyOrder(
                        publicationsWithCristinIdentifier.toArray(Publication[]::new)));
+    }
+
+    @Test
+    void itIsNotPossibleToPersistMultipleTrustedCristinIdentifiersWhenUpdatedPublication()
+        throws BadRequestException, NotFoundException {
+
+        Publication resource = createPersistedPublicationWithDoi();
+        Publication actualOriginalResource = resourceService.getPublication(resource);
+        assertThat(actualOriginalResource, is(equalTo(resource)));
+
+        Set<AdditionalIdentifierBase> multipleTrustedCristinIdentifiers = Set.of(
+            new AdditionalIdentifier("Cristin", randomString()),
+            new AdditionalIdentifier("Cristin", randomString()));
+        var updatedResource = resource.copy().withAdditionalIdentifiers(multipleTrustedCristinIdentifiers).build();
+        assertThrows(IllegalArgumentException.class, () -> resourceService.updatePublication(updatedResource));
+    }
+
+    @Test
+    void combinationOfTrustedAndUntrustedCristinIdentifiersArePersistedWhenUpdatingPublication()
+        throws BadRequestException, NotFoundException {
+
+        Publication resource = createPersistedPublicationWithDoi();
+        Publication actualOriginalResource = resourceService.getPublication(resource);
+        assertThat(actualOriginalResource, is(equalTo(resource)));
+
+        Set<AdditionalIdentifierBase> cristinIdentifiers = Set.of(
+            new AdditionalIdentifier("Cristin", randomString()),
+            new CristinIdentifier(SourceName.fromBrage("uit"), randomString()));
+        var updatedResource = resource.copy().withAdditionalIdentifiers(cristinIdentifiers).build();
+        resourceService.updatePublication(updatedResource);
+        var actualUpdatedResource = resourceService.getPublication(updatedResource);
+        assertThat(actualUpdatedResource.getAdditionalIdentifiers(), is(equalTo(cristinIdentifiers)));
     }
 
     @Test

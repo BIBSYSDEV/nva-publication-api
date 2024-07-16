@@ -288,7 +288,31 @@ public class CristinImportPublicationMerger {
     private Set<AdditionalIdentifierBase> mergeAdditionalIdentifiers() {
         var additionalIdentifiers = new HashSet<>(existingPublication.getAdditionalIdentifiers());
         additionalIdentifiers.addAll(bragePublicationRepresentation.publication().getAdditionalIdentifiers());
+        removePossiblyRedundantCristinIdentifier(additionalIdentifiers);
         return additionalIdentifiers;
+    }
+
+    private void removePossiblyRedundantCristinIdentifier(HashSet<AdditionalIdentifierBase> additionalIdentifiers) {
+        var cristinIdentifierOptional = getCristinIdentifier();
+        cristinIdentifierOptional.ifPresent(cristinIdentifier -> removeCristinIdentifierFromBrage(additionalIdentifiers, cristinIdentifier));
+    }
+
+    private void removeCristinIdentifierFromBrage(HashSet<AdditionalIdentifierBase> additionalIdentifiers,
+                               AdditionalIdentifierBase cristinIdentifier) {
+        additionalIdentifiers.removeIf(
+            additionalIdentifierBase -> cristinIdentifierFromBrageIsIdentical(cristinIdentifier, additionalIdentifierBase));
+    }
+
+    private boolean cristinIdentifierFromBrageIsIdentical(AdditionalIdentifierBase cristinIdentifier, AdditionalIdentifierBase additionalIdentifierBase) {
+        return additionalIdentifierBase.value().equals(cristinIdentifier.value()) && !"Cristin".equalsIgnoreCase(additionalIdentifierBase.sourceName());
+    }
+
+    private Optional<AdditionalIdentifierBase> getCristinIdentifier() {
+        return existingPublication
+                        .getAdditionalIdentifiers()
+                        .stream()
+                        .filter(additionalIdentifierBase -> "Cristin".equalsIgnoreCase(additionalIdentifierBase.sourceName()))
+                        .findFirst();
     }
 
     private AssociatedArtifactList determineAssociatedArtifacts() {
