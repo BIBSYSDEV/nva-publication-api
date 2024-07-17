@@ -984,6 +984,11 @@ Resources:
                 Rules:
                   - Name: suffix
                     Value: '.json'
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt BrageMigrationDLQ.Arn
 
   BrageMergingRollbackFunction:
     Type: AWS::Serverless::Function
@@ -1868,6 +1873,8 @@ Resources:
   CristinImportDLQ:
     Type: "AWS::SQS::Queue"
   BrageImportPatchQueue:
+    Type: "AWS::SQS::Queue"
+  BrageMigrationDLQ:
     Type: "AWS::SQS::Queue"
 
   CristinEntriesSQSConsumer:
