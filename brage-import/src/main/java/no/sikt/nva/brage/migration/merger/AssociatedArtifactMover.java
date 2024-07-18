@@ -1,6 +1,8 @@
 package no.sikt.nva.brage.migration.merger;
 
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
@@ -32,6 +34,19 @@ public class AssociatedArtifactMover {
     }
 
     private AssociatedArtifactList pushAssociatedArtefactsToPersistedStorageAndGetMetadata(Publication publication) {
+
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var futures = publication.getAssociatedArtifacts()
+                              .stream()
+                              .map(associatedArtifact -> executor.submit(() -> pushAssociatedArtifactToPersistedStorage(associatedArtifact)));
+            var result = futures.map(future -> attempt(future::get).orElseThrow()).toList();
+            return new AssociatedArtifactList(result);
+        } catch (Exception e) {
+            return synchronizedMoving(publication);
+        }
+    }
+
+    private AssociatedArtifactList synchronizedMoving(Publication publication) {
         var associatedArtifacts = publication.getAssociatedArtifacts()
                                       .stream()
                                       .map(this::pushAssociatedArtifactToPersistedStorage)
