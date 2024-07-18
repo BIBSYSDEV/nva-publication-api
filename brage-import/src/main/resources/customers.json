@@ -59,6 +59,7 @@
     "username": "nmh@178.0.0.0",
     "cristinIdentifier": "178.0.0.0",
     "identifiers": {
+      "sandbox": "bb3d0c0c-5065-4623-9b98-5810983c2478",
       "test": "9efe66cc-ead0-49e0-b787-b73a188d4770",
       "dev": "2f148e5f-a017-4e7f-8f78-6a52eb6a9938"
     }
