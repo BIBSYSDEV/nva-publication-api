@@ -22,6 +22,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -498,7 +499,11 @@ class CristinImportPublicationMergerTest {
         var existingPublication = randomPublication(DegreeBachelor.class);
         var tag = randomString();
         var duplicatedTag = randomString();
-        existingPublication.getEntityDescription().setTags(List.of(tag, duplicatedTag));
+        var tags = new ArrayList<String>();
+        tags.add(tag);
+        tags.add(duplicatedTag);
+        tags.add(null);
+        existingPublication.getEntityDescription().setTags(tags);
 
         var bragePublication = randomPublication(DegreeBachelor.class);
         var newTag = randomString();

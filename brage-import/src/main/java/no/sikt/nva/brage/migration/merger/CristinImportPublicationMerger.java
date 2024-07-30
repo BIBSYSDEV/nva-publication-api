@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -139,9 +140,9 @@ public class CristinImportPublicationMerger {
     private List<String> mergeTags() {
         var tags = new HashSet<>(existingPublication.getEntityDescription().getTags());
         bragePublicationRepresentation.publication().getEntityDescription().getTags().stream()
-            .filter(tag -> tags.stream().noneMatch(exTag -> exTag.equalsIgnoreCase(tag)))
+            .filter(tag -> tags.stream().filter(Objects::nonNull).noneMatch(exTag -> exTag.equalsIgnoreCase(tag)))
             .forEach(tags::add);
-        return tags.stream().toList();
+        return tags.stream().filter(Objects::nonNull).toList();
     }
 
     private Map<String, String> determineAlternativeAbstracts() {
