@@ -66,10 +66,16 @@ public final class PublicationComparator {
     private static boolean publicationsDateAreClose(Publication existingPublication, Publication incomingPublication) {
         var existingPublicationDate = existingPublication.getEntityDescription().getPublicationDate();
         var incomingPublicationDate = incomingPublication.getEntityDescription().getPublicationDate();
-        var difference =
-            Math.abs(Integer.parseInt(existingPublicationDate.getYear())
-                     - Integer.parseInt(incomingPublicationDate.getYear()));
-        return difference <= ALLOWED_PUBLICATION_YEAR_DIFFERENCE;
+
+        var existingYear = existingPublicationDate.getYear();
+        var incomingYear = incomingPublicationDate.getYear();
+
+        try {
+            var difference = Math.abs(Integer.parseInt(existingYear) - Integer.parseInt(incomingYear));
+            return difference <= ALLOWED_PUBLICATION_YEAR_DIFFERENCE;
+        } catch (NumberFormatException e) {
+            return existingYear.equals(incomingYear);
+        }
     }
 
     private static boolean contributorsMatch(Publication existingPublication, Publication incomingPublication) {

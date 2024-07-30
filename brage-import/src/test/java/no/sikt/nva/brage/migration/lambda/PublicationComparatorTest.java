@@ -1,6 +1,7 @@
 package no.sikt.nva.brage.migration.lambda;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
@@ -49,6 +50,16 @@ class PublicationComparatorTest {
         assertTrue(PublicationComparator.publicationsMatch(existingPublication, incomingConferenceReport));
     }
 
+    @Test
+    void shouldComparePublicationYearStringValuesWhenPublicationYearIsNotAnInteger() {
+        var existingPublication = randomPublication(Lecture.class);
+        existingPublication.getEntityDescription().setPublicationDate(publicationDateRandomString());
+        var incomingConferenceReport = existingPublication.copy()
+                                           .withEntityDescription(addEmptyReference(existingPublication))
+                                           .build();
+        assertTrue(PublicationComparator.publicationsMatch(existingPublication, incomingConferenceReport));
+    }
+
     private static EntityDescription addEmptyReference(Publication existingPublication) {
         return existingPublication
                    .getEntityDescription().copy()
@@ -59,6 +70,12 @@ class PublicationComparatorTest {
     private static PublicationDate publicationDateWithYear() {
         return new PublicationDate.Builder()
                    .withYear("2022")
+                   .build();
+    }
+
+    private static PublicationDate publicationDateRandomString() {
+        return new PublicationDate.Builder()
+                   .withYear(randomString())
                    .build();
     }
 
