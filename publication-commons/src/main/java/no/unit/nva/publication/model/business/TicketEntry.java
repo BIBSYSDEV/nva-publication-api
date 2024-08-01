@@ -170,11 +170,12 @@ public abstract class TicketEntry implements Entity {
 
     public TicketEntry complete(Publication publication, Username finalizedBy) {
         var updated = this.copy();
+        var now = Instant.now();
+        updated.setModifiedDate(now);
+        updated.setFinalizedDate(now);
+        updated.setFinalizedBy(finalizedBy);
         updated.setStatus(TicketStatus.COMPLETED);
         updated.validateCompletionRequirements(publication);
-        updated.setModifiedDate(Instant.now());
-        updated.setFinalizedBy(finalizedBy);
-        updated.setFinalizedDate(Instant.now());
         return updated;
     }
 

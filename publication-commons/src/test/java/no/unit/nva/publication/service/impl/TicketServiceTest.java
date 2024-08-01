@@ -50,11 +50,11 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.Collection;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -754,6 +754,16 @@ public class TicketServiceTest extends ResourcesLocalTest {
         var updatedVersion = updatedTicket.toDao().getVersion();
 
         assertThat(updatedVersion, is(not(equalTo(version))));
+    }
+
+    @Test
+    void finalizedDateShouldBeSetAfterCreatedDateWhenAutoCompletingTicket() throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
+        var ticket = (PublishingRequestCase) PublishingRequestCase.createNewTicket(
+            publication, PublishingRequestCase.class, SortableIdentifier::next);
+        var completedTicket = ticket.persistAutoComplete(ticketService, publication, new Username(randomString()));
+
+        assertThat(completedTicket.getFinalizedDate(), greaterThan(completedTicket.getCreatedDate()));
     }
 
     private static Username getUsername(Publication publication) {
