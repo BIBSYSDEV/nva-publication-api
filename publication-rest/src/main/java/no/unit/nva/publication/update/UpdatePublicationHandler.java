@@ -409,7 +409,7 @@ public class UpdatePublicationHandler
                                                  Publication publicationUpdate,
                                                  Customer customer,
                                                  UserInstance userInstance) {
-        if (isAlreadyPublished(existingPublication) && !thereIsRelatedPendingPublishingRequest(publicationUpdate)) {
+        if (isAlreadyPublished(existingPublication) && thereIsNoRelatedPendingPublishingRequest(publicationUpdate)) {
             createPublishingRequestOnFileUpdate(publicationUpdate, customer, userInstance);
         }
         if (isAlreadyPublished(existingPublication) && thereAreNoFiles(publicationUpdate)) {
@@ -516,7 +516,7 @@ public class UpdatePublicationHandler
         return nonNull(file.getLicense()) && !file.isAdministrativeAgreement();
     }
 
-    private boolean thereIsRelatedPendingPublishingRequest(Publication publication) {
+    private boolean thereIsNoRelatedPendingPublishingRequest(Publication publication) {
         return ticketService.fetchTicketsForUser(UserInstance.fromPublication(publication))
                    .filter(PublishingRequestCase.class::isInstance)
                    .filter(ticketEntry -> hasMatchingIdentifier(publication, ticketEntry))
