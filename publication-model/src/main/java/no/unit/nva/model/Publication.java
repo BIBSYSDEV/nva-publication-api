@@ -6,10 +6,14 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.DRAFT_FOR_DELETION;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
+import com.fasterxml.jackson.annotation.JsonClassDescription;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.jsonschema.JsonSerializableSchema;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -38,6 +42,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@Schema(description="Complete Publication entity")
 @SuppressWarnings({"PMD.ExcessivePublicCount", "PMD.TooManyFields", "PMD.GodClass"})
 public class Publication
     implements WithIdentifier, WithInternal, WithAssociatedArtifact, WithMetadata, WithCopy<Publication.Builder> {

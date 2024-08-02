@@ -16,7 +16,7 @@ class SwaggerTest {
     @Test
     void writePublicationSchemaToFile() throws IOException {
         Publication publication = PublicationGenerator.randomPublication();
-        ResolvedSchema map = ModelConverters.getInstance().readAllAsResolvedSchema(publication.getClass());
+        var map = ModelConverters.getInstance().readAll(publication.getClass());
 
         File file = new File(SCHEMA_YAML);
         Yaml.pretty().writeValue(file, map);
