@@ -878,138 +878,6 @@ components:
             items:
               type: string
               enum: ["update", "delete", "terminate", "unpublish", "ticket/publish"]
-    Publication:
-      type: object
-      description: Complete Publication entity
-      required:
-        - type
-      properties:
-        type:
-          type: string
-          enum: [ 'Publication' ]
-          description: Type of the request
-        abstract:
-          type: string
-          description: short abstract of content
-        alternativeTitles:
-          type: array
-          description: short abstract of content
-          items:
-            type: string
-        contributors:
-          type: array
-          description: List of contributing people
-          items:
-            type: object
-            properties:
-              id:
-                type: string
-                format: uri
-              name:
-                type: string
-        description:
-          type: string
-        doi:
-          type: string
-          format: uri
-        id:
-          type: string
-          format: uri
-        modifiedDate:
-          type: string
-          format: date
-        owner:
-          type: string
-        publicationDate:
-          type: object
-          properties:
-            day:
-              type: string
-            month:
-              type: string
-            type:
-              type: string
-            year:
-              type: string
-        publicationType:
-          type: string
-        publishedDate:
-          type: string
-          format: date
-        publisher:
-          type: object
-          properties:
-            id:
-              type: string
-              format: uri
-            name:
-              type: string
-        reference:
-          type: object
-          properties:
-            doi:
-              type: string
-            publicationContext:
-              type: object
-              properties:
-                level:
-                  type: string
-                linkedContext:
-                  type: string
-                onlineIssn:
-                  type: string
-                openAccess:
-                  type: boolean
-                peerReviewed:
-                  type: boolean
-                printIssn:
-                  type: string
-                publisher:
-                  type: string
-                seriesTitle:
-                  type: string
-                title:
-                  type: string
-                type:
-                  type: string
-                url:
-                  type: string
-            publicationInstance:
-              type: object
-              properties:
-                articleNumber:
-                  type: string
-                issue:
-                  type: string
-                pages:
-                  type: object
-                  properties:
-                    begin:
-                      type: string
-                    end:
-                      type: string
-                    illustrated:
-                      type: boolean
-                    pages:
-                      type: string
-                    type:
-                      type: string
-                peerReviewed:
-                  type: boolean
-                textbookContent:
-                  type: boolean
-                type:
-                  type: string
-                volume:
-                  type: string
-            type:
-              type: string
-        tags:
-          type: array
-          items:
-            type: string
-        title:
-          type: string
     DeletePublicationRequest:
       type: object
       description: Delete publication request
@@ -1346,9 +1214,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Ticket"
-    PublicationContext:
-      type: object
-      description: Publication context
     PresignedUrl:
       description: PresignedUrl response
       type: object
@@ -1360,6 +1225,3134 @@ components:
           format: uri
         expires:
           type: string
+#auto
+
+    AcademicArticle:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/Range'
+            volume:
+              type: string
+            issue:
+              type: string
+            articleNumber:
+              type: string
+            type:
+              type: string
+    AcademicChapter:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/Range'
+            type:
+              type: string
+    AcademicLiteratureReview:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/Range'
+            volume:
+              type: string
+            issue:
+              type: string
+            articleNumber:
+              type: string
+            type:
+              type: string
+    AcademicMonograph:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/MonographPages'
+            type:
+              type: string
+    AdditionalIdentifier:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/AdditionalIdentifierBase'
+    AdditionalIdentifierBase:
+      required:
+        - type
+      type: object
+      properties:
+        value:
+          type: string
+        sourceName:
+          type: string
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    AdministrativeAgreement:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/File'
+        - type: object
+          properties:
+            type:
+              type: string
+    Agent:
+      required:
+        - type
+      type: object
+      properties:
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    Anthology:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationContext'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uri
+            type:
+              type: string
+    Approval:
+      required:
+        - type
+      type: object
+      properties:
+        approvalDate:
+          type: string
+          format: date-time
+        approvedBy:
+          type: string
+          enum:
+            - REK
+            - NARA
+            - NMA
+            - DIRHEALTH
+        approvalStatus:
+          type: string
+          enum:
+            - NOTAPPLIED
+            - APPLIED
+            - APPROVED
+            - DECLINED
+            - REJECTION
+        applicationCode:
+          type: string
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    Architecture:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            subtype:
+              $ref: '#/components/schemas/ArchitectureSubtype'
+            description:
+              type: string
+            architectureOutput:
+              type: array
+              items:
+                $ref: '#/components/schemas/ArchitectureOutput'
+            pages:
+              $ref: '#/components/schemas/NullPages'
+            type:
+              type: string
+    ArchitectureOutput:
+      required:
+        - type
+      type: object
+      properties:
+        sequence:
+          type: integer
+          format: int32
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    ArchitectureSubtype:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - Building
+            - PlanningProposal
+            - LandscapeArchitecture
+            - Interior
+            - ArchitectureOther
+        description:
+          type: string
+          writeOnly: true
+    Artistic:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationContext'
+        - type: object
+          properties:
+            type:
+              type: string
+    ArtisticDesign:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            subtype:
+              $ref: '#/components/schemas/ArtisticDesignSubtype'
+            description:
+              type: string
+            venues:
+              type: array
+              items:
+                $ref: '#/components/schemas/Venue'
+            pages:
+              $ref: '#/components/schemas/NullPages'
+            type:
+              type: string
+    ArtisticDesignSubtype:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - ClothingDesign
+            - Exhibition
+            - GraphicDesign
+            - Illustration
+            - InteractionDesign
+            - InteriorDesign
+            - LightDesign
+            - ArtisticDesignOther
+            - ProductDesign
+            - ServiceDesign
+            - WebDesign
+        description:
+          type: string
+          writeOnly: true
+    AssociatedArtifact:
+      required:
+        - type
+      type: object
+      properties:
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    AssociatedArtifactList:
+      type: array
+      properties:
+        empty:
+          type: boolean
+        first:
+          $ref: '#/components/schemas/AssociatedArtifact'
+        last:
+          $ref: '#/components/schemas/AssociatedArtifact'
+      items:
+        $ref: '#/components/schemas/AssociatedArtifact'
+    AssociatedLink:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/AssociatedArtifact'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uri
+            name:
+              type: string
+            description:
+              type: string
+            type:
+              type: string
+    AudioVisualPublication:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/MusicPerformanceManifestation'
+        - type: object
+          properties:
+            mediaType:
+              $ref: '#/components/schemas/MusicMediaSubtype'
+            publisher:
+              $ref: '#/components/schemas/PublishingHouse'
+            catalogueNumber:
+              type: string
+            trackList:
+              type: array
+              items:
+                $ref: '#/components/schemas/MusicTrack'
+            isrc:
+              $ref: '#/components/schemas/Isrc'
+            type:
+              type: string
+    Award:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/ArchitectureOutput'
+        - type: object
+          properties:
+            name:
+              type: string
+            organizer:
+              type: string
+            date:
+              $ref: '#/components/schemas/Instant'
+            ranking:
+              type: integer
+              format: int32
+            otherInformation:
+              type: string
+            type:
+              type: string
+    Book:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationContext'
+        - type: object
+          properties:
+            series:
+              $ref: '#/components/schemas/BookSeries'
+            seriesTitle:
+              type: string
+              writeOnly: true
+            seriesNumber:
+              type: string
+            publisher:
+              $ref: '#/components/schemas/PublishingHouse'
+            isbnList:
+              type: array
+              items:
+                type: string
+            revision:
+              type: string
+              enum:
+                - Revised
+                - Unrevised
+            additionalIdentifiers:
+              uniqueItems: true
+              type: array
+              items:
+                $ref: '#/components/schemas/AdditionalIdentifier'
+            type:
+              type: string
+    BookAnthology:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/MonographPages'
+            type:
+              type: string
+    BookSeries:
+      required:
+        - type
+      type: object
+      properties:
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    Broadcast:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/MovingPictureOutput'
+        - type: object
+          properties:
+            publisher:
+              $ref: '#/components/schemas/PublishingHouse'
+            date:
+              $ref: '#/components/schemas/Instant'
+            type:
+              type: string
+    CaseReport:
+      required:
+        - Type
+      type: object
+      discriminator:
+        propertyName: Type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/Range'
+            volume:
+              type: string
+            issue:
+              type: string
+            articleNumber:
+              type: string
+            Type:
+              type: string
+    ChapterConferenceAbstract:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/Range'
+            type:
+              type: string
+    ChapterInReport:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/Range'
+            type:
+              type: string
+    CinematicRelease:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/MovingPictureOutput'
+        - type: object
+          properties:
+            place:
+              $ref: '#/components/schemas/UnconfirmedPlace'
+            date:
+              $ref: '#/components/schemas/Instant'
+            type:
+              type: string
+    Competition:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/ArchitectureOutput'
+        - type: object
+          properties:
+            name:
+              type: string
+            description:
+              type: string
+            date:
+              $ref: '#/components/schemas/Time'
+            type:
+              type: string
+    Concert:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/MusicPerformanceManifestation'
+        - type: object
+          properties:
+            place:
+              $ref: '#/components/schemas/UnconfirmedPlace'
+            time:
+              $ref: '#/components/schemas/Time'
+            extent:
+              type: string
+            concertProgramme:
+              type: array
+              items:
+                $ref: '#/components/schemas/MusicalWorkPerformance'
+            concertSeries:
+              type: string
+    ConferenceAbstract:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            volume:
+              type: string
+            issue:
+              type: string
+            articleNumber:
+              type: string
+            pages:
+              $ref: '#/components/schemas/Range'
+            type:
+              type: string
+    ConferenceLecture:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/NullPages'
+            type:
+              type: string
+    ConferencePoster:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/NullPages'
+            type:
+              type: string
+    ConferenceReport:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/MonographPages'
+            type:
+              type: string
+    ConfirmedDocument:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/RelatedDocument'
+        - type: object
+          properties:
+            identifier:
+              type: string
+              format: uri
+            type:
+              type: string
+    ConfirmedFunding:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/Funding'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uri
+            type:
+              type: string
+    Contributor:
+      required:
+        - type
+      type: object
+      properties:
+        identity:
+          $ref: '#/components/schemas/Identity'
+        affiliations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Corporation'
+        role:
+          $ref: '#/components/schemas/RoleType'
+        sequence:
+          type: integer
+          format: int32
+        correspondingAuthor:
+          type: boolean
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    Corporation:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/Agent'
+        - type: object
+          properties:
+            type:
+              type: string
+    Course:
+      required:
+        - type
+      type: object
+      properties:
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    CristinIdentifier:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/AdditionalIdentifierBase'
+    CustomerRightsRetentionStrategy:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/RightsRetentionStrategy'
+        - type: object
+          properties:
+            type:
+              type: string
+    DataManagementPlan:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            related:
+              uniqueItems: true
+              type: array
+              items:
+                $ref: '#/components/schemas/RelatedDocument'
+            pages:
+              $ref: '#/components/schemas/MonographPages'
+            type:
+              type: string
+    DataSet:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            userAgreesToTermsAndConditions:
+              type: boolean
+            geographicalCoverage:
+              $ref: '#/components/schemas/GeographicalDescription'
+            referencedBy:
+              uniqueItems: true
+              type: array
+              items:
+                type: string
+                format: uri
+            related:
+              uniqueItems: true
+              type: array
+              items:
+                $ref: '#/components/schemas/RelatedDocument'
+            compliesWith:
+              uniqueItems: true
+              type: array
+              items:
+                type: string
+                format: uri
+            pages:
+              $ref: '#/components/schemas/NullPages'
+            type:
+              type: string
+    DefinedDuration:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/Duration'
+        - type: object
+          properties:
+            minutes:
+              type: integer
+              format: int32
+            hours:
+              type: integer
+              format: int32
+            days:
+              type: integer
+              format: int32
+            weeks:
+              type: integer
+              format: int32
+            type:
+              type: string
+    Degree:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationContext'
+        - type: object
+          properties:
+            series:
+              $ref: '#/components/schemas/BookSeries'
+            seriesTitle:
+              type: string
+              writeOnly: true
+            seriesNumber:
+              type: string
+            publisher:
+              $ref: '#/components/schemas/PublishingHouse'
+            isbnList:
+              type: array
+              items:
+                type: string
+            courseCode:
+              $ref: '#/components/schemas/Course'
+            revision:
+              type: string
+              enum:
+                - Revised
+                - Unrevised
+            course:
+              $ref: '#/components/schemas/Course'
+            additionalIdentifiers:
+              uniqueItems: true
+              type: array
+              items:
+                $ref: '#/components/schemas/AdditionalIdentifier'
+            type:
+              type: string
+    DegreeBachelor:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/MonographPages'
+            submittedDate:
+              $ref: '#/components/schemas/PublicationDate'
+            type:
+              type: string
+    DegreeLicentiate:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/MonographPages'
+            submittedDate:
+              $ref: '#/components/schemas/PublicationDate'
+            type:
+              type: string
+    DegreeMaster:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/MonographPages'
+            submittedDate:
+              $ref: '#/components/schemas/PublicationDate'
+            type:
+              type: string
+    DegreePhd:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/MonographPages'
+            submittedDate:
+              $ref: '#/components/schemas/PublicationDate'
+            related:
+              uniqueItems: true
+              type: array
+              items:
+                $ref: '#/components/schemas/RelatedDocument'
+            type:
+              type: string
+    Duration:
+      required:
+        - type
+      type: object
+      properties:
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    Encyclopedia:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/MonographPages'
+            type:
+              type: string
+    EncyclopediaChapter:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/Range'
+    EntityDescription:
+      required:
+        - type
+      type: object
+      properties:
+        mainTitle:
+          type: string
+        alternativeTitles:
+          type: object
+          additionalProperties:
+            type: string
+        language:
+          type: string
+          format: uri
+        publicationDate:
+          $ref: '#/components/schemas/PublicationDate'
+        contributors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Contributor'
+        alternativeAbstracts:
+          type: object
+          additionalProperties:
+            type: string
+        npiSubjectHeading:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        reference:
+          $ref: '#/components/schemas/Reference'
+        metadataSource:
+          type: string
+          format: uri
+        abstract:
+          type: string
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    Event:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationContext'
+        - type: object
+          properties:
+            label:
+              type: string
+            place:
+              $ref: '#/components/schemas/Place'
+            time:
+              $ref: '#/components/schemas/Time'
+            agent:
+              $ref: '#/components/schemas/Agent'
+            product:
+              type: string
+              format: uri
+            subEvent:
+              $ref: '#/components/schemas/Event'
+            type:
+              type: string
+    Exhibition:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/ArchitectureOutput'
+        - type: object
+          properties:
+            name:
+              type: string
+            place:
+              $ref: '#/components/schemas/UnconfirmedPlace'
+            organizer:
+              type: string
+            date:
+              $ref: '#/components/schemas/Period'
+            otherInformation:
+              type: string
+            type:
+              type: string
+    ExhibitionBasic:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/ExhibitionProductionManifestation'
+        - type: object
+          properties:
+            organization:
+              $ref: '#/components/schemas/UnconfirmedOrganization'
+            place:
+              $ref: '#/components/schemas/UnconfirmedPlace'
+            date:
+              $ref: '#/components/schemas/Period'
+    ExhibitionCatalog:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/MonographPages'
+            type:
+              type: string
+    ExhibitionCatalogChapter:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/Range'
+            type:
+              type: string
+    ExhibitionCatalogReference:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/ExhibitionProductionManifestation'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uri
+            type:
+              type: string
+    ExhibitionContent:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationContext'
+        - type: object
+          properties:
+            type:
+              type: string
+    ExhibitionMentionInPublication:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/ExhibitionProductionManifestation'
+        - type: object
+          properties:
+            title:
+              type: string
+            issue:
+              type: string
+            pages:
+              type: string
+            date:
+              $ref: '#/components/schemas/Time'
+            otherInformation:
+              type: string
+    ExhibitionOtherPresentation:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/ExhibitionProductionManifestation'
+        - type: object
+          properties:
+            typeDescription:
+              type: string
+            description:
+              type: string
+            place:
+              $ref: '#/components/schemas/UnconfirmedPlace'
+            publisher:
+              $ref: '#/components/schemas/PublishingHouse'
+            date:
+              $ref: '#/components/schemas/Instant'
+            type:
+              type: string
+    ExhibitionProduction:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            subtype:
+              $ref: '#/components/schemas/ExhibitionProductionSubtype'
+            manifestations:
+              type: array
+              items:
+                $ref: '#/components/schemas/ExhibitionProductionManifestation'
+            pages:
+              $ref: '#/components/schemas/NullPages'
+            type:
+              type: string
+    ExhibitionProductionManifestation:
+      required:
+        - type
+      type: object
+      properties:
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    ExhibitionProductionSubtype:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - BasicExhibition
+            - TemporaryExhibition
+            - PopupExhibition
+            - AmbulatingExhibition
+            - DigitalExhibition
+            - HistoricalInterior
+            - ExhibitionProductionOther
+        description:
+          type: string
+          writeOnly: true
+    File:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/AssociatedArtifact'
+        - type: object
+          properties:
+            identifier:
+              type: string
+              format: uuid
+            name:
+              type: string
+            mimeType:
+              type: string
+            size:
+              type: integer
+              format: int64
+            license:
+              type: string
+              format: uri
+            administrativeAgreement:
+              type: boolean
+            publisherVersion:
+              type: string
+              enum:
+                - PublishedVersion
+                - AcceptedVersion
+            embargoDate:
+              type: string
+              format: date-time
+            rightsRetentionStrategy:
+              $ref: '#/components/schemas/RightsRetentionStrategy'
+            legalNote:
+              type: string
+            publishedDate:
+              type: string
+              format: date-time
+            uploadDetails:
+              $ref: '#/components/schemas/UploadDetails'
+            visibleForNonOwner:
+              type: boolean
+            type:
+              type: string
+    FunderRightsRetentionStrategy:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/RightsRetentionStrategy'
+        - type: object
+          properties:
+            type:
+              type: string
+    Funding:
+      required:
+        - type
+      type: object
+      properties:
+        identifier:
+          type: string
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+        source:
+          type: string
+          format: uri
+        activeFrom:
+          type: string
+          format: date-time
+        activeTo:
+          type: string
+          format: date-time
+        fundingAmount:
+          $ref: '#/components/schemas/MonetaryAmount'
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    GeographicalContent:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationContext'
+        - type: object
+          properties:
+            publisher:
+              $ref: '#/components/schemas/PublishingHouse'
+            type:
+              type: string
+    GeographicalDescription:
+      required:
+        - type
+      type: object
+      properties:
+        description:
+          type: string
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    HandleIdentifier:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/AdditionalIdentifierBase'
+    Identity:
+      required:
+        - type
+      type: object
+      properties:
+        id:
+          type: string
+          format: uri
+        name:
+          type: string
+        nameType:
+          type: string
+          enum:
+            - Organizational
+            - Personal
+        orcId:
+          type: string
+        verificationStatus:
+          type: string
+          enum:
+            - Verified
+            - CannotBeEstablished
+            - NotVerified
+        additionalIdentifiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdditionalIdentifier'
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    ImportDetail:
+      required:
+        - type
+      type: object
+      properties:
+        importDate:
+          type: string
+          format: date-time
+        importSource:
+          $ref: '#/components/schemas/ImportSource'
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    ImportSource:
+      required:
+        - type
+      type: object
+      properties:
+        source:
+          type: string
+          enum:
+            - BRAGE
+            - CRISTIN
+            - SCOPUS
+        archive:
+          type: string
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    Instant:
+      required:
+        - type
+      type: object
+      properties:
+        value:
+          type: string
+          format: date-time
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    Introduction:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/Range'
+            type:
+              type: string
+    Ismn:
+      required:
+        - type
+      type: object
+      properties:
+        value:
+          type: string
+        formatted:
+          type: string
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    Isrc:
+      required:
+        - type
+      type: object
+      properties:
+        value:
+          type: string
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    Journal:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationContext'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uri
+            type:
+              type: string
+    JournalCorrigendum:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            volume:
+              type: string
+            issue:
+              type: string
+            articleNumber:
+              type: string
+            pages:
+              $ref: '#/components/schemas/Range'
+            corrigendumFor:
+              type: string
+              format: uri
+            type:
+              type: string
+    JournalIssue:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            volume:
+              type: string
+            issue:
+              type: string
+            articleNumber:
+              type: string
+            pages:
+              $ref: '#/components/schemas/Range'
+            type:
+              type: string
+    JournalLeader:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            volume:
+              type: string
+            issue:
+              type: string
+            articleNumber:
+              type: string
+            pages:
+              $ref: '#/components/schemas/Range'
+            type:
+              type: string
+    JournalLetter:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            volume:
+              type: string
+            issue:
+              type: string
+            articleNumber:
+              type: string
+            pages:
+              $ref: '#/components/schemas/Range'
+            type:
+              type: string
+    JournalReview:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            volume:
+              type: string
+            issue:
+              type: string
+            articleNumber:
+              type: string
+            pages:
+              $ref: '#/components/schemas/Range'
+            type:
+              type: string
+    Lecture:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/NullPages'
+            type:
+              type: string
+    LiteraryArts:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            subtype:
+              $ref: '#/components/schemas/LiteraryArtsSubtype'
+            manifestations:
+              type: array
+              items:
+                $ref: '#/components/schemas/LiteraryArtsManifestation'
+            description:
+              type: string
+            pages:
+              $ref: '#/components/schemas/NullPages'
+            type:
+              type: string
+    LiteraryArtsAudioVisual:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/LiteraryArtsManifestation'
+        - type: object
+          properties:
+            subtype:
+              $ref: '#/components/schemas/LiteraryArtsAudioVisualSubtype'
+            publisher:
+              $ref: '#/components/schemas/PublishingHouse'
+            isbnList:
+              type: array
+              items:
+                type: string
+            extent:
+              type: integer
+              format: int32
+            type:
+              type: string
+    LiteraryArtsAudioVisualSubtype:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - Audiobook
+            - RadioPlay
+            - ShortFilm
+            - Podcast
+            - LiteraryArtsAudioVisualOther
+        description:
+          type: string
+          writeOnly: true
+    LiteraryArtsManifestation:
+      required:
+        - type
+      type: object
+      properties:
+        publicationDate:
+          $ref: '#/components/schemas/PublicationDate'
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    LiteraryArtsMonograph:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/LiteraryArtsManifestation'
+        - type: object
+          properties:
+            publisher:
+              $ref: '#/components/schemas/PublishingHouse'
+            isbnList:
+              type: array
+              items:
+                type: string
+            pages:
+              $ref: '#/components/schemas/MonographPages'
+            type:
+              type: string
+    LiteraryArtsPerformance:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/LiteraryArtsManifestation'
+        - type: object
+          properties:
+            subtype:
+              $ref: '#/components/schemas/LiteraryArtsPerformanceSubtype'
+            place:
+              $ref: '#/components/schemas/UnconfirmedPlace'
+            type:
+              type: string
+    LiteraryArtsPerformanceSubtype:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - Reading
+            - Play
+            - LiteraryArtsPerformanceOther
+        description:
+          type: string
+          writeOnly: true
+    LiteraryArtsSubtype:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - Novel
+            - Poetry
+            - Novella
+            - ShortFiction
+            - Essay
+            - Translation
+            - Retelling
+            - Play
+            - LiteraryArtsOther
+        description:
+          type: string
+          writeOnly: true
+    LiteraryArtsWeb:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/LiteraryArtsManifestation'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uri
+            publisher:
+              $ref: '#/components/schemas/PublishingHouse'
+            type:
+              type: string
+    Map:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            description:
+              type: string
+            pages:
+              $ref: '#/components/schemas/MonographPages'
+            type:
+              type: string
+    MediaBlogPost:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/NullPages'
+            type:
+              type: string
+    MediaContribution:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationContext'
+        - type: object
+          properties:
+            medium:
+              $ref: '#/components/schemas/MediaSubType'
+            format:
+              type: string
+              enum:
+                - Text
+                - Sound
+                - Video
+            disseminationChannel:
+              type: string
+            partOf:
+              $ref: '#/components/schemas/SeriesEpisode'
+            type:
+              type: string
+    MediaContributionPeriodical:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationContext'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uri
+            type:
+              type: string
+    MediaFeatureArticle:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            volume:
+              type: string
+            issue:
+              type: string
+            articleNumber:
+              type: string
+            pages:
+              $ref: '#/components/schemas/Range'
+            type:
+              type: string
+    MediaInterview:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/NullPages'
+            type:
+              type: string
+    MediaParticipationInRadioOrTv:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/NullPages'
+            type:
+              type: string
+    MediaPodcast:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/NullPages'
+            type:
+              type: string
+    MediaReaderOpinion:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            volume:
+              type: string
+            issue:
+              type: string
+            articleNumber:
+              type: string
+            pages:
+              $ref: '#/components/schemas/Range'
+            type:
+              type: string
+    MediaSubType:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - Journal
+            - Radio
+            - TV
+            - Internet
+            - MediaTypeOther
+        description:
+          type: string
+          writeOnly: true
+    MentionInPublication:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/ArchitectureOutput'
+        - type: object
+          properties:
+            title:
+              type: string
+            issue:
+              type: string
+            date:
+              $ref: '#/components/schemas/Time'
+            otherInformation:
+              type: string
+            type:
+              type: string
+    MonetaryAmount:
+      type: object
+      properties:
+        currency:
+          type: string
+          enum:
+            - NOK
+            - EUR
+            - USD
+            - GBP
+        amount:
+          type: integer
+          format: int64
+    MonographPages:
+      required:
+        - type
+      type: object
+      properties:
+        introduction:
+          $ref: '#/components/schemas/Range'
+        pages:
+          type: string
+        illustrated:
+          type: boolean
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    MovingPicture:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            subtype:
+              $ref: '#/components/schemas/MovingPictureSubtype'
+            description:
+              type: string
+            outputs:
+              type: array
+              items:
+                $ref: '#/components/schemas/MovingPictureOutput'
+            duration:
+              $ref: '#/components/schemas/Duration'
+            pages:
+              $ref: '#/components/schemas/NullPages'
+            type:
+              type: string
+    MovingPictureOutput:
+      required:
+        - type
+      type: object
+      properties:
+        sequence:
+          type: integer
+          format: int32
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    MovingPictureSubtype:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - Film
+            - ShortFilm
+            - SerialFilmProduction
+            - InteractiveFilm
+            - AugmentedVirtualRealityFilm
+            - MovingPictureOther
+        description:
+          type: string
+          writeOnly: true
+    MusicMediaSubtype:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - CompactDisc
+            - DVD
+            - Streaming
+            - DigitalFile
+            - Vinyl
+            - MusicMediaOther
+        description:
+          type: string
+          writeOnly: true
+    MusicPerformance:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            manifestations:
+              type: array
+              items:
+                $ref: '#/components/schemas/MusicPerformanceManifestation'
+            duration:
+              $ref: '#/components/schemas/Duration'
+            pages:
+              $ref: '#/components/schemas/NullPages'
+            type:
+              type: string
+    MusicPerformanceManifestation:
+      required:
+        - type
+      type: object
+      properties:
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    MusicScore:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/MusicPerformanceManifestation'
+        - type: object
+          properties:
+            ensemble:
+              type: string
+            movements:
+              type: string
+            extent:
+              type: string
+            publisher:
+              $ref: '#/components/schemas/PublishingHouse'
+            ismn:
+              $ref: '#/components/schemas/Ismn'
+            type:
+              type: string
+    MusicTrack:
+      required:
+        - type
+      type: object
+      properties:
+        title:
+          type: string
+        composer:
+          type: string
+        extent:
+          type: string
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    MusicalWork:
+      required:
+        - type
+      type: object
+      properties:
+        title:
+          type: string
+        composer:
+          type: string
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    MusicalWorkPerformance:
+      type: object
+      properties:
+        title:
+          type: string
+        composer:
+          type: string
+        premiere:
+          type: boolean
+    NonFictionChapter:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/Range'
+            type:
+              type: string
+    NonFictionMonograph:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/MonographPages'
+            type:
+              type: string
+    NullAssociatedArtifact:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/AssociatedArtifact'
+        - type: object
+          properties:
+            type:
+              type: string
+    NullDuration:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/Duration'
+        - type: object
+          properties:
+            type:
+              type: string
+    NullPages:
+      required:
+        - type
+      type: object
+      properties:
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    NullPublisher:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublishingHouse'
+        - type: object
+          properties:
+            type:
+              type: string
+    NullRightsRetentionStrategy:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/RightsRetentionStrategy'
+        - type: object
+          properties:
+            type:
+              type: string
+    Organization:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/Corporation'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uri
+            type:
+              type: string
+    OtherPerformance:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/MusicPerformanceManifestation'
+        - type: object
+          properties:
+            performanceType:
+              type: string
+            place:
+              $ref: '#/components/schemas/UnconfirmedPlace'
+            extent:
+              type: string
+            musicalWorks:
+              type: array
+              items:
+                $ref: '#/components/schemas/MusicalWork'
+            type:
+              type: string
+    OtherPresentation:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/NullPages'
+            type:
+              type: string
+    OtherRelease:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/MovingPictureOutput'
+        - type: object
+          properties:
+            description:
+              type: string
+            place:
+              $ref: '#/components/schemas/UnconfirmedPlace'
+            publisher:
+              $ref: '#/components/schemas/PublishingHouse'
+            date:
+              $ref: '#/components/schemas/Instant'
+            type:
+              type: string
+    OtherStudentWork:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/MonographPages'
+            submittedDate:
+              $ref: '#/components/schemas/PublicationDate'
+            type:
+              type: string
+    OverriddenRightsRetentionStrategy:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/RightsRetentionStrategy'
+        - type: object
+          properties:
+            overriddenBy:
+              type: string
+            type:
+              type: string
+    Pages:
+      required:
+        - type
+      type: object
+      properties:
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    PerformingArts:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            subtype:
+              $ref: '#/components/schemas/PerformingArtsSubtype'
+            description:
+              type: string
+            outputs:
+              type: array
+              items:
+                $ref: '#/components/schemas/PerformingArtsOutput'
+            pages:
+              $ref: '#/components/schemas/NullPages'
+            type:
+              type: string
+    PerformingArtsOutput:
+      required:
+        - type
+      type: object
+      properties:
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    PerformingArtsSubtype:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - TheatricalProduction
+            - Broadcast
+            - PerformingArtsOther
+        description:
+          type: string
+          writeOnly: true
+    PerformingArtsVenue:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PerformingArtsOutput'
+        - type: object
+          properties:
+            place:
+              $ref: '#/components/schemas/Place'
+            date:
+              $ref: '#/components/schemas/Time'
+            sequence:
+              type: integer
+              format: int32
+            type:
+              type: string
+    Period:
+      required:
+        - type
+      type: object
+      properties:
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    Place:
+      required:
+        - type
+      type: object
+      properties:
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    PopularScienceArticle:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/Range'
+            volume:
+              type: string
+            issue:
+              type: string
+            articleNumber:
+              type: string
+            type:
+              type: string
+    PopularScienceChapter:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/Range'
+            type:
+              type: string
+    PopularScienceMonograph:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/MonographPages'
+            type:
+              type: string
+    ProfessionalArticle:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/Range'
+            volume:
+              type: string
+            issue:
+              type: string
+            articleNumber:
+              type: string
+            type:
+              type: string
+    Publication:
+      required:
+        - type
+      type: object
+      properties:
+        identifier:
+          $ref: '#/components/schemas/SortableIdentifier'
+        status:
+          type: string
+          enum:
+            - NEW
+            - DRAFT
+            - PUBLISHED_METADATA
+            - PUBLISHED
+            - DELETED
+            - UNPUBLISHED
+            - DRAFT_FOR_DELETION
+        resourceOwner:
+          $ref: '#/components/schemas/ResourceOwner'
+        publisher:
+          $ref: '#/components/schemas/Organization'
+        createdDate:
+          type: string
+          format: date-time
+        modifiedDate:
+          type: string
+          format: date-time
+        publishedDate:
+          type: string
+          format: date-time
+        indexedDate:
+          type: string
+          format: date-time
+        handle:
+          type: string
+          format: uri
+        doi:
+          type: string
+          format: uri
+        link:
+          type: string
+          format: uri
+        entityDescription:
+          $ref: '#/components/schemas/EntityDescription'
+        projects:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResearchProject'
+        fundings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Funding'
+        additionalIdentifiers:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/AdditionalIdentifierBase'
+        subjects:
+          type: array
+          items:
+            type: string
+            format: uri
+        associatedArtifacts:
+          type: array
+          properties:
+            empty:
+              type: boolean
+            first:
+              $ref: '#/components/schemas/AssociatedArtifact'
+            last:
+              $ref: '#/components/schemas/AssociatedArtifact'
+          items:
+            $ref: '#/components/schemas/AssociatedArtifact'
+        rightsHolder:
+          type: string
+        duplicateOf:
+          type: string
+          format: uri
+        publicationNotes:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicationNoteBase'
+        curatingInstitutions:
+          uniqueItems: true
+          type: array
+          items:
+            type: string
+            format: uri
+        importDetails:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportDetail'
+        modelVersion:
+          type: string
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    PublicationContext:
+      required:
+        - type
+      type: object
+      properties:
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    PublicationDate:
+      required:
+        - type
+      type: object
+      properties:
+        year:
+          type: string
+        month:
+          type: string
+        day:
+          type: string
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    PublicationInstancePages:
+      required:
+        - type
+      type: object
+      properties:
+        pages:
+          $ref: '#/components/schemas/Pages'
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    PublicationNote:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/PublicationNoteBase'
+    PublicationNoteBase:
+      required:
+        - type
+      type: object
+      properties:
+        note:
+          type: string
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    PublishedFile:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/File'
+        - type: object
+          properties:
+            type:
+              type: string
+    Publisher:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublishingHouse'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uri
+            type:
+              type: string
+    PublishingHouse:
+      required:
+        - type
+      type: object
+      properties:
+        valid:
+          type: boolean
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    Range:
+      required:
+        - type
+      type: object
+      properties:
+        begin:
+          type: string
+        end:
+          type: string
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    Reference:
+      required:
+        - type
+      type: object
+      properties:
+        publicationContext:
+          $ref: '#/components/schemas/PublicationContext'
+        doi:
+          type: string
+          format: uri
+        publicationInstance:
+          $ref: '#/components/schemas/PublicationInstancePages'
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    RelatedDocument:
+      required:
+        - type
+      type: object
+      properties:
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    Report:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/PublicationContext'
+        - type: object
+          properties:
+            series:
+              $ref: '#/components/schemas/BookSeries'
+            seriesTitle:
+              type: string
+              writeOnly: true
+            seriesNumber:
+              type: string
+            publisher:
+              $ref: '#/components/schemas/PublishingHouse'
+            isbnList:
+              type: array
+              items:
+                type: string
+            revision:
+              type: string
+              enum:
+                - Revised
+                - Unrevised
+            additionalIdentifiers:
+              uniqueItems: true
+              type: array
+              items:
+                $ref: '#/components/schemas/AdditionalIdentifier'
+    ReportBasic:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/MonographPages'
+            type:
+              type: string
+    ReportBookOfAbstract:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/MonographPages'
+            type:
+              type: string
+    ReportPolicy:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/MonographPages'
+            type:
+              type: string
+    ReportResearch:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/MonographPages'
+            type:
+              type: string
+    ReportWorkingPaper:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/MonographPages'
+            type:
+              type: string
+    ResearchData:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationContext'
+        - type: object
+          properties:
+            publisher:
+              $ref: '#/components/schemas/PublishingHouse'
+            type:
+              type: string
+    ResearchProject:
+      required:
+        - type
+      type: object
+      properties:
+        id:
+          type: string
+          format: uri
+        name:
+          type: string
+        approvals:
+          type: array
+          items:
+            $ref: '#/components/schemas/Approval'
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    ResourceOwner:
+      type: object
+      properties:
+        owner:
+          type: string
+        ownerAffiliation:
+          type: string
+          format: uri
+    RightsRetentionStrategy:
+      required:
+        - type
+      type: object
+      properties:
+        configuredType:
+          type: string
+          enum:
+            - Unknown
+            - NullRightsRetentionStrategy
+            - RightsRetentionStrategy
+            - OverridableRightsRetentionStrategy
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    RoleType:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - AcademicCoordinator
+            - Actor
+            - Advisor
+            - Architect
+            - ArchitecturalPlanner
+            - Artist
+            - ArtisticDirector
+            - AudioVisualContributor
+            - Choreographer
+            - CollaborationPartner
+            - Composer
+            - Conductor
+            - Consultant
+            - Conservator
+            - ContactPerson
+            - CostumeDesigner
+            - Creator
+            - Curator
+            - CuratorOrganizer
+            - Dancer
+            - DataCollector
+            - DataCurator
+            - DataManager
+            - Designer
+            - Director
+            - Distributor
+            - Dramatist
+            - Dramaturge
+            - Editor
+            - EditorialBoardMember
+            - ExhibitionDesigner
+            - Funder
+            - HostingInstitution
+            - Illustrator
+            - InteriorArchitect
+            - InterviewSubject
+            - Journalist
+            - LandscapeArchitect
+            - Librettist
+            - LightDesigner
+            - Musician
+            - MuseumEducator
+            - Organizer
+            - RoleOther
+            - Producer
+            - Photographer
+            - ProductionDesigner
+            - ProgrammeLeader
+            - ProgrammeParticipant
+            - ProjectLeader
+            - ProjectManager
+            - ProjectMember
+            - Registrar
+            - RegistrationAgency
+            - RegistrationAuthority
+            - RelatedPerson
+            - Researcher
+            - ResearchGroup
+            - RightsHolder
+            - Scenographer
+            - Screenwriter
+            - Soloist
+            - SoundDesigner
+            - Supervisor
+            - TranslatorAdapter
+            - VfxSupervisor
+            - VideoEditor
+            - WorkPackageLeader
+            - Writer
+    ScopusIdentifier:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/AdditionalIdentifierBase'
+    Series:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/BookSeries'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uri
+            type:
+              type: string
+    SeriesEpisode:
+      required:
+        - type
+      type: object
+      properties:
+        seriesName:
+          type: string
+        seriesPart:
+          type: string
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    SortableIdentifier:
+      type: object
+    StudyProtocol:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/Range'
+            volume:
+              type: string
+            issue:
+              type: string
+            articleNumber:
+              type: string
+            type:
+              type: string
+    Textbook:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/MonographPages'
+            type:
+              type: string
+    TextbookChapter:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            pages:
+              $ref: '#/components/schemas/Range'
+    Time:
+      required:
+        - type
+      type: object
+      properties:
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    UnconfirmedCourse:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/Course'
+        - type: object
+          properties:
+            code:
+              type: string
+            type:
+              type: string
+    UnconfirmedDocument:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/RelatedDocument'
+        - type: object
+          properties:
+            text:
+              type: string
+            type:
+              type: string
+    UnconfirmedFunding:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/Funding'
+        - type: object
+          properties:
+            type:
+              type: string
+    UnconfirmedJournal:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationContext'
+        - type: object
+          properties:
+            title:
+              type: string
+            printIssn:
+              type: string
+            onlineIssn:
+              type: string
+            type:
+              type: string
+    UnconfirmedMediaContributionPeriodical:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationContext'
+        - type: object
+          properties:
+            title:
+              type: string
+            printIssn:
+              type: string
+            onlineIssn:
+              type: string
+            type:
+              type: string
+    UnconfirmedOrganization:
+      required:
+        - type
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    UnconfirmedPlace:
+      required:
+        - type
+      type: object
+      properties:
+        label:
+          type: string
+        country:
+          type: string
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    UnconfirmedPublisher:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublishingHouse'
+        - type: object
+          properties:
+            name:
+              type: string
+            type:
+              type: string
+    UnconfirmedSeries:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/BookSeries'
+        - type: object
+          properties:
+            title:
+              type: string
+            issn:
+              type: string
+            onlineIssn:
+              type: string
+            type:
+              type: string
+    UndefinedDuration:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/Duration'
+        - type: object
+          properties:
+            value:
+              type: string
+            type:
+              type: string
+    UnpublishedFile:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/File'
+        - type: object
+          properties:
+            type:
+              type: string
+    UnpublishingNote:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/PublicationNoteBase'
+        - type: object
+          properties:
+            createdBy:
+              type: string
+            createdDate:
+              type: string
+              format: date-time
+    UploadDetails:
+      required:
+        - type
+      type: object
+      properties:
+        uploadedBy:
+          type: string
+        uploadedDate:
+          type: string
+          format: date-time
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    Venue:
+      required:
+        - type
+      type: object
+      properties:
+        place:
+          $ref: '#/components/schemas/Place'
+        date:
+          $ref: '#/components/schemas/Time'
+        sequence:
+          type: integer
+          format: int32
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+    VisualArts:
+      required:
+        - type
+      type: object
+      discriminator:
+        propertyName: type
+      allOf:
+        - $ref: '#/components/schemas/PublicationInstancePages'
+        - type: object
+          properties:
+            subtype:
+              $ref: '#/components/schemas/VisualArtsSubtype'
+            description:
+              type: string
+            venues:
+              uniqueItems: true
+              type: array
+              items:
+                $ref: '#/components/schemas/Venue'
+            pages:
+              $ref: '#/components/schemas/NullPages'
+            type:
+              type: string
+    VisualArtsSubtype:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - IndividualExhibition
+            - CollectiveExhibition
+            - Installation
+            - ArtInPublicSpace
+            - Performance
+            - VisualArts
+            - AudioArt
+            - ArtistBook
+            - VisualArtsOther
+        description:
+          type: string
+          writeOnly: true
+
   securitySchemes:
     CognitoUserPool:
       type: apiKey
