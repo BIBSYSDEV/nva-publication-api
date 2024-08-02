@@ -2,8 +2,6 @@ AcademicArticle:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -22,8 +20,6 @@ AcademicChapter:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -36,8 +32,6 @@ AcademicLiteratureReview:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -56,8 +50,6 @@ AcademicMonograph:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -81,14 +73,10 @@ AdditionalIdentifierBase:
       type: string
     type:
       type: string
-  discriminator:
-    propertyName: type
 AdministrativeAgreement:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/File'
   - type: object
@@ -102,14 +90,10 @@ Agent:
   properties:
     type:
       type: string
-  discriminator:
-    propertyName: type
 Anthology:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationContext'
   - type: object
@@ -146,14 +130,10 @@ Approval:
       type: string
     type:
       type: string
-  discriminator:
-    propertyName: type
 Architecture:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -180,8 +160,6 @@ ArchitectureOutput:
       format: int32
     type:
       type: string
-  discriminator:
-    propertyName: type
 ArchitectureSubtype:
   type: object
   properties:
@@ -200,8 +178,6 @@ Artistic:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationContext'
   - type: object
@@ -212,8 +188,6 @@ ArtisticDesign:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -257,8 +231,6 @@ AssociatedArtifact:
   properties:
     type:
       type: string
-  discriminator:
-    propertyName: type
 AssociatedArtifactList:
   type: array
   properties:
@@ -274,8 +246,6 @@ AssociatedLink:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/AssociatedArtifact'
   - type: object
@@ -293,8 +263,6 @@ AudioVisualPublication:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/MusicPerformanceManifestation'
   - type: object
@@ -317,8 +285,6 @@ Award:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/ArchitectureOutput'
   - type: object
@@ -340,8 +306,6 @@ Book:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationContext'
   - type: object
@@ -375,8 +339,6 @@ BookAnthology:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -392,14 +354,10 @@ BookSeries:
   properties:
     type:
       type: string
-  discriminator:
-    propertyName: type
 Broadcast:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/MovingPictureOutput'
   - type: object
@@ -414,8 +372,6 @@ CaseReport:
   required:
   - Type
   type: object
-  discriminator:
-    propertyName: Type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -434,8 +390,6 @@ ChapterConferenceAbstract:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -448,8 +402,6 @@ ChapterInReport:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -462,8 +414,6 @@ CinematicRelease:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/MovingPictureOutput'
   - type: object
@@ -478,8 +428,6 @@ Competition:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/ArchitectureOutput'
   - type: object
@@ -514,8 +462,6 @@ ConferenceAbstract:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -534,8 +480,6 @@ ConferenceLecture:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -548,8 +492,6 @@ ConferencePoster:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -562,8 +504,6 @@ ConferenceReport:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -576,8 +516,6 @@ ConfirmedDocument:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/RelatedDocument'
   - type: object
@@ -591,8 +529,6 @@ ConfirmedFunding:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/Funding'
   - type: object
@@ -622,14 +558,10 @@ Contributor:
       type: boolean
     type:
       type: string
-  discriminator:
-    propertyName: type
 Corporation:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/Agent'
   - type: object
@@ -643,8 +575,6 @@ Course:
   properties:
     type:
       type: string
-  discriminator:
-    propertyName: type
 CristinIdentifier:
   type: object
   allOf:
@@ -653,8 +583,6 @@ CustomerRightsRetentionStrategy:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/RightsRetentionStrategy'
   - type: object
@@ -665,8 +593,6 @@ DataManagementPlan:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -684,8 +610,6 @@ DataSet:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -719,8 +643,6 @@ DefinedDuration:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/Duration'
   - type: object
@@ -743,8 +665,6 @@ Degree:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationContext'
   - type: object
@@ -782,8 +702,6 @@ DegreeBachelor:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -798,8 +716,6 @@ DegreeLicentiate:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -814,8 +730,6 @@ DegreeMaster:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -830,8 +744,6 @@ DegreePhd:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -854,14 +766,10 @@ Duration:
   properties:
     type:
       type: string
-  discriminator:
-    propertyName: type
 Encyclopedia:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -919,14 +827,10 @@ EntityDescription:
       type: string
     type:
       type: string
-  discriminator:
-    propertyName: type
 Event:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationContext'
   - type: object
@@ -950,8 +854,6 @@ Exhibition:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/ArchitectureOutput'
   - type: object
@@ -984,8 +886,6 @@ ExhibitionCatalog:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -998,8 +898,6 @@ ExhibitionCatalogChapter:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -1012,8 +910,6 @@ ExhibitionCatalogReference:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/ExhibitionProductionManifestation'
   - type: object
@@ -1027,8 +923,6 @@ ExhibitionContent:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationContext'
   - type: object
@@ -1055,8 +949,6 @@ ExhibitionOtherPresentation:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/ExhibitionProductionManifestation'
   - type: object
@@ -1077,8 +969,6 @@ ExhibitionProduction:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -1100,8 +990,6 @@ ExhibitionProductionManifestation:
   properties:
     type:
       type: string
-  discriminator:
-    propertyName: type
 ExhibitionProductionSubtype:
   type: object
   properties:
@@ -1122,8 +1010,6 @@ File:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/AssociatedArtifact'
   - type: object
@@ -1168,8 +1054,6 @@ FunderRightsRetentionStrategy:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/RightsRetentionStrategy'
   - type: object
@@ -1190,24 +1074,20 @@ Funding:
     source:
       type: string
       format: uri
-    fundingAmount:
-      $ref: '#/components/schemas/MonetaryAmount'
     activeFrom:
       type: string
       format: date-time
     activeTo:
       type: string
       format: date-time
+    fundingAmount:
+      $ref: '#/components/schemas/MonetaryAmount'
     type:
       type: string
-  discriminator:
-    propertyName: type
 GeographicalContent:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationContext'
   - type: object
@@ -1225,8 +1105,6 @@ GeographicalDescription:
       type: string
     type:
       type: string
-  discriminator:
-    propertyName: type
 HandleIdentifier:
   type: object
   allOf:
@@ -1260,8 +1138,6 @@ Identity:
         $ref: '#/components/schemas/AdditionalIdentifier'
     type:
       type: string
-  discriminator:
-    propertyName: type
 ImportDetail:
   required:
   - type
@@ -1274,8 +1150,6 @@ ImportDetail:
       $ref: '#/components/schemas/ImportSource'
     type:
       type: string
-  discriminator:
-    propertyName: type
 ImportSource:
   required:
   - type
@@ -1291,8 +1165,6 @@ ImportSource:
       type: string
     type:
       type: string
-  discriminator:
-    propertyName: type
 Instant:
   required:
   - type
@@ -1303,14 +1175,10 @@ Instant:
       format: date-time
     type:
       type: string
-  discriminator:
-    propertyName: type
 Introduction:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -1330,8 +1198,6 @@ Ismn:
       type: string
     type:
       type: string
-  discriminator:
-    propertyName: type
 Isrc:
   required:
   - type
@@ -1341,14 +1207,10 @@ Isrc:
       type: string
     type:
       type: string
-  discriminator:
-    propertyName: type
 Journal:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationContext'
   - type: object
@@ -1362,8 +1224,6 @@ JournalCorrigendum:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -1385,8 +1245,6 @@ JournalIssue:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -1405,8 +1263,6 @@ JournalLeader:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -1425,8 +1281,6 @@ JournalLetter:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -1445,8 +1299,6 @@ JournalReview:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -1465,8 +1317,6 @@ Lecture:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -1479,8 +1329,6 @@ LiteraryArts:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -1501,8 +1349,6 @@ LiteraryArtsAudioVisual:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/LiteraryArtsManifestation'
   - type: object
@@ -1543,14 +1389,10 @@ LiteraryArtsManifestation:
       $ref: '#/components/schemas/PublicationDate'
     type:
       type: string
-  discriminator:
-    propertyName: type
 LiteraryArtsMonograph:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/LiteraryArtsManifestation'
   - type: object
@@ -1569,8 +1411,6 @@ LiteraryArtsPerformance:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/LiteraryArtsManifestation'
   - type: object
@@ -1615,8 +1455,6 @@ LiteraryArtsWeb:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/LiteraryArtsManifestation'
   - type: object
@@ -1632,8 +1470,6 @@ Map:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -1648,8 +1484,6 @@ MediaBlogPost:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -1662,8 +1496,6 @@ MediaContribution:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationContext'
   - type: object
@@ -1686,8 +1518,6 @@ MediaContributionPeriodical:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationContext'
   - type: object
@@ -1701,8 +1531,6 @@ MediaFeatureArticle:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -1721,8 +1549,6 @@ MediaInterview:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -1735,8 +1561,6 @@ MediaParticipationInRadioOrTv:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -1749,8 +1573,6 @@ MediaPodcast:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -1763,8 +1585,6 @@ MediaReaderOpinion:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -1797,8 +1617,6 @@ MentionInPublication:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/ArchitectureOutput'
   - type: object
@@ -1839,14 +1657,10 @@ MonographPages:
       type: boolean
     type:
       type: string
-  discriminator:
-    propertyName: type
 MovingPicture:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -1875,8 +1689,6 @@ MovingPictureOutput:
       format: int32
     type:
       type: string
-  discriminator:
-    propertyName: type
 MovingPictureSubtype:
   type: object
   properties:
@@ -1911,8 +1723,6 @@ MusicPerformance:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -1934,14 +1744,10 @@ MusicPerformanceManifestation:
   properties:
     type:
       type: string
-  discriminator:
-    propertyName: type
 MusicScore:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/MusicPerformanceManifestation'
   - type: object
@@ -1971,8 +1777,6 @@ MusicTrack:
       type: string
     type:
       type: string
-  discriminator:
-    propertyName: type
 MusicalWork:
   required:
   - type
@@ -1984,8 +1788,6 @@ MusicalWork:
       type: string
     type:
       type: string
-  discriminator:
-    propertyName: type
 MusicalWorkPerformance:
   type: object
   properties:
@@ -1999,8 +1801,6 @@ NonFictionChapter:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -2013,8 +1813,6 @@ NonFictionMonograph:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -2027,8 +1825,6 @@ NullAssociatedArtifact:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/AssociatedArtifact'
   - type: object
@@ -2039,8 +1835,6 @@ NullDuration:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/Duration'
   - type: object
@@ -2054,14 +1848,10 @@ NullPages:
   properties:
     type:
       type: string
-  discriminator:
-    propertyName: type
 NullPublisher:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublishingHouse'
   - type: object
@@ -2072,8 +1862,6 @@ NullRightsRetentionStrategy:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/RightsRetentionStrategy'
   - type: object
@@ -2084,8 +1872,6 @@ Organization:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/Corporation'
   - type: object
@@ -2099,8 +1885,6 @@ OtherPerformance:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/MusicPerformanceManifestation'
   - type: object
@@ -2121,8 +1905,6 @@ OtherPresentation:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -2135,8 +1917,6 @@ OtherRelease:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/MovingPictureOutput'
   - type: object
@@ -2155,8 +1935,6 @@ OtherStudentWork:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -2171,8 +1949,6 @@ OverriddenRightsRetentionStrategy:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/RightsRetentionStrategy'
   - type: object
@@ -2188,14 +1964,10 @@ Pages:
   properties:
     type:
       type: string
-  discriminator:
-    propertyName: type
 PerformingArts:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -2219,8 +1991,6 @@ PerformingArtsOutput:
   properties:
     type:
       type: string
-  discriminator:
-    propertyName: type
 PerformingArtsSubtype:
   type: object
   properties:
@@ -2237,8 +2007,6 @@ PerformingArtsVenue:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PerformingArtsOutput'
   - type: object
@@ -2265,8 +2033,6 @@ Period:
       format: date-time
     type:
       type: string
-  discriminator:
-    propertyName: type
 Place:
   required:
   - type
@@ -2274,14 +2040,10 @@ Place:
   properties:
     type:
       type: string
-  discriminator:
-    propertyName: type
 PopularScienceArticle:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -2300,8 +2062,6 @@ PopularScienceChapter:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -2314,8 +2074,6 @@ PopularScienceMonograph:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -2328,8 +2086,6 @@ ProfessionalArticle:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -2441,8 +2197,6 @@ Publication:
     type:
       type: string
   description: Complete Publication entity
-  discriminator:
-    propertyName: type
 PublicationContext:
   required:
   - type
@@ -2450,8 +2204,6 @@ PublicationContext:
   properties:
     type:
       type: string
-  discriminator:
-    propertyName: type
 PublicationDate:
   required:
   - type
@@ -2465,8 +2217,6 @@ PublicationDate:
       type: string
     type:
       type: string
-  discriminator:
-    propertyName: type
 PublicationInstancePages:
   required:
   - type
@@ -2476,8 +2226,6 @@ PublicationInstancePages:
       $ref: '#/components/schemas/Pages'
     type:
       type: string
-  discriminator:
-    propertyName: type
 PublicationNote:
   type: object
   allOf:
@@ -2491,14 +2239,10 @@ PublicationNoteBase:
       type: string
     type:
       type: string
-  discriminator:
-    propertyName: type
 PublishedFile:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/File'
   - type: object
@@ -2509,8 +2253,6 @@ Publisher:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublishingHouse'
   - type: object
@@ -2529,8 +2271,6 @@ PublishingHouse:
       type: boolean
     type:
       type: string
-  discriminator:
-    propertyName: type
 Range:
   required:
   - type
@@ -2542,8 +2282,6 @@ Range:
       type: string
     type:
       type: string
-  discriminator:
-    propertyName: type
 Reference:
   required:
   - type
@@ -2558,8 +2296,6 @@ Reference:
       $ref: '#/components/schemas/PublicationInstancePages'
     type:
       type: string
-  discriminator:
-    propertyName: type
 RelatedDocument:
   required:
   - type
@@ -2567,8 +2303,6 @@ RelatedDocument:
   properties:
     type:
       type: string
-  discriminator:
-    propertyName: type
 Report:
   type: object
   allOf:
@@ -2602,8 +2336,6 @@ ReportBasic:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -2616,8 +2348,6 @@ ReportBookOfAbstract:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -2630,8 +2360,6 @@ ReportPolicy:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -2644,8 +2372,6 @@ ReportResearch:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -2658,8 +2384,6 @@ ReportWorkingPaper:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -2672,8 +2396,6 @@ ResearchData:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationContext'
   - type: object
@@ -2698,8 +2420,6 @@ ResearchProject:
         $ref: '#/components/schemas/Approval'
     type:
       type: string
-  discriminator:
-    propertyName: type
 ResourceOwner:
   type: object
   properties:
@@ -2722,8 +2442,6 @@ RightsRetentionStrategy:
       - OverridableRightsRetentionStrategy
     type:
       type: string
-  discriminator:
-    propertyName: type
 RoleType:
   type: object
   properties:
@@ -2807,8 +2525,6 @@ Series:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/BookSeries'
   - type: object
@@ -2829,16 +2545,12 @@ SeriesEpisode:
       type: string
     type:
       type: string
-  discriminator:
-    propertyName: type
 SortableIdentifier:
   type: object
 StudyProtocol:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -2857,8 +2569,6 @@ Textbook:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
@@ -2882,14 +2592,10 @@ Time:
   properties:
     type:
       type: string
-  discriminator:
-    propertyName: type
 UnconfirmedCourse:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/Course'
   - type: object
@@ -2902,8 +2608,6 @@ UnconfirmedDocument:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/RelatedDocument'
   - type: object
@@ -2916,8 +2620,6 @@ UnconfirmedFunding:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/Funding'
   - type: object
@@ -2928,8 +2630,6 @@ UnconfirmedJournal:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationContext'
   - type: object
@@ -2946,8 +2646,6 @@ UnconfirmedMediaContributionPeriodical:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationContext'
   - type: object
@@ -2969,8 +2667,6 @@ UnconfirmedOrganization:
       type: string
     type:
       type: string
-  discriminator:
-    propertyName: type
 UnconfirmedPlace:
   required:
   - type
@@ -2982,14 +2678,10 @@ UnconfirmedPlace:
       type: string
     type:
       type: string
-  discriminator:
-    propertyName: type
 UnconfirmedPublisher:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublishingHouse'
   - type: object
@@ -3002,8 +2694,6 @@ UnconfirmedSeries:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/BookSeries'
   - type: object
@@ -3020,8 +2710,6 @@ UndefinedDuration:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/Duration'
   - type: object
@@ -3034,8 +2722,6 @@ UnpublishedFile:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/File'
   - type: object
@@ -3065,8 +2751,6 @@ UploadDetails:
       format: date-time
     type:
       type: string
-  discriminator:
-    propertyName: type
 Venue:
   required:
   - type
@@ -3081,14 +2765,10 @@ Venue:
       format: int32
     type:
       type: string
-  discriminator:
-    propertyName: type
 VisualArts:
   required:
   - type
   type: object
-  discriminator:
-    propertyName: type
   allOf:
   - $ref: '#/components/schemas/PublicationInstancePages'
   - type: object
