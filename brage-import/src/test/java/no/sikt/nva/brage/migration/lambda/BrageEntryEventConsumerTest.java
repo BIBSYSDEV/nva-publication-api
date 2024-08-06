@@ -182,7 +182,7 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     public static final UUID UUID = java.util.UUID.randomUUID();
-    public static final Context CONTEXT = null;
+    public static final Context CONTEXT = mock(Context.class);
     public static final long SOME_FILE_SIZE = 100L;
     public static final Type TYPE_BOOK = new Type(List.of(NvaType.BOOK.getValue()), NvaType.BOOK.getValue());
     public static final Type TYPE_CONFERENCE_REPORT = new Type(List.of(NvaType.CONFERENCE_REPORT.getValue()),
@@ -293,6 +293,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     @BeforeEach
     public void init() {
         super.init();
+        when(CONTEXT.getRemainingTimeInMillis()).thenReturn(100000)
         this.resourceService = getResourceServiceBuilder(client).build();
         this.s3Client = new ExtendedFakeS3Client();
         this.s3Driver = new S3Driver(s3Client, INPUT_BUCKET_NAME);
