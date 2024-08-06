@@ -293,7 +293,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     @BeforeEach
     public void init() {
         super.init();
-        when(CONTEXT.getRemainingTimeInMillis()).thenReturn(100000)
+        when(CONTEXT.getRemainingTimeInMillis()).thenReturn(100000);
         this.resourceService = getResourceServiceBuilder(client).build();
         this.s3Client = new ExtendedFakeS3Client();
         this.s3Driver = new S3Driver(s3Client, INPUT_BUCKET_NAME);
