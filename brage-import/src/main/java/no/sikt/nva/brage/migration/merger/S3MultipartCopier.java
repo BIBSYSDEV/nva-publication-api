@@ -27,7 +27,7 @@ public final class S3MultipartCopier {
                                                                        + "perform multipart copy!";
     private static final long PARTITION_SIZE = 5L * 1024 * 1024;
     private static final int ZERO_LENGTH = 0;
-    private static final int TIMEOUT_THRESHOLD_30_SECONDS = 30000;
+    private static final int SECONDS_30 = 30_000;
     private static final String TIMEOUT_THRESHOLD_EXCEEDED = "Timeout threshold exceeded when copying associated "
                                                          + "artifacts!";
     private final Logger logger = LoggerFactory.getLogger(S3MultipartCopier.class);
@@ -133,7 +133,7 @@ public final class S3MultipartCopier {
             int partNumber = 1;
             long totalSize = headOfObjectToCopy.contentLength();
             while (position < totalSize) {
-                if (context.getRemainingTimeInMillis() < TIMEOUT_THRESHOLD_30_SECONDS) {
+                if (context.getRemainingTimeInMillis() < SECONDS_30) {
                     throw MultipartCopyException.withMessage(TIMEOUT_THRESHOLD_EXCEEDED);
                 }
                 position = copyPartAndUpdatePosition(s3Client, position, totalSize, response, partNumber);
