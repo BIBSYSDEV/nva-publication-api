@@ -87,7 +87,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     public PublicationRepresentation handleRequest(S3Event s3Event, Context context) {
         return attempt(() -> parseBrageRecord(s3Event))
                    .map(publicationRepresentation -> pushAssociatedFilesToPersistedStorage(publicationRepresentation,
-                                                                                           s3Event))
+                                                                                           s3Event, context))
                    .map(publicationRepresentation -> persistMetadataChange(s3Event, publicationRepresentation))
                    .orElse(fail -> handleSavingError(fail, s3Event));
     }
@@ -379,9 +379,8 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     }
 
     private PublicationRepresentation pushAssociatedFilesToPersistedStorage(
-        PublicationRepresentation publicationRepresentation,
-        S3Event s3Event) {
-        var associatedArtifactMover = new AssociatedArtifactMover(s3Client, s3Event);
+        PublicationRepresentation publicationRepresentation, S3Event s3Event, Context context) {
+        var associatedArtifactMover = new AssociatedArtifactMover(s3Client, s3Event, context);
         associatedArtifactMover.pushAssociatedArtifactsToPersistedStorage(publicationRepresentation.publication());
         return publicationRepresentation;
     }

@@ -1,5 +1,6 @@
 package no.sikt.nva.brage.migration.merger;
 
+import com.amazonaws.services.lambda.runtime.Context;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -25,7 +26,10 @@ public final class S3MultipartCopier {
     private static final String MISSING_REQUIRING_PARAMETERS_MESSAGE = "All required params have to be provided to "
                                                                        + "perform multipart copy!";
     private static final long PARTITION_SIZE = 5L * 1024 * 1024;
-    public static final int ZERO_LENGTH = 0;
+    private static final int ZERO_LENGTH = 0;
+    private static final int SECONDS_30 = 30_000;
+    private static final String TIMEOUT_THRESHOLD_EXCEEDED = "Timeout threshold exceeded when copying associated "
+                                                         + "artifacts!";
     private final Logger logger = LoggerFactory.getLogger(S3MultipartCopier.class);
     private final String sourceS3Key;
     private final String sourceS3Bucket;
@@ -55,9 +59,9 @@ public final class S3MultipartCopier {
                    .withDestinationBucket(this.destinationS3Bucket);
     }
 
-    public void copy(S3Client s3Client) {
+    public void copy(S3Client s3Client, Context context) {
         validateRequest();
-        performCopying(s3Client);
+        performCopying(s3Client, context);
     }
 
     public S3MultipartCopier sourceBucket(String sourceBucket) {
@@ -98,12 +102,12 @@ public final class S3MultipartCopier {
         return Stream.of(sourceS3Key, sourceS3Bucket, destinationS3Key, destinationS3Key).anyMatch(Objects::isNull);
     }
 
-    private void performCopying(S3Client s3Client) throws MultipartCopyException {
+    private void performCopying(S3Client s3Client, Context context) throws MultipartCopyException {
         var headOfObjectToCopy = getHeadOfObjectToCopy(s3Client);
         if (objectToCopyIsEmpty(headOfObjectToCopy)) {
             performSimpleCopy(s3Client);
         } else {
-            performMultiPartCopy(s3Client, headOfObjectToCopy);
+            performMultiPartCopy(s3Client, context, headOfObjectToCopy);
         }
     }
 
@@ -121,7 +125,7 @@ public final class S3MultipartCopier {
         s3Client.copyObject(copyObjRequest);
     }
 
-    private void performMultiPartCopy(S3Client s3Client, HeadObjectResponse headOfObjectToCopy) {
+    private void performMultiPartCopy(S3Client s3Client, Context context, HeadObjectResponse headOfObjectToCopy) {
         var request = initiateMultiUploadRequest(headOfObjectToCopy);
         var response = s3Client.createMultipartUpload(request);
         try {
@@ -129,6 +133,9 @@ public final class S3MultipartCopier {
             int partNumber = 1;
             long totalSize = headOfObjectToCopy.contentLength();
             while (position < totalSize) {
+                if (context.getRemainingTimeInMillis() < SECONDS_30) {
+                    throw MultipartCopyException.withMessage(TIMEOUT_THRESHOLD_EXCEEDED);
+                }
                 position = copyPartAndUpdatePosition(s3Client, position, totalSize, response, partNumber);
                 partNumber++;
             }

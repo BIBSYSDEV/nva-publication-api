@@ -1,5 +1,6 @@
 package no.sikt.nva.brage.migration.merger;
 
+import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import java.util.stream.Collectors;
 import no.unit.nva.model.Publication;
@@ -20,10 +21,12 @@ public class AssociatedArtifactMover {
     private final S3Client s3Client;
     private final S3Event s3Event;
     private final String persistedStorageBucket;
+    private final Context context;
 
-    public AssociatedArtifactMover(S3Client s3Client, S3Event s3Event) {
+    public AssociatedArtifactMover(S3Client s3Client, S3Event s3Event, Context context) {
         this.s3Client = s3Client;
         this.s3Event = s3Event;
+        this.context = context;
         this.persistedStorageBucket = new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME");
     }
 
@@ -48,7 +51,7 @@ public class AssociatedArtifactMover {
                     .sourceBucket(getSourceBucket())
                     .destinationKey(objectKey)
                     .destinationBucket(persistedStorageBucket)
-                    .copy(s3Client);
+                    .copy(s3Client, context);
 
                 return extractMimeTypeAndSize(file, objectKey);
             } else {
