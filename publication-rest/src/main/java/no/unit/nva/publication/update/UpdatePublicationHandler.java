@@ -378,9 +378,13 @@ public class UpdatePublicationHandler
                                 .filter(PublishedFile.class::isInstance)
                                 .map(PublishedFile.class::cast);
 
-        if (!existingFiles.allMatch(inputFiles::contains) && !permissionStrategy.isCuratorOnPublication()) {
+        if (!filesAreUnchangedExceptLicense(existingFiles, inputFiles) && !permissionStrategy.isCuratorOnPublication()) {
             throw new ForbiddenException();
         }
+    }
+
+    private static boolean filesAreUnchangedExceptLicense(Stream<PublishedFile> existingFiles, List<PublishedFile> inputFiles) {
+        return existingFiles.allMatch(existingFile -> inputFiles.stream().anyMatch(inputFile -> inputFile.equalsExceptLicense(existingFile)));
     }
 
     private void setRrsOnFiles(Publication publicationUpdate, Publication existingPublication, Customer customer,

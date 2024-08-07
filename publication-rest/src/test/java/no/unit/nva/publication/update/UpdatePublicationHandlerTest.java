@@ -2,6 +2,7 @@ package no.unit.nva.publication.update;
 
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
@@ -1697,6 +1698,52 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         assertNotNull(updatedFile.getUploadDetails());
         assertThat(updatedFile.getUploadDetails().getUploadedBy().getValue(), is(not(equalTo(contributorName))));
+    }
+
+    @Test
+    void publicationOwnerShouldBeAbleToUpdateLicenseOfPublishedFile() throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(customerId, PUBLISHED,
+                                                                                       resourceService);
+        var publishedFile = publication.getAssociatedArtifacts().stream()
+                              .filter(PublishedFile.class::isInstance)
+                              .map(PublishedFile.class::cast)
+                              .findFirst().orElseThrow();
+        var updatedFile = publishedFile.copy().withLicense(randomUri()).buildPublishedFile();
+        var files = publication.getAssociatedArtifacts();
+        files.remove(publishedFile);
+        files.add(updatedFile);
+        var event = ownerUpdatesOwnPublication(publication.getIdentifier(), publication);
+
+        updatePublicationHandler.handleRequest(event, output, context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, Publication.class);
+        var updatedPublication = resourceService.getPublication(publication);
+
+        assertThat(updatedPublication.getAssociatedArtifacts().getFirst(), is(equalTo(updatedFile)));
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
+    }
+
+    @Test
+    void publicationOwnerShouldNotBeAbleToUpdateOtherFieldsOfPublishedFileThanLicense()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(customerId, PUBLISHED,
+                                                                                       resourceService);
+        var publishedFile = publication.getAssociatedArtifacts().stream()
+                                .filter(PublishedFile.class::isInstance)
+                                .map(PublishedFile.class::cast)
+                                .findFirst().orElseThrow();
+        var updatedFile = publishedFile.copy()
+                              .withLicense(randomUri())
+                              .withName(randomString())
+                              .buildPublishedFile();
+        var files = publication.getAssociatedArtifacts();
+        files.remove(publishedFile);
+        files.add(updatedFile);
+        var event = ownerUpdatesOwnPublication(publication.getIdentifier(), publication);
+
+        updatePublicationHandler.handleRequest(event, output, context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
+
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
 
     private Publication createAndPersistNonDegreePublicationWithFile(File file) throws BadRequestException {
