@@ -56,14 +56,13 @@ public class ScopusFileConverterTest {
     public static final URI DOWNLOAD_URL_FROM_CROSSREF_RESPONSE = URI.create(
         "https://www.cambridge.org/core/services/aop-cambridge-core/content/view/" + TEST_FILE_NAME);
     private HttpClient httpClient;
-    private S3Client s3Client;
     private ScopusGenerator scopusData;
     private ScopusFileConverter fileConverter;
 
     @BeforeEach
     public void init() throws IOException, URISyntaxException {
         httpClient = mock(HttpClient.class);
-        s3Client = mock(S3Client.class);
+        S3Client s3Client = mock(S3Client.class);
         var tikaUtils = mockedTikaUtils();
         fileConverter = new ScopusFileConverter(httpClient, s3Client, tikaUtils);
 
@@ -198,8 +197,8 @@ public class ScopusFileConverterTest {
         scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccessWithDownloadUrl(firstUrl));
         mockDownloadUrlResponse();
         var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
-        var expectedUserName = UPLOAD_DETAILS_USERNAME;
-        assertThat(file.getUploadDetails().getUploadedBy(), is(equalTo(expectedUserName)));
+
+        assertThat(file.getUploadDetails().getUploadedBy(), is(equalTo(UPLOAD_DETAILS_USERNAME)));
         assertThat(file.getUploadDetails().getUploadedDate(), is(notNullValue()));
     }
 
@@ -208,9 +207,21 @@ public class ScopusFileConverterTest {
         var responseBody = "crossrefResponseMissingFields.json";
         mockResponsesWithHeader(responseBody, Map.of());
         var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
-        var expectedUserName = UPLOAD_DETAILS_USERNAME;
-        assertThat(file.getUploadDetails().getUploadedBy(), is(equalTo(expectedUserName)));
+
+        assertThat(file.getUploadDetails().getUploadedBy(), is(equalTo(UPLOAD_DETAILS_USERNAME)));
         assertThat(file.getUploadDetails().getUploadedDate(), is(notNullValue()));
+    }
+
+
+    @Test
+    void shouldSetPublisherVersionAsPublishedWhenFetchingAssociatedArtifactsFromXml()
+        throws IOException, InterruptedException {
+        var firstUrl = randomUri();
+        scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccessWithDownloadUrl(firstUrl));
+        mockDownloadUrlResponse();
+        var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
+
+        assertThat(file.getPublisherVersion(), is(equalTo(PublisherVersion.PUBLISHED_VERSION)));
     }
 
     private void mockDownloadUrlResponse() throws IOException, InterruptedException {
