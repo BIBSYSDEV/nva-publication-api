@@ -393,6 +393,10 @@ public class UpdatePublicationHandler
         return existingFiles.allMatch(existingFile -> inputFiles.stream().anyMatch(inputFile -> inputFile.equalsExceptLicense(existingFile)));
     }
 
+    private static boolean filesAreUnchangedExceptLicense(Stream<PublishedFile> existingFiles, List<PublishedFile> inputFiles) {
+        return existingFiles.allMatch(existingFile -> inputFiles.stream().anyMatch(inputFile -> inputFile.equalsExceptLicense(existingFile)));
+    }
+
     private void setRrsOnFiles(Publication publicationUpdate, Publication existingPublication, Customer customer,
                                String actingUser, PublicationPermissionStrategy permissionStrategy)
         throws BadRequestException, UnauthorizedException {
