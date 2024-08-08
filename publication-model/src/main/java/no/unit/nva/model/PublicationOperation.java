@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum PublicationOperation {
 
     UPDATE("update"),
+    UPDATE_FILES("update-including-files"),
     UNPUBLISH("unpublish"),
     TICKET_PUBLISH("ticket/publish"),
     DELETE("delete"),

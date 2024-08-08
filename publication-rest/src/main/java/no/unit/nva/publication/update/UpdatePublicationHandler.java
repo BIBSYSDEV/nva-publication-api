@@ -5,6 +5,7 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationOperation.TERMINATE;
 import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
+import static no.unit.nva.model.PublicationOperation.UPDATE_FILES;
 import static no.unit.nva.publication.RequestUtil.createUserInstanceFromRequest;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.defaultEventBridgeClient;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
@@ -303,7 +304,12 @@ public class UpdatePublicationHandler
                                        UserInstance userInstance)
         throws ApiGatewayException {
         validateRequest(identifierInPath, input);
-        permissionStrategy.authorize(UPDATE);
+
+        if (publishedFilesAreUnchangedExceptLicense(existingPublication, input)) {
+            permissionStrategy.authorize(UPDATE);
+        } else {
+            permissionStrategy.authorize(UPDATE_FILES);
+        }
 
         validateRemovalOfPublishedFiles(existingPublication, input, permissionStrategy);
 
@@ -371,16 +377,20 @@ public class UpdatePublicationHandler
                                                  UpdatePublicationRequest input,
                                                  PublicationPermissionStrategy permissionStrategy)
         throws ForbiddenException {
+        if (!publishedFilesAreUnchangedExceptLicense(existingPublication, input) && !permissionStrategy.isCuratorOnPublication()) {
+            throw new ForbiddenException();
+        }
+    }
+
+    private static boolean publishedFilesAreUnchangedExceptLicense(Publication existingPublication,
+                                                                   UpdatePublicationRequest input) {
         var inputFiles = input.getAssociatedArtifacts().stream()
                              .filter(PublishedFile.class::isInstance)
                              .map(PublishedFile.class::cast).toList();
         var existingFiles = existingPublication.getAssociatedArtifacts().stream()
                                 .filter(PublishedFile.class::isInstance)
                                 .map(PublishedFile.class::cast);
-
-        if (!existingFiles.allMatch(inputFiles::contains) && !permissionStrategy.isCuratorOnPublication()) {
-            throw new ForbiddenException();
-        }
+        return existingFiles.allMatch(existingFile -> inputFiles.stream().anyMatch(inputFile -> inputFile.equalsExceptLicense(existingFile)));
     }
 
     private void setRrsOnFiles(Publication publicationUpdate, Publication existingPublication, Customer customer,
