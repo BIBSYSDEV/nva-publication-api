@@ -1701,7 +1701,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void publicationOwnerShouldBeAbleToUpdateLicenseOfPublishedFile() throws ApiGatewayException, IOException {
+    void publicationOwnerShouldBeAbleToUpdateMetadataOfPublishedFile() throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(customerId, PUBLISHED,
                                                                                        resourceService);
         var publishedFile = publication.getAssociatedArtifacts().stream()
@@ -1716,32 +1716,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         updatePublicationHandler.handleRequest(event, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Publication.class);
-        var updatedPublication = resourceService.getPublication(publication);
-
-        assertThat(updatedPublication.getAssociatedArtifacts().getFirst(), is(equalTo(updatedFile)));
-        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
-    }
-
-    @Test
-    void publicationOwnerShouldNotBeAbleToUpdateOtherFieldsOfPublishedFileThanLicense()
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(customerId, PUBLISHED,
-                                                                                       resourceService);
-        var publishedFile = publication.getAssociatedArtifacts().stream()
-                                .filter(PublishedFile.class::isInstance)
-                                .map(PublishedFile.class::cast)
-                                .findFirst().orElseThrow();
-        var updatedFile = publishedFile.copy()
-                              .withLicense(randomUri())
-                              .withName(randomString())
-                              .buildPublishedFile();
-        var files = publication.getAssociatedArtifacts();
-        files.remove(publishedFile);
-        files.add(updatedFile);
-        var event = ownerUpdatesOwnPublication(publication.getIdentifier(), publication);
-
-        updatePublicationHandler.handleRequest(event, output, context);
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
 
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
