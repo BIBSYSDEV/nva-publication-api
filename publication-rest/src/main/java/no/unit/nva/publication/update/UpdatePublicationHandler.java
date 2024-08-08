@@ -304,7 +304,7 @@ public class UpdatePublicationHandler
         throws ApiGatewayException {
         validateRequest(identifierInPath, input);
 
-        if (publishedFilesAreUnchangedExceptLicense(existingPublication, input)) {
+        if (publishedFilesAreUnchanged(existingPublication, input)) {
             permissionStrategy.authorize(UPDATE);
         } else {
             permissionStrategy.authorize(UPDATE_FILES);
@@ -370,15 +370,15 @@ public class UpdatePublicationHandler
         return file.copy().withUploadDetails(uploadDetails);
     }
 
-    private static boolean publishedFilesAreUnchangedExceptLicense(Publication existingPublication,
-                                                                   UpdatePublicationRequest input) {
+    private static boolean publishedFilesAreUnchanged(Publication existingPublication,
+                                                      UpdatePublicationRequest input) {
         var inputFiles = input.getAssociatedArtifacts().stream()
                              .filter(PublishedFile.class::isInstance)
                              .map(PublishedFile.class::cast).toList();
         var existingFiles = existingPublication.getAssociatedArtifacts().stream()
                                 .filter(PublishedFile.class::isInstance)
                                 .map(PublishedFile.class::cast);
-        return existingFiles.allMatch(existingFile -> inputFiles.stream().anyMatch(inputFile -> inputFile.equalsExceptLicense(existingFile)));
+        return existingFiles.allMatch(inputFiles::contains);
     }
 
     private void setRrsOnFiles(Publication publicationUpdate, Publication existingPublication, Customer customer,
