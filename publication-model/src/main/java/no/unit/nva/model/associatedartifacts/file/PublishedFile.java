@@ -80,17 +80,4 @@ public class PublishedFile extends File {
                    .withLegalNote(this.getLegalNote())
                    .withUploadDetails(this.getUploadDetails());
     }
-
-    public boolean equalsExceptLicense(PublishedFile file) {
-        return this.getIdentifier().equals(file.getIdentifier())
-               && this.getName().equals(file.getName())
-               && this.getMimeType().equals(file.getMimeType())
-               && this.getSize().equals(file.getSize())
-               && this.isAdministrativeAgreement() == file.isAdministrativeAgreement()
-               && this.getPublisherVersion().equals(file.getPublisherVersion())
-               && this.getEmbargoDate().equals(file.getEmbargoDate())
-               && this.getRightsRetentionStrategy().equals(file.getRightsRetentionStrategy())
-               && this.getLegalNote().equals(file.getLegalNote())
-               && this.getUploadDetails().equals(file.getUploadDetails());
-    }
 }
