@@ -14,6 +14,8 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -38,6 +40,7 @@ import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -130,7 +133,7 @@ class RightsRetentionsApplierTest {
 
         addFilesToPublication(originalPublication, originalFile);
         var isCurator = false;
-        var permissionStrategy = new FakePublicationPermissionStrategy(isCurator);
+        var permissionStrategy = new FakePublicationPermissionStrategy(isCurator, originalPublication);
         var applier = rrsApplierForUpdatedPublication(originalPublication, updatedPublication,
                                                       getServerConfiguredRrs(
                                                           NULL_RIGHTS_RETENTION_STRATEGY),
@@ -156,7 +159,7 @@ class RightsRetentionsApplierTest {
 
         addFilesToPublication(originalPublication, originalFile);
         var isCurator = false;
-        var permissionStrategy = new FakePublicationPermissionStrategy(isCurator);
+        var permissionStrategy = new FakePublicationPermissionStrategy(isCurator, originalPublication);
         var applier = rrsApplierForUpdatedPublication(originalPublication, updatedPublication,
                                                       getServerConfiguredRrs(
                                                           NULL_RIGHTS_RETENTION_STRATEGY),
@@ -182,7 +185,7 @@ class RightsRetentionsApplierTest {
                                      .withAssociatedArtifacts(new AssociatedArtifactList(publishedFile))
                                      .build();
         var isCurator = false;
-        var permissionStrategy = new FakePublicationPermissionStrategy(isCurator);
+        var permissionStrategy = new FakePublicationPermissionStrategy(isCurator, originalPublication);
         var applier = rrsApplierForUpdatedPublication(originalPublication, updatedPublication,
                                                       getServerConfiguredRrs(
                                                           configuredType),
@@ -207,7 +210,7 @@ class RightsRetentionsApplierTest {
                                      .build();
 
         var isCurator = false;
-        var permissionStrategy = new FakePublicationPermissionStrategy(isCurator);
+        var permissionStrategy = new FakePublicationPermissionStrategy(isCurator, originalPublication);
         var applier = rrsApplierForUpdatedPublication(originalPublication, updatedPublication,
                                                       getServerConfiguredRrs(
                                                           configuredType),
@@ -222,7 +225,7 @@ class RightsRetentionsApplierTest {
         "RIGHTS_RETENTION_STRATEGY",
         "OVERRIDABLE_RIGHTS_RETENTION_STRATEGY"
     })
-    void shouldAllowCuratorToOverrideRetentionStrategy(RightsRetentionStrategyConfiguration configuredType) {
+    void shouldAllowPublishingCuratorToOverrideRetentionStrategy(RightsRetentionStrategyConfiguration configuredType) {
         var originalPublication =
             PublicationGenerator.randomPublication(AcademicArticle.class)
                 .copy()
@@ -231,8 +234,8 @@ class RightsRetentionsApplierTest {
                                                                        RIGHTS_RETENTION_STRATEGY))))
                 .build();
         var userName = randomString();
-        var isCurator = true;
-        var permissionStrategy = new FakePublicationPermissionStrategy(isCurator);
+        var permissionStrategy = mock(PublicationPermissionStrategy.class);
+        when(permissionStrategy.isPublishingCuratorOnPublication()).thenReturn(true);
         var fileWithOverridenRrs = createFileWithRrs(UUID.randomUUID(), ACCEPTED_VERSION,
                                                      OverriddenRightsRetentionStrategy.create(
                                                          OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, userName));
@@ -290,9 +293,13 @@ class RightsRetentionsApplierTest {
 
         private final boolean isCurator;
 
-        public FakePublicationPermissionStrategy(boolean isCurator) {
-            super(null, null);
+        public FakePublicationPermissionStrategy(boolean isCurator, Publication publication) {
+            super(publication, createFakeUserInstance(publication));
             this.isCurator = isCurator;
+        }
+
+        private static UserInstance createFakeUserInstance(Publication publication) {
+            return UserInstance.create(randomString(), publication.getResourceOwner().getOwnerAffiliation());
         }
 
         @Override

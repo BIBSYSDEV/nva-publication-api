@@ -68,7 +68,6 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
-import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
@@ -311,8 +310,6 @@ public class UpdatePublicationHandler
             permissionStrategy.authorize(UPDATE_FILES);
         }
 
-        validateRemovalOfPublishedFiles(existingPublication, input, permissionStrategy);
-
         var publicationUpdate = input.generatePublicationUpdate(existingPublication);
 
         var customerApiClient = getCustomerApiClient();
@@ -373,15 +370,6 @@ public class UpdatePublicationHandler
         return file.copy().withUploadDetails(uploadDetails);
     }
 
-    private void validateRemovalOfPublishedFiles(Publication existingPublication,
-                                                 UpdatePublicationRequest input,
-                                                 PublicationPermissionStrategy permissionStrategy)
-        throws ForbiddenException {
-        if (!publishedFilesAreUnchangedExceptLicense(existingPublication, input) && !permissionStrategy.isCuratorOnPublication()) {
-            throw new ForbiddenException();
-        }
-    }
-
     private static boolean publishedFilesAreUnchangedExceptLicense(Publication existingPublication,
                                                                    UpdatePublicationRequest input) {
         var inputFiles = input.getAssociatedArtifacts().stream()
@@ -390,10 +378,6 @@ public class UpdatePublicationHandler
         var existingFiles = existingPublication.getAssociatedArtifacts().stream()
                                 .filter(PublishedFile.class::isInstance)
                                 .map(PublishedFile.class::cast);
-        return existingFiles.allMatch(existingFile -> inputFiles.stream().anyMatch(inputFile -> inputFile.equalsExceptLicense(existingFile)));
-    }
-
-    private static boolean filesAreUnchangedExceptLicense(Stream<PublishedFile> existingFiles, List<PublishedFile> inputFiles) {
         return existingFiles.allMatch(existingFile -> inputFiles.stream().anyMatch(inputFile -> inputFile.equalsExceptLicense(existingFile)));
     }
 
