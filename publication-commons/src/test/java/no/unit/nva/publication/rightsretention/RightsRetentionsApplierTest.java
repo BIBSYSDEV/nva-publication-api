@@ -14,6 +14,8 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -222,7 +224,7 @@ class RightsRetentionsApplierTest {
         "RIGHTS_RETENTION_STRATEGY",
         "OVERRIDABLE_RIGHTS_RETENTION_STRATEGY"
     })
-    void shouldAllowCuratorToOverrideRetentionStrategy(RightsRetentionStrategyConfiguration configuredType) {
+    void shouldAllowPublishingCuratorToOverrideRetentionStrategy(RightsRetentionStrategyConfiguration configuredType) {
         var originalPublication =
             PublicationGenerator.randomPublication(AcademicArticle.class)
                 .copy()
@@ -231,8 +233,8 @@ class RightsRetentionsApplierTest {
                                                                        RIGHTS_RETENTION_STRATEGY))))
                 .build();
         var userName = randomString();
-        var isCurator = true;
-        var permissionStrategy = new FakePublicationPermissionStrategy(isCurator);
+        var permissionStrategy = mock(PublicationPermissionStrategy.class);
+        when(permissionStrategy.isPublishingCuratorOnPublication()).thenReturn(true);
         var fileWithOverridenRrs = createFileWithRrs(UUID.randomUUID(), ACCEPTED_VERSION,
                                                      OverriddenRightsRetentionStrategy.create(
                                                          OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, userName));

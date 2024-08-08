@@ -2,7 +2,6 @@ package no.unit.nva.publication.update;
 
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
-import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
@@ -41,12 +40,12 @@ import static nva.commons.apigateway.AccessRight.MANAGE_OWN_RESOURCES;
 import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_ALL;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCE_FILES;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static org.apache.http.HttpStatus.SC_ACCEPTED;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
-import static org.apache.http.HttpStatus.SC_FORBIDDEN;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
@@ -190,6 +189,8 @@ import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.zalando.problem.Problem;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
@@ -999,7 +1000,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void curatorShouldBeAbleToOverrideRrs() throws IOException, NotFoundException {
+    void publishingCuratorWithAccessRightManageResourceFilesShouldBeAbleToOverrideRrs()
+        throws IOException, NotFoundException {
         var publishedFileRrs = File.builder()
                                    .withIdentifier(UUID.randomUUID())
                                    .withName(randomString())
@@ -1027,7 +1029,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, null));
 
         var publicationUpdate = publicationWithRrs.copy().withAssociatedArtifacts(List.of(publishedFileRrs)).build();
-        var request = curatorForPublicationUpdatesPublication(publicationUpdate);
+        var request = curatorWithAccessRightsUpdatesPublication(publicationUpdate, customerId,
+                                                                publicationWithRrs.getResourceOwner().getOwnerAffiliation(),
+                                                                MANAGE_RESOURCE_FILES);
         updatePublicationHandler.handleRequest(request, output, context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
@@ -1591,20 +1595,38 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         updatePublicationHandler.handleRequest(event, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertThat(gatewayResponse.getStatusCode(), is(equalTo(SC_FORBIDDEN)));
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
     }
 
     @Test
-    void shouldAllowCuratorToRemovePublishedFile()
+    void shouldAllowUserWithAccessRightManageResourceFilesToRemovePublishedFile()
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(customerId, PUBLISHED,
                                                                                        resourceService);
         var updatedPublication = publication.copy().withAssociatedArtifacts(Collections.emptyList()).build();
-        var event = curatorForPublicationUpdatesPublication(updatedPublication);
+        var event = curatorWithAccessRightsUpdatesPublication(updatedPublication, customerId,
+                                                              publication.getResourceOwner().getOwnerAffiliation(),
+                                                              MANAGE_RESOURCE_FILES);
 
         updatePublicationHandler.handleRequest(event, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = AccessRight.class, mode = Mode.EXCLUDE, names = {"MANAGE_RESOURCE_FILES"})
+    void shouldNotAllowUserWithoutAccessRightManageResourceFilesToRemovePublishedFile(AccessRight accessRight)
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(customerId, PUBLISHED,
+                                                                                       resourceService);
+        var updatedPublication = publication.copy().withAssociatedArtifacts(Collections.emptyList()).build();
+        var event = curatorWithAccessRightsUpdatesPublication(updatedPublication, customerId,
+                                                              publication.getResourceOwner().getOwnerAffiliation(),
+                                                              accessRight);
+
+        updatePublicationHandler.handleRequest(event, output, context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
     }
 
     @Test
@@ -1717,7 +1739,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(event, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Publication.class);
 
-        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
     }
 
     private Publication createAndPersistNonDegreePublicationWithFile(File file) throws BadRequestException {

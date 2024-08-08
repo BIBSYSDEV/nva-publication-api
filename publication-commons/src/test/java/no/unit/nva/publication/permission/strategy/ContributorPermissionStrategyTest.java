@@ -19,7 +19,7 @@ class ContributorPermissionStrategyTest extends PublicationPermissionStrategyTes
 
     @ParameterizedTest(name = "Should allow verified contributor {0} operation on non-degree resources")
     @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "TERMINATE",
-        "TICKET_PUBLISH"})
+        "TICKET_PUBLISH", "UPDATE_FILES"})
     void shouldAllowVerifiedContributorOnNonDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
