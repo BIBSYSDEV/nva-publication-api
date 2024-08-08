@@ -40,7 +40,6 @@ import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
-import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -133,7 +132,7 @@ class RightsRetentionsApplierTest {
 
         addFilesToPublication(originalPublication, originalFile);
         var isCurator = false;
-        var permissionStrategy = new FakePublicationPermissionStrategy(isCurator, originalPublication);
+        var permissionStrategy = new FakePublicationPermissionStrategy(isCurator);
         var applier = rrsApplierForUpdatedPublication(originalPublication, updatedPublication,
                                                       getServerConfiguredRrs(
                                                           NULL_RIGHTS_RETENTION_STRATEGY),
@@ -159,7 +158,7 @@ class RightsRetentionsApplierTest {
 
         addFilesToPublication(originalPublication, originalFile);
         var isCurator = false;
-        var permissionStrategy = new FakePublicationPermissionStrategy(isCurator, originalPublication);
+        var permissionStrategy = new FakePublicationPermissionStrategy(isCurator);
         var applier = rrsApplierForUpdatedPublication(originalPublication, updatedPublication,
                                                       getServerConfiguredRrs(
                                                           NULL_RIGHTS_RETENTION_STRATEGY),
@@ -185,7 +184,7 @@ class RightsRetentionsApplierTest {
                                      .withAssociatedArtifacts(new AssociatedArtifactList(publishedFile))
                                      .build();
         var isCurator = false;
-        var permissionStrategy = new FakePublicationPermissionStrategy(isCurator, originalPublication);
+        var permissionStrategy = new FakePublicationPermissionStrategy(isCurator);
         var applier = rrsApplierForUpdatedPublication(originalPublication, updatedPublication,
                                                       getServerConfiguredRrs(
                                                           configuredType),
@@ -210,7 +209,7 @@ class RightsRetentionsApplierTest {
                                      .build();
 
         var isCurator = false;
-        var permissionStrategy = new FakePublicationPermissionStrategy(isCurator, originalPublication);
+        var permissionStrategy = new FakePublicationPermissionStrategy(isCurator);
         var applier = rrsApplierForUpdatedPublication(originalPublication, updatedPublication,
                                                       getServerConfiguredRrs(
                                                           configuredType),
@@ -293,13 +292,9 @@ class RightsRetentionsApplierTest {
 
         private final boolean isCurator;
 
-        public FakePublicationPermissionStrategy(boolean isCurator, Publication publication) {
-            super(publication, createFakeUserInstance(publication));
+        public FakePublicationPermissionStrategy(boolean isCurator) {
+            super(null, null);
             this.isCurator = isCurator;
-        }
-
-        private static UserInstance createFakeUserInstance(Publication publication) {
-            return UserInstance.create(randomString(), publication.getResourceOwner().getOwnerAffiliation());
         }
 
         @Override
