@@ -997,8 +997,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                    startsWith(correspondingAuthorTp.getGivenName()));
     }
 
-   @ParameterizedTest(name = "Should have entityDescription with language:{1}")
-   @MethodSource("providedLanguagesAndExpectedOutput")
+    @ParameterizedTest(name = "Should have entityDescription with language:{1}")
+    @MethodSource("providedLanguagesAndExpectedOutput")
     void shouldExtractLanguage(List<LanguageDescription> languageCodes, URI expectedLanguageUri) throws IOException {
         createEmptyPiaMock();
         scopusData = ScopusGenerator.createScopusGeneratorWithSpecificLanguage(new LanguagesWrapper(languageCodes));
