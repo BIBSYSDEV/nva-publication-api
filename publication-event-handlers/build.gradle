@@ -43,6 +43,9 @@ dependencies {
 
     testImplementation libs.wiremock
 
+    implementation libs.vavr
+    implementation libs.resilience4j.all
+
     testImplementation libs.bundles.testing
     testImplementation libs.nva.identifiers
     testImplementation project(":publication-model-testing")
