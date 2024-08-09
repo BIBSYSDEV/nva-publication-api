@@ -17,7 +17,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.net.URI;
 import java.util.List;
@@ -235,6 +234,24 @@ public class ContributorExtractorTest {
         assertThat(contributor.getIdentity().getOrcId(), is(equalTo(expectedOrcId)));
     }
 
+    @Test
+    void shouldSetOrcIdToNullWhenMissingBothInXmlAndCristinPerson() {
+        var authorTp = new AuthorTp();
+        authorTp.setAuid(randomString());
+        authorTp.setSeq(String.valueOf(1));
+        var personalnameType = randomPersonalnameType();
+        authorTp.setPreferredName(personalnameType);
+        authorTp.setIndexedName(personalnameType.getIndexedName());
+        authorTp.setGivenName(personalnameType.getGivenName());
+        authorTp.setSurname(personalnameType.getSurname());
+        var document = ScopusGenerator.createWithSingleContributorFromAuthorTp(authorTp).getDocument();
+        mockCristinPersonWithoutOrcId();
+        var contributor = contributorExtractorFromDocument(document).generateContributors()
+                              .stream()
+                              .collect(SingletonCollector.collect());
+
+        assertThat(contributor.getIdentity().getOrcId(), is(nullValue()));
+    }
 
     private AuthorGroupTp createAuthorWithAuid(String auid) {
         var authorTp = new AuthorTp();
