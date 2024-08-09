@@ -1376,6 +1376,71 @@ Resources:
                 responsePayload:
                   topic: [ "PublicationService.PublishingRequest.Update" ]
 
+  HandleIdentifierRequestHandler:
+    DependsOn: EventsLambdaManagedPolicy
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.identifiers.HandleIdentifierRequestHandler::handleRequest
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          TABLE_NAME: !Ref NvaResourcesTable
+          API_DOMAIN: !Ref ApiDomain
+          HANDLE_BASE_PATH: handle
+          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
+          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
+      Events:
+        WorkQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt WorkQueue.Arn
+
+  WorkQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt DLQ.Arn
+        maxReceiveCount: 5
+
+  DLQ:
+    Type: AWS::SQS::Queue
+
+  PublicationServiceUpdateRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !GetAtt InternalBus.Name
+      EventPattern:
+        detail:
+          responsePayload:
+            topic:
+              - "PublicationService.Resource.Update"
+          subtopic:
+            - "PUBLISHED"
+        Targets:
+          - Arn: !GetAtt WorkQueue.Arn
+            Id: WorkQueueTarget
+            InputTransformer:
+              InputPathsMap:
+                identifier: "$.detail.identifier"
+              InputTemplate: '{"identifier": <identifier>}'
+
+  WorkQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref WorkQueue
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: 'sqs:SendMessage'
+            Resource: !GetAtt WorkQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Ref PublicationServiceUpdateRule
+
   EventBasedBatchScanHandlerTest:
     DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function

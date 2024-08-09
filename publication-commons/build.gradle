@@ -27,7 +27,7 @@ dependencies {
 
     implementation libs.jackson.datatype.problem
     implementation libs.vavr
-    implementation libs.resilience4j.retry
+    implementation libs.resilience4j.all
 
     implementation libs.bundles.logging
 

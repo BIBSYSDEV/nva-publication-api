@@ -34,7 +34,7 @@ jena = { strictly = '4.9.0'}
 jsonassert = { strictly = '1.5.1'}
 datafaker = { strictly = '2.1.0' }
 tika = { strictly = '2.9.0' }
-resilience4jRetry = { strictly = '2.2.0' }
+resilience4j = { strictly = '2.2.0' }
 vavrVersion = { strictly = '0.10.4' }
 jakarta-validation-api = { strictly = '3.1.0' }
 jakarta-el-api = { strictly = '6.0.0' }
@@ -152,7 +152,7 @@ tika-langdetect = { group = 'org.apache.tika', name = 'tika-langdetect', version
 tika-langdetect-optimaize = { group = 'org.apache.tika', name = 'tika-langdetect-optimaize', version.ref = 'tika' }
 
 vavr = { group = 'io.vavr', name = 'vavr', version.ref = 'vavrVersion' }
-resilience4j-retry = { group = 'io.github.resilience4j', name = 'resilience4j-retry', version.ref = 'resilience4jRetry' }
+resilience4j-all = { group = 'io.github.resilience4j', name = 'resilience4j-all', version.ref = 'resilience4j' }
 
 swagger-core = { group = 'io.swagger.core.v3', name = 'swagger-core', version.ref = 'swaggerCoreVersion' }
 
