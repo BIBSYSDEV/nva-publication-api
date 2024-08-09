@@ -40,11 +40,12 @@ import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 public class ContributorExtractorTest {
 
-    public static final URI CRISTIN_ID = randomUri();
+    public static final URI CRISTIN_ORGANISATION_ID_FROM_FETCH_ORGANISATION_RESPONSE = randomUri();
     public static final String ORCID_HOST_NAME = "orcid.org";
     public CristinConnection cristinConnection;
     private PiaConnection piaConnection;
@@ -113,8 +114,8 @@ public class ContributorExtractorTest {
                               .stream()
                               .collect(SingletonCollector.collect());
 
-        var id = ((Organization) contributor.getAffiliations().get(0)).getId();
-        assertThat(id, is(equalTo(CRISTIN_ID)));
+        var id = ((Organization) contributor.getAffiliations().getFirst()).getId();
+        assertThat(id, is(equalTo(CRISTIN_ORGANISATION_ID_FROM_FETCH_ORGANISATION_RESPONSE)));
     }
 
     @Test
@@ -139,7 +140,7 @@ public class ContributorExtractorTest {
                               .stream()
                               .collect(SingletonCollector.collect());
 
-        var id = ((Organization) contributor.getAffiliations().get(0)).getId();
+        var id = ((Organization) contributor.getAffiliations().getFirst()).getId();
         assertThat(id, is(equalTo(organization.id())));
     }
 
@@ -154,9 +155,9 @@ public class ContributorExtractorTest {
         var expectedAffiliations = cristinPerson.getAffiliations().stream().filter(Affiliation::isActive).toList();
         var actualOrganizations = contributor.getAffiliations();
 
-        var id = ((Organization) contributor.getAffiliations().get(0)).getId();
+        var id = ((Organization) contributor.getAffiliations().getFirst()).getId();
         assertThat(actualOrganizations.size(), is(equalTo(expectedAffiliations.size())));
-        assertThat(id, is(equalTo(expectedAffiliations.get(0).getOrganization())));
+        assertThat(id, is(equalTo(expectedAffiliations.getFirst().getOrganization())));
     }
 
     @Test
@@ -178,7 +179,7 @@ public class ContributorExtractorTest {
         var expectedAdditionalIdentifier = new AdditionalIdentifier(SCOPUS_AUID, auid);
         var document = ScopusGenerator.createWithOneAuthorGroupAndAffiliation(createAuthorWithAuid(auid)).getDocument();
         mockRandomCristinOrgResponse();
-        var nvaContributor = contributorExtractorFromDocument(document).generateContributors().get(0);
+        var nvaContributor = contributorExtractorFromDocument(document).generateContributors().getFirst();
         assertThat(nvaContributor.getIdentity().getAdditionalIdentifiers(), hasItem(expectedAdditionalIdentifier));
     }
 
@@ -189,20 +190,13 @@ public class ContributorExtractorTest {
         var document = ScopusGenerator.createWithOneAuthorGroupAndAffiliation(createAuthorWithAuid(auid)).getDocument();
         mockCristinPersonWithoutAffiliationResponse();
         mockRandomCristinOrgResponse();
-        var nvaContributor = contributorExtractorFromDocument(document).generateContributors().get(0);
+        var nvaContributor = contributorExtractorFromDocument(document).generateContributors().getFirst();
         assertThat(nvaContributor.getIdentity().getAdditionalIdentifiers(), hasItem(expectedAdditionalIdentifier));
     }
 
     @Test
     void shouldCreateContributorFromAuthorTypeWhenBadResponseFromCristinAndNoOrcId() {
-        var authorTp = new AuthorTp();
-        authorTp.setAuid(randomString());
-        authorTp.setSeq(String.valueOf(1));
-        var personalnameType = randomPersonalnameType();
-        authorTp.setPreferredName(personalnameType);
-        authorTp.setIndexedName(personalnameType.getIndexedName());
-        authorTp.setGivenName(personalnameType.getGivenName());
-        authorTp.setSurname(personalnameType.getSurname());
+        var authorTp = createRandomAuthorTp();
         var document = ScopusGenerator.createWithSingleContributorFromAuthorTp(authorTp).getDocument();
         mockCristinPersonBadRequestResponse();
         var contributor = contributorExtractorFromDocument(document).generateContributors()
@@ -214,14 +208,7 @@ public class ContributorExtractorTest {
 
     @Test
     void shouldExtractOrcIdFromXmlWhenCristinPersonIsPresentButIsMissingOrcId() {
-        var authorTp = new AuthorTp();
-        authorTp.setAuid(randomString());
-        authorTp.setSeq(String.valueOf(1));
-        var personalnameType = randomPersonalnameType();
-        authorTp.setPreferredName(personalnameType);
-        authorTp.setIndexedName(personalnameType.getIndexedName());
-        authorTp.setGivenName(personalnameType.getGivenName());
-        authorTp.setSurname(personalnameType.getSurname());
+        var authorTp = createRandomAuthorTp();
         var orcIdFromXml = randomString();
         authorTp.setOrcid(orcIdFromXml);
         var document = ScopusGenerator.createWithSingleContributorFromAuthorTp(authorTp).getDocument();
@@ -236,6 +223,66 @@ public class ContributorExtractorTest {
 
     @Test
     void shouldSetOrcIdToNullWhenMissingBothInXmlAndCristinPerson() {
+        var authorTp = createRandomAuthorTp();
+        var document = ScopusGenerator.createWithSingleContributorFromAuthorTp(authorTp).getDocument();
+        mockCristinPersonWithoutOrcId();
+        var contributor = contributorExtractorFromDocument(document).generateContributors()
+                              .stream()
+                              .collect(SingletonCollector.collect());
+
+        assertThat(contributor.getIdentity().getOrcId(), is(nullValue()));
+    }
+
+    @DisplayName("Should create contributor with active cristin affiliation from fetch cristin person response only" +
+                 "when cristin organisation from fetch cristin organisation response is also present.")
+    @Test
+    void shouldCreateContributorWithCristinPersonActiveAffiliationsOnlyWhenCristinOrganisationIsAlsoPresent() {
+        var authorTp = createRandomAuthorTp();
+        var document = ScopusGenerator.createWithSingleContributorFromAuthorTp(authorTp).getDocument();
+
+        var mockedCristinPersonResponse = mockCristinPersonWithSingleActiveAffiliationResponse();
+        mockRandomCristinOrgResponse();
+
+        var contributorAffiliations = contributorExtractorFromDocument(document).generateContributors()
+                              .stream()
+                              .collect(SingletonCollector.collect())
+                              .getAffiliations();
+
+        var actualAffiliationId = ((Organization) contributorAffiliations.getFirst()).getId();
+        var expectedAffiliationId = getActiveAffiliation(mockedCristinPersonResponse);
+
+        assertThat(contributorAffiliations, hasSize(1));
+        assertThat(actualAffiliationId, is(equalTo(expectedAffiliationId)));
+    }
+
+    @DisplayName("Should create contributor with affiliation from fetch cristin organisation response" +
+                 "when fetch cristin person response is missing active affiliations.")
+    @Test
+    void shouldCreateContributorWithAffiliationsFromCristinOrganisationResponseWhenCristinPersonMissesAffiliations() {
+        var authorTp = createRandomAuthorTp();
+        var document = ScopusGenerator.createWithSingleContributorFromAuthorTp(authorTp).getDocument();
+
+        mockCristinPersonWithoutAffiliationResponse();
+        mockRandomCristinOrgResponse();
+
+        var contributorAffiliations = contributorExtractorFromDocument(document).generateContributors()
+                                          .stream()
+                                          .collect(SingletonCollector.collect())
+                                          .getAffiliations();
+
+        var actualAffiliationId = ((Organization) contributorAffiliations.getFirst()).getId();
+
+        assertThat(contributorAffiliations, hasSize(1));
+        assertThat(actualAffiliationId, is(equalTo(CRISTIN_ORGANISATION_ID_FROM_FETCH_ORGANISATION_RESPONSE)));
+    }
+
+    private static URI getActiveAffiliation(CristinPerson cristinPersonResponse) {
+        return cristinPersonResponse.getAffiliations().stream()
+                   .filter(Affiliation::isActive)
+                   .iterator().next().getOrganization();
+    }
+
+    private static AuthorTp createRandomAuthorTp() {
         var authorTp = new AuthorTp();
         authorTp.setAuid(randomString());
         authorTp.setSeq(String.valueOf(1));
@@ -244,13 +291,7 @@ public class ContributorExtractorTest {
         authorTp.setIndexedName(personalnameType.getIndexedName());
         authorTp.setGivenName(personalnameType.getGivenName());
         authorTp.setSurname(personalnameType.getSurname());
-        var document = ScopusGenerator.createWithSingleContributorFromAuthorTp(authorTp).getDocument();
-        mockCristinPersonWithoutOrcId();
-        var contributor = contributorExtractorFromDocument(document).generateContributors()
-                              .stream()
-                              .collect(SingletonCollector.collect());
-
-        assertThat(contributor.getIdentity().getOrcId(), is(nullValue()));
+        return authorTp;
     }
 
     private AuthorGroupTp createAuthorWithAuid(String auid) {
@@ -297,13 +338,12 @@ public class ContributorExtractorTest {
         return person;
     }
 
-    private CristinPerson mockCristinPersonWithoutOrcId() {
+    private void mockCristinPersonWithoutOrcId() {
         var personCristinId = randomUri();
         when(piaConnection.getCristinPersonIdentifier(any())).thenReturn(Optional.of(personCristinId));
         var person = CristinGenerator.generateCristinPersonWithoutOrcId(
             personCristinId, randomString(), randomString());
         when(cristinConnection.getCristinPersonByCristinId(personCristinId)).thenReturn(Optional.of(person));
-        return person;
     }
 
     private CristinOrganization mockSearchOrganizationResponse() {
@@ -325,7 +365,7 @@ public class ContributorExtractorTest {
     private void mockRandomCristinOrgResponse() {
         when(piaConnection.fetchCristinOrganizationIdentifier(any())).thenReturn(Optional.of(randomUri()));
         when(cristinConnection.fetchCristinOrganizationByCristinId(any())).thenReturn(
-            CristinGenerator.generateCristinOrganization(CRISTIN_ID));
+            CristinGenerator.generateCristinOrganization(CRISTIN_ORGANISATION_ID_FROM_FETCH_ORGANISATION_RESPONSE));
     }
 
     private void mockOtherCristinOrgResponseWithOtherOrganization() {
