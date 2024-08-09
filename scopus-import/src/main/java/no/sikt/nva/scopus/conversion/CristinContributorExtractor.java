@@ -2,11 +2,13 @@ package no.sikt.nva.scopus.conversion;
 
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.conversion.ContributorExtractor.extractAdditionalIdentifiers;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
+import javax.swing.text.html.Option;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.PersonalnameType;
 import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
@@ -22,6 +24,7 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 public final class CristinContributorExtractor {
 
@@ -50,17 +53,30 @@ public final class CristinContributorExtractor {
                                                                          AuthorTp authorTp) {
         var identity = new Identity();
         identity.setName(determineContributorName(cristinPerson));
-        identity.setOrcId(cristinPerson.getIdentifiers()
-                              .stream()
-                              .filter(CristinContributorExtractor::isOrcid)
-                              .findAny()
-                              .map(TypedValue::getValue)
-                              .orElse(null));
+        identity.setOrcId(extractOrcId(cristinPerson, authorTp));
         identity.setId(cristinPerson.getId());
         identity.setAdditionalIdentifiers(extractAdditionalIdentifiers(authorTp));
         identity.setVerificationStatus(nonNull(cristinPerson.getVerified()) ? generateVerificationStatus(cristinPerson)
                                            : ContributorVerificationStatus.CANNOT_BE_ESTABLISHED);
         return identity;
+    }
+
+    private static String extractOrcId(CristinPerson cristinPerson, AuthorTp authorTp) {
+        return extractOrcIdFromCristinPerson(cristinPerson)
+                   .or(() -> extractOrcIdFromAuthorTp(authorTp))
+                   .orElse(null);
+    }
+
+    private static Optional<String> extractOrcIdFromAuthorTp(AuthorTp authorTp) {
+        return Optional.ofNullable(ContributorExtractor.getOrcidAsUriString(authorTp));
+    }
+
+    private static Optional<String> extractOrcIdFromCristinPerson(CristinPerson cristinPerson) {
+        return Optional.ofNullable(cristinPerson.getIdentifiers()).stream()
+                   .flatMap(Collection::stream)
+                   .filter(CristinContributorExtractor::isOrcid)
+                   .findAny()
+                   .map(TypedValue::getValue);
     }
 
     private static ContributorVerificationStatus generateVerificationStatus(CristinPerson cristinPerson) {

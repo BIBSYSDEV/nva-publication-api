@@ -39,12 +39,14 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Organization;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;
+import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class ContributorExtractorTest {
 
     public static final URI CRISTIN_ID = randomUri();
+    public static final String ORCID_HOST_NAME = "orcid.org";
     public CristinConnection cristinConnection;
     private PiaConnection piaConnection;
     private NvaCustomerConnection nvaCustomerConnection;
@@ -211,6 +213,28 @@ public class ContributorExtractorTest {
         assertThat(contributor.getIdentity().getId(), is(nullValue()));
     }
 
+    @Test
+    void shouldExtractOrcIdFromXmlWhenCristinPersonIsPresentButIsMissingOrcId() {
+        var authorTp = new AuthorTp();
+        authorTp.setAuid(randomString());
+        authorTp.setSeq(String.valueOf(1));
+        var personalnameType = randomPersonalnameType();
+        authorTp.setPreferredName(personalnameType);
+        authorTp.setIndexedName(personalnameType.getIndexedName());
+        authorTp.setGivenName(personalnameType.getGivenName());
+        authorTp.setSurname(personalnameType.getSurname());
+        var orcIdFromXml = randomString();
+        authorTp.setOrcid(orcIdFromXml);
+        var document = ScopusGenerator.createWithSingleContributorFromAuthorTp(authorTp).getDocument();
+        mockCristinPersonWithoutOrcId();
+        var contributor = contributorExtractorFromDocument(document).generateContributors()
+                              .stream()
+                              .collect(SingletonCollector.collect());
+        var expectedOrcId = UriWrapper.fromHost(ORCID_HOST_NAME).addChild(orcIdFromXml).toString();
+
+        assertThat(contributor.getIdentity().getOrcId(), is(equalTo(expectedOrcId)));
+    }
+
 
     private AuthorGroupTp createAuthorWithAuid(String auid) {
         var authorTp = new AuthorTp();
@@ -234,9 +258,9 @@ public class ContributorExtractorTest {
                                .getBibrecord()
                                .getHead()
                                .getAuthorGroup()
-                               .get(0)
+                               .getFirst()
                                .getAuthorOrCollaboration()
-                               .get(0)).getOrcid();
+                               .getFirst()).getOrcid();
     }
 
     private static List<AuthorGroupTp> getAuthorGroup(DocTp document) {
@@ -252,6 +276,15 @@ public class ContributorExtractorTest {
         when(piaConnection.getCristinPersonIdentifier(any())).thenReturn(Optional.of(personCristinId));
         var person = CristinGenerator.generateCristinPersonWithSingleActiveAffiliation(personCristinId, randomString(),
                                                                                        randomString());
+        when(cristinConnection.getCristinPersonByCristinId(personCristinId)).thenReturn(Optional.of(person));
+        return person;
+    }
+
+    private CristinPerson mockCristinPersonWithoutOrcId() {
+        var personCristinId = randomUri();
+        when(piaConnection.getCristinPersonIdentifier(any())).thenReturn(Optional.of(personCristinId));
+        var person = CristinGenerator.generateCristinPersonWithoutOrcId(
+            personCristinId, randomString(), randomString());
         when(cristinConnection.getCristinPersonByCristinId(personCristinId)).thenReturn(Optional.of(person));
         return person;
     }
