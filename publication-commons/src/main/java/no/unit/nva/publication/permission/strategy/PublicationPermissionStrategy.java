@@ -55,6 +55,17 @@ public class PublicationPermissionStrategy {
                && findDenials(PublicationOperation.UPDATE).isEmpty();
     }
 
+    public boolean isPublishingCuratorOnPublication() {
+        return isPublishingCurator()
+               && findDenials(PublicationOperation.UPDATE_FILES).isEmpty();
+    }
+
+    private boolean isPublishingCurator() {
+        return findAllowances(PublicationOperation.UPDATE_FILES)
+                   .stream()
+                   .anyMatch(CuratorPermissionStrategy.class::isInstance);
+    }
+
     private boolean isCurator() {
         return findAllowances(PublicationOperation.UPDATE)
                    .stream()
