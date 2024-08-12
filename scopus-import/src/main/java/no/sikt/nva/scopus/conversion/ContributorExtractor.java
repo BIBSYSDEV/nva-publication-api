@@ -304,11 +304,11 @@ public class ContributorExtractor {
         return collaborationTp.getIndexedName();
     }
 
-    private String getOrcidAsUriString(AuthorTp authorTp) {
+    public static String getOrcidAsUriString(AuthorTp authorTp) {
         return isNotBlank(authorTp.getOrcid()) ? craftOrcidUriString(authorTp.getOrcid()) : null;
     }
 
-    private String craftOrcidUriString(String potentiallyMalformedOrcidString) {
+    private static String craftOrcidUriString(String potentiallyMalformedOrcidString) {
         return potentiallyMalformedOrcidString.contains(ORCID_DOMAIN_URL) ? potentiallyMalformedOrcidString
                    : ORCID_DOMAIN_URL + potentiallyMalformedOrcidString;
     }

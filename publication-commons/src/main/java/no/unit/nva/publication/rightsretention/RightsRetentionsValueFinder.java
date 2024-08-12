@@ -98,7 +98,7 @@ public class RightsRetentionsValueFinder {
     private boolean isAllowedToOverrideRrs(RightsRetentionStrategy rrs,
                                            PublicationPermissionStrategy permissionStrategy) {
         if (nonNull(permissionStrategy) && rrs instanceof OverriddenRightsRetentionStrategy) {
-            return permissionStrategy.isCuratorOnPublication();
+            return permissionStrategy.isPublishingCuratorOnPublication();
         }
         return false;
     }

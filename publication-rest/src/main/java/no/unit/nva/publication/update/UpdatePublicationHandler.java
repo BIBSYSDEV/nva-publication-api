@@ -5,6 +5,7 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationOperation.TERMINATE;
 import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
+import static no.unit.nva.model.PublicationOperation.UPDATE_FILES;
 import static no.unit.nva.publication.RequestUtil.createUserInstanceFromRequest;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.defaultEventBridgeClient;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
@@ -67,7 +68,6 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
-import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
@@ -303,9 +303,12 @@ public class UpdatePublicationHandler
                                        UserInstance userInstance)
         throws ApiGatewayException {
         validateRequest(identifierInPath, input);
-        permissionStrategy.authorize(UPDATE);
 
-        validateRemovalOfPublishedFiles(existingPublication, input, permissionStrategy);
+        if (publishedFilesAreUnchanged(existingPublication, input)) {
+            permissionStrategy.authorize(UPDATE);
+        } else {
+            permissionStrategy.authorize(UPDATE_FILES);
+        }
 
         var publicationUpdate = input.generatePublicationUpdate(existingPublication);
 
@@ -367,20 +370,15 @@ public class UpdatePublicationHandler
         return file.copy().withUploadDetails(uploadDetails);
     }
 
-    private void validateRemovalOfPublishedFiles(Publication existingPublication,
-                                                 UpdatePublicationRequest input,
-                                                 PublicationPermissionStrategy permissionStrategy)
-        throws ForbiddenException {
+    private static boolean publishedFilesAreUnchanged(Publication existingPublication,
+                                                      UpdatePublicationRequest input) {
         var inputFiles = input.getAssociatedArtifacts().stream()
                              .filter(PublishedFile.class::isInstance)
                              .map(PublishedFile.class::cast).toList();
         var existingFiles = existingPublication.getAssociatedArtifacts().stream()
                                 .filter(PublishedFile.class::isInstance)
                                 .map(PublishedFile.class::cast);
-
-        if (!existingFiles.allMatch(inputFiles::contains) && !permissionStrategy.isCuratorOnPublication()) {
-            throw new ForbiddenException();
-        }
+        return existingFiles.allMatch(inputFiles::contains);
     }
 
     private void setRrsOnFiles(Publication publicationUpdate, Publication existingPublication, Customer customer,

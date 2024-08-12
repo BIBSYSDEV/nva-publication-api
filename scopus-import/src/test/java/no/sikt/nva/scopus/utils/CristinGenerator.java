@@ -47,6 +47,15 @@ public class CristinGenerator {
                    .build();
     }
 
+    public static CristinPerson generateCristinPersonWithoutOrcId(URI cristinId, String firstname, String surname) {
+        var names = Set.of(new TypedValue("FirstName", firstname), new TypedValue("LastName", surname));
+        return new CristinPerson.Builder().withId(cristinId)
+                   .withNames(names)
+                   .withAffiliations(generateAffiliationsWithSingleActiveAffiliation())
+                   .withVerifiedStatus(randomBoolean())
+                   .build();
+    }
+
     public static CristinPerson generateCristinPersonWithoutAffiliations(URI cristinId, String firstname,
                                                                          String surname) {
         var names = Set.of(new TypedValue("FirstName", firstname), new TypedValue("LastName", surname));

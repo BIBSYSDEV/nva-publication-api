@@ -2,8 +2,8 @@ package no.sikt.nva.scopus.conversion;
 
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.conversion.ContributorExtractor.extractAdditionalIdentifiers;
+import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -50,17 +50,30 @@ public final class CristinContributorExtractor {
                                                                          AuthorTp authorTp) {
         var identity = new Identity();
         identity.setName(determineContributorName(cristinPerson));
-        identity.setOrcId(cristinPerson.getIdentifiers()
-                              .stream()
-                              .filter(CristinContributorExtractor::isOrcid)
-                              .findAny()
-                              .map(TypedValue::getValue)
-                              .orElse(null));
+        identity.setOrcId(extractOrcId(cristinPerson, authorTp));
         identity.setId(cristinPerson.getId());
         identity.setAdditionalIdentifiers(extractAdditionalIdentifiers(authorTp));
         identity.setVerificationStatus(nonNull(cristinPerson.getVerified()) ? generateVerificationStatus(cristinPerson)
                                            : ContributorVerificationStatus.CANNOT_BE_ESTABLISHED);
         return identity;
+    }
+
+    private static String extractOrcId(CristinPerson cristinPerson, AuthorTp authorTp) {
+        return extractOrcIdFromCristinPerson(cristinPerson)
+                   .or(() -> extractOrcIdFromAuthorTp(authorTp))
+                   .orElse(null);
+    }
+
+    private static Optional<String> extractOrcIdFromAuthorTp(AuthorTp authorTp) {
+        return Optional.ofNullable(ContributorExtractor.getOrcidAsUriString(authorTp));
+    }
+
+    private static Optional<String> extractOrcIdFromCristinPerson(CristinPerson cristinPerson) {
+        return Optional.ofNullable(cristinPerson.getIdentifiers()).stream()
+                   .flatMap(Collection::stream)
+                   .filter(CristinContributorExtractor::isOrcid)
+                   .findAny()
+                   .map(TypedValue::getValue);
     }
 
     private static ContributorVerificationStatus generateVerificationStatus(CristinPerson cristinPerson) {
@@ -71,19 +84,20 @@ public final class CristinContributorExtractor {
 
     private static List<Corporation> generateOrganizations(Set<Affiliation> affiliations,
                                                            List<CristinOrganization> cristinOrganizations) {
-        var organizations = createOrganizationsFromCristinPersonAffiliations(affiliations).toList();
-        var organisationFromAuthorGroupTp = createOrganizationFromCristinOrganization(cristinOrganizations).toList();
-        return Stream.concat(organizations.stream(), organisationFromAuthorGroupTp.stream())
-                   .filter(Objects::nonNull)
-                   .distinct()
-                   .toList();
+        var cristinPersonActiveAffiliations = createOrganizationsFromActiveCristinPersonAffiliations(affiliations);
+        var organizationsFromAuthorGroup = createOrganizationFromCristinOrganization(cristinOrganizations).toList();
+        return cristinPersonActiveAffiliations.isEmpty()
+                   ? organizationsFromAuthorGroup
+                   : cristinPersonActiveAffiliations;
     }
 
-    private static Stream<Corporation> createOrganizationsFromCristinPersonAffiliations(
+    private static List<Corporation> createOrganizationsFromActiveCristinPersonAffiliations(
         Set<Affiliation> affiliations) {
         return affiliations.stream()
                    .filter(Affiliation::isActive)
-                   .map(CristinContributorExtractor::toOrganization);
+                   .map(CristinContributorExtractor::toOrganization)
+                   .distinct()
+                   .toList();
     }
 
     private static Corporation toOrganization(Affiliation affiliation) {
@@ -99,8 +113,10 @@ public final class CristinContributorExtractor {
     private static Stream<Corporation> createOrganizationFromCristinOrganization(
         List<CristinOrganization> cristinOrganization) {
         return Optional.ofNullable(cristinOrganization)
-                   .map(orgs -> orgs.stream().map(CristinContributorExtractor::toOrganization))
-                   .orElse(Stream.empty());
+                   .stream()
+                   .flatMap(Collection::stream)
+                   .distinct()
+                   .map(CristinContributorExtractor::toOrganization);
     }
 
     private static int getSequenceNumber(AuthorTp authorTp) {

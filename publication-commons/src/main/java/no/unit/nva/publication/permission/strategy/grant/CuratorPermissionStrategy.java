@@ -2,6 +2,7 @@ package no.unit.nva.publication.permission.strategy.grant;
 
 import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
+import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCE_FILES;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -23,6 +24,7 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
         }
 
         return switch (permission) {
+            case UPDATE_FILES -> hasAccessRight(MANAGE_RESOURCE_FILES);
             case UPDATE -> canManageStandardResources();
             case TICKET_PUBLISH -> canManagePublishingRequests() && hasUnpublishedFile();
             case UNPUBLISH -> canManageStandardResources() && isPublished();
