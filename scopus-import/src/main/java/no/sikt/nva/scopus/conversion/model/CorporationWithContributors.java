@@ -102,7 +102,7 @@ public class CorporationWithContributors {
             organizationName -> Map.of(guessTheLanguageOfTheInputStringAsIso6391Code(organizationName),
                                        organizationName))
                          : extractCountryNameAsAffiliation();
-        return isNotNorway(labels.orElse(Map.of()))
+        return isNotNorway(labels.orElse(Map.of())) && name.isPresent() && !name.get().isBlank()
                    ? List.of(new UnconfirmedOrganization(name.orElse(null)))
                    : List.of();
     }

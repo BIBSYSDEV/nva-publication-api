@@ -819,6 +819,9 @@ public final class ScopusGenerator {
         var correspondenceTp = new CorrespondenceTp();
         var authorGroupTp = new AuthorGroupTp();
         generateContributorsForCollaborationTp(numberOfContributors, authorGroupTp);
+        var affiliationTp = new AffiliationTp();
+        affiliationTp.setCountry(randomString());
+        authorGroupTp.setAffiliation(affiliationTp);
         var head = new HeadTp();
         head.getAuthorGroup().add(authorGroupTp);
         head.getCorrespondence().add(correspondenceTp);

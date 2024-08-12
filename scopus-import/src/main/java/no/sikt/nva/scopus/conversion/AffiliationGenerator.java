@@ -3,8 +3,11 @@ package no.sikt.nva.scopus.conversion;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConverter.extractContentString;
 import java.net.URI;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import no.scopus.generated.AffiliationTp;
 import no.scopus.generated.AffiliationType;
 import no.scopus.generated.AuthorGroupTp;
@@ -13,20 +16,15 @@ import no.sikt.nva.scopus.conversion.model.CorporationWithContributors;
 import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
 import no.sikt.nva.scopus.paralleliseutils.ParallelizeListProcessing;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class AffiliationGenerator {
 
     public static final String NORWEGIAN_LAND_CODE = "NO";
     public static final String OTHER_INSTITUTIONS = "Andre institusjoner";
-    public static final int SINGLE_HIT = 1;
-    private static final Logger logger = LoggerFactory.getLogger(AffiliationGenerator.class);
     private final PiaConnection piaConnection;
     private final CristinConnection cristinConnection;
 
-    public AffiliationGenerator(PiaConnection piaConnection,
-                                CristinConnection cristinConnection) {
+    public AffiliationGenerator(PiaConnection piaConnection, CristinConnection cristinConnection) {
         this.piaConnection = piaConnection;
         this.cristinConnection = cristinConnection;
     }
@@ -55,13 +53,8 @@ public class AffiliationGenerator {
         return organizationTps.stream().map(AffiliationGenerator::extractName).toList();
     }
 
-    private static CristinOrganization getSingleOrganization(SearchOrganizationResponse searchResponse) {
-        logger.info("Fetched cristin organization from author affiliation labels: {}", searchResponse);
-        return searchResponse.hits().getFirst();
-    }
-
-    private static boolean hasSingleOrganization(SearchOrganizationResponse searchOrganizationResponse) {
-        return searchOrganizationResponse.size() == SINGLE_HIT;
+    private Function<List<CristinOrganization>, Optional<CristinOrganization>> collectSingleEntryOrOptionalEmpty() {
+        return list -> list.size() == 1 ? Optional.of(list.getFirst()) : Optional.empty();
     }
 
     private List<CorporationWithContributors> getCorporationsIds(List<AuthorGroupTp> authorGroupList) {
@@ -82,28 +75,34 @@ public class AffiliationGenerator {
     }
 
     private CorporationWithContributors addCristinOrganisationData(CorporationWithContributors corporation) {
-        return nonNull(corporation.getCristinOrganizationId())
-                   ? fetCristinOrganizationsById(corporation)
-                   : searchForCristinOrganizationByName(corporation);
+        var cristinOrganization = fetchCristinOrganizationsById(corporation)
+            .or(() -> searchForCristinOrganizationByName(corporation))
+            .or(() -> searchForCristinOrganizationByCountry(corporation));
+
+        return cristinOrganization.isPresent()
+                   ? corporation.copy().withCristinCorporations(List.of(cristinOrganization.get())).build()
+                   : corporation;
     }
 
-    private CorporationWithContributors searchForCristinOrganizationByName(CorporationWithContributors corporation) {
-        var organizationNames = extractOrganizationNames(corporation.getScopusAuthors());
-        var cristinOrganizations =
-            organizationNames.stream()
-                .map(this::searchCristinOrganization)
-                .flatMap(Optional::stream)
-                .toList();
-        return corporation.copy().withCristinCorporations(cristinOrganizations).build();
+    private Optional<CristinOrganization> searchForCristinOrganizationByCountry(
+        CorporationWithContributors corporation) {
+        return Optional.ofNullable(corporation.getScopusAuthors())
+                   .map(AuthorGroupTp::getAffiliation)
+                   .map(AffiliationTp::getCountry)
+                   .flatMap(this::searchCristinOrganization);
     }
 
-    private CorporationWithContributors fetCristinOrganizationsById(CorporationWithContributors corporation) {
-        var organization = cristinConnection.fetchCristinOrganizationByCristinId(
-            corporation.getCristinOrganizationId());
-        List<CristinOrganization> validOrganizations = isValidOrganization(organization)
-                                                           ? List.of(organization)
-                                                           : List.of();
-        return corporation.copy().withCristinCorporations(validOrganizations).build();
+    private Optional<CristinOrganization> searchForCristinOrganizationByName(CorporationWithContributors corporation) {
+        return extractOrganizationNames(corporation.getScopusAuthors()).stream()
+                   .map(this::searchCristinOrganization)
+                   .flatMap(Optional::stream)
+                   .findFirst();
+    }
+
+    private Optional<CristinOrganization> fetchCristinOrganizationsById(CorporationWithContributors corporation) {
+        return Optional.ofNullable(cristinConnection.fetchCristinOrganizationByCristinId(
+            corporation.getCristinOrganizationId()))
+                   .filter(this::isValidOrganization);
     }
 
     private boolean isValidOrganization(CristinOrganization organization) {
@@ -111,10 +110,12 @@ public class AffiliationGenerator {
     }
 
     private Optional<CristinOrganization> searchCristinOrganization(String organization) {
-        var searchResponse = cristinConnection.searchCristinOrganization(organization);
-        return searchResponse.isPresent() && hasSingleOrganization(searchResponse.get())
-                   ? Optional.ofNullable(getSingleOrganization(searchResponse.get()))
-                   : Optional.empty();
+        return cristinConnection.searchCristinOrganization(organization)
+                   .map(SearchOrganizationResponse::hits)
+                   .orElse(Collections.emptyList())
+                   .stream()
+                   .filter(cristinOrg -> cristinOrg.containsLabelWithValue(organization))
+                   .collect(Collectors.collectingAndThen(Collectors.toList(), collectSingleEntryOrOptionalEmpty()));
     }
 
     private Optional<URI> getCristinOrganizationUri(AuthorGroupTp authorGroup) {

@@ -51,6 +51,10 @@ public record CristinOrganization(@JsonProperty(ID) URI id,
         return this;
     }
 
+    public boolean containsLabelWithValue(String label) {
+        return labels.containsValue(label);
+    }
+
     @JacocoGenerated
     private static boolean hasPartOf(CristinOrganization org) {
         return nonNull(org.partOf()) && !org.partOf().isEmpty();

@@ -14,10 +14,8 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.net.URI;
 import java.util.List;
@@ -40,6 +38,7 @@ import no.unit.nva.model.Organization;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 public class ContributorExtractorTest {
@@ -130,16 +129,64 @@ public class ContributorExtractorTest {
         assertThat(contributor.getIdentity().getName(), is(equalTo(expectedContributorName)));
     }
 
+    @DisplayName("Should create contributor with affiliation created from fetch cristin organization by name response" +
+                 "when could not fetch institution cristin identifier from pia.")
     @Test
     void shouldCreateContributorAffiliationSearchingOrganizationNameWhenNoResponseFromPiaAndWhenCreatingFromAuthorTp() {
         var document = ScopusGenerator.createWithNumberOfContributorsFromAuthorTp(1).getDocument();
-        var organization = mockSearchOrganizationResponse();
+        var institutionName = getOrganizationName(document);
+        var organization = mockSearchOrganizationByNameResponse(institutionName);
         var contributor = contributorExtractorFromDocument(document).generateContributors()
                               .stream()
                               .collect(SingletonCollector.collect());
 
-        var id = ((Organization) contributor.getAffiliations().get(0)).getId();
+        var id = ((Organization) contributor.getAffiliations().getFirst()).getId();
         assertThat(id, is(equalTo(organization.id())));
+    }
+
+    @DisplayName("Should create contributor with affiliation created by fetching scopus affiliation group country" +
+                 "when could not fetch institution cristin identifier from pia and institution by institution name.")
+    @Test
+    void shouldCreateContributorAffiliationSearchingAuthorGroupCountryWhenNoResponseFromPiaAndSearchingInstitutionByName() {
+        var document = ScopusGenerator.createWithNumberOfContributorsFromAuthorTp(1).getDocument();
+        var affiliationCountry = getAffiliationCountry(document);
+        var organization = mockSearchOrganizationByNameResponse(affiliationCountry);
+        var contributor = contributorExtractorFromDocument(document).generateContributors()
+                              .stream()
+                              .collect(SingletonCollector.collect());
+
+        var id = ((Organization) contributor.getAffiliations().getFirst()).getId();
+        assertThat(id, is(equalTo(organization.id())));
+    }
+
+    private static String getOrganizationName(DocTp document) {
+        return document.getItem()
+                   .getItem()
+                   .getBibrecord()
+                   .getHead()
+                   .getAuthorGroup()
+                   .getFirst()
+                   .getAffiliation()
+                   .getOrganization()
+                   .getFirst()
+                   .getContent()
+                   .getFirst()
+                   .toString();
+    }
+
+    private static String getAffiliationCountry(DocTp document) {
+        return document.getItem()
+                   .getItem()
+                   .getBibrecord()
+                   .getHead()
+                   .getAuthorGroup()
+                   .getFirst()
+                   .getAffiliation()
+                   .getOrganization()
+                   .getFirst()
+                   .getContent()
+                   .getFirst()
+                   .toString();
     }
 
     @Test
@@ -256,10 +303,10 @@ public class ContributorExtractorTest {
         return person;
     }
 
-    private CristinOrganization mockSearchOrganizationResponse() {
+    private CristinOrganization mockSearchOrganizationByNameResponse(String institutionName) {
         var organization = new CristinOrganization(randomUri(), randomUri(), randomString(),
-                                                   List.of(), randomString(), Map.of(randomString(), randomString()));
-        when(cristinConnection.searchCristinOrganization(anyString())).thenReturn(
+                                                   List.of(), randomString(), Map.of(randomString(), institutionName));
+        when(cristinConnection.searchCristinOrganization(eq(institutionName))).thenReturn(
             Optional.of(new SearchOrganizationResponse(List.of(organization), 1)));
         return organization;
     }
