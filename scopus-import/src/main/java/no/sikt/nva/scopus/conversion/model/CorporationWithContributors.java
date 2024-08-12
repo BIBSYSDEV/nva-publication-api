@@ -93,6 +93,7 @@ public class CorporationWithContributors {
     private List<Corporation> generateCorporationFromCristinOrganization() {
         return cristinOrganizations.stream()
                    .map(cristinOrganization -> new Organization.Builder().withId(cristinOrganization.id()).build())
+                   .distinct()
                    .collect(Collectors.toList());
     }
 

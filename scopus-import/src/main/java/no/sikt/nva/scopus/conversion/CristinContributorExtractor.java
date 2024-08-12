@@ -75,6 +75,7 @@ public final class CristinContributorExtractor {
         var organisationFromAuthorGroupTp = createOrganizationFromCristinOrganization(cristinOrganizations).toList();
         return Stream.concat(organizations.stream(), organisationFromAuthorGroupTp.stream())
                    .filter(Objects::nonNull)
+                   .distinct()
                    .toList();
     }
 
