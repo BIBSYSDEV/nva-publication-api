@@ -85,9 +85,9 @@ public final class CristinContributorExtractor {
     private static List<Corporation> generateOrganizations(Set<Affiliation> affiliations,
                                                            List<CristinOrganization> cristinOrganizations) {
         var cristinPersonActiveAffiliations = createOrganizationsFromActiveCristinPersonAffiliations(affiliations);
-        var organisationsFromAuthorGroupTp = createOrganizationFromCristinOrganization(cristinOrganizations).toList();
+        var organizationsFromAuthorGroup = createOrganizationFromCristinOrganization(cristinOrganizations).toList();
         return cristinPersonActiveAffiliations.isEmpty()
-                   ? organisationsFromAuthorGroupTp
+                   ? organizationsFromAuthorGroup
                    : cristinPersonActiveAffiliations;
     }
 
