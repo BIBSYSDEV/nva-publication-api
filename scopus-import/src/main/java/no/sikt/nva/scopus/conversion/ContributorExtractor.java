@@ -182,7 +182,7 @@ public class ContributorExtractor {
         affiliations.addAll(newAffiliations);
 
         return new Contributor.Builder().withIdentity(existingContributor.getIdentity())
-                   .withAffiliations(affiliations)
+                   .withAffiliations(affiliations.stream().distinct().toList())
                    .withRole(existingContributor.getRole())
                    .withSequence(existingContributor.getSequence())
                    .withCorrespondingAuthor(existingContributor.isCorrespondingAuthor())
