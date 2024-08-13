@@ -40,13 +40,14 @@ public class HandleIdentifierRequestHandler
     extends DestinationsEventBridgeEventHandler<EventReference, Void> {
 
     private static final Logger logger = LoggerFactory.getLogger(HandleIdentifierRequestHandler.class);
+    public static final String LEGACY_HANDLE_SOURCE_NAME = "handle";
     private final String backendClientAuthUrl;
     private final String backendClientSecretName;
     private final ResourceService resourceService;
     private final S3Driver s3Driver;
     public static final String RESOURCE_UPDATE_EVENT_TOPIC = "PublicationService.Resource.Update";
-    private static final Set<PublicationStatus> PUBLISHED_STATUSES = Set.<PublicationStatus>of(PUBLISHED,
-                                                                                               PUBLISHED_METADATA);
+    private static final Set<PublicationStatus> PUBLISHED_STATUSES = Set.of(PUBLISHED,
+                                                                            PUBLISHED_METADATA);
     private final SecretsReader secretsManagerClient;
     private final HandleService handleService;
 
@@ -120,7 +121,7 @@ public class HandleIdentifierRequestHandler
         return resourceUpdate.getAdditionalIdentifiers()
                    .stream()
                    .filter(AdditionalIdentifier.class::isInstance)
-                   .anyMatch(a -> a.sourceName().equals("handle"));
+                   .anyMatch(a -> LEGACY_HANDLE_SOURCE_NAME.equals((a.sourceName())));
     }
 
     private static boolean isPublished(Resource resourceUpdate) {
