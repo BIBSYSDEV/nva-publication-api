@@ -1392,20 +1392,38 @@ Resources:
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
           BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
       Events:
-        WorkQueueEvent:
+        HandleWorkQueueEvent:
           Type: SQS
           Properties:
-            Queue: !GetAtt WorkQueue.Arn
+            Queue: !GetAtt HandleWorkQueue.Arn
 
-  WorkQueue:
+  HandleWorkQueue:
     Type: AWS::SQS::Queue
     Properties:
       RedrivePolicy:
-        deadLetterTargetArn: !GetAtt DLQ.Arn
+        deadLetterTargetArn: !GetAtt HandleDLQ.Arn
         maxReceiveCount: 5
 
-  DLQ:
+  HandleDLQ:
     Type: AWS::SQS::Queue
+
+  HandleDLQAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: HandleDLQAlarm in publication-api
+      AlarmDescription: If this alarm is triggered, then check sqs messages on publication-api HandleDLQ
+      MetricName: ApproximateNumberOfMessagesVisible
+      Namespace: AWS/SQS
+      Statistic: Sum
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt HandleDLQ.QueueName
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Ref SlackSnsArn
 
   PublicationServiceUpdateRule:
     Type: AWS::Events::Rule
@@ -1419,24 +1437,24 @@ Resources:
           subtopic:
             - "PUBLISHED"
         Targets:
-          - Arn: !GetAtt WorkQueue.Arn
-            Id: WorkQueueTarget
+          - Arn: !GetAtt HandleWorkQueue.Arn
+            Id: HandleWorkQueueTarget
             InputTransformer:
               InputPathsMap:
                 identifier: "$.detail.identifier"
               InputTemplate: '{"identifier": <identifier>}'
 
-  WorkQueuePolicy:
+  HandleWorkQueuePolicy:
     Type: AWS::SQS::QueuePolicy
     Properties:
       Queues:
-        - !Ref WorkQueue
+        - !Ref HandleWorkQueue
       PolicyDocument:
         Statement:
           - Effect: Allow
             Principal: '*'
             Action: 'sqs:SendMessage'
-            Resource: !GetAtt WorkQueue.Arn
+            Resource: !GetAtt HandleWorkQueue.Arn
             Condition:
               ArnEquals:
                 aws:SourceArn: !Ref PublicationServiceUpdateRule
