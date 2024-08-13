@@ -17,8 +17,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.events.models.EventReference;
+import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
@@ -58,7 +61,6 @@ public class HandleIdentifierRequestHandlerTest extends ResourcesLocalTest {
     private S3Driver s3Driver;
     private Environment environment;
     private HttpClient httpClient;
-    private SecretsManagerClient secretManager;
 
     @BeforeEach
     public void setup() throws IOException, InterruptedException {
@@ -73,7 +75,7 @@ public class HandleIdentifierRequestHandlerTest extends ResourcesLocalTest {
         when(environment.readEnv("BACKEND_CLIENT_AUTH_URL")).thenReturn("cognitoTestUrl");
         httpClient = mock(HttpClient.class);
         when(httpClient.send(any(), any())).thenReturn(FakeHttpResponse.create(RESPONSE_BODY, HTTP_CREATED));
-        secretManager = mock(SecretsManagerClient.class);
+        SecretsManagerClient secretManager = mock(SecretsManagerClient.class);
         when(secretManager.getSecretValue((GetSecretValueRequest) any())).thenReturn(
             GetSecretValueResponse.builder()
                 .secretString(new BackendClientCredentials("id", "secret").toString())
@@ -89,7 +91,7 @@ public class HandleIdentifierRequestHandlerTest extends ResourcesLocalTest {
         names = {"PUBLISHED", "PUBLISHED_METADATA"})
     void shouldCreateHandlesForPublicationIfMissing(PublicationStatus status)
         throws IOException, BadRequestException, NotFoundException {
-        var oldImage = createUnpublishablePublicationWithoutAdditionalIdentifiers();
+        var oldImage = createUnpublishedPublicationWithAdditionalIdentifiers(null);
         var newImage = oldImage.copy().withStatus(status).build();
 
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
@@ -106,7 +108,26 @@ public class HandleIdentifierRequestHandlerTest extends ResourcesLocalTest {
         names = {"PUBLISHED", "PUBLISHED_METADATA"})
     void shouldNotCreateHandlesForPublicationIfAlreadyExisting(PublicationStatus status)
         throws IOException, BadRequestException, NotFoundException {
-        var oldImage = createUnpublishablePublication();
+        var oldImage = createUnpublishedPublication();
+        var additionalIdentifiers = oldImage.getAdditionalIdentifiers();
+        var newImage = oldImage.copy().withStatus(status).build();
+
+        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
+        handler.handleRequest(request, outputStream, CONTEXT);
+
+        var updatedPublication = resourceService.getPublicationByIdentifier(newImage.getIdentifier());
+        assertThat(updatedPublication.getAdditionalIdentifiers(), is(equalTo(additionalIdentifiers)));
+    }
+
+    @ParameterizedTest
+    @EnumSource(
+        value = PublicationStatus.class,
+        mode = INCLUDE,
+        names = {"PUBLISHED", "PUBLISHED_METADATA"})
+    void shouldNotCreateHandlesForPublicationIfLegacyHandleAlreadyExist(PublicationStatus status)
+        throws IOException, BadRequestException, NotFoundException {
+        var oldImage = createUnpublishedPublicationWithAdditionalIdentifiers(
+            Set.of(new AdditionalIdentifier("handle", "https://test.handle.net/123/456")));
         var additionalIdentifiers = oldImage.getAdditionalIdentifiers();
         var newImage = oldImage.copy().withStatus(status).build();
 
@@ -124,7 +145,7 @@ public class HandleIdentifierRequestHandlerTest extends ResourcesLocalTest {
         names = {"PUBLISHED", "PUBLISHED_METADATA"})
     void shouldNotCreateHandlesForUnpublishedPublication(PublicationStatus status)
         throws IOException, BadRequestException, NotFoundException {
-        var oldImage = createUnpublishablePublicationWithoutAdditionalIdentifiers();
+        var oldImage = createUnpublishedPublicationWithAdditionalIdentifiers(null);
         var additionalIdentifiers = oldImage.getAdditionalIdentifiers();
         var newImage = oldImage.copy().withStatus(status).build();
 
@@ -161,17 +182,18 @@ public class HandleIdentifierRequestHandlerTest extends ResourcesLocalTest {
         };
     }
 
-    private Publication createUnpublishablePublication() throws BadRequestException {
+    private Publication createUnpublishedPublication() throws BadRequestException {
         var publication = randomPublication();
-        publication.getEntityDescription().setMainTitle(null);
+        publication.setStatus(PublicationStatus.UNPUBLISHED);
         return Resource.fromPublication(publication).persistNew(resourceService,
                                                                 UserInstance.fromPublication(publication));
     }
 
-    private Publication createUnpublishablePublicationWithoutAdditionalIdentifiers() throws BadRequestException {
+    private Publication createUnpublishedPublicationWithAdditionalIdentifiers(
+        Set<AdditionalIdentifierBase> additionalIdentifiers) throws BadRequestException {
         var publication = randomPublication();
-        publication.getEntityDescription().setMainTitle(null);
-        publication.setAdditionalIdentifiers(null);
+        publication.setStatus(PublicationStatus.UNPUBLISHED);
+        publication.setAdditionalIdentifiers(additionalIdentifiers);
         return Resource.fromPublication(publication).persistNew(resourceService,
                                                                 UserInstance.fromPublication(publication));
     }
