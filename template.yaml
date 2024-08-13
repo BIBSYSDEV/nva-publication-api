@@ -1437,6 +1437,8 @@ Resources:
       Targets:
         - Arn: !GetAtt HandleWorkQueue.Arn
           Id: HandleWorkQueueTarget
+          DeadLetterConfig:
+            Arn: !GetAtt HandleDLQ.Arn
 
   HandleWorkQueuePolicy:
     Type: AWS::SQS::QueuePolicy
@@ -1452,7 +1454,7 @@ Resources:
             Resource: !GetAtt HandleWorkQueue.Arn
             Condition:
               ArnEquals:
-                aws:SourceArn: !Ref PublicationServiceUpdateRule
+                aws:SourceArn: !GetAtt PublicationServiceUpdateRule.Arn
 
   EventBasedBatchScanHandlerTest:
     DependsOn: EventsLambdaManagedPolicy
