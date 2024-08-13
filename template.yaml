@@ -1437,10 +1437,6 @@ Resources:
       Targets:
         - Arn: !GetAtt HandleWorkQueue.Arn
           Id: HandleWorkQueueTarget
-          InputTransformer:
-            InputPathsMap:
-              identifier: "$.detail.identifier"
-            InputTemplate: '{"identifier": <identifier>}'
 
   HandleWorkQueuePolicy:
     Type: AWS::SQS::QueuePolicy
@@ -1450,7 +1446,8 @@ Resources:
       PolicyDocument:
         Statement:
           - Effect: Allow
-            Principal: '*'
+            Principal:
+              Service: "events.amazonaws.com"
             Action: 'sqs:SendMessage'
             Resource: !GetAtt HandleWorkQueue.Arn
             Condition:
