@@ -15,6 +15,7 @@ import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.HandleIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -41,15 +42,13 @@ public class HandleIdentifierRequestHandler
     private static final Logger logger = LoggerFactory.getLogger(HandleIdentifierRequestHandler.class);
     private final String backendClientAuthUrl;
     private final String backendClientSecretName;
-    private final String apiDomain;
-    private final String handleBasePath;
     private final ResourceService resourceService;
     private final S3Driver s3Driver;
     public static final String RESOURCE_UPDATE_EVENT_TOPIC = "PublicationService.Resource.Update";
     private static final Set<PublicationStatus> PUBLISHED_STATUSES = Set.<PublicationStatus>of(PUBLISHED,
                                                                                                PUBLISHED_METADATA);
-    private final AuthorizedBackendClient authorizedBackendClient;
     private final SecretsReader secretsManagerClient;
+    private final HandleService handleService;
 
     @JacocoGenerated
     public HandleIdentifierRequestHandler() {
@@ -66,24 +65,25 @@ public class HandleIdentifierRequestHandler
                                              HttpClient httpClient,
                                              SecretsManagerClient secretsManagerClient) {
         super(EventReference.class);
-        this.apiDomain = environment.readEnv("API_DOMAIN");
-        this.handleBasePath = environment.readEnv("HANDLE_BASE_PATH");
+        String apiDomain = environment.readEnv("API_DOMAIN");
+        String handleBasePath = environment.readEnv("HANDLE_BASE_PATH");
         this.backendClientSecretName = environment.readEnv("BACKEND_CLIENT_SECRET_NAME");
         this.backendClientAuthUrl = environment.readEnv("BACKEND_CLIENT_AUTH_URL");
         this.resourceService = resourceService;
         this.s3Driver = new S3Driver(s3Client, PublicationEventsConfig.EVENTS_BUCKET);
         this.secretsManagerClient = new SecretsReader(secretsManagerClient);
-        this.authorizedBackendClient =  AuthorizedBackendClient.prepareWithCognitoCredentials(httpClient,
-                                                                                              fetchCredentials());
-
+        AuthorizedBackendClient authorizedBackendClient = AuthorizedBackendClient.prepareWithCognitoCredentials(
+            httpClient,
+            fetchCredentials());
+        this.handleService = new HandleService(authorizedBackendClient, apiDomain, handleBasePath);
     }
 
     private CognitoCredentials fetchCredentials() {
-        var credentials = secretsManagerClient.fetchClassSecret(backendClientSecretName, BackendClientCredentials.class);
+        var credentials = secretsManagerClient.fetchClassSecret(backendClientSecretName,
+                                                                BackendClientCredentials.class);
         var uri = UriWrapper.fromHost(backendClientAuthUrl).getUri();
         return new CognitoCredentials(credentials::getId, credentials::getSecret, uri);
     }
-
 
     @Override
     protected Void processInputPayload(EventReference input,
@@ -91,21 +91,36 @@ public class HandleIdentifierRequestHandler
                                        Context context) {
         var eventBlob = s3Driver.readEvent(input.getUri());
 
-        if (input.getTopic().equals(RESOURCE_UPDATE_EVENT_TOPIC)) {
+        if (RESOURCE_UPDATE_EVENT_TOPIC.equals(input.getTopic())) {
             var resourceUpdate = parseResourceUpdateInput(eventBlob);
             if (isPublished(resourceUpdate) && isMissingHandle(resourceUpdate)) {
+                logger.info("Creating handle for publication: {}", resourceUpdate.getIdentifier());
                 var userInstance = UserInstance.create(resourceUpdate.getOwner(), resourceUpdate.getCustomerId());
                 var publication = fetchPublication(userInstance, resourceUpdate.getIdentifier());
                 var additionalIdentifiers = new HashSet<>(publication.getAdditionalIdentifiers());
-                additionalIdentifiers.add(createNewHandle(publication.getLink()));
+                var handle = createNewHandle(publication.getLink());
+                logger.info("Created handle: {}", handle.value());
+                additionalIdentifiers.add(handle);
                 publication.setAdditionalIdentifiers(additionalIdentifiers);
                 attempt(() -> resourceService.updatePublication(publication));
             }
         }
         return null;
     }
+
     private static boolean isMissingHandle(Resource resourceUpdate) {
-        return resourceUpdate.getAdditionalIdentifiers().stream().noneMatch(HandleIdentifier.class::isInstance);
+        return !resourceContainsHandle(resourceUpdate) && !resourceContainsLegacyHandle(resourceUpdate);
+    }
+
+    private static boolean resourceContainsHandle(Resource resourceUpdate) {
+        return resourceUpdate.getAdditionalIdentifiers().stream().anyMatch(HandleIdentifier.class::isInstance);
+    }
+
+    private static boolean resourceContainsLegacyHandle(Resource resourceUpdate) {
+        return resourceUpdate.getAdditionalIdentifiers()
+                   .stream()
+                   .filter(AdditionalIdentifier.class::isInstance)
+                   .anyMatch(a -> a.sourceName().equals("handle"));
     }
 
     private static boolean isPublished(Resource resourceUpdate) {
@@ -113,8 +128,7 @@ public class HandleIdentifierRequestHandler
     }
 
     private HandleIdentifier createNewHandle(URI link) {
-        return new HandleIdentifier(new SourceName("nva", "nva"),
-                                    new HandleService(authorizedBackendClient, apiDomain, handleBasePath).createHandle(link));
+        return new HandleIdentifier(new SourceName("nva", "nva"), handleService.createHandle(link));
     }
 
     private Publication fetchPublication(UserInstance userInstance, SortableIdentifier publicationIdentifier) {
