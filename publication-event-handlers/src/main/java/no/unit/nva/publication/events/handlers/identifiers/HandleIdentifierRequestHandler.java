@@ -121,7 +121,7 @@ public class HandleIdentifierRequestHandler
         return resourceUpdate.getAdditionalIdentifiers()
                    .stream()
                    .filter(AdditionalIdentifier.class::isInstance)
-                   .anyMatch(a -> LEGACY_HANDLE_SOURCE_NAME.equals((a.sourceName())));
+                   .anyMatch(a -> LEGACY_HANDLE_SOURCE_NAME.equals(a.sourceName()));
     }
 
     private static boolean isPublished(Resource resourceUpdate) {
