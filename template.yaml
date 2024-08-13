@@ -1436,13 +1436,13 @@ Resources:
               - "PublicationService.Resource.Update"
           subtopic:
             - "PUBLISHED"
-        Targets:
-          - Arn: !GetAtt HandleWorkQueue.Arn
-            Id: HandleWorkQueueTarget
-            InputTransformer:
-              InputPathsMap:
-                identifier: "$.detail.identifier"
-              InputTemplate: '{"identifier": <identifier>}'
+      Targets:
+        - Arn: !GetAtt HandleWorkQueue.Arn
+          Id: HandleWorkQueueTarget
+          InputTransformer:
+            InputPathsMap:
+              identifier: "$.detail.identifier"
+            InputTemplate: '{"identifier": <identifier>}'
 
   HandleWorkQueuePolicy:
     Type: AWS::SQS::QueuePolicy
