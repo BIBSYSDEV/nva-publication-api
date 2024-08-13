@@ -1434,8 +1434,6 @@ Resources:
           responsePayload:
             topic:
               - "PublicationService.Resource.Update"
-          subtopic:
-            - "PUBLISHED"
       Targets:
         - Arn: !GetAtt HandleWorkQueue.Arn
           Id: HandleWorkQueueTarget
