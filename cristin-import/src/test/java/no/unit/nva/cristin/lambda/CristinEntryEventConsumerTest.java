@@ -68,6 +68,7 @@ import no.unit.nva.cristin.mapper.CristinBookOrReportPartMetadata;
 import no.unit.nva.cristin.mapper.CristinMapper;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
+import no.unit.nva.cristin.mapper.CristinTags;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOf;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
 import no.unit.nva.cristin.mapper.SearchResource2Response;
@@ -613,6 +614,25 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
 
         assertThrows(NoSuchKeyException.class,() -> s3Driver.getFile(reportLocation));
+    }
+
+    @Test
+    void shouldNotUpdateImportDetailsWhenImportingCristinPostTwiceAndItHasChanges()
+        throws IOException {
+        var cristinObject = CristinDataGenerator.randomObject();
+        var eventBody = createEventBody(cristinObject);
+        var sqsEvent = createSqsEvent(eventBody);
+        var publication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+        var updatedCristinObject = CristinDataGenerator.randomObject().copy().withId(cristinObject.getId()).build();
+        var newEventBody = createEventBody(updatedCristinObject);
+        var newSqsEvent = createSqsEvent(newEventBody);
+        var updatedPublication = handler.handleRequest(newSqsEvent, CONTEXT).getFirst();
+
+        var reportLocation =  UnixPath.of("UPDATE").addChild(publication.getIdentifier().toString());
+        var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
+
+        assertThat(publication.getImportDetails(), is(equalTo(updatedPublication.getImportDetails())));
+        assertThat(s3Driver.getFile(reportLocation), is(notNullValue()));
     }
 
     @Test
