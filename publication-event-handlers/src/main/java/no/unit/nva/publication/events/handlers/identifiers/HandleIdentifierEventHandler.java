@@ -4,14 +4,17 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.util.HashSet;
 import java.util.Set;
 import no.unit.nva.auth.AuthorizedBackendClient;
 import no.unit.nva.auth.CognitoCredentials;
-import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
-import no.unit.nva.events.models.AwsEventBridgeDetail;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -36,10 +39,10 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
-public class HandleIdentifierRequestHandler
-    extends DestinationsEventBridgeEventHandler<EventReference, Void> {
+public class HandleIdentifierEventHandler
+    implements RequestHandler<SQSEvent, Void> {
 
-    private static final Logger logger = LoggerFactory.getLogger(HandleIdentifierRequestHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(HandleIdentifierEventHandler.class);
     public static final String LEGACY_HANDLE_SOURCE_NAME = "handle";
     private final String backendClientAuthUrl;
     private final String backendClientSecretName;
@@ -52,7 +55,7 @@ public class HandleIdentifierRequestHandler
     private final HandleService handleService;
 
     @JacocoGenerated
-    public HandleIdentifierRequestHandler() {
+    public HandleIdentifierEventHandler() {
         this(ResourceService.defaultService(),
              S3Driver.defaultS3Client().build(),
              new Environment(),
@@ -60,12 +63,11 @@ public class HandleIdentifierRequestHandler
              SecretsReader.defaultSecretsManagerClient());
     }
 
-    protected HandleIdentifierRequestHandler(ResourceService resourceService,
-                                             S3Client s3Client,
-                                             Environment environment,
-                                             HttpClient httpClient,
-                                             SecretsManagerClient secretsManagerClient) {
-        super(EventReference.class);
+    protected HandleIdentifierEventHandler(ResourceService resourceService,
+                                           S3Client s3Client,
+                                           Environment environment,
+                                           HttpClient httpClient,
+                                           SecretsManagerClient secretsManagerClient) {
         String apiDomain = environment.readEnv("API_DOMAIN");
         String handleBasePath = environment.readEnv("HANDLE_BASE_PATH");
         this.backendClientSecretName = environment.readEnv("BACKEND_CLIENT_SECRET_NAME");
@@ -79,6 +81,23 @@ public class HandleIdentifierRequestHandler
         this.handleService = new HandleService(authorizedBackendClient, apiDomain, handleBasePath);
     }
 
+    @Override
+    public Void handleRequest(SQSEvent sqsEvent, Context context) {
+        sqsEvent.getRecords()
+            .stream()
+            .map(sqs -> {
+                try {
+                    return JsonUtils.dtoObjectMapper
+                               .readValue(sqs.getBody(), new TypeReference<AwsEventBridgeEvent<EventReference>>() {})
+                               .getDetail();
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
+            })
+            .forEach(this::processInputPayload);
+        return null;
+    }
+
     private CognitoCredentials fetchCredentials() {
         var credentials = secretsManagerClient.fetchClassSecret(backendClientSecretName,
                                                                 BackendClientCredentials.class);
@@ -86,10 +105,7 @@ public class HandleIdentifierRequestHandler
         return new CognitoCredentials(credentials::getId, credentials::getSecret, uri);
     }
 
-    @Override
-    protected Void processInputPayload(EventReference input,
-                                       AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
-                                       Context context) {
+    protected Void processInputPayload(EventReference input) {
         var eventBlob = s3Driver.readEvent(input.getUri());
 
         if (RESOURCE_UPDATE_EVENT_TOPIC.equals(input.getTopic())) {

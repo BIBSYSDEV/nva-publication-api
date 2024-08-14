@@ -1376,12 +1376,12 @@ Resources:
                 responsePayload:
                   topic: [ "PublicationService.PublishingRequest.Update" ]
 
-  HandleIdentifierRequestHandler:
+  HandleIdentifierEventHandler:
     DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.handlers.identifiers.HandleIdentifierRequestHandler::handleRequest
+      Handler: no.unit.nva.publication.events.handlers.identifiers.HandleIdentifierEventHandler::handleRequest
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:

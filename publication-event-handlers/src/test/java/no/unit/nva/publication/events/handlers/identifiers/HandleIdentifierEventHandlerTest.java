@@ -12,11 +12,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.io.ByteArrayOutputStream;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.events.models.EventReference;
@@ -49,15 +50,14 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
 
-public class HandleIdentifierRequestHandlerTest extends ResourcesLocalTest {
+public class HandleIdentifierEventHandlerTest extends ResourcesLocalTest {
 
     private static final Context CONTEXT = new FakeContext();
 
     public static final String RESOURCE_UPDATE_EVENT_TOPIC = "PublicationService.Resource.Update";
     private static final String RESPONSE_BODY = "{\"handle\": \"https://test.handle.net/123/456\"}";
     private ResourceService resourceService;
-    private HandleIdentifierRequestHandler handler;
-    private ByteArrayOutputStream outputStream;
+    private HandleIdentifierEventHandler handler;
     private S3Driver s3Driver;
     private Environment environment;
     private HttpClient httpClient;
@@ -80,8 +80,7 @@ public class HandleIdentifierRequestHandlerTest extends ResourcesLocalTest {
             GetSecretValueResponse.builder()
                 .secretString(new BackendClientCredentials("id", "secret").toString())
                 .build());
-        handler = new HandleIdentifierRequestHandler(resourceService, s3Client, environment, httpClient, secretManager);
-        outputStream = new ByteArrayOutputStream();
+        handler = new HandleIdentifierEventHandler(resourceService, s3Client, environment, httpClient, secretManager);
     }
 
     @ParameterizedTest
@@ -94,11 +93,22 @@ public class HandleIdentifierRequestHandlerTest extends ResourcesLocalTest {
         var oldImage = createUnpublishedPublicationWithAdditionalIdentifiers(null);
         var newImage = oldImage.copy().withStatus(status).build();
 
-        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
-        handler.handleRequest(request, outputStream, CONTEXT);
+        var request = emualteSqsWrappedEvent(oldImage, newImage);
+        handler.handleRequest(request, CONTEXT);
 
         var updatedPublication = resourceService.getPublicationByIdentifier(newImage.getIdentifier());
         assertThat(updatedPublication.getAdditionalIdentifiers().size(), is(equalTo(1)));
+    }
+
+    private SQSEvent emualteSqsWrappedEvent(Publication oldImage, Publication newImage) throws IOException {
+        var blobUri = createSampleBlob(oldImage, newImage);
+        var eventBridgeObject =  EventBridgeEventBuilder.sampleEventObject(new EventReference(RESOURCE_UPDATE_EVENT_TOPIC,
+                                                                                  blobUri));
+        var sqsEvent = new SQSEvent();
+        var sqsMessage = new SQSEvent.SQSMessage();
+        sqsMessage.setBody(eventBridgeObject.toJsonString());
+        sqsEvent.setRecords(List.of(sqsMessage));
+        return sqsEvent;
     }
 
     @ParameterizedTest
@@ -112,8 +122,8 @@ public class HandleIdentifierRequestHandlerTest extends ResourcesLocalTest {
         var additionalIdentifiers = oldImage.getAdditionalIdentifiers();
         var newImage = oldImage.copy().withStatus(status).build();
 
-        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
-        handler.handleRequest(request, outputStream, CONTEXT);
+        var request = emualteSqsWrappedEvent(oldImage, newImage);
+        handler.handleRequest(request, CONTEXT);
 
         var updatedPublication = resourceService.getPublicationByIdentifier(newImage.getIdentifier());
         assertThat(updatedPublication.getAdditionalIdentifiers(), is(equalTo(additionalIdentifiers)));
@@ -131,8 +141,8 @@ public class HandleIdentifierRequestHandlerTest extends ResourcesLocalTest {
         var additionalIdentifiers = oldImage.getAdditionalIdentifiers();
         var newImage = oldImage.copy().withStatus(status).build();
 
-        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
-        handler.handleRequest(request, outputStream, CONTEXT);
+        var request = emualteSqsWrappedEvent(oldImage, newImage);
+        handler.handleRequest(request, CONTEXT);
 
         var updatedPublication = resourceService.getPublicationByIdentifier(newImage.getIdentifier());
         assertThat(updatedPublication.getAdditionalIdentifiers(), is(equalTo(additionalIdentifiers)));
@@ -149,18 +159,11 @@ public class HandleIdentifierRequestHandlerTest extends ResourcesLocalTest {
         var additionalIdentifiers = oldImage.getAdditionalIdentifiers();
         var newImage = oldImage.copy().withStatus(status).build();
 
-        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
-        handler.handleRequest(request, outputStream, CONTEXT);
+        var request = emualteSqsWrappedEvent(oldImage, newImage);
+        handler.handleRequest(request, CONTEXT);
 
         var updatedPublication = resourceService.getPublicationByIdentifier(newImage.getIdentifier());
         assertThat(updatedPublication.getAdditionalIdentifiers(), is(equalTo(additionalIdentifiers)));
-    }
-
-    private InputStream emulateEventEmittedByDataEntryUpdateHandler(Object oldImage, Object newImage)
-        throws IOException {
-        var blobUri = createSampleBlob(oldImage, newImage);
-        var event = new EventReference(RESOURCE_UPDATE_EVENT_TOPIC, blobUri);
-        return EventBridgeEventBuilder.sampleLambdaDestinationsEvent(event);
     }
 
     private URI createSampleBlob(Object oldImage, Object newImage) throws IOException {
