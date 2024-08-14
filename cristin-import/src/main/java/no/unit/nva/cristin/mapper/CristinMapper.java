@@ -43,6 +43,7 @@ import no.unit.nva.cristin.mapper.nva.ReferenceBuilder;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.CristinIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -53,6 +54,7 @@ import no.unit.nva.model.PublicationNoteBase;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.SourceName;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import no.unit.nva.publication.utils.CristinUnitsUtil;
@@ -413,7 +415,8 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     private Set<AdditionalIdentifierBase> extractAdditionalIdentifiers() {
-        var cristinId = new AdditionalIdentifier(CristinObject.IDENTIFIER_ORIGIN, cristinObject.getId().toString());
+        var cristinId =
+            new CristinIdentifier(SourceName.fromCristin(getInstanceName()), cristinObject.getId().toString());
         var additionalIdentifiers = extractCristinSourceids(cristinObject);
         additionalIdentifiers.add(cristinId);
         if (nonNull(cristinObject.getSourceCode())
@@ -421,6 +424,10 @@ public class CristinMapper extends CristinMappingModule {
             additionalIdentifiers.add(extractAdditionalIdentifierFromSourceCode());
         }
         return additionalIdentifiers;
+    }
+
+    private String getInstanceName() {
+        return extractResourceOwner().getOwner().getValue().split("@")[0];
     }
 
     private AdditionalIdentifier extractAdditionalIdentifierFromSourceCode() {

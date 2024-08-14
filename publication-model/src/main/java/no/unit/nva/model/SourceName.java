@@ -54,4 +54,8 @@ public record SourceName(String system, String instanceName) {
     public static SourceName fromCristin(String instanceName) {
         return new SourceName(CRISTIN_SYSTEM, instanceName);
     }
+
+    public boolean isFromBrageSystem() {
+        return BRAGE_SYSTEM.equals(system);
+    }
 }
