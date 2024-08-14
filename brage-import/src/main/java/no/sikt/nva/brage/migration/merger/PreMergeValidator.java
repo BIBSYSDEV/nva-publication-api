@@ -4,6 +4,7 @@ import no.sikt.nva.brage.migration.lambda.HandleDuplicateException;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.unit.nva.model.HandleIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.SourceName;
 import no.unit.nva.model.contexttypes.Degree;
 import nva.commons.core.JacocoGenerated;
 
@@ -19,7 +20,7 @@ public final class PreMergeValidator {
     public static boolean shouldNotMergeMetadata(PublicationRepresentation publicationRepresentation,
                                                  Publication existingPublication) {
         hasBeenMigratedBefore(publicationRepresentation, existingPublication);
-        return isDegree(existingPublication) && hasBrageHandle(existingPublication);
+        return isDegree(existingPublication) && hasBeenImportedFromBrage(existingPublication);
     }
 
     private static void hasBeenMigratedBefore(PublicationRepresentation publicationRepresentation,
@@ -36,9 +37,12 @@ public final class PreMergeValidator {
         return publicationRepresentation.brageRecord().getId().toString();
     }
 
-    private static boolean hasBrageHandle(Publication publication) {
+    private static boolean hasBeenImportedFromBrage(Publication publication) {
         return publication.getAdditionalIdentifiers().stream()
-                   .anyMatch(HandleIdentifier.class::isInstance);
+                   .filter(HandleIdentifier.class::isInstance)
+                   .map(HandleIdentifier.class::cast)
+                   .map(HandleIdentifier::source)
+                   .anyMatch(SourceName::isFromBrageSystem);
     }
 
     private static boolean containsHandle(Publication publication, String handle) {
