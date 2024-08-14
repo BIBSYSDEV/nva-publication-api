@@ -52,7 +52,7 @@ public record CristinOrganization(@JsonProperty(ID) URI id,
     }
 
     public boolean containsLabelWithValue(String label) {
-        return labels.containsValue(label);
+        return nonNull(labels) && labels.containsValue(label);
     }
 
     @JacocoGenerated

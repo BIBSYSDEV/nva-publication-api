@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xocs:doc content-type="Abstract" dbname="scopusbase" xsi:schemaLocation="http://www.elsevier.com/xml/xocs/dtd xocs-ani514.xsd" xmlns:xocs="http://www.elsevier.com/xml/xocs/dtd" xmlns:ce="http://www.elsevier.com/xml/ani/common" xmlns:ait="http://www.elsevier.com/xml/ani/ait" xmlns:cto="http://www.elsevier.com/xml/cto/dtd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><xocs:meta>
+<xocs:doc content-type="Abstract" dbname="scopusbase"
+  xsi:schemaLocation="http://www.elsevier.com/xml/xocs/dtd xocs-ani514.xsd"
+  xmlns:xocs="http://www.elsevier.com/xml/xocs/dtd"
+  xmlns:ce="http://www.elsevier.com/xml/ani/common" xmlns:ait="http://www.elsevier.com/xml/ani/ait"
+  xmlns:cto="http://www.elsevier.com/xml/cto/dtd"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <xocs:meta>
     <xocs:eid>2-s2.0-0018978799</xocs:eid>
     <xocs:oeid>2-s1.0-49CH-6RT0-TWC1-C0TG-00000-00</xocs:oeid>
     <xocs:doi>10.1121/1.383915</xocs:doi>
@@ -23,13 +29,69 @@
     <xocs:absavail>1</xocs:absavail>
     <xocs:suppressdummy>no</xocs:suppressdummy>
     <xocs:srctype>j</xocs:srctype>
-    <xocs:subjareas><xocs:subjarea>ARTS</xocs:subjarea><xocs:subjarea>PHYS</xocs:subjarea></xocs:subjareas>
+    <xocs:subjareas>
+      <xocs:subjarea>ARTS</xocs:subjarea>
+      <xocs:subjarea>PHYS</xocs:subjarea>
+    </xocs:subjareas>
     <xocs:srctitle>Journal of the Acoustical Society of America</xocs:srctitle>
-    <xocs:countries><xocs:country>Norway</xocs:country></xocs:countries>
-    <xocs:languages><xocs:language>English</xocs:language></xocs:languages>
-    <xocs:prefnameauids><xocs:prefnameauid>Foote, K.G.#7006535102</xocs:prefnameauid></xocs:prefnameauids>
-    <xocs:open-access><xocs:oa-article-status is-open-access="2" free-to-read-status="all repository repositoryam">Repository</xocs:oa-article-status><xocs:upw-open-access><xocs:upw-oa-article-status>true</xocs:upw-oa-article-status><xocs:upw-timestamp>2023-11-06T15:47:07.000215Z</xocs:upw-timestamp><xocs:upw-oa-journal-is-oa>false</xocs:upw-oa-journal-is-oa><xocs:upw-oa-journal-is-in-doaj>false</xocs:upw-oa-journal-is-in-doaj><xocs:upw-best_oa_location><xocs:upw-url>https://darchive.mblwhoilibrary.org/bitstream/1912/5659/1/JAS000504.pdf</xocs:upw-url><xocs:upw-pmh_id>oai:darchive.mblwhoilibrary.org:1912/5659</xocs:upw-pmh_id><xocs:upw-is_best>true</xocs:upw-is_best><xocs:upw-updated>2023-01-23T12:01:25.701130</xocs:upw-updated><xocs:upw-version>submittedVersion</xocs:upw-version><xocs:upw-evidence>oa repository (via OAI-PMH doi match)</xocs:upw-evidence><xocs:upw-host_type>repository</xocs:upw-host_type><xocs:upw-url_for_pdf>https://darchive.mblwhoilibrary.org/bitstream/1912/5659/1/JAS000504.pdf</xocs:upw-url_for_pdf><xocs:upw-url_for_landing_page>https://hdl.handle.net/1912/5659</xocs:upw-url_for_landing_page></xocs:upw-best_oa_location><xocs:upw-oa_locations><xocs:upw-oa_location><xocs:upw-url>https://darchive.mblwhoilibrary.org/bitstream/1912/5659/1/JAS000504.pdf</xocs:upw-url><xocs:upw-pmh_id>oai:darchive.mblwhoilibrary.org:1912/5659</xocs:upw-pmh_id><xocs:upw-is_best>true</xocs:upw-is_best><xocs:upw-updated>2023-01-23T12:01:25.701130</xocs:upw-updated><xocs:upw-version>submittedVersion</xocs:upw-version><xocs:upw-evidence>oa repository (via OAI-PMH doi match)</xocs:upw-evidence><xocs:upw-host_type>repository</xocs:upw-host_type><xocs:upw-url_for_pdf>https://darchive.mblwhoilibrary.org/bitstream/1912/5659/1/JAS000504.pdf</xocs:upw-url_for_pdf><xocs:upw-url_for_landing_page>https://hdl.handle.net/1912/5659</xocs:upw-url_for_landing_page></xocs:upw-oa_location></xocs:upw-oa_locations></xocs:upw-open-access></xocs:open-access>
-    <xocs:funding-list has-funding-info="1" pui-match="primary"><xocs:funding-addon-generated-timestamp>2021-05-09T13:23:41.297771Z</xocs:funding-addon-generated-timestamp><xocs:funding-addon-type>http://vtw.elsevier.com/data/voc/AddOnTypes/50.7/aggregated-refined</xocs:funding-addon-type></xocs:funding-list>
+    <xocs:countries>
+      <xocs:country>Norway</xocs:country>
+    </xocs:countries>
+    <xocs:languages>
+      <xocs:language>English</xocs:language>
+    </xocs:languages>
+    <xocs:prefnameauids>
+      <xocs:prefnameauid>Foote, K.G.#7006535102</xocs:prefnameauid>
+    </xocs:prefnameauids>
+    <xocs:open-access>
+      <xocs:oa-article-status is-open-access="2" free-to-read-status="all repository repositoryam">
+        Repository
+      </xocs:oa-article-status>
+      <xocs:upw-open-access>
+        <xocs:upw-oa-article-status>true</xocs:upw-oa-article-status>
+        <xocs:upw-timestamp>2023-11-06T15:47:07.000215Z</xocs:upw-timestamp>
+        <xocs:upw-oa-journal-is-oa>false</xocs:upw-oa-journal-is-oa>
+        <xocs:upw-oa-journal-is-in-doaj>false</xocs:upw-oa-journal-is-in-doaj>
+        <xocs:upw-best_oa_location>
+          <xocs:upw-url>https://darchive.mblwhoilibrary.org/bitstream/1912/5659/1/JAS000504.pdf
+          </xocs:upw-url>
+          <xocs:upw-pmh_id>oai:darchive.mblwhoilibrary.org:1912/5659</xocs:upw-pmh_id>
+          <xocs:upw-is_best>true</xocs:upw-is_best>
+          <xocs:upw-updated>2023-01-23T12:01:25.701130</xocs:upw-updated>
+          <xocs:upw-version>submittedVersion</xocs:upw-version>
+          <xocs:upw-evidence>oa repository (via OAI-PMH doi match)</xocs:upw-evidence>
+          <xocs:upw-host_type>repository</xocs:upw-host_type>
+          <xocs:upw-url_for_pdf>
+            https://darchive.mblwhoilibrary.org/bitstream/1912/5659/1/JAS000504.pdf
+          </xocs:upw-url_for_pdf>
+          <xocs:upw-url_for_landing_page>https://hdl.handle.net/1912/5659
+          </xocs:upw-url_for_landing_page>
+        </xocs:upw-best_oa_location>
+        <xocs:upw-oa_locations>
+          <xocs:upw-oa_location>
+            <xocs:upw-url>https://darchive.mblwhoilibrary.org/bitstream/1912/5659/1/JAS000504.pdf
+            </xocs:upw-url>
+            <xocs:upw-pmh_id>oai:darchive.mblwhoilibrary.org:1912/5659</xocs:upw-pmh_id>
+            <xocs:upw-is_best>true</xocs:upw-is_best>
+            <xocs:upw-updated>2023-01-23T12:01:25.701130</xocs:upw-updated>
+            <xocs:upw-version>submittedVersion</xocs:upw-version>
+            <xocs:upw-evidence>oa repository (via OAI-PMH doi match)</xocs:upw-evidence>
+            <xocs:upw-host_type>repository</xocs:upw-host_type>
+            <xocs:upw-url_for_pdf>
+              https://darchive.mblwhoilibrary.org/bitstream/1912/5659/1/JAS000504.pdf
+            </xocs:upw-url_for_pdf>
+            <xocs:upw-url_for_landing_page>https://hdl.handle.net/1912/5659
+            </xocs:upw-url_for_landing_page>
+          </xocs:upw-oa_location>
+        </xocs:upw-oa_locations>
+      </xocs:upw-open-access>
+    </xocs:open-access>
+    <xocs:funding-list has-funding-info="1" pui-match="primary">
+      <xocs:funding-addon-generated-timestamp>2021-05-09T13:23:41.297771Z
+      </xocs:funding-addon-generated-timestamp>
+      <xocs:funding-addon-type>http://vtw.elsevier.com/data/voc/AddOnTypes/50.7/aggregated-refined
+      </xocs:funding-addon-type>
+    </xocs:funding-list>
     <cto:doctype>ar</cto:doctype>
     <cto:group-id>0018978799</cto:group-id>
     <cto:ref-id>84955014980</cto:ref-id>
@@ -62,6 +124,1065 @@
     <cto:ref-id>0001036353</cto:ref-id>
     <cto:ref-id>84959770050</cto:ref-id>
     <cto:ref-id>84955044055</cto:ref-id>
-    <cto:unique-author seq="1"><cto:auth-initials>K.G.</cto:auth-initials><cto:auth-indexed-name>Foote K.G.</cto:auth-indexed-name><cto:auth-surname>Foote</cto:auth-surname><cto:auth-id>7006535102</cto:auth-id></cto:unique-author>
+    <cto:unique-author seq="1">
+      <cto:auth-initials>K.G.</cto:auth-initials>
+      <cto:auth-indexed-name>Foote K.G.</cto:auth-indexed-name>
+      <cto:auth-surname>Foote</cto:auth-surname>
+      <cto:auth-id>7006535102</cto:auth-id>
+    </cto:unique-author>
     <cto:unique-auth-count>1</cto:unique-auth-count>
-  </xocs:meta><xocs:item><item><ait:process-info><ait:date-delivered year="2020" month="01" day="02" timestamp="2020-01-02T04:50:18.000018-05:00"/><ait:date-sort year="1980" month="01" day="01"/><ait:status type="core" state="update" stage="S300"/></ait:process-info><bibrecord><item-info><copyright type="Elsevier">Copyright 2016 Elsevier B.V., All rights reserved.</copyright><itemidlist><ce:doi>10.1121/1.383915</ce:doi><itemid idtype="PUI">401473672</itemid><itemid idtype="ARCAI2">20150001473673</itemid><itemid idtype="CAR-ID">644321551</itemid><itemid idtype="SCP">0018978799</itemid><itemid idtype="SGR">0018978799</itemid><itemid idtype="PUIsecondary">11422929</itemid><itemid idtype="CPX">1981010001642</itemid></itemidlist><history><date-created year="2016" month="01" day="18" timestamp="BST 17:30:24"/></history><dbcollection>ARCAI2</dbcollection><dbcollection>SCOPUS</dbcollection><dbcollection>Scopusbase</dbcollection><dbcollection>CPX</dbcollection></item-info><head><citation-info><citation-type code="ar"/><citation-language xml:lang="eng" language="English"/><abstract-language xml:lang="eng" language="English"/></citation-info><citation-title><titletext xml:lang="eng" original="y" language="English">Averaging of fish target strength functions</titletext></citation-title><author-group><author auid="7006535102" seq="1" type="auth"><ce:initials>K.G.</ce:initials><ce:indexed-name>Foote K.G.</ce:indexed-name><ce:surname>Foote</ce:surname><ce:given-name>Kenneth G.</ce:given-name><preferred-name><ce:initials>K.G.</ce:initials><ce:indexed-name>Foote K.</ce:indexed-name><ce:surname>Foote</ce:surname><ce:given-name>Kenneth G.</ce:given-name></preferred-name></author><affiliation afid="60029622" dptid="112646978" country="nor"><organization>Department of Applied Mathematics</organization><organization>University of Bergen</organization><organization>5014</organization><city-group>Bergen</city-group><affiliation-id afid="60029622" dptid="112646978"/><country>Norway</country></affiliation></author-group><correspondence><person><ce:initials>K.G.</ce:initials><ce:indexed-name>Foote K.G.</ce:indexed-name><ce:surname>Foote</ce:surname><ce:given-name>Kenneth G.</ce:given-name></person><affiliation country="nor"><organization>Department of Applied Mathematics</organization><organization>University of Bergen</organization><organization>5014</organization><city-group>Bergen</city-group><country>Norway</country></affiliation></correspondence><abstracts><abstract original="y" xml:lang="eng"><ce:para>A general model for averaging the acoustic target strength functions of fish is stated in calculable form. It accounts for the influences of the distribution of generally coupled spatial and orientation states of fish, geometric perspective, and beam patterns on observations of target strength. The model is developed and applied to observation of fish by directional, downward-looking sonars. A particular example is considered in which the sonar is represented by an. ideal circular piston, the spatial distribution of fish is homogeneous, and the orientation distribution is spatially homogeneous and characterized by a uniformily distributed azimuthal variable and an independent, essentially normally distributed tilt angle variable. Averaged and averaged-squared backscattering cross sections are computed from high quality gadoid target strength functions measured at two ultrasonic frequencies. Results for a sonar half-beamwidth of 2.5 deg for three different realizations of the tilt angle distribution are expressed in the logarithmic domain and regressed linearly on fish length. The significance of species, frequency, and orientation distribution differences among the regressions is noted. Estimates of the mean ratio of averaged-squared backscattering cross section and squared-averaged backscattering cross section are presented. © 1980, Acoustical Society of America. All rights reserved.</ce:para></abstract></abstracts><source srcid="12936" type="j"><sourcetitle>Journal of the Acoustical Society of America</sourcetitle><sourcetitle-abbrev>J. Acoust. Soc. Am.</sourcetitle-abbrev><issn type="electronic">NA</issn><issn type="print">00014966</issn><volisspag><voliss volume="67" issue="2"/><pagerange first="504" last="515"/></volisspag><publicationyear first="1980"/><publicationdate><year>1980</year><date-text>February 1980</date-text></publicationdate></source><enhancement><descriptorgroup><descriptors controlled="y" type="CMH"><descriptor><mainterm weight="a" candidate="n">SONAR</mainterm></descriptor></descriptors></descriptorgroup><classificationgroup><classifications type="CPXCLASS"><classification>752</classification></classifications><classifications type="SUBJECT"><classification>Engineering and Technology</classification></classifications><classifications type="ASJC"><classification>1201</classification><classification>3102</classification></classifications><classifications type="SUBJABBR"><classification>ARTS</classification><classification>PHYS</classification></classifications></classificationgroup></enhancement></head><tail><bibliography refcount="30"><reference id="1"><ref-info><ref-title><ref-titletext>The Application of Hy-droacoustic Methods for Aquatic Biomass Measurements. A note on Echo Envelope Sampling and Integration</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">84955014980</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>J.B.</ce:initials><ce:indexed-name>Lozow J.B.</ce:indexed-name><ce:surname>Lozow</ce:surname></author><author seq="2"><ce:initials>J.B.</ce:initials><ce:indexed-name>Suomala J.B.</ce:indexed-name><ce:surname>Suomala</ce:surname><ce:suffix>Jr.</ce:suffix></author></ref-authors><ref-sourcetitle>Massachusetts Inst. Technol., Cambridge, MA, Report No. MITSG</ref-sourcetitle><ref-publicationyear first="1972"/><ref-volisspag><pagerange first="72" last="78"/></ref-volisspag></ref-info><ref-fulltext>J. B. Lozow and J. B. Suomala, Jr., “The Application of Hy-droacoustic Methods for Aquatic Biomass Measurements. A note on Echo Envelope Sampling and Integration, ” Massachusetts Inst. Technol., Cambridge, MA, Report No. MITSG 72–78 (1972).</ref-fulltext></reference><reference id="2"><ref-info><ref-title><ref-titletext>An expression for the variance of abundance estimates using a fish echo integrator</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">58249096018</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>P.H.</ce:initials><ce:indexed-name>Moose P.H.</ce:indexed-name><ce:surname>Moose</ce:surname></author><author seq="2"><ce:initials>J.E.</ce:initials><ce:indexed-name>Ehrenberg J.E.</ce:indexed-name><ce:surname>Ehrenberg</ce:surname></author></ref-authors><ref-sourcetitle>J. Fish. Res. Board Can</ref-sourcetitle><ref-publicationyear first="1971"/><ref-volisspag><voliss volume="28"/><pagerange first="1293" last="1301"/></ref-volisspag></ref-info><ref-fulltext>P. H. Moose and J. E. Ehrenberg, “An expression for the variance of abundance estimates using a fish echo integrator,” J. Fish. Res. Board Can. 28, 1293–1301 (1971).</ref-fulltext></reference><reference id="3"><ref-info><ref-title><ref-titletext>Variance Error in Echo Integrator Output</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">10444266911</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>H.</ce:initials><ce:indexed-name>Bodholt H.</ce:indexed-name><ce:surname>Bodholt</ce:surname></author></ref-authors><ref-sourcetitle>Hydro-Acoustics in Fisheries Research</ref-sourcetitle><ref-volisspag><pagerange first="196" last="204"/></ref-volisspag><ref-text>edited by A. R. Margetts (Rapp. P.-V. Reun. Cons. int. Explor. Mer 170, Paris, 1977)</ref-text></ref-info><ref-fulltext>H. Bodholt, “Variance Error in Echo Integrator Output, ” in Hydro-Acoustics in Fisheries Research, edited by A. R. Margetts (Rapp. P.-V. Reun. Cons. int. Explor. Mer 170, Paris, 1977), pp. 196–204.</ref-fulltext></reference><reference id="4"><ref-info><ref-title><ref-titletext>Target Strength Measurements of Fish</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">0001919165</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>O.</ce:initials><ce:indexed-name>Nakken O.</ce:indexed-name><ce:surname>Nakken</ce:surname></author><author seq="2"><ce:initials>K.</ce:initials><ce:indexed-name>Olsen K.</ce:indexed-name><ce:surname>Olsen</ce:surname></author></ref-authors><ref-sourcetitle>Hydro-Acoustics in Fisheries Research</ref-sourcetitle><ref-volisspag><pagerange first="52" last="69"/></ref-volisspag><ref-text>edited by A. R. Margetts (Rapp. P.-V. Reun. Cons. int. Explor. Mer 170, Paris, 1977)</ref-text></ref-info><ref-fulltext>O. Nakken and K. Olsen, “Target Strength Measurements of Fish,” in Hydro-Acoustics in Fisheries Research, edited by A. R. Margetts (Rapp. P.-V. Reun. Cons. int. Explor. Mer 170, Paris, 1977), pp. 52–69.</ref-fulltext></reference><reference id="5"><ref-info><ref-title><ref-titletext>Acoustic estimates of fish density and scattering function</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">0017041922</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>M.L.</ce:initials><ce:indexed-name>Peterson M.L.</ce:indexed-name><ce:surname>Peterson</ce:surname></author><author seq="2"><ce:initials>C.S.</ce:initials><ce:indexed-name>Clay C.S.</ce:indexed-name><ce:surname>Clay</ce:surname></author><author seq="3"><ce:initials>S.B.</ce:initials><ce:indexed-name>Brandt S.B.</ce:indexed-name><ce:surname>Brandt</ce:surname></author></ref-authors><ref-sourcetitle>J. Acoust. Soc. Am</ref-sourcetitle><ref-publicationyear first="1976"/><ref-volisspag><voliss volume="60"/><pagerange first="618" last="622"/></ref-volisspag></ref-info><ref-fulltext>M. L. Peterson, C. S. Clay, and S. B. Brandt, “Acoustic estimates of fish density and scattering function, ” J. Acoust. Soc. Am. 60, 618–622 (1976).</ref-fulltext></reference><reference id="6"><ref-info><ref-title><ref-titletext>Apparatus and experimental technique for the study of ultrasonic backscattering by biological objects in water</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">84953674833</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>V.G.</ce:initials><ce:indexed-name>Samovol'kin V.G.</ce:indexed-name><ce:surname>Samovol'kin</ce:surname></author></ref-authors><ref-sourcetitle>Okeanologiya</ref-sourcetitle><ref-publicationyear first="1974"/><ref-volisspag><voliss volume="14"/><pagerange first="149" last="152"/></ref-volisspag></ref-info><ref-fulltext>V. G. Samovol'kin, “Apparatus and experimental technique for the study of ultrasonic backscattering by biological objects in water,” Okeanologiya 14, 149—152 (1974).</ref-fulltext></reference><reference id="7"><ref-info><ref-title><ref-titletext>Acoustic backscattering cross sections of small fish, crustaceans, and medusae as functions of their foreshortening</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">84912501012</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>V.G.</ce:initials><ce:indexed-name>Samovol'kin V.G.</ce:indexed-name><ce:surname>Samovol'kin</ce:surname></author></ref-authors><ref-sourcetitle>Okeanologiya</ref-sourcetitle><ref-publicationyear first="1974"/><ref-volisspag><voliss volume="14"/><pagerange first="655" last="660"/></ref-volisspag></ref-info><ref-fulltext>V. G. Samovol'kin, “Acoustic backscattering cross sections of small fish, crustaceans, and medusae as functions of their foreshortening, ” Okeanologiya 14, 655–660 (1974).</ref-fulltext></reference><reference id="8"><ref-info><ref-title><ref-titletext>Reflection Power of Commercially Important Fishes and Fish Concentrations</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">84955038701</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>K.I.</ce:initials><ce:indexed-name>Yudanov K.I.</ce:indexed-name><ce:surname>Yudanov</ce:surname></author></ref-authors><ref-sourcetitle>Hydro-Acoustics in Fisheries Research</ref-sourcetitle><ref-volisspag><pagerange first="185" last="188"/></ref-volisspag><ref-text>edited by A. R. Margetts (Rapp. P.-V. Reun. Cons. int. Explor. Mer 170, Paris, 1977)</ref-text></ref-info><ref-fulltext>K. I. Yudanov, “Reflection Power of Commercially Important Fishes and Fish Concentrations,” in Hydro-Acoustics in Fisheries Research, edited by A. R. Margetts (Rapp. P.-V. Reun. Cons. int. Explor. Mer 170, Paris, 1977), pp. 185–188.</ref-fulltext></reference><reference id="9"><ref-info><ref-title><ref-titletext>Analysis of empirical observations on the scattering of sound by encaged aggregations of fish</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">0000792396</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>K.G.</ce:initials><ce:indexed-name>Foote K.G.</ce:indexed-name><ce:surname>Foote</ce:surname></author></ref-authors><ref-sourcetitle>Fiskeridir. Skr. Ser. Havunders</ref-sourcetitle><ref-publicationyear first="1978"/><ref-volisspag><voliss volume="16"/><pagerange first="423" last="456"/></ref-volisspag></ref-info><ref-fulltext>K. G. Foote, “Analysis of empirical observations on the scattering of sound by encaged aggregations of fish, ” Fiskeridir. Skr. Ser. Havunders. 16, 423—456 (1978).</ref-fulltext></reference><reference id="10"><ref-info><ref-title><ref-titletext>Some Signal Processing Techniques for Determining the Variance in Acoustic Stock Abundance Estimates</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">85054950995</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>J.E.</ce:initials><ce:indexed-name>Ehrenberg J.E.</ce:indexed-name><ce:surname>Ehrenberg</ce:surname></author><author seq="2"><ce:initials>D.W.</ce:initials><ce:indexed-name>Lytle D.W.</ce:indexed-name><ce:surname>Lytle</ce:surname></author></ref-authors><ref-sourcetitle>Hydro-Acoustics in Fisheries Research</ref-sourcetitle><ref-text>edited by A. R. Margetts (Rapp. P.-V. Reun. Cons. int. Explor. Mer 170, Paris, 1977), pp. 205—213.</ref-text></ref-info><ref-fulltext>J. E. Ehrenberg and D. W. Lytle, “Some Signal Processing Techniques for Determining the Variance in Acoustic Stock Abundance Estimates, ” in Hydro-Acoustics in Fisheries Research, edited by A. R. Margetts (Rapp. P.-V. Reun. Cons. int. Explor. Mer 170, Paris, 1977), pp. 205—213.</ref-fulltext></reference><reference id="11"><ref-info><ref-title><ref-titletext>Two Applications for a Dual-Beam Transducer in Hydroacoustic Fish Assessment Systems</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">0016321990</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>J.E.</ce:initials><ce:indexed-name>Ehrenberg J.E.</ce:indexed-name><ce:surname>Ehrenberg</ce:surname></author></ref-authors><ref-sourcetitle>Proceedings of the IEEE Ocean</ref-sourcetitle><ref-text>74 International Conference on Engineering in the Ocean Environment, Halifax, Nova Scotia, 21–23 August 1974 (IEEE, New York, 1974).</ref-text></ref-info><ref-fulltext>J. E. Ehrenberg, “Two Applications for a Dual-Beam Transducer in Hydroacoustic Fish Assessment Systems, ” in Proceedings of the IEEE Ocean 74 International Conference on Engineering in the Ocean Environment, Halifax, Nova Scotia, 21–23 August 1974 (IEEE, New York, 1974).</ref-fulltext></reference><reference id="12"><ref-info><ref-title><ref-titletext>Effect of fish bahavior on echo energy: the need for measurements of orientation distributions</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">84955019072</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>K.G.</ce:initials><ce:indexed-name>Foote K.G.</ce:indexed-name><ce:surname>Foote</ce:surname></author></ref-authors><ref-sourcetitle>J. Cons. Cons. Int. Explor. Mer</ref-sourcetitle><ref-publicationyear first="1979"/><ref-volisspag><voliss volume="39" issue="2"/></ref-volisspag><ref-text>(in press).</ref-text></ref-info><ref-fulltext>K. G. Foote, “Effect of fish bahavior on echo energy: the need for measurements of orientation distributions, ” J. Cons. Cons. Int. Explor. Mer. 39(2) (1979) (in press).</ref-fulltext></reference><reference id="13"><ref-info><ref-title><ref-titletext>Dorsal aspect target strength functions of six fishes at two ultrasonic frequencies</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">0001890398</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>K.G.</ce:initials><ce:indexed-name>Foote K.G.</ce:indexed-name><ce:surname>Foote</ce:surname></author><author seq="2"><ce:initials>O.</ce:initials><ce:indexed-name>Nakken O.</ce:indexed-name><ce:surname>Nakken</ce:surname></author></ref-authors><ref-sourcetitle>Fisken Havet, Ser. B</ref-sourcetitle><ref-publicationyear first="1978"/><ref-volisspag><voliss issue="3"/><pagerange first="1" last="96"/></ref-volisspag><ref-text>June</ref-text></ref-info><ref-fulltext>K. G. Foote and O. Nakken, “Dorsal aspect target strength functions of six fishes at two ultrasonic frequencies, ” Fisken Havet, Ser. B, No. 3, 1–96 (June 1978).</ref-fulltext></reference><reference id="14"><ref-info><ref-title><ref-titletext>Influence of Vessel Noise on Behavior of Herring</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">0001165313</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>K.</ce:initials><ce:indexed-name>Olsen K.</ce:indexed-name><ce:surname>Olsen</ce:surname></author></ref-authors><ref-sourcetitle>“Modem Fishing Gear of the World</ref-sourcetitle><ref-volisspag><voliss volume="3"/><pagerange first="291" last="294"/></ref-volisspag><ref-text>edited by H. Kristjonsson [Fishing News (Books) Ltd,., London, 1971]</ref-text></ref-info><ref-fulltext>K. Olsen “Influence of Vessel Noise on Behavior of Herring, ” in “Modem Fishing Gear of the World: 3, ” edited by H. Kristjonsson [Fishing News (Books) Ltd,., London, 1971], pp. 291–294.</ref-fulltext></reference><reference id="15"><ref-info><ref-title><ref-titletext>Evidence for localization of sound by fish in schools</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">0008865450</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>K.</ce:initials><ce:indexed-name>Olsen K.</ce:indexed-name><ce:surname>Olsen</ce:surname></author></ref-authors><ref-sourcetitle>“Sound Reception in Fish</ref-sourcetitle><ref-volisspag><pagerange first="257" last="268"/></ref-volisspag><ref-text>edited by A. Schuijf and A. D. Hawkins (Elsevier, Amsterdam, 1976)</ref-text></ref-info><ref-fulltext>K. Olsen, “Evidence for localization of sound by fish in schools,” in “Sound Reception in Fish, ” edited by A. Schuijf and A. D. Hawkins (Elsevier, Amsterdam, 1976), pp. 257–268.</ref-fulltext></reference><reference id="16"><ref-info><ref-title><ref-titletext>Effect of Vessel Noise in Purse Seining</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">84955018938</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>Y.</ce:initials><ce:indexed-name>Maniwa Y.</ce:indexed-name><ce:surname>Maniwa</ce:surname></author></ref-authors><ref-sourcetitle>Modern Fishing Gear of the World</ref-sourcetitle><ref-volisspag><voliss volume="3"/><pagerange first="294" last="296"/></ref-volisspag><ref-text>edited by H. Kristjonsson [Fishing News (Books) Ltd., London, 1971]</ref-text></ref-info><ref-fulltext>Y. Maniwa, “Effect of Vessel Noise in Purse Seining, ” in Modern Fishing Gear of the World: 3, edited by H. Kristjonsson [Fishing News (Books) Ltd., London, 1971], pp. 294–296.</ref-fulltext></reference><reference id="17"><ref-info><ref-title><ref-titletext>Behavior Patterns of Different Herring Stocks in Relation to Ship and Midwater Trawl</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">0000188320</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>H.</ce:initials><ce:indexed-name>Mohr H.</ce:indexed-name><ce:surname>Mohr</ce:surname></author></ref-authors><ref-sourcetitle>Modern Fishing Gear of the World</ref-sourcetitle><ref-volisspag><voliss volume="3"/><pagerange first="368" last="371"/></ref-volisspag><ref-text>edited by H. Kristjonsson [Fishing News (Books) Ltd., London, 1971]</ref-text></ref-info><ref-fulltext>H. Mohr, “Behavior Patterns of Different Herring Stocks in Relation to Ship and Midwater Trawl, ” in Modern Fishing Gear of the World: 3, edited by H. Kristjonsson [Fishing News (Books) Ltd., London, 1971], pp. 368–371.</ref-fulltext></reference><reference id="18"><ref-info><ref-title><ref-titletext>Determination of the acoustic backscattering patterns and cross sections of fish</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">0000462392</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>R.W.G.</ce:initials><ce:indexed-name>Haslett R.W.G.</ce:indexed-name><ce:surname>Haslett</ce:surname></author></ref-authors><ref-sourcetitle>Brit. J. Appl. Phys</ref-sourcetitle><ref-publicationyear first="1962"/><ref-volisspag><voliss volume="13"/><pagerange first="349" last="357"/></ref-volisspag></ref-info><ref-fulltext>R. W. G. Haslett, “Determination of the acoustic backscattering patterns and cross sections of fish, ” Brit. J. Appl. Phys. 13, 349–357 (1962).</ref-fulltext></reference><reference id="19"><ref-info><ref-title><ref-titletext>Orientation measurements of cod in Lofoten obtained from underwater photography and their relation to target strength</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">84955048132</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>K.</ce:initials><ce:indexed-name>Olsen K.</ce:indexed-name><ce:surname>Olsen</ce:surname></author></ref-authors><ref-text>ICES CM 197l/B:17, 8 pp. (Mimeo).</ref-text></ref-info><ref-fulltext>K. Olsen, “Orientation measurements of cod in Lofoten obtained from underwater photography and their relation to target strength,” ICES CM 197l/B:17, 8 pp. (Mimeo).</ref-fulltext></reference><reference id="20"><ref-info><ref-title><ref-titletext>Feeding, vertical migration, and schooling of O-group herring (Clupea harengus L.) in relation to light intensity</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">0342377438</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>A.K.</ce:initials><ce:indexed-name>Beltestad A.K.</ce:indexed-name><ce:surname>Beltestad</ce:surname></author></ref-authors><ref-publicationyear first="1974"/><ref-text>dissertation, University of Bergen, Bergen, Norway (in Norwegian).</ref-text></ref-info><ref-fulltext>A. K. Beltestad, “Feeding, vertical migration, and schooling of O-group herring (Clupea harengus L.) in relation to light intensity, ” dissertation, University of Bergen, Bergen, Norway (1974) (in Norwegian).</ref-fulltext></reference><reference id="21"><ref-info><ref-title><ref-titletext>Theoretical estimation of the mean echo intensity-fish number density relation for encaged saithe in the dorsal aspect</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">0001446185</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>K.G.</ce:initials><ce:indexed-name>Foote K.G.</ce:indexed-name><ce:surname>Foote</ce:surname></author></ref-authors><ref-publicationyear first="1978"/><ref-volisspag><voliss volume="16"/><pagerange first="457" last="464"/></ref-volisspag><ref-text>Fiskeridir. Skr. Ser. Havunders.</ref-text></ref-info><ref-fulltext>K. G. Foote, “Theoretical estimation of the mean echo intensity-fish number density relation for encaged saithe in the dorsal aspect,” Fiskeridir. Skr. Ser. Havunders. 16, 457—464 (1978).</ref-fulltext></reference><reference id="22"><ref-info><ref-title><ref-titletext>Representations of length dependence of acoustic target strengths of fish</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">0000782678</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>K.G.</ce:initials><ce:indexed-name>Foote K.G.</ce:indexed-name><ce:surname>Foote</ce:surname></author></ref-authors><ref-sourcetitle>J. Fish. Res. Board Can</ref-sourcetitle><ref-publicationyear first="1979"/><ref-volisspag><voliss volume="36"/><pagerange first="1490" last="1496"/></ref-volisspag></ref-info><ref-fulltext>K. G. Foote, “Representations of length dependence of acoustic target strengths of fish,” J. Fish. Res. Board Can. 36, 1490–1496 (1979).</ref-fulltext></reference><reference id="23"><ref-info><ref-title><ref-titletext>Fish target strength-to-length regressions for application in fisheries research</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">0037735243</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>K.G.</ce:initials><ce:indexed-name>Foote K.G.</ce:indexed-name><ce:surname>Foote</ce:surname></author></ref-authors><ref-sourcetitle>Ultrasonics International</ref-sourcetitle><ref-volisspag><pagerange first="327" last="332"/></ref-volisspag><ref-text>79 Conference Proceedings, Graz, Austria, 15—18 May 1979 (IPC Sci. Tech. Press, London, 1979)</ref-text></ref-info><ref-fulltext>K. G. Foote, “Fish target strength-to-length regressions for application in fisheries research, ” in Ultrasonics International 79 Conference Proceedings, Graz, Austria, 15—18 May 1979 (IPC Sci. Tech. Press, London, 1979), pp. 327–332.</ref-fulltext></reference><reference id="24"><ref-info><ref-title><ref-titletext>Reflecing Properties of Commercial Fishes of the Northern Basin</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">84955019027</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>K.I.</ce:initials><ce:indexed-name>Yudanov K.I.</ce:indexed-name><ce:surname>Yudanov</ce:surname></author><author seq="2"><ce:initials>A.A.</ce:initials><ce:indexed-name>Gan'kov A.A.</ce:indexed-name><ce:surname>Gan'kov</ce:surname></author><author seq="3"><ce:initials>O.E.</ce:initials><ce:indexed-name>Shatoba O.E.</ce:indexed-name><ce:surname>Shatoba</ce:surname></author></ref-authors><ref-sourcetitle>Rybn. Khoz. (Moscow)</ref-sourcetitle><ref-publicationyear first="1966"/><ref-volisspag><voliss volume="42" issue="12"/><pagerange first="57" last="60"/></ref-volisspag><ref-text>(in Russian).</ref-text></ref-info><ref-fulltext>K. I. Yudanov, A. A. Gan'kov, and O. E. Shatoba, “Reflecing Properties of Commercial Fishes of the Northern Basin, ” Rybn. Khoz. (Moscow) 42(12), 57–60 (1966) (in Russian).</ref-fulltext></reference><reference id="25"><ref-info><ref-title><ref-titletext>Maximum Side-Aspect Target Strength of an Individual Fish</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">0001361221</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>R.H.</ce:initials><ce:indexed-name>Love R.H.</ce:indexed-name><ce:surname>Love</ce:surname></author></ref-authors><ref-sourcetitle>J. Acoust. Soc. Am</ref-sourcetitle><ref-publicationyear first="1969"/><ref-volisspag><voliss volume="46"/><pagerange first="746" last="752"/></ref-volisspag></ref-info><ref-fulltext>R. H. Love, “Maximum Side-Aspect Target Strength of an Individual Fish,” J. Acoust. Soc. Am. 46, 746—752 (1969).</ref-fulltext></reference><reference id="26"><ref-info><ref-title><ref-titletext>Dorsal-Aspect Target Strength of an Individual Fish</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">0015022446</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>R.H.</ce:initials><ce:indexed-name>Love R.H.</ce:indexed-name><ce:surname>Love</ce:surname></author></ref-authors><ref-sourcetitle>J. Acoust. Soc. Am</ref-sourcetitle><ref-publicationyear first="1971"/><ref-volisspag><voliss volume="49"/><pagerange first="816" last="823"/></ref-volisspag></ref-info><ref-fulltext>R. H. Love, “Dorsal-Aspect Target Strength of an Individual Fish,” J. Acoust. Soc. Am. 49, 816–823 (1971).</ref-fulltext></reference><reference id="27"><ref-info><ref-title><ref-titletext>Target strength of an individual fish at any aspect</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">84953681651</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>R.H.</ce:initials><ce:indexed-name>Love R.H.</ce:indexed-name><ce:surname>Love</ce:surname></author></ref-authors><ref-sourcetitle>J. Acoust. Soc. Am</ref-sourcetitle><ref-publicationyear first="1977"/><ref-volisspag><voliss volume="62"/><pagerange first="1397" last="1403"/></ref-volisspag></ref-info><ref-fulltext>R. H. Love, “Target strength of an individual fish at any aspect, ” J. Acoust. Soc. Am. 62, 1397—1403 (1977).</ref-fulltext></reference><reference id="28"><ref-info><ref-title><ref-titletext>Measurements of the Acoustic Target Strengths of Fish in Dorsal Aspect, Including Swimbladder Resonance</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">0001036353</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>B.S.</ce:initials><ce:indexed-name>McCartney B.S.</ce:indexed-name><ce:surname>McCartney</ce:surname></author><author seq="2"><ce:initials>A.R.</ce:initials><ce:indexed-name>Stubbs A.R.</ce:indexed-name><ce:surname>Stubbs</ce:surname></author></ref-authors><ref-sourcetitle>J. Sound Vib</ref-sourcetitle><ref-publicationyear first="1971"/><ref-volisspag><voliss volume="15"/><pagerange first="397" last="420"/></ref-volisspag></ref-info><ref-fulltext>B. S. McCartney and A. R. Stubbs, “Measurements of the Acoustic Target Strengths of Fish in Dorsal Aspect, Including Swimbladder Resonance, ” J. Sound Vib. 15, 397–420 (1971).</ref-fulltext></reference><reference id="29"><ref-info><ref-title><ref-titletext>Statistical Measurements of the Acoustic Target Strength of Live Fish</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">84959770050</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>G.C.</ce:initials><ce:indexed-name>Goddard G.C.</ce:indexed-name><ce:surname>Goddard</ce:surname></author><author seq="2"><ce:initials>V.G.</ce:initials><ce:indexed-name>Welsby V.G.</ce:indexed-name><ce:surname>Welsby</ce:surname></author></ref-authors><ref-sourcetitle>Department of Electronic and Electrical Engineering, University of Birmingham, Birmingham, England, Departmental Memorandum</ref-sourcetitle><ref-publicationyear first="1975"/><ref-volisspag><voliss volume="456"/></ref-volisspag></ref-info><ref-fulltext>G. C. Goddard and V. G. Welsby, “Statistical Measurements of the Acoustic Target Strength of Live Fish, ” Department of Electronic and Electrical Engineering, University of Birmingham, Birmingham, England, Departmental Memorandum No. 456 (1975).</ref-fulltext></reference><reference id="30"><ref-info><ref-title><ref-titletext>Characterization of Active underwater Acoustic Channels: Part I. A New Formulation of Scattering by Random Media and Interfaces</ref-titletext></ref-title><refd-itemidlist><itemid idtype="SGR">84955044055</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>D.</ce:initials><ce:indexed-name>Middleton D.</ce:indexed-name><ce:surname>Middleton</ce:surname></author></ref-authors><ref-publicationyear first="1974"/><ref-text>Applied Research Laboratories, The University of Texas at Austin, Austin, Texas, Report No. ARL-TR-74-61</ref-text></ref-info><ref-fulltext>D. Middleton, “Characterization of Active underwater Acoustic Channels: Part I. A New Formulation of Scattering by Random Media and Interfaces,” Applied Research Laboratories, The University of Texas at Austin, Austin, Texas, Report No. ARL-TR-74-61 (1974).</ref-fulltext></reference></bibliography></tail></bibrecord></item></xocs:item></xocs:doc>
+  </xocs:meta>
+  <xocs:item>
+    <item>
+      <ait:process-info>
+        <ait:date-delivered year="2020" month="01" day="02"
+          timestamp="2020-01-02T04:50:18.000018-05:00"/>
+        <ait:date-sort year="1980" month="01" day="01"/>
+        <ait:status type="core" state="update" stage="S300"/>
+      </ait:process-info>
+      <bibrecord>
+        <item-info>
+          <copyright type="Elsevier">Copyright 2016 Elsevier B.V., All rights reserved.</copyright>
+          <itemidlist>
+            <ce:doi>10.1121/1.383915</ce:doi>
+            <itemid idtype="PUI">401473672</itemid>
+            <itemid idtype="ARCAI2">20150001473673</itemid>
+            <itemid idtype="CAR-ID">644321551</itemid>
+            <itemid idtype="SCP">0018978799</itemid>
+            <itemid idtype="SGR">0018978799</itemid>
+            <itemid idtype="PUIsecondary">11422929</itemid>
+            <itemid idtype="CPX">1981010001642</itemid>
+          </itemidlist>
+          <history>
+            <date-created year="2016" month="01" day="18" timestamp="BST 17:30:24"/>
+          </history>
+          <dbcollection>ARCAI2</dbcollection>
+          <dbcollection>SCOPUS</dbcollection>
+          <dbcollection>Scopusbase</dbcollection>
+          <dbcollection>CPX</dbcollection>
+        </item-info>
+        <head>
+          <citation-info>
+            <citation-type code="ar"/>
+            <citation-language xml:lang="eng" language="English"/>
+            <abstract-language xml:lang="eng" language="English"/>
+          </citation-info>
+          <citation-title>
+            <titletext xml:lang="eng" original="y" language="English">Averaging of fish target
+              strength functions
+            </titletext>
+          </citation-title>
+          <author-group>
+            <author auid="7006535102" seq="1" type="auth">
+              <ce:initials>K.G.</ce:initials>
+              <ce:indexed-name>Foote K.G.</ce:indexed-name>
+              <ce:surname>Foote</ce:surname>
+              <ce:given-name>Kenneth G.</ce:given-name>
+              <preferred-name>
+                <ce:initials>K.G.</ce:initials>
+                <ce:indexed-name>Foote K.</ce:indexed-name>
+                <ce:surname>Foote</ce:surname>
+                <ce:given-name>Kenneth G.</ce:given-name>
+              </preferred-name>
+            </author>
+            <affiliation afid="60029622" dptid="112646978" country="nor">
+              <organization>Department of Applied Mathematics</organization>
+              <organization>University of Bergen</organization>
+              <organization>5014</organization>
+              <city-group>Bergen</city-group>
+              <affiliation-id afid="60029622" dptid="112646978"/>
+              <country>Norway</country>
+            </affiliation>
+          </author-group>
+          <correspondence>
+            <person>
+              <ce:initials>K.G.</ce:initials>
+              <ce:indexed-name>Foote K.G.</ce:indexed-name>
+              <ce:surname>Foote</ce:surname>
+              <ce:given-name>Kenneth G.</ce:given-name>
+            </person>
+            <affiliation country="nor">
+              <organization>Department of Applied Mathematics</organization>
+              <organization>University of Bergen</organization>
+              <organization>5014</organization>
+              <city-group>Bergen</city-group>
+              <country>Norway</country>
+            </affiliation>
+          </correspondence>
+          <abstracts>
+            <abstract original="y" xml:lang="eng">
+              <ce:para>A general model for averaging the acoustic target strength functions of fish
+                is stated in calculable form. It accounts for the influences of the distribution of
+                generally coupled spatial and orientation states of fish, geometric perspective, and
+                beam patterns on observations of target strength. The model is developed and applied
+                to observation of fish by directional, downward-looking sonars. A particular example
+                is considered in which the sonar is represented by an. ideal circular piston, the
+                spatial distribution of fish is homogeneous, and the orientation distribution is
+                spatially homogeneous and characterized by a uniformily distributed azimuthal
+                variable and an independent, essentially normally distributed tilt angle variable.
+                Averaged and averaged-squared backscattering cross sections are computed from high
+                quality gadoid target strength functions measured at two ultrasonic frequencies.
+                Results for a sonar half-beamwidth of 2.5 deg for three different realizations of
+                the tilt angle distribution are expressed in the logarithmic domain and regressed
+                linearly on fish length. The significance of species, frequency, and orientation
+                distribution differences among the regressions is noted. Estimates of the mean ratio
+                of averaged-squared backscattering cross section and squared-averaged backscattering
+                cross section are presented. © 1980, Acoustical Society of America. All rights
+                reserved.
+              </ce:para>
+            </abstract>
+          </abstracts>
+          <source srcid="12936" type="j">
+            <sourcetitle>Journal of the Acoustical Society of America</sourcetitle>
+            <sourcetitle-abbrev>J. Acoust. Soc. Am.</sourcetitle-abbrev>
+            <issn type="electronic">NA</issn>
+            <issn type="print">00014966</issn>
+            <volisspag>
+              <voliss volume="67" issue="2"/>
+              <pagerange first="504" last="515"/>
+            </volisspag>
+            <publicationyear first="1980"/>
+            <publicationdate>
+              <year>1980</year>
+              <date-text>February 1980</date-text>
+            </publicationdate>
+          </source>
+          <enhancement>
+            <descriptorgroup>
+              <descriptors controlled="y" type="CMH">
+                <descriptor>
+                  <mainterm weight="a" candidate="n">SONAR</mainterm>
+                </descriptor>
+              </descriptors>
+            </descriptorgroup>
+            <classificationgroup>
+              <classifications type="CPXCLASS">
+                <classification>752</classification>
+              </classifications>
+              <classifications type="SUBJECT">
+                <classification>Engineering and Technology</classification>
+              </classifications>
+              <classifications type="ASJC">
+                <classification>1201</classification>
+                <classification>3102</classification>
+              </classifications>
+              <classifications type="SUBJABBR">
+                <classification>ARTS</classification>
+                <classification>PHYS</classification>
+              </classifications>
+            </classificationgroup>
+          </enhancement>
+        </head>
+        <tail>
+          <bibliography refcount="30">
+            <reference id="1">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>The Application of Hy-droacoustic Methods for Aquatic Biomass
+                    Measurements. A note on Echo Envelope Sampling and Integration
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">84955014980</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>J.B.</ce:initials>
+                    <ce:indexed-name>Lozow J.B.</ce:indexed-name>
+                    <ce:surname>Lozow</ce:surname>
+                  </author>
+                  <author seq="2">
+                    <ce:initials>J.B.</ce:initials>
+                    <ce:indexed-name>Suomala J.B.</ce:indexed-name>
+                    <ce:surname>Suomala</ce:surname>
+                    <ce:suffix>Jr.</ce:suffix>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Massachusetts Inst. Technol., Cambridge, MA, Report No. MITSG
+                </ref-sourcetitle>
+                <ref-publicationyear first="1972"/>
+                <ref-volisspag>
+                  <pagerange first="72" last="78"/>
+                </ref-volisspag>
+              </ref-info>
+              <ref-fulltext>J. B. Lozow and J. B. Suomala, Jr., “The Application of Hy-droacoustic
+                Methods for Aquatic Biomass Measurements. A note on Echo Envelope Sampling and
+                Integration, ” Massachusetts Inst. Technol., Cambridge, MA, Report No. MITSG 72–78
+                (1972).
+              </ref-fulltext>
+            </reference>
+            <reference id="2">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>An expression for the variance of abundance estimates using a fish
+                    echo integrator
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">58249096018</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>P.H.</ce:initials>
+                    <ce:indexed-name>Moose P.H.</ce:indexed-name>
+                    <ce:surname>Moose</ce:surname>
+                  </author>
+                  <author seq="2">
+                    <ce:initials>J.E.</ce:initials>
+                    <ce:indexed-name>Ehrenberg J.E.</ce:indexed-name>
+                    <ce:surname>Ehrenberg</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>J. Fish. Res. Board Can</ref-sourcetitle>
+                <ref-publicationyear first="1971"/>
+                <ref-volisspag>
+                  <voliss volume="28"/>
+                  <pagerange first="1293" last="1301"/>
+                </ref-volisspag>
+              </ref-info>
+              <ref-fulltext>P. H. Moose and J. E. Ehrenberg, “An expression for the variance of
+                abundance estimates using a fish echo integrator,” J. Fish. Res. Board Can. 28,
+                1293–1301 (1971).
+              </ref-fulltext>
+            </reference>
+            <reference id="3">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Variance Error in Echo Integrator Output</ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">10444266911</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>H.</ce:initials>
+                    <ce:indexed-name>Bodholt H.</ce:indexed-name>
+                    <ce:surname>Bodholt</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Hydro-Acoustics in Fisheries Research</ref-sourcetitle>
+                <ref-volisspag>
+                  <pagerange first="196" last="204"/>
+                </ref-volisspag>
+                <ref-text>edited by A. R. Margetts (Rapp. P.-V. Reun. Cons. int. Explor. Mer 170,
+                  Paris, 1977)
+                </ref-text>
+              </ref-info>
+              <ref-fulltext>H. Bodholt, “Variance Error in Echo Integrator Output, ” in
+                Hydro-Acoustics in Fisheries Research, edited by A. R. Margetts (Rapp. P.-V. Reun.
+                Cons. int. Explor. Mer 170, Paris, 1977), pp. 196–204.
+              </ref-fulltext>
+            </reference>
+            <reference id="4">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Target Strength Measurements of Fish</ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0001919165</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>O.</ce:initials>
+                    <ce:indexed-name>Nakken O.</ce:indexed-name>
+                    <ce:surname>Nakken</ce:surname>
+                  </author>
+                  <author seq="2">
+                    <ce:initials>K.</ce:initials>
+                    <ce:indexed-name>Olsen K.</ce:indexed-name>
+                    <ce:surname>Olsen</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Hydro-Acoustics in Fisheries Research</ref-sourcetitle>
+                <ref-volisspag>
+                  <pagerange first="52" last="69"/>
+                </ref-volisspag>
+                <ref-text>edited by A. R. Margetts (Rapp. P.-V. Reun. Cons. int. Explor. Mer 170,
+                  Paris, 1977)
+                </ref-text>
+              </ref-info>
+              <ref-fulltext>O. Nakken and K. Olsen, “Target Strength Measurements of Fish,” in
+                Hydro-Acoustics in Fisheries Research, edited by A. R. Margetts (Rapp. P.-V. Reun.
+                Cons. int. Explor. Mer 170, Paris, 1977), pp. 52–69.
+              </ref-fulltext>
+            </reference>
+            <reference id="5">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Acoustic estimates of fish density and scattering function
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0017041922</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>M.L.</ce:initials>
+                    <ce:indexed-name>Peterson M.L.</ce:indexed-name>
+                    <ce:surname>Peterson</ce:surname>
+                  </author>
+                  <author seq="2">
+                    <ce:initials>C.S.</ce:initials>
+                    <ce:indexed-name>Clay C.S.</ce:indexed-name>
+                    <ce:surname>Clay</ce:surname>
+                  </author>
+                  <author seq="3">
+                    <ce:initials>S.B.</ce:initials>
+                    <ce:indexed-name>Brandt S.B.</ce:indexed-name>
+                    <ce:surname>Brandt</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>J. Acoust. Soc. Am</ref-sourcetitle>
+                <ref-publicationyear first="1976"/>
+                <ref-volisspag>
+                  <voliss volume="60"/>
+                  <pagerange first="618" last="622"/>
+                </ref-volisspag>
+              </ref-info>
+              <ref-fulltext>M. L. Peterson, C. S. Clay, and S. B. Brandt, “Acoustic estimates of
+                fish density and scattering function, ” J. Acoust. Soc. Am. 60, 618–622 (1976).
+              </ref-fulltext>
+            </reference>
+            <reference id="6">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Apparatus and experimental technique for the study of ultrasonic
+                    backscattering by biological objects in water
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">84953674833</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>V.G.</ce:initials>
+                    <ce:indexed-name>Samovol'kin V.G.</ce:indexed-name>
+                    <ce:surname>Samovol'kin</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Okeanologiya</ref-sourcetitle>
+                <ref-publicationyear first="1974"/>
+                <ref-volisspag>
+                  <voliss volume="14"/>
+                  <pagerange first="149" last="152"/>
+                </ref-volisspag>
+              </ref-info>
+              <ref-fulltext>V. G. Samovol'kin, “Apparatus and experimental technique for the study
+                of ultrasonic backscattering by biological objects in water,” Okeanologiya 14,
+                149—152 (1974).
+              </ref-fulltext>
+            </reference>
+            <reference id="7">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Acoustic backscattering cross sections of small fish, crustaceans,
+                    and medusae as functions of their foreshortening
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">84912501012</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>V.G.</ce:initials>
+                    <ce:indexed-name>Samovol'kin V.G.</ce:indexed-name>
+                    <ce:surname>Samovol'kin</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Okeanologiya</ref-sourcetitle>
+                <ref-publicationyear first="1974"/>
+                <ref-volisspag>
+                  <voliss volume="14"/>
+                  <pagerange first="655" last="660"/>
+                </ref-volisspag>
+              </ref-info>
+              <ref-fulltext>V. G. Samovol'kin, “Acoustic backscattering cross sections of small
+                fish, crustaceans, and medusae as functions of their foreshortening, ” Okeanologiya
+                14, 655–660 (1974).
+              </ref-fulltext>
+            </reference>
+            <reference id="8">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Reflection Power of Commercially Important Fishes and Fish
+                    Concentrations
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">84955038701</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>K.I.</ce:initials>
+                    <ce:indexed-name>Yudanov K.I.</ce:indexed-name>
+                    <ce:surname>Yudanov</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Hydro-Acoustics in Fisheries Research</ref-sourcetitle>
+                <ref-volisspag>
+                  <pagerange first="185" last="188"/>
+                </ref-volisspag>
+                <ref-text>edited by A. R. Margetts (Rapp. P.-V. Reun. Cons. int. Explor. Mer 170,
+                  Paris, 1977)
+                </ref-text>
+              </ref-info>
+              <ref-fulltext>K. I. Yudanov, “Reflection Power of Commercially Important Fishes and
+                Fish Concentrations,” in Hydro-Acoustics in Fisheries Research, edited by A. R.
+                Margetts (Rapp. P.-V. Reun. Cons. int. Explor. Mer 170, Paris, 1977), pp. 185–188.
+              </ref-fulltext>
+            </reference>
+            <reference id="9">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Analysis of empirical observations on the scattering of sound by
+                    encaged aggregations of fish
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0000792396</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>K.G.</ce:initials>
+                    <ce:indexed-name>Foote K.G.</ce:indexed-name>
+                    <ce:surname>Foote</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Fiskeridir. Skr. Ser. Havunders</ref-sourcetitle>
+                <ref-publicationyear first="1978"/>
+                <ref-volisspag>
+                  <voliss volume="16"/>
+                  <pagerange first="423" last="456"/>
+                </ref-volisspag>
+              </ref-info>
+              <ref-fulltext>K. G. Foote, “Analysis of empirical observations on the scattering of
+                sound by encaged aggregations of fish, ” Fiskeridir. Skr. Ser. Havunders. 16,
+                423—456 (1978).
+              </ref-fulltext>
+            </reference>
+            <reference id="10">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Some Signal Processing Techniques for Determining the Variance in
+                    Acoustic Stock Abundance Estimates
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">85054950995</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>J.E.</ce:initials>
+                    <ce:indexed-name>Ehrenberg J.E.</ce:indexed-name>
+                    <ce:surname>Ehrenberg</ce:surname>
+                  </author>
+                  <author seq="2">
+                    <ce:initials>D.W.</ce:initials>
+                    <ce:indexed-name>Lytle D.W.</ce:indexed-name>
+                    <ce:surname>Lytle</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Hydro-Acoustics in Fisheries Research</ref-sourcetitle>
+                <ref-text>edited by A. R. Margetts (Rapp. P.-V. Reun. Cons. int. Explor. Mer 170,
+                  Paris, 1977), pp. 205—213.
+                </ref-text>
+              </ref-info>
+              <ref-fulltext>J. E. Ehrenberg and D. W. Lytle, “Some Signal Processing Techniques for
+                Determining the Variance in Acoustic Stock Abundance Estimates, ” in Hydro-Acoustics
+                in Fisheries Research, edited by A. R. Margetts (Rapp. P.-V. Reun. Cons. int.
+                Explor. Mer 170, Paris, 1977), pp. 205—213.
+              </ref-fulltext>
+            </reference>
+            <reference id="11">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Two Applications for a Dual-Beam Transducer in Hydroacoustic Fish
+                    Assessment Systems
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0016321990</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>J.E.</ce:initials>
+                    <ce:indexed-name>Ehrenberg J.E.</ce:indexed-name>
+                    <ce:surname>Ehrenberg</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Proceedings of the IEEE Ocean</ref-sourcetitle>
+                <ref-text>74 International Conference on Engineering in the Ocean Environment,
+                  Halifax, Nova Scotia, 21–23 August 1974 (IEEE, New York, 1974).
+                </ref-text>
+              </ref-info>
+              <ref-fulltext>J. E. Ehrenberg, “Two Applications for a Dual-Beam Transducer in
+                Hydroacoustic Fish Assessment Systems, ” in Proceedings of the IEEE Ocean 74
+                International Conference on Engineering in the Ocean Environment, Halifax, Nova
+                Scotia, 21–23 August 1974 (IEEE, New York, 1974).
+              </ref-fulltext>
+            </reference>
+            <reference id="12">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Effect of fish bahavior on echo energy: the need for measurements
+                    of orientation distributions
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">84955019072</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>K.G.</ce:initials>
+                    <ce:indexed-name>Foote K.G.</ce:indexed-name>
+                    <ce:surname>Foote</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>J. Cons. Cons. Int. Explor. Mer</ref-sourcetitle>
+                <ref-publicationyear first="1979"/>
+                <ref-volisspag>
+                  <voliss volume="39" issue="2"/>
+                </ref-volisspag>
+                <ref-text>(in press).</ref-text>
+              </ref-info>
+              <ref-fulltext>K. G. Foote, “Effect of fish bahavior on echo energy: the need for
+                measurements of orientation distributions, ” J. Cons. Cons. Int. Explor. Mer. 39(2)
+                (1979) (in press).
+              </ref-fulltext>
+            </reference>
+            <reference id="13">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Dorsal aspect target strength functions of six fishes at two
+                    ultrasonic frequencies
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0001890398</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>K.G.</ce:initials>
+                    <ce:indexed-name>Foote K.G.</ce:indexed-name>
+                    <ce:surname>Foote</ce:surname>
+                  </author>
+                  <author seq="2">
+                    <ce:initials>O.</ce:initials>
+                    <ce:indexed-name>Nakken O.</ce:indexed-name>
+                    <ce:surname>Nakken</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Fisken Havet, Ser. B</ref-sourcetitle>
+                <ref-publicationyear first="1978"/>
+                <ref-volisspag>
+                  <voliss issue="3"/>
+                  <pagerange first="1" last="96"/>
+                </ref-volisspag>
+                <ref-text>June</ref-text>
+              </ref-info>
+              <ref-fulltext>K. G. Foote and O. Nakken, “Dorsal aspect target strength functions of
+                six fishes at two ultrasonic frequencies, ” Fisken Havet, Ser. B, No. 3, 1–96 (June
+                1978).
+              </ref-fulltext>
+            </reference>
+            <reference id="14">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Influence of Vessel Noise on Behavior of Herring</ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0001165313</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>K.</ce:initials>
+                    <ce:indexed-name>Olsen K.</ce:indexed-name>
+                    <ce:surname>Olsen</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>“Modem Fishing Gear of the World</ref-sourcetitle>
+                <ref-volisspag>
+                  <voliss volume="3"/>
+                  <pagerange first="291" last="294"/>
+                </ref-volisspag>
+                <ref-text>edited by H. Kristjonsson [Fishing News (Books) Ltd,., London, 1971]
+                </ref-text>
+              </ref-info>
+              <ref-fulltext>K. Olsen “Influence of Vessel Noise on Behavior of Herring, ” in “Modem
+                Fishing Gear of the World: 3, ” edited by H. Kristjonsson [Fishing News (Books)
+                Ltd,., London, 1971], pp. 291–294.
+              </ref-fulltext>
+            </reference>
+            <reference id="15">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Evidence for localization of sound by fish in schools
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0008865450</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>K.</ce:initials>
+                    <ce:indexed-name>Olsen K.</ce:indexed-name>
+                    <ce:surname>Olsen</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>“Sound Reception in Fish</ref-sourcetitle>
+                <ref-volisspag>
+                  <pagerange first="257" last="268"/>
+                </ref-volisspag>
+                <ref-text>edited by A. Schuijf and A. D. Hawkins (Elsevier, Amsterdam, 1976)
+                </ref-text>
+              </ref-info>
+              <ref-fulltext>K. Olsen, “Evidence for localization of sound by fish in schools,” in
+                “Sound Reception in Fish, ” edited by A. Schuijf and A. D. Hawkins (Elsevier,
+                Amsterdam, 1976), pp. 257–268.
+              </ref-fulltext>
+            </reference>
+            <reference id="16">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Effect of Vessel Noise in Purse Seining</ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">84955018938</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>Y.</ce:initials>
+                    <ce:indexed-name>Maniwa Y.</ce:indexed-name>
+                    <ce:surname>Maniwa</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Modern Fishing Gear of the World</ref-sourcetitle>
+                <ref-volisspag>
+                  <voliss volume="3"/>
+                  <pagerange first="294" last="296"/>
+                </ref-volisspag>
+                <ref-text>edited by H. Kristjonsson [Fishing News (Books) Ltd., London, 1971]
+                </ref-text>
+              </ref-info>
+              <ref-fulltext>Y. Maniwa, “Effect of Vessel Noise in Purse Seining, ” in Modern Fishing
+                Gear of the World: 3, edited by H. Kristjonsson [Fishing News (Books) Ltd., London,
+                1971], pp. 294–296.
+              </ref-fulltext>
+            </reference>
+            <reference id="17">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Behavior Patterns of Different Herring Stocks in Relation to Ship
+                    and Midwater Trawl
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0000188320</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>H.</ce:initials>
+                    <ce:indexed-name>Mohr H.</ce:indexed-name>
+                    <ce:surname>Mohr</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Modern Fishing Gear of the World</ref-sourcetitle>
+                <ref-volisspag>
+                  <voliss volume="3"/>
+                  <pagerange first="368" last="371"/>
+                </ref-volisspag>
+                <ref-text>edited by H. Kristjonsson [Fishing News (Books) Ltd., London, 1971]
+                </ref-text>
+              </ref-info>
+              <ref-fulltext>H. Mohr, “Behavior Patterns of Different Herring Stocks in Relation to
+                Ship and Midwater Trawl, ” in Modern Fishing Gear of the World: 3, edited by H.
+                Kristjonsson [Fishing News (Books) Ltd., London, 1971], pp. 368–371.
+              </ref-fulltext>
+            </reference>
+            <reference id="18">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Determination of the acoustic backscattering patterns and cross
+                    sections of fish
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0000462392</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>R.W.G.</ce:initials>
+                    <ce:indexed-name>Haslett R.W.G.</ce:indexed-name>
+                    <ce:surname>Haslett</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Brit. J. Appl. Phys</ref-sourcetitle>
+                <ref-publicationyear first="1962"/>
+                <ref-volisspag>
+                  <voliss volume="13"/>
+                  <pagerange first="349" last="357"/>
+                </ref-volisspag>
+              </ref-info>
+              <ref-fulltext>R. W. G. Haslett, “Determination of the acoustic backscattering patterns
+                and cross sections of fish, ” Brit. J. Appl. Phys. 13, 349–357 (1962).
+              </ref-fulltext>
+            </reference>
+            <reference id="19">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Orientation measurements of cod in Lofoten obtained from underwater
+                    photography and their relation to target strength
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">84955048132</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>K.</ce:initials>
+                    <ce:indexed-name>Olsen K.</ce:indexed-name>
+                    <ce:surname>Olsen</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-text>ICES CM 197l/B:17, 8 pp. (Mimeo).</ref-text>
+              </ref-info>
+              <ref-fulltext>K. Olsen, “Orientation measurements of cod in Lofoten obtained from
+                underwater photography and their relation to target strength,” ICES CM 197l/B:17, 8
+                pp. (Mimeo).
+              </ref-fulltext>
+            </reference>
+            <reference id="20">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Feeding, vertical migration, and schooling of O-group herring
+                    (Clupea harengus L.) in relation to light intensity
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0342377438</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>A.K.</ce:initials>
+                    <ce:indexed-name>Beltestad A.K.</ce:indexed-name>
+                    <ce:surname>Beltestad</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-publicationyear first="1974"/>
+                <ref-text>dissertation, University of Bergen, Bergen, Norway (in Norwegian).
+                </ref-text>
+              </ref-info>
+              <ref-fulltext>A. K. Beltestad, “Feeding, vertical migration, and schooling of O-group
+                herring (Clupea harengus L.) in relation to light intensity, ” dissertation,
+                University of Bergen, Bergen, Norway (1974) (in Norwegian).
+              </ref-fulltext>
+            </reference>
+            <reference id="21">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Theoretical estimation of the mean echo intensity-fish number
+                    density relation for encaged saithe in the dorsal aspect
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0001446185</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>K.G.</ce:initials>
+                    <ce:indexed-name>Foote K.G.</ce:indexed-name>
+                    <ce:surname>Foote</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-publicationyear first="1978"/>
+                <ref-volisspag>
+                  <voliss volume="16"/>
+                  <pagerange first="457" last="464"/>
+                </ref-volisspag>
+                <ref-text>Fiskeridir. Skr. Ser. Havunders.</ref-text>
+              </ref-info>
+              <ref-fulltext>K. G. Foote, “Theoretical estimation of the mean echo intensity-fish
+                number density relation for encaged saithe in the dorsal aspect,” Fiskeridir. Skr.
+                Ser. Havunders. 16, 457—464 (1978).
+              </ref-fulltext>
+            </reference>
+            <reference id="22">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Representations of length dependence of acoustic target strengths
+                    of fish
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0000782678</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>K.G.</ce:initials>
+                    <ce:indexed-name>Foote K.G.</ce:indexed-name>
+                    <ce:surname>Foote</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>J. Fish. Res. Board Can</ref-sourcetitle>
+                <ref-publicationyear first="1979"/>
+                <ref-volisspag>
+                  <voliss volume="36"/>
+                  <pagerange first="1490" last="1496"/>
+                </ref-volisspag>
+              </ref-info>
+              <ref-fulltext>K. G. Foote, “Representations of length dependence of acoustic target
+                strengths of fish,” J. Fish. Res. Board Can. 36, 1490–1496 (1979).
+              </ref-fulltext>
+            </reference>
+            <reference id="23">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Fish target strength-to-length regressions for application in
+                    fisheries research
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0037735243</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>K.G.</ce:initials>
+                    <ce:indexed-name>Foote K.G.</ce:indexed-name>
+                    <ce:surname>Foote</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Ultrasonics International</ref-sourcetitle>
+                <ref-volisspag>
+                  <pagerange first="327" last="332"/>
+                </ref-volisspag>
+                <ref-text>79 Conference Proceedings, Graz, Austria, 15—18 May 1979 (IPC Sci. Tech.
+                  Press, London, 1979)
+                </ref-text>
+              </ref-info>
+              <ref-fulltext>K. G. Foote, “Fish target strength-to-length regressions for application
+                in fisheries research, ” in Ultrasonics International 79 Conference Proceedings,
+                Graz, Austria, 15—18 May 1979 (IPC Sci. Tech. Press, London, 1979), pp. 327–332.
+              </ref-fulltext>
+            </reference>
+            <reference id="24">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Reflecing Properties of Commercial Fishes of the Northern Basin
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">84955019027</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>K.I.</ce:initials>
+                    <ce:indexed-name>Yudanov K.I.</ce:indexed-name>
+                    <ce:surname>Yudanov</ce:surname>
+                  </author>
+                  <author seq="2">
+                    <ce:initials>A.A.</ce:initials>
+                    <ce:indexed-name>Gan'kov A.A.</ce:indexed-name>
+                    <ce:surname>Gan'kov</ce:surname>
+                  </author>
+                  <author seq="3">
+                    <ce:initials>O.E.</ce:initials>
+                    <ce:indexed-name>Shatoba O.E.</ce:indexed-name>
+                    <ce:surname>Shatoba</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Rybn. Khoz. (Moscow)</ref-sourcetitle>
+                <ref-publicationyear first="1966"/>
+                <ref-volisspag>
+                  <voliss volume="42" issue="12"/>
+                  <pagerange first="57" last="60"/>
+                </ref-volisspag>
+                <ref-text>(in Russian).</ref-text>
+              </ref-info>
+              <ref-fulltext>K. I. Yudanov, A. A. Gan'kov, and O. E. Shatoba, “Reflecing Properties
+                of Commercial Fishes of the Northern Basin, ” Rybn. Khoz. (Moscow) 42(12), 57–60
+                (1966) (in Russian).
+              </ref-fulltext>
+            </reference>
+            <reference id="25">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Maximum Side-Aspect Target Strength of an Individual Fish
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0001361221</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>R.H.</ce:initials>
+                    <ce:indexed-name>Love R.H.</ce:indexed-name>
+                    <ce:surname>Love</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>J. Acoust. Soc. Am</ref-sourcetitle>
+                <ref-publicationyear first="1969"/>
+                <ref-volisspag>
+                  <voliss volume="46"/>
+                  <pagerange first="746" last="752"/>
+                </ref-volisspag>
+              </ref-info>
+              <ref-fulltext>R. H. Love, “Maximum Side-Aspect Target Strength of an Individual Fish,”
+                J. Acoust. Soc. Am. 46, 746—752 (1969).
+              </ref-fulltext>
+            </reference>
+            <reference id="26">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Dorsal-Aspect Target Strength of an Individual Fish</ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0015022446</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>R.H.</ce:initials>
+                    <ce:indexed-name>Love R.H.</ce:indexed-name>
+                    <ce:surname>Love</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>J. Acoust. Soc. Am</ref-sourcetitle>
+                <ref-publicationyear first="1971"/>
+                <ref-volisspag>
+                  <voliss volume="49"/>
+                  <pagerange first="816" last="823"/>
+                </ref-volisspag>
+              </ref-info>
+              <ref-fulltext>R. H. Love, “Dorsal-Aspect Target Strength of an Individual Fish,” J.
+                Acoust. Soc. Am. 49, 816–823 (1971).
+              </ref-fulltext>
+            </reference>
+            <reference id="27">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Target strength of an individual fish at any aspect</ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">84953681651</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>R.H.</ce:initials>
+                    <ce:indexed-name>Love R.H.</ce:indexed-name>
+                    <ce:surname>Love</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>J. Acoust. Soc. Am</ref-sourcetitle>
+                <ref-publicationyear first="1977"/>
+                <ref-volisspag>
+                  <voliss volume="62"/>
+                  <pagerange first="1397" last="1403"/>
+                </ref-volisspag>
+              </ref-info>
+              <ref-fulltext>R. H. Love, “Target strength of an individual fish at any aspect, ” J.
+                Acoust. Soc. Am. 62, 1397—1403 (1977).
+              </ref-fulltext>
+            </reference>
+            <reference id="28">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Measurements of the Acoustic Target Strengths of Fish in Dorsal
+                    Aspect, Including Swimbladder Resonance
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">0001036353</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>B.S.</ce:initials>
+                    <ce:indexed-name>McCartney B.S.</ce:indexed-name>
+                    <ce:surname>McCartney</ce:surname>
+                  </author>
+                  <author seq="2">
+                    <ce:initials>A.R.</ce:initials>
+                    <ce:indexed-name>Stubbs A.R.</ce:indexed-name>
+                    <ce:surname>Stubbs</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>J. Sound Vib</ref-sourcetitle>
+                <ref-publicationyear first="1971"/>
+                <ref-volisspag>
+                  <voliss volume="15"/>
+                  <pagerange first="397" last="420"/>
+                </ref-volisspag>
+              </ref-info>
+              <ref-fulltext>B. S. McCartney and A. R. Stubbs, “Measurements of the Acoustic Target
+                Strengths of Fish in Dorsal Aspect, Including Swimbladder Resonance, ” J. Sound Vib.
+                15, 397–420 (1971).
+              </ref-fulltext>
+            </reference>
+            <reference id="29">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Statistical Measurements of the Acoustic Target Strength of Live
+                    Fish
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">84959770050</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>G.C.</ce:initials>
+                    <ce:indexed-name>Goddard G.C.</ce:indexed-name>
+                    <ce:surname>Goddard</ce:surname>
+                  </author>
+                  <author seq="2">
+                    <ce:initials>V.G.</ce:initials>
+                    <ce:indexed-name>Welsby V.G.</ce:indexed-name>
+                    <ce:surname>Welsby</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-sourcetitle>Department of Electronic and Electrical Engineering, University of
+                  Birmingham, Birmingham, England, Departmental Memorandum
+                </ref-sourcetitle>
+                <ref-publicationyear first="1975"/>
+                <ref-volisspag>
+                  <voliss volume="456"/>
+                </ref-volisspag>
+              </ref-info>
+              <ref-fulltext>G. C. Goddard and V. G. Welsby, “Statistical Measurements of the
+                Acoustic Target Strength of Live Fish, ” Department of Electronic and Electrical
+                Engineering, University of Birmingham, Birmingham, England, Departmental Memorandum
+                No. 456 (1975).
+              </ref-fulltext>
+            </reference>
+            <reference id="30">
+              <ref-info>
+                <ref-title>
+                  <ref-titletext>Characterization of Active underwater Acoustic Channels: Part I. A
+                    New Formulation of Scattering by Random Media and Interfaces
+                  </ref-titletext>
+                </ref-title>
+                <refd-itemidlist>
+                  <itemid idtype="SGR">84955044055</itemid>
+                </refd-itemidlist>
+                <ref-authors>
+                  <author seq="1">
+                    <ce:initials>D.</ce:initials>
+                    <ce:indexed-name>Middleton D.</ce:indexed-name>
+                    <ce:surname>Middleton</ce:surname>
+                  </author>
+                </ref-authors>
+                <ref-publicationyear first="1974"/>
+                <ref-text>Applied Research Laboratories, The University of Texas at Austin, Austin,
+                  Texas, Report No. ARL-TR-74-61
+                </ref-text>
+              </ref-info>
+              <ref-fulltext>D. Middleton, “Characterization of Active underwater Acoustic Channels:
+                Part I. A New Formulation of Scattering by Random Media and Interfaces,” Applied
+                Research Laboratories, The University of Texas at Austin, Austin, Texas, Report No.
+                ARL-TR-74-61 (1974).
+              </ref-fulltext>
+            </reference>
+          </bibliography>
+        </tail>
+      </bibrecord>
+    </item>
+  </xocs:item>
+</xocs:doc>
