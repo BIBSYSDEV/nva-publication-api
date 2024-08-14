@@ -56,6 +56,6 @@ public record SourceName(String system, String instanceName) {
     }
 
     public boolean isFromBrageSystem() {
-        return system.equals(BRAGE_SYSTEM);
+        return BRAGE_SYSTEM.equals(system);
     }
 }
