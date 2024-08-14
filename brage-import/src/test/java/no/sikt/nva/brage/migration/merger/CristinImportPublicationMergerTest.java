@@ -54,6 +54,7 @@ import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.instancetypes.Map;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
+import no.unit.nva.model.instancetypes.book.Textbook;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.event.Lecture;
@@ -256,21 +257,21 @@ class CristinImportPublicationMergerTest {
     @Test
     void shouldPrioritizePublisherIfRecordHasPublisherPrioritized()
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
-        var existingPublication = randomPublication(DegreeBachelor.class);
-        var shouldBeOverWrittenDuringMerging = new Degree.Builder().withPublisher(new Publisher(randomUri())).build();
+        var existingPublication = randomPublication(Textbook.class);
+        var shouldBeOverWrittenDuringMerging = new BookBuilder().withPublisher(new Publisher(randomUri())).build();
         existingPublication.getEntityDescription().getReference()
             .setPublicationContext(shouldBeOverWrittenDuringMerging);
         var prioritizedPublisher = new Publisher(randomUri());
-        var bragePublication = randomPublication(DegreeBachelor.class);
+        var bragePublication = randomPublication(Textbook.class);
         bragePublication.getEntityDescription().getReference()
-            .setPublicationContext(new Degree.Builder().withPublisher(prioritizedPublisher).build());
+            .setPublicationContext(new BookBuilder().withPublisher(prioritizedPublisher).build());
         var record = new Record();
-        record.setId(bragePublication.getHandle());
+        record.setId(randomUri());
         record.setPrioritizedProperties(Set.of("publisher"));
         var updatedPublication = mergePublications(existingPublication, bragePublication, record);
 
         var actualPublicationContext =
-            (Degree)   updatedPublication.getEntityDescription().getReference().getPublicationContext();
+            (Book) updatedPublication.getEntityDescription().getReference().getPublicationContext();
         var actualPublisher = (Publisher) actualPublicationContext.getPublisher();
         assertThat(actualPublisher.getId(), is(equalTo(prioritizedPublisher.getId())));
     }
@@ -279,6 +280,7 @@ class CristinImportPublicationMergerTest {
     void shouldPrioritizeAuthorsFromBrageIfRecordHasContributorsWithRoleCreatorPrioritized()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var existingPublication = randomPublication(DegreeBachelor.class);
+        existingPublication.setAdditionalIdentifiers(Set.of());
         var contributorThatShouldBeOverWrittenDuringMerging = new Contributor.Builder()
                                                                   .withIdentity(new Identity.Builder()
                                                                                     .withName(randomString())
@@ -395,16 +397,16 @@ class CristinImportPublicationMergerTest {
     @Test
     void shouldPrioritizeMainTitleIfRecordHasMainTitleSetAsPrioritized()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        var existingPublication = randomPublication(DegreeBachelor.class);
+        var existingPublication = randomPublication(Textbook.class);
         var titleThatShouldBeOverWrittenDuringMerging = randomString();
         existingPublication.getEntityDescription().setMainTitle(titleThatShouldBeOverWrittenDuringMerging);
 
-        var bragePublication = randomPublication(DegreeBachelor.class);
+        var bragePublication = randomPublication(Textbook.class);
         var mainTitleThatShouldBeKept = randomString();
         bragePublication.getEntityDescription().setMainTitle(mainTitleThatShouldBeKept);
 
         var record = new Record();
-        record.setId(bragePublication.getHandle());
+        record.setId(randomUri());
         record.setPrioritizedProperties(Set.of(PRIORITIZE_MAIN_TITLE));
 
         var updatedPublication = mergePublications(existingPublication, bragePublication, record);
@@ -415,12 +417,13 @@ class CristinImportPublicationMergerTest {
     @Test
     void shouldPioritizeAlternativeTitleIfRecordHasAlternativeTitleSetAsPrioritized()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        var existingPublication = randomPublication(DegreeBachelor.class);
+        var existingPublication = randomPublication(Textbook.class);
+        existingPublication.setAdditionalIdentifiers(Set.of());
         var alternativeTitleThatShouldBeOverWrittenDuringMerging = java.util.Map.of(randomString(), randomString());
         existingPublication.getEntityDescription()
             .setAlternativeTitles(alternativeTitleThatShouldBeOverWrittenDuringMerging);
 
-        var bragePublication = randomPublication(DegreeBachelor.class);
+        var bragePublication = randomPublication(Textbook.class);
         var alternativeTitleThatShouldBeKept = java.util.Map.of(randomString(), randomString());
         bragePublication.getEntityDescription().setAlternativeTitles(alternativeTitleThatShouldBeKept);
 
@@ -437,11 +440,12 @@ class CristinImportPublicationMergerTest {
     @Test
     void shouldPrioritizeAbstractIfRecordHasAbstractAsPrioritized()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        var existingPublication = randomPublication(DegreeBachelor.class);
+        var existingPublication = randomPublication(Textbook.class);
+        existingPublication.setAdditionalIdentifiers(Set.of());
         var abstractThatShouldBeOverWrittenDuringMerging = randomString();
         existingPublication.getEntityDescription().setAbstract(abstractThatShouldBeOverWrittenDuringMerging);
 
-        var bragePublication = randomPublication(DegreeBachelor.class);
+        var bragePublication = randomPublication(Textbook.class);
         var abstractThatShouldBeKept = randomString();
         bragePublication.getEntityDescription().setAbstract(abstractThatShouldBeKept);
 
@@ -457,12 +461,13 @@ class CristinImportPublicationMergerTest {
     @Test
     void shouldPrioritizeAlternativeAbstractsIfRecordHasAlternativeAbstractAsPrioritized()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        var existingPublication = randomPublication(DegreeBachelor.class);
+        var existingPublication = randomPublication(Textbook.class);
+        existingPublication.setAdditionalIdentifiers(Set.of());
         var abstractThatShouldBeOverWrittenDuringMerging = java.util.Map.of(randomString(), randomString());
         existingPublication.getEntityDescription()
             .setAlternativeAbstracts(abstractThatShouldBeOverWrittenDuringMerging);
 
-        var bragePublication = randomPublication(DegreeBachelor.class);
+        var bragePublication = randomPublication(Textbook.class);
         var abstractThatShouldBeKept = java.util.Map.of(randomString(), randomString());
         bragePublication.getEntityDescription().setAlternativeAbstracts(abstractThatShouldBeKept);
 
@@ -479,9 +484,10 @@ class CristinImportPublicationMergerTest {
     @Test
     void shouldPrioritizeReferenceFromBrageIfRecordHasReferenceAsPrioritized()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        var existingPublication = randomPublication(DegreeBachelor.class);
+        var existingPublication = randomPublication(Textbook.class);
+        existingPublication.setAdditionalIdentifiers(Set.of());
 
-        var bragePublication = randomPublication(DegreeBachelor.class);
+        var bragePublication = randomPublication(Textbook.class);
         var referenceThatShouldBeKept = bragePublication.getEntityDescription().getReference();
 
         var record = new Record();
@@ -496,7 +502,8 @@ class CristinImportPublicationMergerTest {
     @Test
     void shouldMergeTagsWhenRecordHasTagsPrioritized()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        var existingPublication = randomPublication(DegreeBachelor.class);
+        var existingPublication = randomPublication(Textbook.class);
+        existingPublication.setAdditionalIdentifiers(Set.of());
         var tag = randomString();
         var duplicatedTag = randomString();
         var tags = new ArrayList<String>();
@@ -505,7 +512,7 @@ class CristinImportPublicationMergerTest {
         tags.add(null);
         existingPublication.getEntityDescription().setTags(tags);
 
-        var bragePublication = randomPublication(DegreeBachelor.class);
+        var bragePublication = randomPublication(Textbook.class);
         var newTag = randomString();
         bragePublication.getEntityDescription().setTags(List.of(newTag, duplicatedTag.toUpperCase(Locale.ROOT)));
 
@@ -524,14 +531,15 @@ class CristinImportPublicationMergerTest {
     @Test
     void shouldMergeFundingsIfRecordHasFundingsPrioritized()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        var existingPublication = randomPublication(DegreeBachelor.class);
+        var existingPublication = randomPublication(Textbook.class);
+        existingPublication.setAdditionalIdentifiers(Set.of());
         var funding =  new FundingBuilder().withId(randomUri())
                            .withSource(randomUri())
                            .withIdentifier(randomString())
                            .build();
         existingPublication.setFundings(List.of(funding));
 
-        var bragePublication = randomPublication(DegreeBachelor.class);
+        var bragePublication = randomPublication(Textbook.class);
         var newFunding =  new FundingBuilder().withId(randomUri()).build();
 
         bragePublication.setFundings(List.of(newFunding));

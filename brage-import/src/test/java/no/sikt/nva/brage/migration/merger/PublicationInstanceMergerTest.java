@@ -95,6 +95,7 @@ public class PublicationInstanceMergerTest {
         PublicationInstance<?>  publicationInstance) throws InvalidUnconfirmedSeriesException, InvalidIsbnException,
                                                             InvalidIssnException {
         var existingPublication = randomPublication(publicationInstance.getClass());
+        existingPublication.setAdditionalIdentifiers(Set.of());
         existingPublication.getEntityDescription().getReference().setPublicationInstance(publicationInstance);
         var bragePublication = randomPublication(publicationInstance.getClass());
         var updatedPublication = mergePublications(existingPublication, bragePublication);

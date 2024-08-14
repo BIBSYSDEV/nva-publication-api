@@ -31,12 +31,12 @@ import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import no.sikt.nva.brage.migration.record.content.ResourceContent.BundleType;
-import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.CristinIdentifier;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.HandleIdentifier;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -162,10 +162,15 @@ public final class BrageNvaMapper {
                    .collect(Collectors.toSet());
     }
 
-    private static Optional<AdditionalIdentifier> extractBrageHandle(Record brageRecord) {
+    private static Optional<AdditionalIdentifierBase> extractBrageHandle(Record brageRecord) {
         return isDummyHandle(brageRecord)
                    ? Optional.empty()
-                   : Optional.of(new AdditionalIdentifier("handle", brageRecord.getId().toString()));
+                   : Optional.of(handleIdentifierFromRecord(brageRecord));
+    }
+
+    private static HandleIdentifier handleIdentifierFromRecord(Record brageRecord) {
+        return new HandleIdentifier(SourceName.fromBrage(brageRecord.getCustomer().getName()),
+                                    brageRecord.getId());
     }
 
     private static boolean isDummyHandle(Record brageRecord) {

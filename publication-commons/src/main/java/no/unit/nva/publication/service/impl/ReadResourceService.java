@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.CristinIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;

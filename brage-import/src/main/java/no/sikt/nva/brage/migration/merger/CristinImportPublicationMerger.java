@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.AnthologyMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.BookMerger;
@@ -24,6 +25,7 @@ import no.sikt.nva.brage.migration.merger.publicationinstancemerger.PublicationI
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.CristinIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
@@ -53,6 +55,7 @@ import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import nva.commons.core.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 public class CristinImportPublicationMerger {
 
@@ -288,9 +291,26 @@ public class CristinImportPublicationMerger {
 
     private Set<AdditionalIdentifierBase> mergeAdditionalIdentifiers() {
         var additionalIdentifiers = new HashSet<>(existingPublication.getAdditionalIdentifiers());
-        additionalIdentifiers.addAll(bragePublicationRepresentation.publication().getAdditionalIdentifiers());
+        if (bothPublicationsContainCristinIdentifier()) {
+            var additionalIdentifiersExceptCristinIdentifier = getAdditionalIdentifiersExceptCristinIdentifier();
+            additionalIdentifiers.addAll(additionalIdentifiersExceptCristinIdentifier);
+        } else {
+            additionalIdentifiers.addAll(bragePublicationRepresentation.publication().getAdditionalIdentifiers());
+        }
         removePossiblyRedundantCristinIdentifier(additionalIdentifiers);
         return additionalIdentifiers;
+    }
+
+    private boolean bothPublicationsContainCristinIdentifier() {
+        return existingPublication.getAdditionalIdentifiers().stream().anyMatch(CristinIdentifier.class::isInstance)
+               && existingPublication.getAdditionalIdentifiers().stream().anyMatch(CristinIdentifier.class::isInstance);
+    }
+
+    private Set<AdditionalIdentifierBase> getAdditionalIdentifiersExceptCristinIdentifier() {
+        return bragePublicationRepresentation.publication()
+                   .getAdditionalIdentifiers().stream()
+                   .filter(identifier -> !(identifier instanceof CristinIdentifier))
+                   .collect(Collectors.toSet());
     }
 
     private void removePossiblyRedundantCristinIdentifier(HashSet<AdditionalIdentifierBase> additionalIdentifiers) {

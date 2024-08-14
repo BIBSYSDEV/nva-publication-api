@@ -29,9 +29,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.swing.text.html.Option;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifierBase;
+import no.unit.nva.model.CristinIdentifier;
 import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.model.business.Resource;
@@ -239,6 +241,15 @@ public class ResourceDao extends Dao
     }
     
     private boolean keyEqualsCristin(AdditionalIdentifierBase identifier) {
+        return isAdditionalIdentifierWithCristinSource(identifier) || isCristinIdentifier(identifier);
+    }
+
+    private boolean isCristinIdentifier(AdditionalIdentifierBase identifier) {
+        return nonNull(identifier) && identifier instanceof CristinIdentifier;
+    }
+
+    //TODO: All AdditionalIdentifiers with Cristin source should be migrated to CristinIdentifier's
+    private static Boolean isAdditionalIdentifierWithCristinSource(AdditionalIdentifierBase identifier) {
         return Optional.ofNullable(identifier)
                    .map(AdditionalIdentifierBase::sourceName)
                    .map(CRISTIN_SOURCE::equals)

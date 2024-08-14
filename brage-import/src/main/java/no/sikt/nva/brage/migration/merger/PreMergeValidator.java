@@ -1,8 +1,9 @@
 package no.sikt.nva.brage.migration.merger;
 
+import java.net.URI;
 import no.sikt.nva.brage.migration.lambda.HandleDuplicateException;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
-import no.unit.nva.model.AdditionalIdentifierBase;
+import no.unit.nva.model.HandleIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Degree;
 import nva.commons.core.JacocoGenerated;
@@ -10,7 +11,6 @@ import nva.commons.core.JacocoGenerated;
 public final class PreMergeValidator {
 
     public static final String POST_ALREADY_MERGED = "Publication with handle %s in additional identifiers: %s";
-    public static final String HANDLE = "handle";
 
     @JacocoGenerated
     private PreMergeValidator() {
@@ -39,19 +39,14 @@ public final class PreMergeValidator {
 
     private static boolean hasBrageHandle(Publication publication) {
         return publication.getAdditionalIdentifiers().stream()
-                   .map(AdditionalIdentifierBase::sourceName)
-                   .anyMatch(HANDLE::equals);
+                   .anyMatch(HandleIdentifier.class::isInstance);
     }
 
     private static boolean containsHandle(Publication publication, String handle) {
         return publication.getAdditionalIdentifiers().stream()
-                   .filter(PreMergeValidator::isHandle)
-                   .map(AdditionalIdentifierBase::value)
-                   .anyMatch(handle::equals);
-    }
-
-    private static boolean isHandle(AdditionalIdentifierBase additionalIdentifier) {
-        return HANDLE.equals(additionalIdentifier.sourceName());
+                   .filter(HandleIdentifier.class::isInstance)
+                   .map(HandleIdentifier.class::cast)
+                   .anyMatch(handleIdentifier -> handleIdentifier.value().equals(handle));
     }
 
     private static boolean isDegree(Publication publication) {
