@@ -1,6 +1,5 @@
 package no.sikt.nva.brage.migration.merger;
 
-import java.net.URI;
 import no.sikt.nva.brage.migration.lambda.HandleDuplicateException;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.unit.nva.model.HandleIdentifier;

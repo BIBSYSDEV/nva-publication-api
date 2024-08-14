@@ -302,8 +302,10 @@ public class CristinImportPublicationMerger {
     }
 
     private boolean bothPublicationsContainCristinIdentifier() {
-        return existingPublication.getAdditionalIdentifiers().stream().anyMatch(CristinIdentifier.class::isInstance)
-               && existingPublication.getAdditionalIdentifiers().stream().anyMatch(CristinIdentifier.class::isInstance);
+        return existingPublication.getAdditionalIdentifiers().stream()
+                   .anyMatch(CristinIdentifier.class::isInstance)
+               && bragePublicationRepresentation.publication().getAdditionalIdentifiers().stream()
+                      .anyMatch(CristinIdentifier.class::isInstance);
     }
 
     private Set<AdditionalIdentifierBase> getAdditionalIdentifiersExceptCristinIdentifier() {

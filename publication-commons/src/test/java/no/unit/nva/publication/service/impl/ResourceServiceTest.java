@@ -452,18 +452,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertTrue(actualPublication.containsAll(actualResourcesSet));
     }
 
-//    @Test
-//    void some() {
-//        var cristinIdentifier = randomString();
-//        Set<Publication> publicationsWithCristinIdentifier =
-//            createSamplePublicationsOfSingleCristinIdentifier(cristinIdentifier);
-//        List<Publication> actualPublication = resourceService.getPublicationsByCristinIdentifier(cristinIdentifier);
-//        HashSet<Publication> actualResourcesSet = new HashSet<>(actualPublication);
-//        assertThat(actualResourcesSet,
-//                   containsInAnyOrder(
-//                       publicationsWithCristinIdentifier.toArray(Publication[]::new)));
-//    }
-
     @Test
     void itIsNotPossibleToPersistMultipleTrustedCristinIdentifiersWhenUpdatedPublication()
         throws BadRequestException, NotFoundException {

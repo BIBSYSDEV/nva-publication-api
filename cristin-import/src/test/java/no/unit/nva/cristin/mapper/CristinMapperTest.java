@@ -43,7 +43,6 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.SourceName;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.NullPublisher;
@@ -139,24 +138,24 @@ class CristinMapperTest extends AbstractCristinImportTest {
         assertThat(actualIds, is(equalTo(expectedIds)));
     }
 
-//    @Test
-//    void mapReturnsResourceWithCristinSourceIdentifiersStoredInAdditionalIdentifiers() {
-//        var expectedIds = cristinObjects.stream()
-//                              .map(CristinObject::getCristinSources)
-//                              .flatMap(Collection::stream)
-//                              .map(this::createExpectedAdditionalIdentifier)
-//                              .toList();
-//
-//        var actualIds = cristinObjects.stream()
-//                            .map(this::mapToPublication)
-//                            .map(Publication::getAdditionalIdentifiers)
-//                            .flatMap(Collection::stream)
-//                            .filter(CristinIdentifier.class::isInstance)
-//                            .collect(Collectors.toList());
-//
-//        assertThat(actualIds, containsInAnyOrder(expectedIds.toArray()));
-//        assertThat(actualIds, hasSize(expectedIds.size()));
-//    }
+    @Test
+    void shouldMapAllNonCristinIdentifiersToCristinObjectToAdditionalIdentifiers() {
+        var expectedIds = cristinObjects.stream()
+                              .map(CristinObject::getCristinSources)
+                              .flatMap(Collection::stream)
+                              .map(this::createExpectedAdditionalIdentifier)
+                              .toList();
+
+        var actualIds = cristinObjects.stream()
+                            .map(this::mapToPublication)
+                            .map(Publication::getAdditionalIdentifiers)
+                            .flatMap(Collection::stream)
+                            .filter(additionalIdentifierBase -> !(additionalIdentifierBase instanceof CristinIdentifier))
+                            .collect(Collectors.toList());
+
+        assertThat(actualIds, containsInAnyOrder(expectedIds.toArray()));
+        assertThat(actualIds, hasSize(expectedIds.size()));
+    }
 
     @Test
     void mapReturnsResourceWithSourceCodeAndSourceRecordIdentifierStoredInAdditionalIdentifiers() {
@@ -634,8 +633,8 @@ class CristinMapperTest extends AbstractCristinImportTest {
         return cristinObject;
     }
 
-    private CristinIdentifier createExpectedAdditionalIdentifier(CristinSource cristinSource) {
-        return new CristinIdentifier(SourceName.fromCristin("sikt"),
+    private AdditionalIdentifier createExpectedAdditionalIdentifier(CristinSource cristinSource) {
+        return new AdditionalIdentifier(cristinSource.getSourceCode(),
                                      cristinSource.getSourceIdentifier());
     }
 
