@@ -6,7 +6,7 @@ Feature: Mappings that hold for all types of Cristin Results
   Scenario: Cristin entry id is saved as additional identifier
     Given the Cristin Result has id equal to 12345
     When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource has an additional identifier with key "Cristin" and value 12345
+    Then the NVA Resource has an additional identifier with key "cristin@sikt" and value 12345
 
   Scenario: Cristin sources are saved as additional identifiers
     Given the Cristin Result has id equal to 12345
@@ -17,7 +17,7 @@ Feature: Mappings that hold for all types of Cristin Results
       | SCOPUS           | Some third identifier  |
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has an additional identifier with key "SomeCode" and value "Some identifier"
-    And the NVA Resource has an additional identifier with key "Cristin" and value 12345
+    And the NVA Resource has an additional identifier with key "cristin@sikt" and value 12345
     And the NVA Resource has an additional identifier with key "Some other code" and value "Some other identifier"
     And the NVA Resource has an additional identifier with key "Scopus" and value "Some third identifier"
 
@@ -30,7 +30,7 @@ Feature: Mappings that hold for all types of Cristin Results
       | SomeCode         | Some identifier        |
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has an additional identifier with key "SomeCode" and value "Some identifier"
-    And the NVA Resource has an additional identifier with key "Cristin" and value 12345
+    And the NVA Resource has an additional identifier with key "cristin@sikt" and value 12345
     And the NVA Resource does not have an additional identifier with key "SomeCode" and value "Some other identifier"
 
   Scenario: NVA Resource gets the single Cristin title which is annotated as

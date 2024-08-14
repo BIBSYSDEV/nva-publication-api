@@ -45,10 +45,12 @@ import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.CristinIdentifier;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationNote;
 import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.SourceName;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.funding.ConfirmedFunding;
 import no.unit.nva.model.funding.Funding;
@@ -142,8 +144,9 @@ public class GeneralMappingRules {
                                                                     int expectedCristinId) {
         Set<AdditionalIdentifierBase> actualAdditionalIdentifiers =
             scenarioContext.getNvaEntry().getAdditionalIdentifiers();
-        AdditionalIdentifier expectedIdentifier =
-            new AdditionalIdentifier(cristinAdditionalIdentifierKey, Integer.toString(expectedCristinId));
+        CristinIdentifier expectedIdentifier =
+            new CristinIdentifier(SourceName.fromCristin(cristinAdditionalIdentifierKey.split("@")[1]),
+                                  Integer.toString(expectedCristinId));
 
         assertThat(actualAdditionalIdentifiers, hasItem(expectedIdentifier));
     }
