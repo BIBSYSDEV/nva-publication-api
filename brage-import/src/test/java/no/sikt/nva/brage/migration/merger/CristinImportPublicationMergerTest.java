@@ -22,18 +22,24 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.HandleIdentifier;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.SourceName;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
@@ -53,6 +59,7 @@ import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.instancetypes.Map;
+import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
@@ -63,6 +70,7 @@ import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 class CristinImportPublicationMergerTest {
@@ -357,7 +365,7 @@ class CristinImportPublicationMergerTest {
                    containsInAnyOrder(administrativeAgreement, newPublishedFile));
     }
 
-    private File randomPublishedFile() {
+    private AssociatedArtifact randomPublishedFile() {
         return File.builder()
                    .withName(randomString())
                    .withIdentifier(UUID.randomUUID())
@@ -375,8 +383,7 @@ class CristinImportPublicationMergerTest {
     }
 
     private static AssociatedLink randomAssociatedLink() {
-        var associatedLink = new AssociatedLink(randomUri(), null, null);
-        return associatedLink;
+        return new AssociatedLink(randomUri(), null, null);
     }
 
     @Test
@@ -543,6 +550,89 @@ class CristinImportPublicationMergerTest {
         var updatedPublicaiton = mergePublications(existingPublication, bragePublication, record);
 
         assertThat(updatedPublicaiton.getFundings(), is(containsInAnyOrder(funding, newFunding)));
+    }
+
+    @Test
+    void shouldAddDublinCoreFromIncomingPublicationToExistingOneWhenItIsPresentInBothPublications()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var existingPublication = randomPublication(AcademicMonograph.class);
+        var existingDublinCore = randomDublinCore();
+        var existingAssociatedArtifact = List.of(existingDublinCore, randomPublishedFile());
+        existingPublication.setAssociatedArtifacts(new AssociatedArtifactList(existingAssociatedArtifact));
+        var newPublication = randomPublication(AcademicMonograph.class);
+        var newDublinCore = randomDublinCore();
+        var newAssociatedArtifact = List.of(newDublinCore, randomPublishedFile());
+        newPublication.setAssociatedArtifacts(new AssociatedArtifactList(newAssociatedArtifact));
+
+        var record = new Record();
+        record.setId(randomUri());
+
+        var updatedPublication = mergePublications(existingPublication, newPublication, record);
+
+        var dublinCores = extractDublinCores(updatedPublication);
+
+        assertThat(dublinCores, containsInAnyOrder(existingDublinCore, newDublinCore));
+    }
+
+    @Test
+    void shouldAddDublinCoreFromIncomingPublicationToExistingOneWhenItIsPresentInNewPublicationOnly()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var existingPublication = randomPublication(AcademicMonograph.class);
+        var existingAssociatedArtifact = List.of(randomPublishedFile());
+        existingPublication.setAssociatedArtifacts(new AssociatedArtifactList(existingAssociatedArtifact));
+        var newPublication = randomPublication(AcademicMonograph.class);
+        var newDublinCore = randomDublinCore();
+        var newAssociatedArtifact = List.of(newDublinCore, randomPublishedFile());
+        newPublication.setAssociatedArtifacts(new AssociatedArtifactList(newAssociatedArtifact));
+
+        var record = new Record();
+        record.setId(randomUri());
+
+        var updatedPublication = mergePublications(existingPublication, newPublication, record);
+
+        var dublinCores = extractDublinCores(updatedPublication);
+
+        assertThat(dublinCores, containsInAnyOrder(newDublinCore));
+    }
+
+    private static @NotNull Set<AdministrativeAgreement> extractDublinCores(Publication updatedPublication) {
+        return updatedPublication.getAssociatedArtifacts().stream()
+                   .filter(AdministrativeAgreement.class::isInstance)
+                   .map(AdministrativeAgreement.class::cast)
+                   .filter(administrativeAgreement -> "dublin_core.xml".equals(administrativeAgreement.getName()))
+                   .collect(Collectors.toSet());
+    }
+
+    @Test
+    void shouldAddDublinCoreFromIncomingPublicationWhenNotMergingNewPublication()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var existingPublication = randomPublication(AcademicMonograph.class);
+        var handle = randomUri();
+        existingPublication.setAdditionalIdentifiers(Set.of(handleIdentifierFrom(handle)));
+        var newPublication = randomPublication(AcademicMonograph.class);
+        var newDublinCore = randomDublinCore();
+        var newAssociatedArtifact = List.of(newDublinCore);
+        newPublication.setAssociatedArtifacts(new AssociatedArtifactList(newAssociatedArtifact));
+
+        var record = new Record();
+        record.setId(handle);
+
+        var updatedPublication = mergePublications(existingPublication, newPublication, record);
+
+        var dublinCores = extractDublinCores(updatedPublication);
+
+        assertThat(dublinCores, containsInAnyOrder(newDublinCore));
+    }
+
+    private static HandleIdentifier handleIdentifierFrom(URI handle) {
+        return new HandleIdentifier(SourceName.fromBrage("ntnu"), handle);
+    }
+
+    private AssociatedArtifact randomDublinCore() {
+        return File.builder()
+                   .withName("dublin_core.xml")
+                   .withLicense(randomUri())
+                   .buildUnpublishableFile();
     }
 
     private PublicationContext emptyUnconfirmedJournal() throws InvalidIssnException {
