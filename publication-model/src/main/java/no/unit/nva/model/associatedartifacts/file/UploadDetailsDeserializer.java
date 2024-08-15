@@ -33,7 +33,7 @@ public class UploadDetailsDeserializer extends StdDeserializer<UploadDetails> {
         if (node.has("uploadedBy")) {
             var uploadedBy = node.get("uploadedBy").asText();
             var usernameOrArchive = uploadedBy.split("@")[0];
-            if (attempt((() -> Integer.parseInt(usernameOrArchive))).isSuccess()) {
+            if (attempt(() -> Integer.parseInt(usernameOrArchive)).isSuccess()) {
                 return new UserUploadDetails(new Username(uploadedBy), uploadedDate);
             } else {
                 if (uploadedBy.contains(SCOPUS_IMPORT_USERNAME)) {

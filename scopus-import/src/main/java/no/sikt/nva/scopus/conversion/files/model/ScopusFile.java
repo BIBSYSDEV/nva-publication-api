@@ -1,6 +1,5 @@
 package no.sikt.nva.scopus.conversion.files.model;
 
-import static no.sikt.nva.scopus.ScopusConstants.UPLOAD_DETAILS_USERNAME;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
@@ -11,8 +10,6 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails;
 import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails.Source;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
-import no.unit.nva.model.associatedartifacts.file.UploadDetails;
-import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import org.apache.tika.io.TikaInputStream;
 
 public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, TikaInputStream content, long size,

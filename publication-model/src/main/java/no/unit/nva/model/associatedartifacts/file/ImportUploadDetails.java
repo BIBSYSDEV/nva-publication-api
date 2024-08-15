@@ -1,6 +1,7 @@
 package no.unit.nva.model.associatedartifacts.file;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -16,6 +17,12 @@ public record ImportUploadDetails(Source source, String archive, Instant uploade
     implements UploadDetails, JsonSerializable {
 
     public static final String TYPE = "ImportUploadDetails";
+
+    //TODO: Remove method after migration
+    @JsonProperty
+    public String type() {
+        return TYPE;
+    }
 
     public enum Source {
         BRAGE("Brage"), SCOPUS("Scopus");
