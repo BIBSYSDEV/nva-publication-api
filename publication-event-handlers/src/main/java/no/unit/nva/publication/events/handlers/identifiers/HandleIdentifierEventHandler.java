@@ -86,13 +86,12 @@ public class HandleIdentifierEventHandler
         sqsEvent.getRecords()
             .stream()
             .map(sqs -> {
-                logger.info("Processing event: {}", sqs.getBody());
+                logger.info("Processing sqsEvent: {}", sqs.getBody());
                 try {
                     return JsonUtils.dtoObjectMapper
                                  .readValue(sqs.getBody(),
-                                            new TypeReference<AwsEventBridgeEvent<ResponsePayload<EventReference>>>() {})
-                                 .getDetail()
-                                 .responsePayload();
+                                            new TypeReference<AwsEventBridgeEvent<EventReference>>() {})
+                                 .getDetail();
                 } catch (JsonProcessingException e) {
                     throw new RuntimeException(e);
                 }
@@ -100,12 +99,13 @@ public class HandleIdentifierEventHandler
             .forEach(this::processInputPayload);
         return null;
     }
-
+/**
     public record ResponsePayload<T>(T responsePayload) {
         public String toJsonString() {
             return attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(this)).orElseThrow();
         }
     }
+    */
 
     private CognitoCredentials fetchCredentials() {
         var credentials = secretsManagerClient.fetchClassSecret(backendClientSecretName,
