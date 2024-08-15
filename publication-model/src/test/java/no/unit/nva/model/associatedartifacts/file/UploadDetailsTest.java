@@ -4,11 +4,13 @@ import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails.Source;
 import org.junit.Test;
 
 public class UploadDetailsTest {
@@ -52,7 +54,7 @@ public class UploadDetailsTest {
               "associatedArtifacts": [
                 {
                   "type": "UnpublishableFile",
-                  "identifier": "206de8de-a628-4d31-adf3-b83dfffc06f1", 
+                  "identifier": "206de8de-a628-4d31-adf3-b83dfffc06f1",
                   "name": "user_file",
                   "uploadDetails": {
                     "type": "UserUploadDetails",
@@ -60,7 +62,6 @@ public class UploadDetailsTest {
                     "uploadedDate": "2024-07-12T20:15:27.968310156Z"
                   }
                 }
-                
               ]
             }""";
         var publication = dtoObjectMapper.readValue(json, Publication.class);
@@ -85,9 +86,10 @@ public class UploadDetailsTest {
                   "uploadedDate" : "2024-07-02T17:10:13.960576174Z"
                 }
             """;
-        var importDetails = dtoObjectMapper.readValue(uploadDetailsThatHaveBeenImported, UploadDetails.class);
-
-        assertInstanceOf(ImportUploadDetails.class, importDetails);
+        var importDetails = (ImportUploadDetails) dtoObjectMapper.readValue(uploadDetailsThatHaveBeenImported,
+                                                                           UploadDetails.class);
+        assertEquals("ntnu", importDetails.archive());
+        assertEquals(Source.BRAGE, importDetails.source());
     }
 
     @Test
@@ -100,9 +102,9 @@ public class UploadDetailsTest {
                   "uploadedDate" : "2024-07-02T17:10:13.960576174Z"
                 }
             """;
-        var importDetails = dtoObjectMapper.readValue(uploadDetailsThatHaveBeenImported, UploadDetails.class);
+        var uploadDetails = (UserUploadDetails) dtoObjectMapper.readValue(uploadDetailsThatHaveBeenImported, UploadDetails.class);
 
-        assertInstanceOf(UserUploadDetails.class, importDetails);
+        assertEquals(new Username("123454@194.0.0.0"), uploadDetails.uploadedBy());
     }
 
     @Test
@@ -140,7 +142,7 @@ public class UploadDetailsTest {
               "associatedArtifacts": [
                 {
                   "type": "UnpublishableFile",
-                  "identifier": "206de8de-a628-4d31-adf3-b83dfffc06f1", 
+                  "identifier": "206de8de-a628-4d31-adf3-b83dfffc06f1",
                   "name": "user_file",
                   "uploadDetails": {
                     "type": "UploadDetails",

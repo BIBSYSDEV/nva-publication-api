@@ -23,8 +23,8 @@ public class UploadDetailsDeserializer extends StdDeserializer<UploadDetails> {
     }
 
     @Override
-    public UploadDetails deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
-        JsonNode node = jp.getCodec().readTree(jp);
+    public UploadDetails deserialize(JsonParser jsonParser, DeserializationContext context) throws IOException {
+        JsonNode node = jsonParser.getCodec().readTree(jsonParser);
 
         Instant uploadedDate = null;
         if (node.has("uploadedDate")) {
