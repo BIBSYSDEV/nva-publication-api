@@ -66,4 +66,4 @@ Feature: Event conversion rules
     And the Event has an agent "Some agent"
     And the Event has a place "Norge" and country code "NO"
     And the Event has a time Period with fromDate "2023-11-28T00:00:00Z"
-    And the Event has no a time Period with toDate
+    And the Event toDate is null

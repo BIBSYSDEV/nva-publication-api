@@ -105,8 +105,8 @@ public class EventFeatures {
         assertThat(((Period) event.getTime()).getFrom().toString(), is(equalTo(value)));
     }
 
-    @Then("the Event has no a time Period with toDate")
-    public void theNvaEventHasNoAPeriodWithToDate() {
+    @Then("the Event toDate is null")
+    public void theNvaEventToDateIsNull() {
         var event = (Event) scenarioContext.getNvaEntry()
                                 .getEntityDescription()
                                 .getReference()
