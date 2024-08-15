@@ -13,10 +13,12 @@ import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.report.ConferenceReport;
 import no.unit.nva.model.pages.MonographPages;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 class PublicationComparatorTest {
+
+    public static final String SENTENCE_STYLE_TITLE = "An integrative systematic review of promoting patient safety within prehospital emergency medical services by paramedics : A role theory perspective";
+    public static final String HEADLINE_STYLE = "An Integrative Systematic Review of Promoting Patient Safety Within Prehospital Emergency Medical Services by Paramedics: A Role Theory Perspective";
 
     @Test
     void shouldReturnTrueWhenComparingBrageConferenceReportWithExistingLecture()
@@ -58,6 +60,19 @@ class PublicationComparatorTest {
                                            .withEntityDescription(addEmptyReference(existingPublication))
                                            .build();
         assertTrue(PublicationComparator.publicationsMatch(existingPublication, incomingConferenceReport));
+    }
+
+    @Test
+    void shouldReturnTrueWhenPublicationsTitleAreIdenticalButNotStyleTheyAreWrittenIn()
+        throws InvalidIssnException, InvalidUnconfirmedSeriesException {
+        var existingLecture = randomPublication(Lecture.class);
+        existingLecture.getEntityDescription().setMainTitle(SENTENCE_STYLE_TITLE);
+        existingLecture.getEntityDescription().setPublicationDate(publicationDateWithYear());
+        var incomingConferenceReport = existingLecture.copy()
+                                           .withEntityDescription(createConferenceReport(existingLecture))
+                                           .build();
+        incomingConferenceReport.getEntityDescription().setMainTitle(HEADLINE_STYLE);
+        assertTrue(PublicationComparator.publicationsMatch(existingLecture, incomingConferenceReport));
     }
 
     private static EntityDescription addEmptyReference(Publication existingPublication) {

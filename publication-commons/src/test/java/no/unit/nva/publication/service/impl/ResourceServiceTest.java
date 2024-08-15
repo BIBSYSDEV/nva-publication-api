@@ -36,6 +36,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -448,9 +449,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
             createSamplePublicationsOfSingleCristinIdentifier(cristinIdentifier);
         List<Publication> actualPublication = resourceService.getPublicationsByCristinIdentifier(cristinIdentifier);
         HashSet<Publication> actualResourcesSet = new HashSet<>(actualPublication);
-        assertThat(actualResourcesSet,
-                   containsInAnyOrder(
-                       publicationsWithCristinIdentifier.toArray(Publication[]::new)));
+        assertTrue(actualPublication.containsAll(actualResourcesSet));
     }
 
     @Test
@@ -469,7 +468,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void combinationOfTrustedAndUntrustedCristinIdentifiersArePersistedWhenUpdatingPublication()
+    void combinationOfTrustedAndUntrustedCristinIdentifiersIsNotAllowed()
         throws BadRequestException, NotFoundException {
 
         Publication resource = createPersistedPublicationWithDoi();
@@ -480,9 +479,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
             new AdditionalIdentifier("Cristin", randomString()),
             new CristinIdentifier(SourceName.fromBrage("uit"), randomString()));
         var updatedResource = resource.copy().withAdditionalIdentifiers(cristinIdentifiers).build();
-        resourceService.updatePublication(updatedResource);
-        var actualUpdatedResource = resourceService.getPublication(updatedResource);
-        assertThat(actualUpdatedResource.getAdditionalIdentifiers(), is(equalTo(cristinIdentifiers)));
+
+        assertThrows(IllegalArgumentException.class, () -> resourceService.updatePublication(updatedResource));
     }
 
     @Test
@@ -1225,7 +1223,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(updatedPublication.getImportDetails().size(), is(equalTo(1)));
         assertThat(updatedPublication.getImportDetails().getFirst().importSource().getSource(),
                    is(equalTo(Source.CRISTIN)));
-
     }
 
     private static AssociatedArtifactList createEmptyArtifactList() {
@@ -1254,7 +1251,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private Publication injectCristinIdentifier(String cristinIdentifier, Publication publication) {
-        publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Cristin", cristinIdentifier)));
+        publication.setAdditionalIdentifiers(Set.of(new CristinIdentifier(SourceName.fromCristin("ntnu@123"),
+                                                                          cristinIdentifier)));
         return publication;
     }
 

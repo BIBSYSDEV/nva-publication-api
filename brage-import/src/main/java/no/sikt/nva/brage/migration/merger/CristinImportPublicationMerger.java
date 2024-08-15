@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.AnthologyMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.BookMerger;
@@ -24,6 +25,7 @@ import no.sikt.nva.brage.migration.merger.publicationinstancemerger.PublicationI
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.CristinIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
@@ -53,6 +55,7 @@ import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import nva.commons.core.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 public class CristinImportPublicationMerger {
 
@@ -79,14 +82,22 @@ public class CristinImportPublicationMerger {
     public Publication mergePublications()
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
         return PreMergeValidator.shouldNotMergeMetadata(bragePublicationRepresentation, existingPublication)
-                   ? injectBrageHandleOnly()
+                   ? injectBrageHandleOnlyAndDublinCore()
                    : mergePublicationsMetadata();
     }
 
-    private Publication injectBrageHandleOnly() {
+    private Publication injectBrageHandleOnlyAndDublinCore() {
         return existingPublication.copy()
                    .withAdditionalIdentifiers(mergeAdditionalIdentifiers())
+                   .withAssociatedArtifacts(addDublinCoreToExistingAssociatedArtifacts())
                    .build();
+    }
+
+    private List<AssociatedArtifact> addDublinCoreToExistingAssociatedArtifacts() {
+        var associatedArtifacts = new ArrayList<>(existingPublication.getAssociatedArtifacts());
+        var dublinCore = extractDublinCore(bragePublicationRepresentation.publication().getAssociatedArtifacts());
+        associatedArtifacts.addAll(dublinCore);
+        return associatedArtifacts;
     }
 
     private Publication mergePublicationsMetadata()
@@ -288,9 +299,28 @@ public class CristinImportPublicationMerger {
 
     private Set<AdditionalIdentifierBase> mergeAdditionalIdentifiers() {
         var additionalIdentifiers = new HashSet<>(existingPublication.getAdditionalIdentifiers());
-        additionalIdentifiers.addAll(bragePublicationRepresentation.publication().getAdditionalIdentifiers());
+        if (bothPublicationsContainCristinIdentifier()) {
+            var additionalIdentifiersExceptCristinIdentifier = getAdditionalIdentifiersExceptCristinIdentifier();
+            additionalIdentifiers.addAll(additionalIdentifiersExceptCristinIdentifier);
+        } else {
+            additionalIdentifiers.addAll(bragePublicationRepresentation.publication().getAdditionalIdentifiers());
+        }
         removePossiblyRedundantCristinIdentifier(additionalIdentifiers);
         return additionalIdentifiers;
+    }
+
+    private boolean bothPublicationsContainCristinIdentifier() {
+        return existingPublication.getAdditionalIdentifiers().stream()
+                   .anyMatch(CristinIdentifier.class::isInstance)
+               && bragePublicationRepresentation.publication().getAdditionalIdentifiers().stream()
+                      .anyMatch(CristinIdentifier.class::isInstance);
+    }
+
+    private Set<AdditionalIdentifierBase> getAdditionalIdentifiersExceptCristinIdentifier() {
+        return bragePublicationRepresentation.publication()
+                   .getAdditionalIdentifiers().stream()
+                   .filter(identifier -> !(identifier instanceof CristinIdentifier))
+                   .collect(Collectors.toSet());
     }
 
     private void removePossiblyRedundantCristinIdentifier(HashSet<AdditionalIdentifierBase> additionalIdentifiers) {
@@ -300,8 +330,7 @@ public class CristinImportPublicationMerger {
 
     private void removeCristinIdentifierFromBrage(HashSet<AdditionalIdentifierBase> additionalIdentifiers,
                                AdditionalIdentifierBase cristinIdentifier) {
-        additionalIdentifiers.removeIf(
-            additionalIdentifierBase -> cristinIdentifierFromBrageIsIdentical(cristinIdentifier, additionalIdentifierBase));
+        additionalIdentifiers.removeIf(additionalIdentifierBase -> cristinIdentifierFromBrageIsIdentical(cristinIdentifier, additionalIdentifierBase));
     }
 
     private boolean cristinIdentifierFromBrageIsIdentical(AdditionalIdentifierBase cristinIdentifier, AdditionalIdentifierBase additionalIdentifierBase) {
@@ -326,7 +355,7 @@ public class CristinImportPublicationMerger {
             return new AssociatedArtifactList(mergedAssociatedArtifacts);
         }
         if (shouldOverWriteWithBrageArtifacts()) {
-            return keepBrageAssociatedArtifactAndKeepDublinCoreFromExistsing();
+            return keepBrageAssociatedArtifactAndKeepDublinCoreFromExisting();
         }
         if (!hasAdministrativeAgreement(existingPublication)) {
             var associatedArtifacts = new ArrayList<>(existingPublication.getAssociatedArtifacts());
@@ -334,8 +363,24 @@ public class CristinImportPublicationMerger {
                 bragePublicationRepresentation.publication());
             associatedArtifacts.addAll(administrativeAgreements);
             return new AssociatedArtifactList(associatedArtifacts);
+        } else {
+            var associatedArtifacts = new ArrayList<>(existingPublication.getAssociatedArtifacts());
+            var dublinCores = extractDublinCore(bragePublicationRepresentation.publication().getAssociatedArtifacts());
+            associatedArtifacts.addAll(dublinCores);
+            return new AssociatedArtifactList(associatedArtifacts);
         }
-        return existingPublication.getAssociatedArtifacts();
+    }
+
+    private List<AdministrativeAgreement> extractDublinCore(AssociatedArtifactList associatedArtifactList) {
+        return associatedArtifactList.stream()
+                   .filter(AdministrativeAgreement.class::isInstance)
+                   .map(AdministrativeAgreement.class::cast)
+                   .filter(CristinImportPublicationMerger::isDublinCore)
+                   .toList();
+    }
+
+    private static boolean isDublinCore(AdministrativeAgreement administrativeAgreement) {
+        return DUBLIN_CORE_XML.equals(administrativeAgreement.getName());
     }
 
     private boolean existingAssociatedArtifactsAreEmpty() {
@@ -348,19 +393,12 @@ public class CristinImportPublicationMerger {
                    .noneMatch(PublishedFile.class::isInstance);
     }
 
-    private AssociatedArtifactList keepBrageAssociatedArtifactAndKeepDublinCoreFromExistsing() {
+    private AssociatedArtifactList keepBrageAssociatedArtifactAndKeepDublinCoreFromExisting() {
         var associatedArtifacts = new ArrayList<>(
             bragePublicationRepresentation.publication().getAssociatedArtifacts());
-        var dublinCoresFromExisting = extractDublinCores(existingPublication.getAssociatedArtifacts());
+        var dublinCoresFromExisting = extractDublinCore(existingPublication.getAssociatedArtifacts());
         associatedArtifacts.addAll(dublinCoresFromExisting);
         return new AssociatedArtifactList(associatedArtifacts);
-    }
-
-    private List<File> extractDublinCores(AssociatedArtifactList associatedArtifacts) {
-        return associatedArtifacts.stream().filter(a -> a instanceof File)
-                   .map(a -> (File) a)
-                   .filter(file -> DUBLIN_CORE_XML.equals(file.getName()))
-                   .toList();
     }
 
     private boolean shouldOverWriteWithBrageArtifacts() {

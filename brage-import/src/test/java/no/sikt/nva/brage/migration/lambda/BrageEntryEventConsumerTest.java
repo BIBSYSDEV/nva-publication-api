@@ -30,6 +30,7 @@ import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.model.storage.ResourceDao.CRISTIN_SOURCE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
+import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -51,6 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.AssertionsKt.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.kms.model.NotFoundException;
@@ -117,6 +119,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.CristinIdentifier;
+import no.unit.nva.model.HandleIdentifier;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
@@ -172,6 +175,7 @@ import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -970,7 +974,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         throws IOException {
         var publicationInstance = new DegreeBachelor(new MonographPages.Builder().build(), null);
         var handle = randomUri();
-        var expectedAdditionalIdentifier = new AdditionalIdentifier("handle", randomString());
+        var expectedAdditionalIdentifier = new HandleIdentifier(SourceName.fromBrage("ntnu"), randomUri());
         var brageTestRecord =
             generateBrageRecordAndPersistDuplicateByCristinIdentifier(publicationInstance,
                                                                       TYPE_BACHELOR,
@@ -982,13 +986,14 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var publicationRepresentation = handler.handleRequest(s3Event, CONTEXT);
         var handles = publicationRepresentation.publication()
                           .getAdditionalIdentifiers().stream()
-                          .filter(additionalIdentifier -> "handle".equals(additionalIdentifier.sourceName()))
+                          .filter(HandleIdentifier.class::isInstance)
                           .toList();
 
 
         assertThat(handles, hasItem(expectedAdditionalIdentifier));
         var set = new HashSet<>(existingPublication.getAdditionalIdentifiers());
-        set.add(new AdditionalIdentifier("handle", handle.toString()));
+        set.add(new HandleIdentifier(SourceName.fromBrage(brageTestRecord.getGeneratorBuilder().getCustomer().getName()),
+                                     handle));
         var expectedUpdatedPublication = existingPublication.copy()
                                              .withAdditionalIdentifiers(set)
                                              .withModifiedDate(publicationRepresentation.publication()
@@ -1539,7 +1544,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Event = createNewBrageRecordEvent(brageRecord);
         var updatedPublication = handler.handleRequest(s3Event, CONTEXT);
         assertThat(updatedPublication.publication().getAdditionalIdentifiers(),
-                   contains(new AdditionalIdentifier("handle", brageRecord.getId().toString())));
+                   contains(new HandleIdentifier(SourceName.fromBrage(brageRecord.getCustomer().getName()),
+                                                 brageRecord.getId())));
         assertThat(updatedPublication.publication().getIdentifier(), is(equalTo(existingPublication.getIdentifier())));
 
         var actualStoredHandleString = extractUpdatedPublicationsHandleReportFromS3Client(s3Event,
@@ -1565,7 +1571,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Event = createNewBrageRecordEvent(brageRecord);
         var publication = handler.handleRequest(s3Event, CONTEXT);
         assertThat(publication.publication().getAdditionalIdentifiers(),
-                   contains(new AdditionalIdentifier("handle", brageRecord.getId().toString())));
+                   contains(new HandleIdentifier(SourceName.fromBrage(brageRecord.getCustomer().getName()),
+                                                 brageRecord.getId())));
 
         var actualStoredHandleString = extractHandleReportFromS3Client(s3Event,
                                                                        publication.publication(),
@@ -1716,7 +1723,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
         var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
                                                "ARTIST", null, List.of());
-        mockSearchPublicationByIsbnResponse(existingPublication.getIdentifier());
+        var isbn = getIsbn(existingPublication);
+        mockSearchPublicationByIsbnResponse(existingPublication.getIdentifier(), isbn);
         var generator = new NvaBrageMigrationDataGenerator.Builder()
                             .withCristinIdentifier(cristinIdentifier)
                             .withType(TYPE_BOOK)
@@ -1743,10 +1751,10 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldMergeIncomingPublicationWithExistingOneWhenSearchByIsbnReturnsSingleHit() throws IOException {
-        final var isbn = randomIsbn10();
+        final var isbn = randomIsbn13();
         var publication = randomPublication(NonFictionMonograph.class);
         publication.getEntityDescription().getReference()
-            .setPublicationContext(new Book.BookBuilder().withIsbnList(List.of(randomIsbn10())).build());
+            .setPublicationContext(new Book.BookBuilder().withIsbnList(List.of(isbn)).build());
         publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder()
                                                                   .withYear("2022")
                                                                   .build());
@@ -1757,7 +1765,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
         var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
                                                "ARTIST", null, List.of());
-        mockSearchPublicationByIsbnResponse(existingPublication.getIdentifier());
+        mockSearchPublicationByIsbnResponse(existingPublication.getIdentifier(), isbn);
         var generator = new NvaBrageMigrationDataGenerator.Builder()
                             .withIsbn(isbn)
                             .withType(TYPE_BOOK)
@@ -1979,12 +1987,15 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         assertThat(brageImportDetail, is(not(Optional.empty())));
     }
 
+    @DisplayName("Should not keep Cristin identifier from Brage when Cristin identifier is present in existing " +
+                 "publication")
     @Test
-    void shouldNotThrowExceptionWhenUpdatingPublicationWithSecondCristinIdentifier()
+    void shouldUpdateExistingPublicationWhenBragePublicationHasCristinIdentifier()
         throws IOException, nva.commons.apigateway.exceptions.NotFoundException {
 
         var publication = randomPublication(ConferencePoster.class);
-        publication.setAdditionalIdentifiers(Set.of(new AdditionalIdentifier(SOURCE_CRISTIN, randomString())));
+        publication.setAdditionalIdentifiers(Set.of(new CristinIdentifier(SourceName.fromCristin("ntnu@1234"),
+                                                                          randomString())));
         publication.getEntityDescription().getReference().setDoi(null);
         publication.getEntityDescription().setContributors(List.of());
         publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder()
@@ -2020,7 +2031,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var expectedCristinIdentifierFromBrage =
             new CristinIdentifier(SourceName.fromBrage(generator.getBrageRecord().getCustomer().getName()), brageCristinIdentifier);
         assertThat(updatedPublication.getAdditionalIdentifiers(),
-                   hasItem(expectedCristinIdentifierFromBrage));
+                   not(hasItem(expectedCristinIdentifierFromBrage)));
     }
 
     private BrageTestRecord generateBrageRecordAndPersistDuplicateByCristinIdentifier(
@@ -2100,31 +2111,50 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldSkipPostWhereThereExistNvaPostWithTheSameHandle() throws IOException {
-        var generator = new NvaBrageMigrationDataGenerator.Builder()
-                            .withPublicationDate(new PublicationDate("2022",
-                                                                     new PublicationDateNva.Builder()
-                                                                         .withYear("2022")
-                                                                         .build()))
-                            .withMainTitle(randomString())
-                            .withType(new Type(List.of(), "ConferencePoster"))
-                            .build();
-        var publication = randomPublication(ConferencePoster.class);
-        publication.getEntityDescription()
-            .setPublicationDate(new no.unit.nva.model.PublicationDate.Builder().withYear("2022").build());
+        var isbn = randomIsbn13();
+        var mainTitle = randomString();
+        var handle = randomUri();
+        var publication = randomPublication(NonFictionMonograph.class);
+        publication.getEntityDescription().getReference()
+            .setPublicationContext(new Book.BookBuilder().withIsbnList(List.of(isbn)).build());
+        publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder()
+                                                                  .withYear("2022")
+                                                                  .build());
+        publication.getEntityDescription().setMainTitle(mainTitle);
         publication
-            .setAdditionalIdentifiers(Set.of(new AdditionalIdentifier("handle", generator.getBrageRecord()
-                                                                                 .getId().toString())));
+            .setAdditionalIdentifiers(Set.of(new HandleIdentifier(SourceName.fromBrage("ntnu"),
+                                                                  handle)));
         var existingPublication =
             resourceService.createPublicationFromImportedEntry(publication,
                                                                ImportSource.fromBrageArchive(randomString()));
+        var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
+        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
+                                               "ARTIST", null, List.of());
+        var generator = new NvaBrageMigrationDataGenerator.Builder()
+                            .withIsbn(isbn)
+                            .withType(TYPE_BOOK)
+                            .withHandle(handle)
+                            .withContributor(brageContributor)
+                            .withPublicationDate(new PublicationDate("2023",
+                                                                     new PublicationDateNva.Builder()
+                                                                         .withYear("2023")
+                                                                         .build()))
+                            .withMainTitle(mainTitle)
+                            .build();
 
         var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
-        mockSearchPublicationByIsbnResponse(existingPublication.getIdentifier());
+        mockSearchPublicationByIsbnResponse(existingPublication.getIdentifier(), isbn);
         handler.handleRequest(s3Event, CONTEXT);
         var errorReport = extractActualReportFromS3Client(s3Event, HandleDuplicateException.class.getSimpleName(),
                                                           generator.getBrageRecord());
         var exception = errorReport.get("exception").asText();
         assertThat(exception, containsString("Publication with handle"));
+    }
+
+    private static String getIsbn(Publication existingPublication) {
+        return ((Book) existingPublication.getEntityDescription()
+                           .getReference()
+                           .getPublicationContext()).getIsbnList().getFirst();
     }
 
     @Test
@@ -2280,13 +2310,19 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         when(this.uriRetriever.fetchResponse(any())).thenReturn(response);
     }
 
-    private void mockSearchPublicationByIsbnResponse(SortableIdentifier identifier) {
+    private void mockSearchPublicationByIsbnResponse(SortableIdentifier identifier, String isbn) {
         var publicationId = UriWrapper.fromHost(API_HOST)
                                 .addChild("publication")
                                 .addChild(identifier.toString())
                                 .getUri();
+        var searchUri = UriWrapper.fromHost(API_HOST)
+                            .addChild("search")
+                            .addChild("resources")
+                            .addQueryParameter("isbn", isbn)
+                            .addQueryParameter("aggregation", "none")
+                            .getUri();
         var searchResourceApiResponse = new SearchResourceApiResponse(1, List.of(new ResourceWithId(publicationId)));
-        when(this.uriRetriever.getRawContent(any(), any()))
+        when(uriRetriever.getRawContent(eq(searchUri), eq("application/json")))
             .thenReturn(Optional.ofNullable(searchResourceApiResponse.toString()));
     }
 

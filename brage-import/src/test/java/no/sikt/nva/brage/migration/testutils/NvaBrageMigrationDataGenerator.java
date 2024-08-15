@@ -39,11 +39,11 @@ import no.sikt.nva.brage.migration.record.Series;
 import no.sikt.nva.brage.migration.record.Type;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
-import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.CristinIdentifier;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.HandleIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -91,12 +91,13 @@ public class NvaBrageMigrationDataGenerator {
 
     private static Set<AdditionalIdentifierBase> generateCristinIdentifier(Builder builder) {
         var additionalIdentifiers = new HashSet<AdditionalIdentifierBase>();
-        if (nonNull(builder.handle)) {
-            additionalIdentifiers.add(new AdditionalIdentifier("handle", builder.handle.toString()));
+        if (nonNull(builder.getHandle())) {
+            additionalIdentifiers.add(new HandleIdentifier(SourceName.fromBrage(builder.getCustomer().getName()),
+                                                           builder.getHandle()));
         }
-        if (nonNull(builder.cristinIdentifier)) {
-            additionalIdentifiers.add(new CristinIdentifier(SourceName.fromBrage(builder.customer.getName()),
-                                                            builder.cristinIdentifier));
+        if (nonNull(builder.getCristinIdentifier())) {
+            additionalIdentifiers.add(new CristinIdentifier(SourceName.fromBrage(builder.getCustomer().getName()),
+                                                            builder.getCristinIdentifier()));
         }
         return additionalIdentifiers;
     }

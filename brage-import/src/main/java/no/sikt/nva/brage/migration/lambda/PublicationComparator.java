@@ -2,6 +2,7 @@ package no.sikt.nva.brage.migration.lambda;
 
 import static java.util.Objects.isNull;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Stream;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
@@ -114,8 +115,8 @@ public final class PublicationComparator {
     private static boolean titlesMatch(Publication existingPublication, Publication incomingPublication) {
         var existingPublicationTitle = existingPublication.getEntityDescription().getMainTitle();
         var incomingPublicationTitle = incomingPublication.getEntityDescription().getMainTitle();
-        return levenshteinDistanceIsLessThan(existingPublicationTitle,
-                                             incomingPublicationTitle,
+        return levenshteinDistanceIsLessThan(existingPublicationTitle.toLowerCase(Locale.ROOT),
+                                             incomingPublicationTitle.toLowerCase(Locale.ROOT),
                                              MAX_ACCEPTABLE_TITLE_LEVENSHTEIN_DISTANCE);
     }
 }

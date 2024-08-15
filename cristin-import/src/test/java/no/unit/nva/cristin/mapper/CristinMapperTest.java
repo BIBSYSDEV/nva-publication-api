@@ -38,6 +38,7 @@ import no.unit.nva.cristin.mapper.nva.NvaBookSeriesBuilder;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.CristinIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
@@ -127,7 +128,8 @@ class CristinMapperTest extends AbstractCristinImportTest {
                                      .map(this::mapToPublication)
                                      .map(Publication::getAdditionalIdentifiers)
                                      .flatMap(Collection::stream)
-                                     .filter(this::isCristinIdentifier)
+                                     .filter(CristinIdentifier.class::isInstance)
+                                     .map(CristinIdentifier.class::cast)
                                      .map(AdditionalIdentifierBase::value)
                                      .map(Integer::parseInt)
                                      .collect(Collectors.toSet());
@@ -137,21 +139,19 @@ class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void mapReturnsResourceWithCristinSourceIdentifiersStoredInAdditionalIdentifiers() {
-        List<AdditionalIdentifier> expectedIds =
-            cristinObjects.stream()
-                .map(CristinObject::getCristinSources)
-                .flatMap(Collection::stream)
-                .map(this::createExspectedAdditionalIdentifier)
-                .toList();
+    void shouldMapAllNonCristinIdentifiersToCristinObjectToAdditionalIdentifiers() {
+        var expectedIds = cristinObjects.stream()
+                              .map(CristinObject::getCristinSources)
+                              .flatMap(Collection::stream)
+                              .map(this::createExpectedAdditionalIdentifier)
+                              .toList();
 
-        List<AdditionalIdentifierBase> actualIds = cristinObjects.stream()
-                                                   .map(this::mapToPublication)
-                                                   .map(Publication::getAdditionalIdentifiers)
-                                                   .flatMap(Collection::stream)
-                                                   .filter(additionalIdentifier -> !isCristinIdentifier(
-                                                       additionalIdentifier))
-                                                   .collect(Collectors.toList());
+        var actualIds = cristinObjects.stream()
+                            .map(this::mapToPublication)
+                            .map(Publication::getAdditionalIdentifiers)
+                            .flatMap(Collection::stream)
+                            .filter(additionalIdentifierBase -> !(additionalIdentifierBase instanceof CristinIdentifier))
+                            .collect(Collectors.toList());
 
         assertThat(actualIds, containsInAnyOrder(expectedIds.toArray()));
         assertThat(actualIds, hasSize(expectedIds.size()));
@@ -633,8 +633,9 @@ class CristinMapperTest extends AbstractCristinImportTest {
         return cristinObject;
     }
 
-    private AdditionalIdentifier createExspectedAdditionalIdentifier(CristinSource cristinSource) {
-        return new AdditionalIdentifier(cristinSource.getSourceCode(), cristinSource.getSourceIdentifier());
+    private AdditionalIdentifier createExpectedAdditionalIdentifier(CristinSource cristinSource) {
+        return new AdditionalIdentifier(cristinSource.getSourceCode(),
+                                     cristinSource.getSourceIdentifier());
     }
 
     private CristinObject createObjectWithRoleCode(CristinContributorRoleCode actualCristinRoleCode) {
@@ -649,7 +650,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
     private List<ContributionReference> extractContributions(Publication publication) {
 
         AdditionalIdentifierBase cristinIdentifier = publication.getAdditionalIdentifiers().stream()
-                                                     .filter(this::isCristinIdentifier)
+                                                     .filter(CristinIdentifier.class::isInstance)
                                                      .collect(SingletonCollector.collect());
         Integer cristinIdentifierValue = Integer.parseInt(cristinIdentifier.value());
 

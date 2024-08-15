@@ -376,6 +376,7 @@ public class ScopusFileConverter {
                                       .withSize(inputStreamToSave.getLength())
                                       .withLicense(DEFAULT_LICENSE)
                                       .withUploadDetails(createUploadDetails())
+                               .withPublisherVersion(PublisherVersion.PUBLISHED_VERSION)
                                       .buildPublishedFile());
     }
 

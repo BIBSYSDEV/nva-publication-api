@@ -3,6 +3,7 @@ package cucumber;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
@@ -102,6 +103,15 @@ public class EventFeatures {
                                 .getReference()
                                 .getPublicationContext();
         assertThat(((Period) event.getTime()).getFrom().toString(), is(equalTo(value)));
+    }
+
+    @Then("the Event toDate is null")
+    public void theNvaEventToDateIsNull() {
+        var event = (Event) scenarioContext.getNvaEntry()
+                                .getEntityDescription()
+                                .getReference()
+                                .getPublicationContext();
+        assertThat(((Period) event.getTime()).getTo(), is(nullValue()));
     }
 
     @Then("the Event has a time Period with toDate {string}")

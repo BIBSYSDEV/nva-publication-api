@@ -194,7 +194,7 @@ public class ReferenceBuilder extends CristinMappingModule {
     private Time extractTime() {
         var from = extractCristinEventFromDate();
         var to = extractCristinEventToDate();
-        return nonNull(from) && nonNull(to) ? new Period(from, to) : null;
+        return nonNull(from) || nonNull(to) ? new Period(from, to) : null;
     }
 
     private Instant extractCristinEventFromDate() {
