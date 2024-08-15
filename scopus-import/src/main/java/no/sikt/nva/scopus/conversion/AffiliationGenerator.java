@@ -84,6 +84,8 @@ public class AffiliationGenerator {
                    : corporation;
     }
 
+    //Countries are stored as organizations in Cristin, we use the same endpoint
+    //for fetching countries as we do with organizations
     private Optional<CristinOrganization> searchForCristinOrganizationByCountry(
         CorporationWithContributors corporation) {
         return Optional.ofNullable(corporation.getScopusAuthors())
