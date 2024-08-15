@@ -44,7 +44,6 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Book.BookBuilder;
-import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.GeographicalContent;
 import no.unit.nva.model.contexttypes.Journal;
@@ -623,7 +622,7 @@ class CristinImportPublicationMergerTest {
         newPublication.setAssociatedArtifacts(new AssociatedArtifactList(newAssociatedArtifact));
 
         var record = new Record();
-        record.setId(handle);
+        record.setId(randomUri());
 
         var updatedPublication = mergePublications(existingPublication, newPublication, record);
 
