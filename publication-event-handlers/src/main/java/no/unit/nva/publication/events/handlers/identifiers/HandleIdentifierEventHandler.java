@@ -15,6 +15,7 @@ import java.util.Set;
 import no.unit.nva.auth.AuthorizedBackendClient;
 import no.unit.nva.auth.CognitoCredentials;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -89,9 +90,11 @@ public class HandleIdentifierEventHandler
                 logger.info("Processing sqsEvent: {}", sqs.getBody());
                 try {
                     return JsonUtils.dtoObjectMapper
-                                 .readValue(sqs.getBody(),
-                                            new TypeReference<AwsEventBridgeEvent<EventReference>>() {})
-                                 .getDetail();
+                               .readValue(sqs.getBody(),
+                                          new TypeReference<AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>>>() {
+                                          })
+                               .getDetail()
+                               .getResponsePayload();
                 } catch (JsonProcessingException e) {
                     throw new RuntimeException(e);
                 }
@@ -99,13 +102,6 @@ public class HandleIdentifierEventHandler
             .forEach(this::processInputPayload);
         return null;
     }
-/**
-    public record ResponsePayload<T>(T responsePayload) {
-        public String toJsonString() {
-            return attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(this)).orElseThrow();
-        }
-    }
-    */
 
     private CognitoCredentials fetchCredentials() {
         var credentials = secretsManagerClient.fetchClassSecret(backendClientSecretName,

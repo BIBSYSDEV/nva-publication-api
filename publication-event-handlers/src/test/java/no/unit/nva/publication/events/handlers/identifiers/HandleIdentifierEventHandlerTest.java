@@ -14,12 +14,12 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.AdditionalIdentifierBase;
@@ -102,8 +102,11 @@ public class HandleIdentifierEventHandlerTest extends ResourcesLocalTest {
 
     private SQSEvent emualteSqsWrappedEvent(Publication oldImage, Publication newImage) throws IOException {
         var blobUri = createSampleBlob(oldImage, newImage);
-        var eventBridgeObject =  EventBridgeEventBuilder.sampleEventObject(new EventReference(RESOURCE_UPDATE_EVENT_TOPIC,
-                                                                                  blobUri));
+        var eventBridgeObject =
+            EventBridgeEventBuilder.sampleEventObject(AwsEventBridgeDetail.newBuilder()
+                                                          .withResponsePayload(
+                                                              new EventReference(RESOURCE_UPDATE_EVENT_TOPIC, blobUri))
+                                                          .build());
         var sqsEvent = new SQSEvent();
         var sqsMessage = new SQSEvent.SQSMessage();
         sqsMessage.setBody(eventBridgeObject.toJsonString());
