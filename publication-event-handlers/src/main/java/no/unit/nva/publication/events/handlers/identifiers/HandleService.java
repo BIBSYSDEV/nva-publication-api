@@ -67,9 +67,24 @@ public class HandleService {
     private URI executeRequest(URI payloadUri) {
         logger.info("Requesting {}", createRequestUri());
         return of(() -> attempt(
-            () -> backendClient.send(httpRequestBuilder(payloadUri), BodyHandlers.ofString(StandardCharsets.UTF_8))).map(
-                HttpResponse::body)
-                            .map(a -> JsonUtils.dtoObjectMapper.readTree(a).get("handle").asText())
+                            () -> {
+                                HttpResponse<String> response = backendClient.send(httpRequestBuilder(payloadUri), BodyHandlers.ofString(StandardCharsets.UTF_8));
+                                if(response.statusCode() >= 400) {
+                                    logger.error("Error response from server: {} \n{}",  response.statusCode(),
+                                                 response.body());
+                                    throw new RuntimeException("Request failed with status code: " + response.statusCode());
+                                }
+                                return response;
+                            })
+                            .map(HttpResponse::body)
+                            .map(body -> {
+                                try {
+                                    return JsonUtils.dtoObjectMapper.readTree(body).get("handle").asText();
+                                } catch (JsonProcessingException e) {
+                                    logger.error("Error processing JSON: \n\n" + body, e);
+                                    throw new RuntimeException(e);
+                                }
+                            })
                             .map(URI::create)
                             .orElseThrow()).get();
     }

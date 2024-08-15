@@ -6,9 +6,12 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.EnumSource.Mode.EXCLUDE;
 import static org.junit.jupiter.params.provider.EnumSource.Mode.INCLUDE;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -43,7 +46,9 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UnixPath;
+import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
@@ -56,6 +61,9 @@ public class HandleIdentifierEventHandlerTest extends ResourcesLocalTest {
 
     public static final String RESOURCE_UPDATE_EVENT_TOPIC = "PublicationService.Resource.Update";
     private static final String RESPONSE_BODY = "{\"handle\": \"https://test.handle.net/123/456\"}";
+    public static final int BAD_REQUEST = 400;
+    public static final String API_NVATEST_DOMAIN = "api.nvatest.no";
+    public static final String HANDLE_BASE_PATH = "handle";
     private ResourceService resourceService;
     private HandleIdentifierEventHandler handler;
     private S3Driver s3Driver;
@@ -69,8 +77,8 @@ public class HandleIdentifierEventHandlerTest extends ResourcesLocalTest {
         var s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, randomString());
         environment = mock(Environment.class);
-        when(environment.readEnv("API_DOMAIN")).thenReturn("api.nvatest.no");
-        when(environment.readEnv("HANDLE_BASE_PATH")).thenReturn("handle");
+        when(environment.readEnv("API_DOMAIN")).thenReturn(API_NVATEST_DOMAIN);
+        when(environment.readEnv("HANDLE_BASE_PATH")).thenReturn(HANDLE_BASE_PATH);
         when(environment.readEnv("BACKEND_CLIENT_SECRET_NAME")).thenReturn("testSecret");
         when(environment.readEnv("BACKEND_CLIENT_AUTH_URL")).thenReturn("cognitoTestUrl");
         httpClient = mock(HttpClient.class);
@@ -80,6 +88,7 @@ public class HandleIdentifierEventHandlerTest extends ResourcesLocalTest {
             GetSecretValueResponse.builder()
                 .secretString(new BackendClientCredentials("id", "secret").toString())
                 .build());
+        final var logger = LogUtils.getTestingAppenderForRootLogger();
         handler = new HandleIdentifierEventHandler(resourceService, s3Client, environment, httpClient, secretManager);
     }
 
@@ -140,7 +149,7 @@ public class HandleIdentifierEventHandlerTest extends ResourcesLocalTest {
     void shouldNotCreateHandlesForPublicationIfLegacyHandleAlreadyExist(PublicationStatus status)
         throws IOException, BadRequestException, NotFoundException {
         var oldImage = createUnpublishedPublicationWithAdditionalIdentifiers(
-            Set.of(new AdditionalIdentifier("handle", "https://test.handle.net/123/456")));
+            Set.of(new AdditionalIdentifier(HANDLE_BASE_PATH, "https://test.handle.net/123/456")));
         var additionalIdentifiers = oldImage.getAdditionalIdentifiers();
         var newImage = oldImage.copy().withStatus(status).build();
 
@@ -167,6 +176,21 @@ public class HandleIdentifierEventHandlerTest extends ResourcesLocalTest {
 
         var updatedPublication = resourceService.getPublicationByIdentifier(newImage.getIdentifier());
         assertThat(updatedPublication.getAdditionalIdentifiers(), is(equalTo(additionalIdentifiers)));
+    }
+
+    @Test
+    void shouldThrowOnAPIFailure()
+        throws IOException, BadRequestException, InterruptedException {
+        final var logger = LogUtils.getTestingAppenderForRootLogger();
+        var oldImage = createUnpublishedPublicationWithAdditionalIdentifiers(null);
+        var newImage = oldImage.copy().withStatus(PublicationStatus.PUBLISHED).build();
+        var handleRequestUri = URI.create("https://" + API_NVATEST_DOMAIN + "/" + HANDLE_BASE_PATH);
+        when(httpClient.send(argThat(request -> request.uri().equals(handleRequestUri)),any()))
+            .thenReturn(FakeHttpResponse.create("some error message", BAD_REQUEST));
+
+        var request = emualteSqsWrappedEvent(oldImage, newImage);
+        assertThrows(RuntimeException.class, () -> handler.handleRequest(request, CONTEXT));
+        assertThat(logger.getMessages(), containsString("Error response from server: 400"));
     }
 
     private URI createSampleBlob(Object oldImage, Object newImage) throws IOException {
