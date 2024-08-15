@@ -3152,7 +3152,19 @@ referencedSchemas:
           type: string
           format: date-time
   UploadDetails:
+    required:
+    - type
     type: object
+    properties:
+      uploadedBy:
+        type: string
+      uploadedDate:
+        type: string
+        format: date-time
+      type:
+        type: string
+    discriminator:
+      propertyName: type
   Venue:
     required:
     - type
