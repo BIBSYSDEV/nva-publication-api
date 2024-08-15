@@ -1,12 +1,27 @@
 package no.unit.nva.model.associatedartifacts.file;
 
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.model.Publication;
 import org.junit.Test;
 
 public class UploadDetailsTest {
+
+    @Test
+    public void deserializedUploadDetailShouldHaveTypeProperty() throws JsonProcessingException {
+        var importUploadDetails = new ImportUploadDetails(null, null, null);
+        var userUploadDetails = new UserUploadDetails(null, null);
+
+        var importUploadDetailsJson = dtoObjectMapper.readTree(importUploadDetails.toJsonString());
+        var userUploadDetailsJson= dtoObjectMapper.readTree(userUploadDetails.toJsonString());
+
+        assertThat(importUploadDetailsJson.get("type").asText(), is(equalTo(ImportUploadDetails.TYPE)));
+        assertThat(userUploadDetailsJson.get("type").asText(), is(equalTo(UserUploadDetails.TYPE)));
+    }
 
     @Test
     public void shouldMigrateUploadDetailsToImportUploadDetailsWhenUploadedByContainsStringInsteadOfUsername()
