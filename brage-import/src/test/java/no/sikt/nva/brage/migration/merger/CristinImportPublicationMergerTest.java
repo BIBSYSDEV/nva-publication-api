@@ -72,6 +72,7 @@ import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 class CristinImportPublicationMergerTest {
@@ -623,7 +624,7 @@ class CristinImportPublicationMergerTest {
         newPublication.setAssociatedArtifacts(new AssociatedArtifactList(newAssociatedArtifact));
 
         var record = new Record();
-        record.setId(handle);
+        record.setId(randomUri());
 
         var updatedPublication = mergePublications(existingPublication, newPublication, record);
 
