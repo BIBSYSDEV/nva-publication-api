@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 public class HandleService {
 
     public static final URI REPO = URI.create("https://github.com/BIBSYSDEV/nva-publication-api");
+    public static final int BAD_REQUEST = 400;
     private final String handleBasePath;
     private final String apiDomain;
     private final AuthorizedBackendClient backendClient;
@@ -69,7 +70,7 @@ public class HandleService {
         return of(() -> attempt(
                             () -> {
                                 HttpResponse<String> response = backendClient.send(httpRequestBuilder(payloadUri), BodyHandlers.ofString(StandardCharsets.UTF_8));
-                                if(response.statusCode() >= 400) {
+                                if(response.statusCode() >= BAD_REQUEST) {
                                     logger.error("Error response from server: {} \n{}",  response.statusCode(),
                                                  response.body());
                                     throw new RuntimeException("Request failed with status code: " + response.statusCode());
