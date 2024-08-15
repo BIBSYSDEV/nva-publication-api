@@ -65,7 +65,7 @@ public class HandleService {
     }
 
     private URI executeRequest(URI payloadUri) {
-        logger.info("Requesting {}", createRequestUri());
+        logger.info("Requesting {} with payloadUri {}", createRequestUri(), payloadUri);
         return of(() -> attempt(
                             () -> {
                                 HttpResponse<String> response = backendClient.send(httpRequestBuilder(payloadUri), BodyHandlers.ofString(StandardCharsets.UTF_8));

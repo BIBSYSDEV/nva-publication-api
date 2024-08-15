@@ -3,6 +3,7 @@ package no.unit.nva.publication.events.handlers.identifiers;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static nva.commons.core.attempt.Try.attempt;
+import static nva.commons.core.paths.UriWrapper.HTTPS;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
@@ -52,8 +53,10 @@ public class HandleIdentifierEventHandler
     public static final String RESOURCE_UPDATE_EVENT_TOPIC = "PublicationService.Resource.Update";
     private static final Set<PublicationStatus> PUBLISHED_STATUSES = Set.of(PUBLISHED,
                                                                             PUBLISHED_METADATA);
+    private static final String REGISTRATION_PATH = "registration";
     private final SecretsReader secretsManagerClient;
     private final HandleService handleService;
+    private final String frontendDomain;
 
     @JacocoGenerated
     public HandleIdentifierEventHandler() {
@@ -73,6 +76,7 @@ public class HandleIdentifierEventHandler
         String handleBasePath = environment.readEnv("HANDLE_BASE_PATH");
         this.backendClientSecretName = environment.readEnv("BACKEND_CLIENT_SECRET_NAME");
         this.backendClientAuthUrl = environment.readEnv("BACKEND_CLIENT_AUTH_URL");
+        this.frontendDomain = environment.readEnv("NVA_FRONTEND_DOMAIN");
         this.resourceService = resourceService;
         this.s3Driver = new S3Driver(s3Client, PublicationEventsConfig.EVENTS_BUCKET);
         this.secretsManagerClient = new SecretsReader(secretsManagerClient);
@@ -120,7 +124,7 @@ public class HandleIdentifierEventHandler
                 var userInstance = UserInstance.create(resourceUpdate.getOwner(), resourceUpdate.getCustomerId());
                 var publication = fetchPublication(userInstance, resourceUpdate.getIdentifier());
                 var additionalIdentifiers = new HashSet<>(publication.getAdditionalIdentifiers());
-                var handle = createNewHandle(publication.getLink());
+                var handle = createNewHandle(getLandingPage(publication.getIdentifier()));
                 logger.info("Created handle: {}", handle.value());
                 additionalIdentifiers.add(handle);
                 publication.setAdditionalIdentifiers(additionalIdentifiers);
@@ -128,6 +132,12 @@ public class HandleIdentifierEventHandler
             }
         }
         return null;
+    }
+
+    private URI getLandingPage(SortableIdentifier identifier) {
+        return new UriWrapper(HTTPS, frontendDomain).addChild(REGISTRATION_PATH)
+                   .addChild(identifier.toString())
+                   .getUri();
     }
 
     private static boolean isMissingHandle(Resource resourceUpdate) {

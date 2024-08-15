@@ -1391,6 +1391,7 @@ Resources:
           HANDLE_BASE_PATH: handle
           BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
           BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
+          NVA_FRONTEND_DOMAIN: !Ref NvaApplicationDomain
       Events:
         HandleWorkQueueEvent:
           Type: SQS

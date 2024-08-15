@@ -81,6 +81,7 @@ public class HandleIdentifierEventHandlerTest extends ResourcesLocalTest {
         when(environment.readEnv("HANDLE_BASE_PATH")).thenReturn(HANDLE_BASE_PATH);
         when(environment.readEnv("BACKEND_CLIENT_SECRET_NAME")).thenReturn("testSecret");
         when(environment.readEnv("BACKEND_CLIENT_AUTH_URL")).thenReturn("cognitoTestUrl");
+        when(environment.readEnv("NVA_FRONTEND_DOMAIN")).thenReturn("nvatest.no");
         httpClient = mock(HttpClient.class);
         when(httpClient.send(any(), any())).thenReturn(FakeHttpResponse.create(RESPONSE_BODY, HTTP_CREATED));
         SecretsManagerClient secretManager = mock(SecretsManagerClient.class);
@@ -88,7 +89,6 @@ public class HandleIdentifierEventHandlerTest extends ResourcesLocalTest {
             GetSecretValueResponse.builder()
                 .secretString(new BackendClientCredentials("id", "secret").toString())
                 .build());
-        final var logger = LogUtils.getTestingAppenderForRootLogger();
         handler = new HandleIdentifierEventHandler(resourceService, s3Client, environment, httpClient, secretManager);
     }
 
