@@ -160,7 +160,7 @@ public class HandleIdentifierEventHandler
     }
 
     private HandleIdentifier createNewHandle(URI link) {
-        return new HandleIdentifier(new SourceName("nva", "nva"), handleService.createHandle(link));
+        return new HandleIdentifier(new SourceName("nva", "sikt"), handleService.createHandle(link));
     }
 
     private Publication fetchPublication(UserInstance userInstance, SortableIdentifier publicationIdentifier) {

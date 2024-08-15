@@ -1383,6 +1383,8 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.identifiers.HandleIdentifierEventHandler::handleRequest
       Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 1
+      Timeout: 900
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
