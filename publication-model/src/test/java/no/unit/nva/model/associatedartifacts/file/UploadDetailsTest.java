@@ -1,0 +1,120 @@
+package no.unit.nva.model.associatedartifacts.file;
+
+import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import no.unit.nva.model.Publication;
+import org.junit.Test;
+
+public class UploadDetailsTest {
+
+    @Test
+    public void shouldMigrateUploadDetailsToImportUploadDetailsWhenUploadedByContainsStringInsteadOfUsername()
+        throws JsonProcessingException {
+        var uploadDetailsThatHaveBeenImported = """
+             {
+                  "type" : "UploadDetails",
+                  "uploadedBy" : "ntnu@194.0.0.0",
+                  "uploadedDate" : "2024-07-02T17:10:13.960576174Z"
+                }
+            """;
+        var importDetails = dtoObjectMapper.readValue(uploadDetailsThatHaveBeenImported, UploadDetails.class);
+
+        assertInstanceOf(ImportUploadDetails.class, importDetails);
+    }
+
+    @Test
+    public void shouldMigrateUploadDetailsToUserUploadDetailsWhenUploadedByContainsIntegerAsUsername()
+        throws JsonProcessingException {
+        var uploadDetailsThatHaveBeenImported = """
+             {
+                  "type" : "UploadDetails",
+                  "uploadedBy" : "123454@194.0.0.0",
+                  "uploadedDate" : "2024-07-02T17:10:13.960576174Z"
+                }
+            """;
+        var importDetails = dtoObjectMapper.readValue(uploadDetailsThatHaveBeenImported, UploadDetails.class);
+
+        assertInstanceOf(UserUploadDetails.class, importDetails);
+    }
+
+    @Test
+    public void shouldDeserializeImportUploadDetailsCorrectly() throws JsonProcessingException {
+        var json = """
+              {
+                  "system" : "Brage",
+                  "archive" : "oda",
+                  "uploadedDate" : "2024-07-12T20:15:27.968259325Z"
+                }
+            """;
+        var uploadDetails = dtoObjectMapper.readValue(json, UploadDetails.class);
+
+        assertInstanceOf(ImportUploadDetails.class, uploadDetails);
+    }
+
+    @Test
+    public void shouldDeserializeUserUploadDetailsCorrectly() throws JsonProcessingException {
+        var json = """
+              {
+                  "uploadedBy" : "12345@12345",
+                  "uploadedDate" : "2024-07-12T20:15:27.968259325Z"
+                }
+            """;
+        var uploadDetails = dtoObjectMapper.readValue(json, UploadDetails.class);
+
+        assertInstanceOf(UserUploadDetails.class, uploadDetails);
+    }
+
+    @Test
+    public void shouldDeserializePublicationWithUploadDetailsCorrectly() throws JsonProcessingException {
+        var json = """
+                        {
+              "type": "Publication",
+              "associatedArtifacts": [
+                {
+                  "type": "UnpublishableFile",
+                  "identifier": "206de8de-a628-4d31-adf3-b83dfffc06f1", 
+                  "name": "user_file",
+                  "uploadDetails": {
+                    "type": "UploadDetails",
+                    "uploadedBy": "1234@215.0.0.0",
+                    "uploadedDate": "2024-07-12T20:15:27.968310156Z"
+                  }
+                },
+                {
+                  "type": "PublishedFile",
+                  "identifier": "d576be6d-de4d-42b8-aa5a-bf8f820ac36c",
+                  "name": "imported_file",
+                  "size": 665414,
+                  "uploadDetails": {
+                    "type": "UploadDetails",
+                    "uploadedBy": "oda@215.0.0.0",
+                    "uploadedDate": "2024-07-12T20:15:27.968259325Z"
+                  }
+                }
+              ]
+            }""";
+        var publication = dtoObjectMapper.readValue(json, Publication.class);
+        var roundTrippedJson = dtoObjectMapper.writeValueAsString(publication);
+        var roundTrippedPublication = dtoObjectMapper.readValue(roundTrippedJson, Publication.class);
+
+        var files = roundTrippedPublication.getAssociatedArtifacts();
+
+        var uploadDetailsForUserUploadedFile = files.stream()
+                                                   .map(File.class::cast)
+                                                   .filter(file -> "user_file".equals(file.getName()))
+                                                   .map(File::getUploadDetails)
+                                                   .findFirst()
+                                                   .orElseThrow();
+
+        var importDetailsForImportUploadedFile = files.stream()
+                                                     .map(File.class::cast)
+                                                     .filter(file -> "imported_file".equals(file.getName()))
+                                                     .map(File::getUploadDetails)
+                                                     .findFirst()
+                                                     .orElseThrow();
+
+        assertInstanceOf(UserUploadDetails.class, uploadDetailsForUserUploadedFile);
+        assertInstanceOf(ImportUploadDetails.class, importDetailsForImportUploadedFile);
+    }
+}

@@ -126,16 +126,15 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.SourceName;
 import no.unit.nva.model.UnconfirmedCourse;
-import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
-import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
@@ -2349,7 +2348,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
         return new PublishedFile(java.util.UUID.randomUUID(), randomString(), "application/pdf", 10L, null, false,
                                  PublisherVersion.PUBLISHED_VERSION, null, NullRightsRetentionStrategy.create(
-            RightsRetentionStrategyConfiguration.UNKNOWN), null, Instant.now(), new UploadDetails(null, null));
+            RightsRetentionStrategyConfiguration.UNKNOWN), null, Instant.now(), new ImportUploadDetails(null, null, null));
     }
 
     private Record createMinimalRecord(String cristinIdentifier) {
@@ -2409,8 +2408,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         actualPublication.getAssociatedArtifacts().stream().filter(File.class::isInstance)
             .forEach(associatedArtifact -> {
                 var file = (File) associatedArtifact;
-                assertThat(file.getUploadDetails().getUploadedBy().getValue(),
-                           is(equalTo(expectedPublication.getResourceOwner().getOwner().getValue())));
+                assertThat(((ImportUploadDetails) file.getUploadDetails()).archive(),
+                           is(equalTo(expectedPublication.getResourceOwner().getOwner().getValue().split("@")[0])));
             });
     }
 
@@ -2648,7 +2647,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                            .withMimeType(ExtendedFakeS3Client.APPLICATION_PDF_MIMETYPE)
                            .withEmbargoDate(EMBARGO_DATE)
                            .withLegalNote(legalNote)
-                           .withUploadDetails(new UploadDetails(new Username(RESOURCE_OWNER.getOwner()), null))
+                           .withUploadDetails(new ImportUploadDetails(ImportUploadDetails.Source.BRAGE, "ntnu", null))
                            .buildPublishedFile());
     }
 

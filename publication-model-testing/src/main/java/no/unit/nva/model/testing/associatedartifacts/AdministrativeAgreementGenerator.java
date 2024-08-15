@@ -9,6 +9,7 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UploadDetails;
+import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 
 public final class AdministrativeAgreementGenerator {
 
@@ -23,7 +24,7 @@ public final class AdministrativeAgreementGenerator {
     }
 
     private static UploadDetails randomInserted() {
-        return new UploadDetails(randomUsername(), randomInstant());
+        return new UserUploadDetails(randomUsername(), randomInstant());
     }
 
     private static Username randomUsername() {

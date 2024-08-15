@@ -41,6 +41,7 @@ import no.unit.nva.model.associatedartifacts.file.File.Builder;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UploadDetails;
+import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
@@ -324,8 +325,8 @@ public class UpdatePublicationHandler
         return resourceService.updatePublication(publicationUpdate);
     }
 
-    private static UploadDetails extractUploadDetails(UserInstance userInstance) {
-        return new UploadDetails(new Username(userInstance.getUsername()), Instant.now());
+    private static UserUploadDetails extractUploadDetails(UserInstance userInstance) {
+        return new UserUploadDetails(new Username(userInstance.getUsername()), Instant.now());
     }
 
     private static void updateAssociatedArtifactList(AssociatedArtifactList originalArtifacts,

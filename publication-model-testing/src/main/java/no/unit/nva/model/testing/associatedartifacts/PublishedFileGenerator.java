@@ -9,6 +9,7 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UploadDetails;
+import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.testing.associatedartifacts.util.RightsRetentionStrategyGenerator;
 
 public final class PublishedFileGenerator {
@@ -25,10 +26,10 @@ public final class PublishedFileGenerator {
     }
 
     private static UploadDetails randomInserted() {
-        return new UploadDetails(randomUsername(), randomInstant());
+        return new UserUploadDetails(randomUsername(), randomInstant());
     }
 
-    private static Username randomUsername() {
-        return new Username(randomString());
+    public static Username randomUsername() {
+        return new Username(randomInteger().toString() + "@" + randomString());
     }
 }

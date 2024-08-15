@@ -14,6 +14,7 @@ import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfi
 import static no.unit.nva.model.testing.PublicationGenerator.fromInstanceClassesExcluding;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.associatedartifacts.PublishedFileGenerator.randomUsername;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypes;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseNotFound;
@@ -132,7 +133,7 @@ import no.unit.nva.model.associatedartifacts.file.License;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
-import no.unit.nva.model.associatedartifacts.file.UploadDetails;
+import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
@@ -1655,8 +1656,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                .toList().getFirst();
 
         assertNotNull(uploadedFile.getUploadDetails());
-        assertThat(uploadedFile.getUploadDetails().getUploadedBy().getValue(), is(equalTo(contributorName)));
-        assertNotNull(uploadedFile.getUploadDetails().getUploadedDate());
+        assertThat(((UserUploadDetails) uploadedFile.getUploadDetails()).uploadedBy().getValue(),
+                                         is(equalTo(contributorName)));
+        assertNotNull(uploadedFile.getUploadDetails().uploadedDate());
     }
 
     @Test
@@ -1687,9 +1689,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertFalse(existingFiles.isEmpty());
         assertTrue(existingFiles.stream()
                        .allMatch(
-                           file -> file.getUploadDetails() != null && file.getUploadDetails().getUploadedBy() != null));
+                           file -> nonNull(file.getUploadDetails())
+                                   && nonNull(((UserUploadDetails) file.getUploadDetails()).uploadedBy())));
         assertTrue(existingFiles.stream()
-                       .noneMatch(file -> file.getUploadDetails().getUploadedBy().getValue().equals(contributorName)));
+                       .noneMatch(file -> ((UserUploadDetails) file.getUploadDetails()).uploadedBy().getValue().equals(contributorName)));
     }
 
     @Test
@@ -1719,7 +1722,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                               .toList().getFirst();
 
         assertNotNull(updatedFile.getUploadDetails());
-        assertThat(updatedFile.getUploadDetails().getUploadedBy().getValue(), is(not(equalTo(contributorName))));
+        assertThat(((UserUploadDetails) updatedFile.getUploadDetails()).uploadedBy().getValue(),
+                   is(not(equalTo(contributorName))));
     }
 
     @Test
@@ -1979,7 +1983,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private Contributor createContributorForPublicationUpdate(URI cristinId) {
         return new Contributor.Builder()
                    .withRole(new RoleType(Role.CREATOR))
-                   .withIdentity(new Identity.Builder().withId(cristinId).withName(randomString()).build())
+                   .withIdentity(new Identity.Builder().withId(cristinId).withName(randomInteger().toString()).build())
                    .withAffiliations(getListOfRandomOrganizations())
                    .build();
     }
@@ -2190,7 +2194,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                    false, PublisherVersion.PUBLISHED_VERSION, null,
                                    OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY,
                                                                             randomString()),
-                                   randomString(), new UploadDetails(new Username(randomString()), Instant.now()));
+                                   randomString(), new UserUploadDetails(randomUsername(), Instant.now()));
     }
 
     private TestAppender createAppenderForLogMonitoring() {

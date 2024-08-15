@@ -34,6 +34,7 @@ import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UploadDetails;
+import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.testing.associatedartifacts.util.RightsRetentionStrategyGenerator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -176,7 +177,7 @@ public class FileModelTest {
     }
 
     private static UploadDetails randomInserted() {
-        return new UploadDetails(randomUsername(), randomInstant());
+        return new UserUploadDetails(randomUsername(), randomInstant());
     }
 
     public static File randomUnpublishableFile() {
@@ -186,7 +187,7 @@ public class FileModelTest {
     }
 
     private static Username randomUsername() {
-        return new Username(randomString());
+        return new Username(randomInteger().toString() + "@" + randomString());
     }
 
     public static File randomUnpublishedFile() {
