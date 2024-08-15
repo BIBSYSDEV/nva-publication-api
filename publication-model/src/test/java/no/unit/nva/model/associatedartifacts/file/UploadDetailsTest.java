@@ -1,11 +1,10 @@
 package no.unit.nva.model.associatedartifacts.file;
 
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import no.unit.nva.model.Publication;
 import org.junit.Test;
 
@@ -13,14 +12,44 @@ public class UploadDetailsTest {
 
     @Test
     public void deserializedUploadDetailShouldHaveTypeProperty() throws JsonProcessingException {
-        var importUploadDetails = new ImportUploadDetails(null, null, null);
-        var userUploadDetails = new UserUploadDetails(null, null);
+        var json = """
+                        {
+              "type": "Publication",
+              "associatedArtifacts": [
+                {
+                  "type": "UnpublishableFile",
+                  "identifier": "206de8de-a628-4d31-adf3-b83dfffc06f1", 
+                  "name": "user_file",
+                  "uploadDetails": {
+                    "type": "UserUploadDetails",
+                    "uploadedBy": "1234@215.0.0.0",
+                    "uploadedDate": "2024-07-12T20:15:27.968310156Z"
+                  }
+                },
+                {
+                  "type": "PublishedFile",
+                  "identifier": "d576be6d-de4d-42b8-aa5a-bf8f820ac36c",
+                  "name": "imported_file",
+                  "size": 665414,
+                  "uploadDetails": {
+                    "type": "ImportUploadDetails",
+                    "system": "Brage",
+                    "archive": "oda",
+                    "uploadedDate": "2024-07-12T20:15:27.968259325Z"
+                  }
+                }
+              ]
+            }""";
+        var publication = dtoObjectMapper.readValue(json, Publication.class);
+        var roundTrippedJson = dtoObjectMapper.writeValueAsString(publication);
+        var roundTrippedPublication = dtoObjectMapper.readTree(roundTrippedJson);
 
-        var importUploadDetailsJson = dtoObjectMapper.readTree(importUploadDetails.toJsonString());
-        var userUploadDetailsJson= dtoObjectMapper.readTree(userUploadDetails.toJsonString());
+        var associatedArtifacts = roundTrippedPublication.get("associatedArtifacts");
 
-        assertThat(importUploadDetailsJson.get("type").asText(), is(equalTo(ImportUploadDetails.TYPE)));
-        assertThat(userUploadDetailsJson.get("type").asText(), is(equalTo(UserUploadDetails.TYPE)));
+        for (JsonNode artifact : associatedArtifacts) {
+            JsonNode uploadDetails = artifact.get("uploadDetails");
+            assertTrue(uploadDetails.has("type"));
+        }
     }
 
     @Test
