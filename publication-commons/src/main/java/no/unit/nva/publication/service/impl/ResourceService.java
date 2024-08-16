@@ -2,7 +2,6 @@ package no.unit.nva.publication.service.impl;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
@@ -374,11 +373,6 @@ public class ResourceService extends ServiceWithTransactions {
         return !TicketStatus.REMOVED.equals(ticket.getStatus());
     }
 
-    private static void logDao(Dao dao) {
-        var daoString = attempt(() -> dtoObjectMapper.writeValueAsString(dao)).orElseThrow();
-        logger.info("Dao: {}", daoString);
-    }
-
     private List<Entity> refreshAndMigrate(List<Entity> dataEntries) {
         return dataEntries.stream().map(attempt(this::migrate)).map(Try::orElseThrow).collect(Collectors.toList());
     }
@@ -436,7 +430,6 @@ public class ResourceService extends ServiceWithTransactions {
     private List<WriteRequest> createWriteRequestsForBatchJob(List<Entity> refreshedEntries) {
         return refreshedEntries.stream()
                    .map(Entity::toDao)
-                   .peek(ResourceService::logDao)
                    .map(Dao::toDynamoFormat)
                    .map(item -> new PutRequest().withItem(item))
                    .map(WriteRequest::new)
