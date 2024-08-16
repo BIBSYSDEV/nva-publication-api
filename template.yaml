@@ -1376,6 +1376,93 @@ Resources:
                 responsePayload:
                   topic: [ "PublicationService.PublishingRequest.Update" ]
 
+  HandleIdentifierEventHandler:
+    DependsOn: EventsLambdaManagedPolicy
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.identifiers.HandleIdentifierEventHandler::handleRequest
+      Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 1
+      Timeout: 900
+      Environment:
+        Variables:
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          TABLE_NAME: !Ref NvaResourcesTable
+          API_DOMAIN: !Ref ApiDomain
+          HANDLE_BASE_PATH: handle
+          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
+          BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
+          NVA_FRONTEND_DOMAIN: !Ref NvaApplicationDomain
+      Events:
+        HandleWorkQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt HandleWorkQueue.Arn
+
+  HandleWorkQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt HandleDLQ.Arn
+        maxReceiveCount: 5
+
+  HandleDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 1209600 #14 days
+
+  HandleDLQAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: HandleDLQAlarm in publication-api
+      AlarmDescription: If this alarm is triggered, then check sqs messages on publication-api HandleDLQ
+      MetricName: ApproximateNumberOfMessagesVisible
+      Namespace: AWS/SQS
+      Statistic: Sum
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt HandleDLQ.QueueName
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Ref SlackSnsArn
+
+  PublicationServiceUpdateRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !GetAtt InternalBus.Name
+      Description: "Event rule handle identifier minting. Should not be enabled before ALL migrations are done."
+      State: DISABLED
+      EventPattern:
+        detail:
+          responsePayload:
+            topic:
+              - "PublicationService.Resource.Update"
+      Targets:
+        - Arn: !GetAtt HandleWorkQueue.Arn
+          Id: HandleWorkQueueTarget
+          DeadLetterConfig:
+            Arn: !GetAtt HandleDLQ.Arn
+
+  HandleWorkQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref HandleWorkQueue
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: "events.amazonaws.com"
+            Action: 'sqs:SendMessage'
+            Resource: !GetAtt HandleWorkQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !GetAtt PublicationServiceUpdateRule.Arn
+
   EventBasedBatchScanHandlerTest:
     DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
