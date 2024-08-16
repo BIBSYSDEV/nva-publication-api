@@ -7,6 +7,7 @@ import static nva.commons.core.paths.UriWrapper.HTTPS;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.net.URI;
@@ -46,6 +47,9 @@ public class HandleIdentifierEventHandler
 
     private static final Logger logger = LoggerFactory.getLogger(HandleIdentifierEventHandler.class);
     public static final String LEGACY_HANDLE_SOURCE_NAME = "handle";
+    public static final TypeReference<AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>>> SQS_VALUE_TYPE_REF =
+        new TypeReference<>() {
+    };
     private final String backendClientAuthUrl;
     private final String backendClientSecretName;
     private final ResourceService resourceService;
@@ -72,8 +76,8 @@ public class HandleIdentifierEventHandler
                                            Environment environment,
                                            HttpClient httpClient,
                                            SecretsManagerClient secretsManagerClient) {
-        String apiDomain = environment.readEnv("API_DOMAIN");
-        String handleBasePath = environment.readEnv("HANDLE_BASE_PATH");
+        var apiDomain = environment.readEnv("API_DOMAIN");
+        var handleBasePath = environment.readEnv("HANDLE_BASE_PATH");
         this.backendClientSecretName = environment.readEnv("BACKEND_CLIENT_SECRET_NAME");
         this.backendClientAuthUrl = environment.readEnv("BACKEND_CLIENT_AUTH_URL");
         this.frontendDomain = environment.readEnv("NVA_FRONTEND_DOMAIN");
@@ -90,21 +94,21 @@ public class HandleIdentifierEventHandler
     public Void handleRequest(SQSEvent sqsEvent, Context context) {
         sqsEvent.getRecords()
             .stream()
-            .map(sqs -> {
-                logger.info("Processing sqsEvent: {}", sqs.getBody());
-                try {
-                    return JsonUtils.dtoObjectMapper
-                               .readValue(sqs.getBody(),
-                                          new TypeReference<AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>>>() {
-                                          })
-                               .getDetail()
-                               .getResponsePayload();
-                } catch (JsonProcessingException e) {
-                    throw new RuntimeException(e);
-                }
-            })
+            .map(HandleIdentifierEventHandler::parseEventReference)
             .forEach(this::processInputPayload);
         return null;
+    }
+
+    private static EventReference parseEventReference(SQSMessage sqs) {
+        logger.info("Processing sqsEvent: {}", sqs.getBody());
+        try {
+            return JsonUtils.dtoObjectMapper
+                       .readValue(sqs.getBody(), SQS_VALUE_TYPE_REF)
+                       .getDetail()
+                       .getResponsePayload();
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private CognitoCredentials fetchCredentials() {
@@ -148,6 +152,7 @@ public class HandleIdentifierEventHandler
         return resourceUpdate.getAdditionalIdentifiers().stream().anyMatch(HandleIdentifier.class::isInstance);
     }
 
+    // this method can be deleted after AdditionalIdentifier handles is migrated to HandleIdentifier
     private static boolean resourceContainsLegacyHandle(Resource resourceUpdate) {
         return resourceUpdate.getAdditionalIdentifiers()
                    .stream()

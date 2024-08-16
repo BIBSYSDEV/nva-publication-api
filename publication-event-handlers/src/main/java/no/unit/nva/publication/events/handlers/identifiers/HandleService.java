@@ -5,11 +5,14 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.resilience4j.core.IntervalFunction;
 import io.github.resilience4j.decorators.Decorators;
+import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
+import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
 import io.github.resilience4j.retry.RetryRegistry;
 import io.vavr.control.Try;
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.Builder;
@@ -44,20 +47,14 @@ public class HandleService {
     }
 
     public URI createHandle(URI uri) {
-        var config = RateLimiterConfig.custom()
-                         .limitRefreshPeriod(Duration.ofMinutes(1))
-                         .limitForPeriod(100)
-                         .timeoutDuration(Duration.ofSeconds(10))
-                         .build();
-        var rateLimiterRegistry = RateLimiterRegistry.of(config);
-        var rateLimiter = rateLimiterRegistry.rateLimiter("executeRequest");
-        var retryRegistry = RetryRegistry.of(RetryConfig.custom()
-                                                 .maxAttempts(5)
-                                                 .intervalFunction(IntervalFunction.ofExponentialRandomBackoff())
-                                                 .build());
-        var retryWithDefaultConfig = retryRegistry.retry("executeRequest");
+        return executeWithRetry(() -> executeRequest(uri));
+    }
 
-        Supplier<URI> decoratedSupplier = Decorators.ofSupplier(() -> executeRequest(uri))
+    private static <T> T executeWithRetry(Supplier<T> action) {
+        var rateLimiter = createRateLimiter();
+        var retryWithDefaultConfig = createRetryConfig();
+
+        Supplier<T> decoratedSupplier = Decorators.ofSupplier(action)
                                               .withRateLimiter(rateLimiter)
                                               .withRetry(retryWithDefaultConfig)
                                               .decorate();
@@ -65,29 +62,50 @@ public class HandleService {
         return Try.ofSupplier(decoratedSupplier).get();
     }
 
+    private static Retry createRetryConfig() {
+        var retryRegistry = RetryRegistry.of(RetryConfig.custom()
+                                                 .maxAttempts(5)
+                                                 .intervalFunction(IntervalFunction.ofExponentialRandomBackoff())
+                                                 .build());
+        return retryRegistry.retry("executeRequest");
+    }
+
+    private static RateLimiter createRateLimiter() {
+        var config = RateLimiterConfig.custom()
+                         .limitRefreshPeriod(Duration.ofMinutes(1))
+                         .limitForPeriod(100)
+                         .timeoutDuration(Duration.ofSeconds(10))
+                         .build();
+        var rateLimiterRegistry = RateLimiterRegistry.of(config);
+        return rateLimiterRegistry.rateLimiter("executeRequest");
+    }
+
     private URI executeRequest(URI payloadUri) {
         logger.info("Requesting {} with payloadUri {}", createRequestUri(), payloadUri);
-        return of(() -> attempt(
-                            () -> {
-                                HttpResponse<String> response = backendClient.send(httpRequestBuilder(payloadUri), BodyHandlers.ofString(StandardCharsets.UTF_8));
-                                if(response.statusCode() >= BAD_REQUEST) {
-                                    logger.error("Error response from server: {} \n{}",  response.statusCode(),
-                                                 response.body());
-                                    throw new RuntimeException("Request failed with status code: " + response.statusCode());
-                                }
-                                return response;
-                            })
+        return of(() -> attempt(() -> sendRequest(payloadUri))
                             .map(HttpResponse::body)
-                            .map(body -> {
-                                try {
-                                    return JsonUtils.dtoObjectMapper.readTree(body).get("handle").asText();
-                                } catch (JsonProcessingException e) {
-                                    logger.error("Error processing JSON: \n\n" + body, e);
-                                    throw new RuntimeException(e);
-                                }
-                            })
+                            .map(HandleService::getHandleFromBody)
                             .map(URI::create)
                             .orElseThrow()).get();
+    }
+
+    private static String getHandleFromBody(String body) {
+        try {
+            return JsonUtils.dtoObjectMapper.readTree(body).get("handle").asText();
+        } catch (JsonProcessingException e) {
+            logger.error("Error processing JSON: \n\n" + body, e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private HttpResponse<String> sendRequest(URI payloadUri) throws IOException, InterruptedException {
+        HttpResponse<String> response = backendClient.send(httpRequestBuilder(payloadUri), BodyHandlers.ofString(StandardCharsets.UTF_8));
+        if(response.statusCode() >= BAD_REQUEST) {
+            logger.error("Error response from server: {} \n{}",  response.statusCode(),
+                         response.body());
+            throw new RuntimeException("Request failed with status code: " + response.statusCode());
+        }
+        return response;
     }
 
     private Builder httpRequestBuilder(URI payloadUri) throws JsonProcessingException {
