@@ -1403,6 +1403,7 @@ Resources:
   HandleWorkQueue:
     Type: AWS::SQS::Queue
     Properties:
+      VisibilityTimeout: 900 #Equal to or more than HandleIdentifierEventHandler Timeout
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt HandleDLQ.Arn
         maxReceiveCount: 5
