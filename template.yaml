@@ -1434,6 +1434,8 @@ Resources:
     Type: AWS::Events::Rule
     Properties:
       EventBusName: !GetAtt InternalBus.Name
+      Description: "Event rule handle identifier minting. Should not be enabled before ALL migrations are done."
+      State: DISABLED
       EventPattern:
         detail:
           responsePayload:
