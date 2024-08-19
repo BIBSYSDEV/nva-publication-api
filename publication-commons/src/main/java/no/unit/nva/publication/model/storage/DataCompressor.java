@@ -83,7 +83,10 @@ public class DataCompressor {
 
     private static RuntimeException logFailure(Failure<Map<String, AttributeValue>> failure, Dao dao) {
         logger.error("Failure while converting dao to jsonNode. Dao identifier: {}", dao.getIdentifier());
-        return new RuntimeException(failure.getException());
+        var exception = failure.getException();
+        return exception instanceof IllegalArgumentException
+                   ? new IllegalArgumentException(exception)
+                   : new RuntimeException(exception);
     }
 
     private static AttributeValue asBinaryAttributeValue(Entity dao) {
