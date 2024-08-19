@@ -244,7 +244,8 @@ public class ResourceDao extends Dao
     }
 
     private boolean isCristinIdentifier(AdditionalIdentifierBase identifier) {
-        return nonNull(identifier) && identifier instanceof CristinIdentifier;
+        return nonNull(identifier) && identifier instanceof CristinIdentifier
+            && CRISTIN_SOURCE.equalsIgnoreCase(identifier.sourceName());
     }
 
     //TODO: All AdditionalIdentifiers with Cristin source should be migrated to CristinIdentifier's
