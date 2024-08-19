@@ -1,7 +1,6 @@
 package no.unit.nva.publication.model.storage;
 
 import static java.util.zip.Deflater.BEST_COMPRESSION;
-import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
 import static no.unit.nva.publication.model.storage.DynamoEntry.CONTAINED_DATA_FIELD_NAME;
 import static nva.commons.core.attempt.Try.attempt;
@@ -83,8 +82,7 @@ public class DataCompressor {
     }
 
     private static RuntimeException logFailure(Failure<Map<String, AttributeValue>> failure, Dao dao) {
-        var daoString = attempt(() -> dtoObjectMapper.writeValueAsString(dao)).orElseThrow();
-        logger.error("Failure while converting dao to jsonNode. Dao: {}", daoString);
+        logger.error("Failure while converting dao to jsonNode. Dao identifier: {}", dao.getIdentifier());
         return new RuntimeException(failure.getException());
     }
 
