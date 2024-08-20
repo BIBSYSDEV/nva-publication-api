@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -244,7 +245,11 @@ public class ResourceDao extends Dao
     }
 
     private boolean isCristinIdentifier(AdditionalIdentifierBase identifier) {
-        return nonNull(identifier) && identifier instanceof CristinIdentifier;
+        return nonNull(identifier) && identifier instanceof CristinIdentifier && isCristinSource(identifier);
+    }
+
+    private static boolean isCristinSource(AdditionalIdentifierBase identifier) {
+        return identifier.sourceName().toLowerCase(Locale.ROOT).contains(CRISTIN_SOURCE.toLowerCase(Locale.ROOT));
     }
 
     //TODO: All AdditionalIdentifiers with Cristin source should be migrated to CristinIdentifier's

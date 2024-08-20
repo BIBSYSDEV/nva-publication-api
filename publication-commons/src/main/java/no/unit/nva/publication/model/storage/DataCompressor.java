@@ -21,23 +21,18 @@ import java.util.zip.Inflater;
 import java.util.zip.InflaterOutputStream;
 import no.unit.nva.publication.model.business.Entity;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.attempt.Failure;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DataCompressor {
 
+    private static final Logger logger = LoggerFactory.getLogger(DataCompressor.class);
     private static final boolean NO_WRAP = true;
     private static final int COMPRESSION_LEVEL = BEST_COMPRESSION;
 
     @JacocoGenerated
     public DataCompressor() {
-    }
-
-    private static byte[] compress(byte[] uncompressedData) throws IOException {
-        var byteArrayOutputStream = new ByteArrayOutputStream();
-        var deflater = new Deflater(COMPRESSION_LEVEL, NO_WRAP);
-        try (DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(byteArrayOutputStream, deflater)) {
-            deflaterOutputStream.write(uncompressedData);
-        }
-        return byteArrayOutputStream.toByteArray();
     }
 
     public static byte[] decompress(byte[] compressedData) throws IOException {
@@ -53,9 +48,9 @@ public class DataCompressor {
 
         var attributeValue = attempt(
             () -> dynamoDbObjectMapper.convertValue(dao, JsonNode.class))
-                                            .map(json -> Item.fromJSON(dynamoDbObjectMapper.writeValueAsString(json)))
-                                            .map(ItemUtils::toAttributeValues)
-                                            .orElseThrow();
+                                 .map(json -> Item.fromJSON(dynamoDbObjectMapper.writeValueAsString(json)))
+                                 .map(ItemUtils::toAttributeValues)
+                                 .orElseThrow(failure -> logFailure(failure, dao));
 
         attributeValue.put(CONTAINED_DATA_FIELD_NAME, asBinaryAttributeValue(dao.getData()));
         return attributeValue;
@@ -77,6 +72,23 @@ public class DataCompressor {
         return attempt(() -> dynamoDbObjectMapper.readValue(objectNode.toString(), daoClass)).orElseThrow();
     }
 
+    private static byte[] compress(byte[] uncompressedData) throws IOException {
+        var byteArrayOutputStream = new ByteArrayOutputStream();
+        var deflater = new Deflater(COMPRESSION_LEVEL, NO_WRAP);
+        try (DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(byteArrayOutputStream, deflater)) {
+            deflaterOutputStream.write(uncompressedData);
+        }
+        return byteArrayOutputStream.toByteArray();
+    }
+
+    private static RuntimeException logFailure(Failure<Map<String, AttributeValue>> failure, Dao dao) {
+        logger.error("Failure while converting dao to jsonNode. Dao identifier: {}", dao.getIdentifier());
+        var exception = failure.getException();
+        return exception instanceof IllegalArgumentException
+                   ? new IllegalArgumentException(exception)
+                   : new RuntimeException(exception);
+    }
+
     private static AttributeValue asBinaryAttributeValue(Entity dao) {
         var compressedDataBytes = attempt(() -> dynamoDbObjectMapper.convertValue(dao, JsonNode.class))
                                       .map(JsonNode::toString)
@@ -85,6 +97,4 @@ public class DataCompressor {
                                       .orElseThrow();
         return new AttributeValue().withB(ByteBuffer.wrap(compressedDataBytes));
     }
-
-
 }

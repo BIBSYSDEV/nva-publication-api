@@ -86,10 +86,10 @@ public class ResourceService extends ServiceWithTransactions {
                                                                                               + "publications can be "
                                                                                               + "unpublished";
     public static final String DELETE_PUBLICATION_ERROR_MESSAGE = "Only unpublished publication can be deleted";
+    public static final String RESOURCE_TO_REFRESH_NOT_FOUND_MESSAGE = "Resource to refresh is not found: {}";
     private static final String SEPARATOR_ITEM = ",";
     private static final String SEPARATOR_TABLE = ";";
     private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
-    public static final String RESOURCE_TO_REFRESH_NOT_FOUND_MESSAGE = "Resource to refresh is not found: {}";
     private final String tableName;
     private final Clock clockForTimestamps;
     private final Supplier<SortableIdentifier> identifierSupplier;
@@ -204,7 +204,6 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setModifiedDate(now);
         return insertResourceFromImportCandidate(newResource);
     }
-
 
     // @deprecated Only here for existing tests.
     @Deprecated(forRemoval = true)
