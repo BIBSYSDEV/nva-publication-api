@@ -23,6 +23,6 @@ public class UpdatePublicationsInBatchesHandler extends EventHandler<MyEvent, Vo
 
     @Override
     protected Void processInput(MyEvent input, AwsEventBridgeEvent<MyEvent> awsEventBridgeEvent, Context context) {
-        return searchService.searchPublicationsByParam();
+        return null;
     }
 }
