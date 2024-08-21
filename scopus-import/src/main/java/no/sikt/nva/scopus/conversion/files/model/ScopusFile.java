@@ -1,6 +1,5 @@
 package no.sikt.nva.scopus.conversion.files.model;
 
-import static no.sikt.nva.scopus.ScopusConstants.UPLOAD_DETAILS_USERNAME;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
@@ -8,8 +7,9 @@ import java.util.Optional;
 import java.util.UUID;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails;
+import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails.Source;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
-import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import org.apache.tika.io.TikaInputStream;
 
 public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, TikaInputStream content, long size,
@@ -47,8 +47,8 @@ public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, Tika
                    .buildPublishedFile();
     }
 
-    private UploadDetails createUploadDetails() {
-        return new UploadDetails(UPLOAD_DETAILS_USERNAME, Instant.now());
+    private ImportUploadDetails createUploadDetails() {
+        return new ImportUploadDetails(Source.SCOPUS, null, Instant.now());
     }
 
     public boolean hasValidMimeType() {

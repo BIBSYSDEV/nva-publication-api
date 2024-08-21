@@ -14,7 +14,7 @@ import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
-import no.unit.nva.model.associatedartifacts.file.UploadDetails;
+import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeBase;
 import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
@@ -170,7 +170,7 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
                                  Instant.now().plusSeconds(60 * 60 * 24),
                                  RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
                                  RandomDataGenerator.randomString(), RandomDataGenerator.randomInstant(),
-                                 new UploadDetails(new Username(RandomDataGenerator.randomString()),
-                                                   RandomDataGenerator.randomInstant()));
+                                 new UserUploadDetails(new Username(RandomDataGenerator.randomString()),
+                                                       RandomDataGenerator.randomInstant()));
     }
 }

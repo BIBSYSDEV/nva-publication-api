@@ -44,14 +44,14 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationDate.Builder;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.SourceName;
-import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails;
+import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails.Source;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
-import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
@@ -240,8 +240,8 @@ public final class BrageNvaMapper {
                    .buildUnpublishableFile();
     }
 
-    private static UploadDetails createUploadDetails(Customer customer) {
-        return new UploadDetails(new Username(customer.username()), Instant.now());
+    private static ImportUploadDetails createUploadDetails(Customer customer) {
+        return new ImportUploadDetails(Source.BRAGE, customer.name(), Instant.now());
     }
 
     private static File createPublishedFile(ContentFile file, Record brageRecord, Instant embargoDate,

@@ -17,6 +17,7 @@ import static no.unit.nva.publication.create.CreatePublicationFromImportCandidat
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.SCOPUS_IDENTIFIER;
 import static no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever.ACCEPT;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -67,7 +68,7 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
-import no.unit.nva.model.associatedartifacts.file.UploadDetails;
+import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -562,7 +563,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                  null,
                                  null,
                                  null,
-                                 new UploadDetails(null, null));
+                                 new UserUploadDetails(randomPerson(), null));
     }
 
     private ImportCandidate createImportCandidateWithoutScopusId() throws NotFoundException {
@@ -602,7 +603,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     }
 
     private Username randomPerson() {
-        return new Username(randomString());
+        return new Username(randomInteger().toString() + "@" + randomString());
     }
 
     private InputStream createRequestWithoutAccessRights(ImportCandidate importCandidate) throws
