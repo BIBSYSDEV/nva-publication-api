@@ -38,7 +38,6 @@ import java.util.stream.StreamSupport;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -94,18 +93,22 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     }
 
     private static void processArtifact(JsonNode artifact) {
-        if (isNotALink(artifact)) {
-            var artifactNode = (ObjectNode) artifact;
-            var licenseUri = extractLicenseFromAssociatedArtifactNode(artifact);
-            Optional.ofNullable(licenseUri)
-                .map(License::fromUri)
-                .map(License::toJsonNode)
-                .ifPresent(jsonNode -> artifactNode.set(LICENSE_FIELD, jsonNode));
+        if (hasLicense(artifact)) {
+            expandLicense(artifact);
         }
     }
 
-    private static boolean isNotALink(JsonNode artifact) {
-        return !artifact.get(TYPE_FIELD).asText().equals(AssociatedLink.class.getSimpleName());
+    private static void expandLicense(JsonNode artifact) {
+        var artifactNode = (ObjectNode) artifact;
+        var licenseUri = extractLicenseFromAssociatedArtifactNode(artifact);
+        Optional.ofNullable(licenseUri)
+            .map(License::fromUri)
+            .map(License::toJsonNode)
+            .ifPresent(jsonNode -> artifactNode.set(LICENSE_FIELD, jsonNode));
+    }
+
+    private static boolean hasLicense(JsonNode artifact) {
+        return artifact.has(LICENSE_FIELD);
     }
 
     private static URI extractLicenseFromAssociatedArtifactNode(JsonNode node) {
