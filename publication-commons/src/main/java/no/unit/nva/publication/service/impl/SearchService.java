@@ -15,7 +15,7 @@ import no.unit.nva.publication.model.SearchResourceApiResponse;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 
-public class SearchService {
+public final class SearchService {
 
     public static final String SIZE_VALUE = "100";
     public static final String SIZE_QUERY_PARAM = "size";
