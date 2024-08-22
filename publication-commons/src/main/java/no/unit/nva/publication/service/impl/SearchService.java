@@ -44,7 +44,6 @@ public final class SearchService {
         return UriWrapper.fromHost(API_HOST)
                    .addChild(SEARCH)
                    .addChild(RESOURCES)
-                   .addQueryParameter(SIZE_QUERY_PARAM, SIZE_VALUE)
                    .addQueryParameters(searchParams)
                    .getUri();
     }
