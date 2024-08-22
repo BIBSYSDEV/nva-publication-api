@@ -1808,6 +1808,21 @@ Resources:
           HANDLER_EVENTS_FOLDER: 'ignored'
           OUTPUT_EVENT_TOPIC: 'PublicationService.DataEntry.ScanAndUpdateRowVersion'
 
+  ManuallyUpdatePublicationsHandler:
+    DependsOn: EventsLambdaManagedPolicy
+    Type: AWS::Serverless::Function
+    Description: 'Lambda function to update publications fetched from search-api'
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.batch.ManuallyUpdatePublicationsHandler::handleRequest
+      Timeout: 900
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref NvaResourcesTable
+          API_HOST: !Ref ApiDomain
+
+
   ImportCandidatesBatchScanStartHandler:
     DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
