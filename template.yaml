@@ -1811,6 +1811,7 @@ Resources:
   ManuallyUpdatePublicationsHandler:
     DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
+    Description: 'Lambda function to update publications fetched from search-api'
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.batch.ManuallyUpdatePublicationsHandler::handleRequest

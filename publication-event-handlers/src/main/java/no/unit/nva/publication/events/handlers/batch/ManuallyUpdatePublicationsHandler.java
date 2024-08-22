@@ -13,8 +13,10 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Publisher;
+import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.SearchService;
+import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +26,12 @@ public class ManuallyUpdatePublicationsHandler implements RequestStreamHandler {
     private static final Logger logger = LoggerFactory.getLogger(ManuallyUpdatePublicationsHandler.class);
     private final SearchService searchService;
     private final ResourceService resourceService;
+
+    @JacocoGenerated
+    public ManuallyUpdatePublicationsHandler() {
+        this.resourceService = ResourceService.defaultService();
+        this.searchService = SearchService.create(UriRetriever.defaultUriRetriever(), resourceService);
+    }
 
     public ManuallyUpdatePublicationsHandler(SearchService searchService, ResourceService resourceService) {
         this.searchService = searchService;
