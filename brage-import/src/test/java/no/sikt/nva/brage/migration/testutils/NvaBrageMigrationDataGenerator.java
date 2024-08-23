@@ -698,7 +698,7 @@ public class NvaBrageMigrationDataGenerator {
                 subjectCode = randomString();
             }
             if (isNull(project)) {
-                project = new Project(randomString(), randomString());
+                project = new Project(randomString(), randomString(), null);
             }
             return new NvaBrageMigrationDataGenerator(this);
         }
