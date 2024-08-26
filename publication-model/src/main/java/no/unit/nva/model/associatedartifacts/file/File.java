@@ -418,5 +418,17 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
             return new AdministrativeAgreement(identifier, name, mimeType, size, license, administrativeAgreement,
                                                publisherVersion, embargoDate, uploadDetails);
         }
+
+        public File build(Class<? extends File> clazz) {
+            if (clazz.equals(PublishedFile.class)) {
+                return buildPublishedFile();
+            } else if (clazz.equals(UnpublishedFile.class)) {
+                return buildUnpublishedFile();
+            } else if (clazz.equals(AdministrativeAgreement.class)) {
+                return buildUnpublishableFile();
+            } else {
+                throw new IllegalArgumentException("Invalid file type");
+            }
+        }
     }
 }
