@@ -50,11 +50,9 @@ public record Project(String identifier, String name, FundingSource fundingSourc
 
     private Funding constructFundingWithSource() {
         var source = constructSource();
-        if (NFR.equals(fundingSource.identifier())) {
-            return constructConfirmedNfrFunding(source);
-        } else {
-            return constructUnconfirmedFunding(source);
-        }
+        return NFR.equals(fundingSource.identifier())
+                   ? constructConfirmedNfrFunding(source)
+                   : constructUnconfirmedFunding(source);
     }
 
     private Funding constructUnconfirmedFunding(URI source) {

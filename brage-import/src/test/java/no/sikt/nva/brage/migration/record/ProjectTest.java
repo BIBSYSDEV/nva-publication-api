@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 class ProjectTest {
 
     @Test
-    void shouldCreateVerifiedFundingWhenNfrFunding() {
+    void shouldCreateVerifiedFundingWhenFundingSourceIsNfr() {
         var source = "NFR";
         var identifier = randomString();
         var project = new Project(identifier, randomString(),
