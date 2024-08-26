@@ -772,7 +772,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                  .withIsbn(randomIsbn10())
                                  .withType(TYPE_BOOK)
-                                 .withContributor(new Contributor(new Identity(randomString(), randomString()),
+                                 .withContributor(new Contributor(new Identity(randomString(), randomString(), null),
                                                                   "Editor",
                                                                   null,
                                                                   List.of()))
@@ -951,7 +951,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var instanceType = existingPublication.getEntityDescription()
                                .getReference().getPublicationInstance().getInstanceType();
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
-        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
+        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null, null),
                                                "ARTIST", null, List.of());
 
         var generator = new NvaBrageMigrationDataGenerator.Builder()
@@ -1022,7 +1022,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
             resourceService.createPublicationFromImportedEntry(publication,
                                                                ImportSource.fromBrageArchive(randomString()));
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
-        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
+        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null, null),
                                                "ARTIST", null, List.of());
 
         var generator = new NvaBrageMigrationDataGenerator.Builder()
@@ -1055,7 +1055,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
             resourceService.createPublicationFromImportedEntry(publication,
                                                                ImportSource.fromBrageArchive(randomString()));
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
-        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
+        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null, null),
                                                "ARTIST", null, List.of());
 
         var generator = new NvaBrageMigrationDataGenerator.Builder()
@@ -1093,7 +1093,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var instanceType = existingPublication.getEntityDescription()
                                .getReference().getPublicationInstance().getInstanceType();
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
-        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
+        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null, null),
                                                "ARTIST", null, List.of());
         var subjectCode = randomString();
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_MASTER)
@@ -1135,7 +1135,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
             resourceService.createPublicationFromImportedEntry(publication,
                                                                ImportSource.fromBrageArchive(randomString()));
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
-        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
+        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null, null),
                                                "ARTIST", null, List.of());
         var subjectCode = randomString();
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_PHD)
@@ -1181,7 +1181,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var instanceType = existingPublication.getEntityDescription()
                                .getReference().getPublicationInstance().getInstanceType();
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
-        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
+        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null, null),
                                                "ARTIST", null, List.of());
         var subjectCode = randomString();
         var brageGenerator =
@@ -1427,7 +1427,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var instanceType = existingPublication.getEntityDescription()
                                .getReference().getPublicationInstance().getInstanceType();
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
-        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
+        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null, null),
                                                "ARTIST", null, List.of());
 
         var generator = new NvaBrageMigrationDataGenerator.Builder()
@@ -1469,7 +1469,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var instanceType = existingPublication.getEntityDescription()
                                .getReference().getPublicationInstance().getInstanceType();
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
-        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
+        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null, null),
                                                "ARTIST", null, List.of());
         var nvaBrageMigrationDataGenerator =
             new NvaBrageMigrationDataGenerator.Builder()
@@ -1514,7 +1514,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         final var instanceType =
             existingPublication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
-        final var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
+        final var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null, null),
                                                "ARTIST", null, List.of());
         resourceService.createPublicationFromImportedEntry(existingPublication,
                                                            ImportSource.fromBrageArchive(randomString()));
@@ -1596,7 +1596,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var instanceType = existingPublication.getEntityDescription()
                                .getReference().getPublicationInstance().getInstanceType();
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
-        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
+        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null, null),
                                                "ARTIST", null, List.of());
         mockSingleHitSearchApiResponse(existingPublication.getIdentifier(), 200);
 
@@ -1720,7 +1720,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
             resourceService.createPublicationFromImportedEntry(publication,
                                                                ImportSource.fromBrageArchive(randomString()));
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
-        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
+        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null, null),
                                                "ARTIST", null, List.of());
         var isbn = getIsbn(existingPublication);
         mockSearchPublicationByIsbnResponse(existingPublication.getIdentifier(), isbn);
@@ -1762,7 +1762,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
             resourceService.createPublicationFromImportedEntry(publication,
                                                                ImportSource.fromBrageArchive(randomString()));
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
-        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
+        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null, null),
                                                "ARTIST", null, List.of());
         mockSearchPublicationByIsbnResponse(existingPublication.getIdentifier(), isbn);
         var generator = new NvaBrageMigrationDataGenerator.Builder()
@@ -1801,7 +1801,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var instanceType = existingPublication.getEntityDescription().getReference()
                                .getPublicationInstance().getInstanceType();
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
-        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
+        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null, null),
                                                "ARTIST", null, List.of());
 
         mockSingleHitSearchApiResponse(existingPublication.getIdentifier(), 200);
@@ -1836,7 +1836,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var instanceType = existingPublication.getEntityDescription().getReference().getPublicationInstance()
                                .getInstanceType();
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
-        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
+        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null, null),
                                                "ARTIST", null, List.of());
         mockSingleHitSearchApiResponse(existingPublication.getIdentifier(), 200);
 
@@ -1900,7 +1900,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var instanceType = existingPublication.getEntityDescription().getReference().getPublicationInstance()
                                .getInstanceType();
         var affiliationIdentifier = randomString();
-        var contributor = new Contributor(new Identity(randomString(), null),
+        var contributor = new Contributor(new Identity(randomString(), null, null),
                                           "Creator",
                                           "Creator",
                                           List.of(new Affiliation(affiliationIdentifier, "ntnu",
@@ -2006,7 +2006,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var instanceType = existingPublication.getEntityDescription().getReference().getPublicationInstance()
                                .getInstanceType();
         var affiliationIdentifier = randomString();
-        var contributor = new Contributor(new Identity(randomString(), null),
+        var contributor = new Contributor(new Identity(randomString(), null, null),
                                           "Creator",
                                           "Creator",
                                           List.of(new Affiliation(affiliationIdentifier, NTNU_CUSTOMER_NAME,
@@ -2052,7 +2052,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
             resourceService.createPublicationFromImportedEntry(publication,
                                                                ImportSource.fromBrageArchive(randomString()));
         var affiliationIdentifier = randomString();
-        var contributor = new Contributor(new Identity(randomString(), null),
+        var contributor = new Contributor(new Identity(randomString(), null, null),
                                           "Creator",
                                           "Creator",
                                           List.of(new Affiliation(affiliationIdentifier, NTNU_CUSTOMER_NAME,
@@ -2088,7 +2088,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
             resourceService.createPublicationFromImportedEntry(publication,
                                                                ImportSource.fromSource(Source.CRISTIN));
         var affiliationIdentifier = randomString();
-        var contributor = new Contributor(new Identity(randomString(), null),
+        var contributor = new Contributor(new Identity(randomString(), null, null),
                                           "Creator",
                                           "Creator",
                                           List.of(new Affiliation(affiliationIdentifier, NTNU_CUSTOMER_NAME,
@@ -2127,7 +2127,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
             resourceService.createPublicationFromImportedEntry(publication,
                                                                ImportSource.fromBrageArchive(randomString()));
         var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
-        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null),
+        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null, null),
                                                "ARTIST", null, List.of());
         var generator = new NvaBrageMigrationDataGenerator.Builder()
                             .withIsbn(isbn)

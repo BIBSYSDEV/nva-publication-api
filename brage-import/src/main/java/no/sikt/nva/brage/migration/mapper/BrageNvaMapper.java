@@ -412,7 +412,11 @@ public final class BrageNvaMapper {
     }
 
     private static Identity generateIdentity(no.sikt.nva.brage.migration.record.Identity identity) {
-        return new Identity.Builder().withName(identity.getName()).withId(generateIdentityIdentifier(identity)).build();
+        return new Identity.Builder()
+                   .withName(identity.getName())
+                   .withId(generateIdentityIdentifier(identity))
+                   .withOrcId(identity.getOrcId())
+                   .build();
     }
 
     private static URI generateIdentityIdentifier(no.sikt.nva.brage.migration.record.Identity identity) {
