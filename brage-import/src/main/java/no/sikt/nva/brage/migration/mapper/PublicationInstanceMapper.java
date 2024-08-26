@@ -520,6 +520,7 @@ public final class PublicationInstanceMapper {
         return Optional.ofNullable(brageRecord.getPart())
                    .orElseGet(Collections::emptyList)
                    .stream()
+                   .sorted()
                    .map(UnconfirmedDocument::new)
                    .collect(Collectors.toCollection(LinkedHashSet::new));
     }
