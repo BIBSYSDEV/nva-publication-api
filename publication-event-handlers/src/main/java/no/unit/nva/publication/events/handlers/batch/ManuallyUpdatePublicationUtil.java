@@ -32,23 +32,6 @@ public final class ManuallyUpdatePublicationUtil {
         }
     }
 
-    private List<Publication> updateLicense(List<Publication> publications,
-                                              ManuallyUpdatePublicationsRequest request) {
-        return publications.stream()
-                   .map(publication -> updateLicense(publication, request.oldValue(), request.newValue()))
-                   .map(resourceService::updatePublication)
-                   .toList();
-    }
-
-    private List<Publication> updatePublisher(List<Publication> publications,
-                                              ManuallyUpdatePublicationsRequest request) {
-        return publications.stream()
-                   .filter(publication -> hasPublisher(publication, request.oldValue()))
-                   .map(publication -> update(publication, request.oldValue(), request.newValue()))
-                   .map(resourceService::updatePublication)
-                   .toList();
-    }
-
     private static Publication update(Publication publication, String oldPublisher, String newPublisher) {
         var publicationContext = (Book) publication.getEntityDescription().getReference().getPublicationContext();
         var newPublicationContext = publicationContext.copy()
@@ -84,15 +67,34 @@ public final class ManuallyUpdatePublicationUtil {
                    .isPresent();
     }
 
+    private List<Publication> updateLicense(List<Publication> publications, ManuallyUpdatePublicationsRequest request) {
+        return publications.stream()
+                   .map(publication -> updateLicense(publication, request.oldValue(), request.newValue()))
+                   .map(resourceService::updatePublication)
+                   .toList();
+    }
+
+    private List<Publication> updatePublisher(List<Publication> publications,
+                                              ManuallyUpdatePublicationsRequest request) {
+        return publications.stream()
+                   .filter(publication -> hasPublisher(publication, request.oldValue()))
+                   .map(publication -> update(publication, request.oldValue(), request.newValue()))
+                   .map(resourceService::updatePublication)
+                   .toList();
+    }
+
     private Publication updateLicense(Publication publication, String oldLicense, String newLicense) {
         var filesToUpdate = publication.getAssociatedArtifacts()
-                        .stream()
-                        .filter(File.class::isInstance)
-                        .map(File.class::cast)
-                        .filter(file -> file.getLicense().toString().equals(oldLicense))
-                        .toList();
+                                .stream()
+                                .filter(File.class::isInstance)
+                                .map(File.class::cast)
+                                .filter(File::hasLicense)
+                                .filter(file -> file.getLicense().toString().equals(oldLicense))
+                                .toList();
         publication.getAssociatedArtifacts().removeAll(filesToUpdate);
-        var updatedFiles = filesToUpdate.stream().map(file -> file.copy().withLicense(URI.create(newLicense)).build(file.getClass())).toList();
+        var updatedFiles = filesToUpdate.stream()
+                               .map(file -> file.copy().withLicense(URI.create(newLicense)).build(file.getClass()))
+                               .toList();
         publication.getAssociatedArtifacts().addAll(updatedFiles);
         return publication;
     }

@@ -181,6 +181,10 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
         return license;
     }
 
+    public boolean hasLicense() {
+        return nonNull(license);
+    }
+
     public boolean isAdministrativeAgreement() {
         return administrativeAgreement;
     }
