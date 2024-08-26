@@ -1074,14 +1074,14 @@ Funding:
     source:
       type: string
       format: uri
-    fundingAmount:
-      $ref: '#/components/schemas/MonetaryAmount'
     activeFrom:
       type: string
       format: date-time
     activeTo:
       type: string
       format: date-time
+    fundingAmount:
+      $ref: '#/components/schemas/MonetaryAmount'
     type:
       type: string
 GeographicalContent:
@@ -2739,7 +2739,17 @@ UnpublishingNote:
         type: string
         format: date-time
 UploadDetails:
+  required:
+  - type
   type: object
+  properties:
+    uploadedBy:
+      type: string
+    uploadedDate:
+      type: string
+      format: date-time
+    type:
+      type: string
 Venue:
   required:
   - type
