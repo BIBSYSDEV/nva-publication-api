@@ -3,10 +3,12 @@ package no.sikt.nva.brage.migration.mapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anEmptyMap;
+import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.cucumber.java.hu.De;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -20,14 +22,20 @@ import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
+import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
+import no.unit.nva.model.pages.Pages;
 import nva.commons.core.Environment;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 class BrageNvaMapperTest {
-    
+
     private static final String API_HOST = new Environment().readEnv("API_HOST");
+    public static final String RELATED_DOCUMENT_3 = "Paper 3: Prestmo A";
+    public static final String RELATED_DOCUMENT_1 = "Paper 1: Saltvedt,";
+    public static final String RELATED_DOCUMENT_2 = "Paper 2: Prestmo, ";
 
     @Test
     void shouldMapContentFileWithBundleTypeLicenseToAdministrativeAgreement()
@@ -93,6 +101,30 @@ class BrageNvaMapperTest {
                              .build();
         var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST);
         assertThat(publication.getEntityDescription().getAlternativeAbstracts(), is(anEmptyMap()));
+    }
+
+    @Test
+    void shouldCreatePublicationWithRelatedDocumentsSortedAlphabeticallyWhenMappingDoctoralThesis()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var generator =  new NvaBrageMigrationDataGenerator.Builder()
+                             .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
+                             .withHasPart(List.of(RELATED_DOCUMENT_3, RELATED_DOCUMENT_1, RELATED_DOCUMENT_2))
+                             .build();
+        var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST);
+        var publicationInstance = (DegreePhd) publication.getEntityDescription()
+                                                                       .getReference()
+                                                                       .getPublicationInstance();
+        var expectedDocuments = List.of(RELATED_DOCUMENT_1, RELATED_DOCUMENT_2, RELATED_DOCUMENT_3);
+        var actualDocumentValues = getRelatedDocumentsValues(publicationInstance);
+
+        assertThat(actualDocumentValues, is(equalTo(expectedDocuments)));
+    }
+
+    private static List<String> getRelatedDocumentsValues(DegreePhd publicationInstance) {
+        return publicationInstance.getRelated().stream()
+                   .map(UnconfirmedDocument.class::cast)
+                   .map(UnconfirmedDocument::text)
+                   .toList();
     }
 
     private ContentFile createRandomContentFileWithBundleType(BundleType bundleType) {
