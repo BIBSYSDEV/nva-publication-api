@@ -385,7 +385,7 @@ nva:JournalInterview a rdfs:Class ;
   rdfs:subClassOf nva:Journal .
 
 nva:Organization a rdfs:Class ;
-  rdfs:comment "Administrative grouping of people working towards a shared goal" ;
+  rdfs:comment "Administrative grouping of people" ;
   rdfs:isDefinedBy nva: ;
   rdfs:subClassOf nva:Corporation  .
 

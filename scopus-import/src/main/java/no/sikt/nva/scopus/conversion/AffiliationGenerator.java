@@ -77,7 +77,7 @@ public class AffiliationGenerator {
     private CorporationWithContributors addCristinOrganisationData(CorporationWithContributors corporation) {
         var cristinOrganization = fetchCristinOrganizationsById(corporation)
             .or(() -> searchForCristinOrganizationByName(corporation))
-            .or(() -> searchForCristinOrganizationByCountry(corporation));
+            .or(() -> searchForCountry(corporation));
 
         return cristinOrganization.isPresent()
                    ? corporation.copy().withCristinCorporations(List.of(cristinOrganization.get())).build()
@@ -86,7 +86,7 @@ public class AffiliationGenerator {
 
     //Countries are stored as organizations in Cristin, we use the same endpoint
     //for fetching countries as we do with organizations
-    private Optional<CristinOrganization> searchForCristinOrganizationByCountry(
+    private Optional<CristinOrganization> searchForCountry(
         CorporationWithContributors corporation) {
         return Optional.ofNullable(corporation.getScopusAuthors())
                    .map(AuthorGroupTp::getAffiliation)
