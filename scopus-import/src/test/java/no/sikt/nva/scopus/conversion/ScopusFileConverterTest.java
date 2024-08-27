@@ -1,6 +1,5 @@
 package no.sikt.nva.scopus.conversion;
 
-import static no.sikt.nva.scopus.ScopusConstants.UPLOAD_DETAILS_USERNAME;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -39,6 +38,8 @@ import no.scopus.generated.UpwOpenAccessType;
 import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;
 import no.sikt.nva.scopus.conversion.files.TikaUtils;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
+import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails;
+import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails.Source;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import nva.commons.core.ioutils.IoUtils;
@@ -198,8 +199,8 @@ public class ScopusFileConverterTest {
         mockDownloadUrlResponse();
         var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
 
-        assertThat(file.getUploadDetails().getUploadedBy(), is(equalTo(UPLOAD_DETAILS_USERNAME)));
-        assertThat(file.getUploadDetails().getUploadedDate(), is(notNullValue()));
+        assertThat(((ImportUploadDetails) file.getUploadDetails()).source(), is(equalTo(Source.SCOPUS)));
+        assertThat(file.getUploadDetails().uploadedDate(), is(notNullValue()));
     }
 
     @Test
@@ -208,8 +209,8 @@ public class ScopusFileConverterTest {
         mockResponsesWithHeader(responseBody, Map.of());
         var file = (PublishedFile) fileConverter.fetchAssociatedArtifacts(scopusData.getDocument()).getFirst();
 
-        assertThat(file.getUploadDetails().getUploadedBy(), is(equalTo(UPLOAD_DETAILS_USERNAME)));
-        assertThat(file.getUploadDetails().getUploadedDate(), is(notNullValue()));
+        assertThat(((ImportUploadDetails) file.getUploadDetails()).source(), is(equalTo(Source.SCOPUS)));
+        assertThat(file.getUploadDetails().uploadedDate(), is(notNullValue()));
     }
 
 

@@ -10,11 +10,18 @@ public class Identity {
 
     private final String name;
     private final String identifier;
+    private final String orcId;
 
     public Identity(@JsonProperty("name") String name,
-                    @JsonProperty("identifier") String identifier) {
+                    @JsonProperty("identifier") String identifier,
+                    @JsonProperty("orcId") String orcId) {
         this.name = name;
         this.identifier = identifier;
+        this.orcId = orcId;
+    }
+
+    public String getOrcId() {
+        return orcId;
     }
 
     public String getName() {
@@ -42,7 +49,7 @@ public class Identity {
             return false;
         }
         Identity identity = (Identity) o;
-        return Objects.equals(getName(), identity.getName()) && Objects.equals(getIdentifier(),
-                                                                               identity.getIdentifier());
+        return Objects.equals(getName(), identity.getName()) &&
+               Objects.equals(getIdentifier(), identity.getIdentifier());
     }
 }

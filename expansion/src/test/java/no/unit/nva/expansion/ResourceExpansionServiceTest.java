@@ -239,10 +239,11 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldReturnIndexDocumentWithoutLicenseWhenNoLicense() throws JsonProcessingException, NotFoundException {
-        var fileWithLicense = File.builder().buildPublishedFile();
+        var fileWithoutLicense = File.builder().buildUnpublishableFile();
+        var link = new AssociatedLink(randomUri(), null, null);
         var publication = PublicationGenerator.randomPublication()
                               .copy()
-                              .withAssociatedArtifacts(List.of(fileWithLicense))
+                              .withAssociatedArtifacts(List.of(fileWithoutLicense, link))
                               .build();
 
         var resourceUpdate = Resource.fromPublication(publication);

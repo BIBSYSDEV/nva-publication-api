@@ -698,7 +698,7 @@ public class NvaBrageMigrationDataGenerator {
                 subjectCode = randomString();
             }
             if (isNull(project)) {
-                project = new Project(randomString(), randomString());
+                project = new Project(randomString(), randomString(), null);
             }
             return new NvaBrageMigrationDataGenerator(this);
         }
@@ -808,7 +808,7 @@ public class NvaBrageMigrationDataGenerator {
     }
 
     private static Contributor createContributor() {
-        return new Contributor(new Identity("Ola", "123"), "Creator", "author",
+        return new Contributor(new Identity("Ola", "123", null), "Creator", "author",
                                List.of(new Affiliation("12345", "someAffiliation", "handle")));
     }
 }

@@ -69,6 +69,7 @@ public class ErrorDetails {
         INVALID_DC_RIGHTS_URI,
         MULTIPLE_VALUES,
         CONTENT_FILE_MISSING,
-        INVALID_ISMN
+        INVALID_ISMN,
+        UNKNOWN_PROJECT
     }
 }

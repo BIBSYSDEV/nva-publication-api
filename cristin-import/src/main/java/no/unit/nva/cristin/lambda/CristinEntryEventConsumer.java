@@ -181,8 +181,7 @@ public class CristinEntryEventConsumer
 
     private PublicationRepresentations persistUpdatedPublication(
         PublicationRepresentations publicationRepresentations) {
-        resourceService.updatePublicationByImportEntry(publicationRepresentations.getExistingPublication(),
-                                                       ImportSource.fromSource(Source.CRISTIN));
+        resourceService.updatePublication(publicationRepresentations.getExistingPublication());
         return publicationRepresentations;
     }
 
