@@ -421,12 +421,12 @@ Feature: Mappings that hold for all types of Cristin Results
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource should have the handle set to null
 
-  Scenario: when brage-archive is set to non-url, an exception is thrown
+  Scenario: when brage-archive is set to non-url, import without brage-archive
     Given the Cristin Result has the following varbeid_url present:
       | urltypekode | url                       |
       | ARKIV       | Voyage Television, France |
     When the Cristin Result is converted to an NVA Resource
-    Then an error is reported.
+    Then the NVA resource is imported without handle.
 
   Scenario: Cristin notes should be mapped to NVA notes
     Given a valid Cristin Result

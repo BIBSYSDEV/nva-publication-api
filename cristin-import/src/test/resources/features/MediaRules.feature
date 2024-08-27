@@ -56,8 +56,8 @@ Feature: Rules that apply for Media
     When the Cristin Result is converted to an NVA Resource
     Then the NVA publication should contain associatedArtifacts containing associatedLink with "<url>"
     Examples:
-      | urltypekode | url              |
-      | FULLTEKST   | www.example.com  |
-      | DATA        | www.example.com  |
-      | OMTALE      | www.example.com  |
+      | urltypekode | url                     |
+      | FULLTEKST   | https://www.example.com |
+      | DATA        | https://www.example.com |
+      | OMTALE      | https://www.example.com |
 

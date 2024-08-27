@@ -623,6 +623,11 @@ public class GeneralMappingRules {
         contributors.get(0).setAffiliations(List.of());
     }
 
+    @Then("the NVA resource is imported without handle.")
+    public void theNVAResourceIsImportedWithoutHandle() {
+        assertThat(scenarioContext.getNvaEntry().getHandle(), is(nullValue()));
+    }
+
     private void injectAffiliationsIntoContributors(List<CristinContributorsAffiliation> desiredInjectedAffiliations,
                                                     List<CristinContributor> contributors) {
         for (int contributorsIndex = 0; contributorsIndex < contributors.size(); contributorsIndex++) {

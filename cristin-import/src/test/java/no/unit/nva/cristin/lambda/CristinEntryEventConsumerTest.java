@@ -29,6 +29,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -42,6 +43,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Named.named;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -56,19 +59,21 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
+import no.unit.nva.cristin.mapper.CristinAssociatedUri;
 import no.unit.nva.cristin.mapper.CristinBookOrReportPartMetadata;
 import no.unit.nva.cristin.mapper.CristinMapper;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
-import no.unit.nva.cristin.mapper.CristinTags;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOf;
 import no.unit.nva.cristin.mapper.NvaPublicationPartOfCristinPublication;
 import no.unit.nva.cristin.mapper.SearchResource2Response;
@@ -89,6 +94,7 @@ import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.MediaContribution;
 import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
@@ -107,6 +113,7 @@ import no.unit.nva.publication.utils.CristinUnitsUtil;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.SingletonCollector;
+import nva.commons.core.StringUtils;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
@@ -117,8 +124,10 @@ import org.javers.core.JaversBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
+import org.junit.jupiter.params.provider.MethodSource;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
@@ -136,6 +145,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     public static final int SERIES_NSD_CODE = 339741;
     public static final int JOURNAL_NSD_CODE = 339717;
     public static final String ERROR_REPORT = "ERROR_REPORT";
+    public static final String ASSOCIATED_URI_TYPE = "FULLTEKST";
 
     private CristinEntryEventConsumer handler;
     private ResourceService resourceService;
@@ -144,6 +154,21 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     private UriRetriever uriRetriever;
     private DoiDuplicateChecker doiDuplicateChecker;
     private CristinUnitsUtil cristinUnitsUtil;
+
+    public static Stream<Arguments> invalidUriProvider() {
+        return Stream.of(
+            arguments(named("Uri is a text", randomString())),
+            arguments(named("Uri misses scheme", "example.com")),
+            arguments(named("Uri is a path", "12345/6789"))
+        );
+    }
+
+    public static Stream<Arguments> validUriProvider() {
+        return Stream.of(
+            arguments(named("Valid uri with path", randomUri().toString())),
+            arguments(named("Uri with whitespace", randomUri() + StringUtils.SPACE))
+        );
+    }
 
     @BeforeEach
     public void init() {
@@ -1047,6 +1072,32 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
             cristinObject.getBookOrReportPartMetadata().getSubjectField().getSubjectFieldCode().toString();
 
         assertThat(publication.getEntityDescription().getNpiSubjectHeading(), is(equalTo(expectedNpiSubjectHeading)));
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidUriProvider")
+    void shouldCreatePublicationWithoutAssociatedLinkWhenAssociatedLinkIsNotValidUri(String value)
+        throws IOException {
+        var cristinObject = CristinDataGenerator.createObjectWithCategory(CHAPTER, LEXICAL_IMPORT);
+        cristinObject.setCristinAssociatedUris(List.of(new CristinAssociatedUri(ASSOCIATED_URI_TYPE, value)));
+        var sqsEvent = createSqsEvent(createEventBody(cristinObject));
+        var publication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+
+        assertThat(publication.getAssociatedArtifacts(), is(emptyIterable()));
+    }
+
+    @ParameterizedTest
+    @MethodSource("validUriProvider")
+    void shouldCreatePublicationWithAssociatedLinkWhenAssociatedLinkIsUri(String value)
+        throws IOException {
+        var cristinObject = CristinDataGenerator.createObjectWithCategory(CHAPTER, LEXICAL_IMPORT);
+        cristinObject.setCristinAssociatedUris(List.of(new CristinAssociatedUri(ASSOCIATED_URI_TYPE, value)));
+        var sqsEvent = createSqsEvent(createEventBody(cristinObject));
+        var publication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
+        var actualAssociatedLink = (AssociatedLink) publication.getAssociatedArtifacts().getFirst();
+        var expectedAssociatedLinkValue = URI.create(value.trim());
+
+        assertThat(actualAssociatedLink.getId(), is(equalTo(expectedAssociatedLinkValue)));
     }
 
     @Test
