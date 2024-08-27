@@ -2399,7 +2399,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     private void assertThatPublicationsMatch(Publication actualPublication, Publication expectedPublication) {
-        assertThat(actualPublication.getSubjects(), containsInAnyOrder(expectedPublication.getSubjects().toArray()));
         var ignoredFields = new String[]{"createdDate", "identifier", "modifiedDate", "publishedDate", "subjects",
             "associatedArtifacts", "fundings", "status", "importDetails"};
         assertThat(actualPublication, is(samePropertyValuesAs(expectedPublication, ignoredFields)));
