@@ -3,16 +3,16 @@ package no.sikt.nva.brage.migration.mapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anEmptyMap;
-import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import io.cucumber.java.hu.De;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import no.sikt.nva.brage.migration.NvaType;
+import no.sikt.nva.brage.migration.record.Contributor;
+import no.sikt.nva.brage.migration.record.Identity;
 import no.sikt.nva.brage.migration.record.Type;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
@@ -22,12 +22,9 @@ import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
-import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
-import no.unit.nva.model.pages.Pages;
 import nva.commons.core.Environment;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 class BrageNvaMapperTest {
@@ -118,6 +115,26 @@ class BrageNvaMapperTest {
         var actualDocumentValues = getRelatedDocumentsValues(publicationInstance);
 
         assertThat(actualDocumentValues, is(equalTo(expectedDocuments)));
+    }
+
+    @Test
+    void shouldCreatePublicationWithContributorWithOrcIdWhenBrageContributorHasOrcid()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var contributor = randomContributorWithOrcId();
+        var generator =  new NvaBrageMigrationDataGenerator.Builder()
+                             .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
+                             .withContributor(contributor)
+                             .build();
+        var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST);
+        var actualContributor = publication.getEntityDescription().getContributors().getFirst();
+
+        assertEquals(contributor.getIdentity().getOrcId(), actualContributor.getIdentity().getOrcId());
+    }
+
+    private static Contributor randomContributorWithOrcId() {
+        return new Contributor(new Identity(randomString(), randomString(), randomString()),
+                               "ACTOR",
+                               randomString(), List.of());
     }
 
     private static List<String> getRelatedDocumentsValues(DegreePhd publicationInstance) {
