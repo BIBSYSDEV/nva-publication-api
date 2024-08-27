@@ -33,9 +33,6 @@ public final class ExceptionHandling {
         if (exception instanceof DuplicateDoiException) {
             return (DuplicateDoiException) exception;
         }
-        if (exception instanceof InvalidArchiveException) {
-            return (InvalidArchiveException) exception;
-        }
         if (exception instanceof RuntimeException) {
             return (RuntimeException) exception;
         }
