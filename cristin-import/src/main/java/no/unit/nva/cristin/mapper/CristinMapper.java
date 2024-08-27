@@ -131,8 +131,7 @@ public class CristinMapper extends CristinMappingModule {
         return associatedUris
                    .stream()
                    .filter(CristinAssociatedUri::isArchive)
-                   .findFirst() // Analysis of the cristin dataset shows that there is either 0 or 1 archive uri
-                   // present.
+                   .findFirst() // Analysis of the cristin dataset shows that there is either 0 or 1 archive uri present
                    .map(CristinAssociatedUri::toURI);
     }
 

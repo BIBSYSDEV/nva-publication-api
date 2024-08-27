@@ -17,6 +17,7 @@ public final class AssociatedLinkExtractor {
                    .stream()
                    .filter(AssociatedLinkExtractor::isNotAHandle)
                    .filter(AssociatedLinkExtractor::isAssociatedLink)
+                   .filter(CristinAssociatedUri::isValidUri)
                    .map(AssociatedLinkExtractor::toAssociatedLink)
                    .toList();
     }
