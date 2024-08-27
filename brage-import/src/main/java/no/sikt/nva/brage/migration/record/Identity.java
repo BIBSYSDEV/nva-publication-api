@@ -12,7 +12,8 @@ public class Identity {
     private final String identifier;
     private final String orcId;
 
-    public Identity(@JsonProperty("name") String name, @JsonProperty("identifier") String identifier,
+    public Identity(@JsonProperty("name") String name,
+                    @JsonProperty("identifier") String identifier,
                     @JsonProperty("orcId") String orcId) {
         this.name = name;
         this.identifier = identifier;
