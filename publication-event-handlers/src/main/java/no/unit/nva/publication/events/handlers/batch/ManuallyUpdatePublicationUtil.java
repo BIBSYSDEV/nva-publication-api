@@ -22,14 +22,10 @@ public final class ManuallyUpdatePublicationUtil {
     }
 
     public List<Publication> update(List<Publication> publications, ManuallyUpdatePublicationsRequest request) {
-        if (ManualUpdateType.PUBLISHER.equals(request.type())) {
-            return updatePublisher(publications, request);
-        }
-        if (ManualUpdateType.LICENSE.equals(request.type())) {
-            return updateLicense(publications, request);
-        } else {
-            throw new IllegalArgumentException("Unsupported update type: " + request.type());
-        }
+        return switch (request.type()) {
+            case PUBLISHER -> updatePublisher(publications, request);
+            case LICENSE -> updateLicense(publications, request);
+        };
     }
 
     private static Publication update(Publication publication, String oldPublisher, String newPublisher) {

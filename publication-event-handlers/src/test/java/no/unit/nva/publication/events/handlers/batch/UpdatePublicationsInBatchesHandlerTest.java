@@ -6,7 +6,6 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -85,7 +84,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldNotUpdatePublicationPublisherWhenUpdateTypeIsPublisherAndPublicationsHaveDifferentPublisherThanProvidedInRequest()
+    void shouldNotUpdatePublisherWhenPublisherUpdateAndPublicationAndRequestHaveDifferentPublishers()
         throws IOException {
         var publisherIdToKeep = createPublisherIdWithIdentifier(randomUUID().toString());
         var publicationsToUpdate = createMultiplePublicationsWithPublisher(publisherIdToKeep);
@@ -150,17 +149,6 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         });
     }
 
-    @Test
-    void shouldThrowIllegalArgumentExceptionWhenUnknownUpdateType() {
-        var license = randomUri();
-        var publicationsToUpdate = createMultiplePublicationsWithLicense(license);
-        var event = createEvent(null, randomString(), randomString());
-
-        mockSearchApiResponseWithPublications(publicationsToUpdate);
-
-        assertThrows(IllegalArgumentException.class, () -> handler.handleRequest(event, output, CONTEXT));
-    }
-
     private static List<File> getFiles(Publication updatedPublication) {
         return updatedPublication.getAssociatedArtifacts().stream().filter(File.class::isInstance)
                    .map(File.class::cast).toList();
@@ -180,14 +168,9 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     }
 
     private static URI getPublisher(Publication updatedPublication) {
-        return Optional.of(updatedPublication.getEntityDescription())
-                   .map(EntityDescription::getReference)
-                   .map(Reference::getPublicationContext)
-                   .map(Book.class::cast)
-                   .map(Book::getPublisher)
-                   .map(Publisher.class::cast)
-                   .map(Publisher::getId)
-                   .orElseThrow();
+        var book = (Book) updatedPublication.getEntityDescription().getReference().getPublicationContext();
+        var publisher = (Publisher) book.getPublisher();
+        return publisher.getId();
     }
 
     private static URI createPublicationId(String identifier) {
