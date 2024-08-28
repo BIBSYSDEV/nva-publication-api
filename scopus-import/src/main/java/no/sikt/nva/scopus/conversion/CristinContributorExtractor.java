@@ -95,7 +95,9 @@ public final class CristinContributorExtractor {
         Set<Affiliation> affiliations) {
         return affiliations.stream()
                    .filter(Affiliation::isActive)
-                   .map(CristinContributorExtractor::toOrganization).toList();
+                   .map(CristinContributorExtractor::toOrganization)
+                   .distinct()
+                   .toList();
     }
 
     private static Corporation toOrganization(Affiliation affiliation) {
@@ -113,6 +115,7 @@ public final class CristinContributorExtractor {
         return Optional.ofNullable(cristinOrganization)
                    .stream()
                    .flatMap(Collection::stream)
+                   .distinct()
                    .map(CristinContributorExtractor::toOrganization);
     }
 

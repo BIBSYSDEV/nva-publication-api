@@ -93,6 +93,7 @@ public class CorporationWithContributors {
     private List<Corporation> generateCorporationFromCristinOrganization() {
         return cristinOrganizations.stream()
                    .map(cristinOrganization -> new Organization.Builder().withId(cristinOrganization.id()).build())
+                   .distinct()
                    .collect(Collectors.toList());
     }
 
@@ -102,8 +103,8 @@ public class CorporationWithContributors {
             organizationName -> Map.of(guessTheLanguageOfTheInputStringAsIso6391Code(organizationName),
                                        organizationName))
                          : extractCountryNameAsAffiliation();
-        return isNotNorway(labels.orElse(Map.of()))
-                   ? List.of(new UnconfirmedOrganization(name.orElse(null)))
+        return isNotNorway(labels.orElse(Map.of())) && name.isPresent() && !name.get().isBlank()
+                   ? List.of(new UnconfirmedOrganization(name.get()))
                    : List.of();
     }
 
