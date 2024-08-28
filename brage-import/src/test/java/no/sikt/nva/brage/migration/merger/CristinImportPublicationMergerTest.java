@@ -34,6 +34,7 @@ import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.HandleIdentifier;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.SourceName;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
@@ -284,52 +285,52 @@ class CristinImportPublicationMergerTest {
     }
 
     @Test
-    void shouldPrioritizeAuthorsFromBrageIfRecordHasContributorsWithRoleCreatorPrioritized()
+    void shouldUpdateExistingCreatorsAffiliationWhenBrageContributorHasAffiliationAndPublicationIsADegree()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var existingPublication = randomPublication(DegreeBachelor.class);
         existingPublication.setAdditionalIdentifiers(Set.of());
-        var contributorThatShouldBeOverWrittenDuringMerging = new Contributor.Builder()
-                                                                  .withIdentity(new Identity.Builder()
-                                                                                    .withName(randomString())
-                                                                                    .build())
-                                                                  .withAffiliations(List.of())
-                                                                  .withSequence(1)
-                                                                  .withRole(new RoleType(Role.CREATOR))
-                                                                  .build();
-        var contributorThatShouldBeKept = new Contributor.Builder()
-                                              .withIdentity(new Identity.Builder().withName(randomString()).build())
-                                              .withAffiliations(List.of())
-                                              .withSequence(2)
-                                              .withRole(new RoleType(Role.ADVISOR))
-                                              .build();
-        existingPublication.getEntityDescription().setContributors(
-            List.of(contributorThatShouldBeOverWrittenDuringMerging, contributorThatShouldBeKept));
+        var contributorToUpdate = randomContributor(1, Role.CREATOR);
+        existingPublication.getEntityDescription().setContributors(List.of(contributorToUpdate));
+
         var bragePublication = randomPublication(DegreeBachelor.class);
-        var contributorThatShouldBePrioritized = new Contributor.Builder()
-                                                     .withIdentity(new Identity.Builder()
-                                                                       .withName(randomString())
-                                                                       .build())
-                                                     .withAffiliations(List.of())
-                                                     .withSequence(1)
-                                                     .withRole(new RoleType(Role.CREATOR))
-                                                     .build();
-        var contributorThatShouldBeIgnored = new Contributor.Builder()
-                                                 .withIdentity(new Identity.Builder().withName(randomString()).build())
-                                                 .withAffiliations(List.of())
-                                                 .withSequence(2)
-                                                 .withRole(new RoleType(Role.ADVISOR))
-                                                 .build();
-        bragePublication.getEntityDescription()
-            .setContributors(List.of(contributorThatShouldBePrioritized, contributorThatShouldBeIgnored));
-        var record = new Record();
-        record.setId(bragePublication.getHandle());
-        record.setPrioritizedProperties(Set.of(PRIORITIZE_CONTRIBUTORS_WITH_CREATOR_ROLE));
-        var updatedPublication = mergePublications(existingPublication, bragePublication, record);
-        var contributors = updatedPublication.getEntityDescription().getContributors();
-        assertThat(contributors, hasItem(contributorThatShouldBePrioritized));
-        assertThat(contributors, hasItem(contributorThatShouldBeKept));
-        assertThat(contributors, not(hasItem(contributorThatShouldBeIgnored)));
-        assertThat(contributors, not(hasItem(contributorThatShouldBeOverWrittenDuringMerging)));
+        var brageContributor = randomContributor(1, Role.CREATOR);
+        bragePublication.getEntityDescription().setContributors(List.of(brageContributor));
+
+        var brageRecord = new Record();
+        brageRecord.setId(bragePublication.getHandle());
+        var updatedPublication = mergePublications(existingPublication, bragePublication, brageRecord);
+        var updatedContributor = updatedPublication.getEntityDescription().getContributors().getFirst();
+
+        assertThat(updatedContributor.getAffiliations(), is(equalTo(brageContributor.getAffiliations())));
+    }
+
+    @Test
+    void shouldNotUpdateExistingContributorAffiliationWhenContributorIsNotCreatorAndPublicationIsADegree()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var existingPublication = randomPublication(DegreeBachelor.class);
+        existingPublication.setAdditionalIdentifiers(Set.of());
+        var contributorToKeepUnchanged = randomContributor(1, Role.RESEARCHER);
+        existingPublication.getEntityDescription().setContributors(List.of(contributorToKeepUnchanged));
+
+        var bragePublication = randomPublication(DegreeBachelor.class);
+        var brageContributor = randomContributor(1, Role.CREATOR);
+        bragePublication.getEntityDescription().setContributors(List.of(brageContributor));
+
+        var brageRecord = new Record();
+        brageRecord.setId(bragePublication.getHandle());
+        var updatedPublication = mergePublications(existingPublication, bragePublication, brageRecord);
+        var notUpdatedContributor = updatedPublication.getEntityDescription().getContributors().getFirst();
+
+        assertThat(notUpdatedContributor.getAffiliations(), is(equalTo(contributorToKeepUnchanged.getAffiliations())));
+    }
+
+    private static Contributor randomContributor(int sequence, Role creator) {
+        return new Contributor.Builder()
+                   .withIdentity(new Identity.Builder().withName(randomString()).build())
+                   .withAffiliations(List.of(Organization.fromUri(randomUri())))
+                   .withSequence(sequence)
+                   .withRole(new RoleType(creator))
+                   .build();
     }
 
     @Test
