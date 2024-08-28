@@ -90,7 +90,7 @@ public abstract class PermissionStrategy {
         return contributor.getIdentity() != null && contributor.getIdentity().getId() != null;
     }
 
-    protected boolean hasAppreovedFiles() {
+    protected boolean hasApprovedFiles() {
         return publication.getAssociatedArtifacts()
                    .stream()
                    .anyMatch(artifact -> ACCEPTED_FILE_TYPES
