@@ -7,10 +7,12 @@ import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static nva.commons.core.attempt.Try.attempt;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.Set;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
@@ -75,12 +77,11 @@ public abstract class PermissionStrategy {
         return userInstance.getTopLevelOrgCristinId().equals(publication.getResourceOwner().getOwnerAffiliation());
     }
 
-
     protected boolean isProtectedDegreeInstanceTypeWithEmbargo() {
         return isProtectedDegreeInstanceType() && publication.getAssociatedArtifacts().stream()
-                                 .filter(File.class::isInstance)
-                                 .map(File.class::cast)
-                                 .anyMatch(this::hasEmbargo);
+                                                      .filter(File.class::isInstance)
+                                                      .map(File.class::cast)
+                                                      .anyMatch(this::hasEmbargo);
     }
 
     private boolean hasEmbargo(File file) {
@@ -91,8 +92,11 @@ public abstract class PermissionStrategy {
         return contributor.getIdentity() != null && contributor.getIdentity().getId() != null;
     }
 
-    protected boolean hasPublishedFile() {
-        return publication.getAssociatedArtifacts().stream().anyMatch(PublishedFile.class::isInstance);
+    protected boolean hasAppreovedFiles() {
+        return publication.getAssociatedArtifacts()
+                   .stream()
+                   .anyMatch(artifact -> Set.of(PublishedFile.class, AdministrativeAgreement.class)
+                                             .contains(artifact.getClass()));
     }
 
     protected boolean hasUnpublishedFile() {
