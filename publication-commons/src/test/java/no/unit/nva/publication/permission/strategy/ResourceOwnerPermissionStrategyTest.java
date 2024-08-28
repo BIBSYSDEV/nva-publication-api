@@ -1,16 +1,28 @@
 package no.unit.nva.publication.permission.strategy;
 
+import static java.util.UUID.randomUUID;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static org.junit.jupiter.api.Named.named;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.List;
+import java.util.stream.Stream;
 import no.unit.nva.model.PublicationOperation;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.RequestUtil;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyTest {
 
@@ -49,8 +61,54 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                  .create(publication, userInstance)
-                                  .allowsAction(operation));
+                                   .create(publication, userInstance)
+                                   .allowsAction(operation));
+    }
+
+    @ParameterizedTest(name = "Should deny ResourceOwner unpublish operation on own published non-degree resource "
+        + "when files are approved ({0})")
+    @MethodSource("filesWithApprovedStatus")
+    void shouldDenyResourceOwnerUnpublishWhenFilesAreApproved(List<AssociatedArtifact> fileList)
+        throws JsonProcessingException, UnauthorizedException {
+
+        var institution = randomUri();
+        var resourceOwner = randomString();
+        var cristinId = randomUri();
+
+        var requestInfo = createUserRequestInfo(resourceOwner, institution, cristinId, randomUri());
+        var publication =
+            createNonDegreePublication(resourceOwner, institution).copy()
+                .withAssociatedArtifacts(fileList)
+                .build();
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+
+        Assertions.assertFalse(PublicationPermissionStrategy
+                                   .create(publication, userInstance)
+                                   .allowsAction(PublicationOperation.UNPUBLISH));
+    }
+
+    @ParameterizedTest(name = "Should allow ResourceOwner unpublish operation on own published non-degree resource "
+                              + "when files are not approved ({0})")
+    @MethodSource("filesWithNotApprovedStatus")
+    void shouldAllowResourceOwnerUnpublishWhenNoFilesOrUnapproved(List<AssociatedArtifact> fileList)
+        throws JsonProcessingException, UnauthorizedException {
+
+        var institution = randomUri();
+        var resourceOwner = randomString();
+        var cristinId = randomUri();
+
+        var requestInfo = createUserRequestInfo(resourceOwner, institution, cristinId, randomUri());
+        var publication =
+            createNonDegreePublication(resourceOwner, institution).copy()
+                .withAssociatedArtifacts(fileList)
+                .build();
+
+        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+
+        Assertions.assertTrue(PublicationPermissionStrategy
+                                   .create(publication, userInstance)
+                                   .allowsAction(PublicationOperation.UNPUBLISH));
     }
     //endregion
 
@@ -74,4 +132,35 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
     }
 
     //endregion
+
+    public static Stream<Arguments> filesWithApprovedStatus() {
+        return Stream.of(
+            arguments(named("UnpublishableFile", List.of(File.builder()
+                                                 .withName(randomString())
+                                                 .withIdentifier(randomUUID())
+                                                 .withLicense(PublicationGenerator.randomUri())
+                                                 .withAdministrativeAgreement(true)
+                                                 .buildUnpublishableFile()))),
+            arguments(named("PublishedFile", List.of(File.builder()
+                                                  .withIdentifier(randomUUID())
+                                                  .withName(randomString())
+                                                  .withLicense(PublicationGenerator.randomUri())
+                                                  .buildPublishedFile())))
+        );
+    }
+
+    public static Stream<Arguments> filesWithNotApprovedStatus() {
+        return Stream.of(
+            arguments(named("UnpublishedFile", List.of(File.builder()
+                                                           .withName(randomString())
+                                                           .withIdentifier(randomUUID())
+                                                           .withLicense(PublicationGenerator.randomUri())
+                                                           .buildUnpublishedFile()))),
+            arguments(named("Empty list", List.of())),
+            arguments(named("NullAssociatedArtifact", List.of(new NullAssociatedArtifact()))),
+            arguments(named("AssociatedLink", List.of(new AssociatedLink(randomUri(), randomString(),
+                                                                                 randomString())))
+            )
+        );
+    }
 }

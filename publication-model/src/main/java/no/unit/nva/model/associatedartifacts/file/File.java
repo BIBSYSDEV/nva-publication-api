@@ -13,6 +13,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -62,6 +63,8 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     public static final String LEGAL_NOTE_FIELD = "legalNote";
     private static final Supplier<Pattern> LICENSE_VALIDATION_PATTERN =
         () -> Pattern.compile("^(http|https)://.*$");
+    public static final Set<Class<? extends File>> ACCEPTED_FILE_TYPES = Set.of(PublishedFile.class,
+                                                                                    AdministrativeAgreement.class);
 
 
     @JsonProperty(IDENTIFIER_FIELD)
