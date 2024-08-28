@@ -4,17 +4,15 @@ import static java.util.Objects.isNull;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
+import static no.unit.nva.model.associatedartifacts.file.File.ACCEPTED_FILE_TYPES;
 import static nva.commons.core.attempt.Try.attempt;
 import java.util.Arrays;
 import java.util.Optional;
-import java.util.Set;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
-import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
@@ -95,7 +93,7 @@ public abstract class PermissionStrategy {
     protected boolean hasAppreovedFiles() {
         return publication.getAssociatedArtifacts()
                    .stream()
-                   .anyMatch(artifact -> Set.of(PublishedFile.class, AdministrativeAgreement.class)
+                   .anyMatch(artifact -> ACCEPTED_FILE_TYPES
                                              .contains(artifact.getClass()));
     }
 
