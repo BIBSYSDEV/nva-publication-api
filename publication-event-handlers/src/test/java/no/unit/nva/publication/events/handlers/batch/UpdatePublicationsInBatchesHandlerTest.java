@@ -23,6 +23,10 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Book.BookBuilder;
 import no.unit.nva.model.contexttypes.Publisher;
@@ -58,12 +62,13 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldUpdatePublicationPublisherIdWhenPublisherIdIsProvidedInRequest() throws IOException {
+    void shouldUpdatePublicationPublisherIdWhenUpdateTypeIsPublisherAndPublisherIdIsProvidedInRequest()
+        throws IOException {
         var publisherIdentifier = randomUUID().toString();
         var newPublisherIdentifier = randomUUID().toString();
         var publisherId = createPublisherIdWithIdentifier(publisherIdentifier);
         var publicationsToUpdate = createMultiplePublicationsWithPublisher(publisherId);
-        var event = createEvent(publisherIdentifier, newPublisherIdentifier);
+        var event = createEvent(ManualUpdateType.PUBLISHER, publisherIdentifier, newPublisherIdentifier);
 
         mockSearchApiResponseWithPublications(publicationsToUpdate);
 
@@ -79,11 +84,11 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldNotUpdatePublicationPublisherWhenPublicationsHaveDifferentPublisherThanProvidedInRequest()
+    void shouldNotUpdatePublisherWhenPublisherUpdateAndPublicationAndRequestHaveDifferentPublishers()
         throws IOException {
         var publisherIdToKeep = createPublisherIdWithIdentifier(randomUUID().toString());
         var publicationsToUpdate = createMultiplePublicationsWithPublisher(publisherIdToKeep);
-        var event = createEvent(randomUUID().toString(), randomUUID().toString());
+        var event = createEvent(ManualUpdateType.PUBLISHER, randomUUID().toString(), randomUUID().toString());
 
         mockSearchApiResponseWithPublications(publicationsToUpdate);
 
@@ -97,10 +102,62 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         });
     }
 
-    private static InputStream createEvent(String publisherIdentifier, String newPublisherIdentifier) {
-        return IoUtils.stringToStream(new ManuallyUpdatePublicationsRequest(publisherIdentifier, newPublisherIdentifier,
+    @Test
+    void shouldUpdateFileLicenseUriWhenUpdateTypeIsLicenseAndLicenseUriIsProvidedInRequestAndMatchesFileLicense()
+        throws IOException {
+        var license = randomUri();
+        var newLicense = randomUri();
+        var publicationsToUpdate = createMultiplePublicationsWithLicense(license);
+        var event = createEvent(ManualUpdateType.LICENSE, license.toString(), newLicense.toString());
+
+        mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+        handler.handleRequest(event, output, CONTEXT);
+
+        publicationsToUpdate.forEach(publication -> {
+            var updatedPublication = getPublicationByIdentifier(publication);
+
+            assertEquals(publication.getAssociatedArtifacts().size(),
+                         updatedPublication.getAssociatedArtifacts().size());
+
+            var updatedFiles = getFiles(updatedPublication);
+
+            updatedFiles.forEach(file -> assertEquals(newLicense, file.getLicense()));
+        });
+    }
+
+    @Test
+    void shouldNotUpdateFileLicenseUriWhenUpdateTypeIsLicenseAndLicenseUriIsNotEqualProvidedInRequestLicense()
+        throws IOException {
+        var license = randomUri();
+        var publicationsToUpdate = createMultiplePublicationsWithLicense(license);
+        var event = createEvent(ManualUpdateType.LICENSE, randomString(), randomString());
+
+        mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+        handler.handleRequest(event, output, CONTEXT);
+
+        publicationsToUpdate.forEach(publication -> {
+            var updatedPublication = getPublicationByIdentifier(publication);
+
+            assertEquals(publication.getAssociatedArtifacts().size(),
+                         updatedPublication.getAssociatedArtifacts().size());
+
+            var updatedFiles = getFiles(updatedPublication);
+
+            updatedFiles.forEach(file -> assertEquals(license, file.getLicense()));
+        });
+    }
+
+    private static List<File> getFiles(Publication updatedPublication) {
+        return updatedPublication.getAssociatedArtifacts().stream().filter(File.class::isInstance)
+                   .map(File.class::cast).toList();
+    }
+
+    private static InputStream createEvent(ManualUpdateType type, String oldValue, String newValue) {
+        return IoUtils.stringToStream(new ManuallyUpdatePublicationsRequest(type, oldValue, newValue,
                                                                             Map.of("publisher",
-                                                                                 publisherIdentifier)).toJsonString());
+                                                                                   oldValue)).toJsonString());
     }
 
     private static URI createPublisherIdWithIdentifier(String publisherIdentifier) {
@@ -111,14 +168,9 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     }
 
     private static URI getPublisher(Publication updatedPublication) {
-        return Optional.of(updatedPublication.getEntityDescription())
-                   .map(EntityDescription::getReference)
-                   .map(Reference::getPublicationContext)
-                   .map(Book.class::cast)
-                   .map(Book::getPublisher)
-                   .map(Publisher.class::cast)
-                   .map(Publisher::getId)
-                   .orElseThrow();
+        var book = (Book) updatedPublication.getEntityDescription().getReference().getPublicationContext();
+        var publisher = (Publisher) book.getPublisher();
+        return publisher.getId();
     }
 
     private static URI createPublicationId(String identifier) {
@@ -136,6 +188,24 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     private Publication getPublicationByIdentifier(Publication publication) {
         return attempt(() -> resourceService.getPublicationByIdentifier(publication.getIdentifier())).orElseThrow();
+    }
+
+    private List<Publication> createMultiplePublicationsWithLicense(URI license) {
+        return IntStream.range(0, 10).boxed().map(i -> createPublicationWithLicense(license)).toList();
+    }
+
+    private Publication createPublicationWithLicense(URI license) {
+        var publication = randomPublication();
+        publication.setAssociatedArtifacts(new AssociatedArtifactList(randomFileWithLicense(license)));
+        return attempt(() -> resourceService.createPublication(UserInstance.fromPublication(publication),
+                                                               publication)).orElseThrow();
+    }
+
+    private List<AssociatedArtifact> randomFileWithLicense(URI license) {
+        return List.of(File.builder().withLicense(license).withIdentifier(randomUUID()).buildPublishedFile(),
+                       File.builder().withLicense(license).withIdentifier(randomUUID()).buildUnpublishableFile(),
+                       File.builder().withLicense(license).withIdentifier(randomUUID()).buildUnpublishedFile(),
+                       new AssociatedLink(randomUri(), randomString(), randomString()));
     }
 
     private List<Publication> createMultiplePublicationsWithPublisher(URI publisherId) {
