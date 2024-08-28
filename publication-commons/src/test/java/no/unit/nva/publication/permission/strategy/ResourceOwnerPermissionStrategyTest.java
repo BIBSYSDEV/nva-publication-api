@@ -1,16 +1,18 @@
 package no.unit.nva.publication.permission.strategy;
 
+import static java.util.UUID.randomUUID;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.junit.jupiter.api.Named.named;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.RequestUtil;
@@ -131,29 +133,34 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
 
     //endregion
 
-    private static Stream<Arguments> filesWithApprovedStatus() {
+    public static Stream<Arguments> filesWithApprovedStatus() {
         return Stream.of(
             arguments(named("UnpublishableFile", List.of(File.builder()
                                                  .withName(randomString())
-                                                 .withIdentifier(UUID.randomUUID())
+                                                 .withIdentifier(randomUUID())
                                                  .withLicense(PublicationGenerator.randomUri())
                                                  .withAdministrativeAgreement(true)
                                                  .buildUnpublishableFile()))),
             arguments(named("PublishedFile", List.of(File.builder()
-                                                  .withIdentifier(UUID.randomUUID())
+                                                  .withIdentifier(randomUUID())
                                                   .withName(randomString())
                                                   .withLicense(PublicationGenerator.randomUri())
                                                   .buildPublishedFile())))
         );
     }
 
-    private static Stream<Arguments> filesWithNotApprovedStatus() {
+    public static Stream<Arguments> filesWithNotApprovedStatus() {
         return Stream.of(
             arguments(named("UnpublishedFile", List.of(File.builder()
                                                            .withName(randomString())
-                                                           .withIdentifier(UUID.randomUUID())
+                                                           .withIdentifier(randomUUID())
                                                            .withLicense(PublicationGenerator.randomUri())
-                                                           .buildUnpublishedFile())))
+                                                           .buildUnpublishedFile()))),
+            arguments(named("Empty list", List.of())),
+            arguments(named("NullAssociatedArtifact", List.of(new NullAssociatedArtifact()))),
+            arguments(named("AssociatedLink", List.of(new AssociatedLink(randomUri(), randomString(),
+                                                                                 randomString())))
+            )
         );
     }
 }
