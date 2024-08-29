@@ -278,7 +278,8 @@ public final class PublicationUpdater {
         var existingPlace = getPlaceCountry(existingEvent);
         var incomingPlace = getPlaceCountry(incomingEvent);
         if (shouldBeUpdated(existingPlace, incomingPlace)
-            || shouldBeUpdated(getLabel(existingPlace), getLabel(incomingPlace))) {
+            || shouldBeUpdated(getLabel(existingPlace), getLabel(incomingPlace))
+            || shouldBeUpdated(existingEvent.getTime(), incomingEvent.getTime())) {
             return new Event.Builder()
                        .withLabel(
                            nonNull(existingEvent.getLabel()) ? existingEvent.getLabel() : incomingEvent.getLabel())
