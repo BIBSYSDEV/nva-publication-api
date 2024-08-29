@@ -15,6 +15,7 @@ import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import cucumber.utils.ContributorFlattenedDetails;
 import cucumber.utils.exceptions.MisformattedScenarioException;
 import cucumber.utils.transformers.CristinContributorTransformer;
@@ -54,6 +55,7 @@ import no.unit.nva.model.SourceName;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.funding.ConfirmedFunding;
 import no.unit.nva.model.funding.Funding;
+import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.paths.UriWrapper;
@@ -626,6 +628,13 @@ public class GeneralMappingRules {
     @Then("the NVA resource is imported without handle.")
     public void theNVAResourceIsImportedWithoutHandle() {
         assertThat(scenarioContext.getNvaEntry().getHandle(), is(nullValue()));
+    }
+
+    @Then("the NVA contributor has role other.")
+    public void theNVAContributorHasRoleOther() {
+        scenarioContext.getNvaEntry().getEntityDescription().getContributors().stream()
+            .map(Contributor::getRole)
+            .forEach(role -> assertEquals(role, new RoleType(Role.OTHER)));
     }
 
     private void injectAffiliationsIntoContributors(List<CristinContributorsAffiliation> desiredInjectedAffiliations,
