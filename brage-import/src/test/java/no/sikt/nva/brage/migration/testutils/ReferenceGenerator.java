@@ -475,7 +475,6 @@ public final class ReferenceGenerator {
         return new Report.Builder().withIsbnList(Collections.singletonList(builder.getIsbn()))
                    .withSeries(generateSeries(builder))
                    .withSeriesNumber(builder.getSeriesNumberPublication())
-                   .withSeriesNumber(builder.getIssue())
                    .build();
     }
 
