@@ -306,7 +306,7 @@ public class CristinMapper extends CristinMappingModule {
                    .withMainTitle(extractMainTitle())
                    .withPublicationDate(extractPublicationDate())
                    .withReference(new ReferenceBuilder(cristinObject, channelRegistryMapper, s3Client).buildReference())
-                   .withContributors(extractContributors())
+                   .withContributors(extractContributors(s3Client))
                    .withNpiSubjectHeading(extractNpiSubjectHeading())
                    .withAbstract(extractAbstract())
                    .withTags(extractTags())
@@ -334,18 +334,20 @@ public class CristinMapper extends CristinMappingModule {
         return Optional.ofNullable(cristinObject.getCristinExhibition()).map(CristinExhibition::getDescription);
     }
 
-    private List<Contributor> extractContributors() {
+    private List<Contributor> extractContributors(S3Client s3Client) {
         var contributors = Optional.ofNullable(cristinObject.getContributors());
         return contributors.isPresent()
-                   ? contributorsWithUpdatedSequenceNumbers(contributors.get())
+                   ? contributorsWithUpdatedSequenceNumbers(contributors.get(), cristinObject.getId(), s3Client)
                    : Collections.emptyList();
     }
 
-    private List<Contributor> contributorsWithUpdatedSequenceNumbers(List<CristinContributor> cristinContributors) {
+    private List<Contributor> contributorsWithUpdatedSequenceNumbers(List<CristinContributor> cristinContributors,
+                                                                     Integer cristinIdentifier, S3Client s3Client) {
         var sortedContributors = sortCristinContributors(cristinContributors);
         addContributorNumberIfMissing(sortedContributors);
         return cristinContributors.stream()
-                   .map(attempt(CristinContributor::toNvaContributor))
+                   .map(cristinContributor -> attempt(() -> cristinContributor.toNvaContributor(cristinIdentifier,
+                                                                                                s3Client)))
                    .map(Try::orElseThrow)
                    .collect(Collectors.toList());
     }

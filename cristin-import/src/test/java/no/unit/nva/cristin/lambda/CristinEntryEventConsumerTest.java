@@ -38,6 +38,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -105,6 +106,8 @@ import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.ImportResult;
@@ -505,7 +508,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    void handlerStoresAffiliationWithoutARoleExceptionWhenTheCristinObjectHasAffiliationsWithoutRoles()
+    void handlerCreatesPublicationWithContributorRoleOtherAndStoresErrorReportWhenTheCristinObjectHasAffiliationsWithoutRoles()
         throws IOException {
         var cristinObjectWithAffiliationWithoutRoles = CristinDataGenerator
                                                            .objectWithAffiliationWithoutRole();
@@ -513,14 +516,19 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var sqsEvent = createSqsEvent(eventBody);
         handler.handleRequest(sqsEvent, CONTEXT);
 
-        var expectedExceptionName = AffiliationWithoutRoleException.class.getSimpleName();
-        var expectedFilePath = constructExpectedErrorFilePaths(eventBody,
-                                                               expectedExceptionName);
+        var cristinId = cristinObjectWithAffiliationWithoutRoles.at("/id").asText();
+        var errorReportLocation =
+            UnixPath.of(ERROR_REPORT).addChild(AffiliationWithoutRoleException.name()).addChild(cristinId);
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
-        var file = s3Driver.getFile(expectedFilePath);
+        var file = s3Driver.getFile(errorReportLocation);
+
+        var publication = resourceService.getPublicationsByCristinIdentifier(cristinId).getFirst();
+
+        publication.getEntityDescription().getContributors().stream()
+            .map(Contributor::getRole)
+            .forEach(role -> assertEquals(role, new RoleType(Role.OTHER)));
 
         assertThat(file, is(not(emptyString())));
-        assertThat(file, containsString(expectedExceptionName));
     }
 
     @Test

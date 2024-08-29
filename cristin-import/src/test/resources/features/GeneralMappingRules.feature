@@ -303,10 +303,10 @@ Feature: Mappings that hold for all types of Cristin Results
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource Publishers id is "https://api.test.nva.aws.unit.no/customer/0baf8fcb-b18d-4c09-88bb-956b4f659103"
 
-  Scenario: Mapping reports error when Cristin affiliation has no role
+  Scenario: Mapping creates NVA Resource with contributor with role Other
     Given that the Cristin Result has a Contributor with no role
     When the Cristin Result is converted to an NVA Resource
-    Then an error is reported.
+    Then the NVA contributor has role other.
 
   Scenario: Mapping reports error when Cristin Contributor has no name
     Given that the Cristin Result has a Contributor with no family and no given name

@@ -1,11 +1,11 @@
 package no.unit.nva.cristin.mapper.nva.exceptions;
 
-public class AffiliationWithoutRoleException extends RuntimeException {
+public final class AffiliationWithoutRoleException extends RuntimeException {
 
-    public static final String ERROR_MESSAGE =
-        "The affiliation has no role. All affiliations must have at least one role.";
+    private AffiliationWithoutRoleException() {
+    }
 
-    public AffiliationWithoutRoleException() {
-        super(ERROR_MESSAGE);
+    public static String name() {
+        return AffiliationWithoutRoleException.class.getSimpleName();
     }
 }

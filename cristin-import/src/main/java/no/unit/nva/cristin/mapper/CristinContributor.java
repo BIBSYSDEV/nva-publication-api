@@ -17,16 +17,19 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import no.unit.nva.cristin.lambda.ErrorReport;
 import no.unit.nva.cristin.mapper.nva.exceptions.AffiliationWithoutRoleException;
 import no.unit.nva.cristin.mapper.nva.exceptions.ContributorWithoutAffiliationException;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
+import software.amazon.awssdk.services.s3.S3Client;
 
 @Builder(builderClassName = "CristinContributorBuilder", toBuilder = true, builderMethodName = "builder",
     buildMethodName = "build", setterPrefix = "with")
@@ -38,6 +41,7 @@ public class CristinContributor implements Comparable<CristinContributor> {
 
     public static final String NAME_DELIMITER = ", ";
     public static final String MISSING_ROLE_ERROR = "Affiliation without Role";
+    public static final String CONTRIBUTOR_MISSING_ROLE = "Contributor missing role";
     @JsonProperty("personlopenr")
     private Integer identifier;
     @JsonProperty("fornavn")
@@ -60,22 +64,20 @@ public class CristinContributor implements Comparable<CristinContributor> {
         return this.toBuilder();
     }
 
-    public Contributor toNvaContributor() {
+    public Contributor toNvaContributor(Integer cristinIdentifier, S3Client s3Client) {
 
         String fullName = constructFullName();
-        Identity identity = new Identity.Builder()
-            .withName(fullName)
-            .withId(constructId().orElse(null))
-            .withVerificationStatus(extractVerificationStatus())
-            .build();
+        Identity identity = new Identity.Builder().withName(fullName)
+                                .withId(constructId().orElse(null))
+                                .withVerificationStatus(extractVerificationStatus())
+                                .build();
 
-        return new Contributor.Builder()
-            .withIdentity(identity)
-            .withCorrespondingAuthor(false)
-            .withAffiliations(extractAffiliations())
-            .withRole(extractRoles())
-            .withSequence(contributorOrder)
-            .build();
+        return new Contributor.Builder().withIdentity(identity)
+                   .withCorrespondingAuthor(false)
+                   .withAffiliations(extractAffiliations())
+                   .withRole(extractRoles(cristinIdentifier, s3Client))
+                   .withSequence(contributorOrder)
+                   .build();
     }
 
     public void setContributorOrder(Integer orderNumber) {
@@ -98,11 +100,9 @@ public class CristinContributor implements Comparable<CristinContributor> {
     }
 
     private ContributorVerificationStatus extractVerificationStatus() {
-        return isNull(verificationStatus)
-                   ? ContributorVerificationStatus.CANNOT_BE_ESTABLISHED
+        return isNull(verificationStatus) ? ContributorVerificationStatus.CANNOT_BE_ESTABLISHED
                    : VerificationStatus.VERIFIED.getValue().equals(verificationStatus.getValue())
-                         ? ContributorVerificationStatus.VERIFIED
-                         : ContributorVerificationStatus.NOT_VERIFIED;
+                         ? ContributorVerificationStatus.VERIFIED : ContributorVerificationStatus.NOT_VERIFIED;
     }
 
     private String constructFullName() {
@@ -115,42 +115,43 @@ public class CristinContributor implements Comparable<CristinContributor> {
             nameBuilder.append(getFamilyName());
         }
 
-        return StringUtils.isNotBlank(nameBuilder.toString().trim())
-                   ? nameBuilder.toString().trim()
-                   : null;
+        return StringUtils.isNotBlank(nameBuilder.toString().trim()) ? nameBuilder.toString().trim() : null;
     }
 
-    private RoleType extractRoles() {
-        CristinContributorRole firstRole = affiliations
-                                               .stream()
-                                               .map(CristinContributorsAffiliation::getRoles)
-                                               .filter(Objects::nonNull)
-                                               .flatMap(Collection::stream)
-                                               .findFirst()
-                                               .orElseThrow(AffiliationWithoutRoleException::new);
-        return firstRole.toNvaRole();
+    private RoleType extractRoles(Integer cristinIdentifier, S3Client s3Client) {
+        var roles = affiliations.stream()
+                            .map(CristinContributorsAffiliation::getRoles)
+                            .filter(Objects::nonNull)
+                            .flatMap(Collection::stream)
+                            .toList();
+        return !roles.isEmpty() ? roles.getFirst().toNvaRole() : roleOtherAndPersistErrorReport(cristinIdentifier,
+                                                                                                s3Client);
+    }
+
+    private static RoleType roleOtherAndPersistErrorReport(Integer cristinIdentifier, S3Client s3Client) {
+        ErrorReport.exceptionName(AffiliationWithoutRoleException.name())
+            .withBody(CONTRIBUTOR_MISSING_ROLE)
+            .withCristinId(cristinIdentifier)
+            .persist(s3Client);
+        return new RoleType(Role.OTHER);
     }
 
     private List<Corporation> extractAffiliations() {
         if (isNull(affiliations) || affiliations.isEmpty()) {
             throw new ContributorWithoutAffiliationException();
         }
-        return affiliations
-                   .stream()
+        return affiliations.stream()
                    .filter(CristinContributorsAffiliation::isKnownAffiliation)
                    .map(CristinContributorsAffiliation::toNvaOrganization)
                    .collect(Collectors.toList());
     }
 
     private Optional<URI> constructId() {
-        return isVerified()
-            ? Optional.of(UriWrapper
-            .fromUri(NVA_API_DOMAIN)
-            .addChild(CRISTIN_PATH)
-            .addChild(PERSON_PATH)
-            .addChild(identifier.toString())
-            .getUri())
-            : Optional.empty();
+        return isVerified() ? Optional.of(UriWrapper.fromUri(NVA_API_DOMAIN)
+                                              .addChild(CRISTIN_PATH)
+                                              .addChild(PERSON_PATH)
+                                              .addChild(identifier.toString())
+                                              .getUri()) : Optional.empty();
     }
 
     private boolean isVerified() {
