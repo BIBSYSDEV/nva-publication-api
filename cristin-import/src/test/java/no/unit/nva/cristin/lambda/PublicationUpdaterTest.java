@@ -10,8 +10,11 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Event;
+import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.event.ConferenceLecture;
+import no.unit.nva.model.time.Instant;
+import no.unit.nva.model.time.Time;
 import org.junit.jupiter.api.Test;
 
 class PublicationUpdaterTest {
@@ -26,6 +29,29 @@ class PublicationUpdaterTest {
         var publication = PublicationUpdater.update(publicationRepresentations).getExistingPublication();
 
         assertEquals(publication.getEntityDescription().getReference().getPublicationContext(), emptyEvent());
+    }
+
+    @Test
+    void shouldUpdatedEventWithTimeWhenExistingEventIsMissingTimeButNewEventHasTimeMissing() {
+        var existingPublication = randomPublication(ConferenceLecture.class);
+        existingPublication.getEntityDescription().getReference().setPublicationContext(emptyEvent());
+        var incomingPublication = randomPublication(ConferenceLecture.class);
+        var eventWithTime = eventWithTime();
+        incomingPublication.getEntityDescription().getReference().setPublicationContext(eventWithTime);
+        var publicationRepresentations = getPublicationRepresentations(incomingPublication, existingPublication);
+        var publication = PublicationUpdater.update(publicationRepresentations).getExistingPublication();
+
+        var event = (Event) publication.getEntityDescription().getReference().getPublicationContext();
+
+        assertEquals(event.getTime(), eventWithTime.getTime());
+    }
+
+    private static Event eventWithTime() {
+        return new Event(null, null,
+                         new Instant(
+                             java.time.Instant.now()),
+                         null,
+                         null, null);
     }
 
     @Test
