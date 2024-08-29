@@ -36,6 +36,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -58,22 +59,14 @@ import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.utils.PublicationJsonPointers;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.Corporation;
-import no.unit.nva.model.Identity;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
+import no.unit.nva.model.*;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
-import no.unit.nva.model.contexttypes.Anthology;
-import no.unit.nva.model.contexttypes.Book;
-import no.unit.nva.model.contexttypes.Journal;
-import no.unit.nva.model.contexttypes.Publisher;
-import no.unit.nva.model.contexttypes.Series;
+import no.unit.nva.model.contexttypes.*;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
-import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
+import no.unit.nva.model.instancetypes.chapter.*;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -494,11 +487,33 @@ class ExpandedResourceTest {
         assertThat(actualDocument.getPublicationContextUris(), containsInAnyOrder(expectedJournalId));
     }
 
+  private static Publication createPartOfAnthology(Publication bookAnthology, Class<?> typeKey) {
+    var bookAnthologyUri = toPublicationId(bookAnthology.getIdentifier());
+    var childPublication = PublicationGenerator.randomPublication(typeKey);
+    var anthology =
+        (Anthology) childPublication.getEntityDescription().getReference().getPublicationContext();
+    anthology.setId(bookAnthologyUri);
+    return childPublication;
+  }
+
+  private static Stream<Class<?>> validAnthologyMembersProvider() {
+    return Stream.of(
+        AcademicChapter.class,
+        EncyclopediaChapter.class,
+        ExhibitionCatalogChapter.class,
+        Introduction.class,
+        NonFictionChapter.class,
+        PopularScienceChapter.class,
+        TextbookChapter.class,
+        ChapterConferenceAbstract.class,
+        ChapterInReport.class);
+  }
+
     @Test
     void shouldReturnExpandedResourceWithAnthologyPublicationChannelUrisWhenPublicationIsAcademicChapter()
         throws JsonProcessingException {
         var bookAnthology = PublicationGenerator.randomPublication(BookAnthology.class);
-        var academicChapter = getAcademicChapterPartOfAnthology(bookAnthology);
+        var academicChapter = createPartOfAnthology(bookAnthology, AcademicChapter.class);
         mockUriRetrieverPublicationResponse(bookAnthology);
         var expectedPublicationChannelIds = getPublicationContextUris(extractBook(bookAnthology));
 
@@ -507,21 +522,6 @@ class ExpandedResourceTest {
         var actualPublicationChannelUris = extractActualPublicationChannelUris(expandedResourceJsonNode);
         assertThat(actualPublicationChannelUris,
                    containsInAnyOrder(expectedPublicationChannelIds.toArray()));
-    }
-
-    @Test
-    void shouldReturnExpandedResourceWithAnthologyPublicationChannelLevelWhenPublicationIsAcademicChapter()
-        throws IOException {
-        var bookAnthology = PublicationGenerator.randomPublication(BookAnthology.class);
-        var academicChapter = getAcademicChapterPartOfAnthology(bookAnthology);
-        mockUriRetrieverResponses(bookAnthology);
-
-        var expandedResource = fromPublication(uriRetriever, academicChapter);
-        var expandedResourceJsonNode = expandedResource.asJsonNode();
-        var actualSeriesLevel = expandedResourceJsonNode.at(SERIES_LEVEL_JSON_PTR).textValue();
-        var actualPublisherLevel = expandedResourceJsonNode.at(PUBLISHER_LEVEL_JSON_PTR).textValue();
-        assertThat(actualSeriesLevel, is(not(nullValue())));
-        assertThat(actualPublisherLevel, is(not(nullValue())));
     }
 
     @Test
@@ -679,13 +679,50 @@ class ExpandedResourceTest {
         return List.of(actualPublisherId, actualSeriesId);
     }
 
-    private static Publication getAcademicChapterPartOfAnthology(Publication bookAnthology) {
-        var bookAnthologyUri = toPublicationId(bookAnthology.getIdentifier());
-        var academicChapter = PublicationGenerator.randomPublication(AcademicChapter.class);
-        var anthology = (Anthology) academicChapter.getEntityDescription().getReference().getPublicationContext();
-        anthology.setId(bookAnthologyUri);
-        return academicChapter;
+    @Test
+    void shouldReturnExpandedResourceWithAnthologyPublicationChannelLevelWhenPublicationIsAcademicChapter()
+        throws IOException {
+        var bookAnthology = PublicationGenerator.randomPublication(BookAnthology.class);
+        var academicChapter = createPartOfAnthology(bookAnthology, AcademicChapter.class);
+        mockUriRetrieverResponses(bookAnthology);
+
+        var expandedResource = fromPublication(uriRetriever, academicChapter);
+        var expandedResourceJsonNode = expandedResource.asJsonNode();
+        var actualSeriesLevel = expandedResourceJsonNode.at(SERIES_LEVEL_JSON_PTR).textValue();
+        var actualPublisherLevel = expandedResourceJsonNode.at(PUBLISHER_LEVEL_JSON_PTR).textValue();
+        assertThat(actualSeriesLevel, is(not(nullValue())));
+        assertThat(actualPublisherLevel, is(not(nullValue())));
     }
+
+  @Test
+  void shouldSetHasPartsRelationForBookAnthology() throws IOException {
+    var bookAnthology = PublicationGenerator.randomPublication(BookAnthology.class);
+
+    var expandedResource = fromPublication(uriRetriever, bookAnthology).asJsonNode();
+
+    var actualNode = expandedResource.get("joinField");
+    var expectedNode = new ObjectNode(objectMapper.getNodeFactory());
+    expectedNode.put("name", "hasParts");
+
+    assertThat(actualNode, is(equalTo(expectedNode)));
+  }
+
+  @ParameterizedTest
+  @MethodSource("validAnthologyMembersProvider")
+  void shouldSetPartOfRelationForAnthologyMember(Class<?> publicationType) throws IOException {
+    var bookAnthology = PublicationGenerator.randomPublication(BookAnthology.class);
+    mockUriRetrieverResponses(bookAnthology);
+    var publication = createPartOfAnthology(bookAnthology, publicationType);
+
+    var expandedResource = fromPublication(uriRetriever, publication).asJsonNode();
+
+    var actualNode = expandedResource.get("joinField");
+    var expectedNode = new ObjectNode(objectMapper.getNodeFactory());
+    expectedNode.put("name", "partOf");
+    expectedNode.put("parent", bookAnthology.getIdentifier().toString());
+
+    assertThat(actualNode, is(equalTo(expectedNode)));
+  }
 
     private static Contributor createContributorsWithEmptyAffiliations(Contributor contributor) {
         return new Contributor.Builder()
