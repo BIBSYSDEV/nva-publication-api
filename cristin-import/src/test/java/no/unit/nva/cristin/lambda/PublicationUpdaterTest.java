@@ -32,7 +32,7 @@ class PublicationUpdaterTest {
     }
 
     @Test
-    void shouldUpdatedEventWithTimeWhenExistingEventIsMissingTimeButNewEventHasTimeMissing() {
+    void shouldUpdatedEventWithTimeWhenExistingEventIsMissingTimeButNewEventHasTime() {
         var existingPublication = randomPublication(ConferenceLecture.class);
         existingPublication.getEntityDescription().getReference().setPublicationContext(emptyEvent());
         var incomingPublication = randomPublication(ConferenceLecture.class);
