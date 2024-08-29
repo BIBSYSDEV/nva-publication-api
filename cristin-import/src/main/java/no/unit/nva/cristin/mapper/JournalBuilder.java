@@ -132,11 +132,17 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
     }
 
     private String extractVolume() {
-        return getCristinObject().getJournalPublication().getVolume();
+        return Optional.ofNullable(getCristinObject())
+                   .map(CristinObject::getJournalPublication)
+                   .map(CristinJournalPublication::getVolume)
+                   .orElse(null);
     }
 
     private String extractIssue() {
-        return getCristinObject().getJournalPublication().getIssue();
+        return Optional.ofNullable(getCristinObject())
+                   .map(CristinObject::getJournalPublication)
+                   .map(CristinJournalPublication::getIssue)
+                   .orElse(null);
     }
 
     private String extractArticleNumber() {

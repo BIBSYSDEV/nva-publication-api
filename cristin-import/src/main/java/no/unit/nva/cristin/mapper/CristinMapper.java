@@ -400,7 +400,7 @@ public class CristinMapper extends CristinMappingModule {
         var cristinTitles = cristinObject.getCristinTitles();
         return cristinTitles.stream().filter(CristinTitle::isMainTitle)
                    .findFirst()
-                   .orElseGet(() -> cristinTitles.stream().collect(SingletonCollector.collect()));
+                   .orElseGet(() -> cristinTitles.stream().findFirst().orElseThrow());
     }
 
     private String extractMainTitle() {
@@ -469,10 +469,14 @@ public class CristinMapper extends CristinMappingModule {
 
     private CristinSubjectField extractSubjectField() {
         if (isBook(cristinObject) || isReport(cristinObject)) {
-            return extractCristinBookReport().getSubjectField();
+            return Optional.ofNullable(extractCristinBookReport())
+                       .map(CristinBookOrReportMetadata::getSubjectField)
+                       .orElse(null);
         }
         if (isChapter(cristinObject)) {
-            return cristinObject.getBookOrReportPartMetadata().getSubjectField();
+            return Optional.ofNullable(cristinObject.getBookOrReportPartMetadata())
+                       .map(CristinBookOrReportPartMetadata::getSubjectField)
+                       .orElse(null);
         } else {
             return null;
         }
