@@ -4,6 +4,9 @@ import static no.unit.nva.cristin.CristinDataGenerator.largeRandomNumber;
 import static no.unit.nva.cristin.CristinDataGenerator.randomAffiliation;
 import static no.unit.nva.cristin.mapper.CristinObject.IDENTIFIER_ORIGIN;
 import static no.unit.nva.cristin.mapper.CristinPresentationalWork.PROSJEKT;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.CHAPTER;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.JOURNAL_ARTICLE;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.TEXTBOOK;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -17,6 +20,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -53,6 +57,7 @@ import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
+import no.unit.nva.model.instancetypes.journal.ProfessionalArticle;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -90,7 +95,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
     })
     void mapReturnsJournalWithDoiWhenInputIsJournalResultWithDoi(String inputDoi, String expectedDoiUri) {
         CristinObject cristinObject =
-            CristinDataGenerator.randomObject(CristinSecondaryCategory.JOURNAL_ARTICLE.toString());
+            CristinDataGenerator.randomObject(JOURNAL_ARTICLE.toString());
         cristinObject.getJournalPublication().setDoi(inputDoi);
         var publication = mapToPublication(cristinObject);
         assertThat(publication.getEntityDescription().getReference().getDoi(), is(equalTo(URI.create(expectedDoiUri))));
@@ -105,7 +110,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
         String inputDoi = "10.1234/non.existin.doi";
         URI expectedDoiUri = URI.create("https://doi.org/" + inputDoi);
         CristinObject cristinObject =
-            CristinDataGenerator.randomObject(CristinSecondaryCategory.JOURNAL_ARTICLE.toString());
+            CristinDataGenerator.randomObject(JOURNAL_ARTICLE.toString());
         cristinObject.getJournalPublication().setDoi(inputDoi);
         var publication = mapToPublication(cristinObject);
         assertThat(publication.getEntityDescription().getReference().getDoi(), is(equalTo(expectedDoiUri)));
@@ -114,7 +119,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
     @Test
     public void mapReturnsJournalWithoutDoiUriWhenInputIsAJournalArticleWihoutDoi() {
         CristinObject cristinObject =
-            CristinDataGenerator.randomObject(CristinSecondaryCategory.JOURNAL_ARTICLE.toString());
+            CristinDataGenerator.randomObject(JOURNAL_ARTICLE.toString());
         cristinObject.getJournalPublication().setDoi(null);
         var publication = mapToPublication(cristinObject);
         assertThat(publication.getEntityDescription().getReference().getDoi(), is(nullValue()));
@@ -508,7 +513,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     void shouldLookupForJournalByNsdCode() {
-        var cristinObject = CristinDataGenerator.randomObject(CristinSecondaryCategory.JOURNAL_ARTICLE.getValue());
+        var cristinObject = CristinDataGenerator.randomObject(JOURNAL_ARTICLE.getValue());
         cristinObject.getJournalPublication().getJournal().setNsdCode(339700);
         var periodical = new PeriodicalBuilder(cristinObject, ChannelRegistryMapper.getInstance(),
                                       mock(S3Client.class)).buildPeriodicalForPublicationContext();
@@ -518,7 +523,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     void shouldLookupForJournalByJournalTitleWhenNsdCodeIsMissing() {
-        var cristinObject = CristinDataGenerator.randomObject(CristinSecondaryCategory.JOURNAL_ARTICLE.getValue());
+        var cristinObject = CristinDataGenerator.randomObject(JOURNAL_ARTICLE.getValue());
         cristinObject.getJournalPublication().getJournal().setNsdCode(null);
         cristinObject.getJournalPublication().getJournal().setJournalTitle("Arctos: Acta Philologica Fennica");
         var periodical = new PeriodicalBuilder(cristinObject, ChannelRegistryMapper.getInstance(),
@@ -529,7 +534,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     void shouldLookupForJournalByPrintIssnWhenNsdCodeAndJournalTitleIsMissing() {
-        var cristinObject = CristinDataGenerator.randomObject(CristinSecondaryCategory.JOURNAL_ARTICLE.getValue());
+        var cristinObject = CristinDataGenerator.randomObject(JOURNAL_ARTICLE.getValue());
         cristinObject.getJournalPublication().getJournal().setNsdCode(null);
         cristinObject.getJournalPublication().getJournal().setJournalTitle(null);
         cristinObject.getJournalPublication().getJournal().setIssn("0570-734X");
@@ -541,7 +546,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     void shouldLookupForJournalByOnlineIssnWhenNsdCodeAndPrintIssnAndJournalTitleIsMissing() {
-        var cristinObject = CristinDataGenerator.randomObject(CristinSecondaryCategory.JOURNAL_ARTICLE.getValue());
+        var cristinObject = CristinDataGenerator.randomObject(JOURNAL_ARTICLE.getValue());
         cristinObject.getJournalPublication().getJournal().setNsdCode(null);
         cristinObject.getJournalPublication().getJournal().setJournalTitle(null);
         cristinObject.getJournalPublication().getJournal().setIssn(null);
@@ -597,6 +602,54 @@ class CristinMapperTest extends AbstractCristinImportTest {
                                                   mock(S3Client.class)).createBookSeries();
         assertThat(((Series) periodical).getId().toString(),
                    containsString("0012291D-1927-4B27-A49B-1ADC08CA771A"));
+    }
+
+    @Test
+    void shouldImportJournalWithoutVolumeAndIssueWhenJournalAndIssueAreMissing() {
+        var cristinObject = CristinDataGenerator.randomObject(JOURNAL_ARTICLE.getValue());
+        cristinObject.getJournalPublication().setVolume(null);
+        cristinObject.getJournalPublication().setIssue(null);
+        var journal = (ProfessionalArticle) new JournalBuilder(cristinObject, mock(S3Client.class)).build();
+
+        assertNull(journal.getVolume());
+        assertNull(journal.getIssue());
+    }
+
+    @Test
+    void shouldImportPublicationWithoutNpiSubjectHeadingWhenSubjectFieldIsMissingAndPublicationTypeIsBook() {
+        var cristinObject = CristinDataGenerator.randomObject(TEXTBOOK.getValue());
+        cristinObject.setBookOrReportMetadata(cristinObject.getBookOrReportMetadata().copy()
+                                                 .withSubjectField(null)
+                                                 .build());
+        var publication = new CristinMapper(cristinObject, mock(CristinUnitsUtil.class), mock(S3Client.class))
+                         .generatePublication();
+
+        assertNull(publication.getEntityDescription().getNpiSubjectHeading());
+    }
+
+    @Test
+    void shouldImportPublicationWithoutNpiSubjectHeadingWhenSubjectFieldIsMissingAndPublicationTypeIsReport() {
+        var cristinObject = CristinDataGenerator.randomObject(CHAPTER.getValue());
+        cristinObject.setBookOrReportPartMetadata(cristinObject.getBookOrReportPartMetadata().copy()
+                                                  .withSubjectField(null)
+                                                  .build());
+        var publication = new CristinMapper(cristinObject, mock(CristinUnitsUtil.class), mock(S3Client.class))
+                              .generatePublication();
+
+        assertNull(publication.getEntityDescription().getNpiSubjectHeading());
+    }
+
+    @DisplayName("Main title in Cristin has statusOriginal set to 'N', when missing original title, use first present" +
+                 "title as main title")
+    @Test
+    void shouldImportPublicationWithFirstPresentTitleWhenMainTitleIsMissing() {
+        var cristinObject = CristinDataGenerator.randomObject(CHAPTER.getValue());
+        cristinObject.setCristinTitles(List.of(new CristinTitle(null, randomString(), null, null),
+                                               new CristinTitle(null, randomString(), "N", null)));
+        var publication = new CristinMapper(cristinObject, mock(CristinUnitsUtil.class), mock(S3Client.class))
+                              .generatePublication();
+
+        assertNotNull(publication.getEntityDescription().getMainTitle());
     }
 
     private List<Contributor> getContributors(CristinObject singleCristinObject) {

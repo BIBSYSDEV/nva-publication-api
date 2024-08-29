@@ -676,6 +676,7 @@ public final class CristinDataGenerator {
                    .withPublicationYear(randomYear())
                    .withPublicationOwner(randomString())
                    .withContributors(randomContributors())
+                   .withBookOrReportPartMetadata(randomBookOrReportPartMetadata())
                    .build();
     }
 
