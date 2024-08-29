@@ -21,6 +21,10 @@ public class Organization extends Corporation {
         setId(builder.id);
     }
 
+    public static Organization fromUri(URI uri) {
+        return new Organization.Builder().withId(uri).build();
+    }
+
     public URI getId() {
         return id;
     }

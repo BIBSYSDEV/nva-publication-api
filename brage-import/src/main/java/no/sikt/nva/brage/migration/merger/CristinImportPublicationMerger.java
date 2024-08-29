@@ -1,7 +1,7 @@
 package no.sikt.nva.brage.migration.merger;
 
 import static java.util.Objects.nonNull;
-import static java.util.function.Predicate.not;
+import static no.unit.nva.model.role.Role.CREATOR;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -11,7 +11,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.AnthologyMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.BookMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.DegreeMerger;
@@ -27,6 +26,7 @@ import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.CristinIdentifier;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
@@ -52,10 +52,7 @@ import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.pages.Pages;
-import no.unit.nva.model.role.Role;
-import no.unit.nva.model.role.RoleType;
 import nva.commons.core.StringUtils;
-import org.jetbrains.annotations.NotNull;
 
 public class CristinImportPublicationMerger {
 
@@ -197,35 +194,46 @@ public class CristinImportPublicationMerger {
     }
 
     private List<Contributor> mergeContributors() {
-        if (shouldPrioritizeContributorsWithCreatorRole()) {
-            return replaceExistingCreatorsWithBrageCreators();
+        if (isDegree(existingPublication)) {
+            return updateExistingCreatorsAffiliationWithBrageAffiliation();
         }
         return existingPublication.getEntityDescription().getContributors();
     }
 
-    private List<Contributor> replaceExistingCreatorsWithBrageCreators() {
-        var nonCreatorExistingContributors = filterByNonCreatorContributors(existingPublication);
-        var creatorBrageContributors = filterByCreatorContributors(bragePublicationRepresentation.publication());
-        return Stream.concat(nonCreatorExistingContributors, creatorBrageContributors).toList();
+    private List<Contributor> updateExistingCreatorsAffiliationWithBrageAffiliation() {
+        return getBrageAffiliation()
+                   .map(this::updateExistingCreatorWithAffiliation)
+                   .orElseGet(() -> existingPublication.getEntityDescription().getContributors());
     }
 
-    private Stream<Contributor> filterByCreatorContributors(Publication publication) {
-        return publication.getEntityDescription().getContributors().stream().filter(this::isCreator);
+    private List<Contributor> updateExistingCreatorWithAffiliation(Organization organization) {
+        return existingPublication.getEntityDescription().getContributors().stream()
+                   .map(contributor -> updateCreatorAffiliation(contributor, organization))
+                   .toList();
     }
 
-    private Stream<Contributor> filterByNonCreatorContributors(Publication existingPublication) {
-        return existingPublication.getEntityDescription().getContributors().stream().filter(not(this::isCreator));
+    private static Contributor updateCreatorAffiliation(Contributor contributor, Organization organization) {
+        return isCreator(contributor)
+            ? contributor.copy().withAffiliations(List.of(organization)).build()
+            : contributor;
     }
 
-    private boolean isCreator(Contributor contributor) {
-        return Optional.ofNullable(contributor.getRole())
-                   .map(RoleType::getType)
-                   .map(role -> Role.CREATOR == role)
-                   .orElse(false);
+    private static boolean isCreator(Contributor contributor) {
+        return CREATOR.equals(contributor.getRole().getType());
     }
 
-    private boolean shouldPrioritizeContributorsWithCreatorRole() {
-        return shouldPrioritizeField(PRIORITIZE_CONTRIBUTORS_WITH_CREATOR_ROLE);
+    private Optional<Organization> getBrageAffiliation() {
+        return bragePublicationRepresentation.publication().getEntityDescription().getContributors()
+                   .stream()
+                   .map(Contributor::getAffiliations)
+                   .flatMap(List::stream)
+                   .filter(Organization.class::isInstance)
+                   .map(Organization.class::cast)
+                   .findFirst();
+    }
+
+    private boolean isDegree(Publication existingPublication) {
+        return existingPublication.getEntityDescription().getReference().getPublicationContext() instanceof Degree;
     }
 
     private Reference determineReference()

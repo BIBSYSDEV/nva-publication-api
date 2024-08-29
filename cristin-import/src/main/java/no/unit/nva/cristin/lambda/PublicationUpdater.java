@@ -13,6 +13,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.MediaContribution;
 import no.unit.nva.model.contexttypes.PublicationContext;
@@ -99,10 +100,42 @@ public final class PublicationUpdater {
     private static List<Contributor> updateContributors(PublicationRepresentations publicationRepresentations) {
         var existingContributors = getContributors(publicationRepresentations.getExistingPublication());
         var incomingContributors = getContributors(publicationRepresentations.getIncomingPublication());
+        if (isDegree(publicationRepresentations.getExistingPublication())) {
+            return updateExistingContributorsIdWhenMissing(incomingContributors, existingContributors);
+        } else {
+            return listShouldBeOverwritten(existingContributors, incomingContributors)
+                       ? incomingContributors
+                       : existingContributors;
+        }
+    }
 
-        return listShouldBeOverwritten(existingContributors, incomingContributors)
-                   ? incomingContributors
-                   : existingContributors;
+    private static List<Contributor> updateExistingContributorsIdWhenMissing(List<Contributor> incomingContributors,
+                                                                             List<Contributor> existingContributors) {
+        incomingContributors.stream()
+            .filter(incomingContributor -> nonNull(incomingContributor.getIdentity().getId()))
+            .forEach(incomingContributor -> setIdForExistingContributorWhenMissing(incomingContributor,
+                                                                                   existingContributors));
+        return existingContributors;
+    }
+
+    private static void setIdForExistingContributorWhenMissing(Contributor incomingContributor, List<Contributor> existingContributors) {
+        var contributorMissingId = existingContributors.stream()
+                    .filter(existingContributor -> haveSameName(incomingContributor, existingContributor))
+                    .filter(existingContributor -> hasNoId(existingContributor))
+                    .findFirst();
+        contributorMissingId.ifPresent(existingContributor -> existingContributor.getIdentity().setId(incomingContributor.getIdentity().getId()));
+    }
+
+    private static boolean hasNoId(Contributor existingContributor) {
+        return isNull(existingContributor.getIdentity().getId());
+    }
+
+    private static boolean haveSameName(Contributor incomingContributor, Contributor existingContributor) {
+        return existingContributor.getIdentity().getName().equals(incomingContributor.getIdentity().getName());
+    }
+
+    private static boolean isDegree(Publication publication) {
+        return publication.getEntityDescription().getReference().getPublicationContext() instanceof Degree;
     }
 
     private static List<Contributor> getContributors(Publication publication) {
