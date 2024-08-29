@@ -1,6 +1,7 @@
 package no.unit.nva.model.testing;
 
 import static no.unit.nva.model.testing.RandomUtils.randomLabel;
+import static no.unit.nva.model.testing.RandomUtils.randomPublicationId;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
@@ -49,6 +50,7 @@ import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.time.Period;
 import no.unit.nva.model.time.Time;
 import nva.commons.core.JacocoGenerated;
+
 
 @SuppressWarnings("PMD.CouplingBetweenObjects")
 @JacocoGenerated
@@ -239,7 +241,7 @@ public class PublicationContextBuilder {
 
     private static Anthology randomChapter() {
         return new Anthology.Builder()
-            .withId(randomUri())
+            .withId(randomPublicationId())
             .build();
     }
 
