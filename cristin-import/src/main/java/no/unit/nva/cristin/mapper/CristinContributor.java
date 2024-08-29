@@ -119,13 +119,18 @@ public class CristinContributor implements Comparable<CristinContributor> {
     }
 
     private RoleType extractRoles(Integer cristinIdentifier, S3Client s3Client) {
-        var roles = affiliations.stream()
-                            .map(CristinContributorsAffiliation::getRoles)
-                            .filter(Objects::nonNull)
-                            .flatMap(Collection::stream)
-                            .toList();
-        return !roles.isEmpty() ? roles.getFirst().toNvaRole() : roleOtherAndPersistErrorReport(cristinIdentifier,
-                                                                                                s3Client);
+        var roles = getRolesFromAffiliations();
+        return !roles.isEmpty()
+                   ? roles.getFirst().toNvaRole()
+                   : roleOtherAndPersistErrorReport(cristinIdentifier, s3Client);
+    }
+
+    private List<CristinContributorRole> getRolesFromAffiliations() {
+        return affiliations.stream()
+                   .map(CristinContributorsAffiliation::getRoles)
+                   .filter(Objects::nonNull)
+                   .flatMap(Collection::stream)
+                   .toList();
     }
 
     private static RoleType roleOtherAndPersistErrorReport(Integer cristinIdentifier, S3Client s3Client) {
