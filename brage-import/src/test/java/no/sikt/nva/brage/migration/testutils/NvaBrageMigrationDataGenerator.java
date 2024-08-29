@@ -63,7 +63,6 @@ import org.joda.time.Instant;
 
 public class NvaBrageMigrationDataGenerator {
 
-    public static final String SOURCE_CRISTIN = "Cristin";
     private static final URI HARDCODED_NTNU_CUSTOMER_VALUE = URI.create(
         "https://test.nva.aws.unit.no/customer/33c17ef6-864b-4267-bc9d-0cee636e247e");
     private static final URI HARDCODED_NTNU_CRISTIN_ID = URI.create(
@@ -388,15 +387,19 @@ public class NvaBrageMigrationDataGenerator {
         }
 
         public List<AssociatedArtifact> getAssociatedArtifacts() {
-            if (nonNull(link) && isNull(associatedArtifacts)) {
-                return new AssociatedArtifactList(List.of(new AssociatedLink(link, null, null)));
+            var artifacts = new ArrayList<AssociatedArtifact>();
+            if (nonNull(link)) {
+                artifacts.add(new AssociatedLink(link, null, null));
             }
-            if (nonNull(link) && !associatedArtifacts.isEmpty()) {
-                var list = new ArrayList<>(associatedArtifacts);
-                list.add(new AssociatedLink(link, null, null));
-                return list;
+            if (nonNull(associatedArtifacts)) {
+                artifacts.addAll(this.associatedArtifacts);
             }
-            return associatedArtifacts;
+            if (!subjects.isEmpty()) {
+                subjects.stream()
+                    .map(uri -> new AssociatedLink(uri, null, null))
+                    .forEach(artifacts::add);
+            }
+            return new AssociatedArtifactList(artifacts);
         }
 
         public Builder withAssociatedArtifacts(List<AssociatedArtifact> associatedArtifacts) {

@@ -96,7 +96,6 @@ public final class BrageNvaMapper {
                               .withAssociatedArtifacts(extractAssociatedArtifacts(brageRecord, customer))
                               .withAdditionalIdentifiers(extractAdditionalIdentifiers(brageRecord))
                               .withRightsHolder(brageRecord.getRightsholder())
-                              .withSubjects(extractSubjects(brageRecord))
                               .withFundings(extractFundings(brageRecord))
                               .build();
         if (!isCristinRecord(brageRecord)) {
@@ -129,12 +128,13 @@ public final class BrageNvaMapper {
         return values.stream().collect(Collectors.joining(System.lineSeparator()));
     }
 
-    private static List<URI> extractSubjects(Record brageRecord) {
+    private static List<AssociatedLink> extractAssociatedLinksFromSubjects(Record brageRecord) {
         return Optional.ofNullable(brageRecord)
                    .map(Record::getSubjects)
-                   .map(Collection::stream)
-                   .map(Stream::toList)
-                   .orElse(List.of());
+                   .stream()
+                   .flatMap(Collection::stream)
+                   .map(uri -> new AssociatedLink(uri, null, null))
+                   .collect(Collectors.toList());
     }
 
     private static boolean isCristinRecord(Record record) {
@@ -148,6 +148,7 @@ public final class BrageNvaMapper {
     private static List<AssociatedArtifact> extractAssociatedArtifacts(Record brageRecord, Customer customer) {
         var associatedArtifacts = new ArrayList<>(extractAssociatedFiles(brageRecord, customer));
         associatedArtifacts.add(extractAssociatedLink(brageRecord));
+        associatedArtifacts.addAll(extractAssociatedLinksFromSubjects(brageRecord));
         return associatedArtifacts.stream().filter(Objects::nonNull).toList();
     }
 
