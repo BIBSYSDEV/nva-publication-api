@@ -61,6 +61,14 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     public static final String CONTRIBUTOR_SEQUENCE = "sequence";
     public static final String LICENSE_FIELD = "license";
     public static final String ASSOCIATED_ARTIFACTS_FIELD = "associatedArtifacts";
+
+    // The join field is used by the search index to create a relationship between parent and child documents.
+    public static final String JOIN_FIELD_PARENT_LABEL = "hasParts";
+    public static final String JOIN_FIELD_CHILD_LABEL = "partOf";
+    public static final String JOIN_FIELD_NODE_LABEL = "joinField";
+    public static final String JOIN_FIELD_RELATION_KEY = "name";
+    public static final String JOIN_FIELD_PARENT_KEY = "parent";
+
     private static final String ID_FIELD_NAME = "id";
     private static final String JSON_LD_CONTEXT_FIELD = "@context";
     private static final String CONTEXT_TYPE_ANTHOLOGY = "Anthology";
@@ -189,11 +197,11 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
                     var publicationContext = reference.getPublicationContext();
 
                     if (instanceType instanceof BookAnthology) {
-                        addJoinField(sortedJson, "hasParts", null);
+                        addJoinField(sortedJson, JOIN_FIELD_PARENT_LABEL, null);
                     } else if (isPartOfAnthology(publicationContext, instanceType)) {
                         var parentId = ((Anthology) publicationContext).getId();
                         var parentIdentifier = SortableIdentifier.fromUri(parentId).toString();
-                        addJoinField(sortedJson, "partOf", parentIdentifier);
+                        addJoinField(sortedJson, JOIN_FIELD_CHILD_LABEL, parentIdentifier);
                     }
                 });
     }
@@ -208,10 +216,10 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     }
 
     private static void addJoinField(ObjectNode sortedJson, String name, String parent) {
-        var newNode = sortedJson.putObject("joinField");
-        newNode.put("name", name);
+        var newNode = sortedJson.putObject(JOIN_FIELD_NODE_LABEL);
+        newNode.put(JOIN_FIELD_RELATION_KEY, name);
         if (parent != null) {
-            newNode.put("parent", parent);
+            newNode.put(JOIN_FIELD_PARENT_KEY, parent);
         }
     }
 
