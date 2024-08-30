@@ -173,7 +173,7 @@ class ExpandedResourceTest {
     @Test
     void shouldReturnIndexDocumentWithTopLevelOrganizationsWithTreeToRelevantAffiliation() throws Exception {
         final var publication = randomBookWithConfirmedPublisher();
-        final var affiliationToBeExpanded = extractAffiliationsUris(publication).get(0);
+        final var affiliationToBeExpanded = extractAffiliationsUris(publication).getFirst();
 
         final var mockUriRetriever = mock(UriRetriever.class);
         mockOrganizationResponse(affiliationToBeExpanded, mockUriRetriever);
@@ -228,7 +228,7 @@ class ExpandedResourceTest {
     @Test
     void shouldReturnIndexDocumentEvenIfParsingCristinOrgResponseFails() throws Exception {
         final var publication = randomBookWithConfirmedPublisher();
-        final var affiliationToBeExpanded = extractAffiliationsUris(publication).get(0);
+        final var affiliationToBeExpanded = extractAffiliationsUris(publication).getFirst();
 
         final var mockUriRetriever = mock(UriRetriever.class);
         var nonParseableResponse = randomString();
@@ -242,7 +242,7 @@ class ExpandedResourceTest {
     void shouldReturnIndexDocumentWithTopLevelOrganizationWithoutHasPartsIfContributorAffiliatedWithTopLevel()
         throws Exception {
         final var publication = randomBookWithConfirmedPublisher();
-        final var affiliationToBeExpanded = extractAffiliationsUris(publication).get(0);
+        final var affiliationToBeExpanded = extractAffiliationsUris(publication).getFirst();
 
         final var mockUriRetriever = mock(UriRetriever.class);
         mockOrganizationResponseForTopLevelAffiliation(affiliationToBeExpanded, mockUriRetriever);
@@ -258,7 +258,7 @@ class ExpandedResourceTest {
     @Test
     void shouldReturnIndexDocumentWithSortedContributorsByTheirSequence() throws Exception {
         final var publication = randomBookWithManyContributors();
-        final var affiliationToBeExpanded = extractAffiliationsUris(publication).get(0);
+        final var affiliationToBeExpanded = extractAffiliationsUris(publication).getFirst();
 
         final var mockUriRetriever = mock(UriRetriever.class);
         mockOrganizationResponseForTopLevelAffiliation(affiliationToBeExpanded, mockUriRetriever);
@@ -387,13 +387,13 @@ class ExpandedResourceTest {
 
         ((Organization) publication.getEntityDescription()
                                    .getContributors()
-                                   .get(0)
+                                   .getFirst()
                                    .getAffiliations()
-                                   .get(0)).setId(null);
+                                   .getFirst()).setId(null);
 
         ObjectNode framedResultNode = fromPublication(mockUriRetriever, publication).asJsonNode();
 
-        var affiliations = framedResultNode.findValues("affiliations").get(0);
+        var affiliations = framedResultNode.findValues("affiliations").getFirst();
         affiliations.forEach(aff -> {
             if (!aff.has("id")) {
                 assertThat(aff.has("topLevelOrganization"), is(equalTo(false)));

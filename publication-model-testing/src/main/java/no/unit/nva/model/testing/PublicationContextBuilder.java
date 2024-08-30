@@ -220,8 +220,7 @@ public class PublicationContextBuilder {
         return new Organization.Builder().withId(randomUri()).build();
     }
 
-    private static Report randomReport()
-        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+    private static Report randomReport() throws InvalidIssnException, InvalidUnconfirmedSeriesException {
         return new Report.Builder().withSeriesNumber(randomSeriesNumber())
                                    .withSeries(randomBookSeries())
                                    .withIsbnList(randomIsbnList())
