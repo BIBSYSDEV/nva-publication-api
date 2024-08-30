@@ -7,7 +7,6 @@ import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
@@ -17,7 +16,6 @@ import static no.unit.nva.publication.ticket.create.CreateTicketHandler.LOCATION
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
-import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_ALL;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -710,27 +708,6 @@ class CreateTicketHandlerTest extends TicketTestLocal {
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
-    }
-
-    @Test
-    void shouldAllowUserWithAccessRightManageResourcesAllToCreatePublishingRequestTicketForUnpublishedPublication()
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
-        resourceService.unpublishPublication(publication);
-        var requestBody = constructDto(PublishingRequestCase.class);
-        var user = UserInstance.create(randomString(), publication.getPublisher().getId());
-        var input = createHttpTicketCreationRequestWithApprovedAccessRight(
-            requestBody, publication, user.getUsername(), user.getCustomerId(), MANAGE_PUBLISHING_REQUESTS);
-        handler.handleRequest(input, output, CONTEXT);
-
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-
-        var ticket = (PublishingRequestCase) fetchTicket(response);
-        var republishedPublication = resourceService.getPublicationByIdentifier(ticket.getResourceIdentifier());
-
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
-        assertThat(ticket.getStatus(), is(equalTo(COMPLETED)));
-        assertThat(republishedPublication.getStatus(), is(equalTo(PUBLISHED)));
     }
 
     private PublishingRequestCase fetchTicket(Publication publishedPublication,

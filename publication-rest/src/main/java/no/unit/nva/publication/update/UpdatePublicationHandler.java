@@ -188,6 +188,8 @@ public class UpdatePublicationHandler
                                      permissionStrategy,
                                      userInstance);
 
+            case RepublishPublicationRequest ignored -> republish(existingPublication, permissionStrategy, userInstance);
+
             case DeletePublicationRequest ignored -> terminatePublication(existingPublication, permissionStrategy);
 
             default -> throw new BadRequestException("Unknown input body type");
@@ -197,6 +199,13 @@ public class UpdatePublicationHandler
         publicationResponse.setAllowedOperations(getAllowedOperations(requestInfo, updatedPublication));
 
         return publicationResponse;
+    }
+
+    private Publication republish(Publication existingPublication, PublicationPermissionStrategy permissionStrategy,
+                                  UserInstance userInstance)
+        throws ApiGatewayException {
+        return RepublishUtil.create(resourceService, ticketService, permissionStrategy)
+                   .republish(existingPublication, userInstance);
     }
 
     private Set<PublicationOperation> getAllowedOperations(RequestInfo requestInfo, Publication publication) {
@@ -483,6 +492,7 @@ public class UpdatePublicationHandler
             case UpdatePublicationRequest ignored -> HttpStatus.SC_OK;
             case UnpublishPublicationRequest ignored -> HttpStatus.SC_ACCEPTED;
             case DeletePublicationRequest ignored -> HttpStatus.SC_ACCEPTED;
+            case RepublishPublicationRequest ignored -> HttpStatus.SC_OK;
             default -> HttpStatus.SC_BAD_REQUEST;
         };
     }

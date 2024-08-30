@@ -1,12 +1,15 @@
 package no.unit.nva.publication.permission.strategy;
 
+import static no.unit.nva.model.PublicationOperation.REPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
+import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
@@ -16,6 +19,8 @@ import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Named;
+import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
@@ -25,7 +30,7 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should allow editor {0} operation on non-degree resources")
     @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE,
-        names = {"DELETE", "TICKET_PUBLISH", "UPDATE_FILES"})
+        names = {"DELETE", "TICKET_PUBLISH", "UPDATE_FILES", "REPUBLISH"})
     void shouldAllowEditorOnNonDegreeBasedOnOwner(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
@@ -114,7 +119,7 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
     @ParameterizedTest(name = "Should allow Editor {0} operation on degree resources with matching resource owner "
                               + "affiliation")
     @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE,
-        names = {"DELETE", "TERMINATE", "TICKET_PUBLISH", "UPDATE_FILES"})
+        names = {"DELETE", "TERMINATE", "TICKET_PUBLISH", "UPDATE_FILES", "REPUBLISH"})
     void shouldAllowEditorOnDegreeWithResourceOwnerAffiliation(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
@@ -152,5 +157,24 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         Assertions.assertFalse(PublicationPermissionStrategy
                                    .create(publication, userInstance)
                                    .allowsAction(operation));
+    }
+
+    @DisplayName("Should allow editor to republish publication when curating institution matches editor institution")
+    @Test
+    void shouldAllowEditorToRepublishUnpublishedPublicationWithEditorInstitutionInCuratingInstitutions()
+        throws JsonProcessingException, UnauthorizedException {
+
+        var editorInstitution = randomUri();
+
+        var requestInfo = createUserRequestInfo(randomString(), randomUri(), getAccessRightsForEditor(),
+                                                randomUri(), editorInstitution);
+        var publication = createNonDegreePublication(randomString(), randomUri()).copy()
+                              .withCuratingInstitutions(Set.of(editorInstitution))
+                              .withStatus(UNPUBLISHED).build();
+        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+
+        Assertions.assertTrue(PublicationPermissionStrategy
+                                  .create(publication, userInstance)
+                                  .allowsAction(REPUBLISH));
     }
 }

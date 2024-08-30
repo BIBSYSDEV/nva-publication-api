@@ -10,6 +10,7 @@ public enum PublicationOperation {
     UPDATE("update"),
     UPDATE_FILES("update-including-files"),
     UNPUBLISH("unpublish"),
+    REPUBLISH("republish"),
     TICKET_PUBLISH("ticket/publish"),
     DELETE("delete"),
     TERMINATE("terminate");

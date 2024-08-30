@@ -2,6 +2,7 @@ package no.unit.nva.publication.update;
 
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
@@ -1746,6 +1747,54 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
     }
 
+    @Test
+    void userWhichHasAccessRightManageResourcesAllAndIsPartOfPublicationCuratingInstitutionsRepublishPublication()
+        throws ApiGatewayException,
+                                                                                       IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
+        var curatingInstitution = randomUri();
+        publication.setCuratingInstitutions(Set.of(curatingInstitution));
+        resourceService.unpublishPublication(publication);
+        var input = curatorWithAccessRightsRepublishedPublication(publication, randomUri(), curatingInstitution,
+                                                                  MANAGE_RESOURCES_ALL);
+
+        updatePublicationHandler.handleRequest(input, output, context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, Publication.class);
+
+        var republishedPublication = resourceService.getPublication(publication);
+
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
+        assertThat(republishedPublication.getStatus(), is(equalTo(PUBLISHED)));
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenRepublishingNotUnpublishedPublication()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
+        var curatingInstitution = randomUri();
+        publication.setCuratingInstitutions(Set.of(curatingInstitution));
+        var input = curatorWithAccessRightsRepublishedPublication(publication, randomUri(), curatingInstitution,
+                                                                  MANAGE_RESOURCES_ALL);
+
+        updatePublicationHandler.handleRequest(input, output, context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, Publication.class);
+
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenUserRepublishesPublicationAndUserInstitutionIsNotInCuratingInstitutions()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
+        var input = curatorWithAccessRightsRepublishedPublication(publication, randomUri(), randomUri(),
+                                                                  MANAGE_RESOURCES_ALL);
+
+        updatePublicationHandler.handleRequest(input, output, context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, Publication.class);
+
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+    }
+
     private Publication createAndPersistNonDegreePublicationWithFile(File file) throws BadRequestException {
         return persistPublication(addFileToPublication(createAndPersistNonDegreePublication(), file).copy()).build();
     }
@@ -2256,6 +2305,22 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .withPathParameters(pathParameters)
                    .withCurrentCustomer(customerId)
                    .withBody(publication)
+                   .withAccessRights(customerId, accessRights)
+                   .withTopLevelCristinOrgId(topLevelCristinOrgId)
+                   .withPersonCristinId(randomUri())
+                   .build();
+    }
+
+    private InputStream curatorWithAccessRightsRepublishedPublication(Publication publication, URI customerId,
+                                                                  URI topLevelCristinOrgId,
+                                                                  AccessRight... accessRights)
+        throws JsonProcessingException {
+        var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString());
+        return new HandlerRequestBuilder<RepublishPublicationRequest>(restApiMapper)
+                   .withUserName(SOME_CURATOR)
+                   .withPathParameters(pathParameters)
+                   .withCurrentCustomer(customerId)
+                   .withBody(new RepublishPublicationRequest())
                    .withAccessRights(customerId, accessRights)
                    .withTopLevelCristinOrgId(topLevelCristinOrgId)
                    .withPersonCristinId(randomUri())
