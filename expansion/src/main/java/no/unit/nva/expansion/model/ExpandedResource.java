@@ -63,11 +63,11 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     public static final String ASSOCIATED_ARTIFACTS_FIELD = "associatedArtifacts";
 
     // The join field is used by the search index to create a relationship between parent and child documents.
-    public static final String JOIN_FIELD_PARENT_LABEL = "hasParts";
-    public static final String JOIN_FIELD_CHILD_LABEL = "partOf";
-    public static final String JOIN_FIELD_NODE_LABEL = "joinField";
-    public static final String JOIN_FIELD_RELATION_KEY = "name";
-    public static final String JOIN_FIELD_PARENT_KEY = "parent";
+    private static final String JOIN_FIELD_PARENT_LABEL = "hasParts";
+    private static final String JOIN_FIELD_CHILD_LABEL = "partOf";
+    private static final String JOIN_FIELD_NODE_LABEL = "joinField";
+    private static final String JOIN_FIELD_RELATION_KEY = "name";
+    private static final String JOIN_FIELD_PARENT_KEY = "parent";
 
     private static final String ID_FIELD_NAME = "id";
     private static final String JSON_LD_CONTEXT_FIELD = "@context";

@@ -4,11 +4,6 @@ import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.util.Objects.isNull;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
-import static no.unit.nva.expansion.model.ExpandedResource.JOIN_FIELD_CHILD_LABEL;
-import static no.unit.nva.expansion.model.ExpandedResource.JOIN_FIELD_NODE_LABEL;
-import static no.unit.nva.expansion.model.ExpandedResource.JOIN_FIELD_PARENT_KEY;
-import static no.unit.nva.expansion.model.ExpandedResource.JOIN_FIELD_PARENT_LABEL;
-import static no.unit.nva.expansion.model.ExpandedResource.JOIN_FIELD_RELATION_KEY;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
@@ -583,9 +578,9 @@ class ExpandedResourceTest {
 
         var expandedResource = fromPublication(uriRetriever, bookAnthology).asJsonNode();
 
-        var actualNode = expandedResource.get(JOIN_FIELD_NODE_LABEL);
+        var actualNode = expandedResource.get("joinField");
         var expectedNode = new ObjectNode(objectMapper.getNodeFactory());
-        expectedNode.put(JOIN_FIELD_RELATION_KEY, JOIN_FIELD_PARENT_LABEL);
+        expectedNode.put("name", "hasParts");
 
         assertThat(actualNode, is(equalTo(expectedNode)));
     }
@@ -599,10 +594,10 @@ class ExpandedResourceTest {
 
         var expandedResource = fromPublication(uriRetriever, publication).asJsonNode();
 
-        var actualNode = expandedResource.get(JOIN_FIELD_NODE_LABEL);
+        var actualNode = expandedResource.get("joinField");
         var expectedNode = new ObjectNode(objectMapper.getNodeFactory());
-        expectedNode.put(JOIN_FIELD_RELATION_KEY, JOIN_FIELD_CHILD_LABEL);
-        expectedNode.put(JOIN_FIELD_PARENT_KEY, bookAnthology.getIdentifier().toString());
+        expectedNode.put("name", "partOf");
+        expectedNode.put("parent", bookAnthology.getIdentifier().toString());
 
         assertThat(actualNode, is(equalTo(expectedNode)));
     }
