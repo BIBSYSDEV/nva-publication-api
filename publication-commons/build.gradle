@@ -29,6 +29,8 @@ dependencies {
     implementation libs.vavr
     implementation libs.resilience4j.all
 
+    implementation libs.swagger.annotations
+
     implementation libs.bundles.logging
 
     testImplementation project(":tickets-test")

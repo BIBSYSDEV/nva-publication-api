@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.net.URI;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -34,6 +35,7 @@ import nva.commons.core.JacocoGenerated;
     @JsonSubTypes.Type(names = {UnpublishedFile.TYPE, "File"}, value = UnpublishedFile.class),
     @JsonSubTypes.Type(name = AdministrativeAgreement.TYPE, value = AdministrativeAgreement.class)
 })
+@Schema(oneOf = {PublishedFile.class, UnpublishedFile.class, AdministrativeAgreement.class})
 public abstract class File implements JsonSerializable, AssociatedArtifact {
 
     public static final String IDENTIFIER_FIELD = "identifier";

@@ -6,25 +6,22 @@ import io.swagger.v3.oas.models.media.Schema;
 import java.io.File;
 import java.io.IOException;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.testing.PublicationGenerator;
 import org.junit.jupiter.api.Test;
 
-class SwaggerTest {
+class PublicationSchemaGeneratorTest {
 
     public static final String SCHEMA_YAML = "../documentation/schema.yaml";
 
     @Test
     void writePublicationSchemaToFile() throws IOException {
-        Publication publication = PublicationGenerator.randomPublication();
-        var map = ModelConverters.getInstance().readAll(publication.getClass());
-        map.forEach(this::removeDiscriminator);
+        var model = ModelConverters.getInstance().readAll(Publication.class);
+        model.forEach(this::removeDiscriminator);
 
         File file = new File(SCHEMA_YAML);
-        Yaml.pretty().writeValue(file, map);
+        Yaml.pretty().writeValue(file, model);
     }
 
     private void removeDiscriminator(String schemaName, Schema schema) {
         schema.setDiscriminator(null);
     }
-
 }

@@ -73,6 +73,11 @@ AdditionalIdentifierBase:
       type: string
     type:
       type: string
+  oneOf:
+  - $ref: '#/components/schemas/AdditionalIdentifier'
+  - $ref: '#/components/schemas/HandleIdentifier'
+  - $ref: '#/components/schemas/ScopusIdentifier'
+  - $ref: '#/components/schemas/CristinIdentifier'
 AdministrativeAgreement:
   required:
   - type
@@ -90,6 +95,8 @@ Agent:
   properties:
     type:
       type: string
+  oneOf:
+  - $ref: '#/components/schemas/Corporation'
 Anthology:
   required:
   - type
@@ -160,6 +167,11 @@ ArchitectureOutput:
       format: int32
     type:
       type: string
+  oneOf:
+  - $ref: '#/components/schemas/Competition'
+  - $ref: '#/components/schemas/MentionInPublication'
+  - $ref: '#/components/schemas/Award'
+  - $ref: '#/components/schemas/Exhibition'
 ArchitectureSubtype:
   type: object
   properties:
@@ -231,6 +243,10 @@ AssociatedArtifact:
   properties:
     type:
       type: string
+  oneOf:
+  - $ref: '#/components/schemas/File'
+  - $ref: '#/components/schemas/AssociatedLink'
+  - $ref: '#/components/schemas/NullAssociatedArtifact'
 AssociatedArtifactList:
   type: array
   properties:
@@ -354,6 +370,9 @@ BookSeries:
   properties:
     type:
       type: string
+  oneOf:
+  - $ref: '#/components/schemas/Series'
+  - $ref: '#/components/schemas/UnconfirmedSeries'
 Broadcast:
   required:
   - type
@@ -568,6 +587,9 @@ Corporation:
     properties:
       type:
         type: string
+  oneOf:
+  - $ref: '#/components/schemas/Organization'
+  - $ref: '#/components/schemas/UnconfirmedOrganization'
 Course:
   required:
   - type
@@ -575,6 +597,8 @@ Course:
   properties:
     type:
       type: string
+  oneOf:
+  - $ref: '#/components/schemas/UnconfirmedCourse'
 CristinIdentifier:
   type: object
   allOf:
@@ -766,6 +790,10 @@ Duration:
   properties:
     type:
       type: string
+  oneOf:
+  - $ref: '#/components/schemas/DefinedDuration'
+  - $ref: '#/components/schemas/UndefinedDuration'
+  - $ref: '#/components/schemas/NullDuration'
 Encyclopedia:
   required:
   - type
@@ -990,6 +1018,11 @@ ExhibitionProductionManifestation:
   properties:
     type:
       type: string
+  oneOf:
+  - $ref: '#/components/schemas/ExhibitionCatalogReference'
+  - $ref: '#/components/schemas/ExhibitionOtherPresentation'
+  - $ref: '#/components/schemas/ExhibitionBasic'
+  - $ref: '#/components/schemas/ExhibitionMentionInPublication'
 ExhibitionProductionSubtype:
   type: object
   properties:
@@ -1050,6 +1083,10 @@ File:
         type: boolean
       type:
         type: string
+  oneOf:
+  - $ref: '#/components/schemas/PublishedFile'
+  - $ref: '#/components/schemas/UnpublishedFile'
+  - $ref: '#/components/schemas/AdministrativeAgreement'
 FunderRightsRetentionStrategy:
   required:
   - type
@@ -1074,16 +1111,19 @@ Funding:
     source:
       type: string
       format: uri
+    fundingAmount:
+      $ref: '#/components/schemas/MonetaryAmount'
     activeFrom:
       type: string
       format: date-time
     activeTo:
       type: string
       format: date-time
-    fundingAmount:
-      $ref: '#/components/schemas/MonetaryAmount'
     type:
       type: string
+  oneOf:
+  - $ref: '#/components/schemas/ConfirmedFunding'
+  - $ref: '#/components/schemas/UnconfirmedFunding'
 GeographicalContent:
   required:
   - type
@@ -1389,6 +1429,11 @@ LiteraryArtsManifestation:
       $ref: '#/components/schemas/PublicationDate'
     type:
       type: string
+  oneOf:
+  - $ref: '#/components/schemas/LiteraryArtsAudioVisual'
+  - $ref: '#/components/schemas/LiteraryArtsMonograph'
+  - $ref: '#/components/schemas/LiteraryArtsPerformance'
+  - $ref: '#/components/schemas/LiteraryArtsWeb'
 LiteraryArtsMonograph:
   required:
   - type
@@ -1689,6 +1734,10 @@ MovingPictureOutput:
       format: int32
     type:
       type: string
+  oneOf:
+  - $ref: '#/components/schemas/Broadcast'
+  - $ref: '#/components/schemas/CinematicRelease'
+  - $ref: '#/components/schemas/OtherRelease'
 MovingPictureSubtype:
   type: object
   properties:
@@ -1744,6 +1793,11 @@ MusicPerformanceManifestation:
   properties:
     type:
       type: string
+  oneOf:
+  - $ref: '#/components/schemas/AudioVisualPublication'
+  - $ref: '#/components/schemas/Concert'
+  - $ref: '#/components/schemas/MusicScore'
+  - $ref: '#/components/schemas/OtherPerformance'
 MusicScore:
   required:
   - type
@@ -1964,6 +2018,10 @@ Pages:
   properties:
     type:
       type: string
+  oneOf:
+  - $ref: '#/components/schemas/Range'
+  - $ref: '#/components/schemas/MonographPages'
+  - $ref: '#/components/schemas/Period'
 PerformingArts:
   required:
   - type
@@ -1991,6 +2049,8 @@ PerformingArtsOutput:
   properties:
     type:
       type: string
+  oneOf:
+  - $ref: '#/components/schemas/PerformingArtsVenue'
 PerformingArtsSubtype:
   type: object
   properties:
@@ -2040,6 +2100,8 @@ Place:
   properties:
     type:
       type: string
+  oneOf:
+  - $ref: '#/components/schemas/UnconfirmedPlace'
 PopularScienceArticle:
   required:
   - type
@@ -2203,6 +2265,21 @@ PublicationContext:
   properties:
     type:
       type: string
+  oneOf:
+  - $ref: '#/components/schemas/Book'
+  - $ref: '#/components/schemas/Report'
+  - $ref: '#/components/schemas/Degree'
+  - $ref: '#/components/schemas/Anthology'
+  - $ref: '#/components/schemas/Journal'
+  - $ref: '#/components/schemas/UnconfirmedJournal'
+  - $ref: '#/components/schemas/Event'
+  - $ref: '#/components/schemas/Artistic'
+  - $ref: '#/components/schemas/MediaContribution'
+  - $ref: '#/components/schemas/MediaContributionPeriodical'
+  - $ref: '#/components/schemas/UnconfirmedMediaContributionPeriodical'
+  - $ref: '#/components/schemas/ResearchData'
+  - $ref: '#/components/schemas/GeographicalContent'
+  - $ref: '#/components/schemas/ExhibitionContent'
 PublicationDate:
   required:
   - type
@@ -2225,6 +2302,67 @@ PublicationInstancePages:
       $ref: '#/components/schemas/Pages'
     type:
       type: string
+  oneOf:
+  - $ref: '#/components/schemas/Architecture'
+  - $ref: '#/components/schemas/ArtisticDesign'
+  - $ref: '#/components/schemas/MovingPicture'
+  - $ref: '#/components/schemas/PerformingArts'
+  - $ref: '#/components/schemas/AcademicArticle'
+  - $ref: '#/components/schemas/AcademicLiteratureReview'
+  - $ref: '#/components/schemas/CaseReport'
+  - $ref: '#/components/schemas/StudyProtocol'
+  - $ref: '#/components/schemas/ProfessionalArticle'
+  - $ref: '#/components/schemas/PopularScienceArticle'
+  - $ref: '#/components/schemas/JournalCorrigendum'
+  - $ref: '#/components/schemas/JournalLetter'
+  - $ref: '#/components/schemas/JournalLeader'
+  - $ref: '#/components/schemas/JournalReview'
+  - $ref: '#/components/schemas/AcademicMonograph'
+  - $ref: '#/components/schemas/PopularScienceMonograph'
+  - $ref: '#/components/schemas/Encyclopedia'
+  - $ref: '#/components/schemas/ExhibitionCatalog'
+  - $ref: '#/components/schemas/NonFictionMonograph'
+  - $ref: '#/components/schemas/Textbook'
+  - $ref: '#/components/schemas/BookAnthology'
+  - $ref: '#/components/schemas/DegreeBachelor'
+  - $ref: '#/components/schemas/DegreeMaster'
+  - $ref: '#/components/schemas/DegreePhd'
+  - $ref: '#/components/schemas/DegreeLicentiate'
+  - $ref: '#/components/schemas/ReportBasic'
+  - $ref: '#/components/schemas/ReportPolicy'
+  - $ref: '#/components/schemas/ReportResearch'
+  - $ref: '#/components/schemas/ReportWorkingPaper'
+  - $ref: '#/components/schemas/ConferenceReport'
+  - $ref: '#/components/schemas/ReportBookOfAbstract'
+  - $ref: '#/components/schemas/AcademicChapter'
+  - $ref: '#/components/schemas/EncyclopediaChapter'
+  - $ref: '#/components/schemas/ExhibitionCatalogChapter'
+  - $ref: '#/components/schemas/Introduction'
+  - $ref: '#/components/schemas/NonFictionChapter'
+  - $ref: '#/components/schemas/PopularScienceChapter'
+  - $ref: '#/components/schemas/TextbookChapter'
+  - $ref: '#/components/schemas/ChapterConferenceAbstract'
+  - $ref: '#/components/schemas/ChapterInReport'
+  - $ref: '#/components/schemas/OtherStudentWork'
+  - $ref: '#/components/schemas/ConferenceLecture'
+  - $ref: '#/components/schemas/ConferencePoster'
+  - $ref: '#/components/schemas/Lecture'
+  - $ref: '#/components/schemas/OtherPresentation'
+  - $ref: '#/components/schemas/JournalIssue'
+  - $ref: '#/components/schemas/ConferenceAbstract'
+  - $ref: '#/components/schemas/MediaFeatureArticle'
+  - $ref: '#/components/schemas/MediaBlogPost'
+  - $ref: '#/components/schemas/MediaInterview'
+  - $ref: '#/components/schemas/MediaParticipationInRadioOrTv'
+  - $ref: '#/components/schemas/MediaPodcast'
+  - $ref: '#/components/schemas/MediaReaderOpinion'
+  - $ref: '#/components/schemas/MusicPerformance'
+  - $ref: '#/components/schemas/DataManagementPlan'
+  - $ref: '#/components/schemas/DataSet'
+  - $ref: '#/components/schemas/VisualArts'
+  - $ref: '#/components/schemas/Map'
+  - $ref: '#/components/schemas/LiteraryArts'
+  - $ref: '#/components/schemas/ExhibitionProduction'
 PublicationNote:
   type: object
   allOf:
@@ -2238,6 +2376,9 @@ PublicationNoteBase:
       type: string
     type:
       type: string
+  oneOf:
+  - $ref: '#/components/schemas/PublicationNote'
+  - $ref: '#/components/schemas/UnpublishingNote'
 PublishedFile:
   required:
   - type
@@ -2270,6 +2411,10 @@ PublishingHouse:
       type: boolean
     type:
       type: string
+  oneOf:
+  - $ref: '#/components/schemas/Publisher'
+  - $ref: '#/components/schemas/UnconfirmedPublisher'
+  - $ref: '#/components/schemas/NullPublisher'
 Range:
   required:
   - type
@@ -2302,6 +2447,9 @@ RelatedDocument:
   properties:
     type:
       type: string
+  oneOf:
+  - $ref: '#/components/schemas/ConfirmedDocument'
+  - $ref: '#/components/schemas/UnconfirmedDocument'
 Report:
   type: object
   allOf:
@@ -2441,6 +2589,11 @@ RightsRetentionStrategy:
       - OverridableRightsRetentionStrategy
     type:
       type: string
+  oneOf:
+  - $ref: '#/components/schemas/CustomerRightsRetentionStrategy'
+  - $ref: '#/components/schemas/OverriddenRightsRetentionStrategy'
+  - $ref: '#/components/schemas/NullRightsRetentionStrategy'
+  - $ref: '#/components/schemas/FunderRightsRetentionStrategy'
 RoleType:
   type: object
   properties:
@@ -2591,6 +2744,9 @@ Time:
   properties:
     type:
       type: string
+  oneOf:
+  - $ref: '#/components/schemas/Period'
+  - $ref: '#/components/schemas/Instant'
 UnconfirmedCourse:
   required:
   - type

@@ -13,6 +13,7 @@ dependencies {
     implementation libs.aws.sdk.dynamodb
     implementation libs.bundles.jena
     implementation libs.bundles.logging
+    implementation libs.swagger.annotations
 
     testImplementation(project(':publication-testing'))
     testImplementation project(":publication-model-testing")

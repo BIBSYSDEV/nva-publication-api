@@ -5,6 +5,7 @@ import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.swagger.v3.oas.annotations.media.Schema;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -12,6 +13,7 @@ import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
     @JsonSubTypes.Type(name = "Series", value = Series.class),
     @JsonSubTypes.Type(name = "UnconfirmedSeries", value = UnconfirmedSeries.class)
 })
+@Schema(oneOf = {Series.class, UnconfirmedSeries.class})
 public interface BookSeries {
 
     @JsonIgnore
