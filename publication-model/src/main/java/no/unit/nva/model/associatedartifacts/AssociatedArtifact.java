@@ -2,7 +2,6 @@ package no.unit.nva.model.associatedartifacts;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import no.unit.nva.model.associatedartifacts.file.File;
 
