@@ -1768,7 +1768,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnForbiddenWhenRepublishingNotUnpublishedPublication()
+    void shouldReturnForbiddenWhenRepublishingUnpublishedPublication()
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
         var curatingInstitution = randomUri();
