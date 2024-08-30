@@ -51,11 +51,9 @@ import no.unit.nva.model.time.Period;
 import no.unit.nva.model.time.Time;
 import nva.commons.core.JacocoGenerated;
 
-@SuppressWarnings("PMD.CouplingBetweenObjects")
 @JacocoGenerated
 public class PublicationContextBuilder {
 
-    @SuppressWarnings("PMD.NcssCount")
     public static PublicationContext randomPublicationContext(Class<?> publicationInstance) {
         String className = publicationInstance.getSimpleName();
         switch (className) {
