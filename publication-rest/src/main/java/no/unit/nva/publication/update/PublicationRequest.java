@@ -7,7 +7,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonSubTypes({
     @JsonSubTypes.Type(UpdatePublicationRequest.class),
     @JsonSubTypes.Type(UnpublishPublicationRequest.class),
-    @JsonSubTypes.Type(DeletePublicationRequest.class)
+    @JsonSubTypes.Type(DeletePublicationRequest.class),
+    @JsonSubTypes.Type(RepublishPublicationRequest.class)
 })
 public interface PublicationRequest {
 

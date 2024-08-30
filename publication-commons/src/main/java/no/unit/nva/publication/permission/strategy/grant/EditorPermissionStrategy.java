@@ -21,6 +21,7 @@ public class EditorPermissionStrategy extends GrantPermissionStrategy {
             case UPDATE -> true;
             case UNPUBLISH -> isPublished();
             case TERMINATE -> isUnpublished();
+            case REPUBLISH -> userSharesTopLevelOrgWithAtLeastOneContributor() && isUnpublished();
             case DELETE, UPDATE_FILES -> false;
         };
     }

@@ -25,7 +25,7 @@ import org.junit.jupiter.params.provider.EnumSource.Mode;
 class TrustedThirdPartyStrategyTest extends PublicationPermissionStrategyTest {
 
     @ParameterizedTest(name = "Should allow trusted third party {0} operation on non-degree resources")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "UPDATE_FILES"})
+    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "UPDATE_FILES", "REPUBLISH"})
     void shouldAllowTrustedThirdPartyOnNonDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 

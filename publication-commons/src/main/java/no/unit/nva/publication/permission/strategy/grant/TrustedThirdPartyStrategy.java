@@ -16,7 +16,7 @@ public class TrustedThirdPartyStrategy extends GrantPermissionStrategy {
         return switch (permission) {
             case UPDATE, UNPUBLISH, TICKET_PUBLISH, TERMINATE -> canModify();
             case DELETE -> canModify() && isDraft();
-            case UPDATE_FILES -> false;
+            case UPDATE_FILES, REPUBLISH -> false;
         };
     }
 
