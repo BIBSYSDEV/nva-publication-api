@@ -1,5 +1,6 @@
 package no.unit.nva.expansion.model;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.AFFILIATIONS_POINTER;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.CONTEXT_TYPE_JSON_PTR;
@@ -38,6 +39,7 @@ import java.util.stream.StreamSupport;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.instancetypes.PublicationInstance;
@@ -192,18 +194,20 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     private static void injectAnthologyRelation(Publication publication, ObjectNode sortedJson) {
         Optional.ofNullable(publication.getEntityDescription())
                 .flatMap(description -> Optional.ofNullable(description.getReference()))
-                .ifPresent(reference -> {
-                    var instanceType = reference.getPublicationInstance();
-                    var publicationContext = reference.getPublicationContext();
+                .ifPresent(reference -> addJoinFieldWhenAnthology(sortedJson, reference));
+    }
 
-                    if (instanceType instanceof BookAnthology) {
-                        addJoinField(sortedJson, JOIN_FIELD_PARENT_LABEL, null);
-                    } else if (isPartOfAnthology(publicationContext, instanceType)) {
-                        var parentId = ((Anthology) publicationContext).getId();
-                        var parentIdentifier = SortableIdentifier.fromUri(parentId).toString();
-                        addJoinField(sortedJson, JOIN_FIELD_CHILD_LABEL, parentIdentifier);
-                    }
-                });
+    private static void addJoinFieldWhenAnthology(ObjectNode sortedJson, Reference reference) {
+        var instanceType = reference.getPublicationInstance();
+        var publicationContext = reference.getPublicationContext();
+
+        if (instanceType instanceof BookAnthology) {
+            addJoinField(sortedJson, JOIN_FIELD_PARENT_LABEL, null);
+        } else if (isPartOfAnthology(publicationContext, instanceType)) {
+            var parentId = ((Anthology) publicationContext).getId();
+            var parentIdentifier = SortableIdentifier.fromUri(parentId).toString();
+            addJoinField(sortedJson, JOIN_FIELD_CHILD_LABEL, parentIdentifier);
+        }
     }
 
     private static boolean isPartOfAnthology(PublicationContext publicationContext,
@@ -218,7 +222,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     private static void addJoinField(ObjectNode sortedJson, String name, String parent) {
         var newNode = sortedJson.putObject(JOIN_FIELD_NODE_LABEL);
         newNode.put(JOIN_FIELD_RELATION_KEY, name);
-        if (parent != null) {
+        if (nonNull(parent)) {
             newNode.put(JOIN_FIELD_PARENT_KEY, parent);
         }
     }
