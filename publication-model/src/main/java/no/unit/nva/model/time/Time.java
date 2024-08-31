@@ -3,6 +3,7 @@ package no.unit.nva.model.time;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
@@ -12,6 +13,7 @@ import java.time.temporal.ChronoUnit;
     @JsonSubTypes.Type(name = "Period", value = Period.class),
     @JsonSubTypes.Type(name = "Instant", value = Instant.class)
 })
+@Schema(oneOf = {Period.class, Instant.class})
 public interface Time {
 
     // The conversion methods should be removed following migration

@@ -2,6 +2,7 @@ package no.unit.nva.model.instancetypes.artistic.music;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
@@ -10,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
     @JsonSubTypes.Type(name = "MusicScore", value = MusicScore.class),
     @JsonSubTypes.Type(name = "OtherPerformance", value = OtherPerformance.class)
 })
+@Schema(oneOf = {AudioVisualPublication.class, Concert.class, MusicScore.class, OtherPerformance.class})
 public interface MusicPerformanceManifestation {
 
 }

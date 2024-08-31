@@ -3,6 +3,7 @@ package no.unit.nva.model.funding;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
@@ -12,6 +13,7 @@ import java.util.Map;
     @JsonSubTypes.Type(name = "ConfirmedFunding", value = ConfirmedFunding.class),
     @JsonSubTypes.Type(name = "UnconfirmedFunding", value = UnconfirmedFunding.class)
 })
+@Schema(oneOf = {ConfirmedFunding.class, UnconfirmedFunding.class})
 public interface Funding {
     URI getSource();
 

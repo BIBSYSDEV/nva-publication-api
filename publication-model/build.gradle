@@ -7,6 +7,7 @@ dependencies {
     implementation( libs.nva.json )
     implementation( libs.nva.identifiers )
     implementation( libs.nva.testutils )
+    implementation( libs.swagger.annotations )
 
     implementation ( libs.jsonld )
     implementation ( libs.commons.validator )

@@ -2,6 +2,7 @@ package no.unit.nva.model.contexttypes;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * PublicationContext provides a common root object for contexts of type
@@ -26,6 +27,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
     @JsonSubTypes.Type(name = "GeographicalContent", value = GeographicalContent.class),
     @JsonSubTypes.Type(name = "ExhibitionContent", value = ExhibitionContent.class)
 })
+@Schema(oneOf = {Book.class, Report.class, Degree.class, Anthology.class, Anthology.class, Journal.class,
+    UnconfirmedJournal.class, Event.class, Artistic.class, MediaContribution.class, MediaContributionPeriodical.class,
+    UnconfirmedMediaContributionPeriodical.class, ResearchData.class, GeographicalContent.class, ExhibitionContent.class})
 public interface PublicationContext {
 
 }
