@@ -70,6 +70,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     private static final String JOIN_FIELD_NODE_LABEL = "joinField";
     private static final String JOIN_FIELD_RELATION_KEY = "name";
     private static final String JOIN_FIELD_PARENT_KEY = "parent";
+    public static final String JOIN_FIELD_DUMMY_PARENT_ID = "INVALID_PARENT_ID";
 
     private static final String ID_FIELD_NAME = "id";
     private static final String JSON_LD_CONTEXT_FIELD = "@context";
@@ -205,8 +206,12 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
             addJoinField(sortedJson, JOIN_FIELD_PARENT_LABEL, null);
         } else if (isPartOfAnthology(publicationContext, instanceType)) {
             var parentId = ((Anthology) publicationContext).getId();
-            var parentIdentifier = SortableIdentifier.fromUri(parentId).toString();
-            addJoinField(sortedJson, JOIN_FIELD_CHILD_LABEL, parentIdentifier);
+            if (nonNull(parentId)) {
+                var parentIdentifier = SortableIdentifier.fromUri(parentId).toString();
+                addJoinField(sortedJson, JOIN_FIELD_CHILD_LABEL, parentIdentifier);
+            } else {
+                addJoinField(sortedJson, JOIN_FIELD_CHILD_LABEL, JOIN_FIELD_DUMMY_PARENT_ID);
+            }
         }
     }
 

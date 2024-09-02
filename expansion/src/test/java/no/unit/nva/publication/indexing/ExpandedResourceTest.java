@@ -602,6 +602,28 @@ class ExpandedResourceTest {
         assertThat(actualNode, is(equalTo(expectedNode)));
     }
 
+    @ParameterizedTest
+    @MethodSource("validAnthologyMembersProvider")
+    void shouldNotFailWhenAnthologyParentIsMissing(Class<?> publicationType)
+        throws IOException {
+        var bookAnthology = PublicationGenerator.randomPublication(BookAnthology.class);
+        mockUriRetrieverResponses(bookAnthology);
+        var publication = createPartOfAnthology(bookAnthology, publicationType);
+
+        // Remove the publication context ID to simulate a publication that is missing the parent reference
+        var context = (Anthology) publication.getEntityDescription().getReference().getPublicationContext();
+        context.setId(null);
+
+        var expandedResource = fromPublication(uriRetriever, publication).asJsonNode();
+
+        var actualNode = expandedResource.get("joinField");
+        var expectedNode = new ObjectNode(objectMapper.getNodeFactory());
+        expectedNode.put("name", "partOf");
+        expectedNode.put("parent", "INVALID_PARENT_ID");
+
+        assertThat(actualNode, is(equalTo(expectedNode)));
+    }
+
     private static void mockOrganizationResponseWithParents(UriRetriever uriRetriever,
                                                             Organization org,
                                                             Organization parentOrg,
