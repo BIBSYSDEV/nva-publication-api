@@ -38,6 +38,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Anthology;
@@ -70,7 +71,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     private static final String JOIN_FIELD_NODE_LABEL = "joinField";
     private static final String JOIN_FIELD_RELATION_KEY = "name";
     private static final String JOIN_FIELD_PARENT_KEY = "parent";
-    public static final String JOIN_FIELD_DUMMY_PARENT_ID = "INVALID_PARENT_ID";
+    public static final String JOIN_FIELD_DUMMY_PARENT_ID = "PARENT_ID_NOT_FOUND";
 
     private static final String ID_FIELD_NAME = "id";
     private static final String JSON_LD_CONTEXT_FIELD = "@context";
@@ -194,7 +195,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
 
     private static void injectAnthologyRelation(Publication publication, ObjectNode sortedJson) {
         Optional.ofNullable(publication.getEntityDescription())
-                .flatMap(description -> Optional.ofNullable(description.getReference()))
+                .map(EntityDescription::getReference)
                 .ifPresent(reference -> addJoinFieldWhenAnthology(sortedJson, reference));
     }
 

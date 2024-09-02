@@ -619,7 +619,7 @@ class ExpandedResourceTest {
         var actualNode = expandedResource.get("joinField");
         var expectedNode = new ObjectNode(objectMapper.getNodeFactory());
         expectedNode.put("name", "partOf");
-        expectedNode.put("parent", "INVALID_PARENT_ID");
+        expectedNode.put("parent", "PARENT_ID_NOT_FOUND");
 
         assertThat(actualNode, is(equalTo(expectedNode)));
     }
