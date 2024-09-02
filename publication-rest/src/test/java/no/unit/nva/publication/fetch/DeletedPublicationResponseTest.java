@@ -8,7 +8,6 @@ import static org.hamcrest.Matchers.is;
 import java.util.Set;
 import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.model.Publication;
 import org.junit.jupiter.api.Test;
 
 public class DeletedPublicationResponseTest {
@@ -18,7 +17,7 @@ public class DeletedPublicationResponseTest {
         var publication = randomPublication();
         assertThat(publication, doesNotHaveEmptyValuesIgnoringFields(Set.of("entityDescription.reference",
                                                                             "importDetails")));
-        var deletedPublicationResponseJson = DeletedPublicationResponse.fromPublication(publication);
+        var deletedPublicationResponseJson = DeletedPublicationResponse.fromPublication(publication, Set.of());
         var deletedPublicationResponse = JsonUtils.dtoObjectMapper.convertValue(deletedPublicationResponseJson,
                                                                                 PublicationResponseElevatedUser.class);
 

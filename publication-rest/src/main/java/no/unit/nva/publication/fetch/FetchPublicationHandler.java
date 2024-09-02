@@ -122,7 +122,9 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         if (nonNull(publication.getDuplicateOf()) && shouldRedirect(requestInfo)) {
             return produceRedirect(publication.getDuplicateOf());
         } else {
-            throw new GoneException(GONE_MESSAGE, DeletedPublicationResponse.fromPublication(publication));
+            var allowedOperations = getAllowedOperations(requestInfo, publication);
+            var tombstone = DeletedPublicationResponse.fromPublication(publication, allowedOperations);
+            throw new GoneException(GONE_MESSAGE, tombstone);
         }
     }
 
