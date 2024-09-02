@@ -15,6 +15,7 @@ import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIG
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.DO_NOT_REDIRECT_QUERY_PARAM;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ENV_NAME_NVA_FRONTEND_DOMAIN;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static nva.commons.apigateway.ApiGatewayHandler.RESOURCE;
 import static nva.commons.core.attempt.Try.attempt;
@@ -23,6 +24,7 @@ import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
@@ -48,6 +50,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.clients.IdentityServiceClient;
@@ -56,6 +59,7 @@ import no.unit.nva.doi.model.Customer;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -401,6 +405,24 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         assertTrue(gatewayResponse.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN));
     }
 
+    @Test
+    void shouldReturnRepublishAllowedOperationWhenReturningTombstoneAndUserHasAccessRightToRepublish(
+        WireMockRuntimeInfo wireMockRuntimeInfo)
+        throws ApiGatewayException, IOException {
+        var publication = createPublicationWithPublisher(wireMockRuntimeInfo).copy().build();
+        publicationService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        publicationService.unpublishPublication(publicationService.getPublication(publication));
+        createCustomerMock(publication.getPublisher());
+        fetchPublicationHandler.handleRequest(editorRequestsPublication(publication), output,
+                                              context);
+        var gatewayResponse = parseFailureResponse();
+        var problem = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(), Problem.class);
+        var actualPublication = JsonUtils.dtoObjectMapper.convertValue(problem.getParameters().get(RESOURCE),
+                                                                       PublicationResponseElevatedUser.class);
+
+        assertThat(actualPublication.getAllowedOperations(), hasItem(PublicationOperation.REPUBLISH));
+    }
+
     private static Organization createExpectedPublisher(WireMockRuntimeInfo wireMockRuntimeInfo) {
         return new Organization.Builder().withId(
             URI.create(wireMockRuntimeInfo.getHttpsBaseUrl() + "/customer/" + randomUUID())).build();
@@ -410,6 +432,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var publication = PublicationGenerator.randomPublication();
         publication.setPublisher(createExpectedPublisher(wireMockRuntimeInfo));
+        publication.setDuplicateOf(null);
+        publication.setCuratingInstitutions(Set.of(randomUri()));
         var userInstance = UserInstance.fromPublication(publication);
         var publicationIdentifier =
             Resource.fromPublication(publication).persistNew(publicationService, userInstance).getIdentifier();
@@ -463,6 +487,20 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
                    .withHeaders(headers)
                    .withPathParameters(pathParameters)
                    .withQueryParameters(queryParams)
+                   .build();
+    }
+
+    private InputStream editorRequestsPublication(Publication publication)
+        throws JsonProcessingException {
+        var publicationIdentifier = publication.getIdentifier().toString();
+        Map<String, String> pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier);
+        return new HandlerRequestBuilder<InputStream>(restApiMapper)
+                   .withAccessRights(publication.getPublisher().getId(), AccessRight.MANAGE_RESOURCES_ALL)
+                   .withPathParameters(pathParameters)
+                   .withCurrentCustomer(publication.getPublisher().getId())
+                   .withTopLevelCristinOrgId(publication.getCuratingInstitutions().iterator().next())
+                   .withUserName(randomString())
+                   .withPersonCristinId(randomUri())
                    .build();
     }
 
