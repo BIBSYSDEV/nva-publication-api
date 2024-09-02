@@ -215,12 +215,13 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         }
     }
 
-    private static boolean isPartOfAnthology(PublicationContext publicationContext,
-                                             PublicationInstance<?> instanceType) {
+    private static boolean isPartOfAnthology(
+            PublicationContext publicationContext, PublicationInstance<?> instanceType) {
         var hasAnthology = publicationContext instanceof Anthology;
-        var canBePartOfAnthology = (instanceType instanceof ChapterArticle
-                                    || instanceType instanceof ChapterConferenceAbstract
-                                    || instanceType instanceof ChapterInReport);
+        var canBePartOfAnthology =
+                instanceType instanceof ChapterArticle
+                        || instanceType instanceof ChapterConferenceAbstract
+                        || instanceType instanceof ChapterInReport;
         return hasAnthology && canBePartOfAnthology;
     }
 
