@@ -1,6 +1,7 @@
 package no.unit.nva.model.testing;
 
 import static no.unit.nva.model.testing.RandomUtils.randomLabel;
+import static no.unit.nva.model.testing.RandomUtils.randomPublicationId;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
@@ -50,11 +51,9 @@ import no.unit.nva.model.time.Period;
 import no.unit.nva.model.time.Time;
 import nva.commons.core.JacocoGenerated;
 
-@SuppressWarnings("PMD.CouplingBetweenObjects")
 @JacocoGenerated
 public class PublicationContextBuilder {
 
-    @SuppressWarnings("PMD.NcssCount")
     public static PublicationContext randomPublicationContext(Class<?> publicationInstance) {
         String className = publicationInstance.getSimpleName();
         switch (className) {
@@ -141,6 +140,10 @@ public class PublicationContextBuilder {
         }
     }
 
+    public static PublishingHouse randomPublishingHouse() {
+        return new Publisher(randomPublicationChannelsUri());
+    }
+
     private static ExhibitionContent randomExhibition() {
         return new ExhibitionContent();
     }
@@ -154,19 +157,18 @@ public class PublicationContextBuilder {
     }
 
     private static PublicationContext randomMediaContributionPeriodical() {
-        return randomBoolean()
-            ? new MediaContributionPeriodical(randomPublicationChannelsUri())
-            : attempt(() -> new UnconfirmedMediaContributionPeriodical(randomString(),
-                randomIssn(), randomIssn())).orElseThrow();
+        return randomBoolean() ? new MediaContributionPeriodical(randomPublicationChannelsUri())
+                   : attempt(() -> new UnconfirmedMediaContributionPeriodical(randomString(),
+                                                                              randomIssn(),
+                                                                              randomIssn())).orElseThrow();
     }
 
     private static MediaContribution randomMediaContribution() {
-        return new MediaContribution.Builder()
-            .withMedium(generateRandomMedium())
-            .withFormat(generateRandomMediaFormat())
-            .withDisseminationChannel(randomString())
-            .withPartOf(generateRandomSeriesEpisode())
-            .build();
+        return new MediaContribution.Builder().withMedium(generateRandomMedium())
+                                              .withFormat(generateRandomMediaFormat())
+                                              .withDisseminationChannel(randomString())
+                                              .withPartOf(generateRandomSeriesEpisode())
+                                              .build();
     }
 
     private static SeriesEpisode generateRandomSeriesEpisode() {
@@ -179,37 +181,32 @@ public class PublicationContextBuilder {
 
     private static MediaSubType generateRandomMedium() {
         var type = randomElement(MediaSubTypeEnum.values());
-        return MediaSubTypeEnum.OTHER == type
-                ? MediaSubTypeOther.createOther(randomString())
-                : MediaSubType.create(type);
+        return MediaSubTypeEnum.OTHER == type ? MediaSubTypeOther.createOther(randomString())
+                   : MediaSubType.create(type);
     }
 
     private static Degree randomDegree() throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        return new Degree.Builder()
-            .withSeriesNumber(randomSeriesNumber())
-            .withSeries(randomBookSeries())
-            .withIsbnList(randomIsbnList())
-            .withPublisher(randomPublishingHouse())
-            .withCourse(new UnconfirmedCourse(randomString()))
-            .build();
+        return new Degree.Builder().withSeriesNumber(randomSeriesNumber())
+                                   .withSeries(randomBookSeries())
+                                   .withIsbnList(randomIsbnList())
+                                   .withPublisher(randomPublishingHouse())
+                                   .withCourse(new UnconfirmedCourse(randomString()))
+                                   .build();
     }
 
     private static Event randomPresentation() {
-        return new Event.Builder()
-            .withAgent(randomAgent())
-            .withLabel(randomLabel())
-            .withPlace(randomPlace())
-            .withProduct(randomUri())
-            .withTime(randomTime())
-            .build();
+        return new Event.Builder().withAgent(randomAgent())
+                                  .withLabel(randomLabel())
+                                  .withPlace(randomPlace())
+                                  .withProduct(randomUri())
+                                  .withTime(randomTime())
+                                  .build();
     }
 
     private static Time randomTime() {
         Instant from = randomInstant();
 
-        return Math.random() <= 0.5
-                   ? new no.unit.nva.model.time.Instant(from)
-                   : randomPeriod(from);
+        return Math.random() <= 0.5 ? new no.unit.nva.model.time.Instant(from) : randomPeriod(from);
     }
 
     private static Period randomPeriod(Instant from) {
@@ -218,19 +215,15 @@ public class PublicationContextBuilder {
     }
 
     private static Agent randomAgent() {
-        return new Organization.Builder()
-            .withId(randomUri())
-            .build();
+        return new Organization.Builder().withId(randomUri()).build();
     }
 
-    private static Report randomReport()
-        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        return new Report.Builder()
-            .withSeriesNumber(randomSeriesNumber())
-            .withSeries(randomBookSeries())
-            .withIsbnList(randomIsbnList())
-            .withPublisher(randomPublishingHouse())
-            .build();
+    private static Report randomReport() throws InvalidIssnException, InvalidUnconfirmedSeriesException {
+        return new Report.Builder().withSeriesNumber(randomSeriesNumber())
+                                   .withSeries(randomBookSeries())
+                                   .withIsbnList(randomIsbnList())
+                                   .withPublisher(randomPublishingHouse())
+                                   .build();
     }
 
     private static String randomSeriesNumber() {
@@ -238,27 +231,20 @@ public class PublicationContextBuilder {
     }
 
     private static Anthology randomChapter() {
-        return new Anthology.Builder()
-            .withId(randomUri())
-            .build();
+        return new Anthology.Builder().withId(randomPublicationId()).build();
     }
 
     private static Book randomBook() {
-        return new Book.BookBuilder()
-            .withIsbnList(randomIsbnList())
-            .withPublisher(randomPublishingHouse())
-            .withSeries(randomBookSeries())
-            .withSeriesNumber(randomSeriesNumber())
-            .withRevision(Revision.values()[new Random().nextInt(Revision.values().length)])
-            .build();
+        return new Book.BookBuilder().withIsbnList(randomIsbnList())
+                                     .withPublisher(randomPublishingHouse())
+                                     .withSeries(randomBookSeries())
+                                     .withSeriesNumber(randomSeriesNumber())
+                                     .withRevision(Revision.values()[new Random().nextInt(Revision.values().length)])
+                                     .build();
     }
 
     private static Series randomBookSeries() {
         return new Series(randomPublicationChannelsUri());
-    }
-
-    public static PublishingHouse randomPublishingHouse() {
-        return new Publisher(randomPublicationChannelsUri());
     }
 
     private static List<String> randomIsbnList() {

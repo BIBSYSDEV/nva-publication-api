@@ -1,5 +1,6 @@
 package no.unit.nva.expansion.model;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.AFFILIATIONS_POINTER;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.CONTEXT_TYPE_JSON_PTR;
@@ -37,7 +38,16 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.Reference;
+import no.unit.nva.model.contexttypes.Anthology;
+import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.book.BookAnthology;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
+import no.unit.nva.model.instancetypes.chapter.ChapterConferenceAbstract;
+import no.unit.nva.model.instancetypes.chapter.ChapterInReport;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -46,19 +56,27 @@ import nva.commons.core.paths.UriWrapper;
 @JsonTypeName(ExpandedResource.TYPE)
 public final class ExpandedResource implements JsonSerializable, ExpandedDataEntry {
     // The ExpandedResource differs from ExpandedDoiRequest and ExpandedMessage
-    // because is does not extend the Resource or Publication class,
+    // because it does not extend the Resource or Publication class,
     // but it contains its data as an inner Json Node.
 
     public static final String TYPE = "Publication";
-    private static final String ID_FIELD_NAME = "id";
-    private static final String JSON_LD_CONTEXT_FIELD = "@context";
-    private static final String CONTEXT_TYPE_ANTHOLOGY = "Anthology";
-    private static final String INSTANCE_TYPE_ACADEMIC_CHAPTER = "AcademicChapter";
     public static final JsonPointer CONTRIBUTORS_PTR = JsonPointer.compile("/entityDescription/contributors");
     public static final String CONTRIBUTOR_SEQUENCE = "sequence";
     public static final String LICENSE_FIELD = "license";
     public static final String ASSOCIATED_ARTIFACTS_FIELD = "associatedArtifacts";
-    public static final String TYPE_FIELD = "type";
+
+    // The join field is used by the search index to create a relationship between parent and child documents.
+    private static final String JOIN_FIELD_PARENT_LABEL = "hasParts";
+    private static final String JOIN_FIELD_CHILD_LABEL = "partOf";
+    private static final String JOIN_FIELD_NODE_LABEL = "joinField";
+    private static final String JOIN_FIELD_RELATION_KEY = "name";
+    private static final String JOIN_FIELD_PARENT_KEY = "parent";
+    public static final String JOIN_FIELD_DUMMY_PARENT_ID = "PARENT_ID_NOT_FOUND";
+
+    private static final String ID_FIELD_NAME = "id";
+    private static final String JSON_LD_CONTEXT_FIELD = "@context";
+    private static final String CONTEXT_TYPE_ANTHOLOGY = "Anthology";
+    private static final String INSTANCE_TYPE_ACADEMIC_CHAPTER = "AcademicChapter";
     @JsonAnySetter
     private final Map<String, Object> allFields;
 
@@ -72,69 +90,6 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         var enrichedJson = enrichJson(uriRetriever, documentWithId);
         var sortedJson = addFields(enrichedJson, publication);
         return attempt(() -> objectMapper.treeToValue(sortedJson, ExpandedResource.class)).orElseThrow();
-    }
-
-    private static JsonNode addFields(String json, Publication publication) {
-        var sortedJson = strToJsonWithSortedContributors(json);
-        injectHasFileEnum(publication, (ObjectNode) sortedJson);
-        expandLicenses(sortedJson);
-        return sortedJson;
-    }
-
-    private static void expandLicenses(JsonNode node) {
-        var optionalAssociatedArtifacts = Optional.ofNullable(node.get(ASSOCIATED_ARTIFACTS_FIELD));
-        optionalAssociatedArtifacts.ifPresent(ExpandedResource::handleAssociatedArtifacts);
-    }
-
-    private static void handleAssociatedArtifacts(JsonNode associatedArtifacts) {
-        if (associatedArtifacts.isArray()) {
-            associatedArtifacts.forEach(ExpandedResource::processArtifact);
-        }
-    }
-
-    private static void processArtifact(JsonNode artifact) {
-        if (hasLicense(artifact)) {
-            expandLicense(artifact);
-        }
-    }
-
-    private static void expandLicense(JsonNode artifact) {
-        var artifactNode = (ObjectNode) artifact;
-        var licenseUri = extractLicenseFromAssociatedArtifactNode(artifact);
-        Optional.ofNullable(licenseUri)
-            .map(License::fromUri)
-            .map(License::toJsonNode)
-            .ifPresent(jsonNode -> artifactNode.set(LICENSE_FIELD, jsonNode));
-    }
-
-    private static boolean hasLicense(JsonNode artifact) {
-        return artifact.has(LICENSE_FIELD);
-    }
-
-    private static URI extractLicenseFromAssociatedArtifactNode(JsonNode node) {
-        return Optional.ofNullable(node.get(ExpandedResource.LICENSE_FIELD))
-                   .map(JsonNode::asText)
-                   .map(URI::create)
-                   .orElse(null);
-    }
-
-    private static void injectHasFileEnum(Publication publication, ObjectNode sortedJson) {
-        sortedJson.put(FilesStatus.FILES_STATUS, FilesStatus.fromPublication(publication).getValue());
-    }
-
-    private static JsonNode strToJsonWithSortedContributors(String jsonStr) {
-        var json = attempt(() -> objectMapper.readTree(jsonStr)).orElseThrow();
-        var contributors = json.at(CONTRIBUTORS_PTR);
-        if (!contributors.isMissingNode()) {
-            var contributorsArray = (ArrayNode) contributors;
-            List<JsonNode> contributorsList = new ArrayList<>();
-            contributorsArray.forEach(contributorsList::add);
-            contributorsList.sort(Comparator.comparingInt(c -> c.get(CONTRIBUTOR_SEQUENCE).asInt()));
-            contributorsArray.removeAll();
-            contributorsArray.addAll(contributorsList);
-        }
-
-        return json;
     }
 
     public static List<URI> extractPublicationContextUris(JsonNode indexDocument) {
@@ -172,10 +127,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     }
 
     public static Set<URI> extractUris(ArrayNode root, String nodeName) {
-        return root.findValues(nodeName).stream()
-                   .map(JsonNode::textValue)
-                   .map(URI::create)
-                   .collect(Collectors.toSet());
+        return root.findValues(nodeName).stream().map(JsonNode::textValue).map(URI::create).collect(Collectors.toSet());
     }
 
     public List<URI> getPublicationContextUris() {
@@ -233,10 +185,115 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         return toJsonString();
     }
 
+    private static JsonNode addFields(String json, Publication publication) {
+        var sortedJson = strToJsonWithSortedContributors(json);
+        injectHasFileEnum(publication, (ObjectNode) sortedJson);
+        expandLicenses(sortedJson);
+        injectAnthologyRelation(publication, (ObjectNode) sortedJson);
+        return sortedJson;
+    }
+
+    private static void injectAnthologyRelation(Publication publication, ObjectNode sortedJson) {
+        Optional.ofNullable(publication.getEntityDescription())
+                .map(EntityDescription::getReference)
+                .ifPresent(reference -> addJoinFieldWhenAnthology(sortedJson, reference));
+    }
+
+    private static void addJoinFieldWhenAnthology(ObjectNode sortedJson, Reference reference) {
+        var instanceType = reference.getPublicationInstance();
+        var publicationContext = reference.getPublicationContext();
+
+        if (instanceType instanceof BookAnthology) {
+            addJoinField(sortedJson, JOIN_FIELD_PARENT_LABEL, null);
+        } else if (isPartOfAnthology(publicationContext, instanceType)) {
+            var parentId = ((Anthology) publicationContext).getId();
+            if (nonNull(parentId)) {
+                var parentIdentifier = SortableIdentifier.fromUri(parentId).toString();
+                addJoinField(sortedJson, JOIN_FIELD_CHILD_LABEL, parentIdentifier);
+            } else {
+                addJoinField(sortedJson, JOIN_FIELD_CHILD_LABEL, JOIN_FIELD_DUMMY_PARENT_ID);
+            }
+        }
+    }
+
+    private static boolean isPartOfAnthology(
+            PublicationContext publicationContext, PublicationInstance<?> instanceType) {
+        var hasAnthology = publicationContext instanceof Anthology;
+        var canBePartOfAnthology =
+                instanceType instanceof ChapterArticle
+                        || instanceType instanceof ChapterConferenceAbstract
+                        || instanceType instanceof ChapterInReport;
+        return hasAnthology && canBePartOfAnthology;
+    }
+
+    private static void addJoinField(ObjectNode sortedJson, String name, String parent) {
+        var newNode = sortedJson.putObject(JOIN_FIELD_NODE_LABEL);
+        newNode.put(JOIN_FIELD_RELATION_KEY, name);
+        if (nonNull(parent)) {
+            newNode.put(JOIN_FIELD_PARENT_KEY, parent);
+        }
+    }
+
+    private static void expandLicenses(JsonNode node) {
+        var optionalAssociatedArtifacts = Optional.ofNullable(node.get(ASSOCIATED_ARTIFACTS_FIELD));
+        optionalAssociatedArtifacts.ifPresent(ExpandedResource::handleAssociatedArtifacts);
+    }
+
+    private static void handleAssociatedArtifacts(JsonNode associatedArtifacts) {
+        if (associatedArtifacts.isArray()) {
+            associatedArtifacts.forEach(ExpandedResource::processArtifact);
+        }
+    }
+
+    private static void processArtifact(JsonNode artifact) {
+        if (hasLicense(artifact)) {
+            expandLicense(artifact);
+        }
+    }
+
+    private static void expandLicense(JsonNode artifact) {
+        var artifactNode = (ObjectNode) artifact;
+        var licenseUri = extractLicenseFromAssociatedArtifactNode(artifact);
+        Optional.ofNullable(licenseUri)
+                .map(License::fromUri)
+                .map(License::toJsonNode)
+                .ifPresent(jsonNode -> artifactNode.set(LICENSE_FIELD, jsonNode));
+    }
+
+    private static boolean hasLicense(JsonNode artifact) {
+        return artifact.has(LICENSE_FIELD);
+    }
+
+    private static URI extractLicenseFromAssociatedArtifactNode(JsonNode node) {
+        return Optional.ofNullable(node.get(ExpandedResource.LICENSE_FIELD))
+                       .map(JsonNode::asText)
+                       .map(URI::create)
+                       .orElse(null);
+    }
+
+    private static void injectHasFileEnum(Publication publication, ObjectNode sortedJson) {
+        sortedJson.put(FilesStatus.FILES_STATUS, FilesStatus.fromPublication(publication).getValue());
+    }
+
+    private static JsonNode strToJsonWithSortedContributors(String jsonStr) {
+        var json = attempt(() -> objectMapper.readTree(jsonStr)).orElseThrow();
+        var contributors = json.at(CONTRIBUTORS_PTR);
+        if (!contributors.isMissingNode()) {
+            var contributorsArray = (ArrayNode) contributors;
+            List<JsonNode> contributorsList = new ArrayList<>();
+            contributorsArray.forEach(contributorsList::add);
+            contributorsList.sort(Comparator.comparingInt(c -> c.get(CONTRIBUTOR_SEQUENCE).asInt()));
+            contributorsArray.removeAll();
+            contributorsArray.addAll(contributorsList);
+        }
+
+        return json;
+    }
+
     private static ArrayNode affiliationNodes(JsonNode indexDocument) {
-        var affiliationNodes = getJsonNodeStream(indexDocument, CONTRIBUTORS_POINTER)
-                                   .flatMap(ExpandedResource::extractAffiliations)
-                                   .toList();
+        var affiliationNodes = getJsonNodeStream(indexDocument,
+                                                 CONTRIBUTORS_POINTER).flatMap(ExpandedResource::extractAffiliations)
+                                                                      .toList();
         return new ArrayNode(JsonNodeFactory.instance, affiliationNodes);
     }
 
@@ -253,9 +310,8 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     }
 
     private static String enrichJson(RawContentRetriever uriRetriever, ObjectNode documentWithId) {
-        return attempt(() -> new IndexDocumentWrapperLinkedData(uriRetriever))
-                   .map(documentWithLinkedData -> documentWithLinkedData.toFramedJsonLd(documentWithId))
-                   .orElseThrow();
+        return attempt(() -> new IndexDocumentWrapperLinkedData(uriRetriever)).map(documentWithLinkedData -> documentWithLinkedData.toFramedJsonLd(
+            documentWithId)).orElseThrow();
     }
 
     private static ObjectNode transformToJsonLd(Publication publication) throws JsonProcessingException {
