@@ -63,7 +63,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
 
 
         if (publication.getStatus() == PublicationStatus.DRAFT) {
-            PublicationPermissionStrategy.create(publication, userInstance).authorize(DELETE);
+            PublicationPermissionStrategy.create(publication, userInstance, resourceService).authorize(DELETE);
             handleDraftDeletion(userInstance, publicationIdentifier);
         } else {
             unsupportedPublicationForDeletion(publication);

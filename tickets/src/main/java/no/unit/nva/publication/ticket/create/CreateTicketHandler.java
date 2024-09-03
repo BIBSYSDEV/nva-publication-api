@@ -3,65 +3,40 @@ package no.unit.nva.publication.ticket.create;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
-import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
-import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
-import static nva.commons.apigateway.AccessRight.SUPPORT;
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
-import java.net.URI;
-import java.util.Arrays;
 import java.util.Map;
-import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
-import no.unit.nva.publication.ticket.DoiRequestDto;
-import no.unit.nva.publication.ticket.GeneralSupportRequestDto;
-import no.unit.nva.publication.ticket.PublishingRequestDto;
 import no.unit.nva.publication.ticket.TicketDto;
-import no.unit.nva.publication.ticket.UnpublishRequestDto;
 import no.unit.nva.publication.utils.RequestUtils;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
 
     public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
     public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
     public static final String LOCATION_HEADER = "Location";
-    private final Logger logger = LoggerFactory.getLogger(CreateTicketHandler.class);
-    private final ResourceService resourceService;
     private final TicketResolver ticketResolver;
-    private final UriRetriever uriRetriever;
 
     @JacocoGenerated
     public CreateTicketHandler() {
-        this(ResourceService.defaultService(),
-             new TicketResolver(ResourceService.defaultService(), TicketService.defaultService(),
+        this(new TicketResolver(ResourceService.defaultService(), TicketService.defaultService(),
                                 new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL,
-                                                                  BACKEND_CLIENT_SECRET_NAME)),
-             UriRetriever.defaultUriRetriever());
+                                                                  BACKEND_CLIENT_SECRET_NAME)));
     }
 
-    public CreateTicketHandler(ResourceService resourceService,
-                               TicketResolver ticketResolver,
-                               UriRetriever uriRetriever) {
+    public CreateTicketHandler(TicketResolver ticketResolver) {
         super(TicketDto.class);
-        this.resourceService = resourceService;
         this.ticketResolver = ticketResolver;
-        this.uriRetriever = uriRetriever;
     }
 
     @Override
@@ -73,9 +48,8 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
     @Override
     protected Void processInput(TicketDto input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-        var requestUtils = RequestUtils.fromRequestInfo(requestInfo, uriRetriever);
-        var publication = fetchPublication(requestUtils, input);
-        var persistedTicket = ticketResolver.resolveAndPersistTicket(input, publication, requestUtils);
+        var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
+        var persistedTicket = ticketResolver.resolveAndPersistTicket(input, requestUtils);
         addLocationHeader(requestUtils.publicationIdentifier(), persistedTicket.getIdentifier());
         return null;
     }
@@ -99,52 +73,5 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
                    .addChild(ticketIdentifier.toString())
                    .getUri()
                    .toString();
-    }
-
-    private static URI getPublisherId(Publication publication) {
-        return Optional.ofNullable(publication.getPublisher()).map(Organization::getId).orElse(null);
-    }
-
-    private static boolean hasValidAccessRights(RequestUtils requestUtils, TicketDto ticketDto) {
-        return switch (ticketDto) {
-            case DoiRequestDto ignored -> requestUtils.hasAccessRight(MANAGE_DOI);
-            case PublishingRequestDto ignored -> requestUtils.hasAccessRight(MANAGE_PUBLISHING_REQUESTS);
-            case GeneralSupportRequestDto ignored -> requestUtils.hasAccessRight(SUPPORT);
-            case UnpublishRequestDto ignored -> requestUtils.hasAccessRight(MANAGE_PUBLISHING_REQUESTS);
-            case null, default -> false;
-        };
-    }
-
-    private Publication fetchPublication(RequestUtils requestUtils, TicketDto ticketDto)
-        throws ApiGatewayException {
-        var publicationIdentifier = requestUtils.publicationIdentifier();
-        return attempt(() -> resourceService.getPublication(requestUtils.toUserInstance(), publicationIdentifier))
-                   .or(() -> fetchPublicationForPrivilegedUser(publicationIdentifier, requestUtils, ticketDto))
-                   .orElseThrow(fail -> loggingFailureReporter(fail.getException()));
-    }
-
-    private boolean userIsAuthorized(RequestUtils requestUtils, Publication publication, TicketDto ticketDto) {
-        return hasValidAccessRights(requestUtils, ticketDto) && matchingCustomer(requestUtils, publication);
-    }
-
-    private boolean matchingCustomer(RequestUtils requestUtils, Publication publication) {
-        return Optional.ofNullable(requestUtils.customerId())
-                   .map(customer -> customer.equals(getPublisherId(publication)))
-                   .orElse(false);
-    }
-
-    private Publication fetchPublicationForPrivilegedUser(SortableIdentifier publicationIdentifier,
-                                                          RequestUtils requestUtils,
-                                                          TicketDto ticketDto) throws ApiGatewayException {
-        var publication = resourceService.getPublicationByIdentifier(publicationIdentifier);
-        if (!userIsAuthorized(requestUtils, publication, ticketDto)) {
-            throw new ForbiddenException();
-        }
-        return publication;
-    }
-
-    private ApiGatewayException loggingFailureReporter(Exception exception) {
-        logger.error("Request failed: {}", Arrays.toString(exception.getStackTrace()));
-        return new ForbiddenException();
     }
 }

@@ -23,8 +23,8 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
     //region Non-degree publications
     @ParameterizedTest(name = "Should allow Curator {0} operation on non-degree resources belonging to the "
                               + "institution based on publication owner")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE,
-        names = {"DELETE", "TERMINATE", "UPDATE_FILES", "REPUBLISH"})
+    @EnumSource(value = PublicationOperation.class, mode = Mode.INCLUDE,
+        names = {"UPDATE", "UNPUBLISH", "TICKET_PUBLISH"})
     void shouldAllowCuratorOnNonDegreeBasedOnOwner(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
@@ -42,14 +42,14 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, userInstance)
+                                  .create(publication, userInstance, super.resourceService)
                                   .allowsAction(operation));
     }
 
     @ParameterizedTest(name = "Should allow Curator {0} operation on non-degree resources belonging to the "
                               + "institution based on contributors")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE,
-        names = {"DELETE", "TERMINATE", "UPDATE_FILES", "REPUBLISH"})
+    @EnumSource(value = PublicationOperation.class, mode = Mode.INCLUDE,
+        names = {"UPDATE", "UNPUBLISH", "TICKET_PUBLISH"})
     void shouldAllowCuratorOnNonDegreeBasedOnContributors(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
@@ -69,7 +69,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, userInstance)
+                                  .create(publication, userInstance, resourceService)
                                   .allowsAction(operation));
     }
 
@@ -90,7 +90,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .create(publication, userInstance)
+                                   .create(publication, userInstance, resourceService)
                                    .allowsAction(operation));
     }
 
@@ -105,7 +105,8 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var publication = createNonDegreePublication(username, institution, cristinId);
         var permissionStrategy = PublicationPermissionStrategy.create(publication,
                                                                       RequestUtil.createUserInstanceFromRequest(
-                                                                          requestInfo, identityServiceClient));
+                                                                          requestInfo, identityServiceClient),
+                                                                      resourceService);
         assertThat(permissionStrategy.isCuratorOnPublication(), is(equalTo(true)));
     }
     //endregion
@@ -127,14 +128,14 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .create(publication, userInstance)
+                                   .create(publication, userInstance, resourceService)
                                    .allowsAction(operation));
     }
 
     @ParameterizedTest(name = "Should allow Curator {0} operation on degree resources belonging to the institution "
                               + "with MANAGE_DEGREE access rights")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE,
-        names = {"DELETE", "TERMINATE", "UPDATE_FILES", "REPUBLISH"})
+    @EnumSource(value = PublicationOperation.class, mode = Mode.INCLUDE,
+        names = {"UPDATE", "UNPUBLISH", "TICKET_PUBLISH"})
     void shouldAllowCuratorOnDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
@@ -152,7 +153,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, userInstance)
+                                  .create(publication, userInstance, resourceService)
                                   .allowsAction(operation));
     }
 
@@ -173,14 +174,14 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .create(publication, userInstance)
+                                   .create(publication, userInstance, resourceService)
                                    .allowsAction(operation));
     }
 
     @ParameterizedTest(name = "Should allow Curator {0} operation on degree resources with matching resource owner "
                               + "affiliation")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE,
-        names = {"DELETE", "TERMINATE", "UPDATE_FILES", "REPUBLISH"})
+    @EnumSource(value = PublicationOperation.class, mode = Mode.INCLUDE,
+        names = {"UPDATE", "UNPUBLISH", "TICKET_PUBLISH"})
     void shouldAllowCuratorOnDegreeWithResourceOwnerAffiliation(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
@@ -195,7 +196,7 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, userInstance)
+                                  .create(publication, userInstance, resourceService)
                                   .allowsAction(operation));
     }
     //endregion

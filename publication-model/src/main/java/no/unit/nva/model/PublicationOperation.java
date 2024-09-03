@@ -13,7 +13,13 @@ public enum PublicationOperation {
     REPUBLISH("republish"),
     TICKET_PUBLISH("ticket/publish"),
     DELETE("delete"),
-    TERMINATE("terminate");
+    TERMINATE("terminate"),
+    DOI_REQUEST_CREATE("doi-request-create"),
+    DOI_REQUEST_APPROVE("doi-request-approve"),
+    PUBLISHING_REQUEST_CREATE("publishing-request-create"),
+    PUBLISHING_REQUEST_APPROVE("publishing-request-approve"),
+    SUPPORT_REQUEST_CREATE("support-request-create"),
+    SUPPORT_REQUEST_APPROVE("support-request-approve");
 
     public static final String ERROR_MESSAGE_TEMPLATE = "%s not a valid AllowedOperation, expected one of: %s";
     public static final String DELIMITER = ", ";

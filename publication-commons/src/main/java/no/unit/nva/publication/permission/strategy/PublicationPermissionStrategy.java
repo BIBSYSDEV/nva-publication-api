@@ -15,6 +15,7 @@ import no.unit.nva.publication.permission.strategy.grant.ResourceOwnerPermission
 import no.unit.nva.publication.permission.strategy.grant.TrustedThirdPartyStrategy;
 import no.unit.nva.publication.permission.strategy.restrict.DenyPermissionStrategy;
 import no.unit.nva.publication.permission.strategy.restrict.NonDegreePermissionStrategy;
+import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,27 +28,30 @@ public class PublicationPermissionStrategy {
     private final Set<DenyPermissionStrategy> denyStrategies;
     private final UserInstance userInstance;
     private final Publication publication;
+    private final ResourceService resourceService;
 
     public PublicationPermissionStrategy(
         Publication publication,
-        UserInstance userInstance
-    ) {
+        UserInstance userInstance,
+        ResourceService resourceService) {
+        this.resourceService = resourceService;
         this.userInstance = userInstance;
         this.publication = publication;
         this.grantStrategies = Set.of(
-            new EditorPermissionStrategy(publication, userInstance),
-            new CuratorPermissionStrategy(publication, userInstance),
-            new ContributorPermissionStrategy(publication, userInstance),
-            new ResourceOwnerPermissionStrategy(publication, userInstance),
-            new TrustedThirdPartyStrategy(publication, userInstance)
+            new EditorPermissionStrategy(publication, userInstance, resourceService),
+            new CuratorPermissionStrategy(publication, userInstance, resourceService),
+            new ContributorPermissionStrategy(publication, userInstance, resourceService),
+            new ResourceOwnerPermissionStrategy(publication, userInstance, resourceService),
+            new TrustedThirdPartyStrategy(publication, userInstance, resourceService)
         );
         this.denyStrategies = Set.of(
-            new NonDegreePermissionStrategy(publication, userInstance)
+            new NonDegreePermissionStrategy(publication, userInstance, resourceService)
         );
     }
 
-    public static PublicationPermissionStrategy create(Publication publication, UserInstance userInstance) {
-        return new PublicationPermissionStrategy(publication, userInstance);
+    public static PublicationPermissionStrategy create(Publication publication, UserInstance userInstance,
+                                                       ResourceService resourceService) {
+        return new PublicationPermissionStrategy(publication, userInstance, resourceService);
     }
 
     public boolean isCuratorOnPublication() {

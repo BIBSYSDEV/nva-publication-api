@@ -87,7 +87,7 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
         }
     }
 
-    private void injectAssigneeWhenUnassignedTicket(TicketEntry ticket, RequestUtils requestUtils) {
+    private void injectAssigneeWhenUnassignedTicket(TicketEntry ticket,RequestUtils requestUtils) {
         if (userCanBeSetAsAssignee(ticket, requestUtils)) {
             ticket.setAssignee(new Username(requestUtils.username()));
         }

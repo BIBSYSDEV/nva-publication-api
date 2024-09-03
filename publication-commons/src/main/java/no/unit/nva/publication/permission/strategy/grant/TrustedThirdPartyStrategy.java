@@ -4,11 +4,12 @@ import static nva.commons.core.attempt.Try.attempt;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.impl.ResourceService;
 
 public class TrustedThirdPartyStrategy extends GrantPermissionStrategy {
 
-    public TrustedThirdPartyStrategy(Publication publication, UserInstance userInstance) {
-        super(publication, userInstance);
+    public TrustedThirdPartyStrategy(Publication publication, UserInstance userInstance, ResourceService resourceService) {
+        super(publication, userInstance, resourceService);
     }
 
     @Override
@@ -17,6 +18,12 @@ public class TrustedThirdPartyStrategy extends GrantPermissionStrategy {
             case UPDATE, UNPUBLISH, TICKET_PUBLISH, TERMINATE -> canModify();
             case DELETE -> canModify() && isDraft();
             case UPDATE_FILES, REPUBLISH -> false;
+            case DOI_REQUEST_CREATE -> false;
+            case DOI_REQUEST_APPROVE -> false;
+            case PUBLISHING_REQUEST_CREATE -> false;
+            case PUBLISHING_REQUEST_APPROVE -> false;
+            case SUPPORT_REQUEST_CREATE -> false;
+            case SUPPORT_REQUEST_APPROVE -> false;
         };
     }
 

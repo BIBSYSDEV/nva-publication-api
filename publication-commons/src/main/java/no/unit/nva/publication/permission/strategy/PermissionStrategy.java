@@ -20,7 +20,10 @@ import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.pages.Pages;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.AccessRight;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,10 +41,12 @@ public abstract class PermissionStrategy {
 
     protected final Publication publication;
     protected final UserInstance userInstance;
+    protected final ResourceService resourceService;
 
-    protected PermissionStrategy(Publication publication, UserInstance userInstance) {
+    protected PermissionStrategy(Publication publication, UserInstance userInstance, ResourceService resourceService) {
         this.publication = publication;
         this.userInstance = userInstance;
+        this.resourceService = resourceService;
     }
 
     protected boolean hasAccessRight(AccessRight accessRight) {
@@ -80,6 +85,13 @@ public abstract class PermissionStrategy {
                                                       .filter(File.class::isInstance)
                                                       .map(File.class::cast)
                                                       .anyMatch(this::hasEmbargo);
+    }
+
+    protected boolean hasNoPendingTicket(Class<? extends TicketEntry> ticketType) {
+        var resource = Resource.fromPublication(publication);
+        return resourceService.fetchAllTicketsForResource(resource)
+                   .filter(ticketType::isInstance)
+                   .noneMatch(TicketEntry::isPending);
     }
 
     private boolean hasEmbargo(File file) {

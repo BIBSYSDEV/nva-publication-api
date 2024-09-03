@@ -3,11 +3,12 @@ package no.unit.nva.publication.permission.strategy.grant;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.impl.ResourceService;
 
 public class ResourceOwnerPermissionStrategy extends GrantPermissionStrategy {
 
-    public ResourceOwnerPermissionStrategy(Publication publication, UserInstance userInstance) {
-        super(publication, userInstance);
+    public ResourceOwnerPermissionStrategy(Publication publication, UserInstance userInstance, ResourceService resourceService) {
+        super(publication, userInstance, resourceService);
     }
 
     @Override
@@ -17,7 +18,7 @@ public class ResourceOwnerPermissionStrategy extends GrantPermissionStrategy {
         }
 
         return switch (permission) {
-            case UPDATE -> true;
+            case UPDATE, DOI_REQUEST_CREATE -> true;
             case UNPUBLISH -> isPublished() && !hasApprovedFiles();
             case DELETE -> isDraft();
             default -> false;

@@ -43,6 +43,17 @@ public record RequestUtils(List<AccessRight> accessRights,
                                 uriRetriever);
     }
 
+    public static RequestUtils fromRequestInfo(RequestInfo requestInfo)
+        throws UnauthorizedException {
+        return new RequestUtils(requestInfo.getAccessRights(),
+                                requestInfo.getCurrentCustomer(),
+                                requestInfo.getTopLevelOrgCristinId().orElse(null),
+                                requestInfo.getUserName(),
+                                requestInfo.getPersonCristinId(),
+                                requestInfo.getPathParameters(),
+                                null);
+    }
+
     public boolean hasOneOfAccessRights(AccessRight... rights) {
         return Arrays.stream(rights).anyMatch(accessRights::contains);
     }

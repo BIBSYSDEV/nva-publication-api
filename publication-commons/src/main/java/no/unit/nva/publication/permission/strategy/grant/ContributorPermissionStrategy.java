@@ -7,11 +7,13 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.impl.ResourceService;
 
 public class ContributorPermissionStrategy extends GrantPermissionStrategy {
 
-    public ContributorPermissionStrategy(Publication publication, UserInstance userInstance) {
-        super(publication, userInstance);
+    public ContributorPermissionStrategy(Publication publication, UserInstance userInstance,
+                                         ResourceService resourceService) {
+        super(publication, userInstance, resourceService);
     }
 
     @Override
@@ -19,18 +21,28 @@ public class ContributorPermissionStrategy extends GrantPermissionStrategy {
         return switch (permission) {
             case UPDATE -> userIsVerifiedContributor();
             case UNPUBLISH -> userIsVerifiedContributor() && !hasApprovedFiles();
-            default -> false;
+            case PUBLISHING_REQUEST_CREATE,
+                 SUPPORT_REQUEST_CREATE,
+                 DOI_REQUEST_CREATE -> !isDraft() && userIsVerifiedContributor();
+            case UPDATE_FILES,
+                 REPUBLISH,
+                 TICKET_PUBLISH,
+                 DOI_REQUEST_APPROVE,
+                 PUBLISHING_REQUEST_APPROVE,
+                 SUPPORT_REQUEST_APPROVE,
+                 TERMINATE,
+                 DELETE -> false;
         };
     }
 
     private boolean userIsVerifiedContributor() {
-        return nonNull(this.userInstance.getPersonCristinId())
-               && Optional.ofNullable(publication.getEntityDescription())
-                      .map(EntityDescription::getContributors)
-                      .stream().flatMap(List::stream)
-                      .filter(this::isVerifiedContributor)
-                      .anyMatch(contributor ->
-                                    contributor.getIdentity().getId().equals(this.userInstance.getPersonCristinId()));
+        return nonNull(this.userInstance.getPersonCristinId()) &&
+               Optional.ofNullable(publication.getEntityDescription())
+                   .map(EntityDescription::getContributors)
+                   .stream()
+                   .flatMap(List::stream)
+                   .filter(this::isVerifiedContributor)
+                   .anyMatch(
+                       contributor -> contributor.getIdentity().getId().equals(this.userInstance.getPersonCristinId()));
     }
-
 }

@@ -15,6 +15,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -53,6 +54,8 @@ import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.RequestUtil;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -62,7 +65,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class PublicationPermissionStrategyTest {
+class PublicationPermissionStrategyTest extends ResourcesLocalTest {
 
     public static final String AT = "@";
     public static final String AUTHORIZER = "authorizer";
@@ -75,6 +78,7 @@ class PublicationPermissionStrategyTest {
     public static final String AUTHORIZATION = "Authorization";
     public static final String BEARER_TOKEN = "Bearer token";
     IdentityServiceClient identityServiceClient;
+    public ResourceService resourceService;
     public static final ObjectMapper dtoObjectMapper = JsonUtils.dtoObjectMapper;
     private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
     private static final String EXTERNAL_CLIENT_ID = "external-client-id";
@@ -83,6 +87,8 @@ class PublicationPermissionStrategyTest {
 
     @BeforeEach
     void setUp() throws NotFoundException {
+        super.init();
+        this.resourceService = getResourceServiceBuilder().build();
         this.identityServiceClient = mock(IdentityServiceClient.class);
 
         when(this.identityServiceClient.getExternalClient(any())).thenReturn(
@@ -98,7 +104,7 @@ class PublicationPermissionStrategyTest {
 
         Assertions.assertFalse(PublicationPermissionStrategy
                                    .create(publication, RequestUtil.createUserInstanceFromRequest(
-                                       requestInfo, identityServiceClient))
+                                       requestInfo, identityServiceClient), resourceService)
                                    .allowsAction(UNPUBLISH));
     }
 
@@ -113,7 +119,8 @@ class PublicationPermissionStrategyTest {
                                                                  PublicationPermissionStrategy
                                                                      .create(publication,
                                                                              RequestUtil.createUserInstanceFromRequest(
-                                                                                 requestInfo, identityServiceClient))
+                                                                                 requestInfo, identityServiceClient),
+                                                                             resourceService)
                                                                      .allowsAction(UNPUBLISH));
     }
 
@@ -122,7 +129,7 @@ class PublicationPermissionStrategyTest {
         var publication = createDegreePhd(randomString(), randomUri());
         var requestInfo = createThirdPartyRequestInfo(getAccessRightsForCurator());
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
-        var strategy = PublicationPermissionStrategy.create(publication, userInstance);
+        var strategy = PublicationPermissionStrategy.create(publication, userInstance, resourceService);
 
         Assertions.assertThrows(UnauthorizedException.class, () -> strategy.authorize(UPDATE));
     }
@@ -140,7 +147,7 @@ class PublicationPermissionStrategyTest {
 
         assertThat(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
-                    requestInfo, identityServiceClient))
+                    requestInfo, identityServiceClient), resourceService)
                 .getAllAllowedActions(), is(empty()));
     }
 
@@ -159,8 +166,8 @@ class PublicationPermissionStrategyTest {
 
         assertThat(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
-                    requestInfo, identityServiceClient))
-                .getAllAllowedActions(), containsInAnyOrder(UPDATE, UNPUBLISH, UPDATE_FILES));
+                    requestInfo, identityServiceClient), resourceService)
+                .getAllAllowedActions(), hasItems(UPDATE, UNPUBLISH, UPDATE_FILES));
     }
 
     @Test
@@ -178,7 +185,7 @@ class PublicationPermissionStrategyTest {
 
         PublicationPermissionStrategy
             .create(publication, RequestUtil.createUserInstanceFromRequest(
-                requestInfo, identityServiceClient))
+                requestInfo, identityServiceClient), resourceService)
             .authorize(UPDATE);
         assertThat(appender.getMessages(), containsString(contributorName));
         assertThat(appender.getMessages(), containsString(publication.getIdentifier().toString()));
@@ -200,7 +207,7 @@ class PublicationPermissionStrategyTest {
 
         assertTrue(
             PublicationPermissionStrategy.create(publication, RequestUtil.createUserInstanceFromRequest(
-                    requestInfo, identityServiceClient))
+                    requestInfo, identityServiceClient), resourceService)
                 .isPublishingCuratorOnPublication());
     }
 
