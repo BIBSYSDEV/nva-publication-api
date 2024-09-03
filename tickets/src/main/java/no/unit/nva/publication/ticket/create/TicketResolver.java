@@ -20,6 +20,7 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.publication.ticket.TicketDto;
 import no.unit.nva.publication.ticket.model.identityservice.CustomerPublishingWorkflowResponse;
 import no.unit.nva.publication.utils.RequestUtils;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -46,11 +47,13 @@ public class TicketResolver {
         this.uriRetriever = uriRetriever;
     }
 
-    public TicketEntry resolveAndPersistTicket(TicketEntry ticket,
+    public TicketEntry resolveAndPersistTicket(TicketDto ticketDto,
                                                Publication publication,
-                                               URI customerId,
                                                RequestUtils requestUtils) throws ApiGatewayException {
+        var ticket = TicketEntry.requestNewTicket(publication, ticketDto.ticketType());
+        ticket.setOwnerAffiliation(requestUtils.topLevelCristinOrgId());
         if (isPublishingRequestCase(ticket)) {
+            var customerId = requestUtils.customerId();
             var publishingRequestCase = updatePublishingRequestWorkflow((PublishingRequestCase) ticket, customerId);
             return createPublishingRequest(publishingRequestCase, publication, requestUtils);
         }
@@ -63,7 +66,7 @@ public class TicketResolver {
 
     private static boolean hasNoFiles(Publication publication) {
         return publication.getAssociatedArtifacts().stream()
-                   .noneMatch(artifact -> artifact instanceof File);
+                   .noneMatch(File.class::isInstance);
     }
 
     private PublishingRequestCase createPublishingRequest(PublishingRequestCase publishingRequestCase,
