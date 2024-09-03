@@ -353,8 +353,9 @@ public class ResourceService extends ServiceWithTransactions {
         return updateResourceService.updateImportCandidate(importCandidate);
     }
 
-    public void unpublishPublication(Publication publication) throws BadRequestException {
-        if (!PUBLISHED.equals(publication.getStatus())) {
+    public void unpublishPublication(Publication publication) throws BadRequestException, NotFoundException {
+        var existingPublication = readResourceService.getPublication(publication);
+        if (!PUBLISHED.equals(existingPublication.getStatus())) {
             throw new BadRequestException(ONLY_PUBLISHED_PUBLICATIONS_CAN_BE_UNPUBLISHED_ERROR_MESSAGE);
         }
         var allTicketsForResource = fetchAllTicketsForResource(Resource.fromPublication(publication));
