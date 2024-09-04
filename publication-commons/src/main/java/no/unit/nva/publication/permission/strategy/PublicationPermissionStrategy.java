@@ -28,13 +28,11 @@ public class PublicationPermissionStrategy {
     private final Set<DenyPermissionStrategy> denyStrategies;
     private final UserInstance userInstance;
     private final Publication publication;
-    private final ResourceService resourceService;
 
     public PublicationPermissionStrategy(
         Publication publication,
         UserInstance userInstance,
         ResourceService resourceService) {
-        this.resourceService = resourceService;
         this.userInstance = userInstance;
         this.publication = publication;
         this.grantStrategies = Set.of(
