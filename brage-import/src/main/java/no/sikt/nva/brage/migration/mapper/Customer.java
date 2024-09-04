@@ -19,6 +19,7 @@ import nva.commons.core.paths.UriWrapper;
 public record Customer(String name,
                        String cristinIdentifier,
                        String username,
+                       String shortName,
                        Map<Environment, String> identifiers) {
 
     public static final String CUSTOMERS_JSON_STRING = IoUtils.stringFromResources(Path.of("customers.json"));
@@ -26,7 +27,7 @@ public record Customer(String name,
     public static final String CRISTIN = "cristin";
     public static final String ORGANIZATION = "organization";
 
-    public static Customer fromShortName(String customerShortName) {
+    public static Customer fromBrageArchiveName(String customerShortName) {
         var customers = readCustomers();
         return Arrays.stream(customers)
                    .filter(entry -> entry.name().equals(customerShortName))

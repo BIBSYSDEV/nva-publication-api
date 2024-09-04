@@ -48,6 +48,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.AssertionsKt.assertDoesNotThrow;
@@ -275,6 +276,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     public static final int ALMOST_HUNDRED_YEARS = 36487;
     public static final ResourceOwner RESOURCE_OWNER = new ResourceOwner("someOwner", randomUri());
     private static final String NTNU_CUSTOMER_NAME = "ntnu";
+    public static final String NTNU_SHORT_NAME = "NTNU";
     private final String persistedStorageBucket = new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME");
     private BrageEntryEventConsumer handler;
     private S3Driver s3Driver;
@@ -310,6 +312,16 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
         assertThatPublicationsMatch(actualPublication.publication(), brageGenerator.getNvaPublication());
+    }
+
+    @Test
+    void shouldSetInstitutionShortNameForImportDetailWhenImportingPublicationFromBrage() throws IOException {
+        var brageGenerator = buildGeneratorForRecord();
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        var publicationRepresentation = handler.handleRequest(s3Event, CONTEXT);
+
+        assertEquals(NTNU_SHORT_NAME,
+                     publicationRepresentation.publication().getImportDetails().getFirst().importSource().getArchive());
     }
 
     @Test
@@ -1965,8 +1977,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
         assertNotNull(importDetail);
         assertNotNull(importDetail.importDate());
-        assertThat(importDetail.importSource().getArchive(),
-                   is(equalTo(brageGenerator.getBrageRecord().getCustomer().getName())));
+        assertThat(importDetail.importSource().getArchive(), is(equalTo("NTNU")));
     }
 
     @Test
@@ -2028,7 +2039,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         handler.handleRequest(s3Event, CONTEXT);
         var updatedPublication = resourceService.getPublication(existingPublication);
         var expectedCristinIdentifierFromBrage =
-            new CristinIdentifier(SourceName.fromBrage(generator.getBrageRecord().getCustomer().getName()), brageCristinIdentifier);
+            new CristinIdentifier(SourceName.fromBrage(generator.getBrageRecord().getCustomer().getName()),
+                                  brageCristinIdentifier);
         assertThat(updatedPublication.getAdditionalIdentifiers(),
                    not(hasItem(expectedCristinIdentifierFromBrage)));
     }
@@ -2407,8 +2419,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         actualPublication.getAssociatedArtifacts().stream().filter(File.class::isInstance)
             .forEach(associatedArtifact -> {
                 var file = (File) associatedArtifact;
-                assertThat(((ImportUploadDetails) file.getUploadDetails()).archive(),
-                           is(equalTo(expectedPublication.getResourceOwner().getOwner().getValue().split("@")[0])));
+                assertThat(((ImportUploadDetails) file.getUploadDetails()).archive(), is(equalTo("NTNU")));
             });
     }
 

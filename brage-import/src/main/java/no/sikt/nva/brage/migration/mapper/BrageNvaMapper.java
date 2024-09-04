@@ -87,7 +87,7 @@ public final class BrageNvaMapper {
 
     public static Publication toNvaPublication(Record brageRecord, String host)
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        var customer = Customer.fromShortName(brageRecord.getCustomer().getName());
+        var customer = Customer.fromBrageArchiveName(brageRecord.getCustomer().getName());
         validateBrageRecord(brageRecord);
         var publication = new Publication.Builder()
                               .withEntityDescription(extractEntityDescription(brageRecord))
@@ -242,7 +242,7 @@ public final class BrageNvaMapper {
     }
 
     private static ImportUploadDetails createUploadDetails(Customer customer) {
-        return new ImportUploadDetails(Source.BRAGE, customer.name(), Instant.now());
+        return new ImportUploadDetails(Source.BRAGE, customer.shortName(), Instant.now());
     }
 
     private static File createPublishedFile(ContentFile file, Record brageRecord, Instant embargoDate,

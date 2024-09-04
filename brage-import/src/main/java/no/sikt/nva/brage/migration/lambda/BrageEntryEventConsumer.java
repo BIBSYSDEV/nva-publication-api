@@ -13,6 +13,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.mapper.BrageNvaMapper;
+import no.sikt.nva.brage.migration.mapper.Customer;
 import no.sikt.nva.brage.migration.merger.AssociatedArtifactMover;
 import no.sikt.nva.brage.migration.merger.BrageMergingReport;
 import no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger;
@@ -271,8 +272,7 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private BrageMergingReport persistInDatabaseAndCreateMergeReport(Publication publicationForUpdate,
                                                                      Publication existinPublication,
                                                                      PublicationRepresentation representation) {
-        var customerName = representation.brageRecord().getCustomer();
-        var importSource = ImportSource.fromBrageArchive(customerName.getName());
+        var importSource = createImportSource(representation);
         var newImage = resourceService.updatePublicationByImportEntry(publicationForUpdate, importSource);
         return new BrageMergingReport(existinPublication, newImage);
     }
@@ -371,11 +371,18 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private PublicationRepresentation createPublication(PublicationRepresentation publicationRepresentation) {
         var updatedPublication =
             resourceService.createPublicationFromImportedEntry(publicationRepresentation.publication(),
-                                                               ImportSource.fromBrageArchive(
-                                                                   publicationRepresentation
-                                                                       .brageRecord()
-                                                                       .getCustomer().getName()));
+                                                               createImportSource(publicationRepresentation));
         return new PublicationRepresentation(publicationRepresentation.brageRecord(), updatedPublication);
+    }
+
+    private ImportSource createImportSource(PublicationRepresentation publicationRepresentation) {
+        return Optional.ofNullable(publicationRepresentation.brageRecord())
+                   .map(Record::getCustomer)
+                   .map(no.sikt.nva.brage.migration.record.Customer::getName)
+                   .map(Customer::fromBrageArchiveName)
+                   .map(Customer::shortName)
+                   .map(ImportSource::fromBrageArchive)
+                   .orElse(null);
     }
 
     private PublicationRepresentation pushAssociatedFilesToPersistedStorage(
