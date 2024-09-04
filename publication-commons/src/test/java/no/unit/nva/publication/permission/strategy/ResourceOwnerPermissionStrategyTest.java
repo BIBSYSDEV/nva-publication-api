@@ -28,8 +28,8 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
 
     //region Non-degree publications
     @ParameterizedTest(name = "Should allow ResourceOwner {0} operation on own published non-degree resource")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE,
-        names = {"DELETE", "TERMINATE", "TICKET_PUBLISH", "UPDATE_FILES", "REPUBLISH"})
+    @EnumSource(value = PublicationOperation.class, mode = Mode.INCLUDE, names = {"UPDATE", "UNPUBLISH",
+        "DOI_REQUEST_CREATE", "PUBLISHING_REQUEST_CREATE", "SUPPORT_REQUEST_CREATE"})
     void shouldAllowResourceOwnerOnNonDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
@@ -48,7 +48,8 @@ class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyT
     }
 
     @ParameterizedTest(name = "Should deny ResourceOwner {0} operation on own published non-degree resource")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"UPDATE", "UNPUBLISH"})
+    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"UPDATE", "UNPUBLISH", "DOI_REQUEST_CREATE",
+        "PUBLISHING_REQUEST_CREATE", "SUPPORT_REQUEST_CREATE"})
     void shouldDenyResourceOwnerOnNonDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 

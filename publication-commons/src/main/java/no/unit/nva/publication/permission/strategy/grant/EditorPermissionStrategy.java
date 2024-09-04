@@ -23,8 +23,14 @@ public class EditorPermissionStrategy extends GrantPermissionStrategy {
             case UNPUBLISH -> isPublished();
             case TERMINATE -> isUnpublished();
             case REPUBLISH -> userSharesTopLevelOrgWithAtLeastOneContributor() && isUnpublished();
-            case DELETE, UPDATE_FILES, DOI_REQUEST_CREATE, PUBLISHING_REQUEST_CREATE, SUPPORT_REQUEST_CREATE,
-                 DOI_REQUEST_APPROVE, PUBLISHING_REQUEST_APPROVE, SUPPORT_REQUEST_APPROVE -> false;
+            case DOI_REQUEST_CREATE,
+                 PUBLISHING_REQUEST_CREATE,
+                 SUPPORT_REQUEST_CREATE -> userSharesTopLevelOrgWithAtLeastOneContributor();
+            case DELETE,
+                 UPDATE_FILES,
+                 DOI_REQUEST_APPROVE,
+                 PUBLISHING_REQUEST_APPROVE,
+                 SUPPORT_REQUEST_APPROVE -> false;
         };
     }
 

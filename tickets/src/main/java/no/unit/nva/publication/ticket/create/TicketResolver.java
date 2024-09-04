@@ -7,16 +7,11 @@ import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRA
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_AUTH_URL;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_SECRET_NAME;
-import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
-import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
-import static nva.commons.apigateway.AccessRight.SUPPORT;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
@@ -34,7 +29,6 @@ import no.unit.nva.publication.ticket.DoiRequestDto;
 import no.unit.nva.publication.ticket.GeneralSupportRequestDto;
 import no.unit.nva.publication.ticket.PublishingRequestDto;
 import no.unit.nva.publication.ticket.TicketDto;
-import no.unit.nva.publication.ticket.UnpublishRequestDto;
 import no.unit.nva.publication.ticket.model.identityservice.CustomerPublishingWorkflowResponse;
 import no.unit.nva.publication.utils.RequestUtils;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -82,28 +76,15 @@ public class TicketResolver {
         return persistTicket(ticket);
     }
 
-    private static boolean userDoesNotHavePermissionToCreateTicket(PublicationPermissionStrategy permissionStrategy,
-                                                                   TicketDto ticketDto) {
+    private static boolean userHasPermissionToCreateTicket(PublicationPermissionStrategy permissionStrategy,
+                                                           TicketDto ticketDto) {
+        var allowedActions = permissionStrategy.getAllAllowedActions();
         return switch (ticketDto) {
-            case DoiRequestDto ignored -> permissionStrategy.allowsAction(DOI_REQUEST_CREATE);
-            case PublishingRequestDto ignored -> permissionStrategy.allowsAction(PUBLISHING_REQUEST_CREATE);
-            case GeneralSupportRequestDto ignored -> permissionStrategy.allowsAction(SUPPORT_REQUEST_CREATE);
+            case DoiRequestDto ignored -> allowedActions.contains(DOI_REQUEST_CREATE);
+            case PublishingRequestDto ignored -> allowedActions.contains(PUBLISHING_REQUEST_CREATE);
+            case GeneralSupportRequestDto ignored -> allowedActions.contains(SUPPORT_REQUEST_CREATE);
             case null, default -> false;
         };
-    }
-
-    private static boolean hasValidAccessRights(RequestUtils requestUtils, TicketDto ticketDto) {
-        return switch (ticketDto) {
-            case DoiRequestDto ignored -> requestUtils.hasAccessRight(MANAGE_DOI);
-            case PublishingRequestDto ignored -> requestUtils.hasAccessRight(MANAGE_PUBLISHING_REQUESTS);
-            case GeneralSupportRequestDto ignored -> requestUtils.hasAccessRight(SUPPORT);
-            case UnpublishRequestDto ignored -> requestUtils.hasAccessRight(MANAGE_PUBLISHING_REQUESTS);
-            case null, default -> false;
-        };
-    }
-
-    private static URI getPublisherId(Publication publication) {
-        return Optional.ofNullable(publication.getPublisher()).map(Organization::getId).orElse(null);
     }
 
     private static boolean isNotAdministrativeAgreement(AssociatedArtifact artifact) {
@@ -116,7 +97,7 @@ public class TicketResolver {
 
     private void validateUserPermissions(PublicationPermissionStrategy permissionStrategy, TicketDto ticketDto)
         throws ForbiddenException {
-        if (userDoesNotHavePermissionToCreateTicket(permissionStrategy, ticketDto)) {
+        if (!userHasPermissionToCreateTicket(permissionStrategy, ticketDto)) {
             throw new ForbiddenException();
         }
     }
@@ -124,27 +105,6 @@ public class TicketResolver {
     private Publication fetchPublication(RequestUtils requestUtils) throws ApiGatewayException {
         return attempt(requestUtils::publicationIdentifier).map(resourceService::getPublicationByIdentifier)
                    .orElseThrow(fail -> loggingFailureReporter(fail.getException()));
-    }
-
-    private boolean userIsAuthorized(RequestUtils requestUtils, Publication publication, TicketDto ticketDto) {
-        return hasValidAccessRightAtCustomer(requestUtils, publication, ticketDto) ||
-               userTopLevelOrganizationIsCurationInstitution(requestUtils, publication);
-    }
-
-    private boolean hasValidAccessRightAtCustomer(RequestUtils requestUtils, Publication publication,
-                                                  TicketDto ticketDto) {
-        return hasValidAccessRights(requestUtils, ticketDto) && matchingCustomer(requestUtils, publication);
-    }
-
-    private boolean userTopLevelOrganizationIsCurationInstitution(RequestUtils requestUtils, Publication publication) {
-        var userTopLevelCristinOrganizationId = requestUtils.topLevelCristinOrgId();
-        return publication.getCuratingInstitutions().stream().anyMatch(userTopLevelCristinOrganizationId::equals);
-    }
-
-    private boolean matchingCustomer(RequestUtils requestUtils, Publication publication) {
-        return Optional.ofNullable(requestUtils.customerId())
-                   .map(customer -> customer.equals(getPublisherId(publication)))
-                   .orElse(false);
     }
 
     private ApiGatewayException loggingFailureReporter(Exception exception) {
@@ -218,8 +178,8 @@ public class TicketResolver {
         throws BadGatewayException {
         var response = uriRetriever.getRawContent(customerId, CONTENT_TYPE)
                            .orElseThrow(this::createBadGatewayException);
-        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response,
-                                                                 CustomerPublishingWorkflowResponse.class)).orElseThrow();
+        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response, CustomerPublishingWorkflowResponse.class))
+                   .orElseThrow();
     }
 
     private boolean isPublishingRequestCase(TicketEntry ticket) {

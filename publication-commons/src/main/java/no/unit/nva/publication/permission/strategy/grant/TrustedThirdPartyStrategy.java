@@ -8,7 +8,9 @@ import no.unit.nva.publication.service.impl.ResourceService;
 
 public class TrustedThirdPartyStrategy extends GrantPermissionStrategy {
 
-    public TrustedThirdPartyStrategy(Publication publication, UserInstance userInstance, ResourceService resourceService) {
+    public TrustedThirdPartyStrategy(Publication publication,
+                                     UserInstance userInstance,
+                                     ResourceService resourceService) {
         super(publication, userInstance, resourceService);
     }
 
@@ -17,13 +19,14 @@ public class TrustedThirdPartyStrategy extends GrantPermissionStrategy {
         return switch (permission) {
             case UPDATE, UNPUBLISH, TICKET_PUBLISH, TERMINATE -> canModify();
             case DELETE -> canModify() && isDraft();
-            case UPDATE_FILES, REPUBLISH -> false;
-            case DOI_REQUEST_CREATE -> false;
-            case DOI_REQUEST_APPROVE -> false;
-            case PUBLISHING_REQUEST_CREATE -> false;
-            case PUBLISHING_REQUEST_APPROVE -> false;
-            case SUPPORT_REQUEST_CREATE -> false;
-            case SUPPORT_REQUEST_APPROVE -> false;
+            case UPDATE_FILES,
+                 REPUBLISH,
+                 DOI_REQUEST_CREATE,
+                 DOI_REQUEST_APPROVE,
+                 PUBLISHING_REQUEST_CREATE,
+                 PUBLISHING_REQUEST_APPROVE,
+                 SUPPORT_REQUEST_CREATE,
+                 SUPPORT_REQUEST_APPROVE -> false;
         };
     }
 

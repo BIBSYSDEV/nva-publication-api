@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -25,23 +24,12 @@ public record RequestUtils(List<AccessRight> accessRights,
                            URI topLevelCristinOrgId,
                            String username,
                            URI personCristinId,
-                           Map<String, String> pathParameters,
-                           UriRetriever uriRetriever) {
+                           Map<String, String> pathParameters) {
 
     public static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
     public static final String TICKET_IDENTIFIER = "ticketIdentifier";
     public static final String MISSING_PATH_PARAM_MESSAGE = "Missing from pathParameters: %s";
 
-    public static RequestUtils fromRequestInfo(RequestInfo requestInfo, UriRetriever uriRetriever)
-        throws UnauthorizedException {
-        return new RequestUtils(requestInfo.getAccessRights(),
-                                requestInfo.getCurrentCustomer(),
-                                requestInfo.getTopLevelOrgCristinId().orElse(null),
-                                requestInfo.getUserName(),
-                                requestInfo.getPersonCristinId(),
-                                requestInfo.getPathParameters(),
-                                uriRetriever);
-    }
 
     public static RequestUtils fromRequestInfo(RequestInfo requestInfo)
         throws UnauthorizedException {
@@ -50,8 +38,7 @@ public record RequestUtils(List<AccessRight> accessRights,
                                 requestInfo.getTopLevelOrgCristinId().orElse(null),
                                 requestInfo.getUserName(),
                                 requestInfo.getPersonCristinId(),
-                                requestInfo.getPathParameters(),
-                                null);
+                                requestInfo.getPathParameters());
     }
 
     public boolean hasOneOfAccessRights(AccessRight... rights) {

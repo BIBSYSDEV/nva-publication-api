@@ -310,8 +310,9 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     }
 
     private static String enrichJson(RawContentRetriever uriRetriever, ObjectNode documentWithId) {
-        return attempt(() -> new IndexDocumentWrapperLinkedData(uriRetriever)).map(documentWithLinkedData -> documentWithLinkedData.toFramedJsonLd(
-            documentWithId)).orElseThrow();
+        return attempt(() -> new IndexDocumentWrapperLinkedData(uriRetriever))
+                   .map(documentWithLinkedData -> documentWithLinkedData.toFramedJsonLd(documentWithId))
+                   .orElseThrow();
     }
 
     private static ObjectNode transformToJsonLd(Publication publication) throws JsonProcessingException {

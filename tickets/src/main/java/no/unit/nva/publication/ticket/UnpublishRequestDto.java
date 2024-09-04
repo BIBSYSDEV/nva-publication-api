@@ -63,22 +63,6 @@ public class UnpublishRequestDto extends TicketDto {
         this.id = id;
     }
 
-    public static TicketDto empty() {
-        return new UnpublishRequestDto(null,
-                                       null,
-                                       null,
-                                       null,
-                                       null,
-                                       null,
-                                       null,
-                                       null,
-                                       null,
-                                       null,
-                                       null,
-                                       null,
-                                       null);
-    }
-
     public Instant getCreatedDate() {
         return createdDate;
     }
@@ -91,6 +75,7 @@ public class UnpublishRequestDto extends TicketDto {
         return identifier;
     }
 
+    @JacocoGenerated
     @Override
     public Class<? extends TicketEntry> ticketType() {
         return UnpublishRequest.class;

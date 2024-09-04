@@ -7,7 +7,8 @@ import no.unit.nva.publication.service.impl.ResourceService;
 
 public class ResourceOwnerPermissionStrategy extends GrantPermissionStrategy {
 
-    public ResourceOwnerPermissionStrategy(Publication publication, UserInstance userInstance, ResourceService resourceService) {
+    public ResourceOwnerPermissionStrategy(Publication publication, UserInstance userInstance,
+                                           ResourceService resourceService) {
         super(publication, userInstance, resourceService);
     }
 
@@ -18,7 +19,7 @@ public class ResourceOwnerPermissionStrategy extends GrantPermissionStrategy {
         }
 
         return switch (permission) {
-            case UPDATE, DOI_REQUEST_CREATE -> true;
+            case UPDATE, DOI_REQUEST_CREATE, PUBLISHING_REQUEST_CREATE, SUPPORT_REQUEST_CREATE -> true;
             case UNPUBLISH -> isPublished() && !hasApprovedFiles();
             case DELETE -> isDraft();
             default -> false;

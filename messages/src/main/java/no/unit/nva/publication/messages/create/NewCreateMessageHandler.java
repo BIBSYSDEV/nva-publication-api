@@ -55,7 +55,7 @@ public class NewCreateMessageHandler extends ApiGatewayHandler<CreateMessageRequ
     @Override
     protected Void processInput(CreateMessageRequest input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-        var requestUtils = RequestUtils.fromRequestInfo(requestInfo, uriRetriever);
+        var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
         var ticket = fetchTicketForUser(requestUtils, requestUtils.ticketIdentifier());
         isAuthorizedToManageTicket(requestUtils, ticket);
         updateStatusToPendingWhenCompletedGeneralSupportRequest(ticket);

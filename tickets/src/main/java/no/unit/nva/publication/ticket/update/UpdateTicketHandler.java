@@ -95,7 +95,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         throws ApiGatewayException {
         var ticketIdentifier = extractTicketIdentifierFromPath(requestInfo);
         var ticket = fetchTicketForElevatedUser(ticketIdentifier, UserInstance.fromRequestInfo(requestInfo));
-        var requestUtils = RequestUtils.fromRequestInfo(requestInfo, uriRetriever);
+        var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
         if (hasEffectiveChanges(ticket, input)) {
             updateTicket(input, requestUtils, ticket);
         }

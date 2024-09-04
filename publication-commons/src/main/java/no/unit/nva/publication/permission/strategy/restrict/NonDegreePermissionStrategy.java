@@ -9,7 +9,9 @@ import no.unit.nva.publication.service.impl.ResourceService;
 
 public class NonDegreePermissionStrategy extends DenyPermissionStrategy {
 
-    public NonDegreePermissionStrategy(Publication publication, UserInstance userInstance, ResourceService resourceService) {
+    public NonDegreePermissionStrategy(Publication publication,
+                                       UserInstance userInstance,
+                                       ResourceService resourceService) {
         super(publication, userInstance, resourceService);
     }
 
