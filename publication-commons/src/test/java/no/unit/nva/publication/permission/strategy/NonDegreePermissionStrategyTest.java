@@ -115,6 +115,33 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
                                   .allowsAction(operation));
     }
 
+    @ParameterizedTest(
+        name = "Should allow Thesis curator {0} operation on instance type {1} belonging to the institution"
+    )
+    @MethodSource("argumentsForAllowingThesisCuratorPerformingOperationsOnProtectedDegreeResources")
+    void shouldAllowThesisCuratorFromCuratingInstitutionOnDegree(PublicationOperation operation,
+                                                        Class<?> degreeInstanceTypeClass)
+        throws JsonProcessingException, UnauthorizedException {
+
+        var institution = randomUri();
+        var resourceOwner = randomString();
+        var curatorUsername = randomString();
+        var cristinId = randomUri();
+
+        var publication = createPublication(degreeInstanceTypeClass, resourceOwner, institution, randomUri()).copy()
+                              .withStatus(PublicationOperation.UNPUBLISH == operation ? PUBLISHED : UNPUBLISHED)
+                              .build();
+        var curatingInstitution = randomUri();
+        publication.setCuratingInstitutions(Set.of(curatingInstitution));
+        var requestInfo = createUserRequestInfo(curatorUsername, institution, getAccessRightsForThesisCurator(),
+                                                cristinId, curatingInstitution);
+        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+
+        Assertions.assertTrue(PublicationPermissionStrategy
+                                  .create(publication, userInstance, resourceService)
+                                  .allowsAction(operation));
+    }
+
     @Test
     void shouldDenyNonEmbargoThesisCuratorOnDegreeWithEmbargo()
         throws JsonProcessingException, UnauthorizedException {

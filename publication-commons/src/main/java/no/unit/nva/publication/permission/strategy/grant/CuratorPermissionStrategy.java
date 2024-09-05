@@ -50,7 +50,7 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
     }
 
     private boolean userRelatesToPublication() {
-        return userIsFromSameInstitutionAsPublication() || userSharesTopLevelOrgWithAtLeastOneContributor();
+        return userIsFromSameInstitutionAsPublication() || userBelongsToCuratingInstitution();
     }
 
     private boolean canManagePublishingRequests() {

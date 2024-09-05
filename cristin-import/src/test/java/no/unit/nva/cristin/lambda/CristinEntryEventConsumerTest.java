@@ -149,6 +149,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     public static final int JOURNAL_NSD_CODE = 339717;
     public static final String ERROR_REPORT = "ERROR_REPORT";
     public static final String ASSOCIATED_URI_TYPE = "FULLTEKST";
+    public static final int NOT_EXISTING_NSD_CODE = 0;
 
     private CristinEntryEventConsumer handler;
     private ResourceService resourceService;
@@ -956,7 +957,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var cristinObject = CristinDataGenerator.randomObject(category.getValue());
         cristinObject.setSecondaryCategory(category);
         cristinObject.getBookOrReportMetadata().getCristinPublisher().setPublisherName(randomString());
-        cristinObject.getBookOrReportMetadata().getBookSeries().setNsdCode(randomInteger());
+        cristinObject.getBookOrReportMetadata().getBookSeries().setNsdCode(NOT_EXISTING_NSD_CODE);
         var eventBody = createEventBody(cristinObject);
         var sqsEvent = createSqsEvent(eventBody);
         handler.handleRequest(sqsEvent, CONTEXT);

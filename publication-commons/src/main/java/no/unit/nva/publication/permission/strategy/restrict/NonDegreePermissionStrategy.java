@@ -28,12 +28,16 @@ public class NonDegreePermissionStrategy extends DenyPermissionStrategy {
             if (isProtectedDegreeInstanceTypeWithEmbargo() && !hasAccessRight(MANAGE_DEGREE_EMBARGO)) {
                 return true; // deny
             }
-            if (!userIsFromSameInstitutionAsPublication()) {
+            if (userDoesNotBelongsToPublication()) {
                 return true; // deny
             }
         }
 
         return false; // allow
+    }
+
+    private boolean userDoesNotBelongsToPublication() {
+        return !(userBelongsToCuratingInstitution() || userIsFromSameInstitutionAsPublication());
     }
 
     private boolean isUsersDraft() {
