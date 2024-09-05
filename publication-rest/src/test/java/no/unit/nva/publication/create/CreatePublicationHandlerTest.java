@@ -420,7 +420,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnBadRequestIfProvidingOneOrMoreFilesWhenNotAllowedInCustomerConfiguration() throws IOException {
+    void shouldReturnBadRequestIfProvidingOneOrMoreNewFilesWhenNotAllowedInCustomerConfiguration() throws IOException {
         final var event = prepareRequestWithFileForTypeWhereNotAllowed();
         WireMock.reset();
 
