@@ -1,13 +1,12 @@
 package no.unit.nva.model.associatedartifacts.file;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.time.Instant;
 
-//TODO: After migration remove JsonDeserialize annotation and uncomment commented annotations
-//@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-//@JsonSubTypes({@JsonSubTypes.Type(name = "UserUploadDetails", value = UserUploadDetails.class),
-//    @JsonSubTypes.Type(name = "ImportUploadDetails", value = ImportUploadDetails.class)})
-@JsonDeserialize(using = UploadDetailsDeserializer.class)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonSubTypes({@JsonSubTypes.Type(name = "UserUploadDetails", value = UserUploadDetails.class),
+    @JsonSubTypes.Type(name = "ImportUploadDetails", value = ImportUploadDetails.class)})
 public interface UploadDetails {
 
     Instant uploadedDate();
