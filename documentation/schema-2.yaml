@@ -1,0 +1,40 @@
+ComfirmedFunds:
+  required:
+  - type
+  type: object
+  allOf:
+  - $ref: '#/components/schemas/Funds'
+  - type: object
+    properties:
+      comfirmedField:
+        type: string
+      type:
+        type: string
+Funds:
+  required:
+  - type
+  type: object
+  properties:
+    sharedField:
+      type: string
+    type:
+      type: string
+Pub:
+  type: object
+  properties:
+    funds:
+      type: array
+      items:
+        $ref: '#/components/schemas/Funds'
+UncomfirmedFunds:
+  required:
+  - type
+  type: object
+  allOf:
+  - $ref: '#/components/schemas/Funds'
+  - type: object
+    properties:
+      unomfirmedField:
+        type: string
+      type:
+        type: string
