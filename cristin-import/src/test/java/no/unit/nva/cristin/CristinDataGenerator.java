@@ -330,6 +330,7 @@ public final class CristinDataGenerator {
     public static JsonNode journalObjectWithInvalidIssn() throws JsonProcessingException {
         CristinObject cristinObject = randomJournalArticle(JOURNAL_ARTICLE);
         cristinObject.getJournalPublication().getJournal().setIssn("123-123-123-132-123");
+        cristinObject.getJournalPublication().getJournal().setIssnOnline("123-123-123-132-123");
         cristinObject.getJournalPublication().getJournal().setNsdCode(null);
         return cristinObjectAsObjectNode(cristinObject);
     }
