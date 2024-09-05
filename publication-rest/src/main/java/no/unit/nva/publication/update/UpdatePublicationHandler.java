@@ -109,7 +109,7 @@ public class UpdatePublicationHandler
     private final S3Driver s3Driver;
     private final SecretsReader secretsReader;
     private final HttpClient httpClient;
-    private final PublicationValidator publicationValidator;
+    private final DefaultPublicationValidator publicationValidator;
     private final String apiHost;
 
     /**
@@ -325,7 +325,7 @@ public class UpdatePublicationHandler
 
         var customerApiClient = getCustomerApiClient();
         var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, publicationUpdate.getPublisher().getId());
-        validatePublication(publicationUpdate, customer);
+        validatePublication(publicationUpdate, existingPublication, customer);
         updateAssociatedArtifactList(existingPublication.getAssociatedArtifacts(),
                                      publicationUpdate.getAssociatedArtifacts(),
                                      extractUploadDetails(userInstance));
@@ -460,9 +460,9 @@ public class UpdatePublicationHandler
         }
     }
 
-    private void validatePublication(Publication publicationUpdate, Customer customer) throws BadRequestException {
+    private void validatePublication(Publication publicationUpdate, Publication existingPublication, Customer customer) throws BadRequestException {
         try {
-            publicationValidator.validate(publicationUpdate, customer);
+            publicationValidator.validateUpdate(publicationUpdate, existingPublication, customer);
         } catch (PublicationValidationException e) {
             throw new BadRequestException(e.getMessage());
         }

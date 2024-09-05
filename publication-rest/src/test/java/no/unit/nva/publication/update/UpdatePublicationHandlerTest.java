@@ -1072,7 +1072,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldRejectUpdateIfSettingInstanceTypeNotAllowingFilesOnPublicationContainingFile()
+    void shouldReturnSuccessWhenUpdatingMetadataOnlyWhenPublishingFilesIsNotAllowedInCustomerConfiguration()
         throws BadRequestException, IOException {
 
         WireMock.reset();
@@ -1085,11 +1085,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var event = userUpdatesPublicationAndHasRightToUpdate(publicationUpdate);
         updatePublicationHandler.handleRequest(event, output, context);
 
-        var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
-
-        var problem = gatewayResponse.getBodyObject(Problem.class);
-        assertThat(problem.getDetail(), is(startsWith("Files not allowed for instance type ")));
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, Publication.class);
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
     }
 
     @Test
