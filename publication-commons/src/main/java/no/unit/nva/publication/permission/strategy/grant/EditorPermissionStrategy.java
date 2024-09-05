@@ -4,11 +4,12 @@ import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_ALL;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.impl.ResourceService;
 
 public class EditorPermissionStrategy extends GrantPermissionStrategy {
 
-    public EditorPermissionStrategy(Publication publication, UserInstance userInstance) {
-        super(publication, userInstance);
+    public EditorPermissionStrategy(Publication publication, UserInstance userInstance, ResourceService resourceService) {
+        super(publication, userInstance, resourceService);
     }
 
     @Override
@@ -22,7 +23,14 @@ public class EditorPermissionStrategy extends GrantPermissionStrategy {
             case UNPUBLISH -> isPublished();
             case TERMINATE -> isUnpublished();
             case REPUBLISH -> userSharesTopLevelOrgWithAtLeastOneContributor() && isUnpublished();
-            case DELETE, UPDATE_FILES -> false;
+            case DOI_REQUEST_CREATE,
+                 PUBLISHING_REQUEST_CREATE,
+                 SUPPORT_REQUEST_CREATE -> userSharesTopLevelOrgWithAtLeastOneContributor();
+            case DELETE,
+                 UPDATE_FILES,
+                 DOI_REQUEST_APPROVE,
+                 PUBLISHING_REQUEST_APPROVE,
+                 SUPPORT_REQUEST_APPROVE -> false;
         };
     }
 

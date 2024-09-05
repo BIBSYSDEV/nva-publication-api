@@ -67,7 +67,7 @@ public class RequestUtilsTest {
     @Test
     void shouldReturnFalseWhenCheckingAuthorizationForNullTicket() throws UnauthorizedException {
         Assertions.assertFalse(
-            RequestUtils.fromRequestInfo(mockedRequestInfo(), uriRetriever).isAuthorizedToManage(null));
+            RequestUtils.fromRequestInfo(mockedRequestInfo()).isAuthorizedToManage(null));
     }
 
     @Test
@@ -75,14 +75,14 @@ public class RequestUtilsTest {
         var requestInfo = mockedRequestInfoWithoutPathParams();
 
         assertThrows(IllegalArgumentException.class,
-                     () -> RequestUtils.fromRequestInfo(requestInfo, uriRetriever).publicationIdentifier());
+                     () -> RequestUtils.fromRequestInfo(requestInfo).publicationIdentifier());
         assertThrows(IllegalArgumentException.class,
-                     () -> RequestUtils.fromRequestInfo(requestInfo, uriRetriever).ticketIdentifier());
+                     () -> RequestUtils.fromRequestInfo(requestInfo).ticketIdentifier());
     }
 
     @Test
     void shouldReturnIdentifiersFromPathParamsWhenTheyArePresent() throws UnauthorizedException {
-        var requestUtils = RequestUtils.fromRequestInfo(mockedRequestInfo(), uriRetriever);
+        var requestUtils = RequestUtils.fromRequestInfo(mockedRequestInfo());
 
         Assertions.assertTrue(nonNull(requestUtils.publicationIdentifier()));
         Assertions.assertTrue(nonNull(requestUtils.ticketIdentifier()));
@@ -97,7 +97,7 @@ public class RequestUtilsTest {
         var publication = publicationWithOwner(randomString()).copy().withStatus(publicationStatus).build();
         var requestInfo = requestInfoWithAccessRight(publication.getResourceOwner().getOwnerAffiliation(), accessRight);
         var ticket = TicketEntry.requestNewTicket(publication, ticketType);
-        var requestUtils = RequestUtils.fromRequestInfo(requestInfo, uriRetriever);
+        var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
 
         when(resourceService.getPublicationByIdentifier(any())).thenReturn(publication);
 
@@ -108,7 +108,7 @@ public class RequestUtilsTest {
     void shouldReturnTrueWhenUserIsTicketOwner() throws UnauthorizedException {
         var requestInfo = mockedRequestInfo();
         var ticket = TicketEntry.requestNewTicket(publicationWithOwner(requestInfo.getUserName()), DoiRequest.class);
-        var requestUtils = RequestUtils.fromRequestInfo(requestInfo, uriRetriever);
+        var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
 
         Assertions.assertTrue(requestUtils.isTicketOwner(ticket));
     }
@@ -122,7 +122,7 @@ public class RequestUtilsTest {
                                                     requestInfo.getTopLevelOrgCristinId().orElseThrow(),
                                                     requestInfo.getPersonCristinId(),
                                                     requestInfo.getAccessRights());
-        var createdUserInstance = RequestUtils.fromRequestInfo(requestInfo, uriRetriever).toUserInstance();
+        var createdUserInstance = RequestUtils.fromRequestInfo(requestInfo).toUserInstance();
         Assertions.assertEquals(createdUserInstance, expectedUserInstance);
     }
 
@@ -130,7 +130,7 @@ public class RequestUtilsTest {
     void shouldReturnTrueWhenUserHasOneOfAccessRights() throws UnauthorizedException {
         var requestInfo = requestInfoWithAccessRight(randomUri(), MANAGE_DOI);
 
-        Assertions.assertTrue(RequestUtils.fromRequestInfo(requestInfo, uriRetriever)
+        Assertions.assertTrue(RequestUtils.fromRequestInfo(requestInfo)
                                   .hasOneOfAccessRights(MANAGE_DOI, MANAGE_PUBLISHING_REQUESTS));
     }
 

@@ -19,6 +19,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsIn.in;
@@ -658,6 +659,16 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var expansionService = expansionServiceReturningNviCandidate(publication, randomString(), 200);
 
         assertThrows(ExpansionException.class, () -> expansionService.expandEntry(resourceUpdate));
+    }
+
+    @Test
+    void shouldExpandUnpublishRequest() throws ApiGatewayException, JsonProcessingException {
+        var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
+        resourceService.unpublishPublication(publication);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, UnpublishRequest.class, ticketService);
+        var expandedTicket = expansionService.expandEntry(ticket);
+
+        assertThat(expandedTicket, instanceOf(ExpandedUnpublishRequest.class));
     }
 
     private ResourceExpansionServiceImpl expansionServiceReturningNviCandidate(Publication publication,

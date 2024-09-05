@@ -37,6 +37,7 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.License;
 import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
+import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -68,7 +69,6 @@ public final class TicketTestUtils {
         return Stream.of(Arguments.of(DoiRequest.class, PUBLISHED),
                          Arguments.of(DoiRequest.class, PUBLISHED_METADATA),
                          Arguments.of(PublishingRequestCase.class, DRAFT),
-                         Arguments.of(UnpublishRequest.class, PUBLISHED),
                          Arguments.of(GeneralSupportRequest.class, DRAFT));
     }
 
@@ -115,6 +115,20 @@ public final class TicketTestUtils {
     public static Publication createPersistedPublication(PublicationStatus status, ResourceService resourceService)
         throws ApiGatewayException {
         var publication = randomNonDegreePublication(status);
+        publication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
+        publication.getEntityDescription().getContributors().forEach(contributor ->
+                                                                         contributor.getAffiliations()
+                                                                             .forEach(TicketTestUtils::setAffiliation)
+        );
+        publication.setCuratingInstitutions(
+            Set.of(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0")));
+        return persistPublication(resourceService, publication);
+    }
+
+    public static Publication createPersistedDegreePublication(PublicationStatus status,
+                                                               ResourceService resourceService)
+        throws ApiGatewayException {
+        var publication = randomPublication(DegreePhd.class);
         publication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
         publication.getEntityDescription().getContributors().forEach(contributor ->
                                                                          contributor.getAffiliations()

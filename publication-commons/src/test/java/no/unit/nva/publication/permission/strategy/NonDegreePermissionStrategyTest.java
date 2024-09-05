@@ -87,7 +87,7 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .create(publication, userInstance)
+                                   .create(publication, userInstance, resourceService)
                                    .allowsAction(operation));
     }
 
@@ -111,7 +111,7 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, userInstance)
+                                  .create(publication, userInstance, resourceService)
                                   .allowsAction(operation));
     }
 
@@ -135,7 +135,7 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .create(publication, userInstance)
+                                   .create(publication, userInstance, resourceService)
                                    .allowsAction(PublicationOperation.UPDATE));
     }
 
@@ -159,7 +159,7 @@ class NonDegreePermissionStrategyTest extends PublicationPermissionStrategyTest 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, userInstance)
+                                  .create(publication, userInstance, resourceService)
                                   .allowsAction(PublicationOperation.UPDATE));
     }
 

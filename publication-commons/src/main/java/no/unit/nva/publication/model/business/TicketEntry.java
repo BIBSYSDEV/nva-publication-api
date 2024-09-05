@@ -212,6 +212,10 @@ public abstract class TicketEntry implements Entity {
         validateTicketOwner(userInstance);
     }
 
+    public boolean isPending() {
+        return TicketStatus.PENDING.equals(getStatus());
+    }
+
     private void validateTicketOwner(UserInstance userInstance) throws UnauthorizedException {
         if (isNotTicketOwner(userInstance)) {
             throw new UnauthorizedException(UNAUTHENTICATED_TO_REMOVE_TICKET_MESSAGE);

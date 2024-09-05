@@ -766,6 +766,15 @@ public class TicketServiceTest extends ResourcesLocalTest {
         assertThat(completedTicket.getFinalizedDate(), greaterThan(completedTicket.getCreatedDate()));
     }
 
+    @Test
+    void shouldConvertUnpublishRequestToPublication() throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublication(DRAFT, resourceService);
+        var unpublishRequest = UnpublishRequest.createNewUnpublishRequest(publication,SortableIdentifier::next);
+        var publicationFromUnpublishRequest = unpublishRequest.toPublication(resourceService);
+
+        assertThat(publicationFromUnpublishRequest, is(equalTo(publication)));
+    }
+
     private static Username getUsername(Publication publication) {
         return new Username(UserInstance.fromPublication(publication).getUsername());
     }

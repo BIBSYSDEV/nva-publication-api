@@ -293,7 +293,7 @@ class RightsRetentionsApplierTest {
         private final boolean isCurator;
 
         public FakePublicationPermissionStrategy(boolean isCurator) {
-            super(null, null);
+            super(null, null,  null);
             this.isCurator = isCurator;
         }
 

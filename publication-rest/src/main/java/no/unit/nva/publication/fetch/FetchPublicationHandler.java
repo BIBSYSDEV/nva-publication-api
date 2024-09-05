@@ -191,7 +191,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     private Set<PublicationOperation> getAllowedOperations(RequestInfo requestInfo, Publication publication) {
         return attempt(() -> createUserInstanceFromRequest(requestInfo, identityServiceClient)).toOptional()
-                   .map(userInstance -> PublicationPermissionStrategy.create(publication, userInstance))
+                   .map(userInstance -> PublicationPermissionStrategy.create(publication, userInstance, resourceService))
                    .map(PublicationPermissionStrategy::getAllAllowedActions)
                    .orElse(Collections.emptySet());
     }

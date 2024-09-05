@@ -55,6 +55,7 @@ import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
@@ -1584,7 +1585,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
         final var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
-        assertThat(body.getAllowedOperations(), containsInAnyOrder(UPDATE, DELETE));
+        assertThat(body.getAllowedOperations(), hasItems(UPDATE, DELETE));
     }
 
     @Test

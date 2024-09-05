@@ -17,10 +17,10 @@ import org.junit.jupiter.params.provider.EnumSource.Mode;
 
 class ContributorPermissionStrategyTest extends PublicationPermissionStrategyTest {
 
-    @ParameterizedTest(name = "Should allow verified contributor {0} operation on non-degree resources")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"DELETE", "TERMINATE",
-        "TICKET_PUBLISH", "UPDATE_FILES", "REPUBLISH"})
-    void shouldAllowVerifiedContributorOnNonDegree(PublicationOperation operation)
+    @ParameterizedTest(name = "Should allow verified contributor {0} operation on published non-degree resources")
+    @EnumSource(value = PublicationOperation.class, mode = Mode.INCLUDE,
+        names = {"UPDATE", "UNPUBLISH", "PUBLISHING_REQUEST_CREATE", "SUPPORT_REQUEST_CREATE", "DOI_REQUEST_CREATE"})
+    void shouldAllowVerifiedContributorOnPublishedNonDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
         var institution = randomUri();
@@ -36,12 +36,13 @@ class ContributorPermissionStrategyTest extends PublicationPermissionStrategyTes
 
 
         Assertions.assertTrue(PublicationPermissionStrategy
-                                  .create(publication, userInstance)
+                                  .create(publication, userInstance, resourceService)
                                   .allowsAction(operation));
     }
 
     @ParameterizedTest(name = "Should deny verified contributor {0} operation on non-degree resources")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"UNPUBLISH", "UPDATE"})
+    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE,
+        names = {"UNPUBLISH", "UPDATE", "PUBLISHING_REQUEST_CREATE", "SUPPORT_REQUEST_CREATE", "DOI_REQUEST_CREATE"})
     void shouldDenyVerifiedContributorOnNonDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
@@ -55,7 +56,7 @@ class ContributorPermissionStrategyTest extends PublicationPermissionStrategyTes
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
         Assertions.assertFalse(PublicationPermissionStrategy
-                                   .create(publication, userInstance)
+                                   .create(publication, userInstance, resourceService)
                                    .allowsAction(operation));
     }
 
@@ -82,7 +83,7 @@ class ContributorPermissionStrategyTest extends PublicationPermissionStrategyTes
                                    .create(publication,
                                            RequestUtil.createUserInstanceFromRequest(
                                                requestInfo,
-                                               identityServiceClient))
+                                               identityServiceClient), resourceService)
                                    .allowsAction(UNPUBLISH));
     }
 }

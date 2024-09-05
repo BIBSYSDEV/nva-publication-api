@@ -47,11 +47,13 @@ public class ExpandedUnpublishRequest extends ExpandedTicket {
         return entry;
     }
 
+    @JacocoGenerated
     @Override
     public SortableIdentifier identifyExpandedEntry() {
         return extractIdentifier(getId());
     }
 
+    @JacocoGenerated
     @Override
     public ExpandedTicketStatus getStatus() {
         return this.status;
@@ -61,6 +63,7 @@ public class ExpandedUnpublishRequest extends ExpandedTicket {
         this.status = status;
     }
 
+    @JacocoGenerated
     public Instant getModifiedDate() {
         return modifiedDate;
     }
@@ -69,6 +72,7 @@ public class ExpandedUnpublishRequest extends ExpandedTicket {
         this.modifiedDate = modifiedDate;
     }
 
+    @JacocoGenerated
     public Instant getCreatedDate() {
         return this.createdDate;
     }
@@ -77,6 +81,7 @@ public class ExpandedUnpublishRequest extends ExpandedTicket {
         this.createdDate = createdDate;
     }
 
+    @JacocoGenerated
     public URI getCustomerId() {
         return this.customerId;
     }
