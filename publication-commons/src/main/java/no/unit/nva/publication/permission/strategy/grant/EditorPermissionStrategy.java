@@ -22,10 +22,10 @@ public class EditorPermissionStrategy extends GrantPermissionStrategy {
             case UPDATE -> true;
             case UNPUBLISH -> isPublished();
             case TERMINATE -> isUnpublished();
-            case REPUBLISH -> userSharesTopLevelOrgWithAtLeastOneContributor() && isUnpublished();
+            case REPUBLISH -> userBelongsToCuratingInstitution() && isUnpublished();
             case DOI_REQUEST_CREATE,
                  PUBLISHING_REQUEST_CREATE,
-                 SUPPORT_REQUEST_CREATE -> userSharesTopLevelOrgWithAtLeastOneContributor();
+                 SUPPORT_REQUEST_CREATE -> userBelongsToCuratingInstitution();
             case DELETE,
                  UPDATE_FILES,
                  DOI_REQUEST_APPROVE,

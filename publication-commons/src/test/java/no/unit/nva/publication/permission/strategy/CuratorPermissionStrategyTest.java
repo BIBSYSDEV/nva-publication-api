@@ -158,18 +158,15 @@ class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
     }
 
     @ParameterizedTest(name = "Should deny Curator {0} operation on degree resources with no matching resource owner "
-                              + "affiliation")
+                              + "affiliation or curating institution")
     @EnumSource(value = PublicationOperation.class)
-    void shouldDenyCuratorOnDegreeWithNoResourceOwnerAffiliation(PublicationOperation operation)
+    void shouldDenyNotRelatedCuratorOnDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
-
-        var cristinTopLevelId = randomUri();
-
         var requestInfo = createUserRequestInfo(randomString(), randomUri(), getAccessRightsForThesisCurator(),
-                                                randomUri(), cristinTopLevelId);
+                                                randomUri(), randomUri());
 
         var publication = createDegreePublicationWithContributor(randomString(), randomUri(), Role.CREATOR,
-                                                                 randomUri(), cristinTopLevelId);
+                                                                 randomUri(), randomUri());
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 

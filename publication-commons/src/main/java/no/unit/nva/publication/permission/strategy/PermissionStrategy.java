@@ -61,7 +61,7 @@ public abstract class PermissionStrategy {
                    .orElse(false);
     }
 
-    protected boolean userSharesTopLevelOrgWithAtLeastOneContributor() {
+    protected boolean userBelongsToCuratingInstitution() {
         var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
 
         logger.info("found topLevels {} for user {} of {}.",

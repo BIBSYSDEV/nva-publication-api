@@ -4,7 +4,6 @@ import static no.unit.nva.model.PublicationOperation.REPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -137,18 +136,15 @@ class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
     }
 
     @ParameterizedTest(name = "Should deny Editor {0} operation on degree resources with no matching resource owner "
-                              + "affiliation")
+                              + "affiliation or curating institution")
     @EnumSource(value = PublicationOperation.class)
-    void shouldDenyEditorOnDegreeWithNoResourceOwnerAffiliation(PublicationOperation operation)
+    void shouldDenyNotRelatedEditorOnDegree(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
-
-        var cristinTopLevelId = randomUri();
-
         var requestInfo = createUserRequestInfo(randomString(), randomUri(), getAccessRightsForEditor(),
-                                                randomUri(), cristinTopLevelId);
+                                                randomUri(), randomUri());
 
         var publication = createDegreePublicationWithContributor(randomString(), randomUri(), Role.CREATOR,
-                                                                 randomUri(), cristinTopLevelId);
+                                                                 randomUri(), randomUri());
 
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
