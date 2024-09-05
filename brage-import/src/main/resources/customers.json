@@ -7,7 +7,8 @@
       "prod": "0e878881-87b9-4392-b4e4-b410bbecbd1d",
       "test": "27c650e1-9af2-40fd-91c0-3abdf38c86f0",
       "dev": "f94d1d3e-e05a-41f9-8eb8-f891ccd25666"
-    }
+    },
+    "shortName": "NORD"
   },
   {
     "name": "npolar",
@@ -16,7 +17,8 @@
     "identifiers": {
       "test": "7de3c640-f71e-4837-b46b-32f250acf179",
       "dev": "009974e9-217c-46b8-8f61-f7c1501ee04a"
-    }
+    },
+    "shortName": "NPI"
   },
   {
     "name": "ssb",
@@ -25,7 +27,8 @@
     "identifiers": {
       "test": "3f2485a8-ba56-48e2-827b-0a307a44eafb",
       "dev": "3169a5cb-db8b-44ac-8bab-69d3f4ff9f54"
-    }
+    },
+    "shortName": "SSB"
   },
   {
     "name": "ruralis",
@@ -34,7 +37,8 @@
     "identifiers": {
       "test": "37b410b5-d85f-4bb2-8421-c8afc2e5de60",
       "dev": "f8f52dc0-688c-4d56-b0f6-26e2698e16a0"
-    }
+    },
+    "shortName": "RURALIS"
   },
   {
     "name": "sintef",
@@ -43,7 +47,8 @@
     "identifiers": {
       "test": "dd70eb42-264a-4538-b77a-e31bb4cf3a99",
       "dev": "11b70ff2-1ba4-4cf1-95f3-06fea953cf2e"
-    }
+    },
+    "shortName": "SINTEF"
   },
   {
     "name": "norskfolkemuseum",
@@ -52,7 +57,8 @@
     "identifiers": {
       "test": "2fcfc7e5-b8d7-4c08-98ef-3927ad934e6f",
       "dev": "890ae660-440f-41cb-9d57-1afa3f5d0444"
-    }
+    },
+    "shortName": "NFM"
   },
   {
     "name": "nmh",
@@ -62,7 +68,8 @@
       "sandbox": "b075d6e7-4cec-4579-8c8b-ecae18affcc6",
       "test": "9efe66cc-ead0-49e0-b787-b73a188d4770",
       "dev": "2f148e5f-a017-4e7f-8f78-6a52eb6a9938"
-    }
+    },
+    "shortName": "NMH"
   },
   {
     "name": "nih",
@@ -71,7 +78,8 @@
     "identifiers": {
       "test": "6c7ac184-1b21-425c-a422-2855804be2aa",
       "dev": "b5ff15a1-0e58-44bf-b137-d5c5389ef63f"
-    }
+    },
+    "shortName": "NIH"
   },
   {
     "name": "vid",
@@ -80,7 +88,8 @@
     "identifiers": {
       "test": "9b17e692-6690-41a2-923b-b7ac0d7a1522",
       "dev": "58d2d14c-ff23-4aa0-94f1-b53190fd020a"
-    }
+    },
+    "shortName": "VID"
   },
   {
     "name": "usn",
@@ -89,7 +98,8 @@
     "identifiers": {
       "test": "b3d72c51-c4f2-4aa1-a15a-e9cc9b1f5e1e",
       "dev": "702c4fbe-d51a-4d20-aec8-50beb813ff36"
-    }
+    },
+    "shortName": "USN"
   },
   {
     "name": "bora",
@@ -99,7 +109,8 @@
       "prod": "2f42a7e8-219b-4289-9b41-99b32a6b4866",
       "test": "7c41e7cd-f494-4266-9979-48285cbb2434",
       "dev": "a228aba6-932b-4f53-b2de-31ad8daf9f8d"
-    }
+    },
+    "shortName": "UIB"
   },
   {
     "name": "niva",
@@ -108,7 +119,8 @@
     "identifiers": {
       "test": "a497cf56-1a26-4de3-b2cc-ec20aa54af10",
       "dev": "6c94a30a-d4cf-47d7-8de1-7ed3d145f183"
-    }
+    },
+    "shortName": "NIVA"
   },
   {
     "name": "mf",
@@ -117,7 +129,8 @@
     "identifiers": {
       "test": "577c0a2f-2697-4401-ad94-0a9bf20bdb40",
       "dev": "2287bd5f-7ac9-4ad0-b70f-0ce6575adea3"
-    }
+    },
+    "shortName": "MF"
   },
   {
     "name": "nve",
@@ -127,7 +140,8 @@
       "prod": "4ba5f697-2056-4292-b0a3-f81ccf21ea22",
       "dev": "b4497570-2903-49a2-9c2a-d6ab8b0eacc2",
       "sandbox": "5eb7ca32-0e6b-4819-b794-c31a4b16ea6b"
-    }
+    },
+    "shortName": "NVE"
   },
   {
     "name": "nina",
@@ -136,7 +150,8 @@
     "identifiers": {
       "test": "899823c8-7315-4bb7-b734-97e65b43af15",
       "dev": "afa4fb86-76f6-4339-9133-924d999a792e"
-    }
+    },
+    "shortName": "NINA"
   },
   {
     "name": "fni",
@@ -145,7 +160,8 @@
     "identifiers": {
       "test": "ad4555b9-8615-4802-93b0-fe84fc4d2971",
       "dev": "de17a451-0aec-4beb-a17f-ca6779e4e295"
-    }
+    },
+    "shortName": "NANSEN"
   },
   {
     "name": "vegvesen",
@@ -154,7 +170,8 @@
     "identifiers": {
       "test": "95100df5-b46b-41c9-a87a-9a2efc58716e",
       "dev": "2c1deeca-c0fc-487e-93c8-9f0cf4fae490"
-    }
+    },
+    "shortName": "VEGVESEN"
   },
   {
     "name": "hiof",
@@ -163,7 +180,8 @@
     "identifiers": {
       "test": "719fdb5a-f90a-4e20-b81d-1dde3ca6e647",
       "dev": "5c243c2d-a8fb-48fb-a2c6-c6fa70310194"
-    }
+    },
+    "shortName": "HIØ"
   },
   {
     "name": "ffi",
@@ -172,7 +190,8 @@
     "identifiers": {
       "test": "b11f0a40-ac27-42b9-ba94-f4952e3d5a5a",
       "dev": "04939e4d-105e-4d3c-b945-7d482d4f18d5"
-    }
+    },
+    "shortName": "FFI"
   },
   {
     "name": "aho",
@@ -181,7 +200,8 @@
     "identifiers": {
       "test": "ba0b80e8-ca87-4b8f-bf2a-6d00188ad707",
       "dev": "d6e0ba1c-44fd-49bc-8d79-a45bf1a7b66c"
-    }
+    },
+    "shortName": "AHO"
   },
   {
     "name": "norceresearch",
@@ -190,7 +210,8 @@
     "identifiers": {
       "test": "e58d2162-c4de-4627-8b3f-ac2d9fb49446",
       "dev": "d039e7ea-1380-46f1-bb7d-b6456ddc0fc2"
-    }
+    },
+    "shortName": "NORCE"
   },
   {
     "name": "samfunnsforskning",
@@ -199,7 +220,8 @@
     "identifiers": {
       "test": "999f15f5-b0d4-4273-8dc4-97a971454b74",
       "dev": "818c957b-65ce-447d-b78c-cd472ea0e65f"
-    }
+    },
+    "shortName": "ISF"
   },
   {
     "name": "oda",
@@ -208,7 +230,8 @@
     "identifiers": {
       "test": "b7c2979e-c56b-4493-84ce-3cfa7bb3ba27",
       "dev": "8db4a8bd-3db5-420b-a2e4-fc17a489aa6d"
-    }
+    },
+    "shortName": "OSLOMET"
   },
   {
     "name": "ra",
@@ -218,7 +241,8 @@
       "test": "434ed8ed-f302-409f-9943-8886320550a3",
       "dev": "e974d7d1-50b5-47c0-ad7e-7135a2d47555",
       "sandbox": "b3435185-929a-4842-96ee-4243f4c9078c"
-    }
+    },
+    "shortName": "RIKSANTIK"
   },
   {
     "name": "unit",
@@ -227,7 +251,8 @@
     "identifiers": {
       "test": "ed671c06-964c-46ce-85d5-777c164ac81e",
       "dev": "bbd9048d-e51b-49f6-b699-fd86ec86acd6"
-    }
+    },
+    "shortName": "UNIS"
   },
   {
     "name": "nupi",
@@ -236,7 +261,8 @@
     "identifiers": {
       "test": "122d33a7-1844-466a-926b-333eeff42a93",
       "dev": "8d11f0f0-d414-4564-9250-298c06ef5c87"
-    }
+    },
+    "shortName": "NUPI"
   },
   {
     "name": "nb",
@@ -245,7 +271,8 @@
     "identifiers": {
       "test": "155b291c-9da7-482c-833d-e1b1488f9ee3",
       "dev": "9fde89c7-baea-4ac1-ad52-97d4dee0e6da"
-    }
+    },
+    "shortName": "NB"
   },
   {
     "name": "nforsk",
@@ -254,7 +281,8 @@
     "identifiers": {
       "test": "71fb8ede-c372-4f51-a9ec-de1874badaf7",
       "dev": "5196161e-c952-4b36-9125-3e9746ee338d"
-    }
+    },
+    "shortName": "NORDLFORSK"
   },
   {
     "name": "stami",
@@ -263,7 +291,8 @@
     "identifiers": {
       "test": "959587b0-d49b-49c8-adb4-43910500c2c3",
       "dev": "838c45e1-8470-490b-b71d-a947b444e220"
-    }
+    },
+    "shortName": "STAMI"
   },
   {
     "name": "nilu",
@@ -272,7 +301,8 @@
     "identifiers": {
       "test": "31ac9694-3e2e-4424-bd4c-b03e950335e2",
       "dev": "68e24208-5840-45a1-903c-44ebb3afccc2"
-    }
+    },
+    "shortName": "NILU"
   },
   {
     "name": "banenor",
@@ -281,7 +311,8 @@
     "identifiers": {
       "test": "ccfff2f4-e50a-4ee9-af52-469821476cc3",
       "dev": "4a8749c6-567b-42bd-b8c2-384aa41f43d3"
-    }
+    },
+    "shortName": "JERNBMUS"
   },
   {
     "name": "ntnu",
@@ -290,7 +321,8 @@
     "identifiers": {
       "test": "33c17ef6-864b-4267-bc9d-0cee636e247e",
       "dev": "8ddecceb-7d64-4df3-a842-489fe4d98f3a"
-    }
+    },
+    "shortName": "NTNU"
   },
   {
     "name": "cmi",
@@ -299,7 +331,8 @@
     "identifiers": {
       "test": "f9a5a7fb-5add-4968-ac10-68e36953cbb9",
       "dev": "aebc37b9-593c-42b6-88bf-0d8a54492a32"
-    }
+    },
+    "shortName": "CMI"
   },
   {
     "name": "himolde",
@@ -309,7 +342,8 @@
       "prod": "9e6b93b6-1ef2-4b91-9599-ebc9ac8c6606",
       "test": "e8833011-2e16-4765-b1dd-494b64c8d646",
       "dev": "2927ca20-cbd0-4b0a-abd3-3de23e8f2065"
-    }
+    },
+    "shortName": "HIM"
   },
   {
     "name": "nr",
@@ -318,7 +352,8 @@
     "identifiers": {
       "test": "505328d2-1992-406c-8792-b064748d2f38",
       "dev": "54bed9d9-2bc4-4fa4-a6c4-9e957f93870d"
-    }
+    },
+    "shortName": "NR"
   },
   {
     "name": "bi",
@@ -327,7 +362,8 @@
     "identifiers": {
       "test": "e9fb0c5d-1589-4d6f-932f-b312e50daa8f",
       "dev": "a49a2deb-f782-4ab1-b2ab-97745bc14b3d"
-    }
+    },
+    "shortName": "BI"
   },
   {
     "name": "fdir",
@@ -336,7 +372,8 @@
     "identifiers": {
       "test": "c92c0f86-6a65-484a-ae0e-a045029168b5",
       "dev": "4403a49b-a175-4985-a695-f16c5b87c9ac"
-    }
+    },
+    "shortName": "FISKERIDIR"
   },
   {
     "name": "hivolda",
@@ -346,7 +383,8 @@
       "prod": "ca410109-2720-475b-a280-59783e2962c7",
       "test": "235dc022-6beb-4f8f-8165-9fbe680e1f5b",
       "dev": "9c81f056-5839-4843-9b93-20962281df38"
-    }
+    },
+    "shortName": "HVO"
   },
   {
     "name": "dmmh",
@@ -355,7 +393,8 @@
     "identifiers": {
       "test": "2e4f348c-47a3-4500-94dd-9b4ee4ba63d9",
       "dev": "0edc1e9a-a74b-4169-86ba-f98b92d0115e"
-    }
+    },
+    "shortName": "DMMH"
   },
   {
     "name": "uia",
@@ -365,7 +404,8 @@
       "prod": "20c7aad5-af76-4909-afe2-cdc9c7ec4f79",
       "test": "2732ed9a-971a-4e34-ac84-d5f6d067ed66",
       "dev": "8b77046d-2001-47cb-b061-0346d5b4b95c"
-    }
+    },
+    "shortName": "UIA"
   },
   {
     "name": "omsorgsforskning",
@@ -374,7 +414,8 @@
     "identifiers": {
       "test": "33c17ef6-864b-4267-bc9d-0cee636e247e",
       "dev": "8ddecceb-7d64-4df3-a842-489fe4d98f3a"
-    }
+    },
+    "shortName": "NTNU"
   },
   {
     "name": "imr",
@@ -383,7 +424,8 @@
     "identifiers": {
       "test": "f76cf282-43c0-495a-8f4d-532838994bd1",
       "dev": "3e78024a-657d-482c-9496-0f34a376ca78"
-    }
+    },
+    "shortName": "HAVFORSK"
   },
   {
     "name": "toi",
@@ -392,7 +434,8 @@
     "identifiers": {
       "test": "d102baef-5861-43e2-bb21-42a1f6479aef",
       "dev": "ff6fd53f-30ff-4c47-955e-f201fe5d9e0c"
-    }
+    },
+    "shortName": "T\u00d8I"
   },
   {
     "name": "kristiania",
@@ -403,7 +446,8 @@
       "test": "c1d7b72b-3319-4a1f-a365-c04ddb729b6f",
       "dev": "ca57b418-f837-40fd-af5c-5a6ba14abd7e",
       "sandbox": "8fb3c2f4-da97-4eb1-be65-307c86b993ee"
-    }
+    },
+    "shortName": "HK"
   },
   {
     "name": "ngi",
@@ -412,7 +456,8 @@
     "identifiers": {
       "test": "1f899570-ed06-4c08-bc9f-ed92402e5128",
       "dev": "f415cb81-ac56-4244-b31b-25e43dc3027e"
-    }
+    },
+    "shortName": "NGI"
   },
   {
     "name": "nibio",
@@ -422,7 +467,8 @@
       "prod": "77766640-6066-48ef-a32c-0ba7f32abee9",
       "test": "cd925eea-7f4c-4167-9b7c-a7bf7f8eca59",
       "dev": "82c8b036-39cb-4ac2-8a2d-152cda4bcc27"
-    }
+    },
+    "shortName": "NIBIO"
   },
   {
     "name": "samas",
@@ -431,7 +477,8 @@
     "identifiers": {
       "test": "b611090b-a768-4d89-a62d-ddd90f19ae22",
       "dev": "69f64ed3-e2c6-4c0c-a370-0de946ca6568"
-    }
+    },
+    "shortName": "SA/SH"
   },
   {
     "name": "niku",
@@ -440,7 +487,8 @@
     "identifiers": {
       "test": "61f179e2-4c8a-4f92-a285-6244556011f6",
       "dev": "11c1a22c-6b1b-4463-b74e-e20cd13d7243"
-    }
+    },
+    "shortName": "NIKU"
   },
   {
     "name": "samforsk",
@@ -449,7 +497,8 @@
     "identifiers": {
       "test": "999f15f5-b0d4-4273-8dc4-97a971454b74",
       "dev": "6da57387-b48a-46dc-a395-d07c12b1e54b"
-    }
+    },
+    "shortName": "SAMFORSK"
   },
   {
     "name": "statped",
@@ -459,7 +508,8 @@
       "prod": "a63f80aa-d479-4271-8a17-d82ab7d0efd2",
       "test": "82fa69db-a834-47e2-8d03-048b3f60cbcf",
       "dev": "e6890d28-a370-49a3-9100-f78b2e8fb324"
-    }
+    },
+    "shortName": "STATPED"
   },
   {
     "name": "nofima",
@@ -468,7 +518,8 @@
     "identifiers": {
       "test": "dc9f40f0-7397-4237-a54d-cf33b5d236f1",
       "dev": "15af7bc4-16cd-4134-91ba-68d900a5685c"
-    }
+    },
+    "shortName": "NOFIMA"
   },
   {
     "name": "uio",
@@ -477,7 +528,8 @@
     "identifiers": {
       "test": "e4fd5fe5-b073-47a7-bb3e-2516d40335e6",
       "dev": "8db4a8bd-3db5-420b-a2e4-fc17a489aa6d"
-    }
+    },
+    "shortName": "UIO"
   },
   {
     "name": "ngu",
@@ -486,7 +538,8 @@
     "identifiers": {
       "test": "897e5123-d4b5-425a-9872-bfd1c554e30b",
       "dev": "4ff971c0-071b-421e-8566-1c0899f3b26c"
-    }
+    },
+    "shortName": "NGI"
   },
   {
     "name": "uis",
@@ -495,7 +548,8 @@
     "identifiers": {
       "test": "2d353a69-afa0-44a2-9028-211771d748ae",
       "dev": "3e1da1fd-559e-4334-acb9-797684e5bae2"
-    }
+    },
+    "shortName": "UIS"
   },
   {
     "name": "cicero",
@@ -504,7 +558,8 @@
     "identifiers": {
       "test": "47db88b9-3013-4e53-873c-bb0003074ca3",
       "dev": "d22e1273-5dd0-410f-a0d9-356353683a98"
-    }
+    },
+    "shortName": "CICERO"
   },
   {
     "name": "hvlopen",
@@ -514,7 +569,8 @@
       "prod": "2e3ae52c-ada5-4862-b72a-98e74690465c",
       "test": "d60e86ef-2bcd-4e0b-8872-43f80858caaa",
       "dev": "fe945ea8-22d1-481c-b5be-4e0447d5656c"
-    }
+    },
+    "shortName": "HVL"
   },
   {
     "name": "nmbu",
@@ -523,7 +579,8 @@
     "identifiers": {
       "test": "b8977f51-28bd-41b5-bb19-71c577be7c28",
       "dev": "8b0609fc-8787-4c71-ba6d-fa3718bc73e1"
-    }
+    },
+    "shortName": "NMBU"
   },
   {
     "name": "sihf",
@@ -532,7 +589,8 @@
     "identifiers": {
       "test": "ff990b53-59da-44b0-ba95-ac942a220d12",
       "dev": "73662b0f-4eba-4783-97da-de9e835affb6"
-    }
+    },
+    "shortName": "INNLANDET"
   },
   {
     "name": "uit",
@@ -541,16 +599,18 @@
     "identifiers": {
       "test": "acf2bd2e-a721-4f0f-91ca-3c7f46c0e375",
       "dev": "2d35d439-055d-40e5-94de-a9ec28493835"
-    }
+    },
+    "shortName": "UIT"
   },
   {
     "name": "nla",
-    "username": "nla@54.0.0.0",
-    "cristinIdentifier": "54.0.0.0",
+    "username": "nla@254.0.0.0",
+    "cristinIdentifier": "254.0.0.0",
     "identifiers": {
       "test": "d1472762-8e09-4897-bcfe-93418fa90448",
       "dev": "53fdf89c-7408-4371-bab9-89812ce34e91"
-    }
+    },
+    "shortName": "NLA"
   },
   {
     "name": "fhi",
@@ -559,7 +619,8 @@
     "identifiers": {
       "test": "94fb0975-499d-42be-b729-1d8327a33a76",
       "dev": "95bfedd6-0a44-4013-8e96-256b0efb7d28"
-    }
+    },
+    "shortName": "FHI"
   },
   {
     "name": "vetinst",
@@ -569,7 +630,8 @@
       "prod": "1987c64c-3830-46c0-90e0-2603162e0d88",
       "test": "2ccab0d9-c238-4fb6-b417-58586cf0ed22",
       "dev": "cd13fb16-8f88-4216-bc92-d2e63c9fd393"
-    }
+    },
+    "shortName": "VETINST"
   },
   {
     "name": "inn",
@@ -578,7 +640,8 @@
     "identifiers": {
       "test": "df2a796f-3eef-45dc-a39d-51b21989285a",
       "dev": "023f1608-1baa-4d5a-8acc-80d329bddd74"
-    }
+    },
+    "shortName": "HINN"
   },
   {
     "name": "ife",
@@ -587,7 +650,8 @@
     "identifiers": {
       "test": "6c55e437-b373-4875-8505-d0af113aec59",
       "dev": "d13b4e4e-5dfe-4c92-b6d9-dab1b910cb02"
-    }
+    },
+    "shortName": "IFE"
   },
   {
     "name": "fafo",
@@ -596,7 +660,8 @@
     "identifiers": {
       "test": "648a3ed0-f34e-48ff-8db9-092b2f5d5fa2",
       "dev": "eab76eb2-3f15-40af-9056-53946ec8fcde"
-    }
+    },
+    "shortName": "FAFO"
   },
   {
     "name": "norges-bank",
@@ -605,7 +670,8 @@
     "identifiers": {
       "test": "2d37e9a9-dc70-4c30-bdb6-c7724eb7f0c3",
       "dev": "9d02e866-aeba-466d-993a-b519c664d38c"
-    }
+    },
+    "shortName": "NB"
   },
   {
     "name": "nhh",
@@ -615,7 +681,8 @@
       "prod": "1432ce2a-5f2e-4560-8b6c-9af87c082d53",
       "test": "7bf52e6f-82dc-4203-a25e-93630819b741",
       "dev": "418e4bf8-6f7e-419c-b7b7-45bcbab38429"
-    }
+    },
+    "shortName": "NHH"
   },
   {
     "name": "fhs",
@@ -624,7 +691,8 @@
     "identifiers": {
       "test": "ba0b80e8-ca87-4b8f-bf2a-6d00188ad707",
       "dev": "290bb113-cf83-4917-8a07-463b4eca057b"
-    }
+    },
+    "shortName": "FHS"
   },
   {
     "name": "khio",
@@ -633,7 +701,8 @@
     "identifiers": {
       "test": "130e5373-9673-4d66-a0d3-d22a2874b32f",
       "dev": "67e867aa-e925-4697-bad0-c2125c1d6a7c"
-    }
+    },
+    "shortName": "KHIO"
   },
   {
     "name": "ldh",
@@ -642,7 +711,8 @@
     "identifiers": {
       "test": "2197e9e0-93b0-4051-8044-16ffd0087982",
       "dev": "367b47d3-8532-47ca-aebf-e3553bea76a8"
-    }
+    },
+    "shortName": "LDH"
   },
   {
     "name": "steinerhoyskolen",
@@ -651,7 +721,8 @@
     "identifiers": {
       "test": "57bb7742-271a-4a17-ac4c-d142cb598edb",
       "dev": "a739d345-a564-4f0e-adec-c8c9ecb09bbb"
-    }
+    },
+    "shortName": "STEINER"
   },
   {
     "name": "krus",
@@ -661,7 +732,8 @@
       "test": "2e0dc263-5af7-4b0e-8bdc-c6f2c660dfd3",
       "dev": "a768727e-4ecb-41c1-a616-1fec000cac1c",
       "sandbox": "6b5e1238-7a05-11ed-a1eb-0242ac120002"
-    }
+    },
+    "shortName": "KRUS"
   },
   {
     "name": "nasjonalmuseet",
@@ -670,7 +742,8 @@
     "identifiers": {
       "test": "63efab04-c807-4efa-8ee9-a2c3ae6f77af",
       "dev": "bbd9048d-e51b-49f6-b699-fd86ec86acd6"
-    }
+    },
+    "shortName": "NMK"
   },
   {
     "name": "nifu",
@@ -679,7 +752,8 @@
     "identifiers": {
       "test": "f09c78fe-0d6a-4e45-be1c-6fede449cda8",
       "dev": "043ad701-d2c5-46be-b991-c58aef97626d"
-    }
+    },
+    "shortName": "NIFU"
   },
   {
     "name": "phs",
@@ -689,7 +763,8 @@
       "prod": "1b36e4bf-223c-4da7-9bae-35846106c788",
       "test": "f20f314d-fa91-4c66-9131-98b6c4fed42e",
       "dev": "a0df7c41-35f8-4080-a86f-4da018572f54"
-    }
+    },
+    "shortName": "PHS"
   },
   {
     "name": "r-bup",
@@ -698,7 +773,8 @@
     "identifiers": {
       "test": "458137ea-64bf-438d-a69c-6808d1b06e79",
       "dev": "3259519a-1ef6-444d-87d2-534d7c6df021"
-    }
+    },
+    "shortName": "RBUP"
   },
   {
     "name": "unis",
@@ -707,6 +783,7 @@
     "identifiers": {
       "dev": "ed671c06-964c-46ce-85d5-777c164ac81e",
       "test": "c7fa1f3f-3304-45c7-bbb5-b8873923e7e3"
-    }
+    },
+    "shortName": "UNIS"
   }
 ]
