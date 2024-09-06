@@ -36,7 +36,7 @@ latest_local_commit=$(git rev-parse HEAD)
 
 diff_output=$(git diff "$latest_local_commit" -- "$TARGET" origin/main -- "$TARGET")
 
-if [ -n "$diff_output" ] && [ "$local_model_version" != "$remote_model_version" ] ; then
+if [ -n "$diff_output" ] && [ "$local_model_version" == "$remote_model_version" ] ; then
   echo "$MODEL_CHANGE_MESSAGE"
   exit 1
 else
