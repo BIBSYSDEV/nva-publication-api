@@ -10,6 +10,7 @@ import no.unit.nva.model.ResearchProject;
 
 public interface WithMetadata extends PublicationBase {
 
+    // A comment to be removed
     EntityDescription getEntityDescription();
 
     void setEntityDescription(EntityDescription entityDescription);
