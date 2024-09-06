@@ -45,9 +45,12 @@ import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
+import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.chapter.ChapterConferenceAbstract;
 import no.unit.nva.model.instancetypes.chapter.ChapterInReport;
+import no.unit.nva.model.instancetypes.report.ReportBasic;
+import no.unit.nva.model.instancetypes.report.ReportBookOfAbstract;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -203,7 +206,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         var instanceType = reference.getPublicationInstance();
         var publicationContext = reference.getPublicationContext();
 
-        if (instanceType instanceof BookAnthology) {
+        if (instanceTypeCanBeAnthology(instanceType)) {
             addJoinField(sortedJson, JOIN_FIELD_PARENT_LABEL, null);
         } else if (isPartOfAnthology(publicationContext, instanceType)) {
             var parentId = ((Anthology) publicationContext).getId();
@@ -216,14 +219,24 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         }
     }
 
+    private static boolean instanceTypeCanBeAnthology(PublicationInstance<?> instanceType) {
+        return instanceType instanceof BookMonograph
+                || instanceType instanceof ReportBasic
+                || instanceType instanceof BookAnthology
+                || instanceType instanceof ReportBookOfAbstract;
+    }
+
+    private static boolean instanceTypeCanBePartOfAnthology(PublicationInstance<?> instanceType) {
+        return instanceType instanceof ChapterArticle
+               || instanceType instanceof ChapterConferenceAbstract
+               || instanceType instanceof ChapterInReport;
+    }
+
     private static boolean isPartOfAnthology(
             PublicationContext publicationContext, PublicationInstance<?> instanceType) {
-        var hasAnthology = publicationContext instanceof Anthology;
-        var canBePartOfAnthology =
-                instanceType instanceof ChapterArticle
-                        || instanceType instanceof ChapterConferenceAbstract
-                        || instanceType instanceof ChapterInReport;
-        return hasAnthology && canBePartOfAnthology;
+        var contextIsAnthology = publicationContext instanceof Anthology;
+        var typeCanBelongToAnthology = instanceTypeCanBePartOfAnthology(instanceType);
+        return contextIsAnthology && typeCanBelongToAnthology;
     }
 
     private static void addJoinField(ObjectNode sortedJson, String name, String parent) {

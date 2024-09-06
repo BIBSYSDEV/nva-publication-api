@@ -71,8 +71,14 @@ import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingBuilder;
+import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
+import no.unit.nva.model.instancetypes.book.Encyclopedia;
+import no.unit.nva.model.instancetypes.book.ExhibitionCatalog;
+import no.unit.nva.model.instancetypes.book.NonFictionMonograph;
+import no.unit.nva.model.instancetypes.book.PopularScienceMonograph;
+import no.unit.nva.model.instancetypes.book.Textbook;
 import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
 import no.unit.nva.model.instancetypes.chapter.ChapterConferenceAbstract;
 import no.unit.nva.model.instancetypes.chapter.ChapterInReport;
@@ -83,6 +89,12 @@ import no.unit.nva.model.instancetypes.chapter.NonFictionChapter;
 import no.unit.nva.model.instancetypes.chapter.PopularScienceChapter;
 import no.unit.nva.model.instancetypes.chapter.TextbookChapter;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
+import no.unit.nva.model.instancetypes.report.ConferenceReport;
+import no.unit.nva.model.instancetypes.report.ReportBasic;
+import no.unit.nva.model.instancetypes.report.ReportBookOfAbstract;
+import no.unit.nva.model.instancetypes.report.ReportPolicy;
+import no.unit.nva.model.instancetypes.report.ReportResearch;
+import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -572,9 +584,10 @@ class ExpandedResourceTest {
         assertThat(actualPublisherLevel, is(not(nullValue())));
     }
 
-    @Test
-    void shouldSetHasPartsRelationForBookAnthology() throws IOException {
-        var bookAnthology = PublicationGenerator.randomPublication(BookAnthology.class);
+    @ParameterizedTest
+    @MethodSource("validAnthologyContainersProvider")
+    void shouldSetHasPartsRelationForBookAnthology(Class<?> publicationType) throws IOException {
+        var bookAnthology = PublicationGenerator.randomPublication(publicationType);
 
         var expandedResource = fromPublication(uriRetriever, bookAnthology).asJsonNode();
 
@@ -661,6 +674,23 @@ class ExpandedResourceTest {
         var anthology = (Anthology) childPublication.getEntityDescription().getReference().getPublicationContext();
         anthology.setId(bookAnthologyUri);
         return childPublication;
+    }
+
+    private static Stream<Class<?>> validAnthologyContainersProvider() {
+        return Stream.of(
+                AcademicMonograph.class,
+                NonFictionMonograph.class,
+                PopularScienceMonograph.class,
+                Textbook.class,
+                Encyclopedia.class,
+                ExhibitionCatalog.class,
+                BookAnthology.class,
+                ReportResearch.class,
+                ReportPolicy.class,
+                ReportWorkingPaper.class,
+                ReportBookOfAbstract.class,
+                ConferenceReport.class,
+                ReportBasic.class);
     }
 
     private static Stream<Class<?>> validAnthologyMembersProvider() {
