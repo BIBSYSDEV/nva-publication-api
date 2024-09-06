@@ -41,5 +41,4 @@ if [ -n "$diff_output" ] && [ "$local_model_version" == "$remote_model_version" 
   exit 1
 else
   echo "No changes to $TARGET. Continuing."
-  exit 0
 fi
