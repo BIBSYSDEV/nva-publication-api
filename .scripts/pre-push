@@ -32,9 +32,8 @@ MODEL_CHANGE_MESSAGE="Changes in the $TARGET package, which imply \
 
 git fetch origin
 
-latest_local_commit=$(git rev-parse HEAD)
 
-diff_output=$(git diff "$latest_local_commit" -- "$TARGET" origin/main -- "$TARGET")
+diff_output=$(git diff "$(git rev-parse HEAD)" origin/main -- "$TARGET")
 
 if [ -n "$diff_output" ] && [ "$local_model_version" == "$remote_model_version" ] ; then
   echo "$MODEL_CHANGE_MESSAGE"
