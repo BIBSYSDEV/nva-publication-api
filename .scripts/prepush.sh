@@ -1,0 +1,45 @@
+#!/bin/bash
+set -o nounset
+set -o errexit
+
+# If the publication-model has updates that change the model structure,
+# the model version should be updated.
+
+TARGET="publication-model"
+
+BUILD_FILE="${TARGET}/build.gradle"
+PATTERN="^def modelVersion = '"
+
+extract_model_version() {
+  local file_content="$1"
+  echo "$file_content" | grep "$PATTERN" | sed -E "s/$PATTERN([^']+)'.*/\1/"
+}
+
+# Get the content of the file in the latest local commit
+local_content=$(git show HEAD:"$BUILD_FILE")
+
+# Get the content of the file in the origin/main branch
+remote_content=$(git show origin/main:"$BUILD_FILE")
+
+# Extract the modelVersion values
+local_model_version=$(extract_model_version "$local_content")
+remote_model_version=$(extract_model_version "$remote_content")
+
+
+MODEL_CHANGE_MESSAGE="Changes in the $TARGET package, which imply \
+ the model version number may need updating. If there are no effective model structure changes, \
+ override this pre-push hook with $ git push --no-verify"
+
+git fetch origin
+
+latest_local_commit=$(git rev-parse HEAD)
+
+diff_output=$(git diff "$latest_local_commit" -- "$TARGET" origin/main -- "$TARGET")
+
+if [ -n "$diff_output" ] && [ "$local_model_version" != "$remote_model_version" ] ; then
+  echo "$MODEL_CHANGE_MESSAGE"
+  exit 1
+else
+  echo "No changes to $TARGET. Continuing."
+  exit 0
+fi

@@ -16,3 +16,10 @@ wrapper {
     gradleVersion = '8.5'
     distributionType = Wrapper.DistributionType.ALL
 }
+
+task("addGitHooks") {
+    exec {
+        commandLine("cp", "./.scripts/prepush.sh", "./.git/hooks")
+    }
+    println("Added git hooks scripts to local git hooks")
+}
