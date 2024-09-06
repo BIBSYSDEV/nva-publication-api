@@ -20,6 +20,8 @@ wrapper {
 task("addGitHooks") {
     exec {
         commandLine("cp", "./.scripts/pre-push", "./.git/hooks")
+    }
+    exec {
         commandLine("chmod", "+x", "./.git/hooks/pre-push")
     }
     println("Added git hooks scripts to local git hooks")
