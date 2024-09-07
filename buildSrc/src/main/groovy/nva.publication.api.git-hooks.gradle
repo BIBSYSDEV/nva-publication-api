@@ -2,8 +2,8 @@ plugins {
     id 'base'
 }
 
-def scriptsPrePushPath = file('.scripts/publication-model-pre-push')
-def prePushHookPath = file('./.git/hooks/publication-model-pre-push')
+def scriptsPrePushPath = file('.scripts/pre-push')
+def prePushHookPath = file('./.git/hooks/pre-push')
 
 tasks.register('copyPrePushHook', Copy) {
     from scriptsPrePushPath
