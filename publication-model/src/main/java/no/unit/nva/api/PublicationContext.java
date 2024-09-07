@@ -7,8 +7,6 @@ import no.unit.nva.model.Publication;
 
 public class PublicationContext {
 
-    public static final String h = "h";
-
     public static JsonNode getContext(Publication publication) {
         return attempt(() -> dataModelObjectMapper.readTree(publication.getJsonLdContext())).orElseThrow();
     }
