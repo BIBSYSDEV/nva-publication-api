@@ -10,6 +10,8 @@ TARGET="publication-model"
 BUILD_FILE="${TARGET}/build.gradle"
 PATTERN="^def modelVersion = '"
 
+git fetch origin
+
 extract_model_version() {
   local file_content="$1"
   echo "$file_content" | grep "$PATTERN" | sed -E "s/$PATTERN([^']+)'.*/\1/"
@@ -29,9 +31,6 @@ remote_model_version=$(extract_model_version "$remote_content")
 MODEL_CHANGE_MESSAGE="Changes in the $TARGET package, which imply \
  the model version number may need updating. If there are no effective model structure changes, \
  override this pre-push hook with $ git push --no-verify"
-
-git fetch origin
-
 
 diff_output=$(git diff "$(git rev-parse HEAD)" origin/main -- "$TARGET")
 
