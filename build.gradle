@@ -1,5 +1,6 @@
 plugins{
     id 'nva.publication.api.rootplugin'
+    id 'nva.publication.api.git-hooks'
 }
 
 //workaround for jacoco-merge to work
@@ -15,14 +16,4 @@ tasks.withType(JavaCompile) {
 wrapper {
     gradleVersion = '8.5'
     distributionType = Wrapper.DistributionType.ALL
-}
-
-task("addGitHooks") {
-    exec {
-        commandLine("cp", "./.scripts/pre-push", "./.git/hooks")
-    }
-    exec {
-        commandLine("chmod", "+x", "./.git/hooks/pre-push")
-    }
-    println("Added git hooks scripts to local git hooks")
 }
