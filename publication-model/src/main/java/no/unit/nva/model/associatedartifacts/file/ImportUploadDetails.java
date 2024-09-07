@@ -18,12 +18,6 @@ public record ImportUploadDetails(Source source, String archive, Instant uploade
 
     public static final String TYPE = "ImportUploadDetails";
 
-    //TODO: Remove method after migration
-    @JsonProperty
-    public String type() {
-        return TYPE;
-    }
-
     public enum Source {
         BRAGE("Brage"), SCOPUS("Scopus");
 
