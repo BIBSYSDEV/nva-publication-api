@@ -45,6 +45,7 @@ if [ -n "$diff_output" ] && [ "$local_model_version" == "$remote_model_version" 
   echo "$MODEL_CHANGE_MESSAGE"
   exit 1
 else
+  echo "${diff_output} should be null"
   echo "${local_model_version} should equal ${remote_model_version}"
   echo "No changes to $TARGET. Continuing."
 fi
