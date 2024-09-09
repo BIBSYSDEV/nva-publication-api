@@ -1205,6 +1205,26 @@ ImportSource:
       type: string
     type:
       type: string
+ImportUploadDetails:
+  required:
+  - type
+  type: object
+  allOf:
+  - $ref: '#/components/schemas/UploadDetails'
+  - type: object
+    properties:
+      source:
+        type: string
+        enum:
+        - Brage
+        - Scopus
+      archive:
+        type: string
+      uploadedDate:
+        type: string
+        format: date-time
+      type:
+        type: string
 Instant:
   required:
   - type
@@ -1698,7 +1718,7 @@ MonographPages:
       $ref: '#/components/schemas/Range'
     pages:
       type: string
-    illustrated:
+    rename:
       type: boolean
     type:
       type: string
@@ -2899,13 +2919,23 @@ UploadDetails:
   - type
   type: object
   properties:
-    uploadedBy:
-      type: string
-    uploadedDate:
-      type: string
-      format: date-time
     type:
       type: string
+UserUploadDetails:
+  required:
+  - type
+  type: object
+  allOf:
+  - $ref: '#/components/schemas/UploadDetails'
+  - type: object
+    properties:
+      uploadedBy:
+        type: string
+      uploadedDate:
+        type: string
+        format: date-time
+      type:
+        type: string
 Venue:
   required:
   - type
