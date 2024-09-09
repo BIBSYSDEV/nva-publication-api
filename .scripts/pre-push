@@ -2,42 +2,143 @@
 set -o nounset
 set -o errexit
 
+# Enable strict mode
+set -euo pipefail
+
 # If the publication-model has updates that change the model structure,
-# the model version should be updated.
+# the model version should be updated. We cannot easily test the structural
+# change so we simply inform about every model change that does not also
+# update the model version number.
 
 TARGET="publication-model"
 BUILD_FILE="${TARGET}/build.gradle"
 PATTERN="^def modelVersion = '"
-MODEL_CHANGE_MESSAGE="Changes in the $TARGET package, which imply\
+MODEL_CHANGE_WARNING="PUBLICATION MODEL VERSION ERROR"
+MODEL_CHANGE_MESSAGE="Changes detected in the $TARGET package, which implies\
  the model version number may need updating. If there are no effective model structure changes,\
  override this pre-push hook with $ git push --no-verify"
 NO_MODEL_CHANGE_MESSAGE="No changes to $TARGET. Continuing."
+MODEL_AND_VERSION_CHANGE_MESSAGE="You changed the model and updated the version number. Very good!"
+WRAP_SIZE=80
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+RESET='\033[0m'
 
+# Ensuring relative paths are relative to project root
 cd "$(git rev-parse --show-toplevel)"
 
+# Since we later compare local branch with remote, we need to stash uncommitted changes
 if ! git diff-index --quiet HEAD --; then
   echo "You have uncommitted changes. Please commit or stash them before pushing."
   exit 1
 fi
 
+# Let's ensure we are working off the same remote data
 git fetch origin
 
+# Simple regex to get the file, using sed since this is easier to read and maybe
+# more widely supported than equivalent perl regex.
 extract_model_version() {
   local file_content="$1"
   echo "$file_content" | grep "$PATTERN" | sed -E "s/$PATTERN([^']+)'.*/\1/"
 }
 
+# Function to compare two semantic versions
+compare_versions() {
+  local ver1=$1
+  local ver2=$2
+
+  # Split the versions into their components
+  IFS='.' read -r -a ver1_parts <<< "$ver1"
+  IFS='.' read -r -a ver2_parts <<< "$ver2"
+
+  # Compare major versions
+  if (( ver1_parts[0] > ver2_parts[0] )); then
+    return 1
+  elif (( ver1_parts[0] < ver2_parts[0] )); then
+    return 2
+  fi
+
+  # Compare minor versions
+  if (( ver1_parts[1] > ver2_parts[1] )); then
+    return 1
+  elif (( ver1_parts[1] < ver2_parts[1] )); then
+    return 2
+  fi
+
+  # Compare patch versions
+  if (( ver1_parts[2] > ver2_parts[2] )); then
+    return 1
+  elif (( ver1_parts[2] < ver2_parts[2] )); then
+    return 2
+  fi
+
+  # Versions are equal
+  return 0
+}
+
+# Formats the error message header
+format_model_warning() {
+  size=$(((WRAP_SIZE - ${#MODEL_CHANGE_WARNING}) / 2))
+  if [ $size -gt 0 ] ; then
+    echo "$(printf '%*s' $size)$MODEL_CHANGE_WARNING"
+  else
+    echo "$MODEL_CHANGE_WARNING"
+  fi
+}
+
+# Wraps text to 80 characters
+wrap() {
+  echo "$1" | fold -s -w $WRAP_SIZE | cat
+}
+
+# Formats the error message
+
+format_model_changes_message() {
+  repeated_hashes=$(printf '%0.s#' {1..80})
+  newline=$(echo -e "\n")
+  echo "$repeated_hashes"
+  echo "$newline"
+  format_model_warning
+  echo "$newline"
+  wrap "$MODEL_CHANGE_MESSAGE"
+  echo "$newline"
+  echo "$repeated_hashes"
+}
+
+colorize_message() {
+  local color=${1:-$RESET}  # Use RESET as the default color if none is provided
+  local message=${2:-}      # Default message to an empty string if none is provided
+  echo -e "${color}${message}${RESET}"
+}
+
+# Get the local changes
 local_content=$(git show HEAD:"$BUILD_FILE")
+
+# Get the remote changes
 remote_content=$(git show origin/main:"$BUILD_FILE")
 
-local_model_version=$(extract_model_version "$local_content")
-remote_model_version=$(extract_model_version "$remote_content")
-
+# Diff the local to remote changes
 diff_output=$(git diff "$(git rev-parse HEAD)" origin/main -- "$TARGET")
 
-if [ -n "$diff_output" ] && [ "$local_model_version" == "$remote_model_version" ] ; then
-  echo "$MODEL_CHANGE_MESSAGE"
+# Extract the local version number
+local_model_version=$(extract_model_version "$local_content")
+
+# Extract the remote version number
+remote_model_version=$(extract_model_version "$remote_content")
+
+# Get semantic version comparison
+compared_model_version=$(compare_versions "$local_model_version" "$remote_model_version")
+
+# If the diff is not empty and the model version hasn't changed, show the error message
+# If the diff is not empty and the model version has changed, give praise
+# Else say nothing has changed
+
+if [ -n "$diff_output" ] && [ "$compared_model_version" != 1 ] ; then
+  colorize_message "$RED" "$(format_model_changes_message)"
   exit 1
+elif [ -n "$diff_output" ] && [ "$compared_model_version" == 1 ] ; then
+  colorize_message "$GREEN" "$MODEL_AND_VERSION_CHANGE_MESSAGE"
 else
-  echo "$NO_MODEL_CHANGE_MESSAGE"
+  colorize_message "$GREEN" "$NO_MODEL_CHANGE_MESSAGE"
 fi
