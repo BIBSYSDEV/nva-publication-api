@@ -9,7 +9,7 @@ import nva.commons.core.JacocoGenerated;
 public class MonographPages implements Pages {
     private Range introduction;
     private String pages;
-    private boolean rename;
+    private boolean someNewName;
 
     public MonographPages() {
     }
@@ -17,7 +17,7 @@ public class MonographPages implements Pages {
     private MonographPages(Builder builder) {
         setIntroduction(builder.introduction);
         setPages(builder.pages);
-        setRename(builder.illustrated);
+        setSomeNewName(builder.illustrated);
     }
 
     public Range getIntroduction() {
@@ -46,12 +46,12 @@ public class MonographPages implements Pages {
         this.pages = pages;
     }
 
-    public boolean isRename() {
-        return rename;
+    public boolean isSomeNewName() {
+        return someNewName;
     }
 
-    public void setRename(boolean rename) {
-        this.rename = rename;
+    public void setSomeNewName(boolean someNewName) {
+        this.someNewName = someNewName;
     }
 
     public static final class Builder {
@@ -92,7 +92,7 @@ public class MonographPages implements Pages {
             return false;
         }
         MonographPages monographPages = (MonographPages) o;
-        return isRename() == monographPages.isRename()
+        return isSomeNewName() == monographPages.isSomeNewName()
                && Objects.equals(getIntroduction(), monographPages.getIntroduction())
                && Objects.equals(getPages(), monographPages.getPages());
     }
@@ -100,6 +100,6 @@ public class MonographPages implements Pages {
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getIntroduction(), getPages(), isRename());
+        return Objects.hash(getIntroduction(), getPages(), isSomeNewName());
     }
 }
