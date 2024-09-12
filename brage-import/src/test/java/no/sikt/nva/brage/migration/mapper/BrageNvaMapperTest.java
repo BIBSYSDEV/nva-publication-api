@@ -8,6 +8,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -32,8 +33,8 @@ import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
 import nva.commons.core.Environment;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.s3.S3Client;
 
 class BrageNvaMapperTest {
 
@@ -42,6 +43,7 @@ class BrageNvaMapperTest {
     public static final String RELATED_DOCUMENT_1 = "Paper 1: Saltvedt,";
     public static final String RELATED_DOCUMENT_2 = "Paper 2: Prestmo, ";
     public static final String NPOLAR_SHORT_NAME = "NPI";
+    public static final S3Client s3Client = mock(S3Client.class);
 
     @Test
     void shouldMapContentFileWithBundleTypeLicenseToAdministrativeAgreement()
@@ -51,7 +53,7 @@ class BrageNvaMapperTest {
                              .withType(new Type(List.of(), NvaType.CHAPTER.getValue()))
                              .withResourceContent(new ResourceContent(List.of(licenseContentFile)))
                              .build();
-        var file = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST).getAssociatedArtifacts().getFirst();
+        var file = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client).getAssociatedArtifacts().getFirst();
 
         assertThat(file, is(instanceOf(AdministrativeAgreement.class)));
     }
@@ -64,7 +66,7 @@ class BrageNvaMapperTest {
                              .withType(new Type(List.of(), NvaType.CHAPTER.getValue()))
                              .withResourceContent(new ResourceContent(List.of(licenseContentFile)))
                              .build();
-        var file = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST).getAssociatedArtifacts().getFirst();
+        var file = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client).getAssociatedArtifacts().getFirst();
 
         assertThat(file, is(instanceOf(AdministrativeAgreement.class)));
     }
@@ -76,7 +78,7 @@ class BrageNvaMapperTest {
                              .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
                              .withHasPart(List.of("1", "2"))
                              .build();
-        var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST);
+        var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
         var degreePhd = (DegreePhd) publication.getEntityDescription().getReference().getPublicationInstance();
         var expectedRelatedDocuments = Set.of(new UnconfirmedDocument("1"), new UnconfirmedDocument("2"));
         assertThat(degreePhd.getRelated(), is(equalTo(expectedRelatedDocuments)));
@@ -92,7 +94,7 @@ class BrageNvaMapperTest {
                              .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
                              .withAbstracts(List.of(firstAbstract, secondAbstract, thirdAbstract))
                              .build();
-        var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST);
+        var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
         assertThat(publication.getEntityDescription().getAbstract(), is(equalTo(firstAbstract)));
         assertThat(publication.getEntityDescription().getAlternativeAbstracts().get("und"),
                    is(equalTo(secondAbstract + "\n\n" + thirdAbstract)));
@@ -105,7 +107,7 @@ class BrageNvaMapperTest {
                              .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
                              .withAbstracts(List.of(randomString()))
                              .build();
-        var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST);
+        var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
         assertThat(publication.getEntityDescription().getAlternativeAbstracts(), is(anEmptyMap()));
     }
 
@@ -116,7 +118,7 @@ class BrageNvaMapperTest {
                              .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
                              .withHasPart(List.of(RELATED_DOCUMENT_3, RELATED_DOCUMENT_1, RELATED_DOCUMENT_2))
                              .build();
-        var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST);
+        var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
         var publicationInstance = (DegreePhd) publication.getEntityDescription()
                                                                        .getReference()
                                                                        .getPublicationInstance();
@@ -134,7 +136,7 @@ class BrageNvaMapperTest {
                              .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
                              .withContributor(contributor)
                              .build();
-        var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST);
+        var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
         var actualContributor = publication.getEntityDescription().getContributors().getFirst();
 
         assertEquals(contributor.getIdentity().getOrcId(), actualContributor.getIdentity().getOrcId());
@@ -148,7 +150,7 @@ class BrageNvaMapperTest {
                              .withCustomer(new Customer("npolar", randomUri()))
                              .withResourceContent(new ResourceContent(List.of(createRandomContentFileWithBundleType(BundleType.ORIGINAL))))
                              .build();
-        var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST);
+        var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
         var file = getFirstFile(publication);
         var importUploadDetail = (ImportUploadDetails) file.getUploadDetails();
         assertEquals(importUploadDetail.archive(), NPOLAR_SHORT_NAME);

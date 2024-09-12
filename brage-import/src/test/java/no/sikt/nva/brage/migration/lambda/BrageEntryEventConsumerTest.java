@@ -341,21 +341,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldNotConvertBrageRecordMissingTitle() throws IOException {
-        var brageGenerator = buildGeneratorForRecord();
-        var record = brageGenerator.getBrageRecord();
-        record.getEntityDescription().setMainTitle(null);
-        var s3Event = createNewBrageRecordEvent(record);
-        handler.handleRequest(s3Event, CONTEXT);
-        var actualErrorReport =
-            extractActualReportFromS3Client(s3Event,
-                                            MissingFieldsException.class.getSimpleName(),
-                                            record);
-        var exception = actualErrorReport.get("exception").asText();
-        assertThat(exception, containsString("All fields of all included objects need to be non empty"));
-    }
-
-    @Test
     void shouldAttachCertainMetadataFieldsToExistingPublicationWhenExistingPublicationDoesNotHaveThoseFields()
         throws IOException {
         // The metadata fields are currently Description, Abstract and handle
@@ -2252,6 +2237,24 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         //assert that we have not created a new publication, but instead updated the existing one:
         assertThat(updatedPublication.publication().getIdentifier(), is(equalTo(existingPublicationIdentifier)));
 
+    }
+
+    @Test
+    void shouldImportPublicationMissingMandatoryValuesAndPersistReport() throws IOException {
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_REPORT_WORKING_PAPER).build();
+        brageGenerator.getBrageRecord().getEntityDescription().setMainTitle(null);
+        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
+        handler.handleRequest(s3Event, CONTEXT);
+
+        var s3Driver = new S3Driver(s3Client, new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
+        var uri = UriWrapper.fromUri("ERROR_REPORT")
+                      .addChild(brageGenerator.getBrageRecord().getCustomer().getName())
+                      .addChild(MissingFieldsError.name())
+                      .addChild(brageGenerator.getBrageRecord().getId().getPath())
+                      .toS3bucketPath();
+        var content = s3Driver.getFile(uri);
+
+        assertThat(content, containsString("All fields of all included objects need to be non empty"));
     }
 
     private static AdditionalIdentifier cristinAdditionalIdentifier(String cristinIdentifier) {

@@ -2,9 +2,11 @@ package no.sikt.nva.brage.migration.mapper;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.BRAGE_MIGRATION_REPORTS_BUCKET_NAME;
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.HTTPS_PREFIX;
 import static no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger.DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import java.net.URI;
 import java.time.Duration;
@@ -22,7 +24,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.sikt.nva.brage.migration.NvaType;
 import no.sikt.nva.brage.migration.lambda.MappingConstants;
-import no.sikt.nva.brage.migration.lambda.MissingFieldsException;
+import no.sikt.nva.brage.migration.lambda.MissingFieldsError;
 import no.sikt.nva.brage.migration.record.Affiliation;
 import no.sikt.nva.brage.migration.record.Language;
 import no.sikt.nva.brage.migration.record.Project;
@@ -58,11 +60,14 @@ import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
+import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
+import software.amazon.awssdk.services.s3.S3Client;
 
 @SuppressWarnings("PMD.GodClass")
 public final class BrageNvaMapper {
@@ -81,11 +86,12 @@ public final class BrageNvaMapper {
     public static final String UNDEFINED_LANGUAGE = "und";
     public static final String TWO_NEWLINES = "\n\n";
     public static final String NO_ABSTRACT = null;
+    public static final String ERROR_REPORT = "ERROR_REPORT";
 
     private BrageNvaMapper() {
     }
 
-    public static Publication toNvaPublication(Record brageRecord, String host)
+    public static Publication toNvaPublication(Record brageRecord, String host, S3Client s3Client)
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var customer = Customer.fromBrageArchiveName(brageRecord.getCustomer().getName());
         validateBrageRecord(brageRecord);
@@ -99,7 +105,7 @@ public final class BrageNvaMapper {
                               .withFundings(extractFundings(brageRecord))
                               .build();
         if (!isCristinRecord(brageRecord)) {
-            assertPublicationDoesNotHaveEmptyFields(publication);
+            assertPublicationDoesNotHaveEmptyFields(publication, brageRecord, s3Client);
         }
         return publication;
     }
@@ -185,7 +191,7 @@ public final class BrageNvaMapper {
                                                        brageRecord.getCristinId()));
     }
 
-    private static void assertPublicationDoesNotHaveEmptyFields(Publication publication) {
+    private static void assertPublicationDoesNotHaveEmptyFields(Publication publication, Record brageRecord, S3Client s3Client) {
         // TODO: Fix this so we don't depend on JUnit.
         try {
             Set<String> ignoredAndPossiblyEmptyPublicationFields =
@@ -193,9 +199,20 @@ public final class BrageNvaMapper {
             assertThat(publication, doesNotHaveEmptyValuesIgnoringFields(
                 ignoredAndPossiblyEmptyPublicationFields));
         } catch (Error error) {
-            String message = error.getMessage();
-            throw new MissingFieldsException(message);
+            persistErrorReport(brageRecord, s3Client, error);
         }
+    }
+
+    private static void persistErrorReport(Record brageRecord, S3Client s3Client, Error error) {
+        var customerName = brageRecord.getCustomer().getName();
+        var handlePath = brageRecord.getId().getPath();
+        var location = UnixPath.fromString(ERROR_REPORT)
+                           .addChild(customerName)
+                           .addChild(MissingFieldsError.name())
+                           .addChild(handlePath);
+        var errorMessage = error.getMessage();
+        var driver = new S3Driver(s3Client, new Environment().readEnv(BRAGE_MIGRATION_REPORTS_BUCKET_NAME));
+        attempt(() -> driver.insertFile(location, errorMessage)).orElseThrow();
     }
 
     private static List<AssociatedArtifact> extractAssociatedFiles(Record brageRecord, Customer customer) {
