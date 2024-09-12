@@ -25,6 +25,7 @@ import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.core.Environment;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
@@ -52,7 +53,6 @@ import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventPro
 import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.HANDLER_DOES_NOT_DEAL_WITH_DELETIONS;
 import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.HTTP_FOUND;
 import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.MIN_INTERVAL_FOR_REREQUESTING_A_DOI;
-import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.NVA_API_DOMAIN;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -278,7 +278,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     }
 
     private URI inferExpectedPublicationId(Publication publication) {
-        return UriWrapper.fromUri(NVA_API_DOMAIN)
+        return UriWrapper.fromHost(new Environment().readEnv("API_HOST"))
                    .addChild("publication")
                    .addChild(publication.getIdentifier().toString())
                    .getUri();

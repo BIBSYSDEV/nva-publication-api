@@ -1,6 +1,5 @@
 package no.unit.nva.publication.events.bodies;
 
-import static no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer.NVA_API_DOMAIN;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -52,8 +51,8 @@ public class DoiMetadataUpdateEvent {
         this.duplicateOf = duplicateOf;
     }
 
-    public static DoiMetadataUpdateEvent createUpdateDoiEvent(Publication newEntry) {
-        URI publicationId = inferPublicationId(newEntry);
+    public static DoiMetadataUpdateEvent createUpdateDoiEvent(Publication newEntry, String apiHost) {
+        URI publicationId = inferPublicationId(newEntry, apiHost);
         URI customerId = extractCustomerId(newEntry);
         URI doi = extractDoi(newEntry);
         URI duplicateOf  = newEntry.getDuplicateOf();
@@ -128,8 +127,8 @@ public class DoiMetadataUpdateEvent {
         return Optional.ofNullable(publication.getPublisher()).map(Organization::getId).orElse(null);
     }
 
-    private static URI inferPublicationId(Publication newEntry) {
-        return UriWrapper.fromUri(NVA_API_DOMAIN)
+    private static URI inferPublicationId(Publication newEntry, String apiHost) {
+        return UriWrapper.fromHost(apiHost)
                    .addChild("publication")
                    .addChild(newEntry.getIdentifier().toString())
                    .getUri();
