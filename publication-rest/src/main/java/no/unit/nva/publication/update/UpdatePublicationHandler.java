@@ -278,7 +278,7 @@ public class UpdatePublicationHandler
                                                     .source(NVA_PUBLICATION_DELETE_SOURCE)
                                                     .detailType(LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS)
                                                     .detail(new LambdaDestinationInvocationDetail<>(
-                                                        DoiMetadataUpdateEvent.createUpdateDoiEvent(publication))
+                                                        DoiMetadataUpdateEvent.createUpdateDoiEvent(publication, apiHost))
                                                                 .toJsonString())
                                                     .resources(publication.getIdentifier().toString()).build())
                                        .build();

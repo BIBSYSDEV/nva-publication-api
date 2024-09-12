@@ -43,7 +43,6 @@ public class DoiRequestEventProducer
     public static final Duration MIN_INTERVAL_FOR_REREQUESTING_A_DOI = Duration.ofSeconds(10);
     public static final String DOI_REQUEST_HAS_NO_IDENTIFIER = "DoiRequest has no identifier";
     public static final String HEAD = "HEAD";
-    public static final String NVA_API_DOMAIN = "https://" + readDomainName();
     public static final DoiMetadataUpdateEvent EMPTY_EVENT = DoiMetadataUpdateEvent.empty();
     public static final String INPUT = "INPUT {}";
     public static final String OUTPUT = "OUTPUT {}";
@@ -53,6 +52,7 @@ public class DoiRequestEventProducer
     private final ResourceService resourceService;
     private final HttpClient httpClient;
     private final S3Client s3Client;
+    private final String apiHost;
 
     @JacocoGenerated
     public DoiRequestEventProducer() {
@@ -64,6 +64,7 @@ public class DoiRequestEventProducer
         this.resourceService = resourceService;
         this.httpClient = httpClient;
         this.s3Client = s3Client;
+        this.apiHost = new Environment().readEnv("API_HOST");
     }
 
     @Override
@@ -81,10 +82,6 @@ public class DoiRequestEventProducer
                               : EMPTY_EVENT;
         logger.info(OUTPUT, outputEvent.toJsonString());
         return outputEvent;
-    }
-
-    private static String readDomainName() {
-        return new Environment().readEnv("DOMAIN_NAME");
     }
 
     private DoiMetadataUpdateEvent propagateEvent(DataEntryUpdateEvent input) {
@@ -110,13 +107,13 @@ public class DoiRequestEventProducer
     private DoiMetadataUpdateEvent createDoiMetadataUpdateEvent(Resource newEntry) {
         if (resourceWithFindableDoiHasBeenUpdated(newEntry)) {
             var publication = newEntry.toPublication();
-            return DoiMetadataUpdateEvent.createUpdateDoiEvent(publication);
+            return DoiMetadataUpdateEvent.createUpdateDoiEvent(publication, apiHost);
         }
         return EMPTY_EVENT;
     }
 
     private DoiMetadataUpdateEvent createEventForMakingDoiFindable(DoiRequest newEntry) {
-        return DoiMetadataUpdateEvent.createUpdateDoiEvent(newEntry.toPublication(resourceService));
+        return DoiMetadataUpdateEvent.createUpdateDoiEvent(newEntry.toPublication(resourceService), apiHost);
     }
 
     private boolean isDoiRequestApproval(DoiRequest newEntry) {
