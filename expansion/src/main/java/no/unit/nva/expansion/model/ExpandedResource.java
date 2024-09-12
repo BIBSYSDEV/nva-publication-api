@@ -41,16 +41,8 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
-import no.unit.nva.model.contexttypes.Anthology;
+import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
-import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.book.BookAnthology;
-import no.unit.nva.model.instancetypes.book.BookMonograph;
-import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
-import no.unit.nva.model.instancetypes.chapter.ChapterConferenceAbstract;
-import no.unit.nva.model.instancetypes.chapter.ChapterInReport;
-import no.unit.nva.model.instancetypes.report.ReportBasic;
-import no.unit.nva.model.instancetypes.report.ReportBookOfAbstract;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -74,7 +66,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     private static final String JOIN_FIELD_NODE_LABEL = "joinField";
     private static final String JOIN_FIELD_RELATION_KEY = "name";
     private static final String JOIN_FIELD_PARENT_KEY = "parent";
-    public static final String JOIN_FIELD_DUMMY_PARENT_ID = "PARENT_ID_NOT_FOUND";
+    public static final String JOIN_FIELD_DUMMY_PARENT_IDENTIFIER = "PARENT_IDENTIFIER_NOT_FOUND";
 
     private static final String ID_FIELD_NAME = "id";
     private static final String JSON_LD_CONTEXT_FIELD = "@context";
@@ -192,51 +184,52 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         var sortedJson = strToJsonWithSortedContributors(json);
         injectHasFileEnum(publication, (ObjectNode) sortedJson);
         expandLicenses(sortedJson);
-        injectAnthologyRelation(publication, (ObjectNode) sortedJson);
+        injectJoinField(publication, (ObjectNode) sortedJson);
         return sortedJson;
     }
 
-    private static void injectAnthologyRelation(Publication publication, ObjectNode sortedJson) {
+    /**
+     * Injects a join field into the JSON document, intended to be used by OpenSearch. The join
+     * field is used to create a relationship between parent and child documents, where all
+     * documents are considered to either be a potential parent or a child depending on type.
+     * "Children" containing a reference to a parent will have this reference in the join field.
+     */
+    private static void injectJoinField(Publication publication, ObjectNode sortedJson) {
         Optional.ofNullable(publication.getEntityDescription())
                 .map(EntityDescription::getReference)
-                .ifPresent(reference -> addJoinFieldWhenAnthology(sortedJson, reference));
+                .ifPresent(reference -> addJoinField(sortedJson, reference));
     }
 
-    private static void addJoinFieldWhenAnthology(ObjectNode sortedJson, Reference reference) {
-        var instanceType = reference.getPublicationInstance();
+    private static void addJoinField(ObjectNode sortedJson, Reference reference) {
         var publicationContext = reference.getPublicationContext();
-
-        if (instanceTypeCanBeAnthology(instanceType)) {
+        var canBeParent = canBeParent(publicationContext);
+        if (canBeParent) {
             addJoinField(sortedJson, JOIN_FIELD_PARENT_LABEL, null);
-        } else if (isPartOfAnthology(publicationContext, instanceType)) {
-            var parentId = ((Anthology) publicationContext).getId();
-            if (nonNull(parentId)) {
-                var parentIdentifier = SortableIdentifier.fromUri(parentId).toString();
-                addJoinField(sortedJson, JOIN_FIELD_CHILD_LABEL, parentIdentifier);
-            } else {
-                addJoinField(sortedJson, JOIN_FIELD_CHILD_LABEL, JOIN_FIELD_DUMMY_PARENT_ID);
-            }
+        } else {
+            var parentIdentifier = getParentIdentifier(sortedJson);
+            addJoinField(sortedJson, JOIN_FIELD_CHILD_LABEL, parentIdentifier);
         }
     }
 
-    private static boolean instanceTypeCanBeAnthology(PublicationInstance<?> instanceType) {
-        return instanceType instanceof BookMonograph
-                || instanceType instanceof ReportBasic
-                || instanceType instanceof BookAnthology
-                || instanceType instanceof ReportBookOfAbstract;
+    private static String getParentIdentifier(ObjectNode sortedJson) {
+        return extractPublicationContextUri(sortedJson)
+                .filter(uri -> isNotBlank(uri.toString()))
+                .map(
+                        uri -> {
+                            try {
+                                var identifier = SortableIdentifier.fromUri(uri);
+                                return identifier.toString();
+                            } catch (IllegalArgumentException e) {
+                                // Missing or invalid identifier, which is expected for many
+                                // different types of documents.
+                                return null;
+                            }
+                        })
+                .orElse(JOIN_FIELD_DUMMY_PARENT_IDENTIFIER);
     }
 
-    private static boolean instanceTypeCanBePartOfAnthology(PublicationInstance<?> instanceType) {
-        return instanceType instanceof ChapterArticle
-               || instanceType instanceof ChapterConferenceAbstract
-               || instanceType instanceof ChapterInReport;
-    }
-
-    private static boolean isPartOfAnthology(
-            PublicationContext publicationContext, PublicationInstance<?> instanceType) {
-        var contextIsAnthology = publicationContext instanceof Anthology;
-        var typeCanBelongToAnthology = instanceTypeCanBePartOfAnthology(instanceType);
-        return contextIsAnthology && typeCanBelongToAnthology;
+    private static boolean canBeParent(PublicationContext context) {
+        return context instanceof Book;
     }
 
     private static void addJoinField(ObjectNode sortedJson, String name, String parent) {
