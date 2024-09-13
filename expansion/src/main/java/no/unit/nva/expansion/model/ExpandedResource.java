@@ -193,6 +193,8 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
      * field is used to create a relationship between parent and child documents, where all
      * documents are considered to either be a potential parent or a child depending on type.
      * "Children" containing a reference to a parent will have this reference in the join field.
+     * Note that non-publication contexts (e.g. journals) are not handled and the join field will
+     * have an invalid/dummy parent identifier.
      */
     private static void injectJoinField(Publication publication, ObjectNode sortedJson) {
         Optional.ofNullable(publication.getEntityDescription())
@@ -213,11 +215,15 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     private static String getParentIdentifier(ObjectNode sortedJson) {
         return extractPublicationContextUri(sortedJson)
                 .filter(uri -> isNotBlank(uri.toString()))
-                .map(ExpandedResource::getPublicationIdentifier)
+                .map(ExpandedResource::publicationUriToIdentifier)
                 .orElse(JOIN_FIELD_DUMMY_PARENT_IDENTIFIER);
     }
 
-    private static String getPublicationIdentifier(URI uri) {
+    /**
+     * Extracts the publication identifier (last segment) from a URI, assuming it is a publication
+     * URI. Note that other URIs (e.g. journals) will not be handled and will return null.
+     */
+    private static String publicationUriToIdentifier(URI uri) {
         return attempt(() -> SortableIdentifier.fromUri(uri))
                 .map(SortableIdentifier::toString)
                 .orElse(failure -> null);
