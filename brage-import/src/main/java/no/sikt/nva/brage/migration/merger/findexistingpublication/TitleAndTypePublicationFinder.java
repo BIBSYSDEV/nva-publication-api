@@ -27,10 +27,8 @@ import org.slf4j.LoggerFactory;
 
 public class TitleAndTypePublicationFinder implements FindExistingPublicationService {
 
-    public static final String TITLE = "title";
+    public static final String TITLE_SHOULD = "titleShould";
     public static final String CONTEXT_TYPE = "contextType";
-    public static final String AGGREGATION = "aggregation";
-    public static final String NONE = "none";
     private static final Logger logger = LoggerFactory.getLogger(TitleAndTypePublicationFinder.class);
     private static final String RESOURCES = "resources";
     private static final String SEARCH = "search";
@@ -125,9 +123,8 @@ public class TitleAndTypePublicationFinder implements FindExistingPublicationSer
         return UriWrapper.fromHost(apiHost)
                    .addChild(SEARCH)
                    .addChild(RESOURCES)
-                   .addQueryParameter(TITLE, getMainTitle(publication).get())
-                   .addQueryParameter(CONTEXT_TYPE, getPublicationContextType(publication))
-                   .addQueryParameter(AGGREGATION, NONE);
+                   .addQueryParameter(TITLE_SHOULD, getMainTitle(publication).get())
+                   .addQueryParameter(CONTEXT_TYPE, getPublicationContextType(publication));
     }
 
     private String getPublicationContextType(Publication publication) {
