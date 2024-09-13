@@ -41,13 +41,8 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
-import no.unit.nva.model.contexttypes.Anthology;
+import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
-import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.book.BookAnthology;
-import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
-import no.unit.nva.model.instancetypes.chapter.ChapterConferenceAbstract;
-import no.unit.nva.model.instancetypes.chapter.ChapterInReport;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -71,7 +66,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     private static final String JOIN_FIELD_NODE_LABEL = "joinField";
     private static final String JOIN_FIELD_RELATION_KEY = "name";
     private static final String JOIN_FIELD_PARENT_KEY = "parent";
-    public static final String JOIN_FIELD_DUMMY_PARENT_ID = "PARENT_ID_NOT_FOUND";
+    public static final String JOIN_FIELD_DUMMY_PARENT_IDENTIFIER = "PARENT_IDENTIFIER_NOT_FOUND";
 
     private static final String ID_FIELD_NAME = "id";
     private static final String JSON_LD_CONTEXT_FIELD = "@context";
@@ -189,41 +184,53 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         var sortedJson = strToJsonWithSortedContributors(json);
         injectHasFileEnum(publication, (ObjectNode) sortedJson);
         expandLicenses(sortedJson);
-        injectAnthologyRelation(publication, (ObjectNode) sortedJson);
+        injectJoinField(publication, (ObjectNode) sortedJson);
         return sortedJson;
     }
 
-    private static void injectAnthologyRelation(Publication publication, ObjectNode sortedJson) {
+    /**
+     * Injects a join field into the JSON document, intended to be used by OpenSearch. The join
+     * field is used to create a relationship between parent and child documents, where all
+     * documents are considered to either be a potential parent or a child depending on type.
+     * "Children" containing a reference to a parent will have this reference in the join field.
+     * Note that non-publication contexts (e.g. journals) are not handled and the join field will
+     * have an invalid/dummy parent identifier.
+     */
+    private static void injectJoinField(Publication publication, ObjectNode sortedJson) {
         Optional.ofNullable(publication.getEntityDescription())
                 .map(EntityDescription::getReference)
-                .ifPresent(reference -> addJoinFieldWhenAnthology(sortedJson, reference));
+                .ifPresent(reference -> addJoinField(sortedJson, reference));
     }
 
-    private static void addJoinFieldWhenAnthology(ObjectNode sortedJson, Reference reference) {
-        var instanceType = reference.getPublicationInstance();
+    private static void addJoinField(ObjectNode sortedJson, Reference reference) {
         var publicationContext = reference.getPublicationContext();
-
-        if (instanceType instanceof BookAnthology) {
+        if (canBeParent(publicationContext)) {
             addJoinField(sortedJson, JOIN_FIELD_PARENT_LABEL, null);
-        } else if (isPartOfAnthology(publicationContext, instanceType)) {
-            var parentId = ((Anthology) publicationContext).getId();
-            if (nonNull(parentId)) {
-                var parentIdentifier = SortableIdentifier.fromUri(parentId).toString();
-                addJoinField(sortedJson, JOIN_FIELD_CHILD_LABEL, parentIdentifier);
-            } else {
-                addJoinField(sortedJson, JOIN_FIELD_CHILD_LABEL, JOIN_FIELD_DUMMY_PARENT_ID);
-            }
+        } else {
+            var parentIdentifier = getParentIdentifier(sortedJson);
+            addJoinField(sortedJson, JOIN_FIELD_CHILD_LABEL, parentIdentifier);
         }
     }
 
-    private static boolean isPartOfAnthology(
-            PublicationContext publicationContext, PublicationInstance<?> instanceType) {
-        var hasAnthology = publicationContext instanceof Anthology;
-        var canBePartOfAnthology =
-                instanceType instanceof ChapterArticle
-                        || instanceType instanceof ChapterConferenceAbstract
-                        || instanceType instanceof ChapterInReport;
-        return hasAnthology && canBePartOfAnthology;
+    private static String getParentIdentifier(ObjectNode sortedJson) {
+        return extractPublicationContextUri(sortedJson)
+                .filter(uri -> isNotBlank(uri.toString()))
+                .map(ExpandedResource::publicationUriToIdentifier)
+                .orElse(JOIN_FIELD_DUMMY_PARENT_IDENTIFIER);
+    }
+
+    /**
+     * Extracts the publication identifier (last segment) from a URI, assuming it is a publication
+     * URI. Note that other URIs (e.g. journals) will not be handled and will return null.
+     */
+    private static String publicationUriToIdentifier(URI uri) {
+        return attempt(() -> SortableIdentifier.fromUri(uri))
+                .map(SortableIdentifier::toString)
+                .orElse(failure -> null);
+    }
+
+    private static boolean canBeParent(PublicationContext context) {
+        return context instanceof Book;
     }
 
     private static void addJoinField(ObjectNode sortedJson, String name, String parent) {
