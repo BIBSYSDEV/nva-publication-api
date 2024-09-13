@@ -202,8 +202,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
 
     private static void addJoinField(ObjectNode sortedJson, Reference reference) {
         var publicationContext = reference.getPublicationContext();
-        var canBeParent = canBeParent(publicationContext);
-        if (canBeParent) {
+        if (canBeParent(publicationContext)) {
             addJoinField(sortedJson, JOIN_FIELD_PARENT_LABEL, null);
         } else {
             var parentIdentifier = getParentIdentifier(sortedJson);
@@ -214,18 +213,14 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     private static String getParentIdentifier(ObjectNode sortedJson) {
         return extractPublicationContextUri(sortedJson)
                 .filter(uri -> isNotBlank(uri.toString()))
-                .map(
-                        uri -> {
-                            try {
-                                var identifier = SortableIdentifier.fromUri(uri);
-                                return identifier.toString();
-                            } catch (IllegalArgumentException e) {
-                                // Missing or invalid identifier, which is expected for many
-                                // different types of documents.
-                                return null;
-                            }
-                        })
+                .map(ExpandedResource::getPublicationIdentifier)
                 .orElse(JOIN_FIELD_DUMMY_PARENT_IDENTIFIER);
+    }
+
+    private static String getPublicationIdentifier(URI uri) {
+        return attempt(() -> SortableIdentifier.fromUri(uri))
+                .map(SortableIdentifier::toString)
+                .orElse(failure -> null);
     }
 
     private static boolean canBeParent(PublicationContext context) {
