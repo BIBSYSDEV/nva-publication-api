@@ -55,7 +55,6 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.pages.Pages;
 import nva.commons.core.StringUtils;
-import org.jetbrains.annotations.NotNull;
 
 public class CristinImportPublicationMerger {
 
