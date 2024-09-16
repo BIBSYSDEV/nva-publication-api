@@ -55,6 +55,7 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.pages.Pages;
 import nva.commons.core.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 public class CristinImportPublicationMerger {
 
@@ -204,14 +205,20 @@ public class CristinImportPublicationMerger {
 
     private List<Contributor> updateExistingCreatorsAffiliationWithBrageAffiliation() {
         var contributors = new ArrayList<>(existingContributorsWithUpdatedAffiliation());
-        if (isMissingSupervisor(contributors) && incomingPublicationHasSupervisor()) {
-            var supervisors = extractSupervisors().stream()
-                                  .filter(this::isNotContributorWithAnotherRoleInExistingPublication)
-                                  .toList();
-            contributors.addAll(supervisors);
-            return contributors;
+        if (shouldAddSupervisorFromBrage(contributors)) {
+            contributors.addAll(extractIncomingSupervisors());
         }
         return contributors;
+    }
+
+    private boolean shouldAddSupervisorFromBrage(ArrayList<Contributor> contributors) {
+        return isMissingSupervisor(contributors) && incomingPublicationHasSupervisor();
+    }
+
+    private List<Contributor> extractIncomingSupervisors() {
+        return extractSupervisors().stream()
+                              .filter(this::isNotContributorWithAnotherRoleInExistingPublication)
+                              .toList();
     }
 
     private boolean isNotContributorWithAnotherRoleInExistingPublication(Contributor contributor) {
