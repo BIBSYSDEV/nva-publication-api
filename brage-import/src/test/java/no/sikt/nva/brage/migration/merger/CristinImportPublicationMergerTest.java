@@ -3,13 +3,14 @@ package no.sikt.nva.brage.migration.merger;
 import static no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger.PRIORITIZE_ABSTRACT;
 import static no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger.PRIORITIZE_ALTERNATIVE_ABSTRACTS;
 import static no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger.PRIORITIZE_ALTERNATIVE_TITLES;
-import static no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger.PRIORITIZE_CONTRIBUTORS_WITH_CREATOR_ROLE;
 import static no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger.PRIORITIZE_FUNDINGS;
 import static no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger.PRIORITIZE_MAIN_TITLE;
 import static no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger.PRIORITIZE_REFERENCE;
 import static no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger.PRIORITIZE_TAGS;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static no.unit.nva.model.role.Role.ACTOR;
+import static no.unit.nva.model.role.Role.SUPERVISOR;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
@@ -19,6 +20,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -630,6 +632,47 @@ class CristinImportPublicationMergerTest {
         var dublinCores = extractDublinCores(updatedPublication);
 
         assertThat(dublinCores, containsInAnyOrder(newDublinCore));
+    }
+
+    @Test
+    void shouldImportAllSupervisorsFromBrageWhenExistingPublicationIsMissingAdvisorsAndPublicationIsDegree()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var existingPublication = randomPublication(DegreeBachelor.class);
+        existingPublication.getEntityDescription()
+            .setContributors(List.of(contributorWithRoleAndName(ACTOR, randomString())));
+        existingPublication.setAdditionalIdentifiers(Set.of());
+        var bragePublication = randomPublication(DegreeBachelor.class);
+        var supervisor = randomContributor(2, Role.SUPERVISOR);
+        bragePublication.getEntityDescription().setContributors(List.of(supervisor));
+
+        var updatedPublication = mergePublications(existingPublication, bragePublication);
+
+        assertThat(updatedPublication.getEntityDescription().getContributors(), hasItem(supervisor));
+    }
+
+    @Test
+    void shouldNotImportSupervisorFromBrageWhenExistingPublicationHasContributorWithTheSameNameAndPublicationIsDegree()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var existingPublication = randomPublication(DegreeBachelor.class);
+        var name = randomString();
+        existingPublication.getEntityDescription()
+            .setContributors(List.of(contributorWithRoleAndName(ACTOR, name)));
+        existingPublication.setAdditionalIdentifiers(Set.of());
+        var bragePublication = randomPublication(DegreeBachelor.class);
+        var supervisor = contributorWithRoleAndName(SUPERVISOR, name).copy().withSequence(2).build();
+        bragePublication.getEntityDescription().setContributors(List.of(supervisor));
+
+        var updatedPublication = mergePublications(existingPublication, bragePublication);
+
+        assertThat(updatedPublication.getEntityDescription().getContributors(),
+                   is(equalTo(existingPublication.getEntityDescription().getContributors())));
+    }
+
+    private static Contributor contributorWithRoleAndName(Role role, String name) {
+        return new Contributor.Builder()
+                   .withRole(new RoleType(role))
+                   .withIdentity(new Identity.Builder().withName(name).build())
+                   .build();
     }
 
     private static HandleIdentifier handleIdentifierFrom(URI handle) {

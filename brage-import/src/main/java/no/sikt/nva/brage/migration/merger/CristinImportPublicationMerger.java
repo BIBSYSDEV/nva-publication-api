@@ -2,6 +2,7 @@ package no.sikt.nva.brage.migration.merger;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.role.Role.CREATOR;
+import static no.unit.nva.model.role.Role.SUPERVISOR;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -26,6 +27,7 @@ import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.CristinIdentifier;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
@@ -201,6 +203,47 @@ public class CristinImportPublicationMerger {
     }
 
     private List<Contributor> updateExistingCreatorsAffiliationWithBrageAffiliation() {
+        var contributors = new ArrayList<>(existingContributorsWithUpdatedAffiliation());
+        if (shouldAddSupervisorFromBrage(contributors)) {
+            contributors.addAll(extractIncomingSupervisors());
+        }
+        return contributors;
+    }
+
+    private boolean shouldAddSupervisorFromBrage(ArrayList<Contributor> contributors) {
+        return isMissingSupervisor(contributors) && incomingPublicationHasSupervisor();
+    }
+
+    private List<Contributor> extractIncomingSupervisors() {
+        return extractSupervisors().stream()
+                              .filter(this::isNotContributorWithAnotherRoleInExistingPublication)
+                              .toList();
+    }
+
+    private boolean isNotContributorWithAnotherRoleInExistingPublication(Contributor contributor) {
+        var name = contributor.getIdentity().getName();
+        return existingPublication.getEntityDescription().getContributors().stream()
+                   .map(Contributor::getIdentity)
+                   .map(Identity::getName)
+                   .noneMatch(name::equals);
+    }
+
+    private List<Contributor> extractSupervisors() {
+        return bragePublicationRepresentation.publication().getEntityDescription().getContributors().stream()
+                   .filter(contributor -> SUPERVISOR.equals(contributor.getRole().getType()))
+                   .toList();
+    }
+
+    private boolean incomingPublicationHasSupervisor() {
+        return bragePublicationRepresentation.publication().getEntityDescription().getContributors().stream()
+                   .anyMatch(contributor -> SUPERVISOR.equals(contributor.getRole().getType()));
+    }
+
+    private boolean isMissingSupervisor(List<Contributor> contributors) {
+        return contributors.stream().noneMatch(contributor -> SUPERVISOR.equals(contributor.getRole().getType()));
+    }
+
+    private List<Contributor> existingContributorsWithUpdatedAffiliation() {
         return getBrageAffiliation()
                    .map(this::updateExistingCreatorWithAffiliation)
                    .orElseGet(() -> existingPublication.getEntityDescription().getContributors());
