@@ -25,6 +25,8 @@ import com.amazonaws.services.dynamodbv2.model.DeleteBackupRequest;
 import com.amazonaws.services.dynamodbv2.model.DeleteBackupResult;
 import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.DeleteItemResult;
+import com.amazonaws.services.dynamodbv2.model.DeleteResourcePolicyRequest;
+import com.amazonaws.services.dynamodbv2.model.DeleteResourcePolicyResult;
 import com.amazonaws.services.dynamodbv2.model.DeleteTableRequest;
 import com.amazonaws.services.dynamodbv2.model.DeleteTableResult;
 import com.amazonaws.services.dynamodbv2.model.DescribeBackupRequest;
@@ -65,6 +67,8 @@ import com.amazonaws.services.dynamodbv2.model.ExportTableToPointInTimeRequest;
 import com.amazonaws.services.dynamodbv2.model.ExportTableToPointInTimeResult;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
+import com.amazonaws.services.dynamodbv2.model.GetResourcePolicyRequest;
+import com.amazonaws.services.dynamodbv2.model.GetResourcePolicyResult;
 import com.amazonaws.services.dynamodbv2.model.ImportTableRequest;
 import com.amazonaws.services.dynamodbv2.model.ImportTableResult;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
@@ -86,6 +90,8 @@ import com.amazonaws.services.dynamodbv2.model.ListTagsOfResourceResult;
 import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.PutItemResult;
+import com.amazonaws.services.dynamodbv2.model.PutResourcePolicyRequest;
+import com.amazonaws.services.dynamodbv2.model.PutResourcePolicyResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.RestoreTableFromBackupRequest;
@@ -219,6 +225,11 @@ public class FailingDynamoClient implements AmazonDynamoDB {
     public DeleteItemResult deleteItem(String tableName, Map<String, AttributeValue> key,
                                        String returnValues) {
         return this.client.deleteItem(tableName, key);
+    }
+
+    @Override
+    public DeleteResourcePolicyResult deleteResourcePolicy(DeleteResourcePolicyRequest deleteResourcePolicyRequest) {
+        return null;
     }
 
     @Override
@@ -357,6 +368,11 @@ public class FailingDynamoClient implements AmazonDynamoDB {
     }
 
     @Override
+    public GetResourcePolicyResult getResourcePolicy(GetResourcePolicyRequest getResourcePolicyRequest) {
+        return null;
+    }
+
+    @Override
     public ImportTableResult importTable(ImportTableRequest importTableRequest) {
         return this.client.importTable(importTableRequest);
     }
@@ -432,6 +448,11 @@ public class FailingDynamoClient implements AmazonDynamoDB {
     public PutItemResult putItem(String tableName, Map<String, AttributeValue> item,
                                  String returnValues) {
         return this.client.putItem(tableName, item, returnValues);
+    }
+
+    @Override
+    public PutResourcePolicyResult putResourcePolicy(PutResourcePolicyRequest putResourcePolicyRequest) {
+        return null;
     }
 
     @Override

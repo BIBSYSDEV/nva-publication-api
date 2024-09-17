@@ -14,7 +14,7 @@ public class CustomerApiStubs {
 
     private static final String SUCCESSFUL_TOKEN_RESPONSE = """
         {
-            "access_token": "MY_ACCESS_TOKEN"
+            "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
         }
         """;
 
@@ -33,7 +33,7 @@ public class CustomerApiStubs {
 
     public static void stubCustomSuccessfulCustomerResponse(URI customerId, String customerResponse) {
         stubFor(get(urlPathEqualTo(customerId.getPath()))
-                    .withHeader("Authorization", equalTo("Bearer MY_ACCESS_TOKEN"))
+                    .withHeader("Authorization", equalTo("Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"))
                     .willReturn(
                         aResponse()
                             .withStatus(200)
@@ -60,7 +60,7 @@ public class CustomerApiStubs {
 
     public static void stubCustomerResponseNotFound(URI customerId) {
         stubFor(get(urlPathEqualTo(customerId.getPath()))
-                    .withHeader("Authorization", equalTo("Bearer MY_ACCESS_TOKEN"))
+                    .withHeader("Authorization", equalTo("Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"))
                     .willReturn(
                         aResponse()
                             .withStatus(404)));

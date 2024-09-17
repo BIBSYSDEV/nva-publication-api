@@ -149,7 +149,7 @@ public class JavaHttpClientCustomerApiClientTest {
         doReturn(200).when(httpResponse).statusCode();
         var response = """
             {
-                "access_token": "ACCESS_TOKEN"
+                "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
             }
             """;
         doReturn(response).when(httpResponse).body();

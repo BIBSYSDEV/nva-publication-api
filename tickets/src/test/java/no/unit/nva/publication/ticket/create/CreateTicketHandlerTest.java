@@ -93,7 +93,7 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 class CreateTicketHandlerTest extends TicketTestLocal {
 
     public static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
-    public static final String ACCESS_TOKEN_RESPONSE_BODY = "{ \"access_token\" : \"Bearer token\"}";
+    public static final String ACCESS_TOKEN_RESPONSE_BODY = "{ \"access_token\" : \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c\"}";
     private static final String PERSON_AFFILIATION_CLAIM = "custom:personAffiliation";
 
     private FakeSecretsManagerClient secretsManagerClient;
