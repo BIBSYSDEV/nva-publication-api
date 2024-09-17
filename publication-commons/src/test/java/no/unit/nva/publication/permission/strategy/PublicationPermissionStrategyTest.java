@@ -10,10 +10,10 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
@@ -261,7 +261,7 @@ class PublicationPermissionStrategyTest extends ResourcesLocalTest {
         var publication = createPublication(resourceOwner, customer, randomUri());
 
         var degreePhd = new DegreePhd(new MonographPages(), new PublicationDate(),
-                                      Set.of(new UnconfirmedDocument(randomString())));
+                                      Set.of(new UnconfirmedDocument(randomString(), randomInteger())));
         var reference = new Reference.Builder().withPublicationInstance(degreePhd).build();
         var entityDescription = publication.getEntityDescription().copy().withReference(reference).build();
 
@@ -272,7 +272,7 @@ class PublicationPermissionStrategyTest extends ResourcesLocalTest {
         var publication = createPublication(resourceOwner, customerId, ownerAffiliation);
 
         var degreePhd = new DegreePhd(new MonographPages(), new PublicationDate(),
-                                      Set.of(new UnconfirmedDocument(randomString())));
+                                      Set.of(new UnconfirmedDocument(randomString(), randomInteger())));
         var reference = new Reference.Builder().withPublicationInstance(degreePhd).build();
         var entityDescription = publication.getEntityDescription().copy().withReference(reference).build();
 
@@ -312,7 +312,7 @@ class PublicationPermissionStrategyTest extends ResourcesLocalTest {
         publication.getEntityDescription()
             .getReference()
             .setPublicationInstance(new DegreePhd(new MonographPages(), new PublicationDate(),
-                                                  Set.of(new UnconfirmedDocument(randomString()))));
+                                                  Set.of(new UnconfirmedDocument(randomString(), randomInteger()))));
 
         return publication;
     }
