@@ -7,4 +7,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public record UnconfirmedDocument(String text, Integer sequence) implements RelatedDocument{
 
+    public static UnconfirmedDocument fromValue(String value) {
+        return new UnconfirmedDocument(value, null);
+    }
 }

@@ -80,7 +80,7 @@ class BrageNvaMapperTest {
                              .build();
         var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
         var degreePhd = (DegreePhd) publication.getEntityDescription().getReference().getPublicationInstance();
-        var expectedRelatedDocuments = Set.of(new UnconfirmedDocument("1"), new UnconfirmedDocument("2"));
+        var expectedRelatedDocuments = Set.of(UnconfirmedDocument.fromValue("1"), UnconfirmedDocument.fromValue("2"));
         assertThat(degreePhd.getRelated(), is(equalTo(expectedRelatedDocuments)));
     }
 

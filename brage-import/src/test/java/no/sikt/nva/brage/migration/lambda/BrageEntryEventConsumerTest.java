@@ -1154,8 +1154,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                                      .getPublicationInstance());
 
         var related = actualPublicationContext.getRelated().stream().toList();
-        assertThat(related.getLast(), is(equalTo(new UnconfirmedDocument("2"))));
-        assertThat(related.get(related.size() - 2), is(equalTo(new UnconfirmedDocument("1"))));
+        assertThat(related.getLast(), is(equalTo(UnconfirmedDocument.fromValue("2"))));
+        assertThat(related.get(related.size() - 2), is(equalTo(UnconfirmedDocument.fromValue("1"))));
     }
 
     @Test

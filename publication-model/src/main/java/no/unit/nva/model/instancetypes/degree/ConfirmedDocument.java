@@ -7,4 +7,8 @@ import java.net.URI;
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public record ConfirmedDocument(URI identifier, Integer sequence) implements RelatedDocument{
+
+    public static ConfirmedDocument fromUri(URI value) {
+        return new ConfirmedDocument(value, null);
+    }
 }

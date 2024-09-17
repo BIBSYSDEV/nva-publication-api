@@ -554,7 +554,7 @@ public final class ReferenceGenerator {
                    .map(Builder::getHasPart)
                    .orElseGet(Collections::emptyList)
                    .stream()
-                   .map(UnconfirmedDocument::new)
+                   .map(UnconfirmedDocument::fromValue)
                    .collect(Collectors.toCollection(HashSet::new));
     }
 

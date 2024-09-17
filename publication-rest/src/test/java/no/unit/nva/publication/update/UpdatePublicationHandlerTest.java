@@ -1946,7 +1946,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private Publication createAndPersistDegreeWithoutDoi() throws BadRequestException {
         var publication = randomPublication().copy().withDoi(null).build();
         var degreePhd = new DegreePhd(new MonographPages(), new PublicationDate(),
-                                      Set.of(new UnconfirmedDocument(randomString())));
+                                      Set.of(UnconfirmedDocument.fromValue(randomString())));
         var reference = new Reference.Builder().withPublicationInstance(degreePhd).build();
         var entityDescription = publication.getEntityDescription().copy().withReference(reference).build();
         var publicationOfTypeDegree = publication.copy().withEntityDescription(entityDescription).build();
