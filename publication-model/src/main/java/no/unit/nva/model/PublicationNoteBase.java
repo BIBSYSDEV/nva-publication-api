@@ -2,7 +2,6 @@ package no.unit.nva.model;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 
 @JsonTypeInfo(
@@ -12,7 +11,6 @@ import java.util.Objects;
     @JsonSubTypes.Type(PublicationNote.class),
     @JsonSubTypes.Type(UnpublishingNote.class)
 })
-@Schema(oneOf = {PublicationNote.class, UnpublishingNote.class})
 public class PublicationNoteBase {
 
     private String note;

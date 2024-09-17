@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import io.swagger.v3.oas.annotations.media.Schema;
 import no.unit.nva.model.instancetypes.artistic.architecture.Architecture;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesign;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
@@ -130,67 +129,6 @@ import no.unit.nva.model.pages.Pages;
     @JsonSubTypes.Type(name = "LiteraryArts", value = LiteraryArts.class),
     @JsonSubTypes.Type(name = "ExhibitionProduction", value = ExhibitionProduction.class)
 })
-@Schema(oneOf = {
-    Architecture.class,
-    ArtisticDesign.class,
-    MovingPicture.class,
-    PerformingArts.class,
-    AcademicArticle.class,
-    AcademicLiteratureReview.class,
-    CaseReport.class,
-    StudyProtocol.class,
-    ProfessionalArticle.class,
-    PopularScienceArticle.class,
-    JournalCorrigendum.class,
-    JournalLetter.class,
-    JournalLeader.class,
-    JournalReview.class,
-    AcademicMonograph.class,
-    PopularScienceMonograph.class,
-    Encyclopedia.class,
-    ExhibitionCatalog.class,
-    NonFictionMonograph.class,
-    Textbook.class,
-    BookAnthology.class,
-    DegreeBachelor.class,
-    DegreeMaster.class,
-    DegreePhd.class,
-    DegreeLicentiate.class,
-    ReportBasic.class,
-    ReportPolicy.class,
-    ReportResearch.class,
-    ReportWorkingPaper.class,
-    ConferenceReport.class,
-    ReportBookOfAbstract.class,
-    AcademicChapter.class,
-    EncyclopediaChapter.class,
-    ExhibitionCatalogChapter.class,
-    Introduction.class,
-    NonFictionChapter.class,
-    PopularScienceChapter.class,
-    TextbookChapter.class,
-    ChapterConferenceAbstract.class,
-    ChapterInReport.class,
-    OtherStudentWork.class,
-    ConferenceLecture.class,
-    ConferencePoster.class,
-    Lecture.class,
-    OtherPresentation.class,
-    JournalIssue.class,
-    ConferenceAbstract.class,
-    MediaFeatureArticle.class,
-    MediaBlogPost.class,
-    MediaInterview.class,
-    MediaParticipationInRadioOrTv.class,
-    MediaPodcast.class,
-    MediaReaderOpinion.class,
-    MusicPerformance.class,
-    DataManagementPlan.class,
-    DataSet.class,
-    VisualArts.class,
-    Map.class,
-    LiteraryArts.class,
-    ExhibitionProduction.class})
 
 public interface PublicationInstance<P extends Pages> {
 

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import io.swagger.v3.oas.annotations.media.Schema;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
@@ -13,7 +12,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
     @JsonSubTypes.Type(name = ScopusIdentifier.TYPE, value = ScopusIdentifier.class),
     @JsonSubTypes.Type(name = CristinIdentifier.TYPE, value = CristinIdentifier.class)
 })
-@Schema(oneOf = {AdditionalIdentifier.class, HandleIdentifier.class, ScopusIdentifier.class, CristinIdentifier.class})
 public interface AdditionalIdentifierBase {
     @JsonProperty("value")
     String value();
