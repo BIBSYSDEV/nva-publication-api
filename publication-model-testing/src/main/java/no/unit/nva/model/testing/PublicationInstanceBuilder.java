@@ -385,11 +385,12 @@ public final class PublicationInstanceBuilder {
         var referencedUri = new ReferencedByUris(Set.of(randomUri()));
         var compliesWithUris = new CompliesWithUris(Set.of(randomUri()));
         return new DataSet(randomBoolean(),
-                geographicalCoverage, referencedUri, Set.of(new UnconfirmedDocument(randomString())), compliesWithUris);
+                geographicalCoverage, referencedUri, Set.of(new UnconfirmedDocument(randomString(), randomInteger())),
+                           compliesWithUris);
     }
 
     private static DataManagementPlan generateDataManagementPlan() {
-        return new DataManagementPlan(Set.of(new UnconfirmedDocument(randomString())), randomMonographPages());
+        return new DataManagementPlan(Set.of(new UnconfirmedDocument(randomString(), randomInteger())), randomMonographPages());
     }
 
     private static Map generateMap() {
@@ -558,8 +559,8 @@ public final class PublicationInstanceBuilder {
 
     private static DegreePhd generateDegreePhd() {
         return new DegreePhd(randomMonographPages(), randomPublicationDate(),
-                             Set.of(new ConfirmedDocument(randomUri()),
-                                    new UnconfirmedDocument(randomString())));
+                             Set.of(new ConfirmedDocument(randomUri(), randomInteger()),
+                                    new UnconfirmedDocument(randomString(), randomInteger())));
     }
 
     private static DegreeLicentiate generateDegreeLicentiate() {

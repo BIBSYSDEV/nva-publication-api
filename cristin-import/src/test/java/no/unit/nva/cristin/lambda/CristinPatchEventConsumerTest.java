@@ -315,7 +315,7 @@ public class CristinPatchEventConsumerTest extends ResourcesLocalTest {
         var updatedRelatedDocuments = ((DegreePhd) actualUpdatedParentPublication.getEntityDescription()
                                                     .getReference()
                                                     .getPublicationInstance()).getRelated();
-        assertThat(updatedRelatedDocuments, hasItem(new ConfirmedDocument(expectedRelatedDocumentId)));
+        assertThat(updatedRelatedDocuments, hasItem(ConfirmedDocument.fromUri(expectedRelatedDocumentId)));
 
         var actualReport = extractSuccessReportFromS3Client(eventReference, parentPublication);
         assertThat(actualReport, containsString(parentPublication.getIdentifier().toString()));

@@ -56,7 +56,7 @@ public final class CristinPatcher {
         var parent = parentAndChild.getParentPublication();
         if (ParentChildInstanceComparator.isValidCombination(child, parent)) {
             var degreePhd = (DegreePhd) parent.getEntityDescription().getReference().getPublicationInstance();
-            degreePhd.getRelated().add(new ConfirmedDocument(createPartOfUri(child)));
+            degreePhd.getRelated().add(ConfirmedDocument.fromUri(createPartOfUri(child)));
             return parentAndChild;
         } else {
             throw new ParentPatchPublicationInstanceMismatchException(

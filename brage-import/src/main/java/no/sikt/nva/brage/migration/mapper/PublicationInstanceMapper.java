@@ -521,7 +521,7 @@ public final class PublicationInstanceMapper {
                    .orElseGet(Collections::emptyList)
                    .stream()
                    .sorted()
-                   .map(UnconfirmedDocument::new)
+                   .map(UnconfirmedDocument::fromValue)
                    .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
