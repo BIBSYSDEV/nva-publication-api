@@ -516,6 +516,11 @@ nva:Textbook a rdfs:Class ;
   rdfs:isDefinedBy nva: ;
   rdfs:subClassOf nva:BookMonograph .
 
+nva:AcademicCommentary a rdfs:Class ;
+   rdfs:comment "A scholarly text providing analysis, interpretation, or explanation of a particular topic based on original research" ;
+   rdfs:isDefinedBy nva: ;
+   rdfs:subClassOf nva:BookMonograph .
+
 nva:DegreeMaster a rdfs:Class ;
   rdfs:comment "" ;
   rdfs:isDefinedBy nva: ;
