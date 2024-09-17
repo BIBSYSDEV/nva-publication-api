@@ -81,14 +81,17 @@ public class CristinImportPublicationMerger {
     public Publication mergePublications()
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
         return PreMergeValidator.shouldNotMergeMetadata(bragePublicationRepresentation, existingPublication)
-                   ? injectBrageHandleOnlyAndDublinCore()
+                   ? mergeMinimalPublicationMetadata()
                    : mergePublicationsMetadata();
     }
 
-    private Publication injectBrageHandleOnlyAndDublinCore() {
+    private Publication mergeMinimalPublicationMetadata() {
         return existingPublication.copy()
                    .withAdditionalIdentifiers(mergeAdditionalIdentifiers())
                    .withAssociatedArtifacts(addDublinCoreToExistingAssociatedArtifacts())
+                   .withEntityDescription(existingPublication.getEntityDescription().copy()
+                                              .withTags(determineTags())
+                                              .build())
                    .build();
     }
 
