@@ -517,12 +517,12 @@ public final class PublicationInstanceMapper {
     }
 
     private static Set<RelatedDocument> extractUnconfirmedDocuments(Record brageRecord) {
-        return Optional.ofNullable(brageRecord.getPart())
-                   .orElseGet(Collections::emptyList)
-                   .stream()
-                   .sorted()
-                   .map(UnconfirmedDocument::fromValue)
-                   .collect(Collectors.toCollection(LinkedHashSet::new));
+        var values = Optional.ofNullable(brageRecord.getPart()).orElseGet(Collections::emptyList);
+        var relatedDocuments = new LinkedHashSet<RelatedDocument>();
+        for (int i = 0; i < values.size(); i++) {
+            relatedDocuments.add(new UnconfirmedDocument(values.get(i), i + 1));
+        }
+        return relatedDocuments;
     }
 
     private static MonographPages extractMonographPages(Record brageRecord) {

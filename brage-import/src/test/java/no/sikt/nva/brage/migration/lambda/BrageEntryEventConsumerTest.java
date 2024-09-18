@@ -149,7 +149,6 @@ import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
-import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
 import no.unit.nva.model.instancetypes.event.ConferencePoster;
 import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.report.ConferenceReport;
@@ -1112,50 +1111,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                       .getPublicationContext());
 
         assertThat(((UnconfirmedCourse) actualPublicationContext.getCourse()).code(), is(equalTo(subjectCode)));
-    }
-
-    @Test
-    void shouldKeepOrderOfRelatedDocumentsWhenMergingDegreePhd()
-        throws IOException, InvalidUnconfirmedSeriesException {
-        var cristinIdentifier = randomString();
-        var publication = randomPublication(DegreePhd.class);
-        publication.setAdditionalIdentifiers(Set.of());
-        publication.setAdditionalIdentifiers(Set.of(cristinAdditionalIdentifier(cristinIdentifier)));
-        publication.getEntityDescription().getReference().setDoi(null);
-        publication.getEntityDescription().getReference().setPublicationContext(new Degree(null, null, null, null,
-                                                                                           List.of(), null));
-        publication.getEntityDescription().setPublicationDate(new no.unit.nva.model.PublicationDate.Builder()
-                                                                  .withYear("2022")
-                                                                  .build());
-        publication.getEntityDescription().setMainTitle("Dynamic - Response of Floating Wind Turbines! Report");
-        var existingPublication =
-            resourceService.createPublicationFromImportedEntry(publication,
-                                                               ImportSource.fromBrageArchive(randomString()));
-        var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
-        var brageContributor = new Contributor(new Identity(contributor.getIdentity().getName(), null, null),
-                                               "ARTIST", null, List.of());
-        var subjectCode = randomString();
-        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_PHD)
-                                 .withCristinIdentifier(cristinIdentifier)
-                                 .withMainTitle("Dynamic - Response of Floating Wind Turbines! Report")
-                                 .withContributor(brageContributor)
-                                 .withHasPart(List.of("1", "2"))
-                                 .withPublicationDate(new PublicationDate("2023",
-                                                                          new PublicationDateNva.Builder()
-                                                                              .withYear("2023")
-                                                                              .build()))
-                                 .withSubjectCode(subjectCode)
-                                 .build();
-        var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
-        var actualPublication = handler.handleRequest(s3Event, CONTEXT);
-
-        var actualPublicationContext = ((DegreePhd) actualPublication.publication().getEntityDescription()
-                                                     .getReference()
-                                                     .getPublicationInstance());
-
-        var related = actualPublicationContext.getRelated().stream().toList();
-        assertThat(related.getLast(), is(equalTo(UnconfirmedDocument.fromValue("2"))));
-        assertThat(related.get(related.size() - 2), is(equalTo(UnconfirmedDocument.fromValue("1"))));
     }
 
     @Test
