@@ -517,8 +517,7 @@ public final class PublicationInstanceMapper {
     }
 
     private static Set<RelatedDocument> extractUnconfirmedDocuments(Record brageRecord) {
-        var values = Optional.ofNullable(brageRecord.getPart())
-                                 .orElseGet(Collections::emptyList);
+        var values = Optional.ofNullable(brageRecord.getPart()).orElseGet(Collections::emptyList);
         var relatedDocuments = new LinkedHashSet<RelatedDocument>();
         for (int i = 0; i < values.size(); i++) {
             relatedDocuments.add(new UnconfirmedDocument(values.get(i), i + 1));

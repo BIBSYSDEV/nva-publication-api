@@ -39,9 +39,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 class BrageNvaMapperTest {
 
     private static final String API_HOST = new Environment().readEnv("API_HOST");
-    public static final String RELATED_DOCUMENT_3 = "Paper 3: Prestmo A";
-    public static final String RELATED_DOCUMENT_1 = "Paper 1: Saltvedt,";
-    public static final String RELATED_DOCUMENT_2 = "Paper 2: Prestmo, ";
     public static final String NPOLAR_SHORT_NAME = "NPI";
     public static final S3Client s3Client = mock(S3Client.class);
 
@@ -72,7 +69,7 @@ class BrageNvaMapperTest {
     }
 
     @Test
-    void shouldCreateDegreePhdWithRelatedDocumentsInTheSameOrderAsInBrageRecord()
+    void shouldCreateDegreePhdWithRelatedDocumentsWithSequenceNumberAsTheOrderDocumentsAppearInBrageRecord()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var generator =  new NvaBrageMigrationDataGenerator.Builder()
                              .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
@@ -80,7 +77,8 @@ class BrageNvaMapperTest {
                              .build();
         var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
         var degreePhd = (DegreePhd) publication.getEntityDescription().getReference().getPublicationInstance();
-        var expectedRelatedDocuments = Set.of(UnconfirmedDocument.fromValue("1"), UnconfirmedDocument.fromValue("2"));
+        var expectedRelatedDocuments = Set.of(new UnconfirmedDocument("1", 1),
+                                              new UnconfirmedDocument("2", 2));
         assertThat(degreePhd.getRelated(), is(equalTo(expectedRelatedDocuments)));
     }
 
@@ -109,23 +107,6 @@ class BrageNvaMapperTest {
                              .build();
         var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
         assertThat(publication.getEntityDescription().getAlternativeAbstracts(), is(anEmptyMap()));
-    }
-
-    @Test
-    void shouldCreatePublicationWithRelatedDocumentsSortedAlphabeticallyWhenMappingDoctoralThesis()
-        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        var generator =  new NvaBrageMigrationDataGenerator.Builder()
-                             .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
-                             .withHasPart(List.of(RELATED_DOCUMENT_3, RELATED_DOCUMENT_1, RELATED_DOCUMENT_2))
-                             .build();
-        var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
-        var publicationInstance = (DegreePhd) publication.getEntityDescription()
-                                                                       .getReference()
-                                                                       .getPublicationInstance();
-        var expectedDocuments = List.of(RELATED_DOCUMENT_1, RELATED_DOCUMENT_2, RELATED_DOCUMENT_3);
-        var actualDocumentValues = getRelatedDocumentsValues(publicationInstance);
-
-        assertThat(actualDocumentValues, is(equalTo(expectedDocuments)));
     }
 
     @Test
@@ -168,13 +149,6 @@ class BrageNvaMapperTest {
         return new Contributor(new Identity(randomString(), randomString(), randomString()),
                                "ACTOR",
                                randomString(), List.of());
-    }
-
-    private static List<String> getRelatedDocumentsValues(DegreePhd publicationInstance) {
-        return publicationInstance.getRelated().stream()
-                   .map(UnconfirmedDocument.class::cast)
-                   .map(UnconfirmedDocument::text)
-                   .toList();
     }
 
     private ContentFile createRandomContentFileWithBundleType(BundleType bundleType) {
