@@ -157,7 +157,6 @@ class BrageNvaMapperTest {
         assertEquals(insperaIdentifier, insperaAdditionalIdentifier.value());
     }
 
-    @NotNull
     private static AdditionalIdentifierBase getAdditionalIdentifier(Publication publication, String source) {
         return publication.getAdditionalIdentifiers().stream()
                    .filter(identifier -> identifier.sourceName().equals(source))
