@@ -16,8 +16,6 @@ public record SourceName(String system, String instanceName) {
     public static final String BRAGE_SYSTEM = "brage";
     public static final String CRISTIN_SYSTEM = "cristin";
     public static final String SCOPUS_SYSTEM = "scopus";
-    public static final String WISEFLOW_SYSTEM = "wiseflow";
-    public static final String INSPERA_SYSTEM = "inspera";
 
     @JsonValue
     @Override
