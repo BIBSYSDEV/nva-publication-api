@@ -39,6 +39,7 @@ import no.sikt.nva.brage.migration.record.Series;
 import no.sikt.nva.brage.migration.record.Type;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.CristinIdentifier;
@@ -68,6 +69,8 @@ public class NvaBrageMigrationDataGenerator {
     private static final URI HARDCODED_NTNU_CRISTIN_ID = URI.create(
         "https://test.nva.aws.unit.no/cristin/organization/194.0.0.0");
     private static final String HARDCODED_NTNU_USERNAME = "ntnu@194.0.0.0";
+    public static final String WISEFLOW_IDENTIFIER_SOURCE_NAME = "wiseflow";
+    public static final String INSPERA_IDENTIFIER_SOURCE_NAME = "inspera";
     private final Record brageRecord;
     private final Publication correspondingNvaPublication;
 
@@ -88,7 +91,7 @@ public class NvaBrageMigrationDataGenerator {
         return Instant.parse((builder.publishedDate.getNvaDate())).toDate().toInstant();
     }
 
-    private static Set<AdditionalIdentifierBase> generateCristinIdentifier(Builder builder) {
+    private static Set<AdditionalIdentifierBase> generateAdditionalIdentifiers(Builder builder) {
         var additionalIdentifiers = new HashSet<AdditionalIdentifierBase>();
         if (nonNull(builder.getHandle())) {
             additionalIdentifiers.add(new HandleIdentifier(SourceName.fromBrage(builder.getCustomer().getName()),
@@ -97,6 +100,14 @@ public class NvaBrageMigrationDataGenerator {
         if (nonNull(builder.getCristinIdentifier())) {
             additionalIdentifiers.add(new CristinIdentifier(SourceName.fromBrage(builder.getCustomer().getName()),
                                                             builder.getCristinIdentifier()));
+        }
+        if (nonNull(builder.getInsperaIdentifier())) {
+            additionalIdentifiers.add(new AdditionalIdentifier(INSPERA_IDENTIFIER_SOURCE_NAME,
+                                                               builder.getInsperaIdentifier()));
+        }
+        if (nonNull(builder.getWiseflowIdentifier())) {
+            additionalIdentifiers.add(new AdditionalIdentifier(WISEFLOW_IDENTIFIER_SOURCE_NAME,
+                                                               builder.getInsperaIdentifier()));
         }
         return additionalIdentifiers;
     }
@@ -126,7 +137,7 @@ public class NvaBrageMigrationDataGenerator {
                    .withPublisher(new Organization.Builder().withId(HARDCODED_NTNU_CUSTOMER_VALUE).build())
                    .withAssociatedArtifacts(builder.getAssociatedArtifacts())
                    .withResourceOwner(new no.unit.nva.model.ResourceOwner(new Username(HARDCODED_NTNU_USERNAME), HARDCODED_NTNU_CRISTIN_ID))
-                   .withAdditionalIdentifiers(generateCristinIdentifier(builder))
+                   .withAdditionalIdentifiers(generateAdditionalIdentifiers(builder))
                    .withRightsHolder(builder.getRightsHolder())
                    .withSubjects(builder.subjects.stream().toList())
                    .withFundings(List.of(convertProjectToFunding(builder.getProject())))
@@ -168,6 +179,8 @@ public class NvaBrageMigrationDataGenerator {
         brageRecord.setPublication(builder.getPublication());
         brageRecord.setPublishedDate(builder.getPublishedDate());
         brageRecord.setCristinId(builder.getCristinIdentifier());
+        brageRecord.setWiseflowIdentifier(builder.getWiseflowIdentifier());
+        brageRecord.setInsperaIdentifier(builder.getInsperaIdentifier());
         brageRecord.setRightsHolder(builder.getRightsHolder());
         brageRecord.setLink(builder.getLink());
         brageRecord.setSubjects(builder.getSubjects());
@@ -263,6 +276,8 @@ public class NvaBrageMigrationDataGenerator {
         private List<String> ismnList;
         private String accessCode;
         private Project project;
+        private String insperaIdentifier;
+        private String wiseflowIdentifier;
 
         private static URI randomHandle() {
             return UriWrapper.fromUri("http://hdl.handle.net/11250/" + randomInteger()).getUri();
@@ -283,6 +298,14 @@ public class NvaBrageMigrationDataGenerator {
 
         public String getCristinIdentifier() {
             return cristinIdentifier;
+        }
+
+        public String getWiseflowIdentifier() {
+            return wiseflowIdentifier;
+        }
+
+        public String getInsperaIdentifier() {
+            return insperaIdentifier;
         }
 
         public Builder withCristinIdentifier(String cristinIdentifier) {
@@ -623,6 +646,16 @@ public class NvaBrageMigrationDataGenerator {
 
         public Builder withIssue(String issue) {
             this.issue = issue;
+            return this;
+        }
+
+        public Builder withInsperaIdentifier(String value) {
+            this.insperaIdentifier = value;
+            return this;
+        }
+
+        public Builder withWiseflowIdentifier(String value) {
+            this.wiseflowIdentifier = value;
             return this;
         }
 
