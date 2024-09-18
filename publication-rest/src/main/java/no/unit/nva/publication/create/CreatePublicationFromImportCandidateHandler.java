@@ -145,17 +145,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
                 .stream()
                 .filter(contributor -> changeInCristinIdentifier(contributor, rawImportCandidateContributors))
                 .toList();
-        piaClient.updateContributor(contributorsNeedingUpdate, extractScopusIdentifier(rawImportCandidate));
-    }
-
-    private String extractScopusIdentifier(ImportCandidate rawImportCandidate) {
-        return rawImportCandidate
-                   .getAdditionalIdentifiers()
-                   .stream()
-                   .filter(additionalIdentifier -> "scopus".equalsIgnoreCase(additionalIdentifier.sourceName()))
-                   .findFirst()
-                   .map(AdditionalIdentifierBase::value)
-                   .orElseThrow();
+        piaClient.updateContributor(contributorsNeedingUpdate, getScopusIdentifier(rawImportCandidate));
     }
 
     private boolean changeInCristinIdentifier(Contributor contributor,

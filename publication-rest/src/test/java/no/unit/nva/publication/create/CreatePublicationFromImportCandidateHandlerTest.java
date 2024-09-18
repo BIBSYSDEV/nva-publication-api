@@ -62,7 +62,6 @@ import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -482,8 +481,11 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         return
             importCandidate.getAdditionalIdentifiers()
                 .stream()
-                .filter(additionalIdentifier -> "scopus".equalsIgnoreCase(additionalIdentifier.sourceName()))
-                .map(AdditionalIdentifierBase::value).findFirst().get();
+                .filter(ScopusIdentifier.class::isInstance)
+                .map(ScopusIdentifier.class::cast)
+                .map(ScopusIdentifier::value)
+                .findFirst()
+                .orElseThrow();
     }
 
     private PiaClientConfig createPiaConfig(WireMockRuntimeInfo wireMockRuntimeInfo) {
