@@ -178,20 +178,20 @@ public class HandleIdentifierEventHandlerTest extends ResourcesLocalTest {
         assertThat(updatedPublication.getAdditionalIdentifiers(), is(equalTo(additionalIdentifiers)));
     }
 
-//    @Test
-//    void shouldThrowOnAPIFailure()
-//        throws IOException, BadRequestException, InterruptedException {
-//        final var logger = LogUtils.getTestingAppenderForRootLogger();
-//        var oldImage = createUnpublishedPublicationWithAdditionalIdentifiers(null);
-//        var newImage = oldImage.copy().withStatus(PublicationStatus.PUBLISHED).build();
-//        var handleRequestUri = URI.create("https://" + API_NVATEST_DOMAIN + "/" + HANDLE_BASE_PATH);
-//        when(httpClient.send(argThat(request -> request.uri().equals(handleRequestUri)),any()))
-//            .thenReturn(FakeHttpResponse.create("some error message", BAD_REQUEST));
-//
-//        var request = emualteSqsWrappedEvent(oldImage, newImage);
-//        assertThrows(RuntimeException.class, () -> handler.handleRequest(request, CONTEXT));
-//        assertThat(logger.getMessages(), containsString("Error response from server: 400"));
-//    }
+    @Test
+    void shouldThrowOnAPIFailure()
+        throws IOException, BadRequestException, InterruptedException {
+        final var logger = LogUtils.getTestingAppenderForRootLogger();
+        var oldImage = createUnpublishedPublicationWithAdditionalIdentifiers(null);
+        var newImage = oldImage.copy().withStatus(PublicationStatus.PUBLISHED).build();
+        var handleRequestUri = URI.create("https://" + API_NVATEST_DOMAIN + "/" + HANDLE_BASE_PATH);
+        when(httpClient.send(argThat(request -> request.uri().equals(handleRequestUri)),any()))
+            .thenReturn(FakeHttpResponse.create("some error message", BAD_REQUEST));
+
+        var request = emualteSqsWrappedEvent(oldImage, newImage);
+        assertThrows(RuntimeException.class, () -> handler.handleRequest(request, CONTEXT));
+        assertThat(logger.getMessages(), containsString("Error response from server: 400"));
+    }
 
     private URI createSampleBlob(Object oldImage, Object newImage) throws IOException {
         var oldImageResource = crateDataEntry(oldImage);

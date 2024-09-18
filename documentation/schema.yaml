@@ -3,11 +3,11 @@ AcademicArticle:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/Range'
+        $ref: "#/components/schemas/Range"
       volume:
         type: string
       issue:
@@ -21,11 +21,11 @@ AcademicChapter:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/Range'
+        $ref: "#/components/schemas/Range"
       type:
         type: string
 AcademicLiteratureReview:
@@ -33,11 +33,11 @@ AcademicLiteratureReview:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/Range'
+        $ref: "#/components/schemas/Range"
       volume:
         type: string
       issue:
@@ -51,17 +51,17 @@ AcademicMonograph:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/MonographPages'
+        $ref: "#/components/schemas/MonographPages"
       type:
         type: string
 AdditionalIdentifier:
   type: object
   allOf:
-  - $ref: '#/components/schemas/AdditionalIdentifierBase'
+  - $ref: "#/components/schemas/AdditionalIdentifierBase"
 AdditionalIdentifierBase:
   required:
   - type
@@ -78,7 +78,7 @@ AdministrativeAgreement:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/File'
+  - $ref: "#/components/schemas/File"
   - type: object
     properties:
       type:
@@ -95,7 +95,7 @@ Anthology:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationContext'
+  - $ref: "#/components/schemas/PublicationContext"
   - type: object
     properties:
       id:
@@ -135,19 +135,19 @@ Architecture:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       subtype:
-        $ref: '#/components/schemas/ArchitectureSubtype'
+        $ref: "#/components/schemas/ArchitectureSubtype"
       description:
         type: string
       architectureOutput:
         type: array
         items:
-          $ref: '#/components/schemas/ArchitectureOutput'
+          $ref: "#/components/schemas/ArchitectureOutput"
       pages:
-        $ref: '#/components/schemas/NullPages'
+        $ref: "#/components/schemas/NullPages"
       type:
         type: string
 ArchitectureOutput:
@@ -179,7 +179,7 @@ Artistic:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationContext'
+  - $ref: "#/components/schemas/PublicationContext"
   - type: object
     properties:
       type:
@@ -189,19 +189,19 @@ ArtisticDesign:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       subtype:
-        $ref: '#/components/schemas/ArtisticDesignSubtype'
+        $ref: "#/components/schemas/ArtisticDesignSubtype"
       description:
         type: string
       venues:
         type: array
         items:
-          $ref: '#/components/schemas/Venue'
+          $ref: "#/components/schemas/Venue"
       pages:
-        $ref: '#/components/schemas/NullPages'
+        $ref: "#/components/schemas/NullPages"
       type:
         type: string
 ArtisticDesignSubtype:
@@ -237,17 +237,17 @@ AssociatedArtifactList:
     empty:
       type: boolean
     first:
-      $ref: '#/components/schemas/AssociatedArtifact'
+      $ref: "#/components/schemas/AssociatedArtifact"
     last:
-      $ref: '#/components/schemas/AssociatedArtifact'
+      $ref: "#/components/schemas/AssociatedArtifact"
   items:
-    $ref: '#/components/schemas/AssociatedArtifact'
+    $ref: "#/components/schemas/AssociatedArtifact"
 AssociatedLink:
   required:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/AssociatedArtifact'
+  - $ref: "#/components/schemas/AssociatedArtifact"
   - type: object
     properties:
       id:
@@ -264,21 +264,21 @@ AudioVisualPublication:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/MusicPerformanceManifestation'
+  - $ref: "#/components/schemas/MusicPerformanceManifestation"
   - type: object
     properties:
       mediaType:
-        $ref: '#/components/schemas/MusicMediaSubtype'
+        $ref: "#/components/schemas/MusicMediaSubtype"
       publisher:
-        $ref: '#/components/schemas/PublishingHouse'
+        $ref: "#/components/schemas/PublishingHouse"
       catalogueNumber:
         type: string
       trackList:
         type: array
         items:
-          $ref: '#/components/schemas/MusicTrack'
+          $ref: "#/components/schemas/MusicTrack"
       isrc:
-        $ref: '#/components/schemas/Isrc'
+        $ref: "#/components/schemas/Isrc"
       type:
         type: string
 Award:
@@ -286,7 +286,7 @@ Award:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/ArchitectureOutput'
+  - $ref: "#/components/schemas/ArchitectureOutput"
   - type: object
     properties:
       name:
@@ -294,7 +294,7 @@ Award:
       organizer:
         type: string
       date:
-        $ref: '#/components/schemas/Instant'
+        $ref: "#/components/schemas/Instant"
       ranking:
         type: integer
         format: int32
@@ -307,18 +307,18 @@ Book:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationContext'
+  - $ref: "#/components/schemas/PublicationContext"
   - type: object
     properties:
       series:
-        $ref: '#/components/schemas/BookSeries'
+        $ref: "#/components/schemas/BookSeries"
       seriesTitle:
         type: string
         writeOnly: true
       seriesNumber:
         type: string
       publisher:
-        $ref: '#/components/schemas/PublishingHouse'
+        $ref: "#/components/schemas/PublishingHouse"
       isbnList:
         type: array
         items:
@@ -332,7 +332,7 @@ Book:
         uniqueItems: true
         type: array
         items:
-          $ref: '#/components/schemas/AdditionalIdentifier'
+          $ref: "#/components/schemas/AdditionalIdentifier"
       type:
         type: string
 BookAnthology:
@@ -340,11 +340,11 @@ BookAnthology:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/MonographPages'
+        $ref: "#/components/schemas/MonographPages"
       type:
         type: string
 BookSeries:
@@ -359,13 +359,13 @@ Broadcast:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/MovingPictureOutput'
+  - $ref: "#/components/schemas/MovingPictureOutput"
   - type: object
     properties:
       publisher:
-        $ref: '#/components/schemas/PublishingHouse'
+        $ref: "#/components/schemas/PublishingHouse"
       date:
-        $ref: '#/components/schemas/Instant'
+        $ref: "#/components/schemas/Instant"
       type:
         type: string
 CaseReport:
@@ -373,11 +373,11 @@ CaseReport:
   - Type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/Range'
+        $ref: "#/components/schemas/Range"
       volume:
         type: string
       issue:
@@ -391,11 +391,11 @@ ChapterConferenceAbstract:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/Range'
+        $ref: "#/components/schemas/Range"
       type:
         type: string
 ChapterInReport:
@@ -403,11 +403,11 @@ ChapterInReport:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/Range'
+        $ref: "#/components/schemas/Range"
       type:
         type: string
 CinematicRelease:
@@ -415,13 +415,13 @@ CinematicRelease:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/MovingPictureOutput'
+  - $ref: "#/components/schemas/MovingPictureOutput"
   - type: object
     properties:
       place:
-        $ref: '#/components/schemas/UnconfirmedPlace'
+        $ref: "#/components/schemas/UnconfirmedPlace"
       date:
-        $ref: '#/components/schemas/Instant'
+        $ref: "#/components/schemas/Instant"
       type:
         type: string
 Competition:
@@ -429,7 +429,7 @@ Competition:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/ArchitectureOutput'
+  - $ref: "#/components/schemas/ArchitectureOutput"
   - type: object
     properties:
       name:
@@ -437,25 +437,25 @@ Competition:
       description:
         type: string
       date:
-        $ref: '#/components/schemas/Time'
+        $ref: "#/components/schemas/Time"
       type:
         type: string
 Concert:
   type: object
   allOf:
-  - $ref: '#/components/schemas/MusicPerformanceManifestation'
+  - $ref: "#/components/schemas/MusicPerformanceManifestation"
   - type: object
     properties:
       place:
-        $ref: '#/components/schemas/UnconfirmedPlace'
+        $ref: "#/components/schemas/UnconfirmedPlace"
       time:
-        $ref: '#/components/schemas/Time'
+        $ref: "#/components/schemas/Time"
       extent:
         type: string
       concertProgramme:
         type: array
         items:
-          $ref: '#/components/schemas/MusicalWorkPerformance'
+          $ref: "#/components/schemas/MusicalWorkPerformance"
       concertSeries:
         type: string
 ConferenceAbstract:
@@ -463,7 +463,7 @@ ConferenceAbstract:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       volume:
@@ -473,7 +473,7 @@ ConferenceAbstract:
       articleNumber:
         type: string
       pages:
-        $ref: '#/components/schemas/Range'
+        $ref: "#/components/schemas/Range"
       type:
         type: string
 ConferenceLecture:
@@ -481,11 +481,11 @@ ConferenceLecture:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/NullPages'
+        $ref: "#/components/schemas/NullPages"
       type:
         type: string
 ConferencePoster:
@@ -493,11 +493,11 @@ ConferencePoster:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/NullPages'
+        $ref: "#/components/schemas/NullPages"
       type:
         type: string
 ConferenceReport:
@@ -505,11 +505,11 @@ ConferenceReport:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/MonographPages'
+        $ref: "#/components/schemas/MonographPages"
       type:
         type: string
 ConfirmedDocument:
@@ -517,7 +517,7 @@ ConfirmedDocument:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/RelatedDocument'
+  - $ref: "#/components/schemas/RelatedDocument"
   - type: object
     properties:
       identifier:
@@ -530,7 +530,7 @@ ConfirmedFunding:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/Funding'
+  - $ref: "#/components/schemas/Funding"
   - type: object
     properties:
       id:
@@ -544,13 +544,13 @@ Contributor:
   type: object
   properties:
     identity:
-      $ref: '#/components/schemas/Identity'
+      $ref: "#/components/schemas/Identity"
     affiliations:
       type: array
       items:
-        $ref: '#/components/schemas/Corporation'
+        $ref: "#/components/schemas/Corporation"
     role:
-      $ref: '#/components/schemas/RoleType'
+      $ref: "#/components/schemas/RoleType"
     sequence:
       type: integer
       format: int32
@@ -563,7 +563,7 @@ Corporation:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/Agent'
+  - $ref: "#/components/schemas/Agent"
   - type: object
     properties:
       type:
@@ -578,13 +578,13 @@ Course:
 CristinIdentifier:
   type: object
   allOf:
-  - $ref: '#/components/schemas/AdditionalIdentifierBase'
+  - $ref: "#/components/schemas/AdditionalIdentifierBase"
 CustomerRightsRetentionStrategy:
   required:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/RightsRetentionStrategy'
+  - $ref: "#/components/schemas/RightsRetentionStrategy"
   - type: object
     properties:
       type:
@@ -594,16 +594,16 @@ DataManagementPlan:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       related:
         uniqueItems: true
         type: array
         items:
-          $ref: '#/components/schemas/RelatedDocument'
+          $ref: "#/components/schemas/RelatedDocument"
       pages:
-        $ref: '#/components/schemas/MonographPages'
+        $ref: "#/components/schemas/MonographPages"
       type:
         type: string
 DataSet:
@@ -611,13 +611,13 @@ DataSet:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       userAgreesToTermsAndConditions:
         type: boolean
       geographicalCoverage:
-        $ref: '#/components/schemas/GeographicalDescription'
+        $ref: "#/components/schemas/GeographicalDescription"
       referencedBy:
         uniqueItems: true
         type: array
@@ -628,7 +628,7 @@ DataSet:
         uniqueItems: true
         type: array
         items:
-          $ref: '#/components/schemas/RelatedDocument'
+          $ref: "#/components/schemas/RelatedDocument"
       compliesWith:
         uniqueItems: true
         type: array
@@ -636,7 +636,7 @@ DataSet:
           type: string
           format: uri
       pages:
-        $ref: '#/components/schemas/NullPages'
+        $ref: "#/components/schemas/NullPages"
       type:
         type: string
 DefinedDuration:
@@ -644,7 +644,7 @@ DefinedDuration:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/Duration'
+  - $ref: "#/components/schemas/Duration"
   - type: object
     properties:
       minutes:
@@ -666,36 +666,36 @@ Degree:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationContext'
+  - $ref: "#/components/schemas/PublicationContext"
   - type: object
     properties:
       series:
-        $ref: '#/components/schemas/BookSeries'
+        $ref: "#/components/schemas/BookSeries"
       seriesTitle:
         type: string
         writeOnly: true
       seriesNumber:
         type: string
       publisher:
-        $ref: '#/components/schemas/PublishingHouse'
+        $ref: "#/components/schemas/PublishingHouse"
       isbnList:
         type: array
         items:
           type: string
       courseCode:
-        $ref: '#/components/schemas/Course'
+        $ref: "#/components/schemas/Course"
       revision:
         type: string
         enum:
         - Revised
         - Unrevised
       course:
-        $ref: '#/components/schemas/Course'
+        $ref: "#/components/schemas/Course"
       additionalIdentifiers:
         uniqueItems: true
         type: array
         items:
-          $ref: '#/components/schemas/AdditionalIdentifier'
+          $ref: "#/components/schemas/AdditionalIdentifier"
       type:
         type: string
 DegreeBachelor:
@@ -703,13 +703,13 @@ DegreeBachelor:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/MonographPages'
+        $ref: "#/components/schemas/MonographPages"
       submittedDate:
-        $ref: '#/components/schemas/PublicationDate'
+        $ref: "#/components/schemas/PublicationDate"
       type:
         type: string
 DegreeLicentiate:
@@ -717,13 +717,13 @@ DegreeLicentiate:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/MonographPages'
+        $ref: "#/components/schemas/MonographPages"
       submittedDate:
-        $ref: '#/components/schemas/PublicationDate'
+        $ref: "#/components/schemas/PublicationDate"
       type:
         type: string
 DegreeMaster:
@@ -731,13 +731,13 @@ DegreeMaster:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/MonographPages'
+        $ref: "#/components/schemas/MonographPages"
       submittedDate:
-        $ref: '#/components/schemas/PublicationDate'
+        $ref: "#/components/schemas/PublicationDate"
       type:
         type: string
 DegreePhd:
@@ -745,18 +745,18 @@ DegreePhd:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/MonographPages'
+        $ref: "#/components/schemas/MonographPages"
       submittedDate:
-        $ref: '#/components/schemas/PublicationDate'
+        $ref: "#/components/schemas/PublicationDate"
       related:
         uniqueItems: true
         type: array
         items:
-          $ref: '#/components/schemas/RelatedDocument'
+          $ref: "#/components/schemas/RelatedDocument"
       type:
         type: string
 Duration:
@@ -771,21 +771,21 @@ Encyclopedia:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/MonographPages'
+        $ref: "#/components/schemas/MonographPages"
       type:
         type: string
 EncyclopediaChapter:
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/Range'
+        $ref: "#/components/schemas/Range"
 EntityDescription:
   required:
   - type
@@ -801,11 +801,11 @@ EntityDescription:
       type: string
       format: uri
     publicationDate:
-      $ref: '#/components/schemas/PublicationDate'
+      $ref: "#/components/schemas/PublicationDate"
     contributors:
       type: array
       items:
-        $ref: '#/components/schemas/Contributor'
+        $ref: "#/components/schemas/Contributor"
     alternativeAbstracts:
       type: object
       additionalProperties:
@@ -819,7 +819,7 @@ EntityDescription:
     description:
       type: string
     reference:
-      $ref: '#/components/schemas/Reference'
+      $ref: "#/components/schemas/Reference"
     metadataSource:
       type: string
       format: uri
@@ -832,22 +832,22 @@ Event:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationContext'
+  - $ref: "#/components/schemas/PublicationContext"
   - type: object
     properties:
       label:
         type: string
       place:
-        $ref: '#/components/schemas/Place'
+        $ref: "#/components/schemas/Place"
       time:
-        $ref: '#/components/schemas/Time'
+        $ref: "#/components/schemas/Time"
       agent:
-        $ref: '#/components/schemas/Agent'
+        $ref: "#/components/schemas/Agent"
       product:
         type: string
         format: uri
       subEvent:
-        $ref: '#/components/schemas/Event'
+        $ref: "#/components/schemas/Event"
       type:
         type: string
 Exhibition:
@@ -855,17 +855,17 @@ Exhibition:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/ArchitectureOutput'
+  - $ref: "#/components/schemas/ArchitectureOutput"
   - type: object
     properties:
       name:
         type: string
       place:
-        $ref: '#/components/schemas/UnconfirmedPlace'
+        $ref: "#/components/schemas/UnconfirmedPlace"
       organizer:
         type: string
       date:
-        $ref: '#/components/schemas/Period'
+        $ref: "#/components/schemas/Period"
       otherInformation:
         type: string
       type:
@@ -873,25 +873,25 @@ Exhibition:
 ExhibitionBasic:
   type: object
   allOf:
-  - $ref: '#/components/schemas/ExhibitionProductionManifestation'
+  - $ref: "#/components/schemas/ExhibitionProductionManifestation"
   - type: object
     properties:
       organization:
-        $ref: '#/components/schemas/UnconfirmedOrganization'
+        $ref: "#/components/schemas/UnconfirmedOrganization"
       place:
-        $ref: '#/components/schemas/UnconfirmedPlace'
+        $ref: "#/components/schemas/UnconfirmedPlace"
       date:
-        $ref: '#/components/schemas/Period'
+        $ref: "#/components/schemas/Period"
 ExhibitionCatalog:
   required:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/MonographPages'
+        $ref: "#/components/schemas/MonographPages"
       type:
         type: string
 ExhibitionCatalogChapter:
@@ -899,11 +899,11 @@ ExhibitionCatalogChapter:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/Range'
+        $ref: "#/components/schemas/Range"
       type:
         type: string
 ExhibitionCatalogReference:
@@ -911,7 +911,7 @@ ExhibitionCatalogReference:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/ExhibitionProductionManifestation'
+  - $ref: "#/components/schemas/ExhibitionProductionManifestation"
   - type: object
     properties:
       id:
@@ -924,7 +924,7 @@ ExhibitionContent:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationContext'
+  - $ref: "#/components/schemas/PublicationContext"
   - type: object
     properties:
       type:
@@ -932,7 +932,7 @@ ExhibitionContent:
 ExhibitionMentionInPublication:
   type: object
   allOf:
-  - $ref: '#/components/schemas/ExhibitionProductionManifestation'
+  - $ref: "#/components/schemas/ExhibitionProductionManifestation"
   - type: object
     properties:
       title:
@@ -942,7 +942,7 @@ ExhibitionMentionInPublication:
       pages:
         type: string
       date:
-        $ref: '#/components/schemas/Time'
+        $ref: "#/components/schemas/Time"
       otherInformation:
         type: string
 ExhibitionOtherPresentation:
@@ -950,7 +950,7 @@ ExhibitionOtherPresentation:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/ExhibitionProductionManifestation'
+  - $ref: "#/components/schemas/ExhibitionProductionManifestation"
   - type: object
     properties:
       typeDescription:
@@ -958,11 +958,11 @@ ExhibitionOtherPresentation:
       description:
         type: string
       place:
-        $ref: '#/components/schemas/UnconfirmedPlace'
+        $ref: "#/components/schemas/UnconfirmedPlace"
       publisher:
-        $ref: '#/components/schemas/PublishingHouse'
+        $ref: "#/components/schemas/PublishingHouse"
       date:
-        $ref: '#/components/schemas/Instant'
+        $ref: "#/components/schemas/Instant"
       type:
         type: string
 ExhibitionProduction:
@@ -970,17 +970,17 @@ ExhibitionProduction:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       subtype:
-        $ref: '#/components/schemas/ExhibitionProductionSubtype'
+        $ref: "#/components/schemas/ExhibitionProductionSubtype"
       manifestations:
         type: array
         items:
-          $ref: '#/components/schemas/ExhibitionProductionManifestation'
+          $ref: "#/components/schemas/ExhibitionProductionManifestation"
       pages:
-        $ref: '#/components/schemas/NullPages'
+        $ref: "#/components/schemas/NullPages"
       type:
         type: string
 ExhibitionProductionManifestation:
@@ -1011,7 +1011,7 @@ File:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/AssociatedArtifact'
+  - $ref: "#/components/schemas/AssociatedArtifact"
   - type: object
     properties:
       identifier:
@@ -1038,14 +1038,14 @@ File:
         type: string
         format: date-time
       rightsRetentionStrategy:
-        $ref: '#/components/schemas/RightsRetentionStrategy'
+        $ref: "#/components/schemas/RightsRetentionStrategy"
       legalNote:
         type: string
       publishedDate:
         type: string
         format: date-time
       uploadDetails:
-        $ref: '#/components/schemas/UploadDetails'
+        $ref: "#/components/schemas/UploadDetails"
       visibleForNonOwner:
         type: boolean
       type:
@@ -1055,7 +1055,7 @@ FunderRightsRetentionStrategy:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/RightsRetentionStrategy'
+  - $ref: "#/components/schemas/RightsRetentionStrategy"
   - type: object
     properties:
       type:
@@ -1081,7 +1081,7 @@ Funding:
       type: string
       format: date-time
     fundingAmount:
-      $ref: '#/components/schemas/MonetaryAmount'
+      $ref: "#/components/schemas/MonetaryAmount"
     type:
       type: string
 GeographicalContent:
@@ -1089,11 +1089,11 @@ GeographicalContent:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationContext'
+  - $ref: "#/components/schemas/PublicationContext"
   - type: object
     properties:
       publisher:
-        $ref: '#/components/schemas/PublishingHouse'
+        $ref: "#/components/schemas/PublishingHouse"
       type:
         type: string
 GeographicalDescription:
@@ -1108,7 +1108,7 @@ GeographicalDescription:
 HandleIdentifier:
   type: object
   allOf:
-  - $ref: '#/components/schemas/AdditionalIdentifierBase'
+  - $ref: "#/components/schemas/AdditionalIdentifierBase"
 Identity:
   required:
   - type
@@ -1135,7 +1135,7 @@ Identity:
     additionalIdentifiers:
       type: array
       items:
-        $ref: '#/components/schemas/AdditionalIdentifier'
+        $ref: "#/components/schemas/AdditionalIdentifier"
     type:
       type: string
 ImportDetail:
@@ -1147,7 +1147,7 @@ ImportDetail:
       type: string
       format: date-time
     importSource:
-      $ref: '#/components/schemas/ImportSource'
+      $ref: "#/components/schemas/ImportSource"
     type:
       type: string
 ImportSource:
@@ -1170,7 +1170,7 @@ ImportUploadDetails:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/UploadDetails'
+  - $ref: "#/components/schemas/UploadDetails"
   - type: object
     properties:
       source:
@@ -1200,11 +1200,11 @@ Introduction:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/Range'
+        $ref: "#/components/schemas/Range"
       type:
         type: string
 Ismn:
@@ -1232,7 +1232,7 @@ Journal:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationContext'
+  - $ref: "#/components/schemas/PublicationContext"
   - type: object
     properties:
       id:
@@ -1245,7 +1245,7 @@ JournalCorrigendum:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       volume:
@@ -1255,7 +1255,7 @@ JournalCorrigendum:
       articleNumber:
         type: string
       pages:
-        $ref: '#/components/schemas/Range'
+        $ref: "#/components/schemas/Range"
       corrigendumFor:
         type: string
         format: uri
@@ -1266,7 +1266,7 @@ JournalIssue:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       volume:
@@ -1276,7 +1276,7 @@ JournalIssue:
       articleNumber:
         type: string
       pages:
-        $ref: '#/components/schemas/Range'
+        $ref: "#/components/schemas/Range"
       type:
         type: string
 JournalLeader:
@@ -1284,7 +1284,7 @@ JournalLeader:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       volume:
@@ -1294,7 +1294,7 @@ JournalLeader:
       articleNumber:
         type: string
       pages:
-        $ref: '#/components/schemas/Range'
+        $ref: "#/components/schemas/Range"
       type:
         type: string
 JournalLetter:
@@ -1302,7 +1302,7 @@ JournalLetter:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       volume:
@@ -1312,7 +1312,7 @@ JournalLetter:
       articleNumber:
         type: string
       pages:
-        $ref: '#/components/schemas/Range'
+        $ref: "#/components/schemas/Range"
       type:
         type: string
 JournalReview:
@@ -1320,7 +1320,7 @@ JournalReview:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       volume:
@@ -1330,7 +1330,7 @@ JournalReview:
       articleNumber:
         type: string
       pages:
-        $ref: '#/components/schemas/Range'
+        $ref: "#/components/schemas/Range"
       type:
         type: string
 Lecture:
@@ -1338,11 +1338,11 @@ Lecture:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/NullPages'
+        $ref: "#/components/schemas/NullPages"
       type:
         type: string
 LiteraryArts:
@@ -1350,19 +1350,19 @@ LiteraryArts:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       subtype:
-        $ref: '#/components/schemas/LiteraryArtsSubtype'
+        $ref: "#/components/schemas/LiteraryArtsSubtype"
       manifestations:
         type: array
         items:
-          $ref: '#/components/schemas/LiteraryArtsManifestation'
+          $ref: "#/components/schemas/LiteraryArtsManifestation"
       description:
         type: string
       pages:
-        $ref: '#/components/schemas/NullPages'
+        $ref: "#/components/schemas/NullPages"
       type:
         type: string
 LiteraryArtsAudioVisual:
@@ -1370,13 +1370,13 @@ LiteraryArtsAudioVisual:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/LiteraryArtsManifestation'
+  - $ref: "#/components/schemas/LiteraryArtsManifestation"
   - type: object
     properties:
       subtype:
-        $ref: '#/components/schemas/LiteraryArtsAudioVisualSubtype'
+        $ref: "#/components/schemas/LiteraryArtsAudioVisualSubtype"
       publisher:
-        $ref: '#/components/schemas/PublishingHouse'
+        $ref: "#/components/schemas/PublishingHouse"
       isbnList:
         type: array
         items:
@@ -1406,7 +1406,7 @@ LiteraryArtsManifestation:
   type: object
   properties:
     publicationDate:
-      $ref: '#/components/schemas/PublicationDate'
+      $ref: "#/components/schemas/PublicationDate"
     type:
       type: string
 LiteraryArtsMonograph:
@@ -1414,17 +1414,17 @@ LiteraryArtsMonograph:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/LiteraryArtsManifestation'
+  - $ref: "#/components/schemas/LiteraryArtsManifestation"
   - type: object
     properties:
       publisher:
-        $ref: '#/components/schemas/PublishingHouse'
+        $ref: "#/components/schemas/PublishingHouse"
       isbnList:
         type: array
         items:
           type: string
       pages:
-        $ref: '#/components/schemas/MonographPages'
+        $ref: "#/components/schemas/MonographPages"
       type:
         type: string
 LiteraryArtsPerformance:
@@ -1432,13 +1432,13 @@ LiteraryArtsPerformance:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/LiteraryArtsManifestation'
+  - $ref: "#/components/schemas/LiteraryArtsManifestation"
   - type: object
     properties:
       subtype:
-        $ref: '#/components/schemas/LiteraryArtsPerformanceSubtype'
+        $ref: "#/components/schemas/LiteraryArtsPerformanceSubtype"
       place:
-        $ref: '#/components/schemas/UnconfirmedPlace'
+        $ref: "#/components/schemas/UnconfirmedPlace"
       type:
         type: string
 LiteraryArtsPerformanceSubtype:
@@ -1476,14 +1476,14 @@ LiteraryArtsWeb:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/LiteraryArtsManifestation'
+  - $ref: "#/components/schemas/LiteraryArtsManifestation"
   - type: object
     properties:
       id:
         type: string
         format: uri
       publisher:
-        $ref: '#/components/schemas/PublishingHouse'
+        $ref: "#/components/schemas/PublishingHouse"
       type:
         type: string
 Map:
@@ -1491,13 +1491,13 @@ Map:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       description:
         type: string
       pages:
-        $ref: '#/components/schemas/MonographPages'
+        $ref: "#/components/schemas/MonographPages"
       type:
         type: string
 MediaBlogPost:
@@ -1505,11 +1505,11 @@ MediaBlogPost:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/NullPages'
+        $ref: "#/components/schemas/NullPages"
       type:
         type: string
 MediaContribution:
@@ -1517,11 +1517,11 @@ MediaContribution:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationContext'
+  - $ref: "#/components/schemas/PublicationContext"
   - type: object
     properties:
       medium:
-        $ref: '#/components/schemas/MediaSubType'
+        $ref: "#/components/schemas/MediaSubType"
       format:
         type: string
         enum:
@@ -1531,7 +1531,7 @@ MediaContribution:
       disseminationChannel:
         type: string
       partOf:
-        $ref: '#/components/schemas/SeriesEpisode'
+        $ref: "#/components/schemas/SeriesEpisode"
       type:
         type: string
 MediaContributionPeriodical:
@@ -1539,7 +1539,7 @@ MediaContributionPeriodical:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationContext'
+  - $ref: "#/components/schemas/PublicationContext"
   - type: object
     properties:
       id:
@@ -1552,7 +1552,7 @@ MediaFeatureArticle:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       volume:
@@ -1562,7 +1562,7 @@ MediaFeatureArticle:
       articleNumber:
         type: string
       pages:
-        $ref: '#/components/schemas/Range'
+        $ref: "#/components/schemas/Range"
       type:
         type: string
 MediaInterview:
@@ -1570,11 +1570,11 @@ MediaInterview:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/NullPages'
+        $ref: "#/components/schemas/NullPages"
       type:
         type: string
 MediaParticipationInRadioOrTv:
@@ -1582,11 +1582,11 @@ MediaParticipationInRadioOrTv:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/NullPages'
+        $ref: "#/components/schemas/NullPages"
       type:
         type: string
 MediaPodcast:
@@ -1594,11 +1594,11 @@ MediaPodcast:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/NullPages'
+        $ref: "#/components/schemas/NullPages"
       type:
         type: string
 MediaReaderOpinion:
@@ -1606,7 +1606,7 @@ MediaReaderOpinion:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       volume:
@@ -1616,7 +1616,7 @@ MediaReaderOpinion:
       articleNumber:
         type: string
       pages:
-        $ref: '#/components/schemas/Range'
+        $ref: "#/components/schemas/Range"
       type:
         type: string
 MediaSubType:
@@ -1638,7 +1638,7 @@ MentionInPublication:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/ArchitectureOutput'
+  - $ref: "#/components/schemas/ArchitectureOutput"
   - type: object
     properties:
       title:
@@ -1646,7 +1646,7 @@ MentionInPublication:
       issue:
         type: string
       date:
-        $ref: '#/components/schemas/Time'
+        $ref: "#/components/schemas/Time"
       otherInformation:
         type: string
       type:
@@ -1670,7 +1670,7 @@ MonographPages:
   type: object
   properties:
     introduction:
-      $ref: '#/components/schemas/Range'
+      $ref: "#/components/schemas/Range"
     pages:
       type: string
     illustrated:
@@ -1682,21 +1682,21 @@ MovingPicture:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       subtype:
-        $ref: '#/components/schemas/MovingPictureSubtype'
+        $ref: "#/components/schemas/MovingPictureSubtype"
       description:
         type: string
       outputs:
         type: array
         items:
-          $ref: '#/components/schemas/MovingPictureOutput'
+          $ref: "#/components/schemas/MovingPictureOutput"
       duration:
-        $ref: '#/components/schemas/Duration'
+        $ref: "#/components/schemas/Duration"
       pages:
-        $ref: '#/components/schemas/NullPages'
+        $ref: "#/components/schemas/NullPages"
       type:
         type: string
 MovingPictureOutput:
@@ -1744,17 +1744,17 @@ MusicPerformance:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       manifestations:
         type: array
         items:
-          $ref: '#/components/schemas/MusicPerformanceManifestation'
+          $ref: "#/components/schemas/MusicPerformanceManifestation"
       duration:
-        $ref: '#/components/schemas/Duration'
+        $ref: "#/components/schemas/Duration"
       pages:
-        $ref: '#/components/schemas/NullPages'
+        $ref: "#/components/schemas/NullPages"
       type:
         type: string
 MusicPerformanceManifestation:
@@ -1769,7 +1769,7 @@ MusicScore:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/MusicPerformanceManifestation'
+  - $ref: "#/components/schemas/MusicPerformanceManifestation"
   - type: object
     properties:
       ensemble:
@@ -1779,9 +1779,9 @@ MusicScore:
       extent:
         type: string
       publisher:
-        $ref: '#/components/schemas/PublishingHouse'
+        $ref: "#/components/schemas/PublishingHouse"
       ismn:
-        $ref: '#/components/schemas/Ismn'
+        $ref: "#/components/schemas/Ismn"
       type:
         type: string
 MusicTrack:
@@ -1822,11 +1822,11 @@ NonFictionChapter:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/Range'
+        $ref: "#/components/schemas/Range"
       type:
         type: string
 NonFictionMonograph:
@@ -1834,11 +1834,11 @@ NonFictionMonograph:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/MonographPages'
+        $ref: "#/components/schemas/MonographPages"
       type:
         type: string
 NullAssociatedArtifact:
@@ -1846,7 +1846,7 @@ NullAssociatedArtifact:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/AssociatedArtifact'
+  - $ref: "#/components/schemas/AssociatedArtifact"
   - type: object
     properties:
       type:
@@ -1856,7 +1856,7 @@ NullDuration:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/Duration'
+  - $ref: "#/components/schemas/Duration"
   - type: object
     properties:
       type:
@@ -1873,7 +1873,7 @@ NullPublisher:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublishingHouse'
+  - $ref: "#/components/schemas/PublishingHouse"
   - type: object
     properties:
       type:
@@ -1883,7 +1883,7 @@ NullRightsRetentionStrategy:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/RightsRetentionStrategy'
+  - $ref: "#/components/schemas/RightsRetentionStrategy"
   - type: object
     properties:
       type:
@@ -1893,7 +1893,7 @@ Organization:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/Corporation'
+  - $ref: "#/components/schemas/Corporation"
   - type: object
     properties:
       id:
@@ -1906,19 +1906,19 @@ OtherPerformance:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/MusicPerformanceManifestation'
+  - $ref: "#/components/schemas/MusicPerformanceManifestation"
   - type: object
     properties:
       performanceType:
         type: string
       place:
-        $ref: '#/components/schemas/UnconfirmedPlace'
+        $ref: "#/components/schemas/UnconfirmedPlace"
       extent:
         type: string
       musicalWorks:
         type: array
         items:
-          $ref: '#/components/schemas/MusicalWork'
+          $ref: "#/components/schemas/MusicalWork"
       type:
         type: string
 OtherPresentation:
@@ -1926,11 +1926,11 @@ OtherPresentation:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/NullPages'
+        $ref: "#/components/schemas/NullPages"
       type:
         type: string
 OtherRelease:
@@ -1938,17 +1938,17 @@ OtherRelease:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/MovingPictureOutput'
+  - $ref: "#/components/schemas/MovingPictureOutput"
   - type: object
     properties:
       description:
         type: string
       place:
-        $ref: '#/components/schemas/UnconfirmedPlace'
+        $ref: "#/components/schemas/UnconfirmedPlace"
       publisher:
-        $ref: '#/components/schemas/PublishingHouse'
+        $ref: "#/components/schemas/PublishingHouse"
       date:
-        $ref: '#/components/schemas/Instant'
+        $ref: "#/components/schemas/Instant"
       type:
         type: string
 OtherStudentWork:
@@ -1956,13 +1956,13 @@ OtherStudentWork:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/MonographPages'
+        $ref: "#/components/schemas/MonographPages"
       submittedDate:
-        $ref: '#/components/schemas/PublicationDate'
+        $ref: "#/components/schemas/PublicationDate"
       type:
         type: string
 OverriddenRightsRetentionStrategy:
@@ -1970,7 +1970,7 @@ OverriddenRightsRetentionStrategy:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/RightsRetentionStrategy'
+  - $ref: "#/components/schemas/RightsRetentionStrategy"
   - type: object
     properties:
       overriddenBy:
@@ -1989,19 +1989,19 @@ PerformingArts:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       subtype:
-        $ref: '#/components/schemas/PerformingArtsSubtype'
+        $ref: "#/components/schemas/PerformingArtsSubtype"
       description:
         type: string
       outputs:
         type: array
         items:
-          $ref: '#/components/schemas/PerformingArtsOutput'
+          $ref: "#/components/schemas/PerformingArtsOutput"
       pages:
-        $ref: '#/components/schemas/NullPages'
+        $ref: "#/components/schemas/NullPages"
       type:
         type: string
 PerformingArtsOutput:
@@ -2028,13 +2028,13 @@ PerformingArtsVenue:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PerformingArtsOutput'
+  - $ref: "#/components/schemas/PerformingArtsOutput"
   - type: object
     properties:
       place:
-        $ref: '#/components/schemas/Place'
+        $ref: "#/components/schemas/Place"
       date:
-        $ref: '#/components/schemas/Time'
+        $ref: "#/components/schemas/Time"
       sequence:
         type: integer
         format: int32
@@ -2065,11 +2065,11 @@ PopularScienceArticle:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/Range'
+        $ref: "#/components/schemas/Range"
       volume:
         type: string
       issue:
@@ -2083,11 +2083,11 @@ PopularScienceChapter:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/Range'
+        $ref: "#/components/schemas/Range"
       type:
         type: string
 PopularScienceMonograph:
@@ -2095,11 +2095,11 @@ PopularScienceMonograph:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/MonographPages'
+        $ref: "#/components/schemas/MonographPages"
       type:
         type: string
 ProfessionalArticle:
@@ -2107,11 +2107,11 @@ ProfessionalArticle:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/Range'
+        $ref: "#/components/schemas/Range"
       volume:
         type: string
       issue:
@@ -2126,7 +2126,7 @@ Publication:
   type: object
   properties:
     identifier:
-      $ref: '#/components/schemas/SortableIdentifier'
+      $ref: "#/components/schemas/SortableIdentifier"
     status:
       type: string
       enum:
@@ -2138,9 +2138,9 @@ Publication:
       - UNPUBLISHED
       - DRAFT_FOR_DELETION
     resourceOwner:
-      $ref: '#/components/schemas/ResourceOwner'
+      $ref: "#/components/schemas/ResourceOwner"
     publisher:
-      $ref: '#/components/schemas/Organization'
+      $ref: "#/components/schemas/Organization"
     createdDate:
       type: string
       format: date-time
@@ -2163,20 +2163,20 @@ Publication:
       type: string
       format: uri
     entityDescription:
-      $ref: '#/components/schemas/EntityDescription'
+      $ref: "#/components/schemas/EntityDescription"
     projects:
       type: array
       items:
-        $ref: '#/components/schemas/ResearchProject'
+        $ref: "#/components/schemas/ResearchProject"
     fundings:
       type: array
       items:
-        $ref: '#/components/schemas/Funding'
+        $ref: "#/components/schemas/Funding"
     additionalIdentifiers:
       uniqueItems: true
       type: array
       items:
-        $ref: '#/components/schemas/AdditionalIdentifierBase'
+        $ref: "#/components/schemas/AdditionalIdentifierBase"
     subjects:
       type: array
       items:
@@ -2188,11 +2188,11 @@ Publication:
         empty:
           type: boolean
         first:
-          $ref: '#/components/schemas/AssociatedArtifact'
+          $ref: "#/components/schemas/AssociatedArtifact"
         last:
-          $ref: '#/components/schemas/AssociatedArtifact'
+          $ref: "#/components/schemas/AssociatedArtifact"
       items:
-        $ref: '#/components/schemas/AssociatedArtifact'
+        $ref: "#/components/schemas/AssociatedArtifact"
     rightsHolder:
       type: string
     duplicateOf:
@@ -2201,7 +2201,7 @@ Publication:
     publicationNotes:
       type: array
       items:
-        $ref: '#/components/schemas/PublicationNoteBase'
+        $ref: "#/components/schemas/PublicationNoteBase"
     curatingInstitutions:
       uniqueItems: true
       type: array
@@ -2211,7 +2211,7 @@ Publication:
     importDetails:
       type: array
       items:
-        $ref: '#/components/schemas/ImportDetail'
+        $ref: "#/components/schemas/ImportDetail"
     modelVersion:
       type: string
     type:
@@ -2242,13 +2242,13 @@ PublicationInstancePages:
   type: object
   properties:
     pages:
-      $ref: '#/components/schemas/Pages'
+      $ref: "#/components/schemas/Pages"
     type:
       type: string
 PublicationNote:
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationNoteBase'
+  - $ref: "#/components/schemas/PublicationNoteBase"
 PublicationNoteBase:
   required:
   - type
@@ -2263,7 +2263,7 @@ PublishedFile:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/File'
+  - $ref: "#/components/schemas/File"
   - type: object
     properties:
       type:
@@ -2273,7 +2273,7 @@ Publisher:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublishingHouse'
+  - $ref: "#/components/schemas/PublishingHouse"
   - type: object
     properties:
       id:
@@ -2307,12 +2307,12 @@ Reference:
   type: object
   properties:
     publicationContext:
-      $ref: '#/components/schemas/PublicationContext'
+      $ref: "#/components/schemas/PublicationContext"
     doi:
       type: string
       format: uri
     publicationInstance:
-      $ref: '#/components/schemas/PublicationInstancePages'
+      $ref: "#/components/schemas/PublicationInstancePages"
     type:
       type: string
 RelatedDocument:
@@ -2325,18 +2325,18 @@ RelatedDocument:
 Report:
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationContext'
+  - $ref: "#/components/schemas/PublicationContext"
   - type: object
     properties:
       series:
-        $ref: '#/components/schemas/BookSeries'
+        $ref: "#/components/schemas/BookSeries"
       seriesTitle:
         type: string
         writeOnly: true
       seriesNumber:
         type: string
       publisher:
-        $ref: '#/components/schemas/PublishingHouse'
+        $ref: "#/components/schemas/PublishingHouse"
       isbnList:
         type: array
         items:
@@ -2350,17 +2350,17 @@ Report:
         uniqueItems: true
         type: array
         items:
-          $ref: '#/components/schemas/AdditionalIdentifier'
+          $ref: "#/components/schemas/AdditionalIdentifier"
 ReportBasic:
   required:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/MonographPages'
+        $ref: "#/components/schemas/MonographPages"
       type:
         type: string
 ReportBookOfAbstract:
@@ -2368,11 +2368,11 @@ ReportBookOfAbstract:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/MonographPages'
+        $ref: "#/components/schemas/MonographPages"
       type:
         type: string
 ReportPolicy:
@@ -2380,11 +2380,11 @@ ReportPolicy:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/MonographPages'
+        $ref: "#/components/schemas/MonographPages"
       type:
         type: string
 ReportResearch:
@@ -2392,11 +2392,11 @@ ReportResearch:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/MonographPages'
+        $ref: "#/components/schemas/MonographPages"
       type:
         type: string
 ReportWorkingPaper:
@@ -2404,11 +2404,11 @@ ReportWorkingPaper:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/MonographPages'
+        $ref: "#/components/schemas/MonographPages"
       type:
         type: string
 ResearchData:
@@ -2416,11 +2416,11 @@ ResearchData:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationContext'
+  - $ref: "#/components/schemas/PublicationContext"
   - type: object
     properties:
       publisher:
-        $ref: '#/components/schemas/PublishingHouse'
+        $ref: "#/components/schemas/PublishingHouse"
       type:
         type: string
 ResearchProject:
@@ -2436,7 +2436,7 @@ ResearchProject:
     approvals:
       type: array
       items:
-        $ref: '#/components/schemas/Approval'
+        $ref: "#/components/schemas/Approval"
     type:
       type: string
 ResourceOwner:
@@ -2539,13 +2539,13 @@ RoleType:
 ScopusIdentifier:
   type: object
   allOf:
-  - $ref: '#/components/schemas/AdditionalIdentifierBase'
+  - $ref: "#/components/schemas/AdditionalIdentifierBase"
 Series:
   required:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/BookSeries'
+  - $ref: "#/components/schemas/BookSeries"
   - type: object
     properties:
       id:
@@ -2571,11 +2571,11 @@ StudyProtocol:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/Range'
+        $ref: "#/components/schemas/Range"
       volume:
         type: string
       issue:
@@ -2589,21 +2589,21 @@ Textbook:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/MonographPages'
+        $ref: "#/components/schemas/MonographPages"
       type:
         type: string
 TextbookChapter:
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       pages:
-        $ref: '#/components/schemas/Range'
+        $ref: "#/components/schemas/Range"
 Time:
   required:
   - type
@@ -2616,7 +2616,7 @@ UnconfirmedCourse:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/Course'
+  - $ref: "#/components/schemas/Course"
   - type: object
     properties:
       code:
@@ -2628,7 +2628,7 @@ UnconfirmedDocument:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/RelatedDocument'
+  - $ref: "#/components/schemas/RelatedDocument"
   - type: object
     properties:
       text:
@@ -2640,7 +2640,7 @@ UnconfirmedFunding:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/Funding'
+  - $ref: "#/components/schemas/Funding"
   - type: object
     properties:
       type:
@@ -2650,7 +2650,7 @@ UnconfirmedJournal:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationContext'
+  - $ref: "#/components/schemas/PublicationContext"
   - type: object
     properties:
       title:
@@ -2666,7 +2666,7 @@ UnconfirmedMediaContributionPeriodical:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationContext'
+  - $ref: "#/components/schemas/PublicationContext"
   - type: object
     properties:
       title:
@@ -2702,7 +2702,7 @@ UnconfirmedPublisher:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublishingHouse'
+  - $ref: "#/components/schemas/PublishingHouse"
   - type: object
     properties:
       name:
@@ -2714,7 +2714,7 @@ UnconfirmedSeries:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/BookSeries'
+  - $ref: "#/components/schemas/BookSeries"
   - type: object
     properties:
       title:
@@ -2730,7 +2730,7 @@ UndefinedDuration:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/Duration'
+  - $ref: "#/components/schemas/Duration"
   - type: object
     properties:
       value:
@@ -2742,7 +2742,7 @@ UnpublishedFile:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/File'
+  - $ref: "#/components/schemas/File"
   - type: object
     properties:
       type:
@@ -2750,7 +2750,7 @@ UnpublishedFile:
 UnpublishingNote:
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationNoteBase'
+  - $ref: "#/components/schemas/PublicationNoteBase"
   - type: object
     properties:
       createdBy:
@@ -2770,7 +2770,7 @@ UserUploadDetails:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/UploadDetails'
+  - $ref: "#/components/schemas/UploadDetails"
   - type: object
     properties:
       uploadedBy:
@@ -2786,9 +2786,9 @@ Venue:
   type: object
   properties:
     place:
-      $ref: '#/components/schemas/Place'
+      $ref: "#/components/schemas/Place"
     date:
-      $ref: '#/components/schemas/Time'
+      $ref: "#/components/schemas/Time"
     sequence:
       type: integer
       format: int32
@@ -2799,20 +2799,20 @@ VisualArts:
   - type
   type: object
   allOf:
-  - $ref: '#/components/schemas/PublicationInstancePages'
+  - $ref: "#/components/schemas/PublicationInstancePages"
   - type: object
     properties:
       subtype:
-        $ref: '#/components/schemas/VisualArtsSubtype'
+        $ref: "#/components/schemas/VisualArtsSubtype"
       description:
         type: string
       venues:
         uniqueItems: true
         type: array
         items:
-          $ref: '#/components/schemas/Venue'
+          $ref: "#/components/schemas/Venue"
       pages:
-        $ref: '#/components/schemas/NullPages'
+        $ref: "#/components/schemas/NullPages"
       type:
         type: string
 VisualArtsSubtype:
