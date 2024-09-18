@@ -16,7 +16,7 @@ import io.cucumber.java.en.Then;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.List;
-import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;

@@ -8,12 +8,13 @@ import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 import no.unit.nva.api.PublicationResponse;
-import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.create.pia.PiaClient;
 import no.unit.nva.publication.exception.NotAuthorizedException;
@@ -256,14 +257,11 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     private String getScopusIdentifier(ImportCandidate importCandidate) {
         return importCandidate.getAdditionalIdentifiers()
                    .stream()
-                   .filter(this::isScopusIdentifier)
-                   .map(AdditionalIdentifierBase::value)
+                   .filter(ScopusIdentifier.class::isInstance)
+                   .map(ScopusIdentifier.class::cast)
+                   .map(ScopusIdentifier::value)
                    .findFirst()
                    .orElse(null);
-    }
-
-    private boolean isScopusIdentifier(AdditionalIdentifierBase identifier) {
-        return SCOPUS_IDENTIFIER.equals(identifier.sourceName());
     }
 
     private BadGatewayException rollbackImportStatusUpdate(ImportCandidate importCandidate)

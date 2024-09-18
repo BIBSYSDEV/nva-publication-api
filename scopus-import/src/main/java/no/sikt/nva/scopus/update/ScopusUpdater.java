@@ -4,13 +4,12 @@ import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.util.Optional;
-import no.sikt.nva.scopus.ScopusHandler;
 import no.sikt.nva.scopus.conversion.model.ImportCandidateSearchApiResponse;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.ExpandedImportCandidate;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.AdditionalIdentifierBase;
-import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
+import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.BadGatewayException;
@@ -24,15 +23,16 @@ public class ScopusUpdater {
                                                                                  + "candidate";
     private static final String API_HOST = new Environment().readEnv("API_HOST");
     private static final String SEARCH = "search";
-    private static final String IMPORT_CANDIDATES_2 = "import-candidates2";
+    private static final String IMPORT_CANDIDATES = "import-candidates";
     private static final String SCOPUS_IDENTIFIER = "scopusIdentifier";
     private static final String AGGREGATION = "aggregation";
     private static final String NONE = "none";
+    public static final String CUSTOMER = "customer";
     private final ResourceService resourceService;
-    private final UriRetriever uriRetriever;
+    private final RawContentRetriever uriRetriever;
     private static final String APPLICATION_JSON = "application/json";
 
-    public ScopusUpdater(ResourceService resourceService, UriRetriever uriRetriever) {
+    public ScopusUpdater(ResourceService resourceService, RawContentRetriever uriRetriever) {
         this.resourceService = resourceService;
         this.uriRetriever = uriRetriever;
     }
@@ -79,7 +79,8 @@ public class ScopusUpdater {
     private URI constructUri(String scopusIdentifier) {
         return UriWrapper.fromHost(API_HOST)
                    .addChild(SEARCH)
-                   .addChild(IMPORT_CANDIDATES_2)
+                   .addChild(CUSTOMER)
+                   .addChild(IMPORT_CANDIDATES)
                    .addQueryParameter(SCOPUS_IDENTIFIER, scopusIdentifier)
                    .addQueryParameter(AGGREGATION, NONE)
                    .getUri();
@@ -97,17 +98,14 @@ public class ScopusUpdater {
 
     private String getScopusIdentifier(ImportCandidate importCandidate) {
         return importCandidate.getAdditionalIdentifiers().stream()
-                   .filter(this::isScopusIdentifier)
-                   .map(AdditionalIdentifierBase::value)
+                   .filter(ScopusIdentifier.class::isInstance)
+                   .map(ScopusIdentifier.class::cast)
+                   .map(ScopusIdentifier::value)
                    .findFirst()
                    .orElse(null);
     }
 
     private Optional<String> getResponseBody(URI uri) {
         return uriRetriever.getRawContent(uri, APPLICATION_JSON);
-    }
-
-    private boolean isScopusIdentifier(AdditionalIdentifierBase identifier) {
-        return ScopusHandler.SCOPUS_IDENTIFIER.equals(identifier.sourceName());
     }
 }

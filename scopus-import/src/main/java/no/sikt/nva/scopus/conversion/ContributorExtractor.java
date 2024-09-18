@@ -22,7 +22,7 @@ import no.sikt.nva.scopus.conversion.model.AuthorIdentifiers;
 import no.sikt.nva.scopus.conversion.model.CorporationWithContributors;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.exception.MissingNvaContributorException;
-import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Identity;

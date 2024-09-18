@@ -18,7 +18,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;

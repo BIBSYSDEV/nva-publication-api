@@ -1,4 +1,4 @@
-package no.unit.nva.model;
+package no.unit.nva.model.additionalidentifiers;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -15,6 +15,9 @@ public record SourceName(String system, String instanceName) {
     public static final String SEPARATOR = "@";
     public static final String BRAGE_SYSTEM = "brage";
     public static final String CRISTIN_SYSTEM = "cristin";
+    public static final String SCOPUS_SYSTEM = "scopus";
+    public static final String WISEFLOW_SYSTEM = "wiseflow";
+    public static final String INSPERA_SYSTEM = "inspera";
 
     @JsonValue
     @Override
@@ -57,5 +60,9 @@ public record SourceName(String system, String instanceName) {
 
     public boolean isFromBrageSystem() {
         return BRAGE_SYSTEM.equals(system);
+    }
+
+    public static SourceName scopus() {
+        return new SourceName(SCOPUS_SYSTEM, null);
     }
 }

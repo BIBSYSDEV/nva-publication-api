@@ -7,7 +7,7 @@ import java.util.Set;
 import no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.sikt.nva.brage.migration.record.Record;
-import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;

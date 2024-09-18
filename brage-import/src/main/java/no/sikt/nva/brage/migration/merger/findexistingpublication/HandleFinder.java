@@ -8,7 +8,7 @@ import java.util.Optional;
 import no.sikt.nva.brage.migration.lambda.MergeSource;
 import no.sikt.nva.brage.migration.model.PublicationForUpdate;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
-import no.unit.nva.model.HandleIdentifier;
+import no.unit.nva.model.additionalidentifiers.HandleIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.service.impl.ResourceService;

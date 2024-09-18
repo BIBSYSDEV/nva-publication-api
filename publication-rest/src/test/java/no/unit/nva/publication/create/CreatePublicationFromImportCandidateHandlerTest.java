@@ -14,7 +14,6 @@ import static no.unit.nva.publication.create.CreatePublicationFromImportCandidat
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.RESOURCE_IS_MISSING_SCOPUS_IDENTIFIER_ERROR_MESSAGE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.RESOURCE_IS_NOT_PUBLISHABLE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.ROLLBACK_WENT_WRONG_MESSAGE;
-import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.SCOPUS_IDENTIFIER;
 import static no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever.ACCEPT;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
@@ -52,8 +51,6 @@ import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.AdditionalIdentifier;
-import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
@@ -64,6 +61,9 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
@@ -222,8 +222,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     }
 
     @Test
-    void shouldReturnBadGatewayWhenImportCandidatePersistenceFails(@Mock ResourceService resourceService,
-                                                                   WireMockRuntimeInfo wireMockRuntimeInfo)
+    void shouldReturnBadGatewayWhenImportCandidatePersistenceFails(@Mock ResourceService resourceService)
         throws IOException, ApiGatewayException {
         var importCandidate = createPersistedImportCandidate();
         final var request = createRequest(importCandidate);
@@ -646,7 +645,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                    .withRightsHolder(randomString())
                    .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
                    .withFundings(List.of(new FundingBuilder().build()))
-                   .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(SCOPUS_IDENTIFIER, randomString())))
+                   .withAdditionalIdentifiers(Set.of(ScopusIdentifier.fromValue(randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of(File.builder()
                                                         .withName("some_name.pdf")

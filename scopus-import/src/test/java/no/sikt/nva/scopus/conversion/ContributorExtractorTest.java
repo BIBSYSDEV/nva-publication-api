@@ -33,7 +33,7 @@ import no.sikt.nva.scopus.exception.MissingNvaContributorException;
 import no.sikt.nva.scopus.utils.CristinGenerator;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
-import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.Organization;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;

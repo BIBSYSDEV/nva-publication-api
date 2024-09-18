@@ -10,7 +10,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.List;
 import java.util.Set;
-import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
