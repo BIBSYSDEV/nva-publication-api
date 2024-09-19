@@ -75,6 +75,7 @@ import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArts;
 import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArtsSubtype;
 import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArtsSubtypeEnum;
 import no.unit.nva.model.instancetypes.artistic.visualarts.VisualArtsSubtypeOther;
+import no.unit.nva.model.instancetypes.book.AcademicCommentary;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookAbstracts;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
@@ -238,6 +239,8 @@ public final class PublicationInstanceBuilder {
             case "BookMonograph":
             case "AcademicMonograph":
                 return generateAcademicMonograph();
+            case "AcademicCommentary":
+                return generateAcademicCommentary();
             case "NonFictionMonograph":
                 return generateNonFictionMonograph();
             case "PopularScienceMonograph":
@@ -307,6 +310,10 @@ public final class PublicationInstanceBuilder {
             default:
                 throw new UnsupportedOperationException("Publication instance not supported: " + typeName);
         }
+    }
+
+    private static AcademicCommentary generateAcademicCommentary() {
+        return new AcademicCommentary(randomMonographPages());
     }
 
     public static Class<?> randomPublicationInstanceType() {
@@ -385,11 +392,12 @@ public final class PublicationInstanceBuilder {
         var referencedUri = new ReferencedByUris(Set.of(randomUri()));
         var compliesWithUris = new CompliesWithUris(Set.of(randomUri()));
         return new DataSet(randomBoolean(),
-                geographicalCoverage, referencedUri, Set.of(new UnconfirmedDocument(randomString())), compliesWithUris);
+                geographicalCoverage, referencedUri, Set.of(new UnconfirmedDocument(randomString(), randomInteger())),
+                           compliesWithUris);
     }
 
     private static DataManagementPlan generateDataManagementPlan() {
-        return new DataManagementPlan(Set.of(new UnconfirmedDocument(randomString())), randomMonographPages());
+        return new DataManagementPlan(Set.of(new UnconfirmedDocument(randomString(), randomInteger())), randomMonographPages());
     }
 
     private static Map generateMap() {
@@ -558,8 +566,8 @@ public final class PublicationInstanceBuilder {
 
     private static DegreePhd generateDegreePhd() {
         return new DegreePhd(randomMonographPages(), randomPublicationDate(),
-                             Set.of(new ConfirmedDocument(randomUri()),
-                                    new UnconfirmedDocument(randomString())));
+                             Set.of(new ConfirmedDocument(randomUri(), randomInteger()),
+                                    new UnconfirmedDocument(randomString(), randomInteger())));
     }
 
     private static DegreeLicentiate generateDegreeLicentiate() {

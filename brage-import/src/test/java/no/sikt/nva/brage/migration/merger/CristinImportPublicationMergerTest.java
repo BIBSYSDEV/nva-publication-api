@@ -20,7 +20,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -668,6 +668,33 @@ class CristinImportPublicationMergerTest {
                    is(equalTo(existingPublication.getEntityDescription().getContributors())));
     }
 
+    @Test
+    void shouldMergeTagsWhenMergingDegree()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var handle = randomUri();
+        var handleIdentifier = new HandleIdentifier(SourceName.fromBrage("ntnu"), handle);
+        var existingPublication = randomPublicationWithHandleIdAdditionalIdentifiers(DegreeBachelor.class,
+                                                                                     handleIdentifier);
+        var bragePublication =
+            randomPublicationWithHandleIdAdditionalIdentifiers(DegreeBachelor.class,
+                                                               new HandleIdentifier(SourceName.fromBrage("nmbu"), handle));;
+        bragePublication.getEntityDescription().getReference().setPublicationContext(null);
+        bragePublication.getEntityDescription().getReference().setPublicationInstance(null);
+        var updatedPublication = mergePublications(existingPublication, bragePublication);
+
+        var tags = updatedPublication.getEntityDescription().getTags();
+
+        assertThat(tags, hasItems(existingPublication.getEntityDescription().getTags().toArray(String[]::new)));
+        assertThat(tags, hasItems(bragePublication.getEntityDescription().getTags().toArray(String[]::new)));
+    }
+
+    private static Publication randomPublicationWithHandleIdAdditionalIdentifiers(Class<?> publicationInstance,
+                                                                                  HandleIdentifier handleIdentifier) {
+        return randomPublication(publicationInstance).copy()
+                   .withAdditionalIdentifiers(Set.of(handleIdentifier))
+                   .build();
+    }
+
     private static Contributor contributorWithRoleAndName(Role role, String name) {
         return new Contributor.Builder()
                    .withRole(new RoleType(role))
@@ -694,6 +721,7 @@ class CristinImportPublicationMergerTest {
         throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
         var record = new Record();
         record.setId(bragePublication.getHandle());
+        record.setPrioritizedProperties(Set.of("tags"));
         return mergePublications(existingPublication, bragePublication, record);
     }
 
