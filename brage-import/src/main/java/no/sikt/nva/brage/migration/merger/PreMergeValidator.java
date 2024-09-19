@@ -2,9 +2,9 @@ package no.sikt.nva.brage.migration.merger;
 
 import no.sikt.nva.brage.migration.lambda.HandleDuplicateException;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
-import no.unit.nva.model.HandleIdentifier;
+import no.unit.nva.model.additionalidentifiers.HandleIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.SourceName;
+import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.contexttypes.Degree;
 import nva.commons.core.JacocoGenerated;
 

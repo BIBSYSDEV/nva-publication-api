@@ -1,7 +1,7 @@
 package no.unit.nva;
 
 import java.util.Set;
-import no.unit.nva.model.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 
 public interface WithAdditionalIdentifiers {
 

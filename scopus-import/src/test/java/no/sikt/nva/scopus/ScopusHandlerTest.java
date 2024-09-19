@@ -11,7 +11,6 @@ import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.YYYY_MM
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_ELECTRONIC;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_PRINT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
-import static no.sikt.nva.scopus.ScopusConstants.SCOPUS_IDENTIFIER;
 import static no.sikt.nva.scopus.ScopusHandler.SCOPUS_IMPORT_BUCKET;
 import static no.sikt.nva.scopus.ScopusHandler.SUCCESS_BUCKET_PATH;
 import static no.sikt.nva.scopus.conversion.PiaConnection.API_HOST;
@@ -160,8 +159,6 @@ import no.unit.nva.expansion.model.ExpandedImportCandidate;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.language.LanguageConstants;
 import no.unit.nva.language.LanguageDescription;
-import no.unit.nva.model.AdditionalIdentifier;
-import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.EntityDescription;
@@ -172,6 +169,8 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
@@ -340,9 +339,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldExtractOnlyScopusIdentifierIgnoreAllOtherIdentifiersAndStoreItInPublication() throws IOException {
         createEmptyPiaMock();
-        var scopusIdentifiers = getEid();
-        var expectedAdditionalIdentifier = new AdditionalIdentifier(SCOPUS_IDENTIFIER,
-                                                                    scopusIdentifiers);
+        var scopusIdentifier = getEid();
+        var expectedAdditionalIdentifier = ScopusIdentifier.fromValue(scopusIdentifier);
         var s3Event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualAdditionalIdentifiers = publication.getAdditionalIdentifiers();
@@ -1262,9 +1260,10 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private static String getScopusIdentifier(Publication publication) {
         return publication.getAdditionalIdentifiers()
                    .stream()
-                   .filter(id -> SCOPUS_IDENTIFIER.equals(id.sourceName()))
+                   .filter(ScopusIdentifier.class::isInstance)
+                   .map(ScopusIdentifier.class::cast)
+                   .map(ScopusIdentifier::value)
                    .findFirst()
-                   .map(AdditionalIdentifierBase::value)
                    .orElse(null);
     }
 
@@ -1364,7 +1363,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                    .withRightsHolder(randomString())
                    .withProjects(List.of(new ResearchProject.Builder().withId(randomUri()).build()))
                    .withFundings(List.of(new FundingBuilder().build()))
-                   .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Scopus", randomString())))
+                   .withAdditionalIdentifiers(Set.of(ScopusIdentifier.fromValue(randomString())))
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
                    .withAssociatedArtifacts(List.of())
                    .build();

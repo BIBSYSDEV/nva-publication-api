@@ -5,7 +5,6 @@ import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.sikt.nva.scopus.ScopusConstants.INF_END;
 import static no.sikt.nva.scopus.ScopusConstants.INF_START;
-import static no.sikt.nva.scopus.ScopusConstants.SCOPUS_IDENTIFIER;
 import static no.sikt.nva.scopus.ScopusConstants.SUP_END;
 import static no.sikt.nva.scopus.ScopusConstants.SUP_START;
 import static nva.commons.core.StringUtils.isEmpty;
@@ -42,8 +41,6 @@ import no.sikt.nva.scopus.conversion.PublicationChannelConnection;
 import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
 import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;
-import no.unit.nva.model.AdditionalIdentifier;
-import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
@@ -51,6 +48,8 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import nva.commons.core.Environment;
@@ -301,8 +300,8 @@ public class ScopusConverter {
         return Set.of(extractScopusIdentifier());
     }
 
-    private AdditionalIdentifier extractScopusIdentifier() {
-        return new AdditionalIdentifier(SCOPUS_IDENTIFIER, docTp.getMeta().getEid());
+    private ScopusIdentifier extractScopusIdentifier() {
+        return ScopusIdentifier.fromValue(docTp.getMeta().getEid());
     }
 
     private List<AuthorGroupTp> extractAuthorGroup() {

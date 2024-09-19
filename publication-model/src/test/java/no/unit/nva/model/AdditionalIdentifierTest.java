@@ -2,6 +2,7 @@ package no.unit.nva.model;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import org.junit.jupiter.api.Test;
 
 @Deprecated

@@ -1,4 +1,4 @@
-package no.unit.nva.model;
+package no.unit.nva.model.additionalidentifiers;
 
 
 public record AdditionalIdentifier(String sourceName, String value) implements AdditionalIdentifierBase {
