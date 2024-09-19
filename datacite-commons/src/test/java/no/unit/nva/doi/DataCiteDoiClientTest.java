@@ -6,7 +6,6 @@ import static java.net.HttpURLConnection.HTTP_BAD_METHOD;
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.net.HttpURLConnection.HTTP_OK;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -45,13 +44,14 @@ public class DataCiteDoiClientTest {
     private FakeSecretsManagerClient secretsManagerClient;
     private DataCiteDoiClient dataCiteDoiClient;
 
+    public static final String HOST = "localhost";
+
     @BeforeEach
     void setup() {
         secretsManagerClient = new FakeSecretsManagerClient();
         var credentials = new BackendClientCredentials("id", "secret");
         secretsManagerClient.putPlainTextSecret("someSecret", credentials.toString());
-        dataCiteDoiClient = new DataCiteDoiClient(WiremockHttpClient.create(), secretsManagerClient,
-                                                  "http://localhost:68000");
+        dataCiteDoiClient = new DataCiteDoiClient(WiremockHttpClient.create(), secretsManagerClient, HOST);
     }
 
     @Test
@@ -66,7 +66,7 @@ public class DataCiteDoiClientTest {
         var publication = PublicationGenerator.randomPublication();
         var doi = RandomDataGenerator.randomDoi();
         var httpClient = new FakeHttpClient<>(tokenResponse(), findableDoiResponse(doi));
-        var doiClient = new DataCiteDoiClient(httpClient, secretsManagerClient, randomString());
+        var doiClient = new DataCiteDoiClient(httpClient, secretsManagerClient, HOST);
         var actualDoi = doiClient.createFindableDoi(publication);
         assertThat(actualDoi, is(equalTo(doi)));
     }
@@ -75,7 +75,7 @@ public class DataCiteDoiClientTest {
     void shouldThrowExceptionWhenBadResponseFromDoiClient() {
         var publication = PublicationGenerator.randomPublication();
         var httpClient = new FakeHttpClient<>(tokenResponse(), deleteDoiBadResponse());
-        var doiClient = new DataCiteDoiClient(httpClient, secretsManagerClient, randomString());
+        var doiClient = new DataCiteDoiClient(httpClient, secretsManagerClient, HOST);
         assertThrows(RuntimeException.class, () -> doiClient.deleteDraftDoi(publication));
     }
 
@@ -83,7 +83,7 @@ public class DataCiteDoiClientTest {
     void shouldThrowExceptionWhenBadMethodFromDoiClient() {
         var publication = PublicationGenerator.randomPublication();
         var httpClient = new FakeHttpClient<>(tokenResponse(), deleteDoiBadMethodResponse());
-        var doiClient = new DataCiteDoiClient(httpClient, secretsManagerClient, randomString());
+        var doiClient = new DataCiteDoiClient(httpClient, secretsManagerClient, HOST);
         assertThrows(RuntimeException.class, () -> doiClient.deleteDraftDoi(publication));
     }
 
@@ -94,7 +94,7 @@ public class DataCiteDoiClientTest {
         when(httpClient.send(any(), any())).thenReturn(FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY, HTTP_OK))
             .thenReturn(FakeHttpResponse.create(null, HTTP_ACCEPTED));
 
-        var doiClient = spy(new DataCiteDoiClient(httpClient, secretsManagerClient,"url"));
+        var doiClient = spy(new DataCiteDoiClient(httpClient, secretsManagerClient, HOST));
         doiClient.deleteDraftDoi(publication);
         verify(doiClient, times(1)).deleteDraftDoi(publication);
     }
@@ -105,7 +105,7 @@ public class DataCiteDoiClientTest {
         var httpClient = mock(HttpClient.class);
         when(httpClient.send(any(), any())).thenReturn(FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY, HTTP_OK))
             .thenReturn(FakeHttpResponse.create(null, HTTP_CONFLICT));
-        var doiClient = spy(new DataCiteDoiClient(httpClient, secretsManagerClient,"url"));
+        var doiClient = spy(new DataCiteDoiClient(httpClient, secretsManagerClient, HOST));
 
         assertThrows(RuntimeException.class, () -> doiClient.deleteDraftDoi(publication));
     }
