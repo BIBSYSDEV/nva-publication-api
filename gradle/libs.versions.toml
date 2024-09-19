@@ -12,7 +12,7 @@ awsLambdaCore = { strictly = '1.2.3' }
 awsLambdaEvents = { strictly = '3.13.0' }
 # jsonld and awssdk have different versions. update libraries and check again
 httpcore = { require = '5.3' }
-dynamoDbLocal = { strictly = '2.5.2' }
+dynamoDbLocal = { strictly = '2.0.0' }
 awsIon = { strictly = '1.11.9' }
 commonsValidator = { strictly = '1.9.0' }
 apacheCommonsCollections = { require = '4.4' }
