@@ -1,4 +1,4 @@
-package no.unit.nva.model;
+package no.unit.nva.model.additionalidentifiers;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;

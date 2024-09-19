@@ -1,4 +1,4 @@
-package no.unit.nva.model;
+package no.unit.nva.model.additionalidentifiers;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -11,6 +11,10 @@ public record ScopusIdentifier(@JsonIgnore SourceName source, String value) impl
     @JsonCreator
     private ScopusIdentifier(@JsonProperty("sourceName") String sourceName, @JsonProperty("value") String value) {
         this(new SourceName(sourceName), value);
+    }
+
+    public static ScopusIdentifier fromValue(String value) {
+        return new ScopusIdentifier(SourceName.scopus(), value);
     }
 
     @Override

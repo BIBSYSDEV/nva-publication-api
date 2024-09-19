@@ -22,9 +22,8 @@ import no.sikt.nva.scopus.conversion.files.TikaUtils;
 import no.sikt.nva.scopus.exception.ExceptionMapper;
 import no.sikt.nva.scopus.update.ScopusUpdater;
 import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
-import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -77,7 +76,8 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
                                                                          BACKEND_CLIENT_SECRET_NAME)),
              ResourceService.defaultService(),
              new ScopusUpdater(ResourceService.defaultService(),
-                               UriRetriever.defaultUriRetriever()),
+                               new no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL,
+                                                                                                           BACKEND_CLIENT_SECRET_NAME)),
              new ScopusFileConverter(defaultHttpClientWithRedirect(),
                                      S3Driver.defaultS3Client().build(),
                                      new TikaUtils()));
@@ -155,14 +155,11 @@ public class ScopusHandler implements RequestHandler<S3Event, Publication> {
     private String getScopusIdentifier(ImportCandidate importCandidate) {
         return importCandidate.getAdditionalIdentifiers()
                    .stream()
-                   .filter(this::isScopusIdentifier)
-                   .map(AdditionalIdentifierBase::value)
+                   .filter(ScopusIdentifier.class::isInstance)
+                   .map(ScopusIdentifier.class::cast)
+                   .map(ScopusIdentifier::value)
                    .findFirst()
                    .orElse(null);
-    }
-
-    private boolean isScopusIdentifier(AdditionalIdentifierBase identifier) {
-        return SCOPUS_IDENTIFIER.equals(identifier.sourceName());
     }
 
     private RuntimeException handleSavingError(Failure<ImportCandidate> fail, S3Event event) {

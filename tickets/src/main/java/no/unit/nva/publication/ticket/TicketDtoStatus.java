@@ -10,8 +10,9 @@ public enum TicketDtoStatus {
     NEW("New"),
     PENDING("Pending"),
     COMPLETED("Completed"),
-    NOT_APPLICABLE("Not Applicable"),
-    CLOSED("Closed");
+    NOT_APPLICABLE("NotApplicable"),
+    CLOSED("Closed"),
+    REMOVED("Removed");
 
     private static final String INVALID_TICKET_STATUS_ERROR = "Invalid ticketDto status. Valid values:  ";
     private static final String SEPARATOR = ",";

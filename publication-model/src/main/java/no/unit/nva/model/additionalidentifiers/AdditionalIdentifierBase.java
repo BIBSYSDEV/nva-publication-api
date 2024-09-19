@@ -1,4 +1,4 @@
-package no.unit.nva.model;
+package no.unit.nva.model.additionalidentifiers;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;

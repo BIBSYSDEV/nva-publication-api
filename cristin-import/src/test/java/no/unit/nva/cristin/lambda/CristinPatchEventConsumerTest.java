@@ -36,8 +36,8 @@ import no.unit.nva.cristin.patcher.exception.ParentPatchPublicationInstanceMisma
 import no.unit.nva.cristin.patcher.exception.ParentPublicationException;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.AdditionalIdentifier;
-import no.unit.nva.model.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;

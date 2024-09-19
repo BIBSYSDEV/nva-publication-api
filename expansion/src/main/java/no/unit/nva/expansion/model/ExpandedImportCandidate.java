@@ -20,7 +20,7 @@ import no.unit.nva.expansion.JournalExpansionServiceImpl;
 import no.unit.nva.expansion.PublisherExpansionServiceImpl;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.EntityDescription;
