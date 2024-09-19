@@ -50,7 +50,6 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
-import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import nva.commons.core.Environment;
