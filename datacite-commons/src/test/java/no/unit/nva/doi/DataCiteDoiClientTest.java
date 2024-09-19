@@ -29,6 +29,7 @@ import no.unit.nva.publication.testing.http.FakeHttpClient;
 import no.unit.nva.publication.testing.http.FakeHttpResponse;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
 import no.unit.nva.stubs.WiremockHttpClient;
+import no.unit.nva.testutils.JwtTestToken;
 import no.unit.nva.testutils.RandomDataGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,9 +39,9 @@ public class DataCiteDoiClientTest {
     public static final String ACCESS_TOKEN_RESPONSE_BODY =
         """
            {
-           "access_token" : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+           "access_token" : "%s"
            }
-        """;
+        """.formatted(JwtTestToken.randomToken());
     private FakeSecretsManagerClient secretsManagerClient;
     private DataCiteDoiClient dataCiteDoiClient;
 

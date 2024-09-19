@@ -72,6 +72,7 @@ import no.unit.nva.publication.ticket.TicketTestLocal;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
+import no.unit.nva.testutils.JwtTestToken;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -93,7 +94,9 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 class CreateTicketHandlerTest extends TicketTestLocal {
 
     public static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
-    public static final String ACCESS_TOKEN_RESPONSE_BODY = "{ \"access_token\" : \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c\"}";
+    public static final String ACCESS_TOKEN_RESPONSE_BODY = """
+        { "access_token" : "%s"}
+        """.formatted(JwtTestToken.randomToken());
     private static final String PERSON_AFFILIATION_CLAIM = "custom:personAffiliation";
 
     private FakeSecretsManagerClient secretsManagerClient;
