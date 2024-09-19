@@ -33,18 +33,18 @@ import no.unit.nva.testutils.RandomDataGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class DataCiteDoiClientTest {
+class DataCiteDoiClientTest {
 
-    public static final String ACCESS_TOKEN_RESPONSE_BODY =
+    private static final String ACCESS_TOKEN_RESPONSE_BODY =
         """
            {
            "access_token" : "%s"
            }
         """.formatted(JwtTestToken.randomToken());
+    private static final String HOST = "localhost";
+
     private FakeSecretsManagerClient secretsManagerClient;
     private DataCiteDoiClient dataCiteDoiClient;
-
-    public static final String HOST = "localhost";
 
     @BeforeEach
     void setup() {
