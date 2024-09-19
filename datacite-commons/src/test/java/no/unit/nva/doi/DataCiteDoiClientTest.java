@@ -27,7 +27,6 @@ import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.testing.http.FakeHttpClient;
 import no.unit.nva.publication.testing.http.FakeHttpResponse;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
-import no.unit.nva.stubs.WiremockHttpClient;
 import no.unit.nva.testutils.JwtTestToken;
 import no.unit.nva.testutils.RandomDataGenerator;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,7 +50,7 @@ class DataCiteDoiClientTest {
         secretsManagerClient = new FakeSecretsManagerClient();
         var credentials = new BackendClientCredentials("id", "secret");
         secretsManagerClient.putPlainTextSecret("someSecret", credentials.toString());
-        dataCiteDoiClient = new DataCiteDoiClient(WiremockHttpClient.create(), secretsManagerClient, HOST);
+        dataCiteDoiClient = new DataCiteDoiClient(HttpClient.newHttpClient(), secretsManagerClient, HOST);
     }
 
     @Test
