@@ -33,6 +33,7 @@ import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import no.sikt.nva.brage.migration.record.content.ResourceContent.BundleType;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
@@ -87,6 +88,8 @@ public final class BrageNvaMapper {
     public static final String TWO_NEWLINES = "\n\n";
     public static final String NO_ABSTRACT = null;
     public static final String ERROR_REPORT = "ERROR_REPORT";
+    public static final String INSPERA_SOURCE = "inspera";
+    public static final String WISEFLOW_SOURCE = "wiseflow";
 
     private BrageNvaMapper() {
     }
@@ -163,10 +166,25 @@ public final class BrageNvaMapper {
     }
 
     private static Set<AdditionalIdentifierBase> extractAdditionalIdentifiers(Record brageRecord) {
-        return Stream.of(extractCristinAdditionalIdentifier(brageRecord), extractBrageHandle(brageRecord))
+        return Stream.of(extractCristinAdditionalIdentifier(brageRecord),
+                         extractBrageHandle(brageRecord),
+                         extractInsperaIdentifier(brageRecord),
+                         extractWiseflowIdentifier(brageRecord))
                    .filter(Optional::isPresent)
                    .map(Optional::get)
                    .collect(Collectors.toSet());
+    }
+
+    private static Optional<? extends AdditionalIdentifierBase> extractInsperaIdentifier(Record brageRecord) {
+        return isNull(brageRecord.getInsperaIdentifier())
+                   ? Optional.empty()
+                   : Optional.of(new AdditionalIdentifier(INSPERA_SOURCE, brageRecord.getInsperaIdentifier()));
+    }
+
+    private static Optional<? extends AdditionalIdentifierBase> extractWiseflowIdentifier(Record brageRecord) {
+        return isNull(brageRecord.getWiseflowIdentifier())
+                   ? Optional.empty()
+                   : Optional.of(new AdditionalIdentifier(WISEFLOW_SOURCE, brageRecord.getWiseflowIdentifier()));
     }
 
     private static Optional<AdditionalIdentifierBase> extractBrageHandle(Record brageRecord) {

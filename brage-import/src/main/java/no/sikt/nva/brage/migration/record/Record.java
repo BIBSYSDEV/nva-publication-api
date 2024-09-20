@@ -44,6 +44,8 @@ public class Record implements JsonSerializable {
     private String accessCode;
     private List<Project> projects;
     private Set<String> prioritizedProperties;
+    private String insperaIdentifier;
+    private String wiseflowIdentifier;
 
     @JsonCreator
     public Record() {
@@ -133,6 +135,26 @@ public class Record implements JsonSerializable {
     @JsonProperty("hasPart")
     public List<String> getPart() {
         return part;
+    }
+
+    @JacocoGenerated
+    @JsonProperty("insperaIdentifier")
+    public String getInsperaIdentifier() {
+        return insperaIdentifier;
+    }
+
+    @JacocoGenerated
+    @JsonProperty("wiseflowIdentifier")
+    public String getWiseflowIdentifier() {
+        return wiseflowIdentifier;
+    }
+
+    public void setInsperaIdentifier(String insperaIdentifier) {
+        this.insperaIdentifier = insperaIdentifier;
+    }
+
+    public void setWiseflowIdentifier(String wiseflowIdentifier) {
+        this.wiseflowIdentifier = wiseflowIdentifier;
     }
 
     @JacocoGenerated

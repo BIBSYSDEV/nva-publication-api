@@ -137,6 +137,32 @@ class BrageNvaMapperTest {
         assertEquals(importUploadDetail.archive(), NPOLAR_SHORT_NAME);
     }
 
+    @Test
+    void shouldMapInsperaAndWiseflowIdentifierToAdditionalIdentifiers()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var wiseflowIdentifier = randomString();
+        var insperaIdentifier = randomString();
+        var generator =  new NvaBrageMigrationDataGenerator.Builder()
+                             .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
+                             .withInsperaIdentifier(insperaIdentifier)
+                             .withWiseflowIdentifier(wiseflowIdentifier)
+                             .build();
+        var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
+        var wiseflowAdditionalIdentifier = getAdditionalIdentifier(publication, "wiseflow");
+        var insperaAdditionalIdentifier = getAdditionalIdentifier(publication, "inspera");
+
+        assertEquals(wiseflowIdentifier, wiseflowAdditionalIdentifier.value());
+        assertEquals(insperaIdentifier, insperaAdditionalIdentifier.value());
+    }
+
+    private static no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase getAdditionalIdentifier(
+        Publication publication, String source) {
+        return publication.getAdditionalIdentifiers().stream()
+                   .filter(identifier -> identifier.sourceName().equals(source))
+                   .findFirst()
+                   .orElseThrow();
+    }
+
     private static File getFirstFile(Publication publication) {
         return publication.getAssociatedArtifacts().stream()
                    .filter(File.class::isInstance)
