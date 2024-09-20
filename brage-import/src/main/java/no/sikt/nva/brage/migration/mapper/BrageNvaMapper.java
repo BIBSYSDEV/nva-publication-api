@@ -33,6 +33,7 @@ import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import no.sikt.nva.brage.migration.record.content.ResourceContent.BundleType;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;

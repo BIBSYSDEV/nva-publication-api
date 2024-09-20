@@ -23,7 +23,6 @@ import no.sikt.nva.brage.migration.record.content.ResourceContent.BundleType;
 import no.sikt.nva.brage.migration.record.license.License;
 import no.sikt.nva.brage.migration.record.license.NvaLicense;
 import no.sikt.nva.brage.migration.testutils.NvaBrageMigrationDataGenerator;
-import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -34,7 +33,6 @@ import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.degree.UnconfirmedDocument;
 import nva.commons.core.Environment;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -157,7 +155,8 @@ class BrageNvaMapperTest {
         assertEquals(insperaIdentifier, insperaAdditionalIdentifier.value());
     }
 
-    private static AdditionalIdentifierBase getAdditionalIdentifier(Publication publication, String source) {
+    private static no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase getAdditionalIdentifier(
+        Publication publication, String source) {
         return publication.getAdditionalIdentifiers().stream()
                    .filter(identifier -> identifier.sourceName().equals(source))
                    .findFirst()
