@@ -1,47 +1,44 @@
 [versions]
-
-
-nva = { strictly = '1.40.8' }
+nva = { strictly = '1.40.20' }
 nvaDoiPartnerData = { strictly = '0.5.8' }
-jackson = { strictly = '2.16.1' }
-awsSdk = { strictly = '1.12.668' }
-awsSdk2 = { strictly = '2.24.12' }
-log4j = { strictly = '2.23.0' }
+jackson = { strictly = '2.17.2' }
+awsSdk = { strictly = '1.12.772' }
+awsSdk2 = { strictly = '2.27.24' }
+log4j = { strictly = '2.24.0' }
 # slf4j takes "require", not "strictly" as wiremock has multiple versions
-slf4j = { require = '2.0.12' }
+slf4j = { require = '2.0.16' }
 zalandoProblem = { strictly = '0.27.1' }
 awsLambdaCore = { strictly = '1.2.3' }
-awsLambdaEvents = { strictly = '3.11.4' }
+awsLambdaEvents = { strictly = '3.13.0' }
 # jsonld and awssdk have different versions. update libraries and check again
-httpcore = { require = '4.4.13' }
+httpcore = { require = '5.3' }
 dynamoDbLocal = { strictly = '2.0.0' }
-awsIon = { strictly = '1.5.1' }
-commonsValidator = { strictly = '1.8.0' }
+awsIon = { strictly = '1.11.9' }
+commonsValidator = { strictly = '1.9.0' }
 apacheCommonsCollections = { require = '4.4' }
 apacheCommonsText = { require = '1.12.0' }
-hamcrest = { strictly = '2.2' }
-cucumber = { strictly = '6.11.0' }
-junit = { strictly = '5.10.2' }
-mockito = { strictly = '5.10.0' }
-wiremock = { strictly = "3.4.1" }
-configTypesafe = { strictly = '1.4.1' }
+hamcrest = { strictly = '3.0' }
+cucumber = { strictly = '7.18.1' }
+junit = { strictly = '5.11.0' }
+mockito = { strictly = '5.13.0' }
+wiremock = { strictly = "3.9.1" }
+configTypesafe = { strictly = '1.4.3' }
 jsonld = { strictly = '0.13.4' }
 nva-language = { strictly = '1.2.0' }
-guava = { require = '32.1.2-jre' }
-javers = { strictly = '7.3.2' }
+guava = { require = '33.3.0-jre' }
+javers = { strictly = '7.6.1' }
 hamcrestSpotify = { strictly = '1.3.2' }
-jena = { strictly = '4.9.0'}
-jsonassert = { strictly = '1.5.1'}
-datafaker = { strictly = '2.1.0' }
-tika = { strictly = '2.9.0' }
+jena = { strictly = '4.10.0'}
+jsonassert = { strictly = '1.5.3'}
+datafaker = { strictly = '2.3.1' }
+tika = { strictly = '2.9.2' }
 resilience4j = { strictly = '2.2.0' }
 vavrVersion = { strictly = '0.10.4' }
 jakarta-validation-api = { strictly = '3.1.0' }
-jakarta-el-api = { strictly = '6.0.0' }
+jakarta-el-api = { strictly = '6.0.1' }
 glassfish-el = { strictly = '4.0.2' }
-apache-bval = { strictly = '3.0.0' }
-swaggerCoreVersion = { strictly = '2.2.15' }
-
+apache-bval = { strictly = '3.0.1' }
+swaggerCoreVersion = { strictly = '2.2.22' }
 [libraries]
 nva-core = { group = 'com.github.bibsysdev', name = 'core', version.ref = 'nva' }
 nva-json = { group = 'com.github.bibsysdev', name = 'json', version.ref = 'nva' }
@@ -53,14 +50,12 @@ nva-eventhandlers = { group = 'com.github.bibsysdev', name = 'eventhandlers', ve
 nva-events = { group = "com.github.bibsysdev", name = "eventhandlers", version.ref = "nva" }
 nva-clients = { group = "com.github.bibsysdev", name = "clients", version.ref = "nva" }
 logutils = { group = 'com.github.bibsysdev', name = 'logutils', version.ref = 'nva' }
-
 nva-doi = { group = 'com.github.bibsysdev', name = 'doi', version.ref = 'nva' }
 nva-secrets = { group = 'com.github.bibsysdev', name = 'secrets', version.ref = 'nva' }
 nva-language = { group = 'com.github.bibsysdev', name = 'nva-language', version.ref = 'nva-language' }
 nva-testutils = { group = 'com.github.bibsysdev', name = 'nvatestutils', version.ref = 'nva' }
 nva-doi-partner-data = { group = 'com.github.BIBSYSDEV.nva-doi-partner-data', name = 'datacite-transform', version.ref = 'nvaDoiPartnerData' }
 nva-logutils = { group = "com.github.bibsysdev", name = "logutils", version.ref = "nva" }
-
 jackson-core = { group = 'com.fasterxml.jackson.core', name = 'jackson-core', version.ref = 'jackson' }
 jackson-datatype-jdk8 = { group = 'com.fasterxml.jackson.datatype', name = 'jackson-datatype-jdk8', version.ref = 'jackson' }
 jackson-datatype-jsr310 = { group = 'com.fasterxml.jackson.datatype', name = 'jackson-datatype-jsr310', version.ref = 'jackson' }
@@ -69,22 +64,17 @@ jackson-annotations = { group = 'com.fasterxml.jackson.core', name = 'jackson-an
 jackson-module-parameter-names = { group = 'com.fasterxml.jackson.module', name = 'jackson-module-parameter-names', version.ref = 'jackson' }
 jackson-datatype-problem = { group = 'org.zalando', name = 'jackson-datatype-problem', version.ref = 'zalandoProblem' }
 jsonassert = { group = 'org.skyscreamer', name = 'jsonassert', version.ref = 'jsonassert' }
-
 jakarta-validation-api = { group = 'jakarta.validation', name = 'jakarta.validation-api', version.ref = 'jakarta-validation-api' }
 jakarta-el-api = {group = 'jakarta.el', name = 'jakarta.el-api', version.ref = 'jakarta-el-api' }
 glassfish-el = {group = 'org.glassfish', name = 'jakarta.el', version.ref = 'glassfish-el' }
 apache-bval = { group= 'org.apache.bval', name= 'bval-jsr', version.ref= 'apache-bval'}
-
 aws-lambda-java-core = { group = 'com.amazonaws', name = 'aws-lambda-java-core', version.ref = 'awsLambdaCore' }
 aws-lambda-events = { group = 'com.amazonaws', name = 'aws-lambda-java-events', version.ref = 'awsLambdaEvents' }
-
 aws-sdk-dynamodb = { group = 'com.amazonaws', name = 'aws-java-sdk-dynamodb', version.ref = 'awsSdk' }
 aws-java-sdk-core = { group = 'com.amazonaws', name = 'aws-java-sdk-core', version.ref = 'awsSdk' }
 aws-sdk-apigateway = { group = 'com.amazonaws', name = 'aws-java-sdk-api-gateway', version.ref = 'awsSdk' }
 aws-sdk-sqs = {group = 'com.amazonaws', name = 'aws-java-sdk-sqs', version.ref = 'awsSdk'}
-
-httpcore = { group = 'org.apache.httpcomponents', name = 'httpcore', version.ref = 'httpcore' }
-
+httpcore = { group = 'org.apache.httpcomponents.core5', name = 'httpcore5', version.ref = 'httpcore' }
 aws-sdk2-s3 = { group = 'software.amazon.awssdk', name = 's3', version.ref = 'awsSdk2' }
 aws-core = { group = 'software.amazon.awssdk', name = 'aws-core', version.ref = 'awsSdk2' }
 aws-sdk2-core = { group = 'software.amazon.awssdk', name = 'sdk-core', version.ref = 'awsSdk2' }
@@ -97,24 +87,18 @@ aws-sdk2-auth = { group = 'software.amazon.awssdk', name = 'auth', version.ref =
 aws-sdk2-sqs = { group = 'software.amazon.awssdk', name = 'sqs', version.ref = 'awsSdk2' }
 aws-apache-client = { group = 'software.amazon.awssdk', name = 'apache-client', version.ref = 'awsSdk2' }
 aws-sdk2-secrets = { group = 'software.amazon.awssdk', name = 'secretsmanager', version.ref = 'awsSdk2' }
-
-aws-ion = { group = 'software.amazon.ion', name = 'ion-java', version.ref = 'awsIon' }
-
+aws-ion = { group = 'com.amazon.ion', name = 'ion-java', version.ref = 'awsIon' }
 apache-commons-collections = { group = 'org.apache.commons', name = 'commons-collections4', version.ref = 'apacheCommonsCollections' }
 apache-commons-text = { group = 'org.apache.commons', name = 'commons-text', version.ref = 'apacheCommonsText' }
-
 commons-validator = { group = 'commons-validator', name = 'commons-validator', version.ref = 'commonsValidator' }
 jsonld = { group = 'com.github.jsonld-java', name = 'jsonld-java', version.ref = 'jsonld' }
 guava = { group = 'com.google.guava', name = 'guava', version.ref = 'guava' }
-
 jaxb-runtime = { group = 'org.glassfish.jaxb', name = 'jaxb-runtime', version = '2.3.1' }
-
 xsd2java-xjc = { group = 'com.sun.xml.bind', name = 'jaxb-xjc', version = '3.0.2' }
 xsd2java-impl = { group = 'com.sun.xml.bind', name = 'jaxb-impl', version = '3.0.2' }
 xsd2java-api = { group = 'javax.xml.bind', name = 'jaxb-api', version = '2.4.0-b180830.0359' }
 xsd2java-activation = { group = 'javax.activation', name = 'javax.activation-api', version = '1.2.0' }
 xsd2java-jakarta = { group = 'jakarta.xml.bind', name = 'jakarta.xml.bind-api', version = '3.0.1' }
-
 hamcrest-base = { group = 'org.hamcrest', name = 'hamcrest', version.ref = 'hamcrest' }
 hamcrest-core = { group = 'org.hamcrest', name = 'hamcrest-core', version.ref = 'hamcrest' }
 dynamodDbLocal = { group = 'com.amazonaws', name = 'DynamoDBLocal', version.ref = 'dynamoDbLocal' }
@@ -123,46 +107,31 @@ zalando = { group = 'org.zalando', name = 'problem', version.ref = 'zalandoProbl
 typesafe-config = { group = 'com.typesafe', name = 'config', version.ref = 'configTypesafe' }
 hamcrest-optional = { group = 'com.spotify', name = 'hamcrest-optional', version.ref = 'hamcrestSpotify' }
 datafaker = { group = 'net.datafaker', name = 'datafaker', version.ref = 'datafaker' }
-
-
 junit-jupiter-params = { group = 'org.junit.jupiter', name = 'junit-jupiter-params', version.ref = 'junit' }
 junit-jupiter-api = { group = 'org.junit.jupiter', name = 'junit-jupiter-api', version.ref = 'junit' }
 junit-vintage-engine = { group = 'org.junit.vintage', name = 'junit-vintage-engine', version.ref = 'junit' }
 junit-jupiter-engine = { group = 'org.junit.jupiter', name = 'junit-jupiter-engine', version.ref = 'junit' }
-
 mockito-junit = { group = 'org.mockito', name = 'mockito-junit-jupiter', version.ref = 'mockito' }
 mockito-core = { group = 'org.mockito', name = 'mockito-core', version.ref = 'mockito' }
-
-wiremock = { group = "org.wiremock", name = "wiremock", version.ref = "wiremock" }
-
+wiremock = { group = 'org.wiremock', name = 'wiremock-jetty12', version.ref = 'wiremock' }
 cucumber-java = { group = 'io.cucumber', name = 'cucumber-java', version.ref = 'cucumber' }
 cucumber-junit = { group = 'io.cucumber', name = 'cucumber-junit', version.ref = 'cucumber' }
 cucumber-picocontainer = { group = 'io.cucumber', name = 'cucumber-picocontainer', version.ref = 'cucumber' }
-
 log4j-core = { group = 'org.apache.logging.log4j', name = 'log4j-core', version.ref = 'log4j' }
 log4j-api = { group = 'org.apache.logging.log4j', name = 'log4j-api', version.ref = 'log4j' }
 log4j-slf4j-impl = { group = 'org.apache.logging.log4j', name = 'log4j-slf4j2-impl', version.ref = 'log4j' }
 slf4j-api = { group = 'org.slf4j', name = 'slf4j-api', version.ref = 'slf4j' }
-
 jena-core = { group=  'org.apache.jena', name = 'jena-core', version.ref = 'jena' }
 jena-arq = { group = 'org.apache.jena', name = 'jena-arq', version.ref = 'jena' }
-
 tika-core = { group = 'org.apache.tika', name = 'tika-core', version.ref = 'tika' }
 tika-langdetect = { group = 'org.apache.tika', name = 'tika-langdetect', version.ref = 'tika' }
 tika-langdetect-optimaize = { group = 'org.apache.tika', name = 'tika-langdetect-optimaize', version.ref = 'tika' }
-
 vavr = { group = 'io.vavr', name = 'vavr', version.ref = 'vavrVersion' }
 resilience4j-all = { group = 'io.github.resilience4j', name = 'resilience4j-all', version.ref = 'resilience4j' }
-
 swagger-core = { group = 'io.swagger.core.v3', name = 'swagger-core', version.ref = 'swaggerCoreVersion' }
 swagger-annotations = { group = 'io.swagger.core.v3', name = 'swagger-annotations', version.ref = 'swaggerCoreVersion' }
-
-
 mockito-junit-jupiter = {group= 'org.mockito', name= 'mockito-junit-jupiter', version= '5.3.1'}
-
-
 open-csv = { group = 'com.opencsv', name = 'opencsv', version = '5.8' } # open-csv is used by cristin-import, can be deleted when cristin-import is deleted
-
 [bundles]
 validation = ['jakarta-validation-api', 'jakarta-el-api', 'glassfish-el', 'apache-bval']
 testing = ['junit-jupiter-params', 'junit-jupiter-api', 'junit-vintage-engine', 'guava',
@@ -174,4 +143,3 @@ jackson = ['jackson-core', 'jackson-datatype-jdk8', 'jackson-datatype-jsr310', '
 jaxb = ['xsd2java-api', 'jaxb-runtime', 'xsd2java-jakarta']
 jena = ['jena-core', 'jena-arq']
 xsd2java = ["xsd2java-xjc", "xsd2java-impl", "xsd2java-api", "xsd2java-activation", "xsd2java-jakarta"]
-

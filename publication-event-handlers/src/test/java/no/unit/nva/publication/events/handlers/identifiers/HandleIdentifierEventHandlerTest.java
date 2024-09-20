@@ -11,7 +11,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.EnumSource.Mode.EXCLUDE;
 import static org.junit.jupiter.params.provider.EnumSource.Mode.INCLUDE;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -42,6 +41,7 @@ import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
+import no.unit.nva.testutils.JwtTestToken;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
@@ -62,12 +62,11 @@ public class HandleIdentifierEventHandlerTest extends ResourcesLocalTest {
     public static final String RESOURCE_UPDATE_EVENT_TOPIC = "PublicationService.Resource.Update";
     private static final String RESPONSE_BODY = "{\"handle\": \"https://test.handle.net/123/456\"}";
     public static final int BAD_REQUEST = 400;
-    public static final String API_NVATEST_DOMAIN = "api.nvatest.no";
+    public static final String API_NVA_TEST_DOMAIN = "api.nvatest.no";
     public static final String HANDLE_BASE_PATH = "handle";
     private ResourceService resourceService;
     private HandleIdentifierEventHandler handler;
     private S3Driver s3Driver;
-    private Environment environment;
     private HttpClient httpClient;
 
     @BeforeEach
@@ -76,20 +75,35 @@ public class HandleIdentifierEventHandlerTest extends ResourcesLocalTest {
         resourceService = getResourceServiceBuilder().build();
         var s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, randomString());
-        environment = mock(Environment.class);
-        when(environment.readEnv("API_DOMAIN")).thenReturn(API_NVATEST_DOMAIN);
+        var environment = mock(Environment.class);
+        when(environment.readEnv("API_DOMAIN")).thenReturn(API_NVA_TEST_DOMAIN);
         when(environment.readEnv("HANDLE_BASE_PATH")).thenReturn(HANDLE_BASE_PATH);
         when(environment.readEnv("BACKEND_CLIENT_SECRET_NAME")).thenReturn("testSecret");
         when(environment.readEnv("BACKEND_CLIENT_AUTH_URL")).thenReturn("cognitoTestUrl");
         when(environment.readEnv("NVA_FRONTEND_DOMAIN")).thenReturn("nvatest.no");
         httpClient = mock(HttpClient.class);
-        when(httpClient.send(any(), any())).thenReturn(FakeHttpResponse.create(RESPONSE_BODY, HTTP_CREATED));
-        SecretsManagerClient secretManager = mock(SecretsManagerClient.class);
+        mockHttpToReturnJwtThenResponse(FakeHttpResponse.create(RESPONSE_BODY, HTTP_CREATED));
+        var secretManager = mock(SecretsManagerClient.class);
         when(secretManager.getSecretValue((GetSecretValueRequest) any())).thenReturn(
             GetSecretValueResponse.builder()
                 .secretString(new BackendClientCredentials("id", "secret").toString())
                 .build());
         handler = new HandleIdentifierEventHandler(resourceService, s3Client, environment, httpClient, secretManager);
+    }
+
+    private void mockHttpToReturnJwtThenResponse(FakeHttpResponse<Object> secondResponse)
+        throws IOException, InterruptedException {
+        when(httpClient.send(any(), any()))
+            .thenReturn(FakeHttpResponse.create(tokenResponse(), HTTP_CREATED))
+            .thenReturn(secondResponse);
+    }
+
+    private String tokenResponse() {
+        return """
+            {
+            "access_token": "%s"
+            }
+            """.formatted(JwtTestToken.randomToken());
     }
 
     @ParameterizedTest
@@ -102,14 +116,14 @@ public class HandleIdentifierEventHandlerTest extends ResourcesLocalTest {
         var oldImage = createUnpublishedPublicationWithAdditionalIdentifiers(null);
         var newImage = oldImage.copy().withStatus(status).build();
 
-        var request = emualteSqsWrappedEvent(oldImage, newImage);
+        var request = emulateSqsWrappedEvent(oldImage, newImage);
         handler.handleRequest(request, CONTEXT);
 
         var updatedPublication = resourceService.getPublicationByIdentifier(newImage.getIdentifier());
         assertThat(updatedPublication.getAdditionalIdentifiers().size(), is(equalTo(1)));
     }
 
-    private SQSEvent emualteSqsWrappedEvent(Publication oldImage, Publication newImage) throws IOException {
+    private SQSEvent emulateSqsWrappedEvent(Publication oldImage, Publication newImage) throws IOException {
         var blobUri = createSampleBlob(oldImage, newImage);
         var eventBridgeObject =
             EventBridgeEventBuilder.sampleEventObject(AwsEventBridgeDetail.newBuilder()
@@ -134,7 +148,7 @@ public class HandleIdentifierEventHandlerTest extends ResourcesLocalTest {
         var additionalIdentifiers = oldImage.getAdditionalIdentifiers();
         var newImage = oldImage.copy().withStatus(status).build();
 
-        var request = emualteSqsWrappedEvent(oldImage, newImage);
+        var request = emulateSqsWrappedEvent(oldImage, newImage);
         handler.handleRequest(request, CONTEXT);
 
         var updatedPublication = resourceService.getPublicationByIdentifier(newImage.getIdentifier());
@@ -153,7 +167,7 @@ public class HandleIdentifierEventHandlerTest extends ResourcesLocalTest {
         var additionalIdentifiers = oldImage.getAdditionalIdentifiers();
         var newImage = oldImage.copy().withStatus(status).build();
 
-        var request = emualteSqsWrappedEvent(oldImage, newImage);
+        var request = emulateSqsWrappedEvent(oldImage, newImage);
         handler.handleRequest(request, CONTEXT);
 
         var updatedPublication = resourceService.getPublicationByIdentifier(newImage.getIdentifier());
@@ -171,7 +185,7 @@ public class HandleIdentifierEventHandlerTest extends ResourcesLocalTest {
         var additionalIdentifiers = oldImage.getAdditionalIdentifiers();
         var newImage = oldImage.copy().withStatus(status).build();
 
-        var request = emualteSqsWrappedEvent(oldImage, newImage);
+        var request = emulateSqsWrappedEvent(oldImage, newImage);
         handler.handleRequest(request, CONTEXT);
 
         var updatedPublication = resourceService.getPublicationByIdentifier(newImage.getIdentifier());
@@ -184,11 +198,11 @@ public class HandleIdentifierEventHandlerTest extends ResourcesLocalTest {
         final var logger = LogUtils.getTestingAppenderForRootLogger();
         var oldImage = createUnpublishedPublicationWithAdditionalIdentifiers(null);
         var newImage = oldImage.copy().withStatus(PublicationStatus.PUBLISHED).build();
-        var handleRequestUri = URI.create("https://" + API_NVATEST_DOMAIN + "/" + HANDLE_BASE_PATH);
-        when(httpClient.send(argThat(request -> request.uri().equals(handleRequestUri)),any()))
-            .thenReturn(FakeHttpResponse.create("some error message", BAD_REQUEST));
 
-        var request = emualteSqsWrappedEvent(oldImage, newImage);
+        mockHttpToReturnJwtThenResponse(
+            FakeHttpResponse.create("some error message", BAD_REQUEST));
+
+        var request = emulateSqsWrappedEvent(oldImage, newImage);
         assertThrows(RuntimeException.class, () -> handler.handleRequest(request, CONTEXT));
         assertThat(logger.getMessages(), containsString("Error response from server: 400"));
     }

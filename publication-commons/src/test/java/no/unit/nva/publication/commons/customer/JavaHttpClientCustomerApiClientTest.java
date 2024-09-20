@@ -17,6 +17,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
 import no.unit.nva.auth.CognitoCredentials;
+import no.unit.nva.testutils.JwtTestToken;
 import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -149,9 +150,9 @@ public class JavaHttpClientCustomerApiClientTest {
         doReturn(200).when(httpResponse).statusCode();
         var response = """
             {
-                "access_token": "ACCESS_TOKEN"
+                "access_token": "%s"
             }
-            """;
+            """.formatted(JwtTestToken.randomToken());
         doReturn(response).when(httpResponse).body();
 
         //noinspection unchecked

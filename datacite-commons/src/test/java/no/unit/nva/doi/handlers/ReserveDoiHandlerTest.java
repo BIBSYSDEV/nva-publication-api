@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.DataCiteDoiClient;
@@ -52,6 +51,7 @@ import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
 import no.unit.nva.stubs.WiremockHttpClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
+import no.unit.nva.testutils.JwtTestToken;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -72,7 +72,9 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     public static final String OWNER = "owner";
     public static final String NOT_FOUND_MESSAGE = "Publication not found: ";
     public static final String EXPECTED_BAD_REQUEST_RESPONSE_MESSAGE = "ExpectedResponseMessage";
-    public static final String ACCESS_TOKEN_RESPONSE_BODY = "{ \"access_token\" : \"Bearer token\"}";
+    public static final String ACCESS_TOKEN_RESPONSE_BODY = """
+        { "access_token" : "%s"}
+        """.formatted(JwtTestToken.randomToken());
     private final Environment environment = mock(Environment.class);
     private Context context;
     private ByteArrayOutputStream output;

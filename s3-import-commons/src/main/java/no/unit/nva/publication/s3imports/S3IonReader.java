@@ -1,6 +1,10 @@
 package no.unit.nva.publication.s3imports;
 
 import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
+import com.amazon.ion.IonReader;
+import com.amazon.ion.IonWriter;
+import com.amazon.ion.system.IonReaderBuilder;
+import com.amazon.ion.system.IonTextWriterBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -11,10 +15,6 @@ import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import nva.commons.core.attempt.Try;
-import software.amazon.ion.IonReader;
-import software.amazon.ion.IonWriter;
-import software.amazon.ion.system.IonReaderBuilder;
-import software.amazon.ion.system.IonTextWriterBuilder;
 
 public final class S3IonReader {
     

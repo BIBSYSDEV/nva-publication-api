@@ -22,6 +22,10 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import com.amazon.ion.IonReader;
+import com.amazon.ion.IonWriter;
+import com.amazon.ion.system.IonReaderBuilder;
+import com.amazon.ion.system.IonTextWriterBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.sqs.model.BatchResultErrorEntry;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
@@ -55,10 +59,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.ion.IonReader;
-import software.amazon.ion.IonWriter;
-import software.amazon.ion.system.IonReaderBuilder;
-import software.amazon.ion.system.IonTextWriterBuilder;
 
 class FileEntriesEventEmitterTest {
 

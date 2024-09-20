@@ -70,7 +70,7 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
             .orElseThrow();
     }
     
-    private static Publication randomPublicationWithoutDoi() {
+    public static Publication randomPublicationWithoutDoi() {
         return randomPublication().copy().withDoi(null).build();
     }
     

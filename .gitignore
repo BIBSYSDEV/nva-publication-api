@@ -19,6 +19,9 @@ local.properties
 .loadpath
 .recommenders
 
+# DynamoDB local database file
+**/dynamodb-local-metadata.json
+
 # External tool builders
 .externalToolBuilders/
 
