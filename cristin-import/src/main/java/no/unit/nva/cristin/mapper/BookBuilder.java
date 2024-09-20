@@ -4,6 +4,7 @@ import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isMonograph;
 import java.util.Set;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.book.AcademicCommentary;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.Encyclopedia;
@@ -48,7 +49,7 @@ public class BookBuilder extends AbstractBookReportBuilder {
         } else if (CristinSecondaryCategory.EXHIBITION_CATALOG.equals(secondaryCategory)) {
             return new ExhibitionCatalog(createMonographPages());
         } else if (CristinSecondaryCategory.ACADEMIC_COMMENTARY.equals(secondaryCategory)) {
-            return new AcademicMonograph(createMonographPages());
+            return new AcademicCommentary(createMonographPages());
         } else {
             throw new UnsupportedSecondaryCategoryException();
         }
