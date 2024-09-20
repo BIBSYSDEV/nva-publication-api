@@ -14,12 +14,27 @@ Feature: Mappings that hold for all types of Cristin Results
       | Source Code Text | Source Identifier Text |
       | SomeCode         | Some identifier        |
       | Some other code  | Some other identifier  |
-      | SCOPUS           | Some third identifier  |
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has an additional identifier with key "SomeCode" and value "Some identifier"
     And the NVA Resource has an additional identifier with key "cristin@sikt" and value 12345
     And the NVA Resource has an additional identifier with key "Some other code" and value "Some other identifier"
-    And the NVA Resource has an additional identifier with key "Scopus" and value "Some third identifier"
+
+  Scenario: Cristin scopus sources is saved as Scopus identifier
+    Given the Cristin Result has id equal to 1
+    And the Cristin Result has a non null array of CristinSources with values:
+      | Source Code Text | Source Identifier Text |
+      | Scopus           | 12345                  |
+      | SCOPUS           | 12345                  |
+      | scopus           | 12345                  |
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a single Scopus identifier with value "12345"
+
+  Scenario: Cristin scopus sourceCode and CristinSource are saved as Scopus identifiers
+    Given the Cristin Result has id equal to 1
+    And the Cristin Result has a non null array of CristinSources with code "Scopus" and value "12345"
+    And Cristin result has source code scopus with value "12345"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a single Scopus identifier with value "12345"
 
   Scenario: CristinSource collides with sourceCode
     Given the Cristin Result has id equal to 12345
@@ -94,7 +109,7 @@ Feature: Mappings that hold for all types of Cristin Results
     Then the NVA Resource has a Publication Date with year equal to "1996", month equal to "null" and day equal to "null"
 
   Scenario: The Resources Publication Date is set to the Cristin Result's publication Date
-    Approximately 300 000 cristin entries have the publication date set.
+  Approximately 300 000 cristin entries have the publication date set.
     Given that the Cristin Result has published date equal to the local date "2001-05-31"
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Publication Date with year equal to "2001", month equal to "5" and day equal to "31"

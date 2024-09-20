@@ -2,6 +2,7 @@ package cucumber;
 
 import static cucumber.utils.transformers.CristinContributorAffiliationTransformer.parseContributorAffiliationsFromMap;
 import static cucumber.utils.transformers.CristinSourceTransformer.parseCristinSourceFromMap;
+import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasItem;
@@ -41,6 +42,7 @@ import no.unit.nva.cristin.mapper.CristinGrant;
 import no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities;
 import no.unit.nva.cristin.mapper.CristinLocale;
 import no.unit.nva.cristin.mapper.CristinPresentationalWork;
+import no.unit.nva.cristin.mapper.CristinSource;
 import no.unit.nva.cristin.mapper.CristinTags;
 import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
@@ -51,6 +53,7 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationNote;
 import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.funding.ConfirmedFunding;
@@ -186,7 +189,7 @@ public class GeneralMappingRules {
         scenarioContext.getCristinEntry().setCristinTitles(cristinTitles);
     }
 
-    @Given("the Cristin Result has a non null array of CristinSources with values:")
+    @And("the Cristin Result has a non null array of CristinSources with values:")
     public void theCristinResultHasCristinSourcesWithValues(DataTable dataTable) {
         var cristinSources = parseCristinSourceFromMap(dataTable);
         scenarioContext.getCristinEntry().setCristinSources(cristinSources);
@@ -433,7 +436,7 @@ public class GeneralMappingRules {
 
     @Then("the NVA Resource has the following subjects:")
     public void theNvaResourceHasTheFollowingSubjects(List<String> stringUriList) {
-        List<URI> expectedUriList = stringUriList.stream().map(URI::create).collect(Collectors.toList());
+        List<URI> expectedUriList = stringUriList.stream().map(URI::create).collect(toList());
         List<URI> actualSubjectList = this.scenarioContext.getNvaEntry().getSubjects();
         assertThat(actualSubjectList, is(equalTo(expectedUriList)));
     }
@@ -635,6 +638,33 @@ public class GeneralMappingRules {
         scenarioContext.getNvaEntry().getEntityDescription().getContributors().stream()
             .map(Contributor::getRole)
             .forEach(role -> assertEquals(role, new RoleType(Role.OTHER)));
+    }
+
+    @Then("the NVA Resource has a single Scopus identifier with value {string}")
+    public void theNVAResourceHasASingleScopusIdentifierWithValue(String value) {
+        var scopusIdentifier = scenarioContext
+                                              .getNvaEntry()
+                                              .getAdditionalIdentifiers().stream()
+                                              .filter(ScopusIdentifier.class::isInstance)
+                                              .map(ScopusIdentifier.class::cast)
+                                              .collect(SingletonCollector.collect());
+
+        var expectedScopusIdentifier = new ScopusIdentifier(SourceName.fromCristin("sikt"), value);
+        assertThat(scopusIdentifier, is(equalTo(expectedScopusIdentifier)));
+    }
+
+    @And("Cristin result has source code scopus with value {string}")
+    public void cristinResultHasSourceCodeScopusWithValue(String value) {
+        this.scenarioContext.getCristinEntry().setSourceCode("SCOPUS");
+        this.scenarioContext.getCristinEntry().setSourceRecordIdentifier(value);
+    }
+
+    @And("the Cristin Result has a non null array of CristinSources with code {string} and value {string}")
+    public void theCristinResultHasANonNullArrayOfCristinSourcesWithCodeAndValue(String code, String value) {
+        scenarioContext.getCristinEntry().setCristinSources(List.of(CristinSource.builder()
+                                                                      .withSourceCode(code)
+                                                                      .withSourceIdentifier(value)
+                                                                      .build()));
     }
 
     private void injectAffiliationsIntoContributors(List<CristinContributorsAffiliation> desiredInjectedAffiliations,
