@@ -453,7 +453,7 @@ public class CristinMapper extends CristinMappingModule {
 
     private static boolean scopusIdentifierThatAlreadyHasBeenMapped(String sourceCode,
                                                                     AdditionalIdentifierBase additionalIdentifier) {
-        return sourceCode.toLowerCase(Locale.ROOT).equals(SCOPUS_IDENTIFIER_SOURCE_CODE_FROM_CRISTIN)
+        return SCOPUS_IDENTIFIER_SOURCE_CODE_FROM_CRISTIN.equals(sourceCode.toLowerCase(Locale.ROOT))
                && additionalIdentifier instanceof ScopusIdentifier;
     }
 
