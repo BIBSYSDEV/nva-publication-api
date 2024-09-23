@@ -40,10 +40,7 @@ import no.unit.nva.cristin.mapper.channelregistry.ChannelRegistryMapper;
 import no.unit.nva.cristin.mapper.exhibition.CristinExhibition;
 import no.unit.nva.cristin.mapper.nva.CristinMappingModule;
 import no.unit.nva.cristin.mapper.nva.ReferenceBuilder;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
-import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -54,6 +51,10 @@ import no.unit.nva.model.PublicationNoteBase;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
+import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
@@ -89,6 +90,7 @@ public class CristinMapper extends CristinMappingModule {
                                                                    "bb3d0c0c-5065-4623-9b98-5810983c2478",
                                                                    "api.nva.unit.no",
                                                                    "22139870-8d31-4df9-bc45-14eb68287c4a");
+    public static final String SCOPUS_IDENTIFIER_SOURCE_CODE_FROM_CRISTIN = "scopus";
     private final CristinUnitsUtil cristinUnitsUtil;
     private final S3Client s3Client;
 
@@ -176,12 +178,6 @@ public class CristinMapper extends CristinMappingModule {
                    .withMonth(String.valueOf(publishedDate.getMonthValue()))
                    .withDay(String.valueOf(publishedDate.getDayOfMonth()))
                    .build();
-    }
-
-    private static String craftSourceCode(CristinSource cristinSource) {
-        return SCOPUS_CASING_ACCEPTED_BY_FRONTEND.equalsIgnoreCase(cristinSource.getSourceCode())
-                   ? SCOPUS_CASING_ACCEPTED_BY_FRONTEND
-                   : cristinSource.getSourceCode();
     }
 
     private URI extractHandle() {
@@ -421,11 +417,15 @@ public class CristinMapper extends CristinMappingModule {
             new CristinIdentifier(SourceName.fromCristin(getInstanceName()), cristinObject.getId().toString());
         var additionalIdentifiers = extractCristinSourceids(cristinObject);
         additionalIdentifiers.add(cristinId);
-        if (nonNull(cristinObject.getSourceCode())
-            && sourceCodeHasNotBeenMappedAlready(additionalIdentifiers, cristinObject.getSourceCode())) {
+        if (sourceCodeHasBeenMappedAlready(additionalIdentifiers)) {
             additionalIdentifiers.add(extractAdditionalIdentifierFromSourceCode());
         }
         return additionalIdentifiers;
+    }
+
+    private boolean sourceCodeHasBeenMappedAlready(Set<AdditionalIdentifierBase> additionalIdentifiers) {
+        return nonNull(cristinObject.getSourceCode())
+               && sourceCodeHasNotBeenMappedAlready(additionalIdentifiers, cristinObject.getSourceCode());
     }
 
     private String getInstanceName() {
@@ -444,7 +444,17 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     private boolean hasIdenticalSourceCode(String sourceCode, AdditionalIdentifierBase additionalIdentifier) {
-        return additionalIdentifier.sourceName().equals(sourceCode);
+        if (scopusIdentifierThatAlreadyHasBeenMapped(sourceCode, additionalIdentifier)) {
+            return true;
+        } else {
+            return additionalIdentifier.sourceName().toLowerCase(Locale.ROOT).equals(sourceCode.toLowerCase(Locale.ROOT));
+        }
+    }
+
+    private static boolean scopusIdentifierThatAlreadyHasBeenMapped(String sourceCode,
+                                                                    AdditionalIdentifierBase additionalIdentifier) {
+        return SCOPUS_IDENTIFIER_SOURCE_CODE_FROM_CRISTIN.equals(sourceCode.toLowerCase(Locale.ROOT))
+               && additionalIdentifier instanceof ScopusIdentifier;
     }
 
     private Set<AdditionalIdentifierBase> extractCristinSourceids(CristinObject cristinObject) {
@@ -458,8 +468,22 @@ public class CristinMapper extends CristinMappingModule {
                        Collectors.toSet());
     }
 
-    private AdditionalIdentifier mapCristinSourceToAdditionalIdentifier(CristinSource cristinSource) {
-        return new AdditionalIdentifier(craftSourceCode(cristinSource), cristinSource.getSourceIdentifier());
+    private AdditionalIdentifierBase mapCristinSourceToAdditionalIdentifier(CristinSource cristinSource) {
+        return isScopusIdentifier(cristinSource)
+                   ? extractScopusIdentifier(cristinSource)
+                   : extractAdditionalIdentifier(cristinSource);
+    }
+
+    private static AdditionalIdentifier extractAdditionalIdentifier(CristinSource cristinSource) {
+        return new AdditionalIdentifier(cristinSource.getSourceCode(), cristinSource.getSourceIdentifier());
+    }
+
+    private ScopusIdentifier extractScopusIdentifier(CristinSource cristinSource) {
+        return new ScopusIdentifier(SourceName.fromCristin(getInstanceName()), cristinSource.getSourceIdentifier());
+    }
+
+    private static boolean isScopusIdentifier(CristinSource cristinSource) {
+        return SCOPUS_CASING_ACCEPTED_BY_FRONTEND.equalsIgnoreCase(cristinSource.getSourceCode());
     }
 
     private String extractNpiSubjectHeading() {
