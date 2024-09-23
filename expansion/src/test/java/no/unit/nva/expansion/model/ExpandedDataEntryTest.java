@@ -69,6 +69,7 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
+import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
@@ -463,6 +464,10 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                 return new ExpandedDataEntryWithAssociatedPublication(
                     createExpandedGeneralSupportRequest(publication, resourceService, expansionService,
                                                         ticketService));
+            } else if (expandedDataEntryClass.equals(ExpandedUnpublishRequest.class)) {
+                return new ExpandedDataEntryWithAssociatedPublication(
+                    createExpandedUnpublishRequest(publication, resourceService, expansionService,
+                                                        ticketService));
             } else {
                 throw new UnsupportedOperationException();
             }
@@ -475,6 +480,16 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             throws NotFoundException, JsonProcessingException {
             var request = (GeneralSupportRequest) GeneralSupportRequest.fromPublication(publication);
             return ExpandedGeneralSupportRequest.create(request, resourceService, expansionService,
+                                                        ticketService);
+        }
+
+        private static ExpandedDataEntry createExpandedUnpublishRequest(Publication publication,
+                                                                             ResourceService resourceService,
+                                                                             ResourceExpansionService expansionService,
+                                                                             TicketService ticketService)
+            throws NotFoundException, JsonProcessingException {
+            var request = (UnpublishRequest) UnpublishRequest.fromPublication(publication);
+            return ExpandedUnpublishRequest.create(request, resourceService, expansionService,
                                                         ticketService);
         }
 
