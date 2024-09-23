@@ -13,6 +13,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.text.IsEmptyString.emptyString;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -36,8 +37,8 @@ import no.unit.nva.expansion.model.ExpandedGeneralSupportRequest;
 import no.unit.nva.expansion.model.ExpandedImportCandidate;
 import no.unit.nva.expansion.model.ExpandedPublishingRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
+import no.unit.nva.expansion.model.ExpandedUnpublishRequest;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
@@ -47,6 +48,7 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
@@ -57,6 +59,7 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
@@ -202,6 +205,19 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
                    is(equalTo("Ticket")));
     }
 
+    @Test
+    void persistedUnpublishRequestEntryShouldBeDeserializable()
+        throws IOException, ApiGatewayException {
+        var entryUpdate = generateExpandedEntry(ExpandedUnpublishRequest.class);
+        eventUriInEventsBucket = s3Reader.insertEvent(UnixPath.of(randomString()), entryUpdate.entry.toJsonString());
+        var outputEvent = sendEvent();
+        var persistedEvent = s3Writer.readEvent(outputEvent.getUri());
+        var expandedEntryJson = JsonUtils.dtoObjectMapper.readTree(persistedEvent).at("/body");
+
+        assertDoesNotThrow(() -> JsonUtils.dtoObjectMapper.readValue(expandedEntryJson.toString(),
+                                                                  ExpandedDataEntry.class));
+    }
+
     private static Stream<Class<?>> expandedEntriesTypeProvider() {
         return TypeProvider.listSubTypes(ExpandedDataEntry.class);
     }
@@ -218,6 +234,8 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
             return new PersistedEntryWithExpectedType(randomPublishingRequest(), TICKETS_INDEX);
         } else if (ExpandedGeneralSupportRequest.class.equals(expandedEntryType)) {
             return new PersistedEntryWithExpectedType(randomGeneralSupportRequest(), TICKETS_INDEX);
+        } else if (ExpandedUnpublishRequest.class.equals(expandedEntryType)) {
+            return new PersistedEntryWithExpectedType(randomUnpublishRequest(), TICKETS_INDEX);
         }
         throw new RuntimeException();
     }
@@ -275,6 +293,13 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         var openingCaseObject =
             TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class).persistNewTicket(ticketService);
         return resourceExpansionService.expandEntry(openingCaseObject);
+    }
+
+    private ExpandedDataEntry randomUnpublishRequest() throws ApiGatewayException, JsonProcessingException {
+        var publication = createPublicationWithoutDoi();
+        var unpublishRequest =
+            TicketEntry.requestNewTicket(publication, UnpublishRequest.class).persistNewTicket(ticketService);
+        return resourceExpansionService.expandEntry(unpublishRequest);
     }
 
     private ExpandedPublishingRequest randomPublishingRequest() throws ApiGatewayException, JsonProcessingException {

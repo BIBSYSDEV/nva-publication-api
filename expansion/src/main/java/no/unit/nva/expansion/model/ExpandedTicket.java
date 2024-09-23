@@ -26,7 +26,8 @@ import nva.commons.core.paths.UriWrapper;
 @JsonSubTypes({
     @JsonSubTypes.Type(name = ExpandedDoiRequest.TYPE, value = ExpandedDoiRequest.class),
     @JsonSubTypes.Type(name = ExpandedPublishingRequest.TYPE, value = ExpandedPublishingRequest.class),
-    @JsonSubTypes.Type(name = ExpandedGeneralSupportRequest.TYPE, value = ExpandedGeneralSupportRequest.class)
+    @JsonSubTypes.Type(name = ExpandedGeneralSupportRequest.TYPE, value = ExpandedGeneralSupportRequest.class),
+    @JsonSubTypes.Type(name = ExpandedUnpublishRequest.TYPE, value = ExpandedUnpublishRequest.class)
 })
 public abstract class ExpandedTicket implements ExpandedDataEntry {
 
