@@ -15,6 +15,7 @@ import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfi
 import static no.unit.nva.model.testing.PublicationGenerator.fromInstanceClassesExcluding;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.associatedartifacts.PublishedFileGenerator.random;
 import static no.unit.nva.model.testing.associatedartifacts.PublishedFileGenerator.randomUsername;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypes;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles;
@@ -1088,6 +1089,28 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Publication.class);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenUpdatingFilesWhenPublishingFilesIsNotAllowedInCustomerConfiguration()
+        throws BadRequestException, IOException {
+
+        WireMock.reset();
+
+        stubSuccessfulTokenResponse();
+        stubSuccessfulCustomerResponseAllowingFilesForNoTypes(customerId);
+
+        var savedPublication = createSamplePublication();
+        var publicationUpdate = updateFiles(savedPublication);
+        var event = userUpdatesPublicationAndHasRightToUpdate(publicationUpdate);
+        updatePublicationHandler.handleRequest(event, output, context);
+
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, Publication.class);
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
+    }
+
+    private Publication updateFiles(Publication publication) {
+        return publication.copy().withAssociatedArtifacts(List.of(random())).build();
     }
 
     @Test
