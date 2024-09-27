@@ -40,6 +40,8 @@ public class DataEntryUpdateHandler extends EventHandler<EventReference, EventRe
     public static final Entity NO_VALUE = null;
     public static final EventReference DO_NOT_EMIT_EVENT = null;
     private static final Logger logger = LoggerFactory.getLogger(DataEntryUpdateHandler.class);
+    public static final String EMITTED_EVENT_MESSAGE = "Emitted Event:{}";
+    public static final String PROCEEDING_EVENT_MESSAGE = "Proceeding event for identifier: {}";
     private final QueueClient sqsClient;
     private final S3Driver s3Driver;
     
@@ -67,6 +69,7 @@ public class DataEntryUpdateHandler extends EventHandler<EventReference, EventRe
     }
 
     private EventReference proceedBlob(DataEntryUpdateEvent blob) {
+        logger.info(PROCEEDING_EVENT_MESSAGE, getIdentifier(blob));
         return attempt(() -> saveBlobToS3(blob))
                    .map(blobUri -> new EventReference(blob.getTopic(), blobUri))
                    .map(this::logEvent)
@@ -94,7 +97,7 @@ public class DataEntryUpdateHandler extends EventHandler<EventReference, EventRe
     }
 
     private EventReference logEvent(EventReference event) {
-        logger.debug("Emitted Event:{}", event.toJsonString());
+        logger.info(EMITTED_EVENT_MESSAGE, event);
         return event;
     }
     

@@ -38,6 +38,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
+import static nva.commons.apigateway.AccessRight.MANAGE_NVI_CANDIDATES;
 import static nva.commons.apigateway.AccessRight.MANAGE_OWN_RESOURCES;
 import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_ALL;
@@ -1791,6 +1792,58 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Publication.class);
 
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+    }
+
+    @DisplayName("When user uploads file and customer does not allow publishing files, then PublishingRequestCase is" +
+                 "persisted containing file to publish in filesForApproval")
+    @Test
+    void shouldSetFilesForApprovalWhenUserUpdatedPublicationWithUnpublishedFile() throws ApiGatewayException,
+                                                                                       IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(
+            customerId, PUBLISHED, resourceService);
+
+        var newUnpublishedFile = File.builder().withIdentifier(UUID.randomUUID())
+                                     .withLicense(randomUri())
+                                     .buildUnpublishedFile();
+        updatePublicationWithFile(publication, newUnpublishedFile);
+
+        stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
+        var input = ownerUpdatesOwnPublication(publication.getIdentifier(), publication);
+        updatePublicationHandler.handleRequest(input, output, context);
+
+        var publishingRequest = getPublishingRequestCase(publication);
+
+        assertThat(publishingRequest.getFilesForApproval(), hasItem(FileForApproval.fromFile(newUnpublishedFile)));
+    }
+
+    @DisplayName("When user with accessRight updates metadata for publication containing unpublished file and" +
+                 "there exists pending PublishingRequest containing unpublished file in files for approval," +
+                 "and customer does not allow publishing files " +
+                 "then unpublished file is not being published and still exists in files for approval")
+    @Test
+    void shouldNotPublishFilesWhenUpdatingMetadataForPublicationWithUnpublishedFiles()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
+            customerId, PUBLISHED, resourceService);
+        TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
+        var updatedPublication = updateTitle(publication);
+
+        stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
+        var input = curatorWithAccessRightsUpdatesPublication(updatedPublication, customerId,
+                                                              publication.getResourceOwner().getOwnerAffiliation(),
+                                                              SUPPORT, MANAGE_OWN_RESOURCES, MANAGE_NVI_CANDIDATES,
+                                                              MANAGE_RESOURCES_STANDARD);
+        updatePublicationHandler.handleRequest(input, output, context);
+
+        var publishingRequest = getPublishingRequestCase(publication);
+        var unpublishedFile = getUnpublishedFiles(publication).getFirst();
+        assertThat(publishingRequest.getFilesForApproval(), hasItem(unpublishedFile));
+    }
+
+    private PublishingRequestCase getPublishingRequestCase(Publication publication) {
+        return ticketService.fetchTicketByResourceIdentifier(publication.getPublisher().getId(),
+                                                             publication.getIdentifier(), PublishingRequestCase.class)
+                   .orElseThrow();
     }
 
     private Publication createAndPersistNonDegreePublicationWithFile(File file) throws BadRequestException {

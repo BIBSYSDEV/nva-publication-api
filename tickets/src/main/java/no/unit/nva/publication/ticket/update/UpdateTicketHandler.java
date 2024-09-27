@@ -55,6 +55,12 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
                                                                                                  + "DOI requirements";
     public static final String UNKNOWN_VIEWED_STATUS_MESSAGE = "Unknown ViewedStatus";
     private static final Logger logger = LoggerFactory.getLogger(UpdateTicketHandler.class);
+    public static final String TICKET_STATUS_UPDATE_MESSAGE =
+        "User {} with access rights {} updates ticket status to {} for publication {}";
+    public static final String NOT_AUTHORIZED_MESSAGE =
+        "User {} is not authorized to manage ticket {} for publication {}";
+    private static final String TICKET_ASSIGNEE_UPDATE_MESSAGE =
+        "User {} updates assignee to {} for publication {}";
     private final TicketService ticketService;
     private final ResourceService resourceService;
     private final DoiClient doiClient;
@@ -110,6 +116,10 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     private void throwExceptionIfUnauthorized(RequestUtils requestUtils, TicketEntry ticket)
         throws ForbiddenException {
         if (!userIsAuthorized(requestUtils, ticket)) {
+            logger.error(NOT_AUTHORIZED_MESSAGE,
+                         requestUtils.username(),
+                         ticket.getIdentifier(),
+                         ticket.getResourceIdentifier());
             throw new ForbiddenException();
         }
     }
@@ -163,6 +173,8 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
             updateStatus(ticketRequest, requestUtils, ticket);
         }
         if (incomingUpdateIsAssignee(ticket, ticketRequest)) {
+            logger.info(TICKET_ASSIGNEE_UPDATE_MESSAGE, requestUtils, ticketRequest.getAssignee(),
+                        ticket.getResourceIdentifier());
             updateAssignee(ticketRequest, requestUtils, ticket);
         }
         if (incomingUpdateIsViewedStatus(ticketRequest)) {
@@ -189,7 +201,10 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         if (ticket instanceof PublishingRequestCase publishingRequestCase) {
             publishingRequestSideEffects(publishingRequestCase, ticketRequest);
         }
-        ticketService.updateTicketStatus(ticket, ticketRequest.getStatus(), new Username(requestUtils.username()));
+        var username = requestUtils.username();
+        logger.info(TICKET_STATUS_UPDATE_MESSAGE, requestUtils, requestUtils.accessRights(), ticketRequest.getStatus(),
+                    ticket.getResourceIdentifier());
+        ticketService.updateTicketStatus(ticket, ticketRequest.getStatus(), new Username(username));
     }
 
     private void publishingRequestSideEffects(PublishingRequestCase ticket,

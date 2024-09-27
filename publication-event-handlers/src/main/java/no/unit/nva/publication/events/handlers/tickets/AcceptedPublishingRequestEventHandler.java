@@ -5,7 +5,6 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -41,6 +40,10 @@ public class AcceptedPublishingRequestEventHandler
 
     public static final String DOI_REQUEST_CREATION_MESSAGE = "Doi request has been created for publication: {}";
     private static final Logger logger = LoggerFactory.getLogger(AcceptedPublishingRequestEventHandler.class);
+    public static final String PUBLISHING_METADATA_AND_FILES_MESSAGE =
+        "Publishing files and publication metadata {} via approved publishing request {}";
+    public static final String PUBLISHING_FILES_MESSAGE =
+        "Publishing files for publication {} via approved publishing request {}";
     private final ResourceService resourceService;
     private final TicketService ticketService;
     private final S3Driver s3Driver;
@@ -111,11 +114,17 @@ public class AcceptedPublishingRequestEventHandler
         if (PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(latestUpdate.getWorkflow())
             || PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(latestUpdate.getWorkflow())) {
             publishFiles(updatedPublication);
+            logger.info(PUBLISHING_FILES_MESSAGE,
+                        publication.getIdentifier(),
+                        latestUpdate.getIdentifier());
         }
         if (PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES.equals(
             latestUpdate.getWorkflow())) {
             publishFiles(updatedPublication);
             publishPublication(latestUpdate, userInstance);
+            logger.info(PUBLISHING_METADATA_AND_FILES_MESSAGE,
+                        publication.getIdentifier(),
+                        latestUpdate.getIdentifier());
         }
         createDoiRequestIfNeeded(updatedPublication);
     }
@@ -138,7 +147,7 @@ public class AcceptedPublishingRequestEventHandler
     private List<AssociatedArtifact> convertFilesToPublished(AssociatedArtifactList associatedArtifacts) {
         return associatedArtifacts.stream()
                    .map(this::updateFileToPublished)
-                   .collect(Collectors.toList());
+                   .toList();
     }
 
     private AssociatedArtifact updateFileToPublished(AssociatedArtifact artifact) {
