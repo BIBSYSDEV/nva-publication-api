@@ -378,7 +378,7 @@ class ExpandedResourceTest {
         var expandedResource = fromPublication(mockUriRetriever, publication).asJsonNode();
 
         assertTrue(expandedResource.at(JsonPointer.compile("/fundings/1/source")).has("id"));
-        assertTrue(expandedResource.at(JsonPointer.compile("/fundings/0/source")).has("id"));
+        assertTrue(expandedResource.at(JsonPointer.compile("/fundings/0/source")).has("fredag"));
     }
 
     @Test

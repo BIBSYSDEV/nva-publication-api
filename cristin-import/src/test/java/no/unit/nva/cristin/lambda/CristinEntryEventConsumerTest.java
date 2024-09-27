@@ -967,7 +967,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         var s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
         var file = s3Driver.getFile(expectedReportFileLocation);
         var importedPublication = resourceService.getPublicationsByCristinIdentifier(cristinId);
-        assertThat(importedPublication, hasSize(1));
+        assertThat(importedPublication, hasSize(42));
         assertThat(file, is(not(emptyString())));
     }
 
