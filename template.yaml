@@ -236,6 +236,8 @@ Resources:
       Tags:
         - Key: IncludedInBackup
           Value: 'true'
+        - Key: foo
+          Value: bar
 
   # NB! for compatibility reasons NvaImportCandidatesTable should be a copy of NvaResourcesTable
   NvaImportCandidatesTable:
