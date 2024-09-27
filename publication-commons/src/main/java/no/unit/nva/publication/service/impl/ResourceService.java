@@ -23,6 +23,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,6 +37,8 @@ import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
@@ -49,6 +52,7 @@ import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
+import no.unit.nva.publication.model.storage.CounterDao;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.IdentifierEntry;
@@ -97,6 +101,7 @@ public class ResourceService extends ServiceWithTransactions {
     private final UpdateResourceService updateResourceService;
     private final DeleteResourceService deleteResourceService;
     private final UriRetriever uriRetriever;
+    private final CounterService counterService;
 
     protected ResourceService(AmazonDynamoDB dynamoDBClient,
                               String tableName,
@@ -108,6 +113,7 @@ public class ResourceService extends ServiceWithTransactions {
         this.clockForTimestamps = clock;
         this.identifierSupplier = identifierSupplier;
         this.uriRetriever = uriRetriever;
+        this.counterService = new CristinIdentifierCounterService(dynamoDBClient);
         this.readResourceService = new ReadResourceService(client, this.tableName);
         this.updateResourceService = new UpdateResourceService(client, this.tableName, clockForTimestamps,
                                                                readResourceService, uriRetriever);
@@ -498,9 +504,26 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private TransactWriteItem[] transactionItemsForNewResourceInsertion(Resource resource) {
-        TransactWriteItem resourceEntry = newPutTransactionItem(new ResourceDao(resource), tableName);
-        TransactWriteItem uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource);
-        return new TransactWriteItem[]{resourceEntry, uniqueIdentifierEntry};
+        if (resource.getCristinIdentifier().isPresent()) {
+            TransactWriteItem resourceEntry = newPutTransactionItem(new ResourceDao(resource), tableName);
+            TransactWriteItem uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource);
+            return new TransactWriteItem[]{resourceEntry, uniqueIdentifierEntry};
+        } else {
+            var counterEntry = CounterDao.fetch(counterService).increment();
+            var syntheticCristinIdentifier = CristinIdentifier.fromCounter(counterEntry.value());
+            var resourceWithCristinIdentifier = injectSyntheticCristinIdentifier(resource, syntheticCristinIdentifier);
+            var increasedCounter = counterEntry.toPutTransactionWriteItem();
+            TransactWriteItem resourceEntry = newPutTransactionItem(new ResourceDao(resourceWithCristinIdentifier), tableName);
+            TransactWriteItem uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource);
+            return new TransactWriteItem[]{resourceEntry, uniqueIdentifierEntry, increasedCounter};
+        }
+    }
+
+    private static Resource injectSyntheticCristinIdentifier(Resource resource,
+                                                             AdditionalIdentifierBase syntheticCristinIdentifier) {
+        var additionalIdentifiers = new HashSet<>(resource.getAdditionalIdentifiers());
+        additionalIdentifiers.add(syntheticCristinIdentifier);
+        return resource.copy().withAdditionalIdentifiers(additionalIdentifiers).build();
     }
 
     private List<TransactWriteItem> deleteDoiRequestTransactionItems(List<Dao> daos) {

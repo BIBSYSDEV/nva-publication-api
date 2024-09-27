@@ -16,7 +16,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.Organization;
@@ -25,6 +24,8 @@ import no.unit.nva.model.PublicationNoteBase;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingList;
@@ -115,8 +116,6 @@ public class Resource implements Entity {
     public static Resource fromPublication(Publication publication) {
         return Optional.ofNullable(publication).map(Resource::convertToResource).orElse(null);
     }
-
-
 
     private static Resource convertToResource(Publication publication) {
         return Resource.builder()
@@ -504,6 +503,14 @@ public class Resource implements Entity {
      *
      * @return the hashcode.
      */
+
+    public Optional<CristinIdentifier> getCristinIdentifier() {
+        return additionalIdentifiers.stream()
+                   .filter(CristinIdentifier.class::isInstance)
+                   .map(CristinIdentifier.class::cast)
+                   .findFirst();
+    }
+
     @JacocoGenerated
     @Override
     public int hashCode() {

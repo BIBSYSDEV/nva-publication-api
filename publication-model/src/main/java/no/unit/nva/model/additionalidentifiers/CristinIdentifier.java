@@ -13,6 +13,10 @@ public record CristinIdentifier(@JsonIgnore SourceName source, String value) imp
         this(new SourceName(sourceName), value);
     }
 
+    public static AdditionalIdentifierBase fromCounter(int counter) {
+        return new CristinIdentifier(SourceName.nva(), String.valueOf(counter));
+    }
+
     @Override
     public String sourceName() {
         return source.toString();

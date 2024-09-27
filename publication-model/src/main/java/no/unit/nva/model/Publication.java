@@ -411,6 +411,7 @@ public class Publication
         this.curatingInstitutions = curatingInstitutions;
     }
 
+
     @Override
     public List<ImportDetail> getImportDetails() {
         return nonNull(importDetails) ? importDetails : Collections.emptyList();

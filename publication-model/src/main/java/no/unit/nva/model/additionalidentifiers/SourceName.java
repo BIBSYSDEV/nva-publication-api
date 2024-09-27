@@ -16,6 +16,7 @@ public record SourceName(String system, String instanceName) {
     public static final String BRAGE_SYSTEM = "brage";
     public static final String CRISTIN_SYSTEM = "cristin";
     public static final String SCOPUS_SYSTEM = "scopus";
+    public static final String NVA_SYSTEM = "nva";
 
     @JsonValue
     @Override
@@ -60,7 +61,15 @@ public record SourceName(String system, String instanceName) {
         return BRAGE_SYSTEM.equals(system);
     }
 
+    public boolean isNvaSource() {
+        return NVA_SYSTEM.equals(system);
+    }
+
     public static SourceName scopus() {
         return new SourceName(SCOPUS_SYSTEM, null);
+    }
+
+    public static SourceName nva() {
+        return new SourceName(NVA_SYSTEM, null);
     }
 }
