@@ -27,7 +27,6 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
-import static org.mockito.Mockito.mock;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
@@ -44,7 +43,6 @@ import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.PublicationServiceConfig;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -80,13 +78,11 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     public static final Username ASSIGNEE = new Username("Assignee");
     public static final String TICKET_IDENTIFIER_PATH_PARAMETER = "ticketIdentifier";
     private UpdateTicketHandler handler;
-    private UriRetriever uriRetriever;
 
     @BeforeEach
     public void setup() {
         super.init();
-        this.uriRetriever = mock(UriRetriever.class);
-        this.handler = new UpdateTicketHandler(ticketService, resourceService, new FakeDoiClient(), uriRetriever);
+        this.handler = new UpdateTicketHandler(ticketService, resourceService, new FakeDoiClient());
     }
 
     @Test
@@ -218,8 +214,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         this.handler = new UpdateTicketHandler(ticketService,
                                                resourceService,
-                                               new FakeDoiClientThrowingException(),
-                                               uriRetriever);
+                                               new FakeDoiClientThrowingException());
         var publication = createPersistAndPublishPublication();
         var ticket = createPersistedDoiTicket(publication);
         var completedTicket = ticket.complete(publication, USER_NAME);
@@ -234,8 +229,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         throws IOException, ApiGatewayException {
         this.handler = new UpdateTicketHandler(ticketService,
                                                resourceService,
-                                               new FakeDoiClientThrowingException(),
-                                               uriRetriever);
+                                               new FakeDoiClientThrowingException());
         var publication = TicketTestUtils.createPersistedPublicationWithDoi(PublicationStatus.PUBLISHED,
                                                                             resourceService);
         var ticket = createPersistedDoiTicket(publication);
@@ -249,7 +243,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
 
     @Test
     void shouldDeleteDraftDoiAndUpdatePublicationSuccessfully() throws IOException, ApiGatewayException {
-        this.handler = new UpdateTicketHandler(ticketService, resourceService, new FakeDoiClient(), uriRetriever);
+        this.handler = new UpdateTicketHandler(ticketService, resourceService, new FakeDoiClient());
         var publication = TicketTestUtils.createPersistedPublicationWithDoi(PublicationStatus.PUBLISHED,
                                                                             resourceService);
         var ticket = TicketTestUtils.createClosedTicket(publication, DoiRequest.class, ticketService);
@@ -467,7 +461,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         var ticket = setupUnassignedPersistedTicket(ticketType, publication);
         var curator = new User(randomString());
 
-        var httpRequest = curatorMarksTicket(publication, ticket, ViewStatus.READ, curator);
+        var httpRequest = curatorMarksTicket(publication, ticket, curator);
         handler.handleRequest(httpRequest, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
@@ -766,6 +760,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                    .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME,
                                               publicationIdentifier, TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME,
                                               ticketIdentifier))
+                   .withUserName(randomString())
                    .withPersonCristinId(randomUri())
                    .build();
     }
@@ -788,9 +783,9 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                                        new User(randomString()));
     }
 
-    private InputStream curatorMarksTicket(Publication publication, TicketEntry ticket, ViewStatus viewStatus,
+    private InputStream curatorMarksTicket(Publication publication, TicketEntry ticket,
                                            User curator) throws JsonProcessingException {
-        return elevatedUserMarksTicket(publication, ticket, viewStatus, ticket.getCustomerId(), curator);
+        return elevatedUserMarksTicket(publication, ticket, ViewStatus.READ, ticket.getCustomerId(), curator);
     }
 
     private void mockBadResponseFromDoiRegistrar(URI doi) {

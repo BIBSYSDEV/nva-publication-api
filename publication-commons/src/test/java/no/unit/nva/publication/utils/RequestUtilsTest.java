@@ -25,7 +25,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -48,12 +47,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class RequestUtilsTest {
 
     private ResourceService resourceService;
-    private UriRetriever uriRetriever;
 
     @BeforeEach
     public void setup() {
         this.resourceService = mock(ResourceService.class);
-        this.uriRetriever = mock(UriRetriever.class);
     }
 
     public static Stream<Arguments> ticketTypeAndAccessRightProvider() {
@@ -71,17 +68,23 @@ public class RequestUtilsTest {
     }
 
     @Test
-    void shouldThrowIllegalArgumentWhenExtractingMissingPathParamAsIdentifier() throws UnauthorizedException {
+    void shouldThrowNotFoundExceptionWhenExtractingMissingTicketIdentifier() throws UnauthorizedException {
         var requestInfo = mockedRequestInfoWithoutPathParams();
 
-        assertThrows(IllegalArgumentException.class,
-                     () -> RequestUtils.fromRequestInfo(requestInfo).publicationIdentifier());
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NotFoundException.class,
                      () -> RequestUtils.fromRequestInfo(requestInfo).ticketIdentifier());
     }
 
     @Test
-    void shouldReturnIdentifiersFromPathParamsWhenTheyArePresent() throws UnauthorizedException {
+    void shouldThrowNotFoundExceptionWhenExtractingMissingPublicationIdentifier() throws UnauthorizedException {
+        var requestInfo = mockedRequestInfoWithoutPathParams();
+
+        assertThrows(NotFoundException.class,
+                     () -> RequestUtils.fromRequestInfo(requestInfo).publicationIdentifier());
+    }
+
+    @Test
+    void shouldReturnIdentifiersFromPathParamsWhenTheyArePresent() throws UnauthorizedException, NotFoundException {
         var requestUtils = RequestUtils.fromRequestInfo(mockedRequestInfo());
 
         Assertions.assertTrue(nonNull(requestUtils.publicationIdentifier()));

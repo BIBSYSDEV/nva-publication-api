@@ -4,7 +4,8 @@ import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.business.TicketStatus.CLOSED;
-import static no.unit.nva.publication.ticket.TicketConfig.TICKET_IDENTIFIER_PARAMETER_NAME;
+import static no.unit.nva.publication.utils.RequestUtils.PUBLICATION_IDENTIFIER;
+import static no.unit.nva.publication.utils.RequestUtils.TICKET_IDENTIFIER;
 import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -18,13 +19,11 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
-import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketHandler;
@@ -61,33 +60,24 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
         "User {} is not authorized to manage ticket {} for publication {}";
     private static final String TICKET_ASSIGNEE_UPDATE_MESSAGE =
         "User {} updates assignee to {} for publication {}";
+    public static final String UPDATE_FORBIDDEN_MESSAGE = "Updating ticket {} for publication {} is forbidden for user {}";
     private final TicketService ticketService;
     private final ResourceService resourceService;
     private final DoiClient doiClient;
-    private final UriRetriever uriRetriever;
 
     @JacocoGenerated
     public UpdateTicketHandler() {
         this(TicketService.defaultService(),
              ResourceService.defaultService(),
              new DataCiteDoiClient(HttpClient.newHttpClient(), SecretsReader.defaultSecretsManagerClient(),
-                                   new Environment().readEnv(API_HOST)),
-             UriRetriever.defaultUriRetriever());
+                                   new Environment().readEnv(API_HOST)));
     }
 
-    protected UpdateTicketHandler(TicketService ticketService, ResourceService resourceService, DoiClient doiClient,
-                                  UriRetriever uriRetriever) {
+    protected UpdateTicketHandler(TicketService ticketService, ResourceService resourceService, DoiClient doiClient) {
         super(UpdateTicketRequest.class);
         this.ticketService = ticketService;
         this.resourceService = resourceService;
         this.doiClient = doiClient;
-        this.uriRetriever = uriRetriever;
-    }
-
-    protected static SortableIdentifier extractTicketIdentifierFromPath(RequestInfo requestInfo)
-        throws NotFoundException {
-        return attempt(() -> requestInfo.getPathParameter(TICKET_IDENTIFIER_PARAMETER_NAME)).map(
-            SortableIdentifier::new).orElseThrow(fail -> new NotFoundException(TICKET_NOT_FOUND));
     }
 
     @Override
@@ -99,9 +89,8 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     @Override
     protected Void processInput(UpdateTicketRequest input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-        var ticketIdentifier = extractTicketIdentifierFromPath(requestInfo);
-        var ticket = fetchTicketForElevatedUser(ticketIdentifier, UserInstance.fromRequestInfo(requestInfo));
         var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
+        var ticket = fetchTicketForElevatedUser(requestUtils);
         if (hasEffectiveChanges(ticket, input)) {
             updateTicket(input, requestUtils, ticket);
         }
@@ -173,7 +162,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
             updateStatus(ticketRequest, requestUtils, ticket);
         }
         if (incomingUpdateIsAssignee(ticket, ticketRequest)) {
-            logger.info(TICKET_ASSIGNEE_UPDATE_MESSAGE, requestUtils, ticketRequest.getAssignee(),
+            logger.info(TICKET_ASSIGNEE_UPDATE_MESSAGE, requestUtils.username(), ticketRequest.getAssignee(),
                         ticket.getResourceIdentifier());
             updateAssignee(ticketRequest, requestUtils, ticket);
         }
@@ -202,7 +191,10 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
             publishingRequestSideEffects(publishingRequestCase, ticketRequest);
         }
         var username = requestUtils.username();
-        logger.info(TICKET_STATUS_UPDATE_MESSAGE, requestUtils, requestUtils.accessRights(), ticketRequest.getStatus(),
+        logger.info(TICKET_STATUS_UPDATE_MESSAGE,
+                    username,
+                    requestUtils.accessRights(),
+                    ticketRequest.getStatus(),
                     ticket.getResourceIdentifier());
         ticketService.updateTicketStatus(ticket, ticketRequest.getStatus(), new Username(username));
     }
@@ -233,10 +225,19 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
                    .toList();
     }
 
-    private TicketEntry fetchTicketForElevatedUser(SortableIdentifier ticketIdentifier, UserInstance userInstance)
-        throws ForbiddenException {
+    private TicketEntry fetchTicketForElevatedUser(RequestUtils requestUtils)
+        throws ForbiddenException, NotFoundException {
+        var userInstance = requestUtils.toUserInstance();
+        var ticketIdentifier = requestUtils.ticketIdentifier();
         return attempt(() -> ticketService.fetchTicketForElevatedUser(userInstance, ticketIdentifier))
-                   .orElseThrow(fail -> new ForbiddenException());
+                   .orElseThrow(fail -> getForbiddenException(requestUtils));
+    }
+
+    private static ForbiddenException getForbiddenException(RequestUtils requestUtils) {
+        var publicationIdentifier = requestUtils.pathParameters().get(PUBLICATION_IDENTIFIER);
+        var ticketIdentifier = requestUtils.pathParameters().get(TICKET_IDENTIFIER);
+        logger.info(UPDATE_FORBIDDEN_MESSAGE, ticketIdentifier, publicationIdentifier, requestUtils.username());
+        return new ForbiddenException();
     }
 
     private void updateTicketViewedBy(UpdateTicketRequest ticketRequest, TicketEntry ticket, RequestUtils requestUtils)
@@ -290,7 +291,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
 
     private void assertThatPublicationIdentifierInPathReferencesCorrectPublication(TicketEntry ticket,
                                                                                    RequestUtils requestUtils)
-        throws ForbiddenException {
+        throws ForbiddenException, NotFoundException {
         var suppliedPublicationIdentifier =
             requestUtils.publicationIdentifier();
         if (!suppliedPublicationIdentifier.equals(ticket.getResourceIdentifier())) {
