@@ -2376,11 +2376,6 @@ Resources:
     Properties:
       AccessControl: Private
       BucketName: !Sub "${BrageMigrationErrorBucketName}-${AWS::AccountId}"
-      Tags:
-        - Key: IncludedInBackup
-          Value: 'true'
-        - Key: foo
-          Value: bar
 
   ScopusZipBucket:
     Type: AWS::S3::Bucket
