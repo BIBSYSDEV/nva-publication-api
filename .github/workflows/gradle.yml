@@ -33,9 +33,9 @@ jobs:
 
       - name: Publish test results
         uses: EnricoMi/publish-unit-test-result-action@v2
-        if: failure() || success()
+        if: always()
         with:
-          files: build/test-results/**/*.xml
+          files: "**/build/test-results/**/*.xml"
 
       - name: Codacy Coverage Reporter
         uses: codacy/codacy-coverage-reporter-action@v1
