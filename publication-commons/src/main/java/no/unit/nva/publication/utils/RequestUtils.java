@@ -3,6 +3,7 @@ package no.unit.nva.publication.utils;
 import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
+import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
@@ -17,6 +18,7 @@ import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 
 public record RequestUtils(List<AccessRight> accessRights,
@@ -45,20 +47,20 @@ public record RequestUtils(List<AccessRight> accessRights,
         return Arrays.stream(rights).anyMatch(accessRights::contains);
     }
 
-    public SortableIdentifier ticketIdentifier() {
-        return Optional.ofNullable(pathParameters().get(TICKET_IDENTIFIER))
+    public SortableIdentifier ticketIdentifier() throws NotFoundException {
+        return attempt(() -> pathParameters().get(TICKET_IDENTIFIER))
                    .map(SortableIdentifier::new)
-                   .orElseThrow(() -> new IllegalArgumentException(missingPathParamErrorMessage(TICKET_IDENTIFIER)));
+                   .orElseThrow(failure -> new NotFoundException(missingPathParamErrorMessage(TICKET_IDENTIFIER)));
     }
 
     private static String missingPathParamErrorMessage(String value) {
         return String.format(MISSING_PATH_PARAM_MESSAGE, value);
     }
 
-    public SortableIdentifier publicationIdentifier() {
-        return Optional.ofNullable(pathParameters().get(PUBLICATION_IDENTIFIER))
+    public SortableIdentifier publicationIdentifier() throws NotFoundException {
+        return attempt(() -> pathParameters().get(PUBLICATION_IDENTIFIER))
                    .map(SortableIdentifier::new)
-                   .orElseThrow(() -> new IllegalArgumentException(
+                   .orElseThrow(failure -> new NotFoundException(
                        missingPathParamErrorMessage(PUBLICATION_IDENTIFIER)));
     }
 
