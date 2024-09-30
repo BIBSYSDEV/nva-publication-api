@@ -182,7 +182,7 @@ Resources:
         PointInTimeRecoveryEnabled: true
       Tags:
         - Key: foo
-          Value: bar
+          Value: bar2
 
   NvaResourcesTable:
     Type: AWS::DynamoDB::Table
@@ -258,7 +258,7 @@ Resources:
         - Key: IncludedInBackup
           Value: 'true'
         - Key: foo
-          Value: bar
+          Value: bar2
 
   # NB! for compatibility reasons NvaImportCandidatesTable should be a copy of NvaResourcesTable
   NvaImportCandidatesTable:
@@ -333,7 +333,7 @@ Resources:
         PointInTimeRecoveryEnabled: true
       Tags:
         - Key: IncludedInBackup
-          Value: 'true'
+          Value: 'true!'
 
   #===============================DLOQs===================================================================
 
