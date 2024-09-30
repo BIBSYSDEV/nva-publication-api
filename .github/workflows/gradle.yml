@@ -17,19 +17,13 @@ jobs:
         with:
           java-version: 21
           distribution: corretto
+          cache: 'gradle'
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Cache Gradle packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.gradle/caches
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
-          restore-keys: ${{ runner.os }}-gradle
-
       - name: Build with Gradle
-        run: ./gradlew build --info
+        run: ./gradlew build --info --no-daemon
 
       - name: Publish test results
         uses: EnricoMi/publish-unit-test-result-action@v2
