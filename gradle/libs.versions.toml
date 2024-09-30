@@ -94,7 +94,7 @@ commons-validator = { group = 'commons-validator', name = 'commons-validator', v
 jsonld = { group = 'com.github.jsonld-java', name = 'jsonld-java', version.ref = 'jsonld' }
 guava = { group = 'com.google.guava', name = 'guava', version.ref = 'guava' }
 jaxb-runtime = { group = 'org.glassfish.jaxb', name = 'jaxb-runtime', version = '2.3.1' }
-xsd2java-xjc = { group = 'com.sun.xml.bind', name = 'jaxb-xjc', version = '3.0.2' }
+xsd2java-xjc = { group = 'com.sun.xml.bind', name = 'jaxb-xjc', version = '4.0.5' }
 xsd2java-impl = { group = 'com.sun.xml.bind', name = 'jaxb-impl', version = '3.0.2' }
 xsd2java-api = { group = 'javax.xml.bind', name = 'jaxb-api', version = '2.4.0-b180830.0359' }
 xsd2java-activation = { group = 'javax.activation', name = 'javax.activation-api', version = '1.2.0' }
