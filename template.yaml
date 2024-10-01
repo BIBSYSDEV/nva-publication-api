@@ -8,6 +8,7 @@ Description: >
 
 
 
+
 Parameters:
   CognitoAuthorizerArn:
     Type: 'AWS::SSM::Parameter::Value<String>'
