@@ -7,9 +7,10 @@ import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import static org.apache.jena.rdf.model.ModelFactory.createDefaultModel;
+import com.apicatalog.jsonld.JsonLdError;
+import com.apicatalog.jsonld.document.JsonDocument;
 import java.io.InputStream;
 import java.net.URI;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -24,7 +25,16 @@ import org.apache.jena.vocabulary.RDF;
 
 public class ExpandedParentPublication {
 
-    public static final String FRAME = IoUtils.stringFromResources(Path.of("parentPublicationFrame.json"));
+    public static final JsonDocument FRAME;
+
+    static {
+        try {
+            FRAME = JsonDocument.of(IoUtils.inputStreamFromResources("parentPublicationFrame.json"));
+        } catch (JsonLdError e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private static final String PUBLICATION_ONTOLOGY = "https://nva.sikt.no/ontology/publication#Publication";
     private final RawContentRetriever uriRetriever;
 
