@@ -215,7 +215,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldPersistRecoveryMessageForTicketWhenBadResponseFromExternalApi() throws IOException {
         var publication = createPublicationWithStatus(PUBLISHED);
-        var ticket = TicketEntry.requestNewTicket(publication, DoiRequest.class);
+        var ticket = TicketEntry.requestNewTicket(publication, DoiRequest.class, publication.getPublisher().getId());
         var request = emulateEventEmittedByDataEntryUpdateHandler(null, ticket);
 
         var resourceExpansionService =
@@ -238,7 +238,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var publication = createPublicationWithStatus(PUBLISHED);
         var persistedPublication =
             resourceService.createPublication(UserInstance.fromPublication(publication), publication);
-        var ticket = TicketEntry.requestNewTicket(persistedPublication, GeneralSupportRequest.class)
+        var ticket = TicketEntry.requestNewTicket(persistedPublication, GeneralSupportRequest.class, publication.getPublisher().getId())
                          .persistNewTicket(ticketService);
         var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
         var request = emulateEventEmittedByDataEntryUpdateHandler(null, message);
@@ -343,11 +343,10 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
 
     private DoiRequest doiRequestForDraftResource() {
-        Publication publication = randomPublication().copy()
+        var publication = randomPublication().copy()
                                       .withStatus(DRAFT)
                                       .build();
-        Resource resource = Resource.fromPublication(publication);
-        return DoiRequest.newDoiRequestForResource(resource);
+        return DoiRequest.fromPublication(publication, publication.getPublisher().getId());
     }
 
     private ResourceExpansionService createFailingService() {

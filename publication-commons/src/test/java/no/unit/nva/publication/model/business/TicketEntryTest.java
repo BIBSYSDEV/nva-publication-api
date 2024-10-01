@@ -22,7 +22,7 @@ class TicketEntryTest {
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldRequestNewTicket(Class<? extends TicketEntry> ticketType, PublicationStatus status) {
         var publication = TicketTestUtils.createNonPersistedPublication(status);
-        var ticket = TicketEntry.requestNewTicket(publication, ticketType);
+        var ticket = TicketEntry.requestNewTicket(publication, ticketType, publication.getPublisher().getId());
         var actualUserInstance = UserInstance.fromTicket(ticket);
         var expectedUserInstance = getExpectedUserInstance(publication);
 
@@ -34,13 +34,15 @@ class TicketEntryTest {
     @Test
     void shouldThrowExceptionForUnrecognizedTicketType() {
         var publication = TicketTestUtils.createNonPersistedPublication(PublicationStatus.DRAFT);
-        assertThrows(RuntimeException.class, () -> TicketEntry.requestNewTicket(publication, DoiRequest.class));
+        assertThrows(RuntimeException.class, () -> TicketEntry.requestNewTicket(publication, DoiRequest.class,
+                                                                                publication.getPublisher().getId()));
     }
 
     @Test
     void shouldThrowExceptionForUnrecognizedTicketTypeRequestingNewTicket() {
         var publication = TicketTestUtils.createNonPersistedPublication(PublicationStatus.DRAFT);
-        assertThrows(RuntimeException.class, () -> TicketEntry.requestNewTicket(publication, TicketEntry.class));
+        assertThrows(RuntimeException.class, () -> TicketEntry.requestNewTicket(publication, TicketEntry.class,
+                                                                                publication.getPublisher().getId()));
     }
 
     @Test
@@ -57,13 +59,14 @@ class TicketEntryTest {
         var publication = TicketTestUtils.createNonPersistedPublication(PublicationStatus.DRAFT);
         assertThrows(UnsupportedOperationException.class,
                      () -> TicketEntry.createNewTicket(publication, TicketEntry.class,
-                                                       SortableIdentifier::next));
+                                                       SortableIdentifier::next, publication.getPublisher().getId()));
     }
 
     @Test
     void shouldReturnFalseWhenTicketWithoutAssignee() throws ConflictException {
         var publication = TicketTestUtils.createNonPersistedPublication(PublicationStatus.DRAFT);
-        var ticket = TicketEntry.createNewTicket(publication, DoiRequest.class, SortableIdentifier::next);
+        var ticket = TicketEntry.createNewTicket(publication, DoiRequest.class, SortableIdentifier::next,
+                                                 publication.getPublisher().getId());
 
         assertFalse(ticket.hasAssignee());
     }

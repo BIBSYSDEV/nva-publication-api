@@ -220,7 +220,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
 
     private DoiRequest createDoiRequestTicket(Publication publication) {
         return (DoiRequest) attempt(
-            () -> DoiRequest.fromPublication(publication).persistNewTicket(ticketService)).orElseThrow();
+            () -> DoiRequest.fromPublication(publication, publication.getPublisher().getId()).persistNewTicket(ticketService)).orElseThrow();
     }
 
     private Publication createDraftPublicationWithDoi() throws BadRequestException {
@@ -269,6 +269,6 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
     
     private PublishingRequestCase pendingPublishingRequest(Publication publication) {
-        return PublishingRequestCase.createOpeningCaseObject(publication);
+        return PublishingRequestCase.fromPublication(publication, publication.getPublisher().getId());
     }
 }

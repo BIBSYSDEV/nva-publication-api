@@ -119,7 +119,8 @@ class DeleteTicketHandlerTest extends ResourcesLocalTest {
     }
 
     private TicketEntry createTicket(Publication publication) throws ApiGatewayException {
-        return TicketEntry.createNewTicket(publication, PublishingRequestCase.class, SortableIdentifier::next)
+        return TicketEntry.createNewTicket(publication, PublishingRequestCase.class, SortableIdentifier::next,
+                                           publication.getPublisher().getId())
                    .persistNewTicket(ticketService);
     }
 

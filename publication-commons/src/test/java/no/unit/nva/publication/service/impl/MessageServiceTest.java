@@ -7,10 +7,12 @@ import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -111,7 +113,7 @@ class MessageServiceTest extends ResourcesLocalTest {
         var sender = UserInstance.create(randomString(), owner.getCustomerId());
         var persistedMessage = messageService.createMessage(ticket, sender, randomString());
         messageService.deleteMessage(sender, persistedMessage);
-        var deletedMessage = messageService.getMessage(sender, persistedMessage.getIdentifier());
+        var deletedMessage = messageService.getMessage(UserInstance.fromMessage(persistedMessage), persistedMessage.getIdentifier());
 
         assertThat(deletedMessage.getStatus(), is(equalTo(MessageStatus.DELETED)));
     }
@@ -192,12 +194,34 @@ class MessageServiceTest extends ResourcesLocalTest {
                                                                                      persistedMessage));
     }
 
-    private UserInstance randomUserInstance() {
-        return UserInstance.create(new User(randomString()), randomUri());
+    @Test
+    void shouldFetchMessageCreatedBySender()
+        throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(
+            PublicationStatus.PUBLISHED, owner, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, GeneralSupportRequest.class, ticketService);
+        var userInstance = randomUserInstance();
+        var persistedMessage = messageService.createMessage(ticket, userInstance, randomString());
+        var fetchedMessage = messageService.getMessageByIdentifier(persistedMessage.getIdentifier()).orElseThrow();
+
+        assertEquals(persistedMessage, fetchedMessage);
     }
 
-    private UserInstance randomUserInstance(AccessRight accessRight) {
-        return randomUserInstance(accessRight, randomUri());
+    @Test
+    void shouldFetchAllMessagesForTicket()
+        throws ApiGatewayException {
+        var publication = TicketTestUtils.createPersistedPublicationWithOwner(
+            PublicationStatus.PUBLISHED, owner, resourceService);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, GeneralSupportRequest.class, ticketService);
+        var userInstance = randomUserInstance();
+        var persistedMessage = messageService.createMessage(ticket, userInstance, randomString());
+        var fetchedMessages = ticketService.fetchTicket(ticket).fetchMessages(ticketService);
+
+        assertThat(fetchedMessages, containsInAnyOrder(persistedMessage));
+    }
+
+    private UserInstance randomUserInstance() {
+        return UserInstance.create(new User(randomString()), randomUri());
     }
 
     private UserInstance randomUserInstance(AccessRight accessRight, URI customerId) {

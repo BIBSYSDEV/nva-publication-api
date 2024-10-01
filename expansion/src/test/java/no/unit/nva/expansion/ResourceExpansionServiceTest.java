@@ -293,7 +293,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var publication = persistDraftPublicationWithoutDoi();
         var owner = UserInstance.fromPublication(publication);
 
-        var ticketToBeExpanded = TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class)
+        var ticketToBeExpanded = TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class, publication.getPublisher().getId())
                                      .persistNewTicket(ticketService);
 
         var message = messageService.createMessage(ticketToBeExpanded, owner, randomString());
@@ -310,7 +310,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var publication = persistDraftPublicationWithoutDoi();
         var owner = UserInstance.fromPublication(publication);
 
-        var ticketToBeExpanded = TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class)
+        var ticketToBeExpanded = TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class, publication.getPublisher().getId())
                                      .persistNewTicket(ticketService);
 
         var messageThatWillLeadToTicketExpansion = messageService.createMessage(ticketToBeExpanded, owner,
@@ -882,12 +882,12 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                                                              Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
 
-        var differentTicketSameType = TicketEntry.requestNewTicket(publication, ticketType)
+        var differentTicketSameType = TicketEntry.requestNewTicket(publication, ticketType, publication.getPublisher().getId())
                                           .persistNewTicket(ticketService);
         var firstUnexpectedMessage = ExpandedMessage.createEntry(
             messageService.createMessage(differentTicketSameType, owner, randomString()), expansionService);
         var differentTicketType = someOtherTicketTypeBesidesDoiRequest(ticketType);
-        var differentTicketDifferentType = TicketEntry.requestNewTicket(publication, differentTicketType)
+        var differentTicketDifferentType = TicketEntry.requestNewTicket(publication, differentTicketType, publication.getPublisher().getId())
                                                .persistNewTicket(ticketService);
         var secondUnexpectedMessage = ExpandedMessage.createEntry(
             messageService.createMessage(differentTicketDifferentType, owner, randomString()), expansionService);

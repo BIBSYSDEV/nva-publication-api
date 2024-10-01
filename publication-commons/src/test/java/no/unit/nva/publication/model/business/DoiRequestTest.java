@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.storage.model.exceptions.IllegalDoiRequestUpdate;
 import org.junit.jupiter.api.Test;
@@ -43,8 +44,8 @@ class DoiRequestTest {
 
     @Test
     void updateThrowsExceptionWhenResourceIdentifierIsDifferent() {
-        Resource resource = Resource.fromPublication(PublicationGenerator.publicationWithIdentifier());
-        DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(resource);
+        var publication = PublicationGenerator.publicationWithIdentifier();
+        DoiRequest doiRequest = DoiRequest.fromPublication(publication, publication.getPublisher().getId());
 
         Resource updatedResource = Resource.fromPublication(PublicationGenerator.publicationWithIdentifier());
 
@@ -56,12 +57,12 @@ class DoiRequestTest {
     }
 
     private DoiRequest doiRequestWithoutResourceReference() {
-        Resource resource = Resource.fromPublication(PublicationGenerator.publicationWithoutIdentifier());
-        return DoiRequest.newDoiRequestForResource(resource);
+        var publication = PublicationGenerator.publicationWithoutIdentifier();
+        return DoiRequest.fromPublication(publication, publication.getPublisher().getId());
     }
 
     private DoiRequest sampleDoiRequestFromResource() {
-        Resource resource = Resource.fromPublication(PublicationGenerator.publicationWithIdentifier());
-        return DoiRequest.newDoiRequestForResource(resource, CLOCK.instant());
+        var publication = PublicationGenerator.publicationWithIdentifier();
+        return DoiRequest.fromPublication(publication, publication.getPublisher().getId());
     }
 }

@@ -254,7 +254,8 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         this.handler = new UpdateTicketHandler(ticketService, resourceService, new FakeDoiClient());
         var publication = TicketTestUtils.createPersistedPublicationWithDoi(PublicationStatus.PUBLISHED,
                                                                             resourceService);
-        var ticket = TicketTestUtils.createClosedTicket(publication, DoiRequest.class, ticketService);
+        var ticket = TicketTestUtils.createClosedTicket(publication, DoiRequest.class, ticketService,
+                                                        publication.getPublisher().getId());
         var request = authorizedUserCompletesTicket(ticket);
         handler.handleRequest(request, output, CONTEXT);
         assertThat(resourceService.getPublication(publication).getDoi(), is(nullValue()));

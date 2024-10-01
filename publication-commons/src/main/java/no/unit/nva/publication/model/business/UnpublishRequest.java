@@ -57,7 +57,7 @@ public class UnpublishRequest extends TicketEntry {
         super();
     }
 
-    public static TicketEntry fromPublication(Publication publication) {
+    public static TicketEntry fromPublication(Publication publication, URI curatingCustomer) {
 
         // TODO: Who is ticket owner? Currently publication owner to pass tests
         var owner = extractOwner(publication);
@@ -73,6 +73,7 @@ public class UnpublishRequest extends TicketEntry {
                    .withOwner(owner)
                    .withViewedBy(ViewedBy.addAll(owner)) // TODO: Correct?
                    .withAssignee(null) // TODO: Add no one?
+                   .withCuratingCustomer(curatingCustomer)
                    .build();
     }
 
@@ -182,6 +183,7 @@ public class UnpublishRequest extends TicketEntry {
                    .withOwnerAffiliation(getOwnerAffiliation())
                    .withFinalizedBy(getFinalizedBy())
                    .withFinalizedDate(getFinalizedDate())
+                   .withCuratingCustomer(getCuratingCustomer())
                    .build();
     }
 
@@ -285,6 +287,11 @@ public class UnpublishRequest extends TicketEntry {
 
         public UnpublishRequest.Builder withAssignee(Username assignee) {
             unpublishRequest.setAssignee(assignee);
+            return this;
+        }
+
+        public UnpublishRequest.Builder withCuratingCustomer(URI curatingCustomer) {
+            unpublishRequest.setCuratingCustomer(curatingCustomer);
             return this;
         }
 

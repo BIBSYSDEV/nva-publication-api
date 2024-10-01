@@ -46,7 +46,7 @@ class MessageTest extends TestDataSource {
     @Test
     void shouldReturnCopyWithoutLossOfInformation() throws ConflictException {
         Publication publication = randomPublicationEligibleForDoiRequest();
-        var ticket = TicketEntry.createNewTicket(publication, randomTicketType(), SortableIdentifier::next);
+        var ticket = TicketEntry.createNewTicket(publication, randomTicketType(), SortableIdentifier::next, publication.getPublisher().getId());
         var message = Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
         var copy = message.copy();
         assertThat(message, doesNotHaveEmptyValues());
@@ -72,7 +72,7 @@ class MessageTest extends TestDataSource {
     
     private Message createSampleMessage() throws ConflictException {
         var publication = randomPublicationEligibleForDoiRequest();
-        var ticket = TicketEntry.createNewTicket(publication, DoiRequest.class, SortableIdentifier::next);
+        var ticket = TicketEntry.createNewTicket(publication, DoiRequest.class, SortableIdentifier::next, publication.getPublisher().getId());
         return Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
     }
 }

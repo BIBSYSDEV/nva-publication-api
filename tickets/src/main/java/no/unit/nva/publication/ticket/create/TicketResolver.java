@@ -66,7 +66,7 @@ public class TicketResolver {
 
         validateUserPermissions(permissionStrategy, ticketDto);
 
-        var ticket = TicketEntry.requestNewTicket(publication, ticketDto.ticketType());
+        var ticket = TicketEntry.requestNewTicket(publication, ticketDto.ticketType(), publication.getPublisher().getId());
         ticket.setOwnerAffiliation(requestUtils.topLevelCristinOrgId());
         if (isPublishingRequestCase(ticket)) {
             var customerId = requestUtils.customerId();

@@ -3,7 +3,7 @@ package no.unit.nva.publication.model.business;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
-import static no.unit.nva.publication.model.business.PublishingRequestCase.createOpeningCaseObject;
+import static no.unit.nva.publication.model.business.PublishingRequestCase.fromPublication;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -47,6 +47,7 @@ public abstract class TicketEntry implements Entity {
         "Cannot remove a ticket that has any other status than %s";
     public static final String UNAUTHENTICATED_TO_REMOVE_TICKET_MESSAGE =
         "Ticket owner only can remove ticket!";
+    public static final String CURATING_INSTITUTION_FIELD = "curatingCustomer";
     @JsonProperty(VIEWED_BY_FIELD)
     private ViewedBy viewedBy;
     @JsonProperty(RESOURCE_IDENTIFIER)
@@ -56,27 +57,33 @@ public abstract class TicketEntry implements Entity {
     @JsonProperty(FINALIZED_DATE)
     private Instant finalizedDate;
 
+    @JsonProperty(CURATING_INSTITUTION_FIELD)
+    private URI curatingCustomer;
+
     protected TicketEntry() {
         viewedBy = ViewedBy.empty();
     }
 
-    public static <T extends TicketEntry> TicketEntry createNewTicket(Publication publication, Class<T> ticketType,
-                                                                      Supplier<SortableIdentifier> identifierProvider)
+    public static <T extends TicketEntry> TicketEntry createNewTicket(Publication publication,
+                                                                      Class<T> ticketType,
+                                                                      Supplier<SortableIdentifier> identifierProvider,
+                                                                      URI curatingCustomer)
         throws ConflictException {
-        var newTicket = createNewTicketEntry(publication, ticketType, identifierProvider);
+        var newTicket = createNewTicketEntry(publication, ticketType, identifierProvider, curatingCustomer);
         newTicket.validateCreationRequirements(publication);
         return newTicket;
     }
 
-    public static <T extends TicketEntry> TicketEntry requestNewTicket(Publication publication, Class<T> ticketType) {
+    public static <T extends TicketEntry> TicketEntry requestNewTicket(Publication publication, Class<T> ticketType,
+                                                                       URI curatingCustomer) {
         if (DoiRequest.class.equals(ticketType)) {
-            return attempt(() -> requestDoiRequestTicket(publication)).orElseThrow();
+            return attempt(() -> requestDoiRequestTicket(publication, curatingCustomer)).orElseThrow();
         } else if (PublishingRequestCase.class.equals(ticketType)) {
-            return createOpeningCaseObject(publication);
+            return fromPublication(publication, curatingCustomer);
         } else if (GeneralSupportRequest.class.equals(ticketType)) {
-            return GeneralSupportRequest.fromPublication(publication);
+            return GeneralSupportRequest.fromPublication(publication, curatingCustomer);
         } else if (UnpublishRequest.class.equals(ticketType)) {
-            return UnpublishRequest.fromPublication(publication);
+            return UnpublishRequest.fromPublication(publication, curatingCustomer);
         }
         throw new RuntimeException("Unrecognized ticket type");
     }
@@ -107,15 +114,17 @@ public abstract class TicketEntry implements Entity {
     }
 
     public static TicketEntry createNewGeneralSupportRequest(Publication publication,
-                                                             Supplier<SortableIdentifier> identifierProvider) {
-        var ticket = GeneralSupportRequest.fromPublication(publication);
+                                                             Supplier<SortableIdentifier> identifierProvider,
+                                                             URI curatingCustomer) {
+        var ticket = GeneralSupportRequest.fromPublication(publication, curatingCustomer);
         setServiceControlledFields(ticket, identifierProvider);
         return ticket;
     }
 
     public static TicketEntry createNewUnpublishRequest(Publication publication,
-                                                        Supplier<SortableIdentifier> identifierProvider) {
-        var ticket = UnpublishRequest.fromPublication(publication);
+                                                        Supplier<SortableIdentifier> identifierProvider,
+                                                        URI curatingCustomer) {
+        var ticket = UnpublishRequest.fromPublication(publication, curatingCustomer);
         setServiceControlledFields(ticket, identifierProvider);
         return ticket;
     }
@@ -150,6 +159,14 @@ public abstract class TicketEntry implements Entity {
 
     public void setFinalizedDate(Instant finalizedDate) {
         this.finalizedDate = finalizedDate;
+    }
+
+    public URI getCuratingCustomer() {
+        return nonNull(curatingCustomer) ? curatingCustomer : getCustomerId();
+    }
+
+    public void setCuratingCustomer(URI curatingCustomer) {
+        this.curatingCustomer = curatingCustomer;
     }
 
     public Set<User> getViewedBy() {
@@ -310,9 +327,9 @@ public abstract class TicketEntry implements Entity {
         return updated;
     }
 
-    private static TicketEntry requestDoiRequestTicket(Publication publication) throws BadRequestException {
+    private static TicketEntry requestDoiRequestTicket(Publication publication, URI curatingCustomer) throws BadRequestException {
         if (isPublished(publication)) {
-            return DoiRequest.fromPublication(publication);
+            return DoiRequest.fromPublication(publication, curatingCustomer);
         } else {
             throw new BadRequestException(DOI_REQUEST_EXCEPTION_MESSAGE_WHEN_NON_PUBLISHED);
         }
@@ -321,31 +338,34 @@ public abstract class TicketEntry implements Entity {
     private static <T extends TicketEntry> TicketEntry createNewTicketEntry(
         Publication publication,
         Class<T> ticketType,
-        Supplier<SortableIdentifier> identifierProvider) {
+        Supplier<SortableIdentifier> identifierProvider,
+        URI curatingCustomer) {
 
         if (DoiRequest.class.equals(ticketType)) {
-            return createNewDoiRequest(publication, identifierProvider);
+            return createNewDoiRequest(publication, identifierProvider, curatingCustomer);
         } else if (PublishingRequestCase.class.equals(ticketType)) {
-            return createNewPublishingRequestEntry(publication, identifierProvider);
+            return createNewPublishingRequestEntry(publication, identifierProvider, curatingCustomer);
         } else if (GeneralSupportRequest.class.equals(ticketType)) {
-            return createNewGeneralSupportRequest(publication, identifierProvider);
+            return createNewGeneralSupportRequest(publication, identifierProvider, curatingCustomer);
         } else if (UnpublishRequest.class.equals(ticketType)) {
-            return createNewUnpublishRequest(publication, identifierProvider);
+            return createNewUnpublishRequest(publication, identifierProvider, curatingCustomer);
         } else {
             throw new UnsupportedOperationException();
         }
     }
 
     private static TicketEntry createNewDoiRequest(Publication publication,
-                                                   Supplier<SortableIdentifier> identifierProvider) {
-        var doiRequest = DoiRequest.fromPublication(publication);
+                                                   Supplier<SortableIdentifier> identifierProvider,
+                                                   URI curatingCustomer) {
+        var doiRequest = DoiRequest.fromPublication(publication, curatingCustomer);
         setServiceControlledFields(doiRequest, identifierProvider);
         return doiRequest;
     }
 
     private static TicketEntry createNewPublishingRequestEntry(Publication publication,
-                                                               Supplier<SortableIdentifier> identifierProvider) {
-        var entry = createOpeningCaseObject(publication);
+                                                               Supplier<SortableIdentifier> identifierProvider,
+                                                               URI curatingInstitution) {
+        var entry = fromPublication(publication, curatingInstitution);
         setServiceControlledFields(entry, identifierProvider);
         return entry;
     }

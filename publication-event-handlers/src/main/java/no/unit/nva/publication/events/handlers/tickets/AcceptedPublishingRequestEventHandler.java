@@ -166,7 +166,8 @@ public class AcceptedPublishingRequestEventHandler
 
     private void createDoiRequestIfNeeded(Publication publication) {
         if (hasDoi(publication) && !doiRequestExists(publication)) {
-            attempt(() -> DoiRequest.fromPublication(publication).persistNewTicket(ticketService)).orElseThrow();
+            attempt(() -> DoiRequest.fromPublication(publication,  publication.getPublisher().getId())
+                              .persistNewTicket(ticketService)).orElseThrow();
             logger.info(DOI_REQUEST_CREATION_MESSAGE, publication.getIdentifier());
         }
     }

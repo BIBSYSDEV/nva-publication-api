@@ -99,7 +99,7 @@ public class RequestUtilsTest {
         throws UnauthorizedException, NotFoundException {
         var publication = publicationWithOwner(randomString()).copy().withStatus(publicationStatus).build();
         var requestInfo = requestInfoWithAccessRight(publication.getResourceOwner().getOwnerAffiliation(), accessRight);
-        var ticket = TicketEntry.requestNewTicket(publication, ticketType);
+        var ticket = TicketEntry.requestNewTicket(publication, ticketType, publication.getPublisher().getId());
         var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
 
         when(resourceService.getPublicationByIdentifier(any())).thenReturn(publication);
@@ -110,7 +110,8 @@ public class RequestUtilsTest {
     @Test
     void shouldReturnTrueWhenUserIsTicketOwner() throws UnauthorizedException {
         var requestInfo = mockedRequestInfo();
-        var ticket = TicketEntry.requestNewTicket(publicationWithOwner(requestInfo.getUserName()), DoiRequest.class);
+        var publication = publicationWithOwner(requestInfo.getUserName());
+        var ticket = TicketEntry.requestNewTicket(publication, DoiRequest.class, publication.getPublisher().getId());
         var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
 
         Assertions.assertTrue(requestUtils.isTicketOwner(ticket));

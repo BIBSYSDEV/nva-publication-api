@@ -555,7 +555,8 @@ public class UpdatePublicationHandler
     private void persistPendingPublishingRequest(Publication publicationUpdate,
                                                  Customer customer,
                                                  UserInstance userInstance) {
-        attempt(() -> TicketEntry.requestNewTicket(publicationUpdate, PublishingRequestCase.class))
+        attempt(() -> TicketEntry.requestNewTicket(publicationUpdate, PublishingRequestCase.class,
+                          userInstance.getCustomerId()))
             .map(publishingRequest -> injectPublishingWorkflow((PublishingRequestCase) publishingRequest, customer))
             .map(publishingRequest ->
                      persistPublishingRequest(publicationUpdate, userInstance, customer, publishingRequest));

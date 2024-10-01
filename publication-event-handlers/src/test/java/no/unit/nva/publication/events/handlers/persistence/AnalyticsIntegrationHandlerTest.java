@@ -168,7 +168,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
 
     private ExpandedDoiRequest createSampleExpandedDoiRequest() throws ApiGatewayException {
         Publication samplePublication = insertSamplePublication();
-        var doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(samplePublication));
+        var doiRequest = DoiRequest.fromPublication(samplePublication, samplePublication.getPublisher().getId());
         var messages = doiRequest.fetchMessages(ticketService);
         return ExpandedDoiRequest.createEntry(doiRequest, resourceExpansionService, resourceService, ticketService);
     }

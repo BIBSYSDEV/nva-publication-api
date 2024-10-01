@@ -945,7 +945,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var persistedPublication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(customerId,
                                                                                                   PUBLISHED,
                                                                                                   resourceService);
-        var existingTicket = TicketEntry.requestNewTicket(persistedPublication, PublishingRequestCase.class)
+        var existingTicket = TicketEntry.requestNewTicket(persistedPublication, PublishingRequestCase.class,
+                                                          persistedPublication.getPublisher().getId())
                                  .persistNewTicket(ticketService);
         var updatedPublication = persistedPublication.copy().withAssociatedArtifacts(List.of()).build();
         var input = ownerUpdatesOwnPublication(updatedPublication.getIdentifier(), updatedPublication);
@@ -970,7 +971,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var username = contributor.getIdentity().getName();
         var event = contributorUpdatesPublicationAndHasRightsToUpdate(publicationUpdate, cristinId,
                                                                       username);
-        var pendingTicket = PublishingRequestCase.createOpeningCaseObject(publication).persistNewTicket(ticketService);
+        var pendingTicket = PublishingRequestCase.fromPublication(publication,
+                                                                  publication.getPublisher().getId()).persistNewTicket(ticketService);
         updatePublicationHandler.handleRequest(event, output, context);
 
         var completedTicket = ticketService.fetchTicket(pendingTicket);
@@ -1192,10 +1194,11 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publication = TicketTestUtils.createPersistedPublishedPublicationWithUnpublishedFilesAndContributor(
             userCristinId,
             resourceService);
-        GeneralSupportRequest.fromPublication(publication).persistNewTicket(ticketService);
-        DoiRequest.fromPublication(publication).persistNewTicket(ticketService);
+        GeneralSupportRequest.fromPublication(publication, publication.getPublisher().getId()).persistNewTicket(ticketService);
+        DoiRequest.fromPublication(publication, publication.getPublisher().getId()).persistNewTicket(ticketService);
         var publishingRequestTicket =
-            PublishingRequestCase.createOpeningCaseObject(publication).persistNewTicket(ticketService);
+            PublishingRequestCase.fromPublication(publication,
+                                                  publication.getPublisher().getId()).persistNewTicket(ticketService);
         var completedPublishingRequest = publishingRequestTicket.complete(publication, new Username(userName));
         ticketService.updateTicket(completedPublishingRequest);
 
@@ -1226,9 +1229,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(customerId, PUBLISHED,
                                                                                        resourceService);
-        GeneralSupportRequest.fromPublication(publication).persistNewTicket(ticketService);
-        DoiRequest.fromPublication(publication).persistNewTicket(ticketService);
-        PublishingRequestCase.createOpeningCaseObject(publication)
+        GeneralSupportRequest.fromPublication(publication, publication.getPublisher().getId()).persistNewTicket(ticketService);
+        DoiRequest.fromPublication(publication, publication.getPublisher().getId()).persistNewTicket(ticketService);
+        PublishingRequestCase.fromPublication(publication, publication.getPublisher().getId())
             .persistNewTicket(ticketService)
             .complete(publication, new Username(randomString()))
             .persistUpdate(ticketService);
@@ -2100,12 +2103,14 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private TicketEntry createPendingPublishingRequest(Publication publishedPublication) throws ApiGatewayException {
         return PublishingRequestCase.createNewTicket(publishedPublication, PublishingRequestCase.class,
-                                                     SortableIdentifier::next).persistNewTicket(ticketService);
+                                                     SortableIdentifier::next,
+                                                     publication.getPublisher().getId()).persistNewTicket(ticketService);
     }
 
     private TicketEntry persistCompletedPublishingRequest(Publication publishedPublication) throws ApiGatewayException {
         var ticket = PublishingRequestCase.createNewTicket(publishedPublication, PublishingRequestCase.class,
-                                                           SortableIdentifier::next).persistNewTicket(ticketService);
+                                                           SortableIdentifier::next,
+                                                           publication.getPublisher().getId()).persistNewTicket(ticketService);
         return ticketService.updateTicketStatus(ticket, TicketStatus.COMPLETED, new Username(randomString()));
     }
 

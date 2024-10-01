@@ -7,8 +7,10 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.PublicationOperation;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -58,9 +60,24 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
 
     private List<TicketDto> fetchTickets(SortableIdentifier publicationIdentifier,
                                          UserInstance userInstance) throws ApiGatewayException {
-        var tickets = fetchTickets(userInstance, publicationIdentifier);
+        var tickets = fetchTickets(userInstance, publicationIdentifier)
+                          .filter(ticketEntry -> hasAccessToTicket(ticketEntry, userInstance));
+
 
         return tickets.map(this::createDto).toList();
+    }
+
+    private boolean hasAccessToTicket(TicketEntry ticketEntry, UserInstance userInstance) {
+        if (ticketEntry instanceof GeneralSupportRequest) {
+            return hasSameCuratingInstitution(ticketEntry, userInstance);
+        } else {
+            return hasSameCuratingInstitution(ticketEntry, userInstance)
+                   || !TicketStatus.PENDING.equals(ticketEntry.getStatus());
+        }
+    }
+
+    private static boolean hasSameCuratingInstitution(TicketEntry ticketEntry, UserInstance userInstance) {
+        return userInstance.getCustomerId().equals(ticketEntry.getCuratingCustomer());
     }
 
     private Stream<TicketEntry> fetchTickets(UserInstance userInstance, SortableIdentifier publicationIdentifier)

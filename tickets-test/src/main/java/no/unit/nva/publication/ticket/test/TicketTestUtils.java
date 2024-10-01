@@ -273,28 +273,32 @@ public final class TicketTestUtils {
     public static TicketEntry createPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType,
                                                     TicketService ticketService)
         throws ApiGatewayException {
-        return TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
+        return TicketEntry.requestNewTicket(publication, ticketType, publication.getPublisher().getId())
+                   .persistNewTicket(ticketService);
     }
 
     public static TicketEntry createClosedTicket(Publication publication, Class<? extends TicketEntry> ticketType,
-                                                 TicketService ticketService)
+                                                 TicketService ticketService, URI curatingInstitution)
         throws ApiGatewayException {
-        return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+        return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next, curatingInstitution)
                    .persistNewTicket(ticketService).close(new Username("Username"));
     }
 
     public static TicketEntry createCompletedTicket(Publication publication, Class<? extends TicketEntry> ticketType,
                                                     TicketService ticketService)
         throws ApiGatewayException {
-        var completedTicket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+        var completedTicket = TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next,
+                                                          publication.getPublisher().getId())
                                   .persistNewTicket(ticketService).complete(publication, new Username("Username"));
         completedTicket.persistUpdate(ticketService);
         return completedTicket;
     }
 
-    public static TicketEntry createNonPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType)
+    public static TicketEntry createNonPersistedTicket(Publication publication,
+                                                       Class<? extends TicketEntry> ticketType)
         throws ConflictException {
-        return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next);
+        return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next,
+                                           publication.getPublisher().getId());
     }
 
     private static void setAffiliation(Corporation affiliation) {

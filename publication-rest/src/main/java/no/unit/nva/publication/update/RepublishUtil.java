@@ -44,7 +44,8 @@ public class RepublishUtil {
         var publishingRequest = (PublishingRequestCase) PublishingRequestCase
                                                             .createNewTicket(publication,
                                                                              PublishingRequestCase.class,
-                                                                             SortableIdentifier::next);
+                                                                             SortableIdentifier::next,
+                                                                             userInstance.getCustomerId());
         publishingRequest.persistAutoComplete(ticketService, publication, new Username(userInstance.getUsername()));
     }
 

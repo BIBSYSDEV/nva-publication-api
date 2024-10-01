@@ -338,7 +338,8 @@ class DaoTest extends ResourcesLocalTest {
     }
     
     private static TicketEntry createTicket(Class<? extends TicketEntry> entityType) throws ConflictException {
-        return TicketEntry.createNewTicket(draftPublicationWithoutDoi(), entityType, SortableIdentifier::next);
+        var publication = draftPublicationWithoutDoi();
+        return TicketEntry.createNewTicket(publication, entityType, SortableIdentifier::next, publication.getPublisher().getId());
     }
     
     private static Stream<Dao> instanceProvider() {

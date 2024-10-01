@@ -82,7 +82,7 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
         throws JsonProcessingException, ApiGatewayException {
         var publication = persistedPublication();
         var ticket =
-            GeneralSupportRequest.requestNewTicket(publication, GeneralSupportRequest.class)
+            GeneralSupportRequest.requestNewTicket(publication, GeneralSupportRequest.class, publication.getPublisher().getId())
                 .persistNewTicket(ticketService);
         var ticketVersion = ticket.toDao().getVersion();
         putMessageOnRecoveryQueue(ticket.getIdentifier(), "Ticket");
@@ -99,7 +99,7 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
         throws JsonProcessingException, ApiGatewayException {
         var publication = persistedPublication();
         var ticket =
-            GeneralSupportRequest.requestNewTicket(publication, GeneralSupportRequest.class)
+            GeneralSupportRequest.requestNewTicket(publication, GeneralSupportRequest.class, publication.getPublisher().getId())
                 .persistNewTicket(ticketService);
         var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
         var messageVersion = message.toDao().getVersion();

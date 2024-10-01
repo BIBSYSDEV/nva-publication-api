@@ -101,7 +101,8 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         var createdPublication = createPublication(PublicationGenerator.randomPublication());
         var initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
-        var originalTicket = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
+        var originalTicket = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class,
+                                                          createdPublication.getPublisher().getId())
                                  .persistNewTicket(ticketService);
         var originalTicketDao = fetchTicketDao(originalTicket.getIdentifier());
 
@@ -125,7 +126,8 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         var createdPublication = createPublication(PublicationGenerator.randomPublication());
         var initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
-        var originalTicket = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
+        var originalTicket = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class,
+                                                          createdPublication.getPublisher().getId())
                                  .persistNewTicket(ticketService);
         var originalTicketDao = fetchTicketDao(originalTicket.getIdentifier());
 
@@ -148,7 +150,8 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         var createdPublication = createPublication(PublicationGenerator.randomPublication());
         var initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
-        var originalTicket = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
+        var originalTicket = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class,
+                                                          createdPublication.getPublisher().getId())
                                  .persistNewTicket(ticketService);
         var originalTicketDao = fetchTicketDao(originalTicket.getIdentifier());
 

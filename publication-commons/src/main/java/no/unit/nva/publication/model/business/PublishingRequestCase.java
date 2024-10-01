@@ -82,7 +82,7 @@ public class PublishingRequestCase extends TicketEntry {
         super();
     }
 
-    public static PublishingRequestCase createOpeningCaseObject(Publication publication) {
+    public static PublishingRequestCase fromPublication(Publication publication, URI curatingCustomer) {
         var userInstance = UserInstance.fromPublication(publication);
         var openingCaseObject = new PublishingRequestCase();
         openingCaseObject.setOwner(userInstance.getUser());
@@ -91,6 +91,7 @@ public class PublishingRequestCase extends TicketEntry {
         openingCaseObject.setViewedBy(ViewedBy.addAll(openingCaseObject.getOwner()));
         openingCaseObject.setResourceIdentifier(publication.getIdentifier());
         openingCaseObject.setFilesForApproval(extractFilesForApproval(publication));
+        openingCaseObject.setCuratingCustomer(curatingCustomer);
         return openingCaseObject;
     }
 
@@ -180,6 +181,7 @@ public class PublishingRequestCase extends TicketEntry {
         copy.setFilesForApproval(this.getFilesForApproval().isEmpty() ? Set.of() : this.getFilesForApproval());
         copy.setFinalizedBy(this.getFinalizedBy());
         copy.setFinalizedDate(this.getFinalizedDate());
+        copy.setCuratingCustomer(this.getCuratingCustomer());
         return copy;
     }
 

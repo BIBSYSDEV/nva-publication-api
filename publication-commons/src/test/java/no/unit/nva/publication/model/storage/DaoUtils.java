@@ -58,13 +58,13 @@ public final class DaoUtils extends TestDataSource {
 
     public static DoiRequestDao doiRequestDao() {
         var publication = randomPublicationEligibleForDoiRequest();
-        var doiRequest = DoiRequest.fromPublication(publication);
+        var doiRequest = DoiRequest.fromPublication(publication, publication.getPublisher().getId());
         return new DoiRequestDao(doiRequest);
     }
 
     public static DoiRequestDao doiRequestDao(ResourceDao resourceDao) {
         var resource = (Resource) resourceDao.getData();
-        var doiRequest = DoiRequest.newDoiRequestForResource(resource);
+        var doiRequest = DoiRequest.fromPublication(resource.toPublication(), resource.toPublication().getPublisher().getId());
         return new DoiRequestDao(doiRequest);
     }
 
@@ -100,7 +100,7 @@ public final class DaoUtils extends TestDataSource {
     }
 
     private static TicketEntry randomTicket(Publication publication) {
-        return attempt(() -> TicketEntry.createNewTicket(publication, randomTicketType(), SortableIdentifier::next))
+        return attempt(() -> TicketEntry.createNewTicket(publication, randomTicketType(), SortableIdentifier::next, publication.getPublisher().getId()))
                    .orElseThrow();
     }
 }

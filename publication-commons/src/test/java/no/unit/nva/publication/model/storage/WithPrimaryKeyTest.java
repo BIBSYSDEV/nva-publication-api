@@ -109,7 +109,7 @@ class WithPrimaryKeyTest extends ResourcesLocalTest {
         return TypeProvider.listSubTypes(TicketEntry.class)
                    .map(ticketType -> (Class<TicketEntry>) ticketType)
                    .map(attempt(ticketType -> TicketEntry.createNewTicket(resource.toPublication(), ticketType,
-                       SortableIdentifier::next)))
+                       SortableIdentifier::next, resource.getPublisher().getId())))
                    .map(Try::orElseThrow)
                    .collect(Collectors.toList());
     }

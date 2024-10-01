@@ -71,36 +71,17 @@ public class DoiRequest extends TicketEntry {
         super();
     }
 
-    public static DoiRequest fromPublication(Publication publication) {
-        return newDoiRequestForResource(Resource.fromPublication(publication));
-    }
-
-    public static DoiRequest newDoiRequestForResource(Resource resource) {
-        return newDoiRequestForResource(SortableIdentifier.next(), resource, Clock.systemDefaultZone().instant());
-    }
-
-    public static DoiRequest newDoiRequestForResource(Resource resource, Instant now) {
-
+    public static DoiRequest fromPublication(Publication publication, URI curatingCustomer) {
+        var resource = Resource.fromPublication(publication);
         var doiRequest = extractDataFromResource(resource);
         doiRequest.setIdentifier(SortableIdentifier.next());
         doiRequest.setStatus(TicketStatus.PENDING);
-        doiRequest.setModifiedDate(now);
-        doiRequest.setCreatedDate(now);
-        doiRequest.setViewedBy(ViewedBy.addAll(doiRequest.getOwner()));
-        return doiRequest;
-    }
-
-    public static DoiRequest newDoiRequestForResource(SortableIdentifier doiRequestIdentifier,
-                                                      Resource resource,
-                                                      Instant now) {
-
-        var doiRequest = extractDataFromResource(resource);
-        doiRequest.setIdentifier(doiRequestIdentifier);
-        doiRequest.setStatus(TicketStatus.PENDING);
+        var now = Clock.systemDefaultZone().instant();
         doiRequest.setModifiedDate(now);
         doiRequest.setCreatedDate(now);
         doiRequest.validate();
         doiRequest.setViewedBy(ViewedBy.addAll(doiRequest.getOwner()));
+        doiRequest.setCuratingCustomer(curatingCustomer);
         return doiRequest;
     }
 
@@ -215,6 +196,7 @@ public class DoiRequest extends TicketEntry {
                    .withOwnerAffiliation(getOwnerAffiliation())
                    .withFinalizedBy(getFinalizedBy())
                    .withFinalizedDate(getFinalizedDate())
+                   .withCuratingCustomer(getCuratingCustomer())
                    .build();
     }
 
@@ -380,6 +362,11 @@ public class DoiRequest extends TicketEntry {
 
         public Builder withFinalizedDate(Instant finalizedDate) {
             doiRequest.setFinalizedDate(finalizedDate);
+            return this;
+        }
+
+        public Builder withCuratingCustomer(URI curatingCustomer) {
+            doiRequest.setCuratingCustomer(curatingCustomer);
             return this;
         }
 

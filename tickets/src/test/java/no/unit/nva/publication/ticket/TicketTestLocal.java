@@ -51,13 +51,13 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
     
     protected TicketEntry createPersistedDoiTicket(Publication publication)
         throws ApiGatewayException {
-        var doiTicket = DoiRequest.fromPublication(publication);
+        var doiTicket = DoiRequest.fromPublication(publication, publication.getPublisher().getId());
         return ticketService.createTicket(doiTicket);
     }
 
     protected TicketEntry persistTicket(Publication publication, Class<? extends TicketEntry> ticketType)
         throws ApiGatewayException {
-        return TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
+        return TicketEntry.requestNewTicket(publication, ticketType, publication.getPublisher().getId()).persistNewTicket(ticketService);
     }
     
     protected Publication nonPersistedPublication() {

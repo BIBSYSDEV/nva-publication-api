@@ -359,7 +359,8 @@ public class ResourceService extends ServiceWithTransactions {
             throw new BadRequestException(ONLY_PUBLISHED_PUBLICATIONS_CAN_BE_UNPUBLISHED_ERROR_MESSAGE);
         }
         var allTicketsForResource = fetchAllTicketsForResource(Resource.fromPublication(publication));
-        var unpublishRequestTicket = (UnpublishRequest) UnpublishRequest.fromPublication(publication);
+        var unpublishRequestTicket = (UnpublishRequest) UnpublishRequest.fromPublication(publication,
+                                                                                         publication.getPublisher().getId());
         updateResourceService.unpublishPublication(publication, allTicketsForResource, unpublishRequestTicket);
     }
 

@@ -362,7 +362,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                                                        ResourceService resourceService, MessageService messageService,
                                                        TicketService ticketService) throws ApiGatewayException {
         var userInstance = UserInstance.fromPublication(publication);
-        var doiRequest = (DoiRequest) TicketEntry.requestNewTicket(publication, DoiRequest.class)
+        var doiRequest = (DoiRequest) TicketEntry.requestNewTicket(publication, DoiRequest.class,
+                                                                   publication.getPublisher().getId())
                                           .persistNewTicket(ticketService);
         messageService.createMessage(doiRequest, userInstance, randomString());
         return attempt(() -> ExpandedDoiRequest.createEntry(doiRequest, resourceExpansionService, resourceService,
@@ -397,7 +398,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     }
 
     private DoiRequest createDoiRequest(Publication publication) throws ApiGatewayException {
-        return (DoiRequest) TicketEntry.requestNewTicket(publication, DoiRequest.class).persistNewTicket(ticketService);
+        return (DoiRequest) TicketEntry.requestNewTicket(publication, DoiRequest.class, publication.getPublisher().getId())
+                                .persistNewTicket(ticketService);
     }
 
     private Publication createPublishedPublicationWithoutDoi(Class<?> instanceType) throws ApiGatewayException {
@@ -478,7 +480,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                                                                              ResourceExpansionService expansionService,
                                                                              TicketService ticketService)
             throws NotFoundException, JsonProcessingException {
-            var request = (GeneralSupportRequest) GeneralSupportRequest.fromPublication(publication);
+            var request = (GeneralSupportRequest) GeneralSupportRequest.fromPublication(publication,
+                                                                                        publication.getPublisher().getId());
             return ExpandedGeneralSupportRequest.create(request, resourceService, expansionService,
                                                         ticketService);
         }
@@ -488,7 +491,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                                                                              ResourceExpansionService expansionService,
                                                                              TicketService ticketService)
             throws NotFoundException, JsonProcessingException {
-            var request = (UnpublishRequest) UnpublishRequest.fromPublication(publication);
+            var request = (UnpublishRequest) UnpublishRequest.fromPublication(publication, publication.getPublisher().getId());
             return ExpandedUnpublishRequest.create(request, resourceService, expansionService,
                                                         ticketService);
         }

@@ -291,7 +291,8 @@ class GetTicketHandlerTest extends TicketTestLocal {
 
     private TicketEntry createPersistedTicket(Class<? extends TicketEntry> ticketType, Publication publication)
         throws ApiGatewayException {
-        return TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
+        return TicketEntry.requestNewTicket(publication, ticketType, publication.getPublisher().getId())
+                   .persistNewTicket(ticketService);
     }
 
     private User randomOwner() {

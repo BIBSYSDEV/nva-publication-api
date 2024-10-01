@@ -641,7 +641,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void shouldKeepTheResourceInSyncWithTheAssociatedDoiRequestWhenResourceIsPublished() throws ApiGatewayException {
         var publication = createPersistedPublicationWithoutDoi();
 
-        var doiRequest = DoiRequest.fromPublication(publication);
+        var doiRequest = DoiRequest.fromPublication(publication, publication.getPublisher().getId());
         doiRequest.persistNewTicket(ticketService);
         assertThat(doiRequest.getResourceStatus(), is(equalTo(PublicationStatus.DRAFT)));
 
@@ -1123,14 +1123,16 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void shouldSetAllPendingTicketsToNotApplicableWhenUnpublishingPublication() throws ApiGatewayException {
         var publication = createPublishedResource();
         var pendingGeneralSupportTicket =
-            GeneralSupportRequest.fromPublication(publication).persistNewTicket(ticketService);
-        var pendingDoiRequestTicket = DoiRequest.fromPublication(publication).persistNewTicket(ticketService);
+            GeneralSupportRequest.fromPublication(publication, publication.getPublisher().getId()).persistNewTicket(ticketService);
+        var pendingDoiRequestTicket =
+            DoiRequest.fromPublication(publication, publication.getPublisher().getId()).persistNewTicket(ticketService);
         var closedGeneralSupportTicket =
-            GeneralSupportRequest.fromPublication(publication)
+            GeneralSupportRequest.fromPublication(publication, publication.getPublisher().getId())
                 .persistNewTicket(ticketService)
                 .close(new Username(randomString()));
         ticketService.updateTicket(closedGeneralSupportTicket);
-        var publishingRequestTicket = PublishingRequestCase.createOpeningCaseObject(publication);
+        var publishingRequestTicket = PublishingRequestCase.fromPublication(publication,
+                                                                            publication.getPublisher().getId());
         publishingRequestTicket.setStatus(TicketStatus.COMPLETED);
         publishingRequestTicket.persistNewTicket(ticketService);
         resourceService.unpublishPublication(publication);
@@ -1436,7 +1438,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private DoiRequest createDoiRequest(Publication resource) throws ApiGatewayException {
-        return (DoiRequest) DoiRequest.fromPublication(resource).persistNewTicket(ticketService);
+        return (DoiRequest) DoiRequest.fromPublication(resource, resource.getPublisher().getId()).persistNewTicket(ticketService);
     }
 
     private void verifyThatTheResourceIsInThePublishedResources(Publication resourceWithStatusDraft) {

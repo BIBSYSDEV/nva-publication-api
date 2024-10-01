@@ -52,7 +52,7 @@ public class GeneralSupportRequest extends TicketEntry {
         super();
     }
 
-    public static TicketEntry fromPublication(Publication publication) {
+    public static TicketEntry fromPublication(Publication publication, URI curatingCustomer) {
         var ticket = new GeneralSupportRequest();
         ticket.setResourceIdentifier(publication.getIdentifier());
         ticket.setOwner(extractOwner(publication));
@@ -62,6 +62,7 @@ public class GeneralSupportRequest extends TicketEntry {
         ticket.setStatus(TicketStatus.PENDING);
         ticket.setIdentifier(SortableIdentifier.next());
         ticket.setViewedBy(ViewedBy.addAll(ticket.getOwner()));
+        ticket.setCuratingCustomer(curatingCustomer);
         return ticket;
     }
 
@@ -168,6 +169,7 @@ public class GeneralSupportRequest extends TicketEntry {
         copy.setOwnerAffiliation(this.getOwnerAffiliation());
         copy.setFinalizedBy(this.getFinalizedBy());
         copy.setFinalizedDate(this.getFinalizedDate());
+        copy.setCuratingCustomer(this.getCuratingCustomer());
         return copy;
     }
 
