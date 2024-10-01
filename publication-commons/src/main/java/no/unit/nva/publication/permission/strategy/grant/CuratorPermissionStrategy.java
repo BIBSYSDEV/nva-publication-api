@@ -7,9 +7,6 @@ import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCE_FILES;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
-import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.GeneralSupportRequest;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import org.slf4j.Logger;
@@ -34,10 +31,9 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
             case UPDATE -> canManageStandardResources();
             case TICKET_PUBLISH -> canManagePublishingRequests() && hasUnpublishedFile();
             case UNPUBLISH -> canManageStandardResources() && isPublished();
-            case DOI_REQUEST_CREATE -> hasAccessRight(MANAGE_DOI) && hasNoPendingTicket(DoiRequest.class);
-            case PUBLISHING_REQUEST_CREATE -> hasAccessRight(MANAGE_PUBLISHING_REQUESTS) && hasNoPendingTicket(
-                PublishingRequestCase.class);
-            case SUPPORT_REQUEST_CREATE -> hasAccessRight(SUPPORT) && hasNoPendingTicket(GeneralSupportRequest.class);
+            case DOI_REQUEST_CREATE -> hasAccessRight(MANAGE_DOI) && userRelatesToPublication();
+            case PUBLISHING_REQUEST_CREATE -> hasAccessRight(MANAGE_PUBLISHING_REQUESTS) && userRelatesToPublication();
+            case SUPPORT_REQUEST_CREATE -> hasAccessRight(SUPPORT) && userRelatesToPublication();
             case DOI_REQUEST_APPROVE -> hasAccessRight(MANAGE_DOI);
             case PUBLISHING_REQUEST_APPROVE -> hasAccessRight(MANAGE_PUBLISHING_REQUESTS);
             case SUPPORT_REQUEST_APPROVE -> hasAccessRight(SUPPORT);

@@ -66,7 +66,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         this.resourceService = getResourceServiceBuilder().build();
         this.ticketService = getTicketService();
         var messageService = getMessageService();
-        this.handler = new NewCreateMessageHandler(messageService, ticketService, uriRetriever);
+        this.handler = new NewCreateMessageHandler(messageService, ticketService, resourceService, uriRetriever);
         this.output = new ByteArrayOutputStream();
         this.context = new FakeContext();
     }
@@ -110,8 +110,8 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var sender = UserInstance.create(randomString(), randomUri());
         var expectedText = randomString();
-        var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText,
-                                                             MANAGE_DOI);
+        var request = createNewMessageRequest(publication, ticket, sender, expectedText,
+                                              randomUri(), MANAGE_DOI);
 
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -301,6 +301,24 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
                    .withUserName(user.getUsername())
                    .withCurrentCustomer(user.getCustomerId())
                    .withTopLevelCristinOrgId(publication.getResourceOwner().getOwnerAffiliation())
+                   .withPersonCristinId(randomUri())
+                   .withAccessRights(user.getCustomerId(), accessRights)
+                   .build();
+    }
+
+    private InputStream createNewMessageRequest(Publication publication,
+                                                TicketEntry ticket,
+                                                UserInstance user,
+                                                String message,
+                                                URI institutionCristinId,
+                                                AccessRight... accessRights)
+        throws JsonProcessingException {
+        return new HandlerRequestBuilder<CreateMessageRequest>(JsonUtils.dtoObjectMapper)
+                   .withPathParameters(pathParameters(publication, ticket))
+                   .withBody(messageBody(message))
+                   .withUserName(user.getUsername())
+                   .withCurrentCustomer(user.getCustomerId())
+                   .withTopLevelCristinOrgId(institutionCristinId)
                    .withPersonCristinId(randomUri())
                    .withAccessRights(user.getCustomerId(), accessRights)
                    .build();
