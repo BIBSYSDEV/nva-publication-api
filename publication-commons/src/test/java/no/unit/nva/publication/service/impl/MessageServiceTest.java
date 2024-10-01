@@ -18,7 +18,6 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.Period;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 import no.unit.nva.model.PublicationStatus;
@@ -43,7 +42,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 class MessageServiceTest extends ResourcesLocalTest {
     
@@ -113,7 +111,7 @@ class MessageServiceTest extends ResourcesLocalTest {
         var sender = UserInstance.create(randomString(), owner.getCustomerId());
         var persistedMessage = messageService.createMessage(ticket, sender, randomString());
         messageService.deleteMessage(sender, persistedMessage);
-        var deletedMessage = messageService.getMessage(owner, persistedMessage.getIdentifier());
+        var deletedMessage = messageService.getMessage(sender, persistedMessage.getIdentifier());
 
         assertThat(deletedMessage.getStatus(), is(equalTo(MessageStatus.DELETED)));
     }
