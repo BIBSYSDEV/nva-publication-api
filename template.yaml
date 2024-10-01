@@ -420,7 +420,7 @@ Resources:
                 - lambda.amazonaws.com
             Action: sts:AssumeRole
 
-  DefaultLambdaPermissions:<
+  DefaultLambdaPermissions:
     Type: AWS::IAM::Policy
     Properties:
       PolicyName: !Sub DefaultLambdaPermissions-${AWS::StackName}
