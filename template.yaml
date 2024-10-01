@@ -238,8 +238,6 @@ Resources:
       Tags:
         - Key: IncludedInBackup
           Value: 'true'
-        - Key: IncludedInBackup123
-          Value: 'true'
 
   # NB! for compatibility reasons NvaImportCandidatesTable should be a copy of NvaResourcesTable
   NvaImportCandidatesTable:
@@ -314,8 +312,6 @@ Resources:
         PointInTimeRecoveryEnabled: true
       Tags:
         - Key: IncludedInBackup
-          Value: 'true'
-        - Key: IncludedInBackup123
           Value: 'true'
 
   #===============================DLOQs===================================================================
