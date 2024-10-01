@@ -1,6 +1,8 @@
 package no.unit.nva.publication.ticket.read;
 
 import static java.net.HttpURLConnection.HTTP_OK;
+import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithId;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
@@ -22,13 +24,19 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Identity;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
@@ -47,6 +55,7 @@ import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -228,6 +237,27 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
         assertThat(body.getTickets(), hasSize(3));
     }
 
+    @Test
+    void shouldListTicketsForContributorAtAnotherInstitutionThanPublicationOwner()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+        var contributorId = randomUri();
+        var contributor = randomContributorWithId(contributorId);
+        publication.getEntityDescription().setContributors(List.of(contributor));
+        resourceService.updatePublication(publication);
+        TicketTestUtils.createPersistedTicket(publication, DoiRequest.class, ticketService);
+        TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
+        TicketTestUtils.createPersistedTicket(publication, GeneralSupportRequest.class, ticketService);
+
+        var request = userRequestsTickets(publication, contributorId);
+        handler.handleRequest(request, output, CONTEXT);
+
+        var response = GatewayResponse.fromOutputStream(output, TicketCollection.class);
+        var body = response.getBodyObject(TicketCollection.class);
+
+        assertThat(body.getTickets(), hasSize(3));
+    }
+
     private TicketEntry createPersistedTicketWithMessage(Class<? extends TicketEntry> ticketType,
                                                          Publication publication) throws ApiGatewayException {
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
@@ -316,6 +346,17 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .withUserName(publication.getResourceOwner().getOwner().getValue())
                    .withAccessRights(publication.getPublisher().getId(), accessRight)
                    .withPersonCristinId(randomUri())
+                   .build();
+    }
+
+    private InputStream userRequestsTickets(Publication publication, URI userId)
+        throws JsonProcessingException {
+        return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
+                   .withPathParameters(constructPathParameters(publication))
+                   .withCurrentCustomer(randomUri())
+                   .withUserName(randomString())
+                   .withAccessRights(userId, MANAGE_RESOURCES_STANDARD)
+                   .withPersonCristinId(userId)
                    .build();
     }
 

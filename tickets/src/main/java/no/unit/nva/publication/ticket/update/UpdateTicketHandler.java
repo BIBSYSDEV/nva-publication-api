@@ -24,6 +24,8 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketHandler;
@@ -90,7 +92,8 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     protected Void processInput(UpdateTicketRequest input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
         var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
-        var ticket = fetchTicketForElevatedUser(requestUtils);
+        var publication = resourceService.getPublicationByIdentifier(requestUtils.publicationIdentifier());
+        var ticket = fetchTicketForElevatedUser(requestUtils, publication);
         if (hasEffectiveChanges(ticket, input)) {
             updateTicket(input, requestUtils, ticket);
         }
@@ -225,11 +228,10 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
                    .toList();
     }
 
-    private TicketEntry fetchTicketForElevatedUser(RequestUtils requestUtils)
+    private TicketEntry fetchTicketForElevatedUser(RequestUtils requestUtils, Publication publication)
         throws ForbiddenException, NotFoundException {
-        var userInstance = requestUtils.toUserInstance();
         var ticketIdentifier = requestUtils.ticketIdentifier();
-        return attempt(() -> ticketService.fetchTicketForElevatedUser(userInstance, ticketIdentifier))
+        return attempt(() -> ticketService.fetchTicket(UserInstance.fromPublication(publication), ticketIdentifier))
                    .orElseThrow(fail -> getForbiddenException(requestUtils));
     }
 
@@ -248,7 +250,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
             markTicketForAssignee(ticketRequest, ticket);
         } else if (userIsTicketOwner(ticket, requestUtils.username())) {
             markTicketForOwner(ticketRequest, ticket);
-        } else if (requestUtils.hasAccessRight(MANAGE_DOI)) {
+        } else if (requestUtils.isAuthorizedToManage(ticket)) {
             markTicketForCurator(ticketRequest, ticket, requestUtils.username());
         }
     }

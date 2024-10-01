@@ -78,11 +78,10 @@ public class TicketResolver {
 
     private static boolean userHasPermissionToCreateTicket(PublicationPermissionStrategy permissionStrategy,
                                                            TicketDto ticketDto) {
-        var allowedActions = permissionStrategy.getAllAllowedActions();
         return switch (ticketDto) {
-            case DoiRequestDto ignored -> allowedActions.contains(DOI_REQUEST_CREATE);
-            case PublishingRequestDto ignored -> allowedActions.contains(PUBLISHING_REQUEST_CREATE);
-            case GeneralSupportRequestDto ignored -> allowedActions.contains(SUPPORT_REQUEST_CREATE);
+            case DoiRequestDto ignored -> permissionStrategy.allowsAction(DOI_REQUEST_CREATE);
+            case PublishingRequestDto ignored -> permissionStrategy.allowsAction(PUBLISHING_REQUEST_CREATE);
+            case GeneralSupportRequestDto ignored -> permissionStrategy.allowsAction(SUPPORT_REQUEST_CREATE);
             case null, default -> false;
         };
     }

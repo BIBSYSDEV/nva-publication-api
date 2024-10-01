@@ -1,5 +1,6 @@
 package no.unit.nva.publication.ticket.create;
 
+import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
@@ -7,6 +8,7 @@ import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithId;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
@@ -28,6 +30,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -38,17 +41,18 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
+import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -751,6 +755,41 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
 
+    @Test
+    void contributorAtAnotherInstitutionThanPublicationOwnerShouldBeAbleToCreateTicketForPublication()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
+        var contributorId = randomUri();
+        publication.getEntityDescription().setContributors(List.of(randomContributorWithId(contributorId)));
+        resourceService.updatePublication(publication);
+        var requestBody = constructDto(DoiRequest.class);
+
+        var request = createHttpTicketCreationRequest(requestBody, publication.getIdentifier(),
+                                                      randomUri(), contributorId, randomString());
+        handler.handleRequest(request, output, CONTEXT);
+
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+    }
+
+    @Test
+    void curatorAtAnotherInstitutionThanPublicationOwnerShouldBeAbleToCreateTicketForPublication()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
+        var curatingInstitution = randomUri();
+        publication.setCuratingInstitutions(Set.of(curatingInstitution));
+        resourceService.updatePublication(publication);
+        var requestBody = constructDto(PublishingRequestCase.class);
+
+        var request = createHttpTicketCreationRequest(requestBody, publication.getIdentifier(),
+                                                      curatingInstitution, randomUri(), randomString(),
+                                                      MANAGE_PUBLISHING_REQUESTS);
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+    }
+
     private PublishingRequestCase fetchTicket(Publication publishedPublication,
                                               Class<PublishingRequestCase> ticketType) {
         return ticketService.fetchTicketByResourceIdentifier(publishedPublication.getPublisher().getId(),
@@ -762,10 +801,6 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var ticketIdentifier = new SortableIdentifier(UriWrapper.fromUri(response.getHeaders().get(LOCATION_HEADER))
                                                           .getLastPathElement());
         return ticketService.fetchTicketByIdentifier(ticketIdentifier);
-    }
-
-    private static Username getResourceOwner(Publication publication) {
-        return publication.getResourceOwner().getOwner();
     }
 
     private static List<AssociatedArtifact> getAssociatedFiles(Publication publishedPublication) {

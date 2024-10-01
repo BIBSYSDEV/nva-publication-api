@@ -10,12 +10,15 @@ import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithId;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
+import static nva.commons.apigateway.AccessRight.SUPPORT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -27,13 +30,16 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -42,9 +48,11 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
+import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.FileForApproval;
+import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
@@ -499,25 +507,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldNotProvideAnyInformationAboutTheExistenceOfATicketWhenAnAlienUserTriesToModifyTicket(
-        Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        var ticket = setupPersistedTicketWithAssignee(ticketType, publication);
-        ticket.markReadForAssignee().persistUpdate(ticketService);
-        assertThat(ticket.getViewedBy(), hasItem(ticket.getOwner()));
-        assertThat(ticket.getViewedBy(), hasItem(new User(ticket.getAssignee().toString())));
-
-        var httpRequest = alienCuratorMarksTicket(publication, ticket);
-        handler.handleRequest(httpRequest, output, CONTEXT);
-
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
-        assertThatTicketViewStatusIsUnchanged(ticket);
-    }
-
-    @ParameterizedTest
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldReturnForbiddenWhenTicketIdIsWrongWhenUserIsCurator(Class<? extends TicketEntry> ticketType,
+    void shouldReturnNotFoundWhenTicketIdIsWrongWhenUserIsCurator(Class<? extends TicketEntry> ticketType,
                                                                    PublicationStatus status)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
@@ -527,12 +517,12 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                                                                                          wrongPublicationIdentifier);
         handler.handleRequest(httpRequest, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
     }
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldReturnForbiddenWhenTicketIdIsWrongWhenUserIsOwner(Class<? extends TicketEntry> ticketType,
+    void shouldReturnNotFoundWhenTicketIdIsWrongWhenUserIsOwner(Class<? extends TicketEntry> ticketType,
                                                                  PublicationStatus status)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
@@ -542,7 +532,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                                                                                        wrongPublicationIdentifier);
         handler.handleRequest(httpRequest, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
     }
 
     @ParameterizedTest
@@ -622,6 +612,42 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         assertThat(completedPublishingRequest.getFilesForApproval(), is(emptyIterable()));
     }
 
+    @Test
+    void contributorAtAnotherInstitutionThanPublicationOwnerShouldBeAbleToUpdateTicketForPublication()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
+            PublicationStatus.PUBLISHED, resourceService);
+        var contributorId = PublicationGenerator.randomUri();
+        publication.getEntityDescription().setContributors(List.of(randomContributorWithId(contributorId)));
+        resourceService.updatePublication(publication);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, GeneralSupportRequest.class, ticketService);
+
+        var completedTicket = ticket.complete(publication, USER_NAME);
+        var httpRequest = userUpdatesTicket(completedTicket, contributorId, randomUri());
+        handler.handleRequest(httpRequest, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+
+        assertEquals(response.getStatusCode(),HTTP_ACCEPTED);
+    }
+
+    @Test
+    void curatorAtAnotherInstitutionThanPublicationOwnerShouldBeAbleToUpdateTicketForPublication()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
+            PublicationStatus.PUBLISHED, resourceService);
+        var curatingInstitution = randomUri();
+        publication.setCuratingInstitutions(Set.of(curatingInstitution));
+        resourceService.updatePublication(publication);
+        var ticket = TicketTestUtils.createPersistedTicket(publication, GeneralSupportRequest.class, ticketService);
+
+        var completedTicket = ticket.complete(publication, USER_NAME);
+        var httpRequest = userUpdatesTicket(completedTicket, randomUri(), curatingInstitution);
+        handler.handleRequest(httpRequest, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+
+        assertEquals(response.getStatusCode(),HTTP_ACCEPTED);
+    }
+
     private static Object[] getUnpublishedFiles(Publication publication) {
         return publication.getAssociatedArtifacts().stream()
                    .filter(UnpublishedFile.class::isInstance)
@@ -656,7 +682,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         throws JsonProcessingException {
         return new HandlerRequestBuilder<UpdateTicketRequest>(JsonUtils.dtoObjectMapper).withCurrentCustomer(customerId)
                    .withUserName(curator.toString())
-                   .withAccessRights(customerId, AccessRight.MANAGE_DOI)
+                   .withAccessRights(customerId, MANAGE_RESOURCES_STANDARD, MANAGE_PUBLISHING_REQUESTS, SUPPORT, MANAGE_DOI)
                    .withBody(new UpdateTicketRequest(ticket.getStatus(), null, viewStatus))
                    .withPathParameters(createPathParameters(ticket, publication.getIdentifier()))
                    .withPersonCristinId(randomUri())
@@ -671,7 +697,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                                      MANAGE_RESOURCES_STANDARD,
                                      AccessRight.MANAGE_DOI,
                                      MANAGE_PUBLISHING_REQUESTS,
-                                     AccessRight.SUPPORT)
+                                     SUPPORT)
                    .withBody(new UpdateTicketRequest(ticket.getStatus(), ticket.getAssignee(), viewStatus))
                    .withPathParameters(createPathParameters(ticket, publication.getIdentifier()))
                    .withTopLevelCristinOrgId(publication.getResourceOwner().getOwnerAffiliation())
@@ -732,7 +758,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     private InputStream authorizedUserCompletesTicket(TicketEntry ticket) throws JsonProcessingException {
         return createCompleteTicketHttpRequest(ticket, ticket.getCustomerId(), MANAGE_RESOURCES_STANDARD,
                                                AccessRight.MANAGE_DOI,
-                                               MANAGE_PUBLISHING_REQUESTS, AccessRight.SUPPORT);
+                                               MANAGE_PUBLISHING_REQUESTS, SUPPORT);
     }
 
     private InputStream createCompleteTicketHttpRequest(TicketEntry ticket, URI customer, AccessRight... accessRights)
@@ -809,6 +835,16 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                    .withUserName(ticket.getOwner().toString())
                    .withPathParameters(createPathParameters(ticket, wrongPublicationIdentifier))
                    .withPersonCristinId(randomUri())
+                   .build();
+    }
+
+    private InputStream userUpdatesTicket(TicketEntry ticket, URI userId, URI customer) throws JsonProcessingException {
+        return new HandlerRequestBuilder<UpdateTicketRequest>(JsonUtils.dtoObjectMapper).withBody(
+                new UpdateTicketRequest(null, null, ViewStatus.READ))
+                   .withCurrentCustomer(randomUri())
+                   .withUserName(randomString())
+                   .withPathParameters(createPathParameters(ticket, ticket.getResourceIdentifier()))
+                   .withPersonCristinId(userId)
                    .build();
     }
 }
