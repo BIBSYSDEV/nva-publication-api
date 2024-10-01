@@ -1,9 +1,11 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
+
 Description: >
   AWS
 
   SAM Template for NVA Publication Service
+
 
 
 
@@ -233,6 +235,9 @@ Resources:
         StreamViewType: NEW_AND_OLD_IMAGES
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: IncludedInBackup
+          Value: 'true'
 
   # NB! for compatibility reasons NvaImportCandidatesTable should be a copy of NvaResourcesTable
   NvaImportCandidatesTable:
@@ -305,6 +310,9 @@ Resources:
         StreamViewType: NEW_AND_OLD_IMAGES
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: IncludedInBackup
+          Value: 'true'
 
   #===============================DLOQs===================================================================
 
