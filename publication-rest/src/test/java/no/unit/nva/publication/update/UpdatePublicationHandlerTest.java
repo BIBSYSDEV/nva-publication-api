@@ -455,7 +455,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         persistCompletedPublishingRequest(publishedPublication);
         var pendingPublishingRequest = createPendingPublishingRequest(publishedPublication);
         var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
-        var inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
+        var inputStream = ownerUpdatesOwnPublication(publishedPublication.getIdentifier(), publicationUpdate);
 
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
@@ -2102,13 +2102,15 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private TicketEntry createPendingPublishingRequest(Publication publishedPublication) throws ApiGatewayException {
-        return PublishingRequestCase.createNewTicket(publishedPublication, PublishingRequestCase.class,
-                                                     SortableIdentifier::next).persistNewTicket(ticketService);
+        return PublishingRequestCase.createNewTicket(publishedPublication, PublishingRequestCase.class, SortableIdentifier::next)
+                   .withOwnerAffiliation(publishedPublication.getResourceOwner().getOwnerAffiliation())
+                   .persistNewTicket(ticketService);
     }
 
     private TicketEntry persistCompletedPublishingRequest(Publication publishedPublication) throws ApiGatewayException {
-        var ticket = PublishingRequestCase.createNewTicket(publishedPublication, PublishingRequestCase.class,
-                                                           SortableIdentifier::next).persistNewTicket(ticketService);
+        var ticket = PublishingRequestCase.createNewTicket(publishedPublication, PublishingRequestCase.class, SortableIdentifier::next)
+                         .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
+                         .persistNewTicket(ticketService);
         return ticketService.updateTicketStatus(ticket, TicketStatus.COMPLETED, new Username(randomString()));
     }
 

@@ -418,7 +418,7 @@ public class UpdatePublicationHandler
                                                  Publication publicationUpdate,
                                                  Customer customer,
                                                  UserInstance userInstance) {
-        if (isAlreadyPublished(existingPublication) && thereIsNoRelatedPendingPublishingRequest(publicationUpdate)) {
+        if (isAlreadyPublished(existingPublication) && thereIsNoRelatedPendingPublishingRequest(publicationUpdate, userInstance)) {
             createPublishingRequestOnFileUpdate(publicationUpdate, customer, userInstance);
         }
         if (isAlreadyPublished(existingPublication) && thereAreNoFiles(publicationUpdate)) {
@@ -509,10 +509,6 @@ public class UpdatePublicationHandler
         return unpublishedFiles.stream().anyMatch(this::isPublishable);
     }
 
-    private boolean hasMatchingIdentifier(Publication publication, TicketEntry ticketEntry) {
-        return ticketEntry.getResourceIdentifier().equals(publication.getIdentifier());
-    }
-
     private boolean identifiersDoNotMatch(SortableIdentifier identifierInPath,
                                           UpdatePublicationRequest input) {
         return !identifierInPath.equals(input.getIdentifier());
@@ -528,11 +524,11 @@ public class UpdatePublicationHandler
         return nonNull(file.getLicense()) && !file.isAdministrativeAgreement();
     }
 
-    private boolean thereIsNoRelatedPendingPublishingRequest(Publication publication) {
-        return ticketService.fetchTicketsForUser(UserInstance.fromPublication(publication))
-                   .filter(PublishingRequestCase.class::isInstance)
-                   .filter(ticketEntry -> hasMatchingIdentifier(publication, ticketEntry))
-                   .noneMatch(UpdatePublicationHandler::isPending);
+    private boolean thereIsNoRelatedPendingPublishingRequest(Publication publication, UserInstance userInstance) {
+        return resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication))
+            .filter(PublishingRequestCase.class::isInstance)
+            .filter(ticketEntry -> ticketEntry.hasSameOwnerAffiliationAs(userInstance))
+            .noneMatch(UpdatePublicationHandler::isPending);
     }
 
     private List<File> getUnpublishedFiles(Publication publication) {

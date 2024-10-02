@@ -12,6 +12,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -316,7 +317,9 @@ public abstract class TicketEntry implements Entity {
     }
 
     public boolean hasSameOwnerAffiliationAs(UserInstance userInstance) {
-        return this.getOwnerAffiliation().equals(userInstance.getTopLevelOrgCristinId());
+        return Optional.ofNullable(this.getOwnerAffiliation())
+                   .map(value -> value.equals(userInstance.getTopLevelOrgCristinId()))
+                   .orElse(false);
     }
 
     private static TicketEntry requestDoiRequestTicket(Publication publication) throws BadRequestException {

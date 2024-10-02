@@ -85,7 +85,6 @@ import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -185,7 +184,8 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         throws IOException, ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var requestBody = constructDto(ticketType);
-        var user = UserInstance.create(randomString(), publication.getPublisher().getId());
+        var user = UserInstance.create(randomString(), publication.getPublisher().getId(),
+                                       randomUri(), List.of(), publication.getResourceOwner().getOwnerAffiliation());
         var input = createHttpTicketCreationRequest(requestBody, publication, user);
         handler.handleRequest(input, output, CONTEXT);
 
@@ -202,7 +202,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         throws IOException, ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var requestBody = constructDto(ticketType);
-        var user = UserInstance.create(randomString(), randomUri());
+        var user = UserInstance.create(randomString(), randomUri(), randomUri(), List.of(), randomUri());
         var input = createHttpTicketCreationRequest(requestBody, publication, user);
         handler.handleRequest(input, output, CONTEXT);
 
@@ -951,7 +951,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                    .withUserName(userCredentials.getUsername())
                    .withCurrentCustomer(userCredentials.getCustomerId())
                    .withPersonCristinId(randomUri())
-                   .withTopLevelCristinOrgId(randomUri())
+                   .withTopLevelCristinOrgId(userCredentials.getTopLevelOrgCristinId())
                    .build();
     }
 
