@@ -317,11 +317,11 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     }
 
     @Test
-    void shouldReturnNotFoundWhenSupplyingMalformedTicketIdentifier() throws IOException {
+    void shouldReturnForbiddenWhenSupplyingMalformedTicketIdentifier() throws IOException {
         var request = authorizedUserInputMalformedIdentifier(SortableIdentifier.next().toString(), randomString());
         handler.handleRequest(request, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
 
     @Test
@@ -508,7 +508,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldReturnNotFoundWhenTicketIdIsWrongWhenUserIsCurator(Class<? extends TicketEntry> ticketType,
+    void shouldReturnForbiddenWhenTicketIdIsWrongWhenUserIsCurator(Class<? extends TicketEntry> ticketType,
                                                                    PublicationStatus status)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
@@ -518,12 +518,12 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                                                                                          wrongPublicationIdentifier);
         handler.handleRequest(httpRequest, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
 
     @ParameterizedTest
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldReturnNotFoundWhenTicketIdIsWrongWhenUserIsOwner(Class<? extends TicketEntry> ticketType,
+    void shouldReturnForbiddenWhenTicketIdIsWrongWhenUserIsOwner(Class<? extends TicketEntry> ticketType,
                                                                  PublicationStatus status)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
@@ -533,7 +533,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                                                                                        wrongPublicationIdentifier);
         handler.handleRequest(httpRequest, output, CONTEXT);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
 
     @ParameterizedTest

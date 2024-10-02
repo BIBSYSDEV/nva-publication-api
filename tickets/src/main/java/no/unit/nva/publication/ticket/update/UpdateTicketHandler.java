@@ -6,7 +6,6 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.business.TicketStatus.CLOSED;
 import static no.unit.nva.publication.utils.RequestUtils.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.utils.RequestUtils.TICKET_IDENTIFIER;
-import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
@@ -24,8 +23,6 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
-import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permission.strategy.PublicationPermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketHandler;
@@ -92,8 +89,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     protected Void processInput(UpdateTicketRequest input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
         var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
-        var publication = resourceService.getPublicationByIdentifier(requestUtils.publicationIdentifier());
-        var ticket = fetchTicketForElevatedUser(requestUtils, publication);
+        var ticket = fetchTicket(requestUtils);
         if (hasEffectiveChanges(ticket, input)) {
             updateTicket(input, requestUtils, ticket);
         }
@@ -228,10 +224,10 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
                    .toList();
     }
 
-    private TicketEntry fetchTicketForElevatedUser(RequestUtils requestUtils, Publication publication)
-        throws ForbiddenException, NotFoundException {
-        var ticketIdentifier = requestUtils.ticketIdentifier();
-        return attempt(() -> ticketService.fetchTicket(UserInstance.fromPublication(publication), ticketIdentifier))
+    private TicketEntry fetchTicket(RequestUtils requestUtils)
+        throws ForbiddenException {
+        return attempt(requestUtils::ticketIdentifier)
+                   .map(ticketService::fetchTicketByIdentifier)
                    .orElseThrow(fail -> getForbiddenException(requestUtils));
     }
 
