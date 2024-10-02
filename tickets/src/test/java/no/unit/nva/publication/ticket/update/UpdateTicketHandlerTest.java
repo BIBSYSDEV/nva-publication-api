@@ -271,10 +271,10 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     }
 
     @Test
-    void shouldReturnForbiddenWhenRequestingUserIsCuratorAtOtherCustomerThanCurrentPublisher()
+    void shouldReturnForbiddenWhenRequestingUserBelongsToOtherTopLevelOrgThenTicketOwnerAffiliation()
         throws ApiGatewayException, IOException {
         var publication = createPersistAndPublishPublication();
-        var ticket = createPersistedDoiTicket(publication);
+        var ticket = createPersistedDoiRequestWithOwnerAffiliation(publication, randomUri());
         var completedTicket = ticket.complete(publication, USER_NAME);
         var customer = randomUri();
         var request = createCompleteTicketHttpRequest(completedTicket, customer, AccessRight.MANAGE_DOI);
@@ -748,6 +748,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                    .withCurrentCustomer(user.getCustomerId())
                    .withAccessRights(user.getCustomerId(), AccessRight.MANAGE_DOI)
                    .withPersonCristinId(randomUri())
+                   .withTopLevelCristinOrgId(publication.getResourceOwner().getOwnerAffiliation())
                    .build();
     }
 

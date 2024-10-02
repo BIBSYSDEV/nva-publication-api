@@ -280,6 +280,7 @@ public final class TicketTestUtils {
                                                  TicketService ticketService)
         throws ApiGatewayException {
         return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                   .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
                    .persistNewTicket(ticketService).close(new Username("Username"));
     }
 
