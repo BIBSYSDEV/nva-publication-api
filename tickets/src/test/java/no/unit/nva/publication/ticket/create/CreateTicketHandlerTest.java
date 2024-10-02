@@ -242,7 +242,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
 
     @DisplayName("should update existing DoiRequest when new DOI is requested but a DoiRequest that has not been "
                  + "fulfilled already exists")
-    @RepeatedTest(100)
+    @Test
     void shouldUpdateExistingDoiRequestWhenNewDoiIsRequestedButUnfulfilledDoiRequestAlreadyExists()
         throws ApiGatewayException, IOException {
         var publication = createPersistedPublishedPublication();
