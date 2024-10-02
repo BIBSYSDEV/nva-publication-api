@@ -5,6 +5,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -66,6 +67,17 @@ class TicketEntryTest {
         var ticket = TicketEntry.createNewTicket(publication, DoiRequest.class, SortableIdentifier::next);
 
         assertFalse(ticket.hasAssignee());
+    }
+
+    @Test
+    void shouldReturnTrueWhenUserIsFromTheSameInstitutionAsTicket() throws ConflictException {
+        var publication = TicketTestUtils.createNonPersistedPublication(PublicationStatus.DRAFT);
+        var ticket = TicketEntry.createNewTicket(publication, DoiRequest.class, SortableIdentifier::next)
+                         .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
+
+        var userInstance = UserInstance.fromPublication(publication);
+
+        assertTrue(ticket.hasSameOwnerAffiliationAs(userInstance));
     }
 
     private static UserInstance getExpectedUserInstance(Publication publication) {

@@ -82,7 +82,7 @@ public class PublishingRequestCase extends TicketEntry {
         super();
     }
 
-    public static PublishingRequestCase createOpeningCaseObject(Publication publication) {
+    public static PublishingRequestCase fromPublication(Publication publication) {
         var userInstance = UserInstance.fromPublication(publication);
         var openingCaseObject = new PublishingRequestCase();
         openingCaseObject.setOwner(userInstance.getUser());

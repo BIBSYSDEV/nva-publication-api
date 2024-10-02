@@ -17,6 +17,8 @@ import java.util.Set;
 import java.util.UUID;
 import net.datafaker.providers.base.BaseFaker;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.Approval;
@@ -42,6 +44,8 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.funding.MonetaryAmount;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import nva.commons.core.JacocoGenerated;
 
@@ -213,6 +217,13 @@ public final class PublicationGenerator {
     public static Organization randomOrganization() {
         return new Organization.Builder()
                    .withId(randomUri())
+                   .build();
+    }
+
+    public static Contributor randomContributorWithId(URI id) {
+        return new Contributor.Builder()
+                   .withRole(new RoleType(Role.OTHER))
+                   .withIdentity(new Identity.Builder().withId(id).build())
                    .build();
     }
 

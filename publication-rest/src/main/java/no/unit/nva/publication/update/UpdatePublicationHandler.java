@@ -53,6 +53,7 @@ import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -62,7 +63,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.validation.DefaultPublicationValidator;
 import no.unit.nva.publication.validation.PublicationValidationException;
-import no.unit.nva.publication.validation.PublicationValidator;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -418,22 +418,22 @@ public class UpdatePublicationHandler
                                                  Publication publicationUpdate,
                                                  Customer customer,
                                                  UserInstance userInstance) {
-        if (isAlreadyPublished(existingPublication) && !thereIsRelatedPendingPublishingRequest(publicationUpdate)) {
+        if (isAlreadyPublished(existingPublication) && thereIsNoRelatedPendingPublishingRequest(publicationUpdate)) {
             createPublishingRequestOnFileUpdate(publicationUpdate, customer, userInstance);
         }
         if (isAlreadyPublished(existingPublication) && thereAreNoFiles(publicationUpdate)) {
             autoCompletePendingPublishingRequestsIfNeeded(publicationUpdate, userInstance);
         }
         if (isAlreadyPublished(existingPublication) && updateHasFileChanges(existingPublication, publicationUpdate)) {
-            updateFilesForApproval(publicationUpdate);
+            updateFilesForApproval(publicationUpdate, userInstance);
         }
     }
 
-    private void updateFilesForApproval(Publication publicationUpdate) {
+    private void updateFilesForApproval(Publication publicationUpdate, UserInstance userInstance) {
         var filesForApproval = getUnpublishedFiles(publicationUpdate).stream()
                                    .map(FileForApproval::fromFile)
                                    .collect(Collectors.toSet());
-        fetchPendingPublishingRequest(publicationUpdate)
+        fetchPendingPublishingRequest(publicationUpdate, userInstance)
             .forEach(publishingRequestCase -> updateFilesForApproval(publishingRequestCase, filesForApproval));
     }
 
@@ -469,16 +469,18 @@ public class UpdatePublicationHandler
     }
 
     private void autoCompletePendingPublishingRequestsIfNeeded(Publication publication, UserInstance userInstance) {
-        fetchPendingPublishingRequest(publication)
+        fetchPendingPublishingRequest(publication, userInstance)
             .map(PublishingRequestCase.class::cast)
             .forEach(ticket -> ticket.complete(publication, new Username(userInstance.getUsername()))
                                    .persistUpdate(ticketService));
     }
 
-    private Stream<PublishingRequestCase> fetchPendingPublishingRequest(Publication publication) {
-        return ticketService.fetchTicketsForUser(UserInstance.fromPublication(publication))
+    private Stream<PublishingRequestCase> fetchPendingPublishingRequest(Publication publication,
+                                                                        UserInstance userInstance) {
+        return resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication))
                    .filter(PublishingRequestCase.class::isInstance)
                    .filter(UpdatePublicationHandler::isPending)
+                   .filter(ticketEntry -> ticketEntry.hasSameOwnerAffiliationAs(userInstance))
                    .map(PublishingRequestCase.class::cast);
     }
 
@@ -526,11 +528,11 @@ public class UpdatePublicationHandler
         return nonNull(file.getLicense()) && !file.isAdministrativeAgreement();
     }
 
-    private boolean thereIsRelatedPendingPublishingRequest(Publication publication) {
+    private boolean thereIsNoRelatedPendingPublishingRequest(Publication publication) {
         return ticketService.fetchTicketsForUser(UserInstance.fromPublication(publication))
                    .filter(PublishingRequestCase.class::isInstance)
                    .filter(ticketEntry -> hasMatchingIdentifier(publication, ticketEntry))
-                   .anyMatch(UpdatePublicationHandler::isPending);
+                   .noneMatch(UpdatePublicationHandler::isPending);
     }
 
     private List<File> getUnpublishedFiles(Publication publication) {
@@ -556,6 +558,7 @@ public class UpdatePublicationHandler
                                                  Customer customer,
                                                  UserInstance userInstance) {
         attempt(() -> TicketEntry.requestNewTicket(publicationUpdate, PublishingRequestCase.class))
+            .map(ticket -> ticket.withOwnerAffiliation(userInstance.getTopLevelOrgCristinId()))
             .map(publishingRequest -> injectPublishingWorkflow((PublishingRequestCase) publishingRequest, customer))
             .map(publishingRequest ->
                      persistPublishingRequest(publicationUpdate, userInstance, customer, publishingRequest));

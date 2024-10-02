@@ -269,6 +269,6 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
     
     private PublishingRequestCase pendingPublishingRequest(Publication publication) {
-        return PublishingRequestCase.createOpeningCaseObject(publication);
+        return PublishingRequestCase.fromPublication(publication);
     }
 }

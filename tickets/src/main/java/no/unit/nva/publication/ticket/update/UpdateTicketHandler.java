@@ -90,7 +90,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
     protected Void processInput(UpdateTicketRequest input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
         var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
-        var ticket = fetchTicketForElevatedUser(requestUtils);
+        var ticket = fetchTicket(requestUtils);
         if (hasEffectiveChanges(ticket, input)) {
             updateTicket(input, requestUtils, ticket);
         }
@@ -225,11 +225,10 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
                    .toList();
     }
 
-    private TicketEntry fetchTicketForElevatedUser(RequestUtils requestUtils)
-        throws ForbiddenException, NotFoundException {
-        var userInstance = requestUtils.toUserInstance();
-        var ticketIdentifier = requestUtils.ticketIdentifier();
-        return attempt(() -> ticketService.fetchTicketForElevatedUser(userInstance, ticketIdentifier))
+    private TicketEntry fetchTicket(RequestUtils requestUtils)
+        throws ForbiddenException {
+        return attempt(requestUtils::ticketIdentifier)
+                   .map(ticketService::fetchTicketByIdentifier)
                    .orElseThrow(fail -> getForbiddenException(requestUtils));
     }
 
@@ -248,7 +247,7 @@ public class UpdateTicketHandler extends TicketHandler<UpdateTicketRequest, Void
             markTicketForAssignee(ticketRequest, ticket);
         } else if (userIsTicketOwner(ticket, requestUtils.username())) {
             markTicketForOwner(ticketRequest, ticket);
-        } else if (requestUtils.hasAccessRight(MANAGE_DOI)) {
+        } else if (requestUtils.isAuthorizedToManage(ticket)) {
             markTicketForCurator(ticketRequest, ticket, requestUtils.username());
         }
     }
