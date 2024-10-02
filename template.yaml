@@ -1354,6 +1354,7 @@ Resources:
           Type: EventBridgeRule
           Properties:
             EventBusName: !GetAtt InternalBus.Name
+            State: "DISABLED" # disabled for now to avoid extra compute during batch scans for something we don't use
             Pattern:
               detail:
                 responsePayload:
