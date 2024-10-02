@@ -172,7 +172,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     @Test
     void shouldCreatePublishingRequestForDraftPublication() throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
-        var ticket = PublishingRequestCase.createOpeningCaseObject(publication);
+        var ticket = PublishingRequestCase.fromPublication(publication);
         ticket.setWorkflow(PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
         var persistedTicket = ticket.persistNewTicket(ticketService);
 
@@ -200,7 +200,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     @Test
     void shouldAllowCreationOfPublishingRequestTicketForAlreadyPublishedPublication() throws ApiGatewayException {
         var publication = persistPublication(owner, PUBLISHED);
-        var ticket = PublishingRequestCase.createOpeningCaseObject(publication);
+        var ticket = PublishingRequestCase.fromPublication(publication);
         var actualTicket = ticket.persistNewTicket(ticketService);
         assertThat(actualTicket, is(instanceOf(PublishingRequestCase.class)));
     }
@@ -886,7 +886,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     }
 
     private PublishingRequestCase createRandomPublishingRequest(Publication publication) {
-        var publishingRequest = PublishingRequestCase.createOpeningCaseObject(publication);
+        var publishingRequest = PublishingRequestCase.fromPublication(publication);
         publishingRequest.setIdentifier(SortableIdentifier.next());
         return publishingRequest;
     }

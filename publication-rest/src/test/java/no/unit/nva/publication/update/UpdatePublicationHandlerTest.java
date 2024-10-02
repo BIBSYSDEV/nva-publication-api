@@ -455,7 +455,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         persistCompletedPublishingRequest(publishedPublication);
         var pendingPublishingRequest = createPendingPublishingRequest(publishedPublication);
         var publicationUpdate = addAnotherUnpublishedFile(publishedPublication);
-        var inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
+        var inputStream = ownerUpdatesOwnPublication(publishedPublication.getIdentifier(), publicationUpdate);
 
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
@@ -946,6 +946,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                                                   PUBLISHED,
                                                                                                   resourceService);
         var existingTicket = TicketEntry.requestNewTicket(persistedPublication, PublishingRequestCase.class)
+                                 .withOwnerAffiliation(persistedPublication.getResourceOwner().getOwnerAffiliation())
                                  .persistNewTicket(ticketService);
         var updatedPublication = persistedPublication.copy().withAssociatedArtifacts(List.of()).build();
         var input = ownerUpdatesOwnPublication(updatedPublication.getIdentifier(), updatedPublication);
@@ -970,7 +971,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var username = contributor.getIdentity().getName();
         var event = contributorUpdatesPublicationAndHasRightsToUpdate(publicationUpdate, cristinId,
                                                                       username);
-        var pendingTicket = PublishingRequestCase.createOpeningCaseObject(publication).persistNewTicket(ticketService);
+        var pendingTicket = PublishingRequestCase.fromPublication(publication)
+                                .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
+                                .persistNewTicket(ticketService);
         updatePublicationHandler.handleRequest(event, output, context);
 
         var completedTicket = ticketService.fetchTicket(pendingTicket);
@@ -1195,7 +1198,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         GeneralSupportRequest.fromPublication(publication).persistNewTicket(ticketService);
         DoiRequest.fromPublication(publication).persistNewTicket(ticketService);
         var publishingRequestTicket =
-            PublishingRequestCase.createOpeningCaseObject(publication).persistNewTicket(ticketService);
+            PublishingRequestCase.fromPublication(publication).persistNewTicket(ticketService);
         var completedPublishingRequest = publishingRequestTicket.complete(publication, new Username(userName));
         ticketService.updateTicket(completedPublishingRequest);
 
@@ -1228,7 +1231,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                                        resourceService);
         GeneralSupportRequest.fromPublication(publication).persistNewTicket(ticketService);
         DoiRequest.fromPublication(publication).persistNewTicket(ticketService);
-        PublishingRequestCase.createOpeningCaseObject(publication)
+        PublishingRequestCase.fromPublication(publication)
             .persistNewTicket(ticketService)
             .complete(publication, new Username(randomString()))
             .persistUpdate(ticketService);
@@ -1797,7 +1800,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @DisplayName("When user uploads file and customer does not allow publishing files, then PublishingRequestCase is" +
                  "persisted containing file to publish in filesForApproval")
     @Test
-    void shouldSetFilesForApprovalWhenUserUpdatedPublicationWithUnpublishedFile() throws ApiGatewayException,
+    void shouldSetFilesForApprovalWhenPublicationOwnerUpdatesPublicationWithUnpublishedFile() throws ApiGatewayException,
                                                                                        IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(
             customerId, PUBLISHED, resourceService);
@@ -1813,6 +1816,31 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var publishingRequest = getPublishingRequestCase(publication);
 
+        assertThat(publishingRequest.getFilesForApproval(), hasItem(FileForApproval.fromFile(newUnpublishedFile)));
+    }
+
+    @DisplayName("When contributor uploads file and customer does not allow publishing files, then " +
+                 "pending PublishingRequestCase is persisted containing file to publish in filesForApproval")
+    @Test
+    void shouldSetFilesForApprovalWhenContributorUpdatesPublicationWithUnpublishedFile() throws ApiGatewayException,
+                                                                                                 IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(
+            customerId, PUBLISHED, resourceService);
+        var cristinId = randomUri();
+        var contributor = createContributorForPublicationUpdate(cristinId);
+        injectContributor(publication, contributor);
+        var newUnpublishedFile = File.builder().withIdentifier(UUID.randomUUID())
+                                     .withLicense(randomUri())
+                                     .buildUnpublishedFile();
+        updatePublicationWithFile(publication, newUnpublishedFile);
+
+        stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
+        var input = contributorsUpdatesPublication(publication, cristinId, randomUri());
+        updatePublicationHandler.handleRequest(input, output, context);
+
+        var publishingRequest = getPublishingRequestCase(publication);
+
+        assertThat(publishingRequest.getStatus(), is(equalTo(PENDING)));
         assertThat(publishingRequest.getFilesForApproval(), hasItem(FileForApproval.fromFile(newUnpublishedFile)));
     }
 
@@ -2099,13 +2127,15 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private TicketEntry createPendingPublishingRequest(Publication publishedPublication) throws ApiGatewayException {
-        return PublishingRequestCase.createNewTicket(publishedPublication, PublishingRequestCase.class,
-                                                     SortableIdentifier::next).persistNewTicket(ticketService);
+        return PublishingRequestCase.createNewTicket(publishedPublication, PublishingRequestCase.class, SortableIdentifier::next)
+                   .withOwnerAffiliation(publishedPublication.getResourceOwner().getOwnerAffiliation())
+                   .persistNewTicket(ticketService);
     }
 
     private TicketEntry persistCompletedPublishingRequest(Publication publishedPublication) throws ApiGatewayException {
-        var ticket = PublishingRequestCase.createNewTicket(publishedPublication, PublishingRequestCase.class,
-                                                           SortableIdentifier::next).persistNewTicket(ticketService);
+        var ticket = PublishingRequestCase.createNewTicket(publishedPublication, PublishingRequestCase.class, SortableIdentifier::next)
+                         .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
+                         .persistNewTicket(ticketService);
         return ticketService.updateTicketStatus(ticket, TicketStatus.COMPLETED, new Username(randomString()));
     }
 
@@ -2193,7 +2223,23 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .withPersonCristinId(cristinId)
                    .withBody(publicationUpdate)
                    .withAccessRights(customerId, MANAGE_OWN_RESOURCES)
-                   .withTopLevelCristinOrgId(randomUri())
+                   .withTopLevelCristinOrgId(publicationUpdate.getResourceOwner().getOwnerAffiliation())
+                   .build();
+    }
+
+    private InputStream contributorsUpdatesPublication(Publication publicationUpdate,
+                                                       URI cristinId,
+                                                       URI topLevelCristinOrgId)
+        throws JsonProcessingException {
+        var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationUpdate.getIdentifier().toString());
+        return new HandlerRequestBuilder<Publication>(restApiMapper)
+                   .withUserName(randomString())
+                   .withPathParameters(pathParameters)
+                   .withCurrentCustomer(randomUri())
+                   .withPersonCristinId(cristinId)
+                   .withBody(publicationUpdate)
+                   .withAccessRights(customerId, MANAGE_OWN_RESOURCES)
+                   .withTopLevelCristinOrgId(topLevelCristinOrgId)
                    .build();
     }
 
@@ -2242,7 +2288,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                           .withUserName(publicationUpdate.getResourceOwner().getOwner().getValue())
                           .withCurrentCustomer(customerId)
                           .withBody(publicationUpdate)
-                          .withTopLevelCristinOrgId(randomUri())
+                          .withTopLevelCristinOrgId(publicationUpdate.getResourceOwner().getOwnerAffiliation())
                           .withPersonCristinId(randomUri())
                           .withPathParameters(pathParameters);
 

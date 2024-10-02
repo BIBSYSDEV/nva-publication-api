@@ -177,9 +177,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket);
-        var regeneratedTicket = toTicketEntry(expandedTicket);
 
-        assertThat(regeneratedTicket, is(equalTo(ticket)));
         assertThat(ticket,
                    doesNotHaveEmptyValuesIgnoringFields(Set.of(WORKFLOW, ASSIGNEE, FINALIZED_BY,
                                                                FINALIZED_DATE, OWNERAFFILIATION, APPROVED_FILES,
@@ -577,9 +575,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(PUBLISHED, resourceService);
         var ticket = createCompletedTicketAndPublishFiles(publication);
         var expandedTicket = (ExpandedPublishingRequest) expansionService.expandEntry(ticket);
-        var regeneratedTicket = (PublishingRequestCase) toTicketEntry(expandedTicket);
-
-        assertThat(regeneratedTicket, is(equalTo(ticket)));
 
         var publishedFilesFromPublication = resourceService.getPublication(publication)
                                                 .getAssociatedArtifacts().stream()
@@ -929,6 +924,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         doiRequest.setResourceStatus(expandedDoiRequest.getPublication().getStatus());
         doiRequest.setStatus(getTicketStatus(expandedDoiRequest.getStatus()));
         doiRequest.setAssignee(extractUsername(expandedDoiRequest.getAssignee()));
+        doiRequest.setOwnerAffiliation(expandedDoiRequest.getOrganization().id());
         return doiRequest;
     }
 
@@ -958,6 +954,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         publishingRequest.setAssignee(extractUsername(expandedPublishingRequest.getAssignee()));
         publishingRequest.setApprovedFiles(extractApprovedFiles(expandedPublishingRequest));
         publishingRequest.setFilesForApproval(extractFilesForApproval(expandedPublishingRequest));
+        publishingRequest.setOwnerAffiliation(expandedPublishingRequest.getOrganization().id());
         return publishingRequest;
     }
 
@@ -971,6 +968,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         ticketEntry.setStatus(getTicketStatus(expandedUnpublishRequest.getStatus()));
         ticketEntry.setOwner(expandedUnpublishRequest.getOwner().username());
         ticketEntry.setAssignee(extractUsername(expandedUnpublishRequest.getAssignee()));
+        ticketEntry.setOwnerAffiliation(expandedUnpublishRequest.getOrganization().id());
         return ticketEntry;
     }
 

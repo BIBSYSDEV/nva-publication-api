@@ -3,6 +3,7 @@ package no.unit.nva.publication.ticket;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static nva.commons.core.attempt.Try.attempt;
 import java.io.ByteArrayOutputStream;
+import java.net.URI;
 import java.util.function.Consumer;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
@@ -51,13 +52,16 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
     
     protected TicketEntry createPersistedDoiTicket(Publication publication)
         throws ApiGatewayException {
-        var doiTicket = DoiRequest.fromPublication(publication);
-        return ticketService.createTicket(doiTicket);
+        return DoiRequest.fromPublication(publication)
+                            .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
+                            .persistNewTicket(ticketService);
     }
 
-    protected TicketEntry persistTicket(Publication publication, Class<? extends TicketEntry> ticketType)
+    protected TicketEntry createPersistedDoiRequestWithOwnerAffiliation(Publication publication, URI ownerAffiliation)
         throws ApiGatewayException {
-        return TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
+        return DoiRequest.fromPublication(publication)
+                   .withOwnerAffiliation(ownerAffiliation)
+                   .persistNewTicket(ticketService);
     }
     
     protected Publication nonPersistedPublication() {

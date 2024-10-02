@@ -35,7 +35,6 @@ import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.License;
-import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
@@ -47,7 +46,6 @@ import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permission.strategy.PermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -273,13 +271,16 @@ public final class TicketTestUtils {
     public static TicketEntry createPersistedTicket(Publication publication, Class<? extends TicketEntry> ticketType,
                                                     TicketService ticketService)
         throws ApiGatewayException {
-        return TicketEntry.requestNewTicket(publication, ticketType).persistNewTicket(ticketService);
+        return TicketEntry.requestNewTicket(publication, ticketType)
+                   .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
+                   .persistNewTicket(ticketService);
     }
 
     public static TicketEntry createClosedTicket(Publication publication, Class<? extends TicketEntry> ticketType,
                                                  TicketService ticketService)
         throws ApiGatewayException {
         return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+                   .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
                    .persistNewTicket(ticketService).close(new Username("Username"));
     }
 

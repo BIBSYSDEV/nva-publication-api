@@ -1130,7 +1130,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                 .persistNewTicket(ticketService)
                 .close(new Username(randomString()));
         ticketService.updateTicket(closedGeneralSupportTicket);
-        var publishingRequestTicket = PublishingRequestCase.createOpeningCaseObject(publication);
+        var publishingRequestTicket = PublishingRequestCase.fromPublication(publication);
         publishingRequestTicket.setStatus(TicketStatus.COMPLETED);
         publishingRequestTicket.persistNewTicket(ticketService);
         resourceService.unpublishPublication(publication);

@@ -305,7 +305,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     private ExpandedPublishingRequest randomPublishingRequest() throws ApiGatewayException, JsonProcessingException {
         var publication = createPublicationWithoutDoi();
         var publishingRequest = (PublishingRequestCase) PublishingRequestCase
-                                                            .createOpeningCaseObject(publication);
+                                                            .fromPublication(publication);
         publishingRequest.setWorkflow(PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
         publishingRequest.persistNewTicket(ticketService);
         return (ExpandedPublishingRequest) resourceExpansionService.expandEntry(publishingRequest);
@@ -315,7 +315,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, JsonProcessingException {
         var publication = createPublicationWithoutDoi();
         var publishingRequest = (PublishingRequestCase) PublishingRequestCase
-                                                            .createOpeningCaseObject(publication);
+                                                            .fromPublication(publication);
         publishingRequest.setWorkflow(null);
         publishingRequest.persistNewTicket(ticketService);
         return (ExpandedPublishingRequest) resourceExpansionService.expandEntry(publishingRequest);

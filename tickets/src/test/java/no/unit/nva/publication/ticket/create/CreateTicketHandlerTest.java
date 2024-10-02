@@ -7,6 +7,7 @@ import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithId;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
@@ -38,6 +39,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -182,7 +184,8 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         throws IOException, ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var requestBody = constructDto(ticketType);
-        var user = UserInstance.create(randomString(), publication.getPublisher().getId());
+        var user = UserInstance.create(randomString(), publication.getPublisher().getId(),
+                                       randomUri(), List.of(), publication.getResourceOwner().getOwnerAffiliation());
         var input = createHttpTicketCreationRequest(requestBody, publication, user);
         handler.handleRequest(input, output, CONTEXT);
 
@@ -199,7 +202,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         throws IOException, ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
         var requestBody = constructDto(ticketType);
-        var user = UserInstance.create(randomString(), randomUri());
+        var user = UserInstance.create(randomString(), randomUri(), randomUri(), List.of(), randomUri());
         var input = createHttpTicketCreationRequest(requestBody, publication, user);
         handler.handleRequest(input, output, CONTEXT);
 
@@ -751,6 +754,42 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
 
+    @Test
+    void contributorAtAnotherInstitutionThanPublicationOwnerShouldBeAbleToCreateTicketForPublication()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
+        var contributorId = randomUri();
+        publication.getEntityDescription().setContributors(List.of(randomContributorWithId(contributorId)));
+        resourceService.updatePublication(publication);
+        var requestBody = constructDto(DoiRequest.class);
+
+        var request = createHttpTicketCreationRequest(requestBody, publication.getIdentifier(),
+                                                      randomUri(), contributorId, randomString());
+        handler.handleRequest(request, output, CONTEXT);
+
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+    }
+
+    @Test
+    void curatorAtAnotherInstitutionThanPublicationOwnerShouldBeAbleToCreateTicketForPublication()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
+        var curatingInstitution = randomUri();
+        publication.setCuratingInstitutions(Set.of(curatingInstitution));
+        resourceService.updatePublication(publication);
+        var requestBody = constructDto(PublishingRequestCase.class);
+
+        var request = createHttpTicketCreationRequest(requestBody, publication.getIdentifier(),
+                                                      curatingInstitution, randomUri(), randomString(),
+                                                      MANAGE_PUBLISHING_REQUESTS);
+        handler.handleRequest(request, output, CONTEXT);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+    }
+
+
     private PublishingRequestCase fetchTicket(Publication publishedPublication,
                                               Class<PublishingRequestCase> ticketType) {
         return ticketService.fetchTicketByResourceIdentifier(publishedPublication.getPublisher().getId(),
@@ -912,7 +951,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
                    .withUserName(userCredentials.getUsername())
                    .withCurrentCustomer(userCredentials.getCustomerId())
                    .withPersonCristinId(randomUri())
-                   .withTopLevelCristinOrgId(randomUri())
+                   .withTopLevelCristinOrgId(userCredentials.getTopLevelOrgCristinId())
                    .build();
     }
 
