@@ -34,6 +34,7 @@ import no.unit.nva.publication.utils.RequestUtils;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +42,7 @@ import org.slf4j.LoggerFactory;
 public class TicketResolver {
 
     public static final String CONTENT_TYPE = "application/json";
+    public static final String CREATING_TICKET_ERROR_MESSAGE = "Creating ticket {} for publication {} is forbidden for user {}";
     private final Logger logger = LoggerFactory.getLogger(TicketResolver.class);
     private final ResourceService resourceService;
     private final TicketService ticketService;
@@ -64,7 +66,7 @@ public class TicketResolver {
         var publication = fetchPublication(requestUtils);
         var permissionStrategy = PublicationPermissionStrategy.create(publication, requestUtils.toUserInstance(), resourceService);
 
-        validateUserPermissions(permissionStrategy, ticketDto);
+        validateUserPermissions(permissionStrategy, ticketDto, requestUtils);
 
         var ticket = TicketEntry.requestNewTicket(publication, ticketDto.ticketType())
                          .withOwnerAffiliation(requestUtils.topLevelCristinOrgId());
@@ -95,9 +97,14 @@ public class TicketResolver {
         return publication.getAssociatedArtifacts().stream().noneMatch(File.class::isInstance);
     }
 
-    private void validateUserPermissions(PublicationPermissionStrategy permissionStrategy, TicketDto ticketDto)
-        throws ForbiddenException {
+    private void validateUserPermissions(PublicationPermissionStrategy permissionStrategy, TicketDto ticketDto,
+                                         RequestUtils requestUtils)
+        throws ForbiddenException, NotFoundException {
         if (!userHasPermissionToCreateTicket(permissionStrategy, ticketDto)) {
+            logger.error(CREATING_TICKET_ERROR_MESSAGE,
+                         ticketDto.ticketType().getSimpleName(),
+                         requestUtils.publicationIdentifier(),
+                         requestUtils.username());
             throw new ForbiddenException();
         }
     }

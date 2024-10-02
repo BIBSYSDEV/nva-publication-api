@@ -6,7 +6,6 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.business.TicketStatus.CLOSED;
 import static no.unit.nva.publication.utils.RequestUtils.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.utils.RequestUtils.TICKET_IDENTIFIER;
-import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
