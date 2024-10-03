@@ -49,18 +49,15 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpResponse;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.Spliterators;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.utils.PublicationJsonPointers;
@@ -214,7 +211,7 @@ class ExpandedResourceTest {
         var promotedContributorsNode = (ArrayNode) framedResultNode.at("/entityDescription")
                                              .at("/contributorsPromoted");
 
-        List<Contributor> actualPromotedContributors = stream(promotedContributorsNode.spliterator(), false)
+        var actualPromotedContributors = stream(promotedContributorsNode.spliterator(), false)
                                                    .map(node -> objectMapper.convertValue(node, Contributor.class))
                                                    .collect(Collectors.toList());
 

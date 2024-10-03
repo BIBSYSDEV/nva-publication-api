@@ -193,11 +193,22 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         injectHasFileEnum(publication, objectNode);
         expandLicenses(objectNode);
         injectJoinField(publication, objectNode);
-        injectPromotedContributorsAndContributorCount(objectNode);
+        injectContributorCount(objectNode);
+        injectPromotedContributors(objectNode);
         return objectNode;
     }
 
-    private static void injectPromotedContributorsAndContributorCount(ObjectNode json) {
+    private static void injectContributorCount(ObjectNode json) {
+        var contributors = json.at(CONTRIBUTORS_PTR);
+        if (!contributors.isMissingNode() && contributors.isArray()) {
+            var entityDescription = (ObjectNode) json.at(ENTITY_DESCRIPTION_PTR);
+            if (!entityDescription.isMissingNode() && entityDescription.isObject()) {
+                entityDescription.put(CONTRIBUTORS_COUNT, contributors.size());
+            }
+        }
+    }
+
+    private static void injectPromotedContributors(ObjectNode json) {
         var contributors = json.at(CONTRIBUTORS_PTR);
         if (!contributors.isMissingNode() && contributors.isArray()) {
             var entityDescription = (ObjectNode) json.at(ENTITY_DESCRIPTION_PTR);
@@ -212,7 +223,6 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
                 ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
                 arrayNode.addAll(sortedContributors);
 
-                entityDescription.put(CONTRIBUTORS_COUNT, contributors.size());
                 entityDescription.put(CONTRIBUTORS_PROMOTED, arrayNode);
             }
         }
