@@ -223,7 +223,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldThrowRuntimeExceptionAndLogExceptionMessageWhenUpdatingPublishingFiles()
+    void shouldThrowRuntimeExceptionAndLogExceptionMessageWhenUpdatingPublicationFails()
         throws ApiGatewayException, IOException {
         var publication = createUnpublishablePublication();
         var pendingPublishingRequest = pendingPublishingRequest(publication);
