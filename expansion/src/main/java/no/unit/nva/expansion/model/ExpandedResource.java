@@ -436,6 +436,6 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         if (verificationStatus.isMissingNode()) {
             return false;
         }
-        return verificationStatus.textValue().equals(VERIFIED);
+        return VERIFIED.equals(verificationStatus.textValue());
     }
 }
