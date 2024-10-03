@@ -7,18 +7,23 @@ import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRA
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_AUTH_URL;
 import static no.unit.nva.publication.ticket.create.CreateTicketHandler.BACKEND_CLIENT_SECRET_NAME;
+import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.external.services.RawContentRetriever;
+import no.unit.nva.publication.model.business.FileForApproval;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -70,12 +75,21 @@ public class TicketResolver {
 
         var ticket = TicketEntry.requestNewTicket(publication, ticketDto.ticketType())
                          .withOwnerAffiliation(requestUtils.topLevelCristinOrgId());
-        if (isPublishingRequestCase(ticket)) {
+        if (ticket instanceof PublishingRequestCase publishingRequest) {
             var customerId = requestUtils.customerId();
-            var publishingRequestCase = updatePublishingRequestWorkflow((PublishingRequestCase) ticket, customerId);
-            return createPublishingRequest(publishingRequestCase, publication, requestUtils);
+            publishingRequest.withWorkflow(getCustomerPublishingWorkflowResponse(customerId).convertToPublishingWorkflow())
+                .withFilesForApproval(getFilesForApproval(publication));
+            return createPublishingRequest(publishingRequest, publication, requestUtils);
         }
         return persistTicket(ticket);
+    }
+
+    private Set<FileForApproval> getFilesForApproval(Publication publication) {
+        return publication.getAssociatedArtifacts().stream()
+                   .filter(UnpublishedFile.class::isInstance)
+                   .map(UnpublishedFile.class::cast)
+                   .map(FileForApproval::fromFile)
+                   .collect(Collectors.toSet());
     }
 
     private static boolean userHasPermissionToCreateTicket(PublicationPermissionStrategy permissionStrategy,
@@ -123,9 +137,14 @@ public class TicketResolver {
                                                           Publication publication, RequestUtils requestUtils)
         throws ApiGatewayException {
         var username = new Username(requestUtils.username());
-        return requestUtils.isAuthorizedToManage(publishingRequestCase) ? createPublishingRequestForCurator(
-            publishingRequestCase, publication, username)
+        return userCanPublishFiles(requestUtils, publishingRequestCase)
+                   ? createPublishingRequestForCurator(publishingRequestCase, publication, username)
                    : createPublishingRequestForNonCurator(publishingRequestCase, publication, username);
+    }
+
+    private static boolean userCanPublishFiles(RequestUtils requestUtils, PublishingRequestCase publishingRequestCase) {
+        return requestUtils.toUserInstance().getAccessRights().contains(MANAGE_PUBLISHING_REQUESTS)
+               || publishingRequestCase.getWorkflow().equals(REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
     }
 
     private PublishingRequestCase createPublishingRequestForCurator(PublishingRequestCase publishingRequestCase,
@@ -155,8 +174,7 @@ public class TicketResolver {
                                                                      Publication publication, Username curator)
         throws ApiGatewayException {
         publishingRequestCase.setAssignee(curator);
-        publishingRequestCase.emptyFilesForApproval();
-        return publishingRequestCase.persistAutoComplete(ticketService, publication, curator);
+        return publishingRequestCase.approveFiles().persistAutoComplete(ticketService, publication, curator);
     }
 
     private PublishingRequestCase createAutoApprovedTicketWhenPublicationContainsMetadataOnly(
@@ -174,23 +192,12 @@ public class TicketResolver {
         return ticket.persistAutoComplete(ticketService, publication, finalizedBy);
     }
 
-    private PublishingRequestCase updatePublishingRequestWorkflow(PublishingRequestCase ticket, URI customerId)
-        throws BadGatewayException {
-        var customerTransactionResult = getCustomerPublishingWorkflowResponse(customerId);
-        ticket.setWorkflow(customerTransactionResult.convertToPublishingWorkflow());
-        return ticket;
-    }
-
     private CustomerPublishingWorkflowResponse getCustomerPublishingWorkflowResponse(URI customerId)
         throws BadGatewayException {
         var response = uriRetriever.getRawContent(customerId, CONTENT_TYPE)
                            .orElseThrow(this::createBadGatewayException);
         return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response, CustomerPublishingWorkflowResponse.class))
                    .orElseThrow();
-    }
-
-    private boolean isPublishingRequestCase(TicketEntry ticket) {
-        return ticket instanceof PublishingRequestCase;
     }
 
     private TicketEntry persistTicket(TicketEntry newTicket) {

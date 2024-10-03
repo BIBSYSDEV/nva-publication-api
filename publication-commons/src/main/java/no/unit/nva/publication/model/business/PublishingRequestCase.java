@@ -10,7 +10,6 @@ import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.OWNER_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.STATUS_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.WORKFLOW;
-import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -26,7 +25,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.model.storage.PublishingRequestDao;
 import no.unit.nva.publication.model.storage.TicketDao;
@@ -90,16 +88,7 @@ public class PublishingRequestCase extends TicketEntry {
         openingCaseObject.setStatus(TicketStatus.PENDING);
         openingCaseObject.setViewedBy(ViewedBy.addAll(openingCaseObject.getOwner()));
         openingCaseObject.setResourceIdentifier(publication.getIdentifier());
-        openingCaseObject.setFilesForApproval(extractFilesForApproval(publication));
         return openingCaseObject;
-    }
-
-    private static Set<FileForApproval> extractFilesForApproval(Publication publication) {
-        return publication.getAssociatedArtifacts().stream()
-                   .filter(UnpublishedFile.class::isInstance)
-                   .map(UnpublishedFile.class::cast)
-                   .map(FileForApproval::fromFile)
-                   .collect(Collectors.toSet());
     }
 
     public static PublishingRequestCase createQueryObject(UserInstance userInstance,
@@ -149,17 +138,8 @@ public class PublishingRequestCase extends TicketEntry {
     @Override
     public PublishingRequestCase complete(Publication publication, Username finalizedBy) {
         var completed = (PublishingRequestCase) super.complete(publication, finalizedBy);
-        completed.setApprovedFiles(getFilesToApprove(publication));
         completed.emptyFilesForApproval();
         return completed;
-    }
-
-    private static Set<UUID> getFilesToApprove(Publication publication) {
-        return publication.getAssociatedArtifacts().stream()
-                   .filter(UnpublishedFile.class::isInstance)
-                   .map(UnpublishedFile.class::cast)
-                   .map(UnpublishedFile::getIdentifier)
-                   .collect(Collectors.toSet());
     }
 
     @Override
@@ -229,25 +209,8 @@ public class PublishingRequestCase extends TicketEntry {
         return nonNull(approvedFiles) ? approvedFiles : Collections.emptySet();
     }
 
-    /**
-     * This method should be used ONLY when completing/approving PublishingRequestCase.
-     *
-     * @param approvedFiles Set of UUIDs representing the files that have been published
-     *                      when approving PublishingRequestCase.
-     *
-     * @throws UnsupportedOperationException if this method is called when
-     *     PublishingRequestCase is not in the Completed status
-     */
-
     public void setApprovedFiles(Set<UUID> approvedFiles) {
-        if (settingApprovedFilesForNotCompletedStatus(approvedFiles)) {
-            throw new UnsupportedOperationException(NOT_COMPLETED_PUBLISHING_REQUEST_MESSAGE);
-        }
         this.approvedFiles = approvedFiles;
-    }
-
-    private boolean settingApprovedFilesForNotCompletedStatus(Set<UUID> approvedFiles) {
-        return !approvedFiles.isEmpty() && !COMPLETED.equals(getStatus());
     }
 
     @Override
@@ -321,6 +284,28 @@ public class PublishingRequestCase extends TicketEntry {
 
     public void setOwner(User owner) {
         this.owner = owner;
+    }
+
+    public PublishingRequestCase withFilesForApproval(Set<FileForApproval> filesForApproval) {
+        this.filesForApproval = filesForApproval;
+        return this;
+    }
+
+    public PublishingRequestCase approveFiles() {
+        this.approvedFiles = getFilesForApproval().stream().map(FileForApproval::identifier).collect(Collectors.toSet());
+        this.filesForApproval = Set.of();
+        return this;
+    }
+
+    public PublishingRequestCase withWorkflow(PublishingWorkflow workflow) {
+        this.workflow = workflow;
+        return this;
+    }
+
+    @Override
+    public PublishingRequestCase withOwnerAffiliation(URI ownerAffiliation) {
+        this.setOwnerAffiliation(ownerAffiliation);
+        return this;
     }
 
     @Override

@@ -54,7 +54,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -712,24 +711,10 @@ public class TicketServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldThrowUnsupportedOperationExceptionWhenSettingFileForNotCompletedPublishingRequest()
-        throws ApiGatewayException {
-        var ticketType = PublishingRequestCase.class;
-        var publication = persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
-        var ticket = PublishingRequestCase.createNewTicket(publication, ticketType, SortableIdentifier::next)
-                         .persistNewTicket(ticketService);
-
-        assertThrows(UnsupportedOperationException.class,
-                     () -> ((PublishingRequestCase) ticket).setApprovedFiles(Set.of(UUID.randomUUID())));
-    }
-
-    @Test
     void shouldSetFilesForApprovalOnPublishingRequestCreationWhenPublicationHasUnpublishedFile()
         throws ApiGatewayException {
-        var ticketType = PublishingRequestCase.class;
         var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
-        var ticket = PublishingRequestCase.createNewTicket(publication, ticketType, SortableIdentifier::next)
-                         .persistNewTicket(ticketService);
+        var ticket = persistPublishingRequestContainingExistingUnpublishedFiles(publication);
 
         var expectedFilesForApproval = publication.getAssociatedArtifacts().stream()
                                            .filter(UnpublishedFile.class::isInstance)
@@ -934,6 +919,23 @@ public class TicketServiceTest extends ResourcesLocalTest {
                    .filter(Organization.class::isInstance)
                    .map(Organization.class::cast)
                    .map(Organization::getId)
+                   .collect(Collectors.toSet());
+    }
+
+    private TicketEntry persistPublishingRequestContainingExistingUnpublishedFiles(Publication publication)
+        throws ApiGatewayException {
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createNewTicket(publication, PublishingRequestCase.class,
+                                                                                              SortableIdentifier::next)
+                                                            .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
+        publishingRequest.withFilesForApproval(convertUnpublishedFilesToFilesForApproval(publication));
+        return publishingRequest.persistNewTicket(ticketService);
+    }
+
+    private Set<FileForApproval> convertUnpublishedFilesToFilesForApproval(Publication publication) {
+        return publication.getAssociatedArtifacts().stream()
+                   .filter(UnpublishedFile.class::isInstance)
+                   .map(UnpublishedFile.class::cast)
+                   .map(FileForApproval::fromFile)
                    .collect(Collectors.toSet());
     }
 }
