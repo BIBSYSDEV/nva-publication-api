@@ -206,7 +206,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
                 contributors.forEach(contributorsList::add);
                 var sortedContributors = contributorsList.stream()
                                              .sorted(Comparator.comparingInt(c -> c.get(CONTRIBUTOR_SEQUENCE).asInt()))
-                                             .sorted(ExpandedResource::sortByPromoted)
+                                             .sorted(ExpandedResource::sortContributorByVerifiedFirst)
                                              .limit(MAX_PROMOTED_CONTRIBUTORS).toList();
 
                 ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
@@ -416,7 +416,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         return isPublicationChannelId(getBookSeriesUriStr(root));
     }
 
-    private static int sortByPromoted(JsonNode contributor1, JsonNode contributor2) {
+    private static int sortContributorByVerifiedFirst(JsonNode contributor1, JsonNode contributor2) {
         var contributor1verification = isContributorVerified(contributor1);
         var contributor2verification = isContributorVerified(contributor2);
 
