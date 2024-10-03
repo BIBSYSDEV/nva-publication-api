@@ -13,13 +13,12 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.PublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.external.services.UriRetriever;
-import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -30,7 +29,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.exceptions.ExceptionUtils;
+import nva.commons.core.attempt.Failure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -38,12 +37,18 @@ import software.amazon.awssdk.services.s3.S3Client;
 public class AcceptedPublishingRequestEventHandler
     extends DestinationsEventBridgeEventHandler<EventReference, Void> {
 
-    public static final String DOI_REQUEST_CREATION_MESSAGE = "Doi request has been created for publication: {}";
+    private static final String DOI_REQUEST_CREATION_MESSAGE = "Doi request has been created for publication: {}";
     private static final Logger logger = LoggerFactory.getLogger(AcceptedPublishingRequestEventHandler.class);
-    public static final String PUBLISHING_METADATA_AND_FILES_MESSAGE =
+    private static final String PUBLISHING_METADATA_AND_FILES_MESSAGE =
         "Publishing files and publication metadata {} via approved publishing request {}";
-    public static final String PUBLISHING_FILES_MESSAGE =
+    private static final String PUBLISHING_FILES_MESSAGE =
         "Publishing files for publication {} via approved publishing request {}";
+    private static final String COULD_NOT_FETCH_TICKET_MESSAGE = "Could not fetch PublishingRequest with identifier: ";
+    private static final String PUBLISHING_ERROR_MESSAGE = "Could not publish publication: %s";
+    private static final String EXCEPTION_MESSAGE = "Exception: {}";
+    private static final String PUBLICATION_UPDATE_ERROR_MESSAGE = "Could not update publication: %s";
+    private static final String PUBLISHING_FILE_MESSAGE =
+        "Publishing file {} from approved PublishingRequest {} for publication {}";
     private final ResourceService resourceService;
     private final TicketService ticketService;
     private final S3Driver s3Driver;
@@ -107,56 +112,97 @@ public class AcceptedPublishingRequestEventHandler
         return !noEffectiveChanges(DataEntryUpdateEvent.fromJson(eventBlob));
     }
 
-    private void publishPublicationAndFiles(PublishingRequestCase latestUpdate) {
-        var userInstance = UserInstance.create(latestUpdate.getOwner(), latestUpdate.getCustomerId());
-        var publication = fetchPublication(userInstance, latestUpdate.getResourceIdentifier());
-        var updatedPublication = toPublicationWithPublishedFiles(publication);
-        if (PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(latestUpdate.getWorkflow())
-            || PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(latestUpdate.getWorkflow())) {
+    private void publishPublicationAndFiles(PublishingRequestCase publishingRequestCase) {
+        var userInstance = UserInstance.create(publishingRequestCase.getOwner(), publishingRequestCase.getCustomerId());
+        var publication = fetchPublication(userInstance, publishingRequestCase.getResourceIdentifier());
+        var publishingRequest = fetchPublishingRequest(publishingRequestCase);
+        var updatedPublication = toPublicationWithPublishedFiles(publication, publishingRequest);
+        if (shouldPublishFilesOnly(publishingRequestCase)) {
             publishFiles(updatedPublication);
             logger.info(PUBLISHING_FILES_MESSAGE,
                         publication.getIdentifier(),
-                        latestUpdate.getIdentifier());
+                        publishingRequestCase.getIdentifier());
         }
-        if (PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES.equals(
-            latestUpdate.getWorkflow())) {
+        if (shouldPublishMetadataAndFiles(publishingRequestCase)) {
             publishFiles(updatedPublication);
-            publishPublication(latestUpdate, userInstance);
+            publishPublication(publishingRequestCase, userInstance);
             logger.info(PUBLISHING_METADATA_AND_FILES_MESSAGE,
                         publication.getIdentifier(),
-                        latestUpdate.getIdentifier());
+                        publishingRequestCase.getIdentifier());
         }
         createDoiRequestIfNeeded(updatedPublication);
     }
 
+    private static boolean shouldPublishMetadataAndFiles(PublishingRequestCase publishingRequestCase) {
+        return PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES.equals(
+            publishingRequestCase.getWorkflow());
+    }
+
+    private static boolean shouldPublishFilesOnly(PublishingRequestCase publishingRequestCase) {
+        return PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(publishingRequestCase.getWorkflow())
+               ||
+               PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(publishingRequestCase.getWorkflow());
+    }
+
+    private PublishingRequestCase fetchPublishingRequest(PublishingRequestCase latestUpdate) {
+        return attempt(() -> ticketService.fetchTicket(latestUpdate))
+                   .map(PublishingRequestCase.class::cast)
+                   .orElseThrow(failure ->
+                                    throwException(COULD_NOT_FETCH_TICKET_MESSAGE + latestUpdate.getIdentifier(), failure));
+    }
+
+    private RuntimeException throwException(String message, Failure<?> failure) {
+        logger.error(message);
+        logger.error(EXCEPTION_MESSAGE, failure.getException().getMessage());
+        return new RuntimeException();
+    }
+
     private void publishPublication(PublishingRequestCase latestUpdate, UserInstance userInstance) {
         attempt(() -> resourceService.publishPublication(userInstance, latestUpdate.getResourceIdentifier()))
-            .orElse(fail -> logError(fail.getException()));
+            .orElseThrow(fail -> throwException(
+                String.format(PUBLISHING_ERROR_MESSAGE, latestUpdate.getResourceIdentifier()), fail));
     }
 
     private void publishFiles(Publication updatedPublication) {
-        attempt(() -> resourceService.updatePublication(updatedPublication));
+        attempt(() -> resourceService.updatePublication(updatedPublication))
+            .orElseThrow(failure -> throwException(
+                String.format(PUBLICATION_UPDATE_ERROR_MESSAGE, updatedPublication.getIdentifier()), failure));
     }
 
-    private Publication toPublicationWithPublishedFiles(Publication publication) {
+    private Publication toPublicationWithPublishedFiles(Publication publication,
+                                                        PublishingRequestCase publishingRequest) {
+        var updatedAssociatedArtifacts = publishFilesFromPublishingRequest(
+            publication.getAssociatedArtifacts(), publishingRequest);
         return publication.copy()
-                   .withAssociatedArtifacts(convertFilesToPublished(publication.getAssociatedArtifacts()))
+                   .withAssociatedArtifacts(updatedAssociatedArtifacts)
                    .build();
     }
 
-    private List<AssociatedArtifact> convertFilesToPublished(AssociatedArtifactList associatedArtifacts) {
+    private List<AssociatedArtifact> publishFilesFromPublishingRequest(AssociatedArtifactList associatedArtifacts,
+                                                                       PublishingRequestCase publishingRequestCase) {
         return associatedArtifacts.stream()
-                   .map(this::updateFileToPublished)
+                   .map(associatedArtifact -> publishFileIfApproved(associatedArtifact, publishingRequestCase))
                    .toList();
     }
 
-    private AssociatedArtifact updateFileToPublished(AssociatedArtifact artifact) {
-        if (artifact instanceof UnpublishedFile) {
-            var file = (File) artifact;
-            return file.toPublishedFile();
+    private AssociatedArtifact publishFileIfApproved(AssociatedArtifact associatedArtifact,
+                                                     PublishingRequestCase publishingRequestCase) {
+        if (associatedArtifact instanceof UnpublishedFile unpublishedFile) {
+            return publishingRequestCase.getApprovedFiles().contains(unpublishedFile.getIdentifier())
+                       ? toPublishedFile(unpublishedFile, publishingRequestCase)
+                       : unpublishedFile;
         } else {
-            return artifact;
+            return associatedArtifact;
         }
+    }
+
+    private static PublishedFile toPublishedFile(UnpublishedFile unpublishedFile,
+                                                 PublishingRequestCase publishingRequestCase) {
+        logger.info(PUBLISHING_FILE_MESSAGE,
+                    unpublishedFile.getIdentifier(),
+                    publishingRequestCase.getIdentifier(),
+                    publishingRequestCase.getResourceIdentifier());
+        return unpublishedFile.toPublishedFile();
     }
 
     private Publication fetchPublication(UserInstance userInstance, SortableIdentifier publicationIdentifier) {
@@ -179,11 +225,6 @@ public class AcceptedPublishingRequestEventHandler
         return ticketService.fetchTicketByResourceIdentifier(publication.getPublisher().getId(),
                                                              publication.getIdentifier(),
                                                              DoiRequest.class);
-    }
-
-    private PublishPublicationStatusResponse logError(Exception exception) {
-        logger.warn(ExceptionUtils.stackTraceInSingleLine(exception));
-        return null;
     }
 
     private PublishingRequestCase parseInput(String eventBlob) {
