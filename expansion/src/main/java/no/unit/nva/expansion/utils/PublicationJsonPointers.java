@@ -11,6 +11,8 @@ public final class PublicationJsonPointers {
     public static final String SERIES_ID_JSON_PTR = "/entityDescription/reference/publicationContext/series/id";
     public static final String FUNDING_SOURCE_POINTER = "/fundings";
     public static final String CONTRIBUTORS_POINTER = "/entityDescription/contributors";
+    public static final String CONTRIBUTORS_PROMOTED_POINTER = "/entityDescription/contributorsPromoted";
+    public static final String CONTRIBUTORS_COUNT_POINTER = "/entityDescription/contributorsCount";
     public static final String AFFILIATIONS_POINTER = "/affiliations";
 
     private PublicationJsonPointers() {

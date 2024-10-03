@@ -55,7 +55,11 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     // but it contains its data as an inner Json Node.
 
     public static final String TYPE = "Publication";
+    public static final JsonPointer ENTITY_DESCRIPTION_PTR = JsonPointer.compile("/entityDescription");
     public static final JsonPointer CONTRIBUTORS_PTR = JsonPointer.compile("/entityDescription/contributors");
+    public static final String IDENTITY = "identity";
+    public static final String VERIFICATION_STATUS = "verificationStatus";
+    public static final String VERIFIED = "Verified";
     public static final String CONTRIBUTOR_SEQUENCE = "sequence";
     public static final String LICENSE_FIELD = "license";
     public static final String ASSOCIATED_ARTIFACTS_FIELD = "associatedArtifacts";
@@ -72,6 +76,9 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     private static final String JSON_LD_CONTEXT_FIELD = "@context";
     private static final String CONTEXT_TYPE_ANTHOLOGY = "Anthology";
     private static final String INSTANCE_TYPE_ACADEMIC_CHAPTER = "AcademicChapter";
+    public static final int MAX_PROMOTED_CONTRIBUTORS = 10;
+    public static final String CONTRIBUTORS_COUNT = "contributorsCount";
+    public static final String CONTRIBUTORS_PROMOTED = "contributorsPromoted";
     @JsonAnySetter
     private final Map<String, Object> allFields;
 
@@ -83,8 +90,8 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         throws JsonProcessingException {
         var documentWithId = transformToJsonLd(publication);
         var enrichedJson = enrichJson(uriRetriever, documentWithId);
-        var sortedJson = addFields(enrichedJson, publication);
-        return attempt(() -> objectMapper.treeToValue(sortedJson, ExpandedResource.class)).orElseThrow();
+        var jsonWithAddedFields = addFields(enrichedJson, publication);
+        return attempt(() -> objectMapper.treeToValue(jsonWithAddedFields, ExpandedResource.class)).orElseThrow();
     }
 
     public static List<URI> extractPublicationContextUris(JsonNode indexDocument) {
@@ -180,12 +187,35 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         return toJsonString();
     }
 
-    private static JsonNode addFields(String json, Publication publication) {
-        var sortedJson = strToJsonWithSortedContributors(json);
-        injectHasFileEnum(publication, (ObjectNode) sortedJson);
-        expandLicenses(sortedJson);
-        injectJoinField(publication, (ObjectNode) sortedJson);
-        return sortedJson;
+    private static ObjectNode addFields(String jsonString, Publication publication) {
+        var objectNode = strToJson(jsonString);
+        sortContributors(objectNode);
+        injectHasFileEnum(publication, objectNode);
+        expandLicenses(objectNode);
+        injectJoinField(publication, objectNode);
+        injectPromotedContributorsAndContributorCount(objectNode);
+        return objectNode;
+    }
+
+    private static void injectPromotedContributorsAndContributorCount(ObjectNode json) {
+        var contributors = json.at(CONTRIBUTORS_PTR);
+        if (!contributors.isMissingNode() && contributors.isArray()) {
+            var entityDescription = (ObjectNode) json.at(ENTITY_DESCRIPTION_PTR);
+            if (!entityDescription.isMissingNode() && entityDescription.isObject()) {
+                List<JsonNode> contributorsList = new ArrayList<>();
+                contributors.forEach(contributorsList::add);
+                var sortedContributors = contributorsList.stream()
+                                             .sorted(Comparator.comparingInt(c -> c.get(CONTRIBUTOR_SEQUENCE).asInt()))
+                                             .sorted(ExpandedResource::sortByPromoted)
+                                             .limit(MAX_PROMOTED_CONTRIBUTORS).toList();
+
+                ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
+                arrayNode.addAll(sortedContributors);
+
+                entityDescription.put(CONTRIBUTORS_COUNT, contributors.size());
+                entityDescription.put(CONTRIBUTORS_PROMOTED, arrayNode);
+            }
+        }
     }
 
     /**
@@ -282,8 +312,11 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         sortedJson.put(FilesStatus.FILES_STATUS, FilesStatus.fromPublication(publication).getValue());
     }
 
-    private static JsonNode strToJsonWithSortedContributors(String jsonStr) {
-        var json = attempt(() -> objectMapper.readTree(jsonStr)).orElseThrow();
+    private static ObjectNode strToJson(String jsonStr) {
+        return (ObjectNode) attempt(() -> objectMapper.readTree(jsonStr)).orElseThrow();
+    }
+
+    private static JsonNode sortContributors(JsonNode json) {
         var contributors = json.at(CONTRIBUTORS_PTR);
         if (!contributors.isMissingNode()) {
             var contributorsArray = (ArrayNode) contributors;
@@ -381,5 +414,28 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
 
     private static boolean hasPublicationChannelBookSeriesId(JsonNode root) {
         return isPublicationChannelId(getBookSeriesUriStr(root));
+    }
+
+    private static int sortByPromoted(JsonNode contributor1, JsonNode contributor2) {
+        var contributor1verification = isContributorVerified(contributor1);
+        var contributor2verification = isContributorVerified(contributor2);
+
+        if (contributor1verification && !contributor2verification) {
+            return -1;
+        }
+
+        if (!contributor1verification && contributor2verification) {
+            return 1;
+        }
+
+        return 0;
+    }
+
+    private static boolean isContributorVerified(JsonNode contributor) {
+        var verificationStatus = contributor.path(IDENTITY).path(VERIFICATION_STATUS);
+        if (verificationStatus.isMissingNode()) {
+            return false;
+        }
+        return verificationStatus.textValue().equals(VERIFIED);
     }
 }
