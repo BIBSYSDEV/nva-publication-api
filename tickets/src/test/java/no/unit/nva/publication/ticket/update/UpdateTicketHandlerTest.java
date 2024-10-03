@@ -38,6 +38,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -572,7 +573,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
             PublicationStatus.DRAFT, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
+        var ticket = persistPublishingRequestContainingExistingUnpublishedFiles(publication);
         var closedTicket = ticket.complete(publication, USER_NAME);
         var httpRequest = createCompleteTicketHttpRequest(closedTicket,
                                                           ticket.getCustomerId(),
@@ -591,7 +592,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
             PublicationStatus.DRAFT, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
+        var ticket = persistPublishingRequestContainingExistingUnpublishedFiles(publication);
         var expectedFilesForApproval = getUnpublishedFiles(publication);
 
         assertThat(((PublishingRequestCase) ticket).getFilesForApproval(),
@@ -769,6 +770,23 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
         return createCompleteTicketHttpRequest(ticket, ticket.getCustomerId(), MANAGE_RESOURCES_STANDARD,
                                                AccessRight.MANAGE_DOI,
                                                MANAGE_PUBLISHING_REQUESTS, AccessRight.SUPPORT);
+    }
+
+    private TicketEntry persistPublishingRequestContainingExistingUnpublishedFiles(Publication publication)
+        throws ApiGatewayException {
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createNewTicket(publication, PublishingRequestCase.class,
+                                                                                              SortableIdentifier::next)
+                                                            .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
+        publishingRequest.withFilesForApproval(convertUnpublishedFilesToFilesForApproval(publication));
+        return publishingRequest.persistNewTicket(ticketService);
+    }
+
+    private Set<FileForApproval> convertUnpublishedFilesToFilesForApproval(Publication publication) {
+        return publication.getAssociatedArtifacts().stream()
+                   .filter(UnpublishedFile.class::isInstance)
+                   .map(UnpublishedFile.class::cast)
+                   .map(FileForApproval::fromFile)
+                   .collect(Collectors.toSet());
     }
 
     private InputStream createCompleteTicketHttpRequest(TicketEntry ticket, URI customer, AccessRight... accessRights)

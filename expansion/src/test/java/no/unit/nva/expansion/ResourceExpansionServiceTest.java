@@ -589,7 +589,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     @Test
     void shouldExpandFilesForApprovalForPublishingRequest() throws ApiGatewayException, JsonProcessingException {
         var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(PUBLISHED, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
+        var ticket = persistPublishingRequestContainingExistingUnpublishedFiles(publication);
         var expandedTicket = (ExpandedPublishingRequest) expansionService.expandEntry(ticket);
         var regeneratedTicket = (PublishingRequestCase) toTicketEntry(expandedTicket);
 
@@ -705,7 +705,9 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     private TicketEntry createCompletedTicketAndPublishFiles(Publication publication) throws ApiGatewayException {
-        var ticket = TicketTestUtils.createCompletedTicket(publication, PublishingRequestCase.class, ticketService);
+        var ticket = (PublishingRequestCase) TicketTestUtils.createCompletedTicket(
+            publication, PublishingRequestCase.class, ticketService);
+        ticket.withFilesForApproval(convertUnpublishedFilesToFilesForApproval(publication)).approveFiles();
         publishFiles(publication);
         return ticket;
     }
@@ -735,6 +737,23 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var entityDescription = new EntityDescription();
         entityDescription.setContributors(List.of(contributor));
         return entityDescription;
+    }
+
+    private TicketEntry persistPublishingRequestContainingExistingUnpublishedFiles(Publication publication)
+        throws ApiGatewayException {
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createNewTicket(publication, PublishingRequestCase.class,
+                                                                                              SortableIdentifier::next)
+                                                            .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
+        publishingRequest.withFilesForApproval(convertUnpublishedFilesToFilesForApproval(publication));
+        return publishingRequest.persistNewTicket(ticketService);
+    }
+
+    private Set<FileForApproval> convertUnpublishedFilesToFilesForApproval(Publication publication) {
+        return publication.getAssociatedArtifacts().stream()
+                   .filter(UnpublishedFile.class::isInstance)
+                   .map(UnpublishedFile.class::cast)
+                   .map(FileForApproval::fromFile)
+                   .collect(Collectors.toSet());
     }
 
     private static List<Contributor> extractContributorsWithId(URI id, Publication publication) {

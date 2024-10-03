@@ -6,6 +6,8 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.util.Set;
+import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -78,6 +80,18 @@ class TicketEntryTest {
         var userInstance = UserInstance.fromPublication(publication);
 
         assertTrue(ticket.hasSameOwnerAffiliationAs(userInstance));
+    }
+
+    @Test
+    void shouldMoveFilesForApprovalToApprovedFilesWhenPublishingRequestApproveFiles() throws ConflictException {
+        var publication = TicketTestUtils.createNonPersistedPublication(PublicationStatus.DRAFT);
+        var ticket = (PublishingRequestCase) TicketEntry.createNewTicket(
+            publication, PublishingRequestCase.class, SortableIdentifier::next);
+        ticket.withFilesForApproval(Set.of(new FileForApproval(UUID.randomUUID())))
+            .withWorkflow(PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
+            .approveFiles();
+
+        assertThat(ticket.getApprovedFiles().size(), is(equalTo(1)));
     }
 
     private static UserInstance getExpectedUserInstance(Publication publication) {

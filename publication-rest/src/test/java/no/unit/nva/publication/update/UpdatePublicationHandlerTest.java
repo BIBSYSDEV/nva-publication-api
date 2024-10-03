@@ -982,29 +982,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(completedTicket.getFinalizedBy(), is(not(equalTo(publication.getResourceOwner().getOwner()))));
     }
 
-    @Test
-    void shouldUpdateFilesForApprovalWhenPublicationUpdateHasFileChanges() throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
-            customerId, PUBLISHED, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
-        var expectedFilesForApprovalBeforePublicationUpdate = getUnpublishedFiles(publication);
-
-        assertThat(((PublishingRequestCase) ticket).getFilesForApproval(),
-                   containsInAnyOrder(expectedFilesForApprovalBeforePublicationUpdate.toArray()));
-
-        var newUnpublishedFile = File.builder().withIdentifier(UUID.randomUUID()).buildUnpublishedFile();
-        updatePublicationWithFile(publication, newUnpublishedFile);
-
-        var input = ownerUpdatesOwnPublication(publication.getIdentifier(), publication);
-        updatePublicationHandler.handleRequest(input, output, context);
-
-        var filesForApproval = fetchFilesForApprovalFromPendingPublishingRequest(publication);
-
-        var expectedFilesForApproval = mergeExistingFilesForApprovalWithNewFile(
-            expectedFilesForApprovalBeforePublicationUpdate, newUnpublishedFile);
-
-        assertThat(filesForApproval, containsInAnyOrder(expectedFilesForApproval.toArray()));
-    }
 
     @Test
     void publishingCuratorWithAccessRightManageResourceFilesShouldBeAbleToOverrideRrs()
@@ -1853,7 +1830,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
             customerId, PUBLISHED, resourceService);
-        TicketTestUtils.createPersistedTicket(publication, PublishingRequestCase.class, ticketService);
+        persistPublishingRequestContainingExistingUnpublishedFiles(publication);
         var updatedPublication = updateTitle(publication);
 
         stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
@@ -1866,6 +1843,132 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var publishingRequest = getPublishingRequestCase(publication);
         var unpublishedFile = getUnpublishedFiles(publication).getFirst();
         assertThat(publishingRequest.getFilesForApproval(), hasItem(unpublishedFile));
+    }
+
+    @DisplayName("When contributor updates publication with unpublished file" +
+                 "and publication already contains another unpublished file" +
+                 "and there is no pending publishing request for the publication with contributor owner affiliation" +
+                 "then only new unpublished file is added to files for approval in PublishingRequest")
+    @Test
+    void shouldAddOnlyNewUnpublishedFilesForApprovalToPublishingRequestsFilesForApprovalWhenAddingNewUnpublishedFile()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
+            customerId, PUBLISHED, resourceService);
+        var cristinId = randomUri();
+        var contributor = createContributorForPublicationUpdate(cristinId);
+        injectContributor(publication, contributor);
+        var newUnpublishedFile = File.builder().withIdentifier(UUID.randomUUID())
+                                     .withLicense(randomUri())
+                                     .buildUnpublishedFile();
+        updatePublicationWithFile(publication, newUnpublishedFile);
+        stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
+        var input = ownerUpdatesOwnPublication(publication.getIdentifier(), publication);
+        updatePublicationHandler.handleRequest(input, output, context);
+
+        var publishingRequest = getPublishingRequestCase(publication);
+
+        assertThat(publishingRequest.getFilesForApproval(), hasSize(1));
+        assertThat(publishingRequest.getFilesForApproval(),
+                   containsInAnyOrder(FileForApproval.fromFile(newUnpublishedFile)));
+    }
+
+    @DisplayName("When publishing curator updates publication with unpublished file" +
+                 "and publication already contains another unpublished file" +
+                 "and there is no pending publishing request for the publication with curator owner affiliation" +
+                 "then only new unpublished file is added to approved files in PublishingRequest")
+    @Test
+    void shouldPublishOnlyNewUnpublishedFilesWhenCuratorUpdatesPublicationWithNewUnpublishedFiles()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
+            customerId, PUBLISHED, resourceService);
+        var newUnpublishedFile = File.builder().withIdentifier(UUID.randomUUID())
+                                     .withLicense(randomUri())
+                                     .buildUnpublishedFile();
+        updatePublicationWithFile(publication, newUnpublishedFile);
+        stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
+        var input = curatorWithAccessRightsUpdatesPublication(publication, customerId,
+                                                              publication.getResourceOwner().getOwnerAffiliation(),
+                                                              MANAGE_PUBLISHING_REQUESTS, MANAGE_RESOURCES_ALL);
+        updatePublicationHandler.handleRequest(input, output, context);
+
+        var publishingRequest = getPublishingRequestCase(publication);
+
+        assertThat(publishingRequest.getApprovedFiles(), hasSize(1));
+        assertThat(publishingRequest.getApprovedFiles(), containsInAnyOrder(newUnpublishedFile.getIdentifier()));
+    }
+
+    @DisplayName("When publishing curator updates publication with unpublished file" +
+                 "and publication already contains another unpublished file" +
+                 "and there exists pending publishing request for curator institution with existing unpublished file" +
+                 "then both existing and new unpublished files are added to approved files in PublishingRequest")
+    @Test
+    void shouldPublishExistingAndNewUnpublishedFileWhenThereExistsPendingPublishingRequestForCuratorInstitution()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
+            customerId, PUBLISHED, resourceService);
+        var newUnpublishedFile = File.builder().withIdentifier(UUID.randomUUID())
+                                     .withLicense(randomUri())
+                                     .buildUnpublishedFile();
+        persistPublishingRequestContainingExistingUnpublishedFiles(publication);
+        updatePublicationWithFile(publication, newUnpublishedFile);
+        stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
+        var input = curatorWithAccessRightsUpdatesPublication(publication, customerId,
+                                                              publication.getResourceOwner().getOwnerAffiliation(),
+                                                              MANAGE_PUBLISHING_REQUESTS, MANAGE_RESOURCES_ALL);
+        updatePublicationHandler.handleRequest(input, output, context);
+
+        var publishingRequest = getPublishingRequestCase(publication);
+
+        var approvedFiles = convertUnpublishedFilesToFilesForApproval(publication).stream()
+                                .map(FileForApproval::identifier)
+                                .toList().toArray();
+
+        assertThat(publishingRequest.getApprovedFiles(), hasSize(2));
+        assertThat(publishingRequest.getApprovedFiles(), containsInAnyOrder(approvedFiles));
+    }
+
+    @DisplayName("When publishing curator updates publication with unpublished file" +
+                 "and removes existing unpublished file" +
+                 "and there exists pending publishing request for curator institution with unpublished file to remove" +
+                 "then new unpublished file only is added to approved files in PublishingRequest")
+    @Test
+    void shouldAddNewUnpublishedFileAndRemoveRemovedUnpublishedFileFromFileForApprovalWhenUpdatingPublication()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(
+            customerId, PUBLISHED, resourceService);
+        var newUnpublishedFile = File.builder().withIdentifier(UUID.randomUUID())
+                                     .withLicense(randomUri())
+                                     .buildUnpublishedFile();
+        persistPublishingRequestContainingExistingUnpublishedFiles(publication);
+        publication.getAssociatedArtifacts().clear();
+        updatePublicationWithFile(publication, newUnpublishedFile);
+        stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
+        var input = curatorWithAccessRightsUpdatesPublication(publication, customerId,
+                                                              publication.getResourceOwner().getOwnerAffiliation(),
+                                                              MANAGE_PUBLISHING_REQUESTS, MANAGE_RESOURCES_ALL);
+        updatePublicationHandler.handleRequest(input, output, context);
+
+        var publishingRequest = getPublishingRequestCase(publication);
+
+        assertThat(publishingRequest.getApprovedFiles(), hasSize(1));
+        assertThat(publishingRequest.getApprovedFiles(), containsInAnyOrder(newUnpublishedFile.getIdentifier()));
+    }
+
+    private TicketEntry persistPublishingRequestContainingExistingUnpublishedFiles(Publication publication)
+        throws ApiGatewayException {
+        var publishingRequest = (PublishingRequestCase) PublishingRequestCase.createNewTicket(publication, PublishingRequestCase.class,
+                                                      SortableIdentifier::next)
+                   .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
+        publishingRequest.withFilesForApproval(convertUnpublishedFilesToFilesForApproval(publication));
+        return publishingRequest.persistNewTicket(ticketService);
+    }
+
+    private Set<FileForApproval> convertUnpublishedFilesToFilesForApproval(Publication publication) {
+        return publication.getAssociatedArtifacts().stream()
+                   .filter(UnpublishedFile.class::isInstance)
+                   .map(UnpublishedFile.class::cast)
+                   .map(FileForApproval::fromFile)
+                   .collect(Collectors.toSet());
     }
 
     private PublishingRequestCase getPublishingRequestCase(Publication publication) {
