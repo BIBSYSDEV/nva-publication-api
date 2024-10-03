@@ -171,7 +171,6 @@ public class AcceptedPublishingRequestEventHandler
 
     private Publication toPublicationWithPublishedFiles(Publication publication,
                                                         PublishingRequestCase publishingRequest) {
-        var filesToPublish = publishingRequest.getApprovedFiles();
         var updatedAssociatedArtifacts = publishFilesFromPublishingRequest(
             publication.getAssociatedArtifacts(), publishingRequest);
         return publication.copy()
