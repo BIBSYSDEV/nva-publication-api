@@ -33,7 +33,12 @@ import nva.commons.core.JacocoGenerated;
 @JsonSubTypes({
     @JsonSubTypes.Type(name = PublishedFile.TYPE, value = PublishedFile.class),
     @JsonSubTypes.Type(names = {UnpublishedFile.TYPE, "File"}, value = UnpublishedFile.class),
-    @JsonSubTypes.Type(name = AdministrativeAgreement.TYPE, value = AdministrativeAgreement.class)
+    @JsonSubTypes.Type(name = AdministrativeAgreement.TYPE, value = AdministrativeAgreement.class),
+    @JsonSubTypes.Type(name = OpenFile.TYPE, value = OpenFile.class),
+    @JsonSubTypes.Type(name = PendingOpenFile.TYPE, value = PendingOpenFile.class),
+    @JsonSubTypes.Type(name = InternalFile.TYPE, value = InternalFile.class),
+    @JsonSubTypes.Type(name = PendingInternalFile.TYPE, value = PendingInternalFile.class),
+    @JsonSubTypes.Type(name = RejectedFile.TYPE, value = RejectedFile.class)
 })
 public abstract class File implements JsonSerializable, AssociatedArtifact {
 
