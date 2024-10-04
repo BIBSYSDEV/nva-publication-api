@@ -9,7 +9,8 @@ import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.external.services.AuthorizedBackendUriRetriever;
-import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.ticket.TicketDto;
@@ -26,17 +27,20 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
     public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
     public static final String LOCATION_HEADER = "Location";
     private final TicketResolver ticketResolver;
+    private final MessageService messageService;
 
     @JacocoGenerated
     public CreateTicketHandler() {
         this(new TicketResolver(ResourceService.defaultService(), TicketService.defaultService(),
                                 new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL,
-                                                                  BACKEND_CLIENT_SECRET_NAME)));
+                                                                  BACKEND_CLIENT_SECRET_NAME)),
+             MessageService.defaultService());
     }
 
-    public CreateTicketHandler(TicketResolver ticketResolver) {
+    public CreateTicketHandler(TicketResolver ticketResolver, MessageService messageService) {
         super(TicketDto.class);
         this.ticketResolver = ticketResolver;
+        this.messageService = messageService;
     }
 
     @Override
@@ -50,8 +54,16 @@ public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
         throws ApiGatewayException {
         var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
         var persistedTicket = ticketResolver.resolveAndPersistTicket(input, requestUtils);
+        persistMessage(input, requestUtils, persistedTicket);
         addLocationHeader(requestUtils.publicationIdentifier(), persistedTicket.getIdentifier());
         return null;
+    }
+
+    private void persistMessage(TicketDto input, RequestUtils requestUtils, TicketEntry ticket) {
+        if (!input.getMessages().isEmpty()) {
+            var message = input.getMessages().getFirst().getText();
+            messageService.createMessage(ticket, requestUtils.toUserInstance(), message);
+        }
     }
 
     private void addLocationHeader(SortableIdentifier publicationIdentifier, SortableIdentifier ticketIdentifier) {
