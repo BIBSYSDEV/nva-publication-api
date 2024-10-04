@@ -20,7 +20,9 @@ import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.emptyIterable;
+import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
@@ -849,6 +851,25 @@ class CreateTicketHandlerTest extends TicketTestLocal {
 
         assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
         assertThat(persistedMessage, hasSize(1));
+    }
+
+    @Test
+    void creatingTicketWithoutMessageShouldNotLogAnyMessages()
+        throws ApiGatewayException, IOException {
+        var publication = TicketTestUtils.createPersistedNonDegreePublication(randomUri(), PUBLISHED,
+                                                                              resourceService);
+
+        var request = createHttpTicketCreationRequest(
+            constructDto(GeneralSupportRequest.class), publication.getIdentifier(),
+            publication.getResourceOwner().getOwnerAffiliation(), randomUri(), randomString(), SUPPORT);
+        var logAppender = LogUtils.getTestingAppender(CreateTicketHandler.class);
+        handler.handleRequest(request, output, CONTEXT);
+
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
+        var logMessages = logAppender.getMessages();
+
+        assertThat(logMessages, is(emptyString()));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
     }
 
     private PublishingRequestCase fetchTicket(Publication publishedPublication,
