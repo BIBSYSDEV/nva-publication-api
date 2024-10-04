@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.util.UUID;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 
+@SuppressWarnings("PMD.ExcessiveParameterList")
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(PendingInternalFile.TYPE)
 public class PendingInternalFile extends File {

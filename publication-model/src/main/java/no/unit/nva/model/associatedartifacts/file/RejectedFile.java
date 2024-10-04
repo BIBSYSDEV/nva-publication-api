@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.util.UUID;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 
+@SuppressWarnings("PMD.ExcessiveParameterList")
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(RejectedFile.TYPE)
 public class RejectedFile extends File {

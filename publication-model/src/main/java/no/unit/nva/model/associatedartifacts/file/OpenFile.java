@@ -1,9 +1,15 @@
 package no.unit.nva.model.associatedartifacts.file;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.time.Instant;
 import java.util.UUID;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 
+@SuppressWarnings("PMD.ExcessiveParameterList")
+@JsonTypeInfo(use = Id.NAME, property = "type")
+@JsonTypeName(OpenFile.TYPE)
 public class OpenFile extends File {
 
     public static final String TYPE = "OpenFile";
