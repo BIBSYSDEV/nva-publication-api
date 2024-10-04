@@ -1,5 +1,6 @@
 package no.unit.nva.model.associatedartifacts.file;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -31,6 +32,7 @@ public class InternalFile extends File {
      * @param publishedDate
      * @param uploadDetails           Information regarding who and when inserted the file into the system
      */
+    @JsonCreator
     protected InternalFile(UUID identifier, String name, String mimeType, Long size, Object license,
                            boolean administrativeAgreement, PublisherVersion publisherVersion,
                            Instant embargoDate,
