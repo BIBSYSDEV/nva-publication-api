@@ -17,6 +17,24 @@
       },
       "@type": "@vocab"
     },
+    "administrativeAgreement": {
+      "@type": "xsd:boolean"
+    },
+    "amount": {
+      "@type": "xsd:integer"
+    },
+    "correspondingAuthor": {
+      "@type": "xsd:boolean"
+    },
+    "size": {
+      "@type": "xsd:integer"
+    },
+    "visibleForNonOwner": {
+      "@type": "xsd:boolean"
+    },
+    "sequence": {
+      "@type": "xsd:integer"
+    },
     "activeFrom": {
       "@type": "xsd:dateTime"
     },
@@ -226,8 +244,7 @@
         "@embed": "@always",
         "type": "Organization",
         "labels": {
-          "@embed": "@always",
-          "@default": "@null"
+          "@embed": "@always"
         },
         "countryCode": {
           "@embed": "@always",

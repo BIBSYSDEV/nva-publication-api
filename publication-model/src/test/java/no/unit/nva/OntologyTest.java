@@ -1,8 +1,6 @@
 package no.unit.nva;
 
 import static nva.commons.core.attempt.Try.attempt;
-import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
-import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -14,7 +12,6 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -29,7 +26,6 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
-import org.apache.jena.rdf.model.SimpleSelector;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
@@ -47,10 +43,6 @@ class OntologyTest {
     public static final JsonNode JSON_LD_CONTEXT =
         attempt(() -> MAPPER.readTree(Publication.getJsonLdContext(BASE_URI))).orElseThrow();
     public static final String ONTOLOGY_STRING = Publication.getOntology(BASE_URI);
-    public static final SimpleSelector ANY_CLASS_SELECTOR = new SimpleSelector(null, RDF.type, (RDFNode) null);
-    public static final SimpleSelector ANY_STATEMENT_SELECTOR = new SimpleSelector(null, null, (RDFNode) null);
-    public static final SimpleSelector ONTOLOGY_CLASS_SELECTOR = new SimpleSelector(null, RDF.type, RDFS.Class);
-    public static final SimpleSelector ONTOLOGY_PROPERTY_SELECTOR = new SimpleSelector(null, RDF.type, RDF.Property);
 
     public static Stream<Class<?>> publicationInstanceProvider() {
         return PublicationInstanceBuilder.listPublicationInstanceTypes().stream();
@@ -98,7 +90,7 @@ class OntologyTest {
     }
 
     private static Set<String> getModelClasses() {
-        return createModelFromJson(generateAllNvaTypes()).listStatements(ANY_CLASS_SELECTOR).toSet().stream()
+        return createModelFromJson(generateAllNvaTypes()).listStatements(null, RDF.type, (RDFNode) null).toSet().stream()
                    .map(Statement::getObject)
                    .map(RDFNode::asResource)
                    .map(Resource::getLocalName)
@@ -106,7 +98,7 @@ class OntologyTest {
     }
 
     private static Set<String> getModelProperties() {
-        return createModelFromJson(generateAllNvaTypes()).listStatements(ANY_STATEMENT_SELECTOR).toSet().stream()
+        return createModelFromJson(generateAllNvaTypes()).listStatements(null, null, (RDFNode) null).toSet().stream()
                    .map(Statement::getPredicate)
                    .filter(OntologyTest::isNotRdfType)
                    .map(Resource::getURI)
@@ -147,14 +139,14 @@ class OntologyTest {
 
     private List<String> extractClassesFromOntology() {
         var model = getOntologyModel();
-        return model.listStatements(ONTOLOGY_CLASS_SELECTOR).toSet().stream()
+        return model.listStatements(null, RDF.type, RDFS.Class).toSet().stream()
                    .map(Statement::getSubject)
                    .map(Resource::getLocalName)
                    .collect(Collectors.toList());
     }
 
     private List<String> extractPropertiesFromOntology() {
-        return getOntologyModel().listStatements(ONTOLOGY_PROPERTY_SELECTOR).toSet().stream()
+        return getOntologyModel().listStatements(null, RDF.type, RDF.Property).toSet().stream()
                    .map(Statement::getSubject)
                    .map(Resource::getURI)
                    .distinct()

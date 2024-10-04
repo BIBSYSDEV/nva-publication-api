@@ -2,6 +2,7 @@ package no.unit.nva.expansion.utils;
 
 import static java.util.Objects.isNull;
 import static no.unit.nva.expansion.utils.JsonLdDefaults.frameJsonLd;
+import com.apicatalog.jsonld.document.Document;
 import java.io.InputStream;
 import java.util.List;
 import nva.commons.core.JacocoGenerated;
@@ -20,7 +21,7 @@ public class FramedJsonGenerator {
     private static final Logger logger = LoggerFactory.getLogger(FramedJsonGenerator.class);
     private final String framedJson;
 
-    public FramedJsonGenerator(List<InputStream> streams, String frame) {
+    public FramedJsonGenerator(List<InputStream> streams, Document frame) {
         var model = createModel(streams);
         framedJson = frameJsonLd(model, frame);
     }
