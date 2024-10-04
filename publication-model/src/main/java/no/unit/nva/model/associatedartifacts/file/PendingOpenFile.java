@@ -33,7 +33,7 @@ public class PendingOpenFile extends File {
      * @param uploadDetails           Information regarding who and when inserted the file into the system
      */
     @JsonCreator
-    protected PendingOpenFile(
+    public PendingOpenFile(
         @JsonProperty(IDENTIFIER_FIELD) UUID identifier,
         @JsonProperty(NAME_FIELD) String name,
         @JsonProperty(MIME_TYPE_FIELD) String mimeType,
