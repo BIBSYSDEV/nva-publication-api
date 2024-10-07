@@ -26,40 +26,43 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 
-public final class PublishingService {
+public final class PublishingRequestResolver {
 
     private final TicketService ticketService;
     private final ResourceService resourceService;
+    private final UserInstance userInstance;
+    private final Customer customer;
 
-    private PublishingService(ResourceService resourceService, TicketService ticketService) {
+    public PublishingRequestResolver(ResourceService resourceService,
+                                     TicketService ticketService,
+                                     UserInstance userInstance,
+                                     Customer customer) {
         this.ticketService = ticketService;
         this.resourceService = resourceService;
+        this.userInstance = userInstance;
+        this.customer = customer;
     }
 
-    public static PublishingService create(ResourceService resourceService, TicketService ticketService) {
-        return new PublishingService(resourceService, ticketService);
-    }
-
-    public void resolve(Publication oldImage, Publication newImage, Customer customer, UserInstance userInstance) {
+    public void resolve(Publication oldImage, Publication newImage) {
         if (isAlreadyPublished(oldImage)) {
-            handlePublishingRequest(oldImage, newImage, customer, userInstance);
+            handlePublishingRequest(oldImage, newImage);
         }
     }
 
-    private static boolean canManagePublishingRequests(Customer customer, UserInstance userInstance) {
-        return canManagePublishingRequests(userInstance) || useIsAllowedToPublishFiles(customer);
+    private boolean canManagePublishingRequests() {
+        return userCanManagePublishingRequests() || userIsAllowedToPublishFiles();
     }
 
-    private static boolean canManagePublishingRequests(UserInstance userInstance) {
+    private boolean userCanManagePublishingRequests() {
         return userInstance.getAccessRights().contains(MANAGE_PUBLISHING_REQUESTS);
     }
 
-    private static boolean useIsAllowedToPublishFiles(Customer customer) {
+    private boolean userIsAllowedToPublishFiles() {
         return PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES.getValue()
                    .equals(customer.getPublicationWorkflow());
     }
 
-    private static HashSet<FileForApproval> mergeFilesForApproval(PublishingRequestCase publishingRequestCase,
+    private static Set<FileForApproval> mergeFilesForApproval(PublishingRequestCase publishingRequestCase,
                                                                   Set<FileForApproval> filesForApproval) {
         var combinedFilesForApproval = new HashSet<>(publishingRequestCase.getFilesForApproval());
         combinedFilesForApproval.addAll(filesForApproval);
@@ -78,21 +81,20 @@ public final class PublishingService {
         return TicketStatus.PENDING.equals(publishingRequest.getStatus());
     }
 
-    private static Username getUsername(UserInstance userInstance) {
+    private Username getUsername() {
         return new Username(userInstance.getUsername());
     }
 
-    private void handlePublishingRequest(Publication oldImage, Publication newImage, Customer customer,
-                                         UserInstance userInstance) {
-        var pendingPublishingRequests = fetchPendingPublishingRequestsForUserInstitution(oldImage, userInstance);
+    private void handlePublishingRequest(Publication oldImage, Publication newImage) {
+        var pendingPublishingRequests = fetchPendingPublishingRequestsForUserInstitution(oldImage);
         if (pendingPublishingRequests.isEmpty()) {
-            createPublishingRequestOnFileUpdate(oldImage, newImage, customer, userInstance);
+            createPublishingRequestOnFileUpdate(oldImage, newImage);
         }
         if (thereAreNoFiles(newImage)) {
-            autoCompletePendingPublishingRequestsIfNeeded(newImage, userInstance, pendingPublishingRequests);
+            autoCompletePendingPublishingRequestsIfNeeded(newImage, pendingPublishingRequests);
         }
         if (updateHasFileChanges(oldImage, newImage)) {
-            updateFilesForApproval(oldImage, newImage, customer, userInstance, pendingPublishingRequests);
+            updateFilesForApproval(oldImage, newImage, pendingPublishingRequests);
         }
     }
 
@@ -102,49 +104,45 @@ public final class PublishingService {
         return !existingFiles.equals(updatedFiles);
     }
 
-    private void autoCompletePendingPublishingRequestsIfNeeded(Publication publication, UserInstance userInstance,
+    private void autoCompletePendingPublishingRequestsIfNeeded(Publication publication,
                                                                List<PublishingRequestCase> pendingPublishingRequests) {
         pendingPublishingRequests.forEach(
-            ticket -> ticket.complete(publication, getUsername(userInstance)).persistUpdate(ticketService));
+            ticket -> ticket.complete(publication, getUsername()).persistUpdate(ticketService));
     }
 
     private boolean thereAreNoFiles(Publication publicationUpdate) {
         return publicationUpdate.getAssociatedArtifacts().stream().noneMatch(File.class::isInstance);
     }
 
-    private List<PublishingRequestCase> fetchPendingPublishingRequestsForUserInstitution(Publication publication,
-                                                                                         UserInstance userInstance) {
+    private List<PublishingRequestCase> fetchPendingPublishingRequestsForUserInstitution(Publication publication) {
         return resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication))
                    .filter(PublishingRequestCase.class::isInstance)
                    .map(PublishingRequestCase.class::cast)
                    .filter(ticketEntry -> ticketEntry.hasSameOwnerAffiliationAs(userInstance))
-                   .filter(PublishingService::isPending)
+                   .filter(PublishingRequestResolver::isPending)
                    .toList();
     }
 
-    private void createPublishingRequestOnFileUpdate(Publication oldImage, Publication newImage, Customer customer,
-                                                     UserInstance userInstance) {
+    private void createPublishingRequestOnFileUpdate(Publication oldImage, Publication newImage) {
         if (containsNewPublishableFiles(oldImage, newImage)) {
-            persistPendingPublishingRequest(oldImage, newImage, customer, userInstance);
+            persistPendingPublishingRequest(oldImage, newImage);
         }
     }
 
-    private TicketEntry persistPublishingRequest(Publication newImage, UserInstance userInstance, Customer customer,
+    private TicketEntry persistPublishingRequest(Publication newImage,
                                                  PublishingRequestCase publishingRequest) throws ApiGatewayException {
-        return canManagePublishingRequests(customer, userInstance) ? publishingRequest.approveFiles()
-                                                                         .persistAutoComplete(ticketService, newImage,
-                                                                                              getUsername(userInstance))
+        return canManagePublishingRequests()
+                   ? publishingRequest.approveFiles().persistAutoComplete(ticketService, newImage, getUsername())
                    : publishingRequest.persistNewTicket(ticketService);
     }
 
-    private void persistPendingPublishingRequest(Publication oldImage, Publication newImage, Customer customer,
-                                                 UserInstance userInstance) {
+    private void persistPendingPublishingRequest(Publication oldImage, Publication newImage) {
         attempt(() -> TicketEntry.requestNewTicket(newImage, PublishingRequestCase.class)).map(
                 PublishingRequestCase.class::cast)
             .map(publishingRequest -> publishingRequest.withOwnerAffiliation(userInstance.getTopLevelOrgCristinId()))
             .map(publishingRequest -> publishingRequest.withWorkflow(lookUp(customer.getPublicationWorkflow())))
             .map(publishingRequest -> publishingRequest.withFilesForApproval(getFilesForApproval(oldImage, newImage)))
-            .map(publishingRequest -> persistPublishingRequest(newImage, userInstance, customer, publishingRequest));
+            .map(publishingRequest -> persistPublishingRequest(newImage, publishingRequest));
     }
 
     private boolean isPublishable(File file) {
@@ -155,13 +153,11 @@ public final class PublishingService {
         return getNewUnpublishedFiles(oldImage, newImage).stream().anyMatch(this::isPublishable);
     }
 
-    private void updateFilesForApproval(Publication oldImage, Publication newImage, Customer customer,
-                                        UserInstance userInstance,
+    private void updateFilesForApproval(Publication oldImage, Publication newImage,
                                         List<PublishingRequestCase> pendingPublishingRequests) {
         var filesForApproval = getFilesForApproval(oldImage, newImage);
         pendingPublishingRequests.forEach(
-            publishingRequestCase -> updatePublishingRequest(newImage, publishingRequestCase, filesForApproval,
-                                                             customer, userInstance));
+            publishingRequestCase -> updatePublishingRequest(newImage, publishingRequestCase, filesForApproval));
     }
 
     private List<File> getNewUnpublishedFiles(Publication oldImage, Publication newImage) {
@@ -178,21 +174,20 @@ public final class PublishingService {
     }
 
     private void updatePublishingRequest(Publication newImage, PublishingRequestCase publishingRequest,
-                                         Set<FileForApproval> filesForApproval, Customer customer,
-                                         UserInstance userInstance) {
+                                         Set<FileForApproval> filesForApproval) {
         var updatedFilesForApproval = mergeFilesForApproval(publishingRequest, filesForApproval);
         ensureFileExists(newImage, updatedFilesForApproval);
-        if (canManagePublishingRequests(customer, userInstance)) {
+        if (canManagePublishingRequests()) {
             publishingRequest.withFilesForApproval(updatedFilesForApproval)
                 .approveFiles()
-                .complete(newImage, getUsername(userInstance))
+                .complete(newImage, getUsername())
                 .persistUpdate(ticketService);
         } else {
             publishingRequest.withFilesForApproval(updatedFilesForApproval).persistUpdate(ticketService);
         }
     }
 
-    private void ensureFileExists(Publication publication, HashSet<FileForApproval> updatedFilesForApproval) {
+    private void ensureFileExists(Publication publication, Set<FileForApproval> updatedFilesForApproval) {
         updatedFilesForApproval.removeIf(file -> publicationDoesNotContainFile(publication, file));
     }
 

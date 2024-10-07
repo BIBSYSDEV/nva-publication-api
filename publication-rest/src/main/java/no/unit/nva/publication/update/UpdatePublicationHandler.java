@@ -313,8 +313,8 @@ public class UpdatePublicationHandler
                                      publicationUpdate.getAssociatedArtifacts(),
                                      extractUploadDetails(userInstance));
         setRrsOnFiles(publicationUpdate, existingPublication, customer, userInstance.getUsername(), permissionStrategy);
-        PublishingService.create(resourceService, ticketService)
-            .resolve(existingPublication, publicationUpdate, customer, userInstance);
+        new PublishingRequestResolver(resourceService, ticketService, userInstance, customer)
+            .resolve(existingPublication, publicationUpdate);
 
         return resourceService.updatePublication(publicationUpdate);
     }
