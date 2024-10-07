@@ -140,7 +140,7 @@ validation = ['jakarta-validation-api', 'jakarta-el-api', 'glassfish-el', 'apach
 testing = ['junit-jupiter-params', 'junit-jupiter-api', 'junit-vintage-engine', 'guava',
     'junit-jupiter-engine', 'mockito-core', 'mockito-junit', 'hamcrest-base', 'hamcrest-core',
     'hamcrest-optional', 'logutils', 'nva-testutils', 'javers', 'zalando',
-    'mockito-junit-jupiter','datafaker', 'reflections']
+    'mockito-junit-jupiter','datafaker']
 logging = ['log4j-core', 'log4j-api', 'log4j-slf4j-impl', 'slf4j-api']
 jackson = ['jackson-core', 'jackson-datatype-jdk8', 'jackson-datatype-jsr310', 'jackson-databind', 'jackson-annotations', 'jackson-module-parameter-names', 'jackson-datatype-problem']
 jaxb = ['xsd2java-api', 'jaxb-runtime', 'xsd2java-jakarta']
