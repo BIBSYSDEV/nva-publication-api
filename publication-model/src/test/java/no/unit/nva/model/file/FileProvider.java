@@ -29,6 +29,7 @@ import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.reflections.Reflections;
 
 public class FileProvider implements ArgumentsProvider {
+
     public static final URI LICENSE_URI = URI.create("http://creativecommons.org/licenses/by/4.0/");
     public static final boolean NOT_ADMINISTRATIVE_AGREEMENT = false;
 
@@ -57,7 +58,8 @@ public class FileProvider implements ArgumentsProvider {
             case RejectedFile.TYPE -> randomRejectedFile();
             case InternalFile.TYPE -> randomInternalFile();
             case PendingInternalFile.TYPE -> randomPendingInternalFile();
-            default -> throw new IllegalArgumentException("Unexpected value: " + aClass.getSimpleName());
+            default -> throw new IllegalArgumentException(
+                "Unexpected value, make sure to include new types here: " + aClass.getSimpleName());
         };
     }
 
