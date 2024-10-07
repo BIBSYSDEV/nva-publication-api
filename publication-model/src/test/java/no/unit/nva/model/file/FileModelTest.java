@@ -3,6 +3,7 @@ package no.unit.nva.model.file;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.OVERRIDABLE_RIGHTS_RETENTION_STRATEGY;
+import static no.unit.nva.model.file.FileProvider.randomPublishedFile;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
@@ -24,6 +25,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
@@ -36,8 +38,10 @@ import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.associatedartifacts.file.UploadDetails;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.model.testing.associatedartifacts.util.RightsRetentionStrategyGenerator;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 public class FileModelTest {
@@ -51,21 +55,11 @@ public class FileModelTest {
     public static final boolean NOT_ADMINISTRATIVE_AGREEMENT = false;
     private static final boolean ADMINISTRATIVE_AGREEMENT = true;
 
-    public static Stream<File> fileProvider() {
-        var publishedFile = randomPublishedFile();
-        var unpublishedFile = randomUnpublishedFile();
-        var unpublishableFile = randomUnpublishableFile();
-        return Stream.of(publishedFile, unpublishedFile, unpublishableFile);
-    }
-
-    public static Stream<File> notAdministrativeAgreements() {
-        return Stream.of(randomPublishedFile(), randomUnpublishedFile(),
-            unpublishableNotAdministrativeAgreement());
-    }
 
     @ParameterizedTest
-    @MethodSource("fileProvider")
-    void shouldRoundTripAllFileTypes(File file) throws JsonProcessingException {
+    @ArgumentsSource(FileProvider.class)
+    @DisplayName("Should round trip all file types")
+    void shouldRoundTripAllFileTypes(AssociatedArtifact file) throws JsonProcessingException {
         var json = JsonUtils.dtoObjectMapper.writeValueAsString(file);
         var deserialized = JsonUtils.dtoObjectMapper.readValue(json, File.class);
         assertThat(deserialized, doesNotHaveEmptyValuesIgnoringFields(Set.of(".rightsRetentionStrategy", "legalNote")));
@@ -97,13 +91,13 @@ public class FileModelTest {
     }
 
     @Test
-    public void shouldAssignDefaultStrategyWhenNoneProvided() throws JsonProcessingException {
+    void shouldAssignDefaultStrategyWhenNoneProvided() throws JsonProcessingException {
         var file = JsonUtils.dtoObjectMapper.readValue(generateNewFile(), File.class);
         assertThat(file.getRightsRetentionStrategy(), instanceOf(NullRightsRetentionStrategy.class));
     }
 
     @Test
-    public void shouldSetNewRightsRetentionStrategy() {
+    void shouldSetNewRightsRetentionStrategy() {
         var file = getPublishedFile();
         var rightsRetentionStrategy = CustomerRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY);
         file.setRightsRetentionStrategy(rightsRetentionStrategy);
@@ -124,15 +118,6 @@ public class FileModelTest {
                           .withLabels(null)
                           .build();
         assertThat(license.getLabels(), is(anEmptyMap()));
-    }
-
-    @ParameterizedTest
-    @MethodSource("fileProvider")
-    void shouldReturnSerializedModel(File file) throws JsonProcessingException {
-        var mapped = dataModelObjectMapper.writeValueAsString(file);
-        var unmapped = dataModelObjectMapper.readValue(mapped, File.class);
-        assertThat(file, equalTo(unmapped));
-        assertThat(file, doesNotHaveEmptyValuesIgnoringFields(Set.of(".rightsRetentionStrategy", "legalNote")));
     }
 
     @Test
@@ -176,16 +161,6 @@ public class FileModelTest {
         assertThat(publicationAfterRoundTrip.getPublisherVersion(), is(equalTo(PublisherVersion.ACCEPTED_VERSION)));
     }
 
-    private static UploadDetails randomInserted() {
-        return new UserUploadDetails(randomUsername(), randomInstant());
-    }
-
-    public static File randomUnpublishableFile() {
-        return new AdministrativeAgreement(UUID.randomUUID(), randomString(), randomString(),
-            randomInteger().longValue(), LICENSE_URI, randomBoolean(), PublisherVersion.ACCEPTED_VERSION, randomInstant(),
-                                           randomInserted());
-    }
-
     private static Username randomUsername() {
         return new Username(randomInteger().toString() + "@" + randomString());
     }
@@ -193,9 +168,12 @@ public class FileModelTest {
     public static File randomUnpublishedFile() {
         return buildNonAdministrativeAgreement().buildUnpublishedFile();
     }
-
-    public static File randomPublishedFile() {
-        return buildNonAdministrativeAgreement().buildPublishedFile();
+    public static Stream<File> notAdministrativeAgreements() {
+        return Stream.of(randomPublishedFile(), randomUnpublishedFile(),
+                         unpublishableNotAdministrativeAgreement());
+    }
+    private static UploadDetails randomInserted() {
+        return new UserUploadDetails(randomUsername(), randomInstant());
     }
 
     public static File.Builder buildNonAdministrativeAgreement() {
@@ -304,39 +282,41 @@ public class FileModelTest {
     @Deprecated
     @Test
     void shouldMigrateLegacyFileToUnpublishedFile() throws JsonProcessingException {
-        var fileJson = "{\n"
-                       + "    \"type\" : \"File\",\n"
-                       + "    \"identifier\" : \"df2be965-f628-43fb-914b-e16d6f136e05\",\n"
-                       + "    \"name\" : \"2-s2.0-85143901828.xml\",\n"
-                       + "    \"mimeType\" : \"text/xml\",\n"
-                       + "    \"size\" : 180088,\n"
-                       + "    \"license\" : {\n"
-                       + "      \"type\" : \"License\",\n"
-                       + "      \"identifier\" : \"RightsReserved\",\n"
-                       + "      \"labels\" : {\n"
-                       + "        \"nb\" : \"RightsReserved\"\n"
-                       + "      }\n"
-                       + "    },\n"
-                       + "    \"administrativeAgreement\" : false,\n"
-                       + "    \"publisherAuthority\" : false,\n"
-                       + "    \"visibleForNonOwner\" : true\n"
-                       + "  }";
+        var fileJson = """
+        {
+            "type" : "File",
+            "identifier" : "df2be965-f628-43fb-914b-e16d6f136e05",
+            "name" : "2-s2.0-85143901828.xml",
+            "mimeType" : "text/xml",
+            "size" : 180088,
+            "license" : {
+                "type" : "License",
+                "identifier" : "RightsReserved",
+                "labels" : {
+                    "nb" : "RightsReserved"
+                }
+            },
+            "administrativeAgreement" : false,
+            "publisherAuthority" : false,
+            "visibleForNonOwner" : true
+        }""";
         var file = JsonUtils.dtoObjectMapper.readValue(fileJson, File.class);
         assertThat(file, instanceOf(UnpublishedFile.class));
     }
 
     private static String generateNewFile() {
-        return "{\n"
-               + "    \"type\" : \"PublishedFile\",\n"
-               + "    \"identifier\" : \"d9fc5844-f1a3-491b-825a-5a4cabc12aa2\",\n"
-               + "    \"name\" : \"Per Magne Østertun.pdf\",\n"
-               + "    \"mimeType\" : \"application/pdf\",\n"
-               + "    \"size\" : 1025817,\n"
-               + "    \"license\" : \"https://creativecommons.org/licenses/by-nc/2.0/\",\n"
-               + "    \"administrativeAgreement\" : false,\n"
-               + "    \"publisherAuthority\" : false,\n"
-               + "    \"publishedDate\" : \"2023-05-25T19:31:17.302914Z\",\n"
-               + "    \"visibleForNonOwner\" : true\n"
-               + "  }";
+        return """
+        {
+            "type" : "PublishedFile",
+            "identifier" : "d9fc5844-f1a3-491b-825a-5a4cabc12aa2",
+            "name" : "Per Magne Østertun.pdf",
+            "mimeType" : "application/pdf",
+            "size" : 1025817,
+            "license" : "https://creativecommons.org/licenses/by-nc/2.0/",
+            "administrativeAgreement" : false,
+            "publisherAuthority" : false,
+            "publishedDate" : "2023-05-25T19:31:17.302914Z",
+            "visibleForNonOwner" : true
+        }""";
     }
 }

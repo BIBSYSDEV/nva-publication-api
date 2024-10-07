@@ -30,8 +30,8 @@ public class OpenFile extends File {
      * @param publisherVersion        True if the file owner has publisher authority
      * @param embargoDate             The date after which the file may be published
      * @param rightsRetentionStrategy The rights retention strategy for the file
-     * @param legalNote
-     * @param publishedDate
+     * @param legalNote               The legal note for file
+     * @param publishedDate           The date the file was published
      * @param uploadDetails           Information regarding who and when inserted the file into the system
      */
     @JsonCreator
