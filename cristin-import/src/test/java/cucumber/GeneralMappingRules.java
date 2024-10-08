@@ -503,7 +503,7 @@ public class GeneralMappingRules {
     @Then("publication should have a nva Fundings:")
     public void publicationShouldHaveANvaFundings(List<Funding> fundings) {
         var nvaFundings = scenarioContext.getNvaEntry().getFundings();
-        assertThat(nvaFundings, containsInAnyOrder(fundings.toArray()));
+        assertThat(nvaFundings, containsInAnyOrder(fundings.toArray(Funding[]::new)));
     }
 
     @And("that the Cristin Result has published date equal to the local date {string}")
@@ -583,14 +583,15 @@ public class GeneralMappingRules {
         affiliations.get(0).setRoles(List.of(cristinRole));
     }
 
-    @Given("that Cristin Result has a grant with properties finansieringsreferanse {string} and sourceCode {string}:")
+    @Given("that Cristin Result has a grant with properties finansieringsreferanse {string} and sourceCodeEnglish " +
+           "{string}:")
     public void thatCristinResultHasAGrantWithPropertiesFinansieringsreferanseAndSourceCode(String fundingReference,
                                                                                             String sourceCode) {
         scenarioContext.getCristinEntry()
             .setCristinGrants(
                 List.of(CristinGrant.builder()
                             .withGrantReference(fundingReference)
-                            .withSourceCode(sourceCode)
+                            .withSourceCodeEnglish(sourceCode)
                             .build()));
     }
 

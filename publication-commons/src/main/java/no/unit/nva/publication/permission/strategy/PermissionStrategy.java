@@ -1,6 +1,7 @@
 package no.unit.nva.publication.permission.strategy;
 
 import static java.util.Objects.isNull;
+import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
@@ -29,13 +30,6 @@ import org.slf4j.LoggerFactory;
 public abstract class PermissionStrategy {
 
     public static final Logger logger = LoggerFactory.getLogger(PermissionStrategy.class);
-
-    public static final Class<?>[] PROTECTED_DEGREE_INSTANCE_TYPES = {
-        DegreeLicentiate.class,
-        DegreeBachelor.class,
-        DegreeMaster.class,
-        DegreePhd.class
-    };
 
     protected final Publication publication;
     protected final UserInstance userInstance;

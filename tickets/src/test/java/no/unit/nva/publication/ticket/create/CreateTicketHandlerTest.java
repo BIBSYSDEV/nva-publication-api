@@ -8,6 +8,7 @@ import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithId;
+import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
@@ -92,6 +93,7 @@ import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -254,7 +256,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     @Test
     void shouldUpdateExistingDoiRequestWhenNewDoiIsRequestedButUnfulfilledDoiRequestAlreadyExists()
         throws ApiGatewayException, IOException {
-        var publication = createPersistedPublishedPublication();
+        var publication = createPersistedNonDegreePublishedPublication();
         var owner = UserInstance.fromPublication(publication);
         var requestBody = constructDto(DoiRequest.class);
         ticketResolver = new TicketResolver(resourceService, ticketService,
@@ -1014,6 +1016,15 @@ class CreateTicketHandlerTest extends TicketTestLocal {
 
     private Publication createPersistedPublishedPublication() throws ApiGatewayException {
         var publication = randomPublication();
+        publication.setDoi(null); // for creating DoiRequests
+        publication = Resource.fromPublication(publication)
+                          .persistNew(resourceService, UserInstance.fromPublication(publication));
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
+        return resourceService.getPublication(publication);
+    }
+
+    private Publication createPersistedNonDegreePublishedPublication() throws ApiGatewayException {
+        var publication = randomNonDegreePublication();
         publication.setDoi(null); // for creating DoiRequests
         publication = Resource.fromPublication(publication)
                           .persistNew(resourceService, UserInstance.fromPublication(publication));

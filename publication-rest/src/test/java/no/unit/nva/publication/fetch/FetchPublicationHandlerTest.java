@@ -9,7 +9,7 @@ import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.HttpHeaders.LOCATION;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.util.UUID.randomUUID;
-import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.testing.PublicationGenerator.fromInstanceClassesExcluding;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
@@ -17,7 +17,6 @@ import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIG
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.DO_NOT_REDIRECT_QUERY_PARAM;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ENV_NAME_NVA_FRONTEND_DOMAIN;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
-import static no.unit.nva.publication.ticket.test.TicketTestUtils.createPersistedPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static nva.commons.apigateway.ApiGatewayHandler.RESOURCE;
@@ -63,14 +62,12 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permission.strategy.PermissionStrategy;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ReadResourceService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -86,7 +83,6 @@ import nva.commons.core.paths.UriWrapper;
 import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -427,7 +423,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication createUnpublishedPublication(WireMockRuntimeInfo wireMockRuntimeInfo) throws ApiGatewayException {
-        var publication = fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES);
+        var publication = fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES);
         publication.setPublisher(createExpectedPublisher(wireMockRuntimeInfo));
         publication.setDuplicateOf(null);
         var peristedPublication = publicationService.createPublication(UserInstance.fromPublication(publication),

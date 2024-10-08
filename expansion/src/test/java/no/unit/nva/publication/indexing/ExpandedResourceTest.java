@@ -3,8 +3,11 @@ package no.unit.nva.publication.indexing;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.util.Objects.isNull;
+import static java.util.stream.StreamSupport.stream;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
+import static no.unit.nva.model.ContributorVerificationStatus.NOT_VERIFIED;
+import static no.unit.nva.model.ContributorVerificationStatus.VERIFIED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
@@ -40,12 +43,15 @@ import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpResponse;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -53,12 +59,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.utils.PublicationJsonPointers;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
@@ -180,6 +186,67 @@ class ExpandedResourceTest {
         var actualCountryCode = framedResultNode.at("/entityDescription/contributors/1/affiliations/0/countryCode")
                                                 .textValue();
         assertThat(actualCountryCode, is(not(nullValue())));
+    }
+
+    @Test
+    void shouldReturnIndexDocumentWithContributorsPreviewAndCount() throws Exception {
+        var mockUriRetriever = mock(UriRetriever.class);
+        var publication = randomPublication();
+
+        var contributor1 = contributorWithSequenceAndVerificationStatus(1, NOT_VERIFIED);
+        var contributor2 = contributorWithSequenceAndVerificationStatus(2, VERIFIED);
+        var contributor3 = contributorWithSequenceAndVerificationStatus(3, NOT_VERIFIED);
+        var contributor4 = contributorWithSequenceAndVerificationStatus(4, VERIFIED);
+
+        var contributors = Arrays.asList(contributor1, contributor2, contributor3, contributor4);
+        Collections.shuffle(contributors);
+        var expectedContributors = List.of(contributor2, contributor4, contributor1, contributor3);
+
+        publication.getEntityDescription().setContributors(contributors);
+
+        mockCristinOrganizationRawContentResponse(mockUriRetriever, publication);
+
+        var indexDocument = fromPublication(mockUriRetriever, publication);
+        var framedResultNode = indexDocument.asJsonNode();
+
+        var contributorsPreviewNode = (ArrayNode) framedResultNode.at("/entityDescription")
+                                             .at("/contributorsPreview");
+
+        var actualContributorsPreview = stream(contributorsPreviewNode.spliterator(), false)
+                                                   .map(node -> objectMapper.convertValue(node, Contributor.class))
+                                                   .collect(Collectors.toList());
+
+        assertThat(actualContributorsPreview, is(equalTo(expectedContributors)));
+    }
+
+    @Test
+    void shouldReturnIndexDocumentWithContributorsPreviewWithNoMoreThan10Contributors() throws Exception {
+        var mockUriRetriever = mock(UriRetriever.class);
+        var publication = randomPublication();
+
+        var contributors = IntStream.range(0,20).mapToObj(i ->
+            contributorWithSequenceAndVerificationStatus(randomInteger(), NOT_VERIFIED)
+        ).toList();
+
+        publication.getEntityDescription().setContributors(contributors);
+
+        mockCristinOrganizationRawContentResponse(mockUriRetriever, publication);
+
+        var indexDocument = fromPublication(mockUriRetriever, publication);
+        var framedResultNode = indexDocument.asJsonNode();
+
+        var contributorsCountNode = (IntNode) framedResultNode.at("/entityDescription")
+                                                      .at("/contributorsCount");
+
+        var contributorsPreviewNode = (ArrayNode) framedResultNode.at("/entityDescription")
+                                                      .at("/contributorsPreview");
+
+        var actualContributorsPreview = stream(contributorsPreviewNode.spliterator(), false)
+                                            .map(node -> objectMapper.convertValue(node, Contributor.class))
+                                            .collect(Collectors.toList());
+
+        assertThat(actualContributorsPreview.size(), is(equalTo(10)));
+        assertThat(contributorsCountNode.intValue(), is(equalTo(20)));
     }
 
     @Test
@@ -657,6 +724,14 @@ class ExpandedResourceTest {
                                         .build();
     }
 
+    private static Contributor contributorWithSequenceAndVerificationStatus(int sequence,
+                                                                            ContributorVerificationStatus verificationStatus) {
+        return new Contributor.Builder().withIdentity(new Identity.Builder().withName(randomString()).build())
+                   .withSequence(sequence)
+                   .withIdentity(new Identity.Builder().withVerificationStatus(verificationStatus).build())
+                   .build();
+    }
+
     private static HttpResponse mockResponseWithStatusCodeAndBody(int statusCode, String body) {
         var firstResponse = mock(HttpResponse.class);
         when(firstResponse.statusCode()).thenReturn(statusCode);
@@ -706,7 +781,7 @@ class ExpandedResourceTest {
     }
 
     private static JsonNode getTopLevel(ArrayNode topLevelNodes, String topLevelOrgId) {
-        return StreamSupport.stream(topLevelNodes.spliterator(), false)
+        return stream(topLevelNodes.spliterator(), false)
                             .filter(node -> node.at(JSON_PTR_ID).textValue().contains(topLevelOrgId))
                             .findFirst()
                             .orElse(null);
