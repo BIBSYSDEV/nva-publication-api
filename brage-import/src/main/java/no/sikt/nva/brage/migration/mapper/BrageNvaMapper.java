@@ -33,19 +33,19 @@ import no.sikt.nva.brage.migration.record.Record;
 import no.sikt.nva.brage.migration.record.content.ContentFile;
 import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import no.sikt.nva.brage.migration.record.content.ResourceContent.BundleType;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
-import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.additionalidentifiers.HandleIdentifier;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationDate.Builder;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
+import no.unit.nva.model.additionalidentifiers.HandleIdentifier;
 import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
@@ -451,8 +451,12 @@ public final class BrageNvaMapper {
         return new Identity.Builder()
                    .withName(identity.getName())
                    .withId(generateIdentityIdentifier(identity))
-                   .withOrcId(identity.getOrcId())
+                   .withOrcId(getOrcId(identity))
                    .build();
+    }
+
+    private static String getOrcId(no.sikt.nva.brage.migration.record.Identity identity) {
+        return Optional.ofNullable(identity.getOrcId()).map(URI::toString).orElse(null);
     }
 
     private static URI generateIdentityIdentifier(no.sikt.nva.brage.migration.record.Identity identity) {
