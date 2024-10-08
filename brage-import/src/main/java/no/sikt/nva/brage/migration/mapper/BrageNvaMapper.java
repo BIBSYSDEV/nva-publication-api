@@ -68,7 +68,6 @@ import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
-import org.jetbrains.annotations.Nullable;
 import software.amazon.awssdk.services.s3.S3Client;
 
 @SuppressWarnings("PMD.GodClass")
@@ -456,7 +455,7 @@ public final class BrageNvaMapper {
                    .build();
     }
 
-    private static @Nullable String getOrcId(no.sikt.nva.brage.migration.record.Identity identity) {
+    private static String getOrcId(no.sikt.nva.brage.migration.record.Identity identity) {
         return Optional.ofNullable(identity.getOrcId()).map(URI::toString).orElse(null);
     }
 

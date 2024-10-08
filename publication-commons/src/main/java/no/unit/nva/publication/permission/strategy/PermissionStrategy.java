@@ -16,10 +16,6 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.UnpublishedFile;
 import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
-import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
-import no.unit.nva.model.instancetypes.degree.DegreeMaster;
-import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -60,7 +56,6 @@ public abstract class PermissionStrategy {
                     publication.getCuratingInstitutions(),
                     userInstance.getUser(),
                     userTopLevelOrg);
-
         return publication.getCuratingInstitutions().stream().anyMatch(org -> org.equals(userTopLevelOrg));
     }
 
