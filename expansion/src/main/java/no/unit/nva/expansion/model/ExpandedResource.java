@@ -213,19 +213,21 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         if (!contributors.isMissingNode() && contributors.isArray()) {
             var entityDescription = (ObjectNode) json.at(ENTITY_DESCRIPTION_PTR);
             if (!entityDescription.isMissingNode() && entityDescription.isObject()) {
-                List<JsonNode> contributorsList = new ArrayList<>();
-                contributors.forEach(contributorsList::add);
-                var sortedContributors = contributorsList.stream()
-                                             .sorted(Comparator.comparingInt(c -> c.get(CONTRIBUTOR_SEQUENCE).asInt()))
-                                             .sorted(ExpandedResource::sortContributorByVerifiedFirst)
-                                             .limit(MAX_CONTRIBUTORS_PREVIEW).toList();
+                var sortedContributors = sortBySequenceAndPreviewLimit(contributors);
+                var sortedContributorsArrayNode = new ArrayNode(JsonNodeFactory.instance).addAll(sortedContributors);
 
-                ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
-                arrayNode.addAll(sortedContributors);
-
-                entityDescription.put(CONTRIBUTORS_PREVIEW, arrayNode);
+                entityDescription.set(CONTRIBUTORS_PREVIEW, sortedContributorsArrayNode);
             }
         }
+    }
+
+    private static List<JsonNode> sortBySequenceAndPreviewLimit(JsonNode contributors) {
+        var contributorsList = new ArrayList<JsonNode>();
+        contributors.forEach(contributorsList::add);
+        return contributorsList.stream()
+                   .sorted(Comparator.comparingInt(contributor -> contributor.get(CONTRIBUTOR_SEQUENCE).asInt()))
+                   .sorted(ExpandedResource::sortContributorByVerifiedFirst)
+                   .limit(MAX_CONTRIBUTORS_PREVIEW).toList();
     }
 
     /**

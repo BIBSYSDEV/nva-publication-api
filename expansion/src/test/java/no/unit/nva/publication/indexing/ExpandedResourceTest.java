@@ -43,6 +43,7 @@ import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Lists;
 import java.io.IOException;
@@ -216,6 +217,36 @@ class ExpandedResourceTest {
                                                    .collect(Collectors.toList());
 
         assertThat(actualContributorsPreview, is(equalTo(expectedContributors)));
+    }
+
+    @Test
+    void shouldReturnIndexDocumentWithContributorsPreviewWithNoMoreThan10Contributors() throws Exception {
+        var mockUriRetriever = mock(UriRetriever.class);
+        var publication = randomPublication();
+
+        var contributors = IntStream.range(0,20).mapToObj(i ->
+            contributorWithSequenceAndVerificationStatus(randomInteger(), NOT_VERIFIED)
+        ).toList();
+
+        publication.getEntityDescription().setContributors(contributors);
+
+        mockCristinOrganizationRawContentResponse(mockUriRetriever, publication);
+
+        var indexDocument = fromPublication(mockUriRetriever, publication);
+        var framedResultNode = indexDocument.asJsonNode();
+
+        var contributorsCountNode = (IntNode) framedResultNode.at("/entityDescription")
+                                                      .at("/contributorsCount");
+
+        var contributorsPreviewNode = (ArrayNode) framedResultNode.at("/entityDescription")
+                                                      .at("/contributorsPreview");
+
+        var actualContributorsPreview = stream(contributorsPreviewNode.spliterator(), false)
+                                            .map(node -> objectMapper.convertValue(node, Contributor.class))
+                                            .collect(Collectors.toList());
+
+        assertThat(actualContributorsPreview.size(), is(equalTo(10)));
+        assertThat(contributorsCountNode.intValue(), is(equalTo(20)));
     }
 
     @Test
