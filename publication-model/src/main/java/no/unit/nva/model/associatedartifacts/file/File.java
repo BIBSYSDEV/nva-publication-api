@@ -431,6 +431,36 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
                                                publisherVersion, embargoDate, uploadDetails);
         }
 
+        public File buildOpenFile() {
+            return new OpenFile(identifier, name, mimeType, size, license, administrativeAgreement,
+                                     publisherVersion, embargoDate, rightsRetentionStrategy,
+                                     legalNote, Instant.now(), uploadDetails);
+        }
+
+        public File buildInternalFile() {
+            return new InternalFile(identifier, name, mimeType, size, license, administrativeAgreement,
+                                     publisherVersion, embargoDate, rightsRetentionStrategy,
+                                     legalNote, Instant.now(), uploadDetails);
+        }
+
+        public File buildPendingOpenFile() {
+            return new PendingOpenFile(identifier, name, mimeType, size, license, administrativeAgreement,
+                                       publisherVersion, embargoDate, rightsRetentionStrategy, legalNote,
+                                       uploadDetails);
+        }
+
+        public File buildPendingInternalFile() {
+            return new PendingInternalFile(identifier, name, mimeType, size, license, administrativeAgreement,
+                                       publisherVersion, embargoDate, rightsRetentionStrategy, legalNote,
+                                       uploadDetails);
+        }
+
+        public File buildRejectedFile() {
+            return new RejectedFile(identifier, name, mimeType, size, license, administrativeAgreement,
+                                       publisherVersion, embargoDate, rightsRetentionStrategy, legalNote,
+                                       uploadDetails);
+        }
+
         public File build(Class<? extends File> clazz) {
             if (clazz.equals(PublishedFile.class)) {
                 return buildPublishedFile();

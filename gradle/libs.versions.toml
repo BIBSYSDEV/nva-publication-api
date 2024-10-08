@@ -39,6 +39,7 @@ jakarta-el-api = { strictly = '6.0.1' }
 glassfish-el = { strictly = '4.0.2' }
 apache-bval = { strictly = '3.0.1' }
 swaggerCoreVersion = { strictly = '2.2.22' }
+reflections = { strictly = '0.10.2' }
 [libraries]
 nva-core = { group = 'com.github.bibsysdev', name = 'core', version.ref = 'nva' }
 nva-json = { group = 'com.github.bibsysdev', name = 'json', version.ref = 'nva' }
@@ -133,6 +134,7 @@ swagger-core = { group = 'io.swagger.core.v3', name = 'swagger-core', version.re
 swagger-annotations = { group = 'io.swagger.core.v3', name = 'swagger-annotations', version.ref = 'swaggerCoreVersion' }
 mockito-junit-jupiter = {group= 'org.mockito', name= 'mockito-junit-jupiter', version= '5.3.1'}
 open-csv = { group = 'com.opencsv', name = 'opencsv', version = '5.9' } # open-csv is used by cristin-import, can be deleted when cristin-import is deleted
+reflections = { group = 'org.reflections', name = 'reflections', version.ref = 'reflections' }
 [bundles]
 validation = ['jakarta-validation-api', 'jakarta-el-api', 'glassfish-el', 'apache-bval']
 testing = ['junit-jupiter-params', 'junit-jupiter-api', 'junit-vintage-engine', 'guava',

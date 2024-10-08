@@ -12,6 +12,7 @@ dependencies {
     implementation ( libs.commons.validator )
     implementation( libs.jackson.databind )
 
+    testImplementation( libs.reflections )
     testImplementation( libs.jena.core )
     testImplementation( libs.jena.arq )
 
