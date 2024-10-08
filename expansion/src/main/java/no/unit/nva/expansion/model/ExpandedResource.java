@@ -76,9 +76,9 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     private static final String JSON_LD_CONTEXT_FIELD = "@context";
     private static final String CONTEXT_TYPE_ANTHOLOGY = "Anthology";
     private static final String INSTANCE_TYPE_ACADEMIC_CHAPTER = "AcademicChapter";
-    public static final int MAX_PROMOTED_CONTRIBUTORS = 10;
+    public static final int MAX_CONTRIBUTORS_PREVIEW = 10;
     public static final String CONTRIBUTORS_COUNT = "contributorsCount";
-    public static final String CONTRIBUTORS_PROMOTED = "contributorsPromoted";
+    public static final String CONTRIBUTORS_PREVIEW = "contributorsPreview";
     @JsonAnySetter
     private final Map<String, Object> allFields;
 
@@ -194,7 +194,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         expandLicenses(objectNode);
         injectJoinField(publication, objectNode);
         injectContributorCount(objectNode);
-        injectPromotedContributors(objectNode);
+        injectContributorsPreview(objectNode);
         return objectNode;
     }
 
@@ -208,7 +208,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         }
     }
 
-    private static void injectPromotedContributors(ObjectNode json) {
+    private static void injectContributorsPreview(ObjectNode json) {
         var contributors = json.at(CONTRIBUTORS_PTR);
         if (!contributors.isMissingNode() && contributors.isArray()) {
             var entityDescription = (ObjectNode) json.at(ENTITY_DESCRIPTION_PTR);
@@ -218,12 +218,12 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
                 var sortedContributors = contributorsList.stream()
                                              .sorted(Comparator.comparingInt(c -> c.get(CONTRIBUTOR_SEQUENCE).asInt()))
                                              .sorted(ExpandedResource::sortContributorByVerifiedFirst)
-                                             .limit(MAX_PROMOTED_CONTRIBUTORS).toList();
+                                             .limit(MAX_CONTRIBUTORS_PREVIEW).toList();
 
                 ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
                 arrayNode.addAll(sortedContributors);
 
-                entityDescription.put(CONTRIBUTORS_PROMOTED, arrayNode);
+                entityDescription.put(CONTRIBUTORS_PREVIEW, arrayNode);
             }
         }
     }

@@ -188,7 +188,7 @@ class ExpandedResourceTest {
     }
 
     @Test
-    void shouldReturnIndexDocumentWithPromotedContributorsAndCount() throws Exception {
+    void shouldReturnIndexDocumentWithContributorsPreviewAndCount() throws Exception {
         var mockUriRetriever = mock(UriRetriever.class);
         var publication = randomPublication();
 
@@ -208,14 +208,14 @@ class ExpandedResourceTest {
         var indexDocument = fromPublication(mockUriRetriever, publication);
         var framedResultNode = indexDocument.asJsonNode();
 
-        var promotedContributorsNode = (ArrayNode) framedResultNode.at("/entityDescription")
-                                             .at("/contributorsPromoted");
+        var contributorsPreviewNode = (ArrayNode) framedResultNode.at("/entityDescription")
+                                             .at("/contributorsPreview");
 
-        var actualPromotedContributors = stream(promotedContributorsNode.spliterator(), false)
+        var actualContributorsPreview = stream(contributorsPreviewNode.spliterator(), false)
                                                    .map(node -> objectMapper.convertValue(node, Contributor.class))
                                                    .collect(Collectors.toList());
 
-        assertThat(actualPromotedContributors, is(equalTo(expectedContributors)));
+        assertThat(actualContributorsPreview, is(equalTo(expectedContributors)));
     }
 
     @Test
