@@ -50,6 +50,7 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.funding.FundingBuilder;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.external.services.UriRetriever;
@@ -327,7 +328,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication createPublicationWithoutDoi() throws ApiGatewayException {
-        var publication = randomPublication().copy().withDoi(null).build();
+        var publication = randomPublication(AcademicArticle.class).copy().withDoi(null).build();
         var persisted = Resource.fromPublication(publication)
                             .persistNew(resourceService, UserInstance.fromPublication(publication));
         return resourceService.getPublicationByIdentifier(persisted.getIdentifier());
