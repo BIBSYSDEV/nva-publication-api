@@ -1,6 +1,7 @@
 package no.unit.nva.model.associatedartifacts.file;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -30,17 +31,23 @@ public class PendingInternalFile extends File {
      * @param embargoDate             The date after which the file may be published
      * @param rightsRetentionStrategy The rights retention strategy for the file
      * @param legalNote
-     * @param publishedDate
      * @param uploadDetails           Information regarding who and when inserted the file into the system
      */
     @JsonCreator
-    protected PendingInternalFile(UUID identifier, String name, String mimeType, Long size, Object license,
-                                  boolean administrativeAgreement, PublisherVersion publisherVersion,
-                                  Instant embargoDate,
-                                  RightsRetentionStrategy rightsRetentionStrategy,
-                                  String legalNote, Instant publishedDate, UploadDetails uploadDetails) {
+    public PendingInternalFile(
+        @JsonProperty(IDENTIFIER_FIELD) UUID identifier,
+        @JsonProperty(NAME_FIELD) String name,
+        @JsonProperty(MIME_TYPE_FIELD) String mimeType,
+        @JsonProperty(SIZE_FIELD) Long size,
+        @JsonProperty(LICENSE_FIELD) Object license,
+        @JsonProperty(ADMINISTRATIVE_AGREEMENT_FIELD) boolean administrativeAgreement,
+        @JsonProperty(PUBLISHER_VERSION_FIELD) PublisherVersion publisherVersion,
+        @JsonProperty(EMBARGO_DATE_FIELD) Instant embargoDate,
+        @JsonProperty(RIGHTS_RETENTION_STRATEGY) RightsRetentionStrategy rightsRetentionStrategy,
+        @JsonProperty(LEGAL_NOTE_FIELD) String legalNote,
+        @JsonProperty(UPLOAD_DETAILS_FIELD) UploadDetails uploadDetails) {
         super(identifier, name, mimeType, size, license, administrativeAgreement, publisherVersion, embargoDate,
-              rightsRetentionStrategy, legalNote, publishedDate, uploadDetails);
+              rightsRetentionStrategy, legalNote, null, uploadDetails);
     }
 
     @Override
