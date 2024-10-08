@@ -23,14 +23,14 @@ import no.sikt.nva.brage.migration.merger.publicationcontextmerger.ReportMerger;
 import no.sikt.nva.brage.migration.merger.publicationcontextmerger.ResearchDataMerger;
 import no.sikt.nva.brage.migration.merger.publicationinstancemerger.PublicationInstanceMerger;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
-import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.AdministrativeAgreement;
@@ -91,6 +91,9 @@ public class CristinImportPublicationMerger {
                    .withAssociatedArtifacts(addDublinCoreToExistingAssociatedArtifacts())
                    .withEntityDescription(existingPublication.getEntityDescription().copy()
                                               .withTags(determineTags())
+                                              .withPublicationDate(bragePublicationRepresentation.publication()
+                                                                       .getEntityDescription()
+                                                                       .getPublicationDate())
                                               .build())
                    .build();
     }

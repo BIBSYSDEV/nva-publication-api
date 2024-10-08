@@ -1,6 +1,7 @@
 package no.unit.nva.publication.permission.strategy;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.model.PublicationOperation.UPDATE_FILES;
@@ -245,7 +246,7 @@ class PublicationPermissionStrategyTest extends ResourcesLocalTest {
     }
 
     Publication createNonDegreePublication(String resourceOwner, URI customer, URI ownerAffiliation) {
-        return fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES)
+        return fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES)
                    .copy()
                    .withResourceOwner(new ResourceOwner(new Username(resourceOwner), ownerAffiliation))
                    .withPublisher(new Organization.Builder().withId(customer).build())
@@ -282,7 +283,7 @@ class PublicationPermissionStrategyTest extends ResourcesLocalTest {
     protected Publication createPublicationWithContributor(String contributorName, URI contributorId,
                                                            Role contributorRole, URI customerId,
                                                            URI topLevelCristinOrgId) {
-        var publication = fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES);
+        var publication = fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES);
         publication.setPublisher(new Organization.Builder().withId(customerId).build());
         var identity = new Identity.Builder()
                            .withName(contributorName)

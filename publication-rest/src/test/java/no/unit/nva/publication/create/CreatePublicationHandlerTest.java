@@ -1,5 +1,6 @@
 package no.unit.nva.publication.create;
 
+import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.NULL_RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomSuccessfulCustomerResponse;
@@ -76,7 +77,6 @@ import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.model.testing.associatedartifacts.util.RightsRetentionStrategyGenerator;
 import no.unit.nva.publication.events.bodies.CreatePublicationRequest;
 import no.unit.nva.publication.model.BackendClientCredentials;
-import no.unit.nva.publication.permission.strategy.PermissionStrategy;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.stubs.FakeContext;
@@ -182,7 +182,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private static Class<?>[] protectedDegreeInstanceTypeClassesProvider() {
-        return PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES;
+        return PROTECTED_DEGREE_INSTANCE_TYPES;
     }
 
     @Test

@@ -669,6 +669,19 @@ class CristinImportPublicationMergerTest {
     }
 
     @Test
+    void shouldUpdatePublicationDateOfExistingPublicationWhenIncomingPublicationIsDegree()
+        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        var existingPublication = randomPublication(DegreeBachelor.class);
+        existingPublication.setAdditionalIdentifiers(Set.of(handleIdentifierFrom(randomUri())));
+        var bragePublication = randomPublication(DegreeBachelor.class);
+
+        var updatedPublication = mergePublications(existingPublication, bragePublication);
+
+        assertThat(updatedPublication.getEntityDescription().getPublicationDate(),
+                   is(equalTo(bragePublication.getEntityDescription().getPublicationDate())));
+    }
+
+    @Test
     void shouldMergeTagsWhenMergingDegree()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var handle = randomUri();

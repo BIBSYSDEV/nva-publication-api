@@ -1,6 +1,7 @@
 package no.unit.nva.publication.utils;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.fromInstanceClassesExcluding;
 import static no.unit.nva.publication.utils.RequestUtils.PUBLICATION_IDENTIFIER;
@@ -138,7 +139,7 @@ public class RequestUtilsTest {
     }
 
     private static Publication publicationWithOwner(String owner) {
-        return fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES).copy()
+        return fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES).copy()
                    .withStatus(PUBLISHED)
                    .withResourceOwner(new ResourceOwner(new Username(owner), randomUri())).build();
     }

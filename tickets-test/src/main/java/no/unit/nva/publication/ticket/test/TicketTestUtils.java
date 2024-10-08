@@ -1,5 +1,6 @@
 package no.unit.nva.publication.ticket.test;
 
+import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
@@ -182,7 +183,7 @@ public final class TicketTestUtils {
 
     public static Publication createPersistedPublicationWithAdministrativeAgreement(ResourceService resourceService)
         throws ApiGatewayException {
-        var publication = fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES).copy()
+        var publication = fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES).copy()
                               .withAssociatedArtifacts(List.of(administrativeAgreement()))
                               .build();
 
@@ -304,7 +305,7 @@ public final class TicketTestUtils {
     }
 
     private static Publication randomPublicationWithPublishedFiles(PublicationStatus status) {
-        var publication = fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES).copy()
+        var publication = fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES).copy()
                               .withStatus(status)
                               .build();
         publishFiles(publication);
@@ -329,14 +330,14 @@ public final class TicketTestUtils {
     }
 
     private static Publication randomPublicationWithStatus(PublicationStatus status) {
-        return fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES).copy()
+        return fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES).copy()
                    .withDoi(null)
                    .withStatus(status)
                    .build();
     }
 
     private static Publication randomPublicationWithUnpublishedFiles(PublicationStatus status) {
-        var publication = fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES).copy()
+        var publication = fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES).copy()
                               .withStatus(status)
                               .build();
         unpublishFiles(publication);
@@ -355,14 +356,14 @@ public final class TicketTestUtils {
     }
 
     private static Publication randomPublicationWithAssociatedLink(PublicationStatus status) {
-        return fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES).copy()
+        return fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES).copy()
                    .withStatus(status)
                    .withAssociatedArtifacts(List.of(new AssociatedLink(randomUri(), null, null)))
                    .build();
     }
 
     private static Publication randomNonDegreePublication(PublicationStatus status) {
-        var publication = fromInstanceClassesExcluding(PermissionStrategy.PROTECTED_DEGREE_INSTANCE_TYPES);
+        var publication = fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES);
         return publication.copy()
                    .withStatus(status)
                    .withDoi(null)
