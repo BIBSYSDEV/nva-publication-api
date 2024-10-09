@@ -2213,7 +2213,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldPersistErrorReportWhenImportingStudentThesisFromUio() throws IOException {
+    void shouldPersistIgnoredPublicationErrorWhenImportingStudentThesisFromUio() throws IOException {
         var customer = "uio";
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                  .withType(TYPE_BACHELOR)
@@ -2222,13 +2222,14 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var s3Event = createNewBrageRecordEventForCustomer(brageGenerator.getBrageRecord(), customer);
         handler.handleRequest(s3Event, CONTEXT);
 
-        var s3Driver = new S3Driver(s3Client, new Environment().readEnv("BRAGE_MIGRATION_ERROR_BUCKET_NAME"));
-        var uri = UriWrapper.fromUri("ERROR")
-                      .addChild(brageGenerator.getBrageRecord().getCustomer().getName())
-                      .addChild(IgnoredPublicationException.class.getSimpleName())
-                      .addChild(brageGenerator.getBrageRecord().getId().getPath())
-                      .toS3bucketPath();
-        assertDoesNotThrow(() -> s3Driver.getFile(uri));
+        var uri = UriWrapper.fromUri(ERROR_BUCKET_PATH)
+                   .addChild(customer)
+                   .addChild(s3Event.getRecords().getFirst().getEventTime().toString(YYYY_MM_DD_HH_FORMAT))
+                   .addChild(IgnoredPublicationException.class.getSimpleName())
+                   .addChild(UriWrapper.fromUri(extractFilename(s3Event)).getLastPathElement())
+            ;
+
+        assertThat(s3Driver.getFile(uri.toS3bucketPath()), is(notNullValue()));
     }
 
     private static AdditionalIdentifier cristinAdditionalIdentifier(String cristinIdentifier) {

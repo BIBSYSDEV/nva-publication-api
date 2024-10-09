@@ -29,13 +29,16 @@ import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.Reference;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
+import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -430,18 +433,22 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
         throws JsonProcessingException, InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         var brageRecord = getBrageRecordFromS3(event);
         var nvaPublication = BrageNvaMapper.toNvaPublication(brageRecord, apiHost, s3Client);
-        validateRecordForImport(brageRecord, nvaPublication);
+        validateEntry(brageRecord, nvaPublication);
         return new PublicationRepresentation(brageRecord, nvaPublication);
     }
 
-    private void validateRecordForImport(Record brageRecord, Publication publication) {
+    private void validateEntry(Record brageRecord, Publication publication) {
         if (publicationShouldBeIgnored(brageRecord, publication)) {
             throw new IgnoredPublicationException();
         }
     }
 
     private boolean publicationShouldBeIgnored(Record brageRecord, Publication publication) {
-        var type = publication.getEntityDescription().getReference().getPublicationInstance().getClass();
+        var type = Optional.ofNullable(publication.getEntityDescription())
+                       .map(EntityDescription::getReference)
+                       .map(Reference::getPublicationInstance)
+                       .map(PublicationInstance::getClass)
+                       .orElse(null);
         return UIO.equals(brageRecord.getCustomer().getName())
                && Arrays.asList(PROTECTED_DEGREE_INSTANCE_TYPES).contains(type);
     }
