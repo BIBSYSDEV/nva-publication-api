@@ -34,6 +34,7 @@ import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
+import static no.unit.nva.testutils.HandlerRequestBuilder.SCOPE_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -219,6 +220,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     public static final String PUBLICATION = "publication";
     public static final String MUST_BE_A_VALID_PUBLICATION_API_URI = "must be a valid publication API URI";
     public static final String COMMENT_ON_UNPUBLISHING_REQUEST = "comment";
+    public static final String BACKEND_SCOPE = "https://api.nva.unit.no/scopes/backend";
 
     private final GetExternalClientResponse getExternalClientResponse = mock(GetExternalClientResponse.class);
     final Context context = new FakeContext();
@@ -487,6 +489,31 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(body.getEntityDescription().getMainTitle(),
                    is(equalTo(publicationUpdate.getEntityDescription().getMainTitle())));
     }
+
+    @Test
+    void handlerUpdatesPublicationWhenInputIsValidAndUserIsBackendClient() throws IOException, BadRequestException {
+        publication.setIdentifier(null);
+        var savedPublication = createSamplePublication();
+        var publicationUpdate = updateTitle(savedPublication);
+
+        when(getExternalClientResponse.getCustomerUri())
+            .thenReturn(randomUri());
+        when(getExternalClientResponse.getActingUser())
+            .thenReturn(randomString());
+
+        var event = backendClientUpdatesPublication(publicationUpdate.getIdentifier(), publicationUpdate);
+        updatePublicationHandler.handleRequest(event, output, context);
+
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
+        assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
+
+        final PublicationResponse body = gatewayResponse.getBodyObject(PublicationResponse.class);
+        assertThat(body.getEntityDescription().getMainTitle(),
+                   is(equalTo(publicationUpdate.getEntityDescription().getMainTitle())));
+    }
+
 
     @Test
     @DisplayName("handler Returns BadRequest Response On Missing Path Param")
@@ -2409,6 +2436,23 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return new HandlerRequestBuilder<Publication>(restApiMapper)
                    .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
                    .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
+                   .withBody(publicationUpdate)
+                   .withTopLevelCristinOrgId(randomUri())
+                   .withPersonCristinId(randomUri())
+                   .withUserName(randomString())
+                   .withCurrentCustomer(randomUri())
+                   .withPathParameters(pathParameters)
+                   .build();
+    }
+
+    private InputStream backendClientUpdatesPublication(SortableIdentifier publicationIdentifier,
+                                                        Publication publicationUpdate)
+        throws JsonProcessingException {
+        var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString());
+        return new HandlerRequestBuilder<Publication>(restApiMapper)
+                   .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
+                   .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
+                   .withAuthorizerClaim(SCOPE_CLAIM, BACKEND_SCOPE)
                    .withBody(publicationUpdate)
                    .withTopLevelCristinOrgId(randomUri())
                    .withPersonCristinId(randomUri())
