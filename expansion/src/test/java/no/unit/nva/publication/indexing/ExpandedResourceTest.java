@@ -184,7 +184,7 @@ class ExpandedResourceTest {
     @Test
     void shouldReturnIndexDocumentWithContributorsPreviewAndCount() throws Exception {
         var mockUriRetriever = mock(UriRetriever.class);
-        var publication = randomPublication();
+        var publication = randomPublication(AcademicArticle.class);
 
         var contributor1 = contributorWithSequenceAndVerificationStatus(1, NOT_VERIFIED);
         var contributor2 = contributorWithSequenceAndVerificationStatus(2, VERIFIED);
@@ -206,8 +206,8 @@ class ExpandedResourceTest {
                                              .at("/contributorsPreview");
 
         var actualContributorsPreview = stream(contributorsPreviewNode.spliterator(), false)
-                                                   .map(node -> objectMapper.convertValue(node, Contributor.class))
-                                                   .collect(Collectors.toList());
+                                            .map(node -> objectMapper.convertValue(node, Contributor.class))
+                                            .toList();
 
         assertThat(actualContributorsPreview, is(equalTo(expectedContributors)));
     }
