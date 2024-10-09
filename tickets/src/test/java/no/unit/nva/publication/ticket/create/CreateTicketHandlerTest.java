@@ -117,7 +117,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
 
     public static Stream<Arguments> ticketEntryProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class)
-                   .filter(type -> !type.equals(UnpublishRequest.class))
+                   .filter(type -> !type.getPayload().equals(UnpublishRequest.class))
                    .map(Arguments::of);
     }
 

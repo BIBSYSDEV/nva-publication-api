@@ -115,8 +115,6 @@ public class IndexDocumentWrapperLinkedData {
             logger.error(EXCEPTION, e.toString());
             throw ExpansionException.withMessage(String.format(FETCHING_NVI_CANDIDATE_ERROR_MESSAGE, publicationId));
         }
-
-
     }
 
     private Optional<HttpResponse<String>> fetchNviCandidate(String publicationId) {

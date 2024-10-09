@@ -75,6 +75,8 @@ import no.unit.nva.testutils.EventBridgeEventBuilder;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.paths.UnixPath;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -111,6 +113,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     }
 
     @BeforeEach
+    @Override
     public void init() {
         var eventsBucket = new FakeS3Client();
         var indexBucket = new FakeS3Client();
@@ -158,11 +161,11 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         assertThat(HELP_MESSAGE, actualJson, is(equalTo(expectedJson)));
     }
 
-    @ParameterizedTest(name = "should store entry containing the general type (index name) of the persisted event")
+    @ParameterizedTest
+    @DisplayName("should store entry containing the general type (index name) of the persisted event")
     @MethodSource("expandedEntriesTypeProvider")
     void shouldStoreEntryContainingTheIndexNameForThePersistedEntry(Class<?> expandedEntryType)
         throws IOException, ApiGatewayException {
-
         var expectedPersistedEntry = generateExpandedEntry(expandedEntryType);
         eventUriInEventsBucket = s3Reader.insertEvent(UnixPath.of(randomString()),
                                                       expectedPersistedEntry.entry.toJsonString());
@@ -219,7 +222,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
                                                                   ExpandedDataEntry.class));
     }
 
-    private static Stream<Class<?>> expandedEntriesTypeProvider() {
+    private static Stream<Named<Class<?>>> expandedEntriesTypeProvider() {
         return TypeProvider.listSubTypes(ExpandedDataEntry.class);
     }
 

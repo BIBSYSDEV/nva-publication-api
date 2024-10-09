@@ -36,7 +36,7 @@ import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.external.services.UriRetriever;
+import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
@@ -96,13 +96,13 @@ public class ResourceService extends ServiceWithTransactions {
     private final ReadResourceService readResourceService;
     private final UpdateResourceService updateResourceService;
     private final DeleteResourceService deleteResourceService;
-    private final UriRetriever uriRetriever;
+    private final RawContentRetriever uriRetriever;
 
     protected ResourceService(AmazonDynamoDB dynamoDBClient,
                               String tableName,
                               Clock clock,
                               Supplier<SortableIdentifier> identifierSupplier,
-                              UriRetriever uriRetriever) {
+                              RawContentRetriever uriRetriever) {
         super(dynamoDBClient);
         this.tableName = tableName;
         this.clockForTimestamps = clock;
@@ -321,7 +321,7 @@ public class ResourceService extends ServiceWithTransactions {
     // update this method according to current needs.
     //TODO: redesign migration process?
     public Entity migrate(Entity dataEntry) {
-        return dataEntry instanceof Resource ? migrateResource((Resource) dataEntry) : dataEntry;
+        return dataEntry instanceof Resource resource ? migrateResource(resource) : dataEntry;
     }
 
     public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {
