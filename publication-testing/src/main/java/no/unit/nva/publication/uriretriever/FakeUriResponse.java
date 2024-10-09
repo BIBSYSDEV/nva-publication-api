@@ -25,7 +25,7 @@ import no.unit.nva.model.instancetypes.book.BookAnthology;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 
-public class FakeUriResponse {
+public final class FakeUriResponse {
 
     private static final ObjectMapper OBJECT_MAPPER = JsonUtils.dtoObjectMapper;
     private static final String API_HOST = new Environment().readEnv("API_HOST");
@@ -69,7 +69,7 @@ public class FakeUriResponse {
                              .build();
             var parentResponse = PublicationResponse.fromPublication(parent);
             var anthology = OBJECT_MAPPER.writeValueAsString(parentResponse);
-            var book = ((Book) parentResponse.getEntityDescription().getReference().getPublicationContext());
+            var book = (Book) parentResponse.getEntityDescription().getReference().getPublicationContext();
             fakeUriRetriever.registerResponse(contextUri, 200, APPLICATION_JSON_LD, anthology);
             fakePendingNviResponse(fakeUriRetriever, parent);
             fakePublisherResponse(fakeUriRetriever, book);

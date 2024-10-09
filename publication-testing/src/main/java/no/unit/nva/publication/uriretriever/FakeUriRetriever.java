@@ -14,7 +14,7 @@ import java.util.Optional;
 import javax.net.ssl.SSLSession;
 import no.unit.nva.publication.external.services.RawContentRetriever;
 
-public class FakeUriRetriever implements RawContentRetriever {
+public final class FakeUriRetriever implements RawContentRetriever {
 
     private final List<HttpResponse<String>> responses;
 
@@ -45,8 +45,10 @@ public class FakeUriRetriever implements RawContentRetriever {
                    .findFirst();
     }
 
-    private static boolean matchesMedia(String mediaType, HttpResponse<String> i) {
+    @SuppressWarnings("PMD.UnusedAssignment")
+    private static boolean matchesMedia(String mediaType, HttpResponse<String> response) {
         // TODO: For now, we don't match anything. We should when we design the interface properly.
+
         return true;
     }
 
