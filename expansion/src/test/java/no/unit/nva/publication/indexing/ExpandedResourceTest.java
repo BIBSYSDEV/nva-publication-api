@@ -260,7 +260,7 @@ class ExpandedResourceTest {
 
     @Test
     void shouldReturnIndexDocumentWithContributorsOrganizations() throws Exception {
-        var publication = randomPublication();
+        var publication = randomPublication(AcademicArticle.class);
         var contributor1org = orgWithReadableId("contributor1org");
         var contributor1parentOrg = orgWithReadableId("contributor1parentOrg");
         var contributor2org = orgWithReadableId("contributor2org");
