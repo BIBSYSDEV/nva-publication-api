@@ -608,7 +608,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(filesForApproval, containsInAnyOrder(expectedFilesForApproval));
     }
 
-    @RepeatedTest(100)
+    @Test
     void shouldExpandPublicationWithNviStatusWhenPublicationIsReportedNviCandidate()
         throws ApiGatewayException, JsonProcessingException {
         var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
@@ -673,18 +673,18 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private ResourceExpansionServiceImpl expansionServiceReturningNviCandidate(Publication publication,
                                                                                String responseBody, int statusCode) {
 
-        var uriRetriever = FakeUriRetriever.newInstance();
+        var fakeUriRetriever = FakeUriRetriever.newInstance();
         try {
-            FakeUriResponse.setupFakeForType(publication, uriRetriever);
-            FakeUriResponse.setUpNviResponse(uriRetriever, statusCode, publication, responseBody);
+            FakeUriResponse.setupFakeForType(publication, fakeUriRetriever);
+            FakeUriResponse.setUpNviResponse(fakeUriRetriever, statusCode, publication, responseBody);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
 
         return new ResourceExpansionServiceImpl(getResourceServiceBuilder().build(),
-                                                            new TicketService(client, uriRetriever),
-                                                            uriRetriever,
-                                                            uriRetriever);
+                                                            new TicketService(client, fakeUriRetriever),
+                                                            fakeUriRetriever,
+                                                            fakeUriRetriever);
     }
 
     private String nviCandidateResponse() {

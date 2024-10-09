@@ -75,7 +75,7 @@ public class ExpandedParentPublication {
 
     private String fetch(URI externalReference) {
         return uriRetriever.fetchResponse(externalReference, APPLICATION_JSON_LD.toString())
-                   .filter(i -> i.statusCode() / 100 == 2)
+                   .filter(response -> response.statusCode() / 100 == 2)
                    .map(HttpResponse::body)
                    .orElseThrow();
     }
