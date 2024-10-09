@@ -8,13 +8,13 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UnpublishRequest;
+import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
@@ -31,7 +31,6 @@ public record RequestUtils(List<AccessRight> accessRights,
     public static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
     public static final String TICKET_IDENTIFIER = "ticketIdentifier";
     public static final String MISSING_PATH_PARAM_MESSAGE = "Missing from pathParameters: %s";
-
 
     public static RequestUtils fromRequestInfo(RequestInfo requestInfo)
         throws UnauthorizedException {
@@ -83,6 +82,7 @@ public record RequestUtils(List<AccessRight> accessRights,
     }
 
     public UserInstance toUserInstance() {
-        return new UserInstance(username, customerId, topLevelCristinOrgId, personCristinId, accessRights);
+        return new UserInstance(username, customerId, topLevelCristinOrgId, personCristinId, accessRights,
+                                UserClientType.INTERNAL);
     }
 }

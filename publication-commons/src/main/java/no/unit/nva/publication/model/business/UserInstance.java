@@ -25,43 +25,57 @@ public class UserInstance implements JsonSerializable {
     private final List<AccessRight> accessRights;
     @SuppressWarnings("PMD.AvoidFieldNameMatchingMethodName")
 
-    private boolean isExternalClient;
+    private UserClientType userClientType;
 
     public UserInstance(String userIdentifier, URI customerId, URI topLevelOrgCristinId, URI personCristinId,
-                   List<AccessRight> accessRights) {
+                        List<AccessRight> accessRights, UserClientType userClientType) {
         this.user = new User(userIdentifier);
         this.customerId = customerId;
         this.topLevelOrgCristinId = topLevelOrgCristinId;
         this.personCristinId = personCristinId;
         this.accessRights = accessRights == null ? List.of() : accessRights;
+        this.userClientType = userClientType;
     }
 
     public static UserInstance create(User user, URI customerId) {
-        return new UserInstance(user.toString(), customerId, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, null, null);
+        return new UserInstance(user.toString(), customerId, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, null, null,
+                                UserClientType.INTERNAL);
     }
 
     public static UserInstance create(String userIdentifier, URI customerId) {
-        return new UserInstance(userIdentifier, customerId, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, null, null);
+        return new UserInstance(userIdentifier, customerId, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI, null, null,
+                                UserClientType.INTERNAL);
     }
 
     public static UserInstance create(String userIdentifier, URI customerId, URI personCristinId,
                                       List<AccessRight> accessRights, URI topLevelOrgCristinId) {
-        return new UserInstance(userIdentifier, customerId, topLevelOrgCristinId, personCristinId, accessRights);
+        return new UserInstance(userIdentifier, customerId, topLevelOrgCristinId, personCristinId, accessRights,
+                                UserClientType.INTERNAL);
     }
 
     public static UserInstance create(ResourceOwner resourceOwner, URI customerId) {
         return new UserInstance(resourceOwner.getOwner().getValue(), customerId,
-                                resourceOwner.getOwnerAffiliation(), null, null);
+                                resourceOwner.getOwnerAffiliation(), null, null, UserClientType.INTERNAL);
     }
 
     public static UserInstance createExternalUser(ResourceOwner resourceOwner, URI topLevelOrgCristinId) {
         var userInstance = create(resourceOwner, topLevelOrgCristinId);
-        userInstance.isExternalClient = true;
+        userInstance.userClientType = UserClientType.EXTERNAL;
+        return userInstance;
+    }
+
+    public static UserInstance createBackendUser(ResourceOwner resourceOwner, URI topLevelOrgCristinId) {
+        var userInstance = create(resourceOwner, topLevelOrgCristinId);
+        userInstance.userClientType = UserClientType.BACKEND;
         return userInstance;
     }
 
     public boolean isExternalClient() {
-        return this.isExternalClient;
+        return this.userClientType.equals(UserClientType.EXTERNAL);
+    }
+
+    public boolean isBackendClient() {
+        return this.userClientType.equals(UserClientType.BACKEND);
     }
 
     public static UserInstance fromRequestInfo(RequestInfo requestInfo) throws UnauthorizedException {
@@ -122,7 +136,8 @@ public class UserInstance implements JsonSerializable {
     @Override
     @JacocoGenerated
     public int hashCode() {
-        return Objects.hash(getCustomerId(), getUsername(), getTopLevelOrgCristinId());
+        return Objects.hash(getCustomerId(), getUsername(), getTopLevelOrgCristinId(), userClientType, personCristinId,
+                            accessRights);
     }
 
     @Override
@@ -131,12 +146,14 @@ public class UserInstance implements JsonSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof UserInstance)) {
+        if (!(o instanceof UserInstance that)) {
             return false;
         }
-        UserInstance that = (UserInstance) o;
-        return Objects.equals(getCustomerId(), that.getCustomerId()) && Objects.equals(
-            getUsername(), that.getUsername()) && Objects.equals(getTopLevelOrgCristinId(),
-                                                                 that.getTopLevelOrgCristinId());
+        return Objects.equals(getCustomerId(), that.getCustomerId())
+               && Objects.equals(getUsername(), that.getUsername())
+               && Objects.equals(getTopLevelOrgCristinId(), that.getTopLevelOrgCristinId())
+               && Objects.equals(personCristinId, that.personCristinId)
+               && Objects.equals(accessRights, that.accessRights)
+               && Objects.equals(this.userClientType, that.userClientType);
     }
 }

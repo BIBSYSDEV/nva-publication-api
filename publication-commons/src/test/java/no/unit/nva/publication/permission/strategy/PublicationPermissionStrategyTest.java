@@ -11,6 +11,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
+import static no.unit.nva.testutils.HandlerRequestBuilder.SCOPE_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -78,6 +79,7 @@ class PublicationPermissionStrategyTest extends ResourcesLocalTest {
     public static final String INJECT_TOP_ORG_CRISTIN_ID_CLAIM = "custom:topOrgCristinId";
     public static final String AUTHORIZATION = "Authorization";
     public static final String BEARER_TOKEN = "Bearer token";
+    public static final String BACKEND_SCOPE = "https://api.nva.unit.no/scopes/backend";
     IdentityServiceClient identityServiceClient;
     public ResourceService resourceService;
     public static final ObjectMapper dtoObjectMapper = JsonUtils.dtoObjectMapper;
@@ -406,6 +408,21 @@ class PublicationPermissionStrategyTest extends ResourcesLocalTest {
         var claims = new HashMap<String, String>();
         claims.put(ISS_CLAIM, EXTERNAL_ISSUER);
         claims.put(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID);
+
+        var requestInfo = new RequestInfo();
+        requestInfo.setRequestContext(getRequestContextForClaim(claims));
+        requestInfo.setHeaders(Map.of(AUTHORIZATION, BEARER_TOKEN));
+
+        return requestInfo;
+    }
+
+    protected RequestInfo createBackendRequestInfo()
+        throws JsonProcessingException {
+
+        var claims = new HashMap<String, String>();
+        claims.put(ISS_CLAIM, EXTERNAL_ISSUER);
+        claims.put(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID);
+        claims.put(SCOPE_CLAIM, BACKEND_SCOPE);
 
         var requestInfo = new RequestInfo();
         requestInfo.setRequestContext(getRequestContextForClaim(claims));
