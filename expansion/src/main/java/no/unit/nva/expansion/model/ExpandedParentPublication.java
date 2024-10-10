@@ -53,20 +53,14 @@ public class ExpandedParentPublication {
 
     private void loadPublicationWithChannelDataIntoModel(String publicationJsonString, Model model) {
         var inputStreams = getInputStreams(publicationJsonString);
-        logInputStreams(inputStreams);
         inputStreams.forEach(inputStream -> RDFDataMgr.read(model, inputStream, Lang.JSONLD));
-    }
-
-    private void logInputStreams(List<InputStream> inputStreams) {
-        LOGGER.info("Number of input streams: {}", inputStreams.size());
-        inputStreams.stream()
-            .map(IoUtils::streamToString)
-            .forEach(inputString -> LOGGER.info("Input for model: {}", inputString));
+        LOGGER.info("Read {} inputStreams into model", inputStreams.size());
     }
 
     private List<InputStream> getInputStreams(String publicationJsonString) {
         var inputStreams = new ArrayList<InputStream>();
         inputStreams.add(stringToStream(publicationJsonString));
+        LOGGER.info("Publication jsonString: {}", publicationJsonString);
         inputStreams.addAll(fetchAll(
             extractPublicationContextUris(attempt(() -> objectMapper.readTree(publicationJsonString)).orElseThrow())));
         return inputStreams;
@@ -75,6 +69,7 @@ public class ExpandedParentPublication {
     private Collection<? extends InputStream> fetchAll(List<URI> externalReferences) {
         return externalReferences.stream()
                    .map(this::fetch)
+                   .peek(response -> LOGGER.info("Fetched external reference: {}", response))
                    .flatMap(Optional::stream)
                    .map(IoUtils::stringToStream)
                    .collect(Collectors.toList());
