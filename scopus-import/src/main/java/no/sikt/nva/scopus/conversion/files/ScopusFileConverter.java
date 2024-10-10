@@ -76,7 +76,7 @@ public class ScopusFileConverter {
     public static final String FETCH_FILE_FROM_URL_MESSAGE_ERROR_MESSAGE = "Could not fetch file from url: {}";
     public static final String FETCH_FILE_FROM_XML_MESSAGE_ERROR_MESSAGE = "Could not fetch file from xml: {}";
     public static final String FETCH_FILE_FROM_DOI_ERROR_MESSAGE = "Could not fetch file from doi: {}";
-    public static final String CREATIVECOMMONS_DOMAIN = "creativecommons.org";
+    public static final String CREATIVE_COMMONS_DOMAIN = "creativecommons.org";
     public static final String HTML_CONTENT_TYPE = "text/html";
     public static final String XML_CONTENT_TYPE = "text/xml";
     public static final String FILENAME_CONTENT_TYPE_HEADER_VALUE = "filename=";
@@ -87,7 +87,7 @@ public class ScopusFileConverter {
     public static final String ELSEVIER_HOST = "api.elsevier.com";
     private static final Logger logger = LoggerFactory.getLogger(ScopusFileConverter.class);
     private static final String CONTENT_DISPOSITION_FILE_NAME_PATTERN = "filename=\"%s\"";
-    private static final URI DEFAULT_LICENSE = URI.create("https://creativecommons.org/licenses/by/4.0/");
+    private static final URI DEFAULT_LICENSE = URI.create("https://rightsstatements.org/vocab/InC/1.0/");
     public static final String FETCH_FILE_ERROR_MESSAGE = "Could not fetch file: ";
     public static final String COULD_NOT_SAVE_FILE = "Could not save file to s3 {}";
     public final String crossRefUri;
@@ -106,19 +106,24 @@ public class ScopusFileConverter {
     public ScopusFileConverter(HttpClient httpClient, S3Client s3Client, Environment environment, TikaUtils tikaUtils) {
         this.httpClient = httpClient;
         this.s3Client = s3Client;
-        this.crossRefUri = environment.readEnv("CROSSREF_FETCH_DOI_URI");
+        this.crossRefUri = environment.readEnv(CROSSREF_URI_ENV_VAR_NAME);
         this.tikaUtils = tikaUtils;
     }
 
     public List<AssociatedArtifact> fetchAssociatedArtifacts(DocTp docTp) {
-        var associatedArtifactsFromXmlReferences = extractAssociatedArtifactsFromFileReference(docTp)
-                                                       .stream()
-                                                       .filter(File.class::isInstance)
-                                                       .filter(this::isValid)
-                                                       .toList();
-        return associatedArtifactsFromXmlReferences.isEmpty()
-                   ? extractAssociatedArtifactsFromDoi(docTp)
-                   : associatedArtifactsFromXmlReferences;
+        return fetchFilesFromDoi(docTp)
+                   .or(() -> fetchFilesFromXml(docTp))
+                   .orElseGet(List::of);
+    }
+
+    private Optional<List<AssociatedArtifact>> fetchFilesFromXml(DocTp docTp) {
+        var associatedArtifacts = extractAssociatedArtifactsFromFileReference(docTp)
+                   .stream()
+                   .filter(File.class::isInstance)
+                   .filter(this::isValid)
+                   .toList();
+        return associatedArtifacts.isEmpty() ? Optional.empty() : Optional.of(associatedArtifacts);
+
     }
 
     private boolean isValid(AssociatedArtifact associatedArtifact) {
@@ -202,7 +207,7 @@ public class ScopusFileConverter {
     }
 
     private static boolean isCreativeCommonsLicense(URI uri) {
-        return uri.toString().contains(CREATIVECOMMONS_DOMAIN);
+        return uri.toString().contains(CREATIVE_COMMONS_DOMAIN);
     }
 
     private static boolean hasSameVersion(CrossrefLink crossrefLink, License license) {
@@ -228,24 +233,28 @@ public class ScopusFileConverter {
                && crossrefLink.getContentType().equals(ContentType.TEXT_PLAIN.getMimeType());
     }
 
-    private List<AssociatedArtifact> extractAssociatedArtifactsFromDoi(DocTp docTp) {
+    private Optional<List<AssociatedArtifact>> fetchFilesFromDoi(DocTp docTp) {
         try {
             var doi = docTp.getMeta().getDoi();
             var response = fetchDoi(doi);
-
-            return getScopusFiles(response).stream()
-                       .map(s -> attempt(() -> fetchFileContent(s)).orElseThrow())
-                       .collect(collectRemovingDuplicates())
-                       .stream()
-                       .map(this::saveFile)
-                       .filter(ScopusFile::hasValidMimeType)
-                       .filter(ScopusFileConverter::fileWithContent)
-                       .map(ScopusFile::toPublishedAssociatedArtifact)
-                       .toList();
+            var associatedArtifacts = fetchFilesFromDoi(response);
+            return associatedArtifacts.isEmpty() ? Optional.empty() : Optional.of(associatedArtifacts);
         } catch (Exception e) {
             logger.info(FETCH_FILE_FROM_DOI_ERROR_MESSAGE, e.getMessage());
-            return List.of();
+            return Optional.empty();
         }
+    }
+
+    private List<AssociatedArtifact> fetchFilesFromDoi(CrossrefResponse response) {
+        return getScopusFiles(response).stream()
+                   .map(scopusFile -> attempt(() -> fetchFileContent(scopusFile)).orElseThrow())
+                   .collect(collectRemovingDuplicates())
+                   .stream()
+                   .map(this::saveFile)
+                   .filter(ScopusFile::hasValidMimeType)
+                   .filter(ScopusFileConverter::fileWithContent)
+                   .map(ScopusFile::toPublishedAssociatedArtifact)
+                   .toList();
     }
 
     private ScopusFile fetchFileContent(ScopusFile file) throws IOException {
@@ -394,7 +403,7 @@ public class ScopusFileConverter {
                        .filter(Optional::isPresent)
                        .map(Optional::get)
                        .filter(ScopusFileConverter::fileWithContent)
-                       .map(associatedArtifact -> (File) associatedArtifact)
+                       .map(File.class::cast)
                        .collect(collectRemovingDuplicatedFiles());
         } catch (Exception e) {
             logger.error(FETCH_FILE_FROM_XML_MESSAGE_ERROR_MESSAGE, e.getMessage());
