@@ -247,7 +247,7 @@ public class ScopusFileConverter {
 
     private List<AssociatedArtifact> fetchFilesFromDoi(CrossrefResponse response) {
         return getScopusFiles(response).stream()
-                   .map(s -> attempt(() -> fetchFileContent(s)).orElseThrow())
+                   .map(scopusFile -> attempt(() -> fetchFileContent(scopusFile)).orElseThrow())
                    .collect(collectRemovingDuplicates())
                    .stream()
                    .map(this::saveFile)
