@@ -73,8 +73,8 @@ public final class RequestUtil {
         return attempt(requestInfo::getUserName).orElseThrow(fail -> new UnauthorizedException());
     }
 
-    private static UserInstance createExternalUserInstance(RequestInfo requestInfo,
-                                                          IdentityServiceClient identityServiceClient)
+    private static UserInstance createClientCredentialUserInstance(RequestInfo requestInfo,
+                                                                   IdentityServiceClient identityServiceClient)
         throws UnauthorizedException {
         var client = attempt(() -> requestInfo.getClientId().orElseThrow())
                          .map(identityServiceClient::getExternalClient)
@@ -85,18 +85,12 @@ public final class RequestUtil {
             client.getCristinUrgUri()
         );
 
-        UserInstance user;
-        if (requestInfo.clientIsInternalBackend()) {
-            user = UserInstance.createBackendUser(resourceOwner, client.getCustomerUri());
-        }
-        else {
-            user = UserInstance.createExternalUser(resourceOwner, client.getCustomerUri());
-        }
-
-        return user;
+        return requestInfo.clientIsInternalBackend()
+                   ? UserInstance.createBackendUser(resourceOwner, client.getCustomerUri())
+                   : UserInstance.createExternalUser(resourceOwner, client.getCustomerUri());
     }
 
-    private static UserInstance createInternalUserInstance(RequestInfo requestInfo) throws ApiGatewayException {
+    private static UserInstance createDataportenUserInstance(RequestInfo requestInfo) throws ApiGatewayException {
         String owner = RequestUtil.getOwner(requestInfo);
         var customerId = requestInfo.getCurrentCustomer();
         var personCristinId = attempt(requestInfo::getPersonCristinId).toOptional().orElse(null);
@@ -110,8 +104,8 @@ public final class RequestUtil {
         throws UnauthorizedException {
         try {
             return requestInfo.clientIsThirdParty() || requestInfo.clientIsInternalBackend()
-                       ? createExternalUserInstance(requestInfo, identityServiceClient)
-                       : createInternalUserInstance(requestInfo);
+                       ? createClientCredentialUserInstance(requestInfo, identityServiceClient)
+                       : createDataportenUserInstance(requestInfo);
         } catch (ApiGatewayException e) {
             e.printStackTrace();
             throw new UnauthorizedException(e.getMessage());
