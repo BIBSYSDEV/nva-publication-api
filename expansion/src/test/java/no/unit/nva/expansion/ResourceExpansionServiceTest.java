@@ -97,6 +97,8 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.testing.TypeProvider;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
+import no.unit.nva.publication.uriretriever.FakeUriResponse;
+import no.unit.nva.publication.uriretriever.FakeUriRetriever;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -104,6 +106,7 @@ import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -130,7 +133,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private UriRetriever personRetriever;
     private UriRetriever orgRetriever;
 
-    public static Stream<Class<?>> ticketTypeProvider() {
+    public static Stream<Named<Class<?>>> ticketTypeProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class);
     }
 
@@ -223,7 +226,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         throws JsonProcessingException, NotFoundException {
         var fileWithLicense = randomPublishedFile(licenseUri);
         var associatedLink = new AssociatedLink(randomUri(), null, null);
-        var publication = PublicationGenerator.randomPublication()
+        var publication = PublicationGenerator.randomPublication(AcademicArticle.class)
                                       .copy()
                                       .withAssociatedArtifacts(List.of(fileWithLicense, associatedLink))
                                       .build();
@@ -668,16 +671,19 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     private ResourceExpansionServiceImpl expansionServiceReturningNviCandidate(Publication publication,
                                                                                String responseBody, int statusCode) {
-        var mockUriRetriver = mock(UriRetriever.class);
-        var response = mock(HttpResponse.class);
-        when(response.statusCode()).thenReturn(statusCode);
-        when(response.body()).thenReturn(responseBody);
-        when(mockUriRetriver.fetchResponse(fetchNviCandidateUri(publication), "application/json"))
-            .thenReturn(Optional.of(response));
+
+        var fakeUriRetriever = FakeUriRetriever.newInstance();
+        try {
+            FakeUriResponse.setupFakeForType(publication, fakeUriRetriever);
+            FakeUriResponse.setUpNviResponse(fakeUriRetriever, statusCode, publication, responseBody);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
         return new ResourceExpansionServiceImpl(getResourceServiceBuilder().build(),
-                                                            new TicketService(client, mockUriRetriver),
-                                                            mockUriRetriver,
-                                                            mockUriRetriver);
+                                                            new TicketService(client, fakeUriRetriever),
+                                                            fakeUriRetriever,
+                                                            fakeUriRetriever);
     }
 
     private String nviCandidateResponse() {
@@ -798,7 +804,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     @SuppressWarnings("unchecked")
     private static Class<? extends TicketEntry> someOtherTicketTypeBesidesDoiRequest(
         Class<? extends TicketEntry> ticketType) {
-        return (Class<? extends TicketEntry>) ticketTypeProvider().filter(
+        return (Class<? extends TicketEntry>) ticketTypeProvider().map(Named::getPayload).filter(
             type -> !ticketType.equals(type) && !type.equals(DoiRequest.class)).findAny().orElseThrow();
     }
 

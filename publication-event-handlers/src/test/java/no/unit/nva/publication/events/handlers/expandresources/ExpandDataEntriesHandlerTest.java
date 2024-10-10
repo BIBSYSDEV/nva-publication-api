@@ -40,6 +40,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -302,7 +303,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication createPublicationWithStatus(PublicationStatus status) {
-        return randomPublication().copy().withStatus(status).build();
+        return randomPublication(AcademicArticle.class).copy().withStatus(status).build();
     }
 
     private URI createSampleBlob(Object oldImage, Object newImage) throws IOException {

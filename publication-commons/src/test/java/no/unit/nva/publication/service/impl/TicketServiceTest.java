@@ -93,6 +93,7 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.function.Executable;
@@ -122,7 +123,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     private Instant now;
     private MessageService messageService;
 
-    public static Stream<Class<?>> ticketTypeProvider() {
+    public static Stream<Named<Class<?>>> ticketTypeProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class);
     }
 
@@ -219,7 +220,8 @@ public class TicketServiceTest extends ResourcesLocalTest {
     void shouldPersistAllTypesOfTicketsForAResourceWithoutConflictsAndAlsoBeingAbleToRetrieveAllTickets()
         throws ApiGatewayException {
         var publication = persistPublication(owner, DRAFT);
-        var tickets = ticketTypeProvider().map(ticketType -> createPersistedTicket(publication, ticketType))
+        var tickets = ticketTypeProvider()
+                          .map(ticketType -> createPersistedTicket(publication, ticketType.getPayload()))
             .collect(Collectors.toList());
         var retrievedTickets =
             tickets.stream()

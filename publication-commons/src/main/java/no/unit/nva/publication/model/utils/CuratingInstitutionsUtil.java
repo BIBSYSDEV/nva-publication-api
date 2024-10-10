@@ -13,6 +13,7 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.external.services.RawContentRetriever;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.utils.CristinUnitsUtil;
 
@@ -20,7 +21,7 @@ public final class CuratingInstitutionsUtil {
     private CuratingInstitutionsUtil() {
     }
 
-    public static Set<URI> getCuratingInstitutionsOnline(Publication publication, UriRetriever uriRetriever) {
+    public static Set<URI> getCuratingInstitutionsOnline(Publication publication, RawContentRetriever uriRetriever) {
         return getVerifiedContributors(publication.getEntityDescription())
                    .flatMap(CuratingInstitutionsUtil::getOrganizationIds)
                    .collect(Collectors.toSet())

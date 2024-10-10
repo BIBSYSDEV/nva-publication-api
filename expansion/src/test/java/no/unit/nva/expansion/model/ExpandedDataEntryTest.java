@@ -36,7 +36,6 @@ import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
@@ -48,6 +47,7 @@ import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Revision;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.MediaContributionPeriodical;
@@ -58,6 +58,7 @@ import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.funding.FundingBuilder;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
@@ -80,6 +81,8 @@ import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.testing.TypeProvider;
+import no.unit.nva.publication.uriretriever.FakeUriResponse;
+import no.unit.nva.publication.uriretriever.FakeUriRetriever;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -87,6 +90,7 @@ import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -102,7 +106,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     private MessageService messageService;
     private UriRetriever uriRetriever;
 
-    public static Stream<Class<?>> entryTypes() {
+    public static Stream<Named<Class<?>>> entryTypes() {
         return TypeProvider.listSubTypes(ExpandedDataEntry.class);
     }
 
@@ -124,8 +128,6 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         this.messageService = getMessageService();
         this.ticketService = getTicketService();
         this.uriRetriever = mock(UriRetriever.class);
-        when(uriRetriever.getRawContent(any(), any())).thenReturn(Optional.empty());
-
         this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
     }
 
@@ -278,18 +280,16 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     private void mockOrganizations(Organization org) {
         when(uriRetriever.getRawContent(any(), anyString()))
             .thenReturn(Optional.of(new CristinOrganization(org.getId(), null, null, List.of(randomCristinOrg()),
-                                                           null, Map.of()).toJsonString()));
+                                                            null, Map.of()).toJsonString()));
         var response = (HttpResponse<String>) mock(HttpResponse.class);
         when(response.statusCode()).thenReturn(200);
         when(uriRetriever.fetchResponse(any(), anyString())).thenReturn(Optional.of(response));
-
     }
 
     private void mockOrganizationCristinResponseOnly(Organization org) {
         when(uriRetriever.getRawContent(any(), anyString()))
             .thenReturn(Optional.of(new CristinOrganization(org.getId(), null, null, List.of(randomCristinOrg()),
-                                                           null, Map.of()).toJsonString()));
-
+                                                            null, Map.of()).toJsonString()));
     }
 
     private CristinOrganization randomCristinOrg() {
@@ -325,7 +325,11 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         Class<?> instanceType) throws JsonProcessingException {
 
         var publication = randomPublication(instanceType);
-        var expandedResource = fromPublication(uriRetriever, publication);
+        var fakeUriRetriever = FakeUriRetriever.newInstance();
+
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever);
+
+        var expandedResource = fromPublication(fakeUriRetriever, publication);
         var json = objectMapper.readTree(expandedResource.toJsonString());
         assertThat(json.get(TYPE).textValue(), is(equalTo(EXPECTED_TYPE_OF_EXPANDED_RESOURCE_ENTRY)));
     }
@@ -345,6 +349,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     @MethodSource("entryTypes")
     void shouldReturnIdentifierUsingNonSerializableMethod(Class<?> type)
         throws ApiGatewayException, JsonProcessingException {
+
         var expandedDataEntry = ExpandedDataEntryWithAssociatedPublication.create(type, resourceExpansionService,
                                                                                   resourceService, messageService,
                                                                                   ticketService, uriRetriever);
@@ -467,7 +472,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             } else if (expandedDataEntryClass.equals(ExpandedUnpublishRequest.class)) {
                 return new ExpandedDataEntryWithAssociatedPublication(
                     createExpandedUnpublishRequest(publication, resourceService, expansionService,
-                                                        ticketService));
+                                                   ticketService));
             } else {
                 throw new UnsupportedOperationException();
             }
@@ -484,17 +489,17 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         }
 
         private static ExpandedDataEntry createExpandedUnpublishRequest(Publication publication,
-                                                                             ResourceService resourceService,
-                                                                             ResourceExpansionService expansionService,
-                                                                             TicketService ticketService)
+                                                                        ResourceService resourceService,
+                                                                        ResourceExpansionService expansionService,
+                                                                        TicketService ticketService)
             throws NotFoundException, JsonProcessingException {
             var request = (UnpublishRequest) UnpublishRequest.fromPublication(publication);
             return ExpandedUnpublishRequest.create(request, resourceService, expansionService,
-                                                        ticketService);
+                                                   ticketService);
         }
 
         private static Publication createPublication(ResourceService resourceService) throws BadRequestException {
-            var publication = randomPublicationWithoutDoi();
+            var publication = randomPublicationWithoutDoi(AcademicArticle.class);
             publication = Resource.fromPublication(publication)
                               .persistNew(resourceService, UserInstance.fromPublication(publication));
             return publication;
@@ -546,5 +551,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         }
     }
 
-    private record ChannelRegistryResponse(String name){}
+    private record ChannelRegistryResponse(String name) {
+
+    }
 }
