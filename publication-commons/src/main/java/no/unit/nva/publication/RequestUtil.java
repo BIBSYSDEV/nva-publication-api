@@ -7,6 +7,7 @@ import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -16,17 +17,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class RequestUtil {
-    
+
     public static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
     public static final String IMPORT_CANDIDATE_IDENTIFIER = "importCandidateIdentifier";
     public static final String TICKET_IDENTIFIER = "ticketIdentifier";
     public static final String FILE_IDENTIFIER = "fileIdentifier";
     public static final String IDENTIFIER_IS_NOT_A_VALID_UUID = "Identifier is not a valid UUID: ";
     private static final Logger logger = LoggerFactory.getLogger(RequestUtil.class);
-    
+
     private RequestUtil() {
     }
-    
+
     /**
      * Get identifier from request path parameters.
      *
@@ -59,7 +60,7 @@ public final class RequestUtil {
                    .map(UUID::fromString)
                    .orElseThrow(() -> new BadRequestException("Could not get file identifier!"));
     }
-    
+
     /**
      * Get owner from requestContext authorizer claims.
      *
@@ -72,8 +73,8 @@ public final class RequestUtil {
         return attempt(requestInfo::getUserName).orElseThrow(fail -> new UnauthorizedException());
     }
 
-    private static UserInstance createExternalUserInstance(RequestInfo requestInfo,
-                                                          IdentityServiceClient identityServiceClient)
+    private static UserInstance createClientCredentialUserInstance(RequestInfo requestInfo,
+                                                                   IdentityServiceClient identityServiceClient)
         throws UnauthorizedException {
         var client = attempt(() -> requestInfo.getClientId().orElseThrow())
                          .map(identityServiceClient::getExternalClient)
@@ -84,25 +85,27 @@ public final class RequestUtil {
             client.getCristinUrgUri()
         );
 
-        return UserInstance.createExternalUser(resourceOwner, client.getCustomerUri());
+        return requestInfo.clientIsInternalBackend()
+                   ? UserInstance.createBackendUser(resourceOwner, client.getCustomerUri())
+                   : UserInstance.createExternalUser(resourceOwner, client.getCustomerUri());
     }
 
-    private static UserInstance createInternalUserInstance(RequestInfo requestInfo) throws ApiGatewayException {
+    private static UserInstance createDataportenUserInstance(RequestInfo requestInfo) throws ApiGatewayException {
         String owner = RequestUtil.getOwner(requestInfo);
         var customerId = requestInfo.getCurrentCustomer();
         var personCristinId = attempt(requestInfo::getPersonCristinId).toOptional().orElse(null);
         var topLevelOrg = attempt(requestInfo::getTopLevelOrgCristinId).map(Optional::get).toOptional().orElse(null);
         var accessRights = requestInfo.getAccessRights();
-        return new UserInstance(owner, customerId, topLevelOrg, personCristinId, accessRights);
+        return new UserInstance(owner, customerId, topLevelOrg, personCristinId, accessRights, UserClientType.INTERNAL);
     }
 
     public static UserInstance createUserInstanceFromRequest(RequestInfo requestInfo,
                                                              IdentityServiceClient identityServiceClient)
         throws UnauthorizedException {
         try {
-            return requestInfo.clientIsThirdParty()
-                       ? createExternalUserInstance(requestInfo, identityServiceClient)
-                       : createInternalUserInstance(requestInfo);
+            return requestInfo.clientIsThirdParty() || requestInfo.clientIsInternalBackend()
+                       ? createClientCredentialUserInstance(requestInfo, identityServiceClient)
+                       : createDataportenUserInstance(requestInfo);
         } catch (ApiGatewayException e) {
             e.printStackTrace();
             throw new UnauthorizedException(e.getMessage());

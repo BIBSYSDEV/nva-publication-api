@@ -34,6 +34,7 @@ import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -147,7 +148,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         Class<? extends TicketEntry> ticketType, PublicationStatus status)
         throws ApiGatewayException, IOException {
         var curatorAndOwner = new UserInstance(new User(randomString()).toString(), randomUri(), randomUri(), null,
-                                               null);
+                                               null, UserClientType.INTERNAL);
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, curatorAndOwner, resourceService);
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var expectedText = randomString();
@@ -175,7 +176,7 @@ class NewCreateMessageHandlerTest extends ResourcesLocalTest {
         var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
         var sender = new UserInstance(randomString(), publication.getPublisher().getId(),
                                       publication.getResourceOwner().getOwnerAffiliation(), null,
-                                      null);
+                                      null, UserClientType.INTERNAL);
         var expectedText = randomString();
         var request = createNewMessageRequestForElevatedUser(publication, ticket, sender, expectedText,
                                                              MANAGE_RESOURCES_STANDARD, accessRight);

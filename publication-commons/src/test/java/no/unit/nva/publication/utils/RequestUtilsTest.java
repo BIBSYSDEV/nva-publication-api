@@ -31,8 +31,8 @@ import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UnpublishRequest;
+import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.permission.strategy.PermissionStrategy;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
@@ -125,7 +125,8 @@ public class RequestUtilsTest {
                                                     requestInfo.getCurrentCustomer(),
                                                     requestInfo.getTopLevelOrgCristinId().orElseThrow(),
                                                     requestInfo.getPersonCristinId(),
-                                                    requestInfo.getAccessRights());
+                                                    requestInfo.getAccessRights(),
+                                                    UserClientType.INTERNAL);
         var createdUserInstance = RequestUtils.fromRequestInfo(requestInfo).toUserInstance();
         Assertions.assertEquals(createdUserInstance, expectedUserInstance);
     }
