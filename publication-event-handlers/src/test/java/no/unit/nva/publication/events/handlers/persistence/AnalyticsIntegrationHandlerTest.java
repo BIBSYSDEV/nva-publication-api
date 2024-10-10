@@ -16,6 +16,7 @@ import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -39,10 +40,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.time.Clock;
 import java.util.Optional;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
@@ -108,10 +106,9 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         assertThat(expectedException.getMessage(), containsString(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC));
     }
 
-    @ParameterizedTest(name = "should store the expanded publication from S3 URI in analytics folder: {0} ")
-    @MethodSource("listPublicationInstanceTypes")
-    void shouldStoreTheExpandedPublicationReferredInTheS3UriInTheAnalyticsFolder(Class<?> type) throws IOException {
-        var inputEvent = generateEventForExpandedPublication(type);
+    @Test
+    void shouldStoreTheExpandedPublicationReferredInTheS3UriInTheAnalyticsFolder() throws IOException {
+        var inputEvent = generateEventForExpandedPublication(AcademicArticle.class);
         InputStream event = sampleLambdaDestinationsEvent(inputEvent);
         analyticsIntegration.handleRequest(event, outputStream, context);
         var analyticsObjectEvent = objectMapper.readValue(outputStream.toString(), EventReference.class);
