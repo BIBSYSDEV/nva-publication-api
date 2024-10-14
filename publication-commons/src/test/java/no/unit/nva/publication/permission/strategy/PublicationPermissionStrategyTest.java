@@ -331,6 +331,7 @@ class PublicationPermissionStrategyTest extends ResourcesLocalTest {
         var accessRights = new ArrayList<AccessRight>();
         accessRights.add(AccessRight.MANAGE_PUBLISHING_REQUESTS);
         accessRights.add(AccessRight.MANAGE_RESOURCES_STANDARD);
+        accessRights.add(AccessRight.MANAGE_RESOURCE_FILES);
         return accessRights;
     }
 
@@ -339,6 +340,7 @@ class PublicationPermissionStrategyTest extends ResourcesLocalTest {
         accessRights.add(AccessRight.MANAGE_DEGREE);
         accessRights.add(AccessRight.MANAGE_PUBLISHING_REQUESTS);
         accessRights.add(AccessRight.MANAGE_RESOURCES_STANDARD);
+        accessRights.add(AccessRight.MANAGE_RESOURCE_FILES);
         return accessRights;
     }
 
@@ -348,6 +350,7 @@ class PublicationPermissionStrategyTest extends ResourcesLocalTest {
         accessRights.add(AccessRight.MANAGE_DEGREE_EMBARGO);
         accessRights.add(AccessRight.MANAGE_PUBLISHING_REQUESTS);
         accessRights.add(AccessRight.MANAGE_RESOURCES_STANDARD);
+        accessRights.add(AccessRight.MANAGE_RESOURCE_FILES);
         return accessRights;
     }
 
