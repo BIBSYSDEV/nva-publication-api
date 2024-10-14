@@ -69,7 +69,9 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     private static final Supplier<Pattern> LICENSE_VALIDATION_PATTERN =
         () -> Pattern.compile("^(http|https)://.*$");
     public static final Set<Class<? extends File>> ACCEPTED_FILE_TYPES = Set.of(PublishedFile.class,
-                                                                                    AdministrativeAgreement.class);
+                                                                                AdministrativeAgreement.class,
+                                                                                OpenFile.class,
+                                                                                InternalFile.class);
 
 
     @JsonProperty(IDENTIFIER_FIELD)
