@@ -263,16 +263,11 @@ class ExpandedResourceTest {
     void shouldReturnIndexDocumentWithTopLevelOrganizationWithoutHasPartsIfContributorAffiliatedWithTopLevel()
         throws Exception {
         final var publication = randomBookWithConfirmedPublisher();
-        final var affiliationToBeExpanded =
-            URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0");
-        var contributorOne = publication.getEntityDescription().getContributors().getFirst().copy()
+        final var affiliationToBeExpanded = URI.create(FakeUriResponse.HARD_CODED_TOP_LEVEL_ORG_URI);
+        var contributorAffiliatedToTopLevel = publication.getEntityDescription().getContributors().getFirst().copy()
                               .withAffiliations(List.of(Organization.fromUri(affiliationToBeExpanded))).build();
-        var contributorTwoUri = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/194.16.0.0");
-        var contributorTwo = new Contributor.Builder()
-                                 .withIdentity(new Identity.Builder().withId(randomUri()).build())
-                                     .withAffiliations(List.of(Organization.fromUri(contributorTwoUri))).build();
 
-        publication.getEntityDescription().setContributors(List.of(contributorOne, contributorTwo));
+        publication.getEntityDescription().setContributors(List.of(contributorAffiliatedToTopLevel));
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever);
 
         var framedResultNode = fromPublication(fakeUriRetriever, publication).asJsonNode();

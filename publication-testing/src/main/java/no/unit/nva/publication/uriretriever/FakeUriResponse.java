@@ -33,6 +33,8 @@ import nva.commons.core.paths.UriWrapper;
 
 public final class FakeUriResponse {
 
+    public static final String HARD_CODED_TOP_LEVEL_ORG_URI = "https://api.dev.nva.aws.unit"
+                                                              + ".no/cristin/organization/194.0.0.0";
     private static final ObjectMapper OBJECT_MAPPER = JsonUtils.dtoObjectMapper;
     private static final String API_HOST = new Environment().readEnv("API_HOST");
     private static final String PENDING_NVI_RESPONSE = """
@@ -61,6 +63,33 @@ public final class FakeUriResponse {
         fakePendingNviResponse(fakeUriRetriever, publication);
         fakeFundingResponses(fakeUriRetriever, publication);
         fakeContextResponses(publication, fakeUriRetriever);
+    }
+
+    public static void setupFakeForType(TicketEntry ticket, FakeUriRetriever fakeUriRetriever) {
+        var ownerAffiliation = ticket.getOwnerAffiliation();
+        fakeUriRetriever.registerResponse(ownerAffiliation, 200, APPLICATION_JSON_LD,
+                                          createCristinOrganizationResponse(ownerAffiliation));
+        fakeUriRetriever.registerResponse(ticket.getCustomerId(), 200, APPLICATION_JSON_LD,
+                                          createCristinOrganizationResponse(ticket.getCustomerId()));
+        setUpPersonResponse(fakeUriRetriever, ticket.getOwner());
+        setUpPersonResponse(fakeUriRetriever, ticket.getAssignee());
+        setUpPersonResponse(fakeUriRetriever, ticket.getFinalizedBy());
+        setUpPersonResponse(fakeUriRetriever, ticket.getViewedBy());
+    }
+
+    /**
+     * This allows an override of the default value for the response.
+     *
+     * @param fakeUriRetriever The faked URI retrieval object.
+     * @param statusCode       The desired response status code.
+     * @param publication      The source of the URI for which we mock the response.
+     * @param response         The desired response in JSON.
+     */
+    public static void setUpNviResponse(FakeUriRetriever fakeUriRetriever, int statusCode, Publication publication,
+                                        String response) {
+        var id = PublicationResponse.fromPublication(publication).getId();
+        fakeUriRetriever.registerResponse(createNviCandidateUri(id.toString()), statusCode, MediaType.JSON_UTF_8,
+                                          response);
     }
 
     private static void fakeContextResponses(Publication publication, FakeUriRetriever fakeUriRetriever)
@@ -115,22 +144,12 @@ public final class FakeUriResponse {
     }
 
     private static void createFakeOrganizationStructure(FakeUriRetriever fakeUriRetriever, URI uri) {
-        fakeUriRetriever.registerResponse(uri, 200, MediaType.JSON_UTF_8, createCristinOrganizationResponse(uri));
-        var upperLevel = URI.create(uri + "_upperLevel");
-        fakeUriRetriever.registerResponse(upperLevel, 200, MediaType.JSON_UTF_8,
-                                          createCristinOrganizationResponse(upperLevel));
-    }
-
-    public static void setupFakeForType(TicketEntry ticket, FakeUriRetriever fakeUriRetriever) {
-        var ownerAffiliation = ticket.getOwnerAffiliation();
-        fakeUriRetriever.registerResponse(ownerAffiliation, 200, APPLICATION_JSON_LD,
-                                          createCristinOrganizationResponse(ownerAffiliation));
-        fakeUriRetriever.registerResponse(ticket.getCustomerId(), 200, APPLICATION_JSON_LD,
-                                          createCristinOrganizationResponse(ticket.getCustomerId()));
-        setUpPersonResponse(fakeUriRetriever, ticket.getOwner());
-        setUpPersonResponse(fakeUriRetriever, ticket.getAssignee());
-        setUpPersonResponse(fakeUriRetriever, ticket.getFinalizedBy());
-        setUpPersonResponse(fakeUriRetriever, ticket.getViewedBy());
+        if(HARD_CODED_TOP_LEVEL_ORG_URI.equals(uri.toString())) {
+            fakeUriRetriever.registerResponse(uri, 200, MediaType.JSON_UTF_8,
+                                              createCristinOrganizationResponseForTopLevelOrg(uri));
+        } else {
+            fakeUriRetriever.registerResponse(uri, 200, MediaType.JSON_UTF_8, createCristinOrganizationResponse(uri));
+        }
     }
 
     private static void setUpPersonResponse(FakeUriRetriever fakeUriRetriever, Object person) {
@@ -202,21 +221,6 @@ public final class FakeUriResponse {
     private static void fakeOwnerResponse(FakeUriRetriever fakeUriRetriever, URI ownerAffiliation) {
         fakeUriRetriever.registerResponse(ownerAffiliation, 200, APPLICATION_JSON_LD,
                                           createCristinOrganizationResponse(ownerAffiliation));
-    }
-
-    /**
-     * This allows an override of the default value for the response.
-     *
-     * @param fakeUriRetriever The faked URI retrieval object.
-     * @param statusCode       The desired response status code.
-     * @param publication      The source of the URI for which we mock the response.
-     * @param response         The desired response in JSON.
-     */
-    public static void setUpNviResponse(FakeUriRetriever fakeUriRetriever, int statusCode, Publication publication,
-                                        String response) {
-        var id = PublicationResponse.fromPublication(publication).getId();
-        fakeUriRetriever.registerResponse(createNviCandidateUri(id.toString()), statusCode, MediaType.JSON_UTF_8,
-                                          response);
     }
 
     private static void fakeFundingResponses(FakeUriRetriever fakeUriRetriever, Publication publication) {
@@ -308,6 +312,46 @@ public final class FakeUriResponse {
 
     private static void fakePendingNviResponse(FakeUriRetriever fakeUriRetriever, Publication publication) {
         setUpNviResponse(fakeUriRetriever, 200, publication, getPendingNviResponseString());
+    }
+
+    private static String createCristinOrganizationResponseForTopLevelOrg(URI uri) {
+        return """
+            {
+                           "@context" : "https://bibsysdev.github.io/src/organization-context.json",
+                           "type" : "Organization",
+                           "id" : "%s",
+                           "labels" : {
+                             "en" : "Norwegian Centre for Mathematics Education",
+                             "nb" : "Nasjonalt senter for matematikk i opplæringen"
+                           },
+                           "acronym" : "SU-ILU-NSM",
+                           "country" : "NO",
+                           "hasPart" : [ {
+                             "type" : "Organization",
+                             "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.67.0.0",
+                             "labels" : {
+                               "en" : "Department of Teacher Education",
+                               "nb" : "Institutt for lærerutdanning"
+                             },
+                             "acronym" : "SU-ILU",
+                             "country" : "NO",
+                             "hasPart" : [ {
+                               "type" : "Organization",
+                               "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.67.80.0",
+                               "labels" : {
+                                 "en" : "Faculty of Social and Educational Sciences",
+                                 "nb" : "Fakultet for samfunns- og utdanningsvitenskap"
+                               },
+                               "acronym" : "SU",
+                               "country" : "NO",
+                               "partOf" : [ ],
+                               "hasPart" : [ ]
+                             } ],
+                             "partOf" : [ ]
+                           } ],
+                           "hasPart" : [ ]
+                         }
+            """.formatted(uri);
     }
 
     private static String createCristinOrganizationResponse(URI uri) {
