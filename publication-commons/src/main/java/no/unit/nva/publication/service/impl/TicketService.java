@@ -79,7 +79,7 @@ public class TicketService extends ServiceWithTransactions {
      * @deprecated Use TicketEntry#persist instead.
      */
     @Deprecated(since = " TicketEntry#persist")
-    public <T extends TicketEntry> T createNewTicket(TicketEntry ticketEntry)
+    public <T extends TicketEntry> T createTicket(TicketEntry ticketEntry)
         throws ApiGatewayException {
         var associatedPublication = fetchPublicationToEnsureItExists(ticketEntry);
         return createTicketForPublication(associatedPublication, ticketEntry);
