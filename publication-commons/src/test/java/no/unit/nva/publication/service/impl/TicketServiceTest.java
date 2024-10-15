@@ -742,13 +742,13 @@ public class TicketServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void finalizedDateShouldBeSetAfterCreatedDateWhenAutoCompletingTicket() throws ApiGatewayException {
+    void finalizedDateShouldBeEqualCreatedDateWhenAutoCompletingTicket() throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
         var ticket = (PublishingRequestCase) PublishingRequestCase.createNewTicket(
             publication, PublishingRequestCase.class, SortableIdentifier::next);
         var completedTicket = ticket.persistAutoComplete(ticketService, publication, new Username(randomString()));
 
-        assertThat(completedTicket.getFinalizedDate(), greaterThan(completedTicket.getCreatedDate()));
+        assertThat(completedTicket.getFinalizedDate(), is(equalTo(completedTicket.getCreatedDate())));
     }
 
     @Test

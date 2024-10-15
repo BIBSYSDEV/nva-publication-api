@@ -127,6 +127,7 @@ public abstract class TicketEntry implements Entity {
         ticketEntry.setCreatedDate(now);
         ticketEntry.setModifiedDate(now);
         ticketEntry.setIdentifier(identifierProvider.get());
+        ticketEntry.setFinalizedDate(nonNull(ticketEntry.getFinalizedDate()) ? now : null);
     }
 
     public SortableIdentifier getResourceIdentifier() {
@@ -264,7 +265,7 @@ public abstract class TicketEntry implements Entity {
 
     public final TicketEntry persistNewTicket(TicketService ticketService) throws ApiGatewayException {
         // this is the only place that deprecated should be called.
-        return ticketService.createTicket(this);
+        return ticketService.createNewTicket(this);
     }
 
     public final TicketEntry markUnreadByOwner() {
