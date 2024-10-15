@@ -48,6 +48,7 @@ public abstract class TicketEntry implements Entity {
         "Cannot remove a ticket that has any other status than %s";
     public static final String UNAUTHENTICATED_TO_REMOVE_TICKET_MESSAGE =
         "Ticket owner only can remove ticket!";
+
     @JsonProperty(VIEWED_BY_FIELD)
     private ViewedBy viewedBy;
     @JsonProperty(RESOURCE_IDENTIFIER)
@@ -127,6 +128,9 @@ public abstract class TicketEntry implements Entity {
         ticketEntry.setCreatedDate(now);
         ticketEntry.setModifiedDate(now);
         ticketEntry.setIdentifier(identifierProvider.get());
+        if (nonNull(ticketEntry.getFinalizedDate())) {
+            ticketEntry.setFinalizedDate(now);
+        }
     }
 
     public SortableIdentifier getResourceIdentifier() {

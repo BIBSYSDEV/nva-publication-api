@@ -341,9 +341,7 @@ public class PublishingRequestCase extends TicketEntry {
     public PublishingRequestCase persistAutoComplete(TicketService ticketService, Publication publication,
                                                      Username finalizedBy)
         throws ApiGatewayException {
-        var ticket = this.persistNewTicket(ticketService);
-        ticket.complete(publication, finalizedBy).persistUpdate(ticketService);
-        return (PublishingRequestCase) ticket.fetch(ticketService);
+        return (PublishingRequestCase) this.complete(publication, finalizedBy).persistNewTicket(ticketService);
     }
 
     private static PublishingRequestCase createPublishingRequestIdentifyingObject(
