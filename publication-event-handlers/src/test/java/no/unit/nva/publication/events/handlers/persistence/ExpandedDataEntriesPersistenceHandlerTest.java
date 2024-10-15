@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonSerializable;
@@ -53,7 +52,6 @@ import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -69,6 +67,8 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.testing.TypeProvider;
+import no.unit.nva.publication.uriretriever.FakeUriResponse;
+import no.unit.nva.publication.uriretriever.FakeUriRetriever;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
@@ -93,7 +93,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private TicketService ticketService;
     private ResourceExpansionService resourceExpansionService;
-    private UriRetriever uriRetriever;
+    private FakeUriRetriever uriRetriever;
     private FakeSqsClient fakeSqsClient;
 
     @BeforeEach
@@ -102,14 +102,10 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         resourceService = getResourceServiceBuilder().build();
         ticketService = getTicketService();
         fakeSqsClient = new FakeSqsClient();
-        var mockPersonRetriever = mock(UriRetriever.class);
-        uriRetriever = mock(UriRetriever.class);
-        when(mockPersonRetriever.getRawContent(any(), any())).thenReturn(Optional.empty());
-        when(uriRetriever.getRawContent(any(), any())).thenReturn(
-            Optional.of("{}"));
+        uriRetriever = FakeUriRetriever.newInstance();
 
         resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService,
-                                                                    mockPersonRetriever, uriRetriever);
+                                                                    uriRetriever, uriRetriever);
     }
 
     @BeforeEach
@@ -120,7 +116,6 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
         s3Reader = new S3Driver(eventsBucket, "eventsBucket");
         s3Writer = new S3Driver(indexBucket, "indexBucket");
         handler = new ExpandedDataEntriesPersistenceHandler(s3Reader, s3Writer, fakeSqsClient);
-
         output = new ByteArrayOutputStream();
     }
 
@@ -326,14 +321,16 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     }
 
     private ExpandedResource randomResource() throws JsonProcessingException, ApiGatewayException {
-        var resource = Resource.fromPublication(createPublicationWithoutDoi());
+        var publication = createPublicationWithoutDoi();
+        var resource = Resource.fromPublication(publication);
         return (ExpandedResource) resourceExpansionService.expandEntry(resource);
     }
 
-    private Publication createPublicationWithoutDoi() throws ApiGatewayException {
+    private Publication createPublicationWithoutDoi() throws ApiGatewayException, JsonProcessingException {
         var publication = randomPublication(AcademicArticle.class).copy().withDoi(null).build();
         var persisted = Resource.fromPublication(publication)
                             .persistNew(resourceService, UserInstance.fromPublication(publication));
+        FakeUriResponse.setupFakeForType(persisted, uriRetriever);
         return resourceService.getPublicationByIdentifier(persisted.getIdentifier());
     }
 

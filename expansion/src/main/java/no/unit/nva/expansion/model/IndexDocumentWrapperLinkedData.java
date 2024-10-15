@@ -1,8 +1,7 @@
 package no.unit.nva.expansion.model;
 
-import static java.net.HttpURLConnection.HTTP_OK;
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static java.util.stream.Collectors.toList;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.ResourceExpansionServiceImpl.API_HOST;
 import static no.unit.nva.expansion.model.ExpandedResource.extractAffiliationUris;
@@ -22,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -104,17 +104,26 @@ public class IndexDocumentWrapperLinkedData {
         var urlEncodedPublicationId = URLEncoder.encode(publicationId, StandardCharsets.UTF_8);
         try {
             return fetchNviCandidate(urlEncodedPublicationId)
-                       .filter(response -> response.statusCode() == 200)
-                       .map(HttpResponse::body)
-                       .map(this::toNviCandidateResponse)
-                       .map(NviCandidateResponse::toNviStatus)
-                       .filter(ScientificIndex::isReported)
-                       .map(ScientificIndex::toJsonNode)
-                       .orElse(null);
+                       .filter(IndexDocumentWrapperLinkedData::isAcceptableNviResponse)
+                       .map(this::processNviCandidateResponse)
+                       .orElseThrow();
         } catch (Exception e) {
             logger.error(EXCEPTION, e.toString());
             throw ExpansionException.withMessage(String.format(FETCHING_NVI_CANDIDATE_ERROR_MESSAGE, publicationId));
         }
+    }
+
+    private JsonNode processNviCandidateResponse(HttpResponse<String> response) {
+        if (response.statusCode() == 404) {
+            return new ObjectNode(null);
+        } else {
+            var nviStatus = toNviCandidateResponse(response.body()).toNviStatus();
+            return nviStatus.isReported() ? nviStatus.toJsonNode() : new ObjectNode(null);
+        }
+    }
+
+    private static boolean isAcceptableNviResponse(HttpResponse<String> response) {
+        return response.statusCode() / 100 == 2 || response.statusCode() == 404;
     }
 
     private Optional<HttpResponse<String>> fetchNviCandidate(String publicationId) {
@@ -140,14 +149,20 @@ public class IndexDocumentWrapperLinkedData {
         return fetchFundings(indexDocument).stream()
                    .map(IoUtils::stringToStream)
                    .map(this::addPotentiallyMissingContext)
-                   .collect(toList());
+                   .toList();
     }
 
     private Collection<String> fetchFundings(JsonNode indexDocument) {
         var fundingIdentifiers = extractUris(fundingNodes(indexDocument), SOURCE);
         var fundingMap = new HashMap<URI, String>();
         for (URI uri : fundingIdentifiers) {
-            fundingMap.put(uri, this.fetchUri(uri));
+            if (isNull(uri)) {
+                continue;
+            }
+            var response = fetch(uri);
+            if (response.statusCode() / 100 == 2) {
+                fundingMap.put(uri, response.body());
+            }
         }
         fundingMap.replaceAll(IndexDocumentWrapperLinkedData::replaceNotFetchedFundingSource);
         return fundingMap.values();
@@ -189,10 +204,17 @@ public class IndexDocumentWrapperLinkedData {
 
     private Collection<? extends InputStream> fetchAll(Collection<URI> uris) {
         return uris.stream()
+                   .filter(Objects::nonNull)
                    .map(this::fetch)
-                   .flatMap(Optional::stream)
-                   .map(IoUtils::stringToStream)
-                   .collect(toList());
+                   .map(this::processResponse)
+                   .toList();
+    }
+
+    private InputStream processResponse(HttpResponse<String> response) {
+        if (response.statusCode() / 100 == 2) {
+            return IoUtils.stringToStream(response.body());
+        }
+        throw new RuntimeException("Unexpected response " + response);
     }
 
     private Collection<? extends InputStream> fetchAllAffiliationContent(JsonNode indexDocument) {
@@ -200,11 +222,9 @@ public class IndexDocumentWrapperLinkedData {
                    .stream()
                    .distinct()
                    .map(this::fetchOrganization)
-                   .filter(Optional::isPresent)
-                   .map(Optional::get)
                    .map(CristinOrganization::toJsonString)
                    .map(IoUtils::stringToStream)
-                   .collect(toList());
+                   .toList();
     }
 
     private Optional<InputStream> fetchAnthologyContent(JsonNode indexDocument) {
@@ -220,24 +240,12 @@ public class IndexDocumentWrapperLinkedData {
                    .map(IoUtils::stringToStream);
     }
 
-    private Optional<String> fetch(URI externalReference) {
-        return uriRetriever.getRawContent(externalReference, APPLICATION_JSON_LD.toString());
+    private HttpResponse<String> fetch(URI externalReference) {
+        return uriRetriever.fetchResponse(externalReference, APPLICATION_JSON_LD.toString()).orElseThrow();
     }
 
-    private String fetchUri(URI externalReference) {
-        var response = uriRetriever.fetchResponse(externalReference, APPLICATION_JSON_LD.toString());
-        return Optional.ofNullable(response)
-                   .filter(Optional::isPresent)
-                   .map(Optional::get)
-                   .filter(httpResponse -> httpResponse.statusCode() == HTTP_OK)
-                   .map(HttpResponse::body)
-                   .orElse(null);
-    }
-
-    private Optional<CristinOrganization> fetchOrganization(URI externalReference) {
-        var rawContent = uriRetriever.getRawContent(externalReference, MEDIA_TYPE_JSON_LD_V2);
-        return rawContent.isPresent()
-                   ? attempt(() -> objectMapper.readValue(rawContent.get(), CristinOrganization.class)).toOptional()
-                   : Optional.empty();
+    private CristinOrganization fetchOrganization(URI externalReference) {
+        var rawContent = uriRetriever.getRawContent(externalReference, MEDIA_TYPE_JSON_LD_V2).orElseThrow();
+        return attempt(() -> objectMapper.readValue(rawContent, CristinOrganization.class)).orElseThrow();
     }
 }

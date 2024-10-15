@@ -1,5 +1,6 @@
 package no.unit.nva.publication.uriretriever;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -18,10 +19,15 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.GeographicalContent;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Publisher;
+import no.unit.nva.model.contexttypes.ResearchData;
 import no.unit.nva.model.contexttypes.Series;
+import no.unit.nva.model.funding.ConfirmedFunding;
+import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
+import no.unit.nva.publication.model.business.TicketEntry;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 
@@ -50,45 +56,161 @@ public final class FakeUriResponse {
     public static void setupFakeForType(Publication publication,
                                         FakeUriRetriever fakeUriRetriever) throws JsonProcessingException {
 
-        publication.getEntityDescription().getContributors().stream()
-            .map(Contributor::getAffiliations)
-            .flatMap(Collection::stream)
-            .map(Organization.class::cast)
-            .map(Organization::getId)
-            .filter(Objects::nonNull)
-            .forEach(i -> fakeUriRetriever.registerResponse(i, 200, MediaType.JSON_UTF_8,
-                                                            createCristinOrganizationResponse(i)));
-
+        fakeContributorResponses(publication, fakeUriRetriever);
+        fakeOwnerResponse(fakeUriRetriever, publication.getResourceOwner().getOwnerAffiliation());
         fakePendingNviResponse(fakeUriRetriever, publication);
-        var publicationContext = publication.getEntityDescription().getReference().getPublicationContext();
+        fakeFundingResponses(fakeUriRetriever, publication);
+        fakeContextResponses(publication, fakeUriRetriever);
+    }
 
-        if (publicationContext instanceof Anthology anthologyContext) {
-            var contextUri = anthologyContext.getId();
-            var parent = randomPublication(BookAnthology.class).copy()
-                             .withIdentifier(SortableIdentifier.fromUri(contextUri))
-                             .build();
-            var parentResponse = PublicationResponse.fromPublication(parent);
-            var anthology = OBJECT_MAPPER.writeValueAsString(parentResponse);
-            var book = (Book) parentResponse.getEntityDescription().getReference().getPublicationContext();
-            fakeUriRetriever.registerResponse(contextUri, 200, APPLICATION_JSON_LD, anthology);
-            fakePendingNviResponse(fakeUriRetriever, parent);
-            fakePublisherResponse(fakeUriRetriever, book);
-            fakeSeriesResponse(fakeUriRetriever, book);
-        } else if (publicationContext instanceof Journal journal) {
-            URI id = journal.getId();
-            fakeUriRetriever.registerResponse(id, 200, APPLICATION_JSON_LD, createJournal(id));
-        } else if (publicationContext instanceof Publisher publisher) {
-            URI id = publisher.getId();
-            fakeUriRetriever.registerResponse(id, 200, APPLICATION_JSON_LD, createPublisher(id));
+    private static void fakeContextResponses(Publication publication, FakeUriRetriever fakeUriRetriever)
+        throws JsonProcessingException {
+
+        if (nonNull(publication.getEntityDescription()) && nonNull(publication.getEntityDescription().getReference())) {
+            var publicationContext = publication.getEntityDescription().getReference().getPublicationContext();
+
+            if (publicationContext instanceof Anthology anthologyContext) {
+                var contextUri = anthologyContext.getId();
+                var parent = randomPublication(BookAnthology.class).copy()
+                                 .withIdentifier(SortableIdentifier.fromUri(contextUri))
+                                 .build();
+                var parentResponse = PublicationResponse.fromPublication(parent);
+                var anthology = OBJECT_MAPPER.writeValueAsString(parentResponse);
+                var book = (Book) parentResponse.getEntityDescription().getReference().getPublicationContext();
+                fakeUriRetriever.registerResponse(contextUri, 200, APPLICATION_JSON_LD, anthology);
+                fakePendingNviResponse(fakeUriRetriever, parent);
+                fakeFundingResponses(fakeUriRetriever, parent);
+                fakePublisherResponse(fakeUriRetriever, book);
+                fakeSeriesResponse(fakeUriRetriever, book);
+            } else if (publicationContext instanceof Journal journal) {
+                URI id = journal.getId();
+                fakeUriRetriever.registerResponse(id, 200, APPLICATION_JSON_LD, createJournal(id));
+            } else if (publicationContext instanceof Book book && book.getPublisher() instanceof Publisher publisher) {
+                URI id = publisher.getId();
+                fakeUriRetriever.registerResponse(id, 200, APPLICATION_JSON_LD, createPublisher(id));
+                fakeSeriesResponse(fakeUriRetriever, book);
+            } else if (publicationContext instanceof ResearchData researchData
+                       && researchData.getPublisher() instanceof Publisher publisher) {
+                var uri = publisher.getId();
+                fakeUriRetriever.registerResponse(uri, 200, APPLICATION_JSON_LD, createPublisher(uri));
+            } else if (publicationContext instanceof GeographicalContent geographicalContent
+                       && geographicalContent.getPublisher() instanceof Publisher publisher) {
+                var uri = publisher.getId();
+                fakeUriRetriever.registerResponse(uri, 200, APPLICATION_JSON_LD, createPublisher(uri));
+            }
         }
+    }
+
+    private static void fakeContributorResponses(Publication publication, FakeUriRetriever fakeUriRetriever) {
+        if (nonNull(publication.getEntityDescription()) && nonNull(
+            publication.getEntityDescription().getContributors())) {
+            publication.getEntityDescription().getContributors().stream()
+                .map(Contributor::getAffiliations)
+                .flatMap(Collection::stream)
+                .map(Organization.class::cast)
+                .map(Organization::getId)
+                .filter(Objects::nonNull)
+                .forEach(i -> createFakeOrganizationStructure(fakeUriRetriever, i));
+        }
+    }
+
+    private static void createFakeOrganizationStructure(FakeUriRetriever fakeUriRetriever, URI uri) {
+        fakeUriRetriever.registerResponse(uri, 200, MediaType.JSON_UTF_8, createCristinOrganizationResponse(uri));
+        var upperLevel = URI.create(uri + "_upperLevel");
+        fakeUriRetriever.registerResponse(upperLevel, 200, MediaType.JSON_UTF_8,
+                                          createCristinOrganizationResponse(upperLevel));
+    }
+
+    public static void setupFakeForType(TicketEntry ticket, FakeUriRetriever fakeUriRetriever) {
+        var ownerAffiliation = ticket.getOwnerAffiliation();
+        fakeUriRetriever.registerResponse(ownerAffiliation, 200, APPLICATION_JSON_LD,
+                                          createCristinOrganizationResponse(ownerAffiliation));
+        fakeUriRetriever.registerResponse(ticket.getCustomerId(), 200, APPLICATION_JSON_LD,
+                                          createCristinOrganizationResponse(ticket.getCustomerId()));
+        setUpPersonResponse(fakeUriRetriever, ticket.getOwner());
+        setUpPersonResponse(fakeUriRetriever, ticket.getAssignee());
+        setUpPersonResponse(fakeUriRetriever, ticket.getFinalizedBy());
+        setUpPersonResponse(fakeUriRetriever, ticket.getViewedBy());
+    }
+
+    private static void setUpPersonResponse(FakeUriRetriever fakeUriRetriever, Object person) {
+        if (nonNull(person)) {
+            var assigneeUri = createOwnerUri(person.toString());
+            fakeUriRetriever.registerResponse(assigneeUri, 200, APPLICATION_JSON_LD,
+                                              createPersonResponse(person.toString(), null));
+        }
+    }
+
+    private static String createPersonResponse(String username, URI affiliation) {
+        return """
+            {
+              "@context" : "https://example.org/person-context.json",
+              "id" : "https://api.dev.nva.aws.unit.no/cristin/person/%s",
+              "type" : "Person",
+              "identifiers" : [ {
+                "type" : "CristinIdentifier",
+                "value" : "%s"
+              } ],
+              "names" : [ {
+                "type" : "FirstName",
+                "value" : "someFirstName"
+              }, {
+                "type" : "LastName",
+                "value" : "someLastName"
+              }, {
+                "type" : "PreferredFirstName",
+                "value" : "somePreferredFirstName"
+              }, {
+                "type" : "PreferredLastName",
+                "value" : "somePreferredLastName"
+              } ],
+              "affiliations" : [ {
+                "type" : "Affiliation",
+                "organization" : "%s",
+                "active" : false,
+                "role" : {
+                  "type" : "Role",
+                  "labels" : {
+                    "en" : "Guest",
+                    "nb" : "Gjest"
+                  }
+                }
+              } ],
+              "verified" : true,
+              "keywords" : [ ],
+              "background" : { },
+              "place" : { },
+              "collaboration" : { },
+              "countries" : [ ],
+              "awards" : [ ]
+            }
+            """.formatted(username, username, affiliation);
+    }
+
+    private static String extractCristinId(String owner) {
+        return owner.split("@")[0];
+    }
+
+    private static URI createOwnerUri(String owner) {
+        return UriWrapper.fromHost(API_HOST)
+                   .addChild("cristin")
+                   .addChild("person")
+                   .addChild(extractCristinId(owner))
+                   .getUri();
+    }
+
+    private static void fakeOwnerResponse(FakeUriRetriever fakeUriRetriever, URI ownerAffiliation) {
+        fakeUriRetriever.registerResponse(ownerAffiliation, 200, APPLICATION_JSON_LD,
+                                          createCristinOrganizationResponse(ownerAffiliation));
     }
 
     /**
      * This allows an override of the default value for the response.
+     *
      * @param fakeUriRetriever The faked URI retrieval object.
-     * @param statusCode The desired response status code.
-     * @param publication The source of the URI for which we mock the response.
-     * @param response The desired response in JSON.
+     * @param statusCode       The desired response status code.
+     * @param publication      The source of the URI for which we mock the response.
+     * @param response         The desired response in JSON.
      */
     public static void setUpNviResponse(FakeUriRetriever fakeUriRetriever, int statusCode, Publication publication,
                                         String response) {
@@ -97,14 +219,91 @@ public final class FakeUriResponse {
                                           response);
     }
 
+    private static void fakeFundingResponses(FakeUriRetriever fakeUriRetriever, Publication publication) {
+        publication.getFundings().forEach(funding -> fakeFundingResponse(fakeUriRetriever, funding));
+    }
+
+    private static void fakeFundingResponse(FakeUriRetriever fakeUriRetriever, Funding funding) {
+        var source = funding.getSource();
+        if (funding instanceof ConfirmedFunding confirmedFunding) {
+            var id = confirmedFunding.getId();
+            fakeUriRetriever.registerResponse(id,
+                                              200,
+                                              APPLICATION_JSON_LD,
+                                              confirmedFundingResponse(id, source));
+        } else {
+
+            fakeUriRetriever.registerResponse(source,
+                                              200,
+                                              APPLICATION_JSON_LD,
+                                              unconfirmedFundingResponse(source));
+        }
+        fakeUriRetriever.registerResponse(source,
+                                          200,
+                                          APPLICATION_JSON_LD,
+                                          fundingSourceResponse(source));
+    }
+
+    private static String fundingSourceResponse(URI source) {
+        return """
+            {
+              "type" : "FundingSource",
+              "id" : "%s",
+              "identifier" : "NFR",
+              "labels" : {
+                "en" : "Research Council of Norway (RCN)",
+                "nb" : "Norges forskningsråd"
+              },
+              "name" : {
+                "en" : "Research Council of Norway (RCN)",
+                "nb" : "Norges forskningsråd"
+              },
+              "@context" : {
+                "@vocab" : "https://nva.sikt.no/ontology/publication#",
+                "id" : "@id",
+                "type" : "@type",
+                "labels" : {
+                  "@id" : "label",
+                  "@container" : "@language"
+                }
+              }
+            }
+            """.formatted(source);
+    }
+
+    private static String unconfirmedFundingResponse(URI source) {
+        return """
+            {
+              "type" : "UnconfirmedFunding",
+              "source" : "%s",
+              "identifier" : "NFR00011-12-3211"
+              }
+            """.formatted(source);
+    }
+
+    private static String confirmedFundingResponse(URI id, URI source) {
+        return """
+            {
+              "type" : "ConfirmedFunding",
+              "source" : "%s",
+              "id" : "%s",
+              "identifier" : "NFR00011-12-3211"
+              }
+            """.formatted(source, id);
+    }
+
     private static void fakePublisherResponse(FakeUriRetriever fakeUriRetriever, Book book) {
-        var publisher = ((Publisher) book.getPublisher()).getId();
-        fakeUriRetriever.registerResponse(publisher, 200, APPLICATION_JSON_LD, createPublisher(publisher));
+        if (nonNull(book.getPublisher()) && book.getPublisher() instanceof Publisher publisher) {
+            var id = publisher.getId();
+            fakeUriRetriever.registerResponse(id, 200, APPLICATION_JSON_LD, createPublisher(id));
+        }
     }
 
     private static void fakeSeriesResponse(FakeUriRetriever fakeUriRetriever, Book book) {
-        var seriesId = ((Series) book.getSeries()).getId();
-        fakeUriRetriever.registerResponse(seriesId, 200, APPLICATION_JSON_LD, createSeries(seriesId));
+        if (book.getSeries() != null && book.getSeries() instanceof Series series) {
+            var seriesId = series.getId();
+            fakeUriRetriever.registerResponse(seriesId, 200, APPLICATION_JSON_LD, createSeries(seriesId));
+        }
     }
 
     private static void fakePendingNviResponse(FakeUriRetriever fakeUriRetriever, Publication publication) {
@@ -114,13 +313,52 @@ public final class FakeUriResponse {
     private static String createCristinOrganizationResponse(URI uri) {
         return """
             {
-              "id": "%s",
-              "type": "Organization",
-              "labels": {
-                "en": "Some organization",
-                "nb": "En organisasjon"
-              }
-            }
+                           "@context" : "https://bibsysdev.github.io/src/organization-context.json",
+                           "type" : "Organization",
+                           "id" : "%s",
+                           "labels" : {
+                             "en" : "Norwegian Centre for Mathematics Education",
+                             "nb" : "Nasjonalt senter for matematikk i opplæringen"
+                           },
+                           "acronym" : "SU-ILU-NSM",
+                           "country" : "NO",
+                           "partOf" : [ {
+                             "type" : "Organization",
+                             "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.67.80.0",
+                             "labels" : {
+                               "en" : "Department of Teacher Education",
+                               "nb" : "Institutt for lærerutdanning"
+                             },
+                             "acronym" : "SU-ILU",
+                             "country" : "NO",
+                             "partOf" : [ {
+                               "type" : "Organization",
+                               "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.67.0.0",
+                               "labels" : {
+                                 "en" : "Faculty of Social and Educational Sciences",
+                                 "nb" : "Fakultet for samfunns- og utdanningsvitenskap"
+                               },
+                               "acronym" : "SU",
+                               "country" : "NO",
+                               "partOf" : [ {
+                                 "type" : "Organization",
+                                 "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0",
+                                 "labels" : {
+                                   "en" : "Norwegian University of Science and Technology",
+                                   "nb" : "Norges teknisk-naturvitenskapelige universitet",
+                                   "nn" : "Noregs teknisk-naturvitskaplege universitet"
+                                 },
+                                 "acronym" : "NTNU",
+                                 "country" : "NO",
+                                 "partOf" : [ ],
+                                 "hasPart" : [ ]
+                               } ],
+                               "hasPart" : [ ]
+                             } ],
+                             "hasPart" : [ ]
+                           } ],
+                           "hasPart" : [ ]
+                         }
             """.formatted(uri);
     }
 

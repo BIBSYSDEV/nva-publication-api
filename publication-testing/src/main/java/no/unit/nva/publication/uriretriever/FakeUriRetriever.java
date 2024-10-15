@@ -1,5 +1,6 @@
 package no.unit.nva.publication.uriretriever;
 
+import static java.util.Objects.nonNull;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import com.google.common.net.MediaType;
 import java.net.URI;
@@ -39,10 +40,14 @@ public final class FakeUriRetriever implements RawContentRetriever {
     @Override
     public Optional<String> getRawContent(URI uri,
                                           String mediaType) {
-        return responses.stream()
+        var returnValue = responses.stream()
                    .filter(response -> matchUri(uri, mediaType, response))
                    .map(HttpResponse::body)
                    .findFirst();
+        if (returnValue.isEmpty()) {
+            System.out.println("(getRawContent fake) Failed to find matching response for " + uri);
+        }
+        return returnValue;
     }
 
     @SuppressWarnings("PMD.UnusedAssignment")
@@ -62,16 +67,22 @@ public final class FakeUriRetriever implements RawContentRetriever {
     @Override
     public Optional<HttpResponse<String>> fetchResponse(URI uri,
                                                         String mediaType) {
-        return responses.stream()
+        var returnValue = responses.stream()
                    .filter(response -> matchUri(uri, mediaType, response))
                    .findFirst();
+        if (returnValue.isEmpty()) {
+            System.out.println("(fetchResponse fake) Failed to find matching response for " + uri);
+        }
+        return returnValue;
     }
 
     public FakeUriRetriever registerResponse(URI uri,
                                              int statusCode,
                                              MediaType mediaType,
                                              String body) {
-        add(new FakeHttpResponse(uri, statusCode, mediaType, body));
+        if (nonNull(uri)) {
+            add(new FakeHttpResponse(uri, statusCode, mediaType, body));
+        }
         return this;
     }
 
