@@ -336,7 +336,7 @@ public final class FakeUriResponse {
                            "country" : "NO",
                            "hasPart" : [ {
                              "type" : "Organization",
-                             "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/123.1.0.0",
+                             "id" : "%s",
                              "labels" : {
                                "en" : "Department of Teacher Education",
                                "nb" : "Institutt for lærerutdanning"
@@ -345,7 +345,7 @@ public final class FakeUriResponse {
                              "country" : "NO",
                              "hasPart" : [ {
                                "type" : "Organization",
-                               "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/123.1.1.0",
+                               "id" : "%s",
                                "labels" : {
                                  "en" : "Faculty of Social and Educational Sciences",
                                  "nb" : "Fakultet for samfunns- og utdanningsvitenskap"
@@ -359,7 +359,7 @@ public final class FakeUriResponse {
                            } ],
                            "hasPart" : [ ]
                          }
-            """.formatted(uri);
+            """.formatted(uri, HARD_CODED_LEVEL_2_ORG_URI, HARD_CODED_LEVEL_3_ORG_URI);
     }
 
     private static String createCristinOrganizationResponse(URI uri) {
@@ -376,7 +376,7 @@ public final class FakeUriResponse {
                              "country" : "NO",
                              "partOf" : [ {
                                "type" : "Organization",
-                               "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/123.1.0.0",
+                               "id" : "%s",
                                "labels" : {
                                  "en" : "Faculty of Social and Educational Sciences",
                                  "nb" : "Fakultet for samfunns- og utdanningsvitenskap"
@@ -385,7 +385,7 @@ public final class FakeUriResponse {
                                "country" : "NO",
                                "partOf" : [ {
                                  "type" : "Organization",
-                                 "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/123.0.0.0",
+                                 "id" : "%s",
                                  "labels" : {
                                    "en" : "Norwegian University of Science and Technology",
                                    "nb" : "Norges teknisk-naturvitenskapelige universitet",
@@ -402,7 +402,7 @@ public final class FakeUriResponse {
                            } ],
                            "hasPart" : [ ]
                          }
-            """.formatted(uri);
+            """.formatted(uri, HARD_CODED_LEVEL_2_ORG_URI, HARD_CODED_TOP_LEVEL_ORG_URI);
     }
 
     private static String createJournal(URI id) {
