@@ -9,7 +9,7 @@ import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permission.strategy.grant.BackendClientStrategy;
 import no.unit.nva.publication.permission.strategy.grant.ContributorPermissionStrategy;
-import no.unit.nva.publication.permission.strategy.grant.CuratorPermissionStrategy;
+import no.unit.nva.publication.permission.strategy.grant.PublishingCuratorPermissionStrategy;
 import no.unit.nva.publication.permission.strategy.grant.EditorPermissionStrategy;
 import no.unit.nva.publication.permission.strategy.grant.GrantPermissionStrategy;
 import no.unit.nva.publication.permission.strategy.grant.ResourceOwnerPermissionStrategy;
@@ -38,7 +38,7 @@ public class PublicationPermissionStrategy {
         this.publication = publication;
         this.grantStrategies = Set.of(
             new EditorPermissionStrategy(publication, userInstance, resourceService),
-            new CuratorPermissionStrategy(publication, userInstance, resourceService),
+            new PublishingCuratorPermissionStrategy(publication, userInstance, resourceService),
             new ContributorPermissionStrategy(publication, userInstance, resourceService),
             new ResourceOwnerPermissionStrategy(publication, userInstance, resourceService),
             new TrustedThirdPartyStrategy(publication, userInstance, resourceService),
@@ -67,13 +67,13 @@ public class PublicationPermissionStrategy {
     private boolean isPublishingCurator() {
         return findAllowances(PublicationOperation.UPDATE_FILES)
                    .stream()
-                   .anyMatch(CuratorPermissionStrategy.class::isInstance);
+                   .anyMatch(PublishingCuratorPermissionStrategy.class::isInstance);
     }
 
     private boolean isCurator() {
         return findAllowances(PublicationOperation.UPDATE)
                    .stream()
-                   .anyMatch(CuratorPermissionStrategy.class::isInstance);
+                   .anyMatch(PublishingCuratorPermissionStrategy.class::isInstance);
     }
 
     public boolean allowsAction(PublicationOperation permission) {

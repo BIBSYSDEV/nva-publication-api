@@ -7,25 +7,22 @@ import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCE_FILES;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
-import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.GeneralSupportRequest;
-import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CuratorPermissionStrategy extends GrantPermissionStrategy {
+public class PublishingCuratorPermissionStrategy extends GrantPermissionStrategy {
 
-    public static final Logger logger = LoggerFactory.getLogger(CuratorPermissionStrategy.class);
+    public static final Logger logger = LoggerFactory.getLogger(PublishingCuratorPermissionStrategy.class);
 
-    public CuratorPermissionStrategy(Publication publication, UserInstance userInstance, ResourceService resourceService) {
+    public PublishingCuratorPermissionStrategy(Publication publication, UserInstance userInstance, ResourceService resourceService) {
         super(publication, userInstance, resourceService);
     }
 
     @Override
     public boolean allowsAction(PublicationOperation permission) {
-        if (!userRelatesToPublication()) {
+        if (!userRelatesToPublication() ) {
             return false;
         }
 
@@ -33,13 +30,13 @@ public class CuratorPermissionStrategy extends GrantPermissionStrategy {
             case UPDATE_FILES -> hasAccessRight(MANAGE_RESOURCE_FILES);
             case UPDATE -> canManageStandardResources();
             case TICKET_PUBLISH -> canManagePublishingRequests() && hasUnpublishedFile();
-            case UNPUBLISH -> canManageStandardResources() && isPublished();
+            case UNPUBLISH -> canManagePublishingRequests() && isPublished();
             case DOI_REQUEST_CREATE -> hasAccessRight(MANAGE_DOI) && userRelatesToPublication();
-            case PUBLISHING_REQUEST_CREATE -> hasAccessRight(MANAGE_PUBLISHING_REQUESTS)
+            case PUBLISHING_REQUEST_CREATE ->  canManagePublishingRequests()
                                               && userRelatesToPublication();
             case SUPPORT_REQUEST_CREATE -> hasAccessRight(SUPPORT) && userRelatesToPublication();
             case DOI_REQUEST_APPROVE -> hasAccessRight(MANAGE_DOI);
-            case PUBLISHING_REQUEST_APPROVE -> hasAccessRight(MANAGE_PUBLISHING_REQUESTS);
+            case PUBLISHING_REQUEST_APPROVE ->  canManagePublishingRequests();
             case SUPPORT_REQUEST_APPROVE -> hasAccessRight(SUPPORT);
             default -> false;
         };

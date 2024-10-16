@@ -18,7 +18,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 
-class CuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
+class PublishingCuratorPermissionStrategyTest extends PublicationPermissionStrategyTest {
 
     //region Non-degree publications
     @ParameterizedTest(name = "Should allow Curator {0} operation on non-degree resources belonging to the "
