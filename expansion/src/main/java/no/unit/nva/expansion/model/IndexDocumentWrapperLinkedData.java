@@ -155,6 +155,8 @@ public class IndexDocumentWrapperLinkedData {
                        if (response.statusCode() / 100 == 2) {
                            return response.body();
                        } else if (isClientError(response)) {
+                           logger.warn("Client error when fetching funding source: {}. Response body: {}", uri,
+                                       response.body());
                            return FundingSource.withId(uri).toJsonString();
                        } else {
                            throw new RuntimeException("Unexpected response " + response);
