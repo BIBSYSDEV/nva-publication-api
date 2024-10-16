@@ -7,10 +7,12 @@ import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.model.ContributorVerificationStatus.NOT_VERIFIED;
 import static no.unit.nva.model.ContributorVerificationStatus.VERIFIED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.testing.PublicationGenerator.API_HOST;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.publication.uriretriever.FakeUriResponse.HARD_CODED_TOP_LEVEL_ORG_URI;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
@@ -158,7 +160,7 @@ class ExpandedResourceTest {
         var framedResultNode = indexDocument.asJsonNode();
 
         var actualCountryCode = framedResultNode.at("/entityDescription/contributors/1/affiliations/0/countryCode")
-                                                .textValue();
+                                    .textValue();
         assertThat(actualCountryCode, is(not(nullValue())));
     }
 
@@ -182,7 +184,7 @@ class ExpandedResourceTest {
         var framedResultNode = indexDocument.asJsonNode();
 
         var contributorsPreviewNode = (ArrayNode) framedResultNode.at("/entityDescription")
-                                             .at("/contributorsPreview");
+                                                      .at("/contributorsPreview");
 
         var actualContributorsPreview = stream(contributorsPreviewNode.spliterator(), false)
                                             .map(node -> objectMapper.convertValue(node, Contributor.class))
@@ -195,8 +197,9 @@ class ExpandedResourceTest {
     void shouldReturnIndexDocumentWithContributorsPreviewWithNoMoreThan10Contributors() throws Exception {
         var publication = randomPublication();
 
-        var contributors = IntStream.range(0,20).mapToObj(i ->
-            contributorWithSequenceAndVerificationStatus(randomInteger(), NOT_VERIFIED)
+        var contributors = IntStream.range(0, 20).mapToObj(i ->
+                                                               contributorWithSequenceAndVerificationStatus(
+                                                                   randomInteger(), NOT_VERIFIED)
         ).toList();
 
         publication.getEntityDescription().setContributors(contributors);
@@ -206,7 +209,7 @@ class ExpandedResourceTest {
         var framedResultNode = indexDocument.asJsonNode();
 
         var contributorsCountNode = (IntNode) framedResultNode.at("/entityDescription")
-                                                      .at("/contributorsCount");
+                                                  .at("/contributorsCount");
 
         var contributorsPreviewNode = (ArrayNode) framedResultNode.at("/entityDescription")
                                                       .at("/contributorsPreview");
@@ -221,22 +224,30 @@ class ExpandedResourceTest {
 
     @Test
     void shouldReturnIndexDocumentWithTopLevelOrganizationsWithTreeToRelevantAffiliation() throws Exception {
-        final var publication = randomBookWithConfirmedPublisher();
+        final var publication = randomPublication(AcademicArticle.class);
+        final var affiliationToBeExpanded = FakeUriResponse.HARD_CODED_LEVEL_3_ORG_URI;
+        var contributorAffiliatedToTopLevel = publication.getEntityDescription().getContributors().getFirst().copy()
+                                                  .withAffiliations(
+                                                      List.of(Organization.fromUri(affiliationToBeExpanded))).build();
+
+        publication.getEntityDescription().setContributors(List.of(contributorAffiliatedToTopLevel));
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever);
 
         var framedResultNode = fromPublication(fakeUriRetriever, publication).asJsonNode();
         var topLevelNodes = (ArrayNode) framedResultNode.at(JSON_PTR_TOP_LEVEL_ORGS);
-        var topLevelForExpandedAffiliation = getTopLevel(topLevelNodes, "194.0.0.0");
+        var topLevelForExpandedAffiliation = getTopLevel(topLevelNodes, HARD_CODED_TOP_LEVEL_ORG_URI.toString());
+
+        assertThat(findDeepestNestedSubUnit(topLevelForExpandedAffiliation).at(JSON_PTR_ID).textValue(),
+                   is(equalTo(affiliationToBeExpanded.toString())));
     }
 
     @Test
     void shouldReturnIndexDocumentWithContributorsOrganizations() throws Exception {
         var publication = randomPublication(AcademicArticle.class);
-        var contributor1org = orgWithReadableId("contributor1org");
-        var contributor1parentOrg = orgWithReadableId("contributor1parentOrg");
-        var contributor2org = orgWithReadableId("contributor2org");
-        var contributor2parentOrg = orgWithReadableId("contributor2parentOrg");
-        var sharedGrandParent = orgWithReadableId("sharedGrandParent");
+        var contributor1org = Organization.fromUri(FakeUriResponse.HARD_CODED_LEVEL_3_ORG_URI);
+        var contributor1parentOrg = Organization.fromUri(FakeUriResponse.HARD_CODED_LEVEL_2_ORG_URI);
+        var contributor2org = Organization.fromUri(FakeUriResponse.constructCristinOrgUri("123.1.2.0"));
+        var topLevelOrg = Organization.fromUri(HARD_CODED_TOP_LEVEL_ORG_URI);
 
         var contributor1 = contributorWithOneAffiliation(contributor1org);
         var contributor2 = contributorWithOneAffiliation(contributor2org);
@@ -246,15 +257,14 @@ class ExpandedResourceTest {
         var framedResultNode = fromPublication(fakeUriRetriever, publication).asJsonNode();
         var contributorOrganizationsNode = framedResultNode.at(JSON_CONTRIBUTOR_ORGANIZATIONS);
         var actualOrganizations = Lists.newArrayList(contributorOrganizationsNode.elements())
-                                       .stream()
-                                       .map(JsonNode::textValue)
-                                       .toList();
+                                      .stream()
+                                      .map(JsonNode::textValue)
+                                      .toList();
 
         var expectedOrganizations = Stream.of(contributor1org,
-                                              contributor2org,
                                               contributor1parentOrg,
-                                              contributor2parentOrg,
-                                              sharedGrandParent).map(Organization::getId).map(URI::toString).toArray();
+                                              topLevelOrg,
+                                              contributor2org).map(Organization::getId).map(URI::toString).toArray();
 
         assertThat(actualOrganizations, containsInAnyOrder(expectedOrganizations));
     }
@@ -263,16 +273,12 @@ class ExpandedResourceTest {
     void shouldReturnIndexDocumentWithTopLevelOrganizationWithoutHasPartsIfContributorAffiliatedWithTopLevel()
         throws Exception {
         final var publication = randomBookWithConfirmedPublisher();
-        final var affiliationToBeExpanded =
-            URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0");
-        var contributorOne = publication.getEntityDescription().getContributors().getFirst().copy()
-                              .withAffiliations(List.of(Organization.fromUri(affiliationToBeExpanded))).build();
-        var contributorTwoUri = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/194.16.0.0");
-        var contributorTwo = new Contributor.Builder()
-                                 .withIdentity(new Identity.Builder().withId(randomUri()).build())
-                                     .withAffiliations(List.of(Organization.fromUri(contributorTwoUri))).build();
+        final var affiliationToBeExpanded = HARD_CODED_TOP_LEVEL_ORG_URI;
+        var contributorAffiliatedToTopLevel = publication.getEntityDescription().getContributors().getFirst().copy()
+                                                  .withAffiliations(
+                                                      List.of(Organization.fromUri(affiliationToBeExpanded))).build();
 
-        publication.getEntityDescription().setContributors(List.of(contributorOne, contributorTwo));
+        publication.getEntityDescription().setContributors(List.of(contributorAffiliatedToTopLevel));
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever);
 
         var framedResultNode = fromPublication(fakeUriRetriever, publication).asJsonNode();
@@ -293,8 +299,8 @@ class ExpandedResourceTest {
 
         List<Contributor> contributors = objectMapper.convertValue(contributorsJson,
                                                                    objectMapper.getTypeFactory()
-                                                                               .constructCollectionType(List.class,
-                                                                                                        Contributor.class));
+                                                                       .constructCollectionType(List.class,
+                                                                                                Contributor.class));
         var sortedContributors = contributors.stream().sorted(Comparator.comparing(Contributor::getSequence)).toList();
 
         assertThat(contributors, is(equalTo(sortedContributors)));
@@ -333,7 +339,6 @@ class ExpandedResourceTest {
         final var sourceUri1 = publication.getFundings().get(1).getSource();
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever);
 
-
         assertHasExpectedFundings(sourceUri0, sourceUri1, fromPublication(fakeUriRetriever, publication).asJsonNode());
     }
 
@@ -343,7 +348,8 @@ class ExpandedResourceTest {
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever);
 
         var expandedResource = fromPublication(fakeUriRetriever, publication).asJsonNode();
-        var type = new TypeReference<List<FundingResult>>() {};
+        var type = new TypeReference<List<FundingResult>>() {
+        };
 
         var string = expandedResource.at("/fundings").toString();
         var fundings = attempt(() -> objectMapper.readValue(string, type)).orElseThrow();
@@ -366,12 +372,11 @@ class ExpandedResourceTest {
 
         final Publication publication = randomBookWithConfirmedPublisher();
 
-
         ((Organization) publication.getEntityDescription()
-                                   .getContributors()
-                                   .getFirst()
-                                   .getAffiliations()
-                                   .getFirst()).setId(null);
+                            .getContributors()
+                            .getFirst()
+                            .getAffiliations()
+                            .getFirst()).setId(null);
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever);
 
         ObjectNode framedResultNode = fromPublication(fakeUriRetriever, publication).asJsonNode();
@@ -459,8 +464,9 @@ class ExpandedResourceTest {
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever);
         var parentUri = (Anthology) publication.getEntityDescription().getReference().getPublicationContext();
         var bookAnthology =
-            objectMapper.readValue(fakeUriRetriever.fetchResponse(parentUri.getId(), APPLICATION_JSON_LD.toString()).get().body(),
-                                   Publication.class);
+            objectMapper.readValue(
+                fakeUriRetriever.fetchResponse(parentUri.getId(), APPLICATION_JSON_LD.toString()).get().body(),
+                Publication.class);
         var expectedPublicationChannelIds = getPublicationContextUris(extractBook(bookAnthology));
 
         var expandedResource = fromPublication(fakeUriRetriever, publication);
@@ -607,10 +613,10 @@ class ExpandedResourceTest {
 
     private static Contributor contributorWithOneAffiliation(Organization contributor1org) {
         return new Contributor.Builder().withIdentity(new Identity.Builder().withName(randomString()).build())
-                                        .withRole(new RoleType(Role.ACTOR))
-                                        .withSequence(randomInteger(10000))
-                                        .withAffiliations(List.of(contributor1org))
-                                        .build();
+                   .withRole(new RoleType(Role.ACTOR))
+                   .withSequence(randomInteger(10000))
+                   .withAffiliations(List.of(contributor1org))
+                   .build();
     }
 
     private static Contributor contributorWithSequenceAndVerificationStatus(int sequence,
@@ -623,19 +629,19 @@ class ExpandedResourceTest {
 
     private static Stream<Class<?>> validAnthologyContainersProvider() {
         return Stream.of(
-                AcademicMonograph.class,
-                NonFictionMonograph.class,
-                PopularScienceMonograph.class,
-                Textbook.class,
-                Encyclopedia.class,
-                ExhibitionCatalog.class,
-                BookAnthology.class,
-                ReportResearch.class,
-                ReportPolicy.class,
-                ReportWorkingPaper.class,
-                ReportBookOfAbstract.class,
-                ConferenceReport.class,
-                ReportBasic.class);
+            AcademicMonograph.class,
+            NonFictionMonograph.class,
+            PopularScienceMonograph.class,
+            Textbook.class,
+            Encyclopedia.class,
+            ExhibitionCatalog.class,
+            BookAnthology.class,
+            ReportResearch.class,
+            ReportPolicy.class,
+            ReportWorkingPaper.class,
+            ReportBookOfAbstract.class,
+            ConferenceReport.class,
+            ReportBasic.class);
     }
 
     private static Stream<Class<?>> validAnthologyMembersProvider() {
@@ -652,24 +658,24 @@ class ExpandedResourceTest {
 
     private static JsonNode getTopLevel(ArrayNode topLevelNodes, String topLevelOrgId) {
         return stream(topLevelNodes.spliterator(), false)
-                            .filter(node -> node.at(JSON_PTR_ID).textValue().contains(topLevelOrgId))
-                            .findFirst()
-                            .orElse(null);
+                   .filter(node -> node.at(JSON_PTR_ID).textValue().contains(topLevelOrgId))
+                   .findFirst()
+                   .orElse(null);
     }
 
     private static void mockCristinOrganizationRawContentResponse(UriRetriever mockUriRetriever,
                                                                   Publication publication) {
         publication.getEntityDescription()
-                   .getContributors()
-                   .stream()
-                   .flatMap(contributor -> contributor.getAffiliations().stream())
-                   .filter(Organization.class::isInstance)
-                   .map(Organization.class::cast)
-                   .map(Organization::getId)
-                   .forEach(id -> mockGetRawContentResponse(
-                       mockUriRetriever,
-                       id,
-                       getCristinResponseWithCountryCodeForOrganization(id.toString(), COUNTRY_CODE_NO)));
+            .getContributors()
+            .stream()
+            .flatMap(contributor -> contributor.getAffiliations().stream())
+            .filter(Organization.class::isInstance)
+            .map(Organization.class::cast)
+            .map(Organization::getId)
+            .forEach(id -> mockGetRawContentResponse(
+                mockUriRetriever,
+                id,
+                getCristinResponseWithCountryCodeForOrganization(id.toString(), COUNTRY_CODE_NO)));
     }
 
     private static void assertHasExpectedFundings(URI sourceUri0, URI sourceUri1, ObjectNode framedResultNode) {
@@ -685,12 +691,12 @@ class ExpandedResourceTest {
 
     private static Set<URI> extractSourceId(ObjectNode framedResultNode) {
         return framedResultNode.at(PublicationJsonPointers.FUNDING_SOURCE_POINTER)
-                               .findValues("source")
-                               .stream()
-                               .flatMap(node -> node.findValues("id").stream())
-                               .map(JsonNode::textValue)
-                               .map(URI::create)
-                               .collect(Collectors.toSet());
+                   .findValues("source")
+                   .stream()
+                   .flatMap(node -> node.findValues("id").stream())
+                   .map(JsonNode::textValue)
+                   .map(URI::create)
+                   .collect(Collectors.toSet());
     }
 
     private static void mockGetRawContentResponse(UriRetriever uriRetriever, URI uri, String response) {
@@ -705,11 +711,11 @@ class ExpandedResourceTest {
 
     private static Contributor createContributorsWithEmptyAffiliations(Contributor contributor) {
         return new Contributor.Builder().withIdentity(contributor.getIdentity())
-                                        .withAffiliations(List.of(new Organization()))
-                                        .withRole(contributor.getRole())
-                                        .withSequence(contributor.getSequence())
-                                        .withCorrespondingAuthor(contributor.isCorrespondingAuthor())
-                                        .build();
+                   .withAffiliations(List.of(new Organization()))
+                   .withRole(contributor.getRole())
+                   .withSequence(contributor.getSequence())
+                   .withCorrespondingAuthor(contributor.isCorrespondingAuthor())
+                   .build();
     }
 
     private static String getCristinResponseWithCountryCodeForOrganization(String id, String countryCode) {
@@ -731,20 +737,20 @@ class ExpandedResourceTest {
 
     private static Set<URI> getOrgIdsForContributorAffiliations(Publication publication) {
         return publication.getEntityDescription()
-                          .getContributors()
-                          .stream()
-                          .map(Contributor::getAffiliations)
-                          .map(ExpandedResourceTest::getOrgIds)
-                          .flatMap(Set::stream)
-                          .collect(Collectors.toSet());
+                   .getContributors()
+                   .stream()
+                   .map(Contributor::getAffiliations)
+                   .map(ExpandedResourceTest::getOrgIds)
+                   .flatMap(Set::stream)
+                   .collect(Collectors.toSet());
     }
 
     private static Set<URI> getOrgIds(List<Corporation> organizations) {
         return organizations.stream()
-                            .filter(Organization.class::isInstance)
-                            .map(Organization.class::cast)
-                            .map(Organization::getId)
-                            .collect(Collectors.toSet());
+                   .filter(Organization.class::isInstance)
+                   .map(Organization.class::cast)
+                   .map(Organization::getId)
+                   .collect(Collectors.toSet());
     }
 
     private static JsonNode findDeepestNestedSubUnit(JsonNode jsonNode) {
@@ -772,34 +778,35 @@ class ExpandedResourceTest {
     }
 
     private Organization orgWithReadableId(String readable) {
-        return new Organization.Builder().withId(URI.create(("https://example.org/" + readable))).build();
+        return Organization.fromUri(
+            UriWrapper.fromHost(API_HOST).addChild("cristin").addChild("organization").addChild(readable).getUri());
     }
 
     private Publication bookAnthologyWithDoiReferencedInAssociatedLink() {
         var doi = randomDoi();
         return PublicationGenerator.randomPublication(BookAnthology.class)
-                                   .copy()
-                                   .withDoi(doi)
-                                   .withAssociatedArtifacts(List.of(new AssociatedLink(doi, null, null)))
-                                   .build();
+                   .copy()
+                   .withDoi(doi)
+                   .withAssociatedArtifacts(List.of(new AssociatedLink(doi, null, null)))
+                   .build();
     }
 
     private Publication bookAnthologyWithHandleReferencedInAssociatedLink() {
         var handle = randomUri();
         return PublicationGenerator.randomPublication(BookAnthology.class)
-                                   .copy()
-                                   .withHandle(handle)
-                                   .withAssociatedArtifacts(List.of(new AssociatedLink(handle, null, null)))
-                                   .build();
+                   .copy()
+                   .withHandle(handle)
+                   .withAssociatedArtifacts(List.of(new AssociatedLink(handle, null, null)))
+                   .build();
     }
 
     private Publication bookAnthologyWithLinkReferencedInAssociatedLink() {
         var link = randomUri();
         return PublicationGenerator.randomPublication(BookAnthology.class)
-                                   .copy()
-                                   .withLink(link)
-                                   .withAssociatedArtifacts(List.of(new AssociatedLink(link, null, null)))
-                                   .build();
+                   .copy()
+                   .withLink(link)
+                   .withAssociatedArtifacts(List.of(new AssociatedLink(link, null, null)))
+                   .build();
     }
 
     private List<URI> getPublicationContextUris(Book book) {
@@ -815,9 +822,9 @@ class ExpandedResourceTest {
         publication.setStatus(PUBLISHED);
         var entityDescription = publication.getEntityDescription();
         var contributors = entityDescription.getContributors()
-                                            .stream()
-                                            .map(ExpandedResourceTest::createContributorsWithEmptyAffiliations)
-                                            .toList();
+                               .stream()
+                               .map(ExpandedResourceTest::createContributorsWithEmptyAffiliations)
+                               .toList();
         entityDescription.setContributors(contributors);
         return publication;
     }
@@ -832,14 +839,14 @@ class ExpandedResourceTest {
 
     private List<URI> extractAffiliationsUris(Publication publication) {
         return publication.getEntityDescription()
-                          .getContributors()
-                          .stream()
-                          .flatMap(contributor -> contributor.getAffiliations()
-                                                             .stream()
-                                                             .filter(Organization.class::isInstance)
-                                                             .map(Organization.class::cast)
-                                                             .map(Organization::getId))
-                          .toList();
+                   .getContributors()
+                   .stream()
+                   .flatMap(contributor -> contributor.getAffiliations()
+                                               .stream()
+                                               .filter(Organization.class::isInstance)
+                                               .map(Organization.class::cast)
+                                               .map(Organization::getId))
+                   .toList();
     }
 
     private Book extractBook(Publication publication) {
@@ -862,17 +869,17 @@ class ExpandedResourceTest {
 
     private Contributor randomContributor() {
         return new Contributor.Builder().withIdentity(new Identity.Builder().withName(randomString()).build())
-                                        .withRole(new RoleType(Role.ACTOR))
-                                        .withSequence(randomInteger(10000))
-                                        .withAffiliations(List.of(randomOrganization()))
-                                        .build();
+                   .withRole(new RoleType(Role.ACTOR))
+                   .withSequence(randomInteger(10000))
+                   .withAffiliations(List.of(randomOrganization()))
+                   .build();
     }
 
     private Publication randomBookWithManyContributors() {
         var publication = PublicationGenerator.randomPublication(BookMonograph.class);
         var contributions = IntStream.rangeClosed(1, 10)
-                                     .mapToObj(i -> randomContributor())
-                                     .toList();
+                                .mapToObj(i -> randomContributor())
+                                .toList();
         publication.getEntityDescription().setContributors(contributions);
         return publication;
     }
