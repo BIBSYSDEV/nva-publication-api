@@ -89,9 +89,11 @@ public final class PublishingRequestResolver {
         var pendingPublishingRequests = fetchPendingPublishingRequestsForUserInstitution(oldImage);
         if (pendingPublishingRequests.isEmpty()) {
             createPublishingRequestOnFileUpdate(oldImage, newImage);
+            return;
         }
         if (thereAreNoFiles(newImage)) {
             autoCompletePendingPublishingRequestsIfNeeded(newImage, pendingPublishingRequests);
+            return;
         }
         if (updateHasFileChanges(oldImage, newImage)) {
             updateFilesForApproval(oldImage, newImage, pendingPublishingRequests);
