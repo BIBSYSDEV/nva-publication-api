@@ -33,10 +33,18 @@ import nva.commons.core.paths.UriWrapper;
 
 public final class FakeUriResponse {
 
-    public static final String HARD_CODED_TOP_LEVEL_ORG_URI = "https://api.dev.nva.aws.unit"
-                                                              + ".no/cristin/organization/194.0.0.0";
-    private static final ObjectMapper OBJECT_MAPPER = JsonUtils.dtoObjectMapper;
     private static final String API_HOST = new Environment().readEnv("API_HOST");
+    public static final URI HARD_CODED_TOP_LEVEL_ORG_URI = UriWrapper.fromHost(API_HOST)
+                                                               .addChild("cristin/organization/123.0.0.0")
+                                                               .getUri();
+
+    public static final URI HARD_CODED_LEVEL_2_ORG_URI = UriWrapper.fromHost(API_HOST)
+                                                             .addChild("cristin/organization/123.1.0.0")
+                                                             .getUri();
+    public static final URI HARD_CODED_LEVEL_3_ORG_URI = UriWrapper.fromHost(API_HOST)
+                                                             .addChild("cristin/organization/123.1.1.0")
+                                                             .getUri();
+    private static final ObjectMapper OBJECT_MAPPER = JsonUtils.dtoObjectMapper;
     private static final String PENDING_NVI_RESPONSE = """
         {
           "type": "NviCandidateResponse",
@@ -144,7 +152,7 @@ public final class FakeUriResponse {
     }
 
     private static void createFakeOrganizationStructure(FakeUriRetriever fakeUriRetriever, URI uri) {
-        if(HARD_CODED_TOP_LEVEL_ORG_URI.equals(uri.toString())) {
+        if (HARD_CODED_TOP_LEVEL_ORG_URI.equals(uri)) {
             fakeUriRetriever.registerResponse(uri, 200, MediaType.JSON_UTF_8,
                                               createCristinOrganizationResponseForTopLevelOrg(uri));
         } else {
@@ -328,7 +336,7 @@ public final class FakeUriResponse {
                            "country" : "NO",
                            "hasPart" : [ {
                              "type" : "Organization",
-                             "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.67.0.0",
+                             "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/123.1.0.0",
                              "labels" : {
                                "en" : "Department of Teacher Education",
                                "nb" : "Institutt for lærerutdanning"
@@ -337,7 +345,7 @@ public final class FakeUriResponse {
                              "country" : "NO",
                              "hasPart" : [ {
                                "type" : "Organization",
-                               "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.67.80.0",
+                               "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/123.1.1.0",
                                "labels" : {
                                  "en" : "Faculty of Social and Educational Sciences",
                                  "nb" : "Fakultet for samfunns- og utdanningsvitenskap"
@@ -357,18 +365,9 @@ public final class FakeUriResponse {
     private static String createCristinOrganizationResponse(URI uri) {
         return """
             {
-                           "@context" : "https://bibsysdev.github.io/src/organization-context.json",
-                           "type" : "Organization",
-                           "id" : "%s",
-                           "labels" : {
-                             "en" : "Norwegian Centre for Mathematics Education",
-                             "nb" : "Nasjonalt senter for matematikk i opplæringen"
-                           },
-                           "acronym" : "SU-ILU-NSM",
-                           "country" : "NO",
-                           "partOf" : [ {
+                             "@context" : "https://bibsysdev.github.io/src/organization-context.json",
                              "type" : "Organization",
-                             "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.67.80.0",
+                             "id" : "%s",
                              "labels" : {
                                "en" : "Department of Teacher Education",
                                "nb" : "Institutt for lærerutdanning"
@@ -377,7 +376,7 @@ public final class FakeUriResponse {
                              "country" : "NO",
                              "partOf" : [ {
                                "type" : "Organization",
-                               "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.67.0.0",
+                               "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/123.1.0.0",
                                "labels" : {
                                  "en" : "Faculty of Social and Educational Sciences",
                                  "nb" : "Fakultet for samfunns- og utdanningsvitenskap"
@@ -386,7 +385,7 @@ public final class FakeUriResponse {
                                "country" : "NO",
                                "partOf" : [ {
                                  "type" : "Organization",
-                                 "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0",
+                                 "id" : "https://api.dev.nva.aws.unit.no/cristin/organization/123.0.0.0",
                                  "labels" : {
                                    "en" : "Norwegian University of Science and Technology",
                                    "nb" : "Norges teknisk-naturvitenskapelige universitet",
