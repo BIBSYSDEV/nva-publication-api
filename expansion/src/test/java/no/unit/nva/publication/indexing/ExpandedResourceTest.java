@@ -39,6 +39,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Lists;
+import com.google.common.net.MediaType;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
@@ -65,6 +66,7 @@ import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Series;
+import no.unit.nva.model.funding.ConfirmedFunding;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
@@ -361,6 +363,15 @@ class ExpandedResourceTest {
         throws JsonProcessingException {
         final var publication = randomBookWithConfirmedPublisher();
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever);
+        int statusCode = 404;
+
+        publication.getFundings().stream()
+            .filter(ConfirmedFunding.class::isInstance)
+            .map(ConfirmedFunding.class::cast)
+            .map(ConfirmedFunding::getSource)
+            .forEach(uri -> {
+                fakeUriRetriever.registerResponse(uri, statusCode, MediaType.ANY_APPLICATION_TYPE, "");
+            });
         var expandedResource = fromPublication(fakeUriRetriever, publication).asJsonNode();
 
         assertTrue(expandedResource.at(JsonPointer.compile("/fundings/1/source")).has("id"));

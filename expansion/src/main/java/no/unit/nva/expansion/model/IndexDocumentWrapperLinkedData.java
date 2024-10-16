@@ -1,7 +1,5 @@
 package no.unit.nva.expansion.model;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.ResourceExpansionServiceImpl.API_HOST;
 import static no.unit.nva.expansion.model.ExpandedResource.extractAffiliationUris;
@@ -21,12 +19,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URLEncoder;
-import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -90,7 +86,7 @@ public class IndexDocumentWrapperLinkedData {
         fetchAnthologyContent(indexDocument).ifPresent(inputStreams::add);
         inputStreams.addAll(fetchAllAffiliationContent(indexDocument));
         inputStreams.addAll(fetchAll(extractPublicationContextUris(indexDocument)));
-        inputStreams.addAll(fetchFundingSources(indexDocument));
+        inputStreams.addAll(fetchFundingSourcesAddingContext(indexDocument));
         inputStreams.removeIf(Objects::isNull);
         return inputStreams;
     }
@@ -145,33 +141,32 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     @Deprecated
-    private Collection<? extends InputStream> fetchFundingSources(JsonNode indexDocument) {
-        return fetchFundings(indexDocument).stream()
+    private Collection<? extends InputStream> fetchFundingSourcesAddingContext(JsonNode indexDocument) {
+        return fetchFundingSources(indexDocument).stream()
                    .map(IoUtils::stringToStream)
                    .map(this::addPotentiallyMissingContext)
                    .toList();
     }
 
-    private Collection<String> fetchFundings(JsonNode indexDocument) {
-        var fundingIdentifiers = extractUris(fundingNodes(indexDocument), SOURCE);
-        var fundingMap = new HashMap<URI, String>();
-        for (URI uri : fundingIdentifiers) {
-            if (isNull(uri)) {
-                continue;
-            }
-            var response = fetch(uri);
-            if (response.statusCode() / 100 == 2) {
-                fundingMap.put(uri, response.body());
-            }
-        }
-        fundingMap.replaceAll(IndexDocumentWrapperLinkedData::replaceNotFetchedFundingSource);
-        return fundingMap.values();
+    private Collection<String> fetchFundingSources(JsonNode indexDocument) {
+        return extractUris(fundingNodes(indexDocument), SOURCE).stream()
+                   .map(uri -> {
+                       var response = fetch(uri);
+                       if (response.statusCode() / 100 == 2) {
+                           return response.body();
+                       } else if (isClientError(response)) {
+                           logger.warn("Client error when fetching funding source: {}. Response body: {}", uri,
+                                       response.body());
+                           return FundingSource.withId(uri).toJsonString();
+                       } else {
+                           throw new RuntimeException("Unexpected response " + response);
+                       }
+                   })
+                   .toList();
     }
 
-    private static String replaceNotFetchedFundingSource(URI key, String value) {
-        return nonNull(value)
-                   ? value
-                   : FundingSource.withId(key).toJsonString();
+    private boolean isClientError(HttpResponse<String> response) {
+        return response.statusCode() / 100 == 4;
     }
 
     @Deprecated
