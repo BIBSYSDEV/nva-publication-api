@@ -154,11 +154,17 @@ public class IndexDocumentWrapperLinkedData {
                        var response = fetch(uri);
                        if (response.statusCode() / 100 == 2) {
                            return response.body();
-                       } else {
+                       } else if (isClientError(response)) {
                            return FundingSource.withId(uri).toJsonString();
+                       } else {
+                           throw new RuntimeException("Unexpected response " + response);
                        }
                    })
                    .toList();
+    }
+
+    private boolean isClientError(HttpResponse<String> response) {
+        return response.statusCode() / 100 == 4;
     }
 
     @Deprecated

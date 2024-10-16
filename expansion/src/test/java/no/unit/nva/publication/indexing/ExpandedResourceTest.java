@@ -368,7 +368,7 @@ class ExpandedResourceTest {
         publication.getFundings().stream()
             .filter(ConfirmedFunding.class::isInstance)
             .map(ConfirmedFunding.class::cast)
-            .map(ConfirmedFunding::getSource) // evt getId?
+            .map(ConfirmedFunding::getSource)
             .forEach(uri -> {
                 fakeUriRetriever.registerResponse(uri, statusCode, MediaType.ANY_APPLICATION_TYPE, "");
             });
