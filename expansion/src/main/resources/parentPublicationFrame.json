@@ -32,6 +32,24 @@
       "@id": "publicationNote",
       "@container": "@set"
     },
+    "administrativeAgreement": {
+      "@type": "xsd:boolean"
+    },
+    "amount": {
+      "@type": "xsd:integer"
+    },
+    "correspondingAuthor": {
+      "@type": "xsd:boolean"
+    },
+    "size": {
+      "@type": "xsd:integer"
+    },
+    "visibleForNonOwner": {
+      "@type": "xsd:boolean"
+    },
+    "sequence": {
+      "@type": "xsd:integer"
+    },
     "affiliations": {
       "@container": "@set",
       "@id": "affiliation"
