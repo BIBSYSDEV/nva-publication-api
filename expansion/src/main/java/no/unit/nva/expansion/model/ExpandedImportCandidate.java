@@ -75,10 +75,6 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     public static final String PRINT_ISSN_FIELD = "printIssn";
     public static final String ONLINE_ISSN_FIELD = "onlineIssn";
     private static final String CONTENT_TYPE = "application/json";
-    public static final String CRISTIN = "cristin";
-    public static final String ORGANIZATION = "organization";
-    public static final String DEPTH = "depth";
-    public static final String TOP = "top";
     public static final String CUSTOMER = "customer";
     public static final String CRISTIN_ID = "cristinId";
     public static final String IS_CUSTOMER_MESSAGE = "Cristin organization {} is nva customer: {}";
@@ -508,9 +504,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
     }
 
     private static Optional<CristinOrganization> fetchCristinOrg(URI id, RawContentRetriever uriRetriever) {
-        return Optional.ofNullable(getCristinIdentifier(id))
-                   .map(ExpandedImportCandidate::toCristinOrgUri)
-                   .map(uri -> fetch(uri, uriRetriever))
+        return Optional.ofNullable(fetch(id, uriRetriever))
                    .filter(Optional::isPresent)
                    .map(Optional::get)
                    .map(ExpandedImportCandidate::toCristinOrganization)
@@ -534,18 +528,6 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
 
     private static Optional<String> fetch(URI uri, RawContentRetriever uriRetriever) {
         return uriRetriever.getRawContent(uri, CONTENT_TYPE);
-    }
-
-    private static String getCristinIdentifier(URI id) {
-        return UriWrapper.fromUri(id).getLastPathElement();
-    }
-
-    private static URI toCristinOrgUri(String cristinId) {
-        return UriWrapper.fromHost(API_HOST)
-                   .addChild(CRISTIN)
-                   .addChild(ORGANIZATION)
-                   .addQueryParameter(DEPTH, TOP)
-                   .addChild(cristinId).getUri();
     }
 
     public static final class Builder {

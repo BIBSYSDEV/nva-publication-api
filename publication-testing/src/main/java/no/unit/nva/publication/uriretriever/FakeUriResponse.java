@@ -66,8 +66,8 @@ public final class FakeUriResponse {
         fakePendingNviResponse(fakeUriRetriever, publication);
         fakeFundingResponses(fakeUriRetriever, publication);
         fakeContextResponses(publication, fakeUriRetriever);
-        if (publication instanceof ImportCandidate importCandidate) {
-            fakeCustomerApiResponse(fakeUriRetriever, importCandidate);
+        if (publication instanceof ImportCandidate) {
+            createFakeCustomerApiResponse(fakeUriRetriever);
         }
     }
 
@@ -106,17 +106,14 @@ public final class FakeUriResponse {
                    .getUri();
     }
 
-    private static void fakeCustomerApiResponse(FakeUriRetriever fakeUriRetriever, ImportCandidate importCandidate) {
-        extractAffiliations(importCandidate).forEach(uri -> createFakeCustomerApiResponse(fakeUriRetriever, uri));
-    }
-
-    private static void createFakeCustomerApiResponse(FakeUriRetriever fakeUriRetriever, URI uri) {
-        fakeUriRetriever.registerResponse(toFetchCustomerByCristinIdUri(uri), 200, MediaType.JSON_UTF_8,
+    private static void createFakeCustomerApiResponse(FakeUriRetriever fakeUriRetriever) {
+        fakeUriRetriever.registerResponse(toFetchCustomerByCristinIdUri(HARD_CODED_TOP_LEVEL_ORG_URI), 200,
+                                          MediaType.JSON_UTF_8,
                                           createCustomerApiResponse());
     }
 
     private static URI toFetchCustomerByCristinIdUri(URI uri) {
-        var getCustomerEndpoint = UriWrapper.fromHost(API_HOST).addChild("customer").addChild("cristin").getUri();
+        var getCustomerEndpoint = UriWrapper.fromHost(API_HOST).addChild("customer").addChild("cristinId").getUri();
         return URI.create(
             getCustomerEndpoint + "/" + URLEncoder.encode(uri.toString(), StandardCharsets.UTF_8));
     }
