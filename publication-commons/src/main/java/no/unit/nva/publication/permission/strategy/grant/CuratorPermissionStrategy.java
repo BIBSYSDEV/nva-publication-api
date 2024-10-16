@@ -12,11 +12,11 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PublishingCuratorPermissionStrategy extends GrantPermissionStrategy {
+public class CuratorPermissionStrategy extends GrantPermissionStrategy {
 
-    public static final Logger logger = LoggerFactory.getLogger(PublishingCuratorPermissionStrategy.class);
+    public static final Logger logger = LoggerFactory.getLogger(CuratorPermissionStrategy.class);
 
-    public PublishingCuratorPermissionStrategy(Publication publication, UserInstance userInstance, ResourceService resourceService) {
+    public CuratorPermissionStrategy(Publication publication, UserInstance userInstance, ResourceService resourceService) {
         super(publication, userInstance, resourceService);
     }
 
