@@ -2355,7 +2355,6 @@ Resources:
   BrageMigrationInputBucket:
     Type: AWS::S3::Bucket
     Properties:
-      AccessControl: Private
       BucketName: !Sub "${BrageMigrationInputBucketName}-${AWS::AccountId}"
       LifecycleConfiguration:
         Rules:
@@ -2366,13 +2365,11 @@ Resources:
   BrageMigrationErrorBucket:
     Type: AWS::S3::Bucket
     Properties:
-      AccessControl: Private
       BucketName: !Sub "${BrageMigrationErrorBucketName}-${AWS::AccountId}"
 
   ScopusZipBucket:
     Type: AWS::S3::Bucket
     Properties:
-      AccessControl: Private
       BucketName: !Sub "${ScopusZipBucketName}-${AWS::AccountId}"
       LifecycleConfiguration:
         Rules:
@@ -2384,7 +2381,6 @@ Resources:
   ScopusXmlBucket:
     Type: AWS::S3::Bucket
     Properties:
-      AccessControl: Private
       BucketName: !Sub "${ScopusXmlBucketName}-${AWS::AccountId}"
       LifecycleConfiguration:
         Rules:
@@ -2395,13 +2391,11 @@ Resources:
   ImportCandidateStorageBucket:
     Type: AWS::S3::Bucket
     Properties:
-      AccessControl: Private
       BucketName: !Sub "${ImportCandidateStorageBucketName}-${AWS::AccountId}"
 
   ScopusImportReportBucket:
     Type: AWS::S3::Bucket
     Properties:
-      AccessControl: Private
       BucketName: !Sub "${ScopusImportReportBucketName}-${AWS::AccountId}"
 
 
