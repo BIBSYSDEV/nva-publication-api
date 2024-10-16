@@ -112,7 +112,7 @@ public class MessageService extends ServiceWithTransactions {
             case GeneralSupportRequest supportRequest -> userInstance.getAccessRights().contains(AccessRight.SUPPORT);
             case DoiRequest doiRequest -> userInstance.getAccessRights().contains(AccessRight.MANAGE_DOI);
             case UnpublishRequest unpublishRequest -> userInstance.getAccessRights()
-                                                          .contains(AccessRight.MANAGE_RESOURCES_STANDARD);
+                                                          .contains(AccessRight.MANAGE_PUBLISHING_REQUESTS);
             default -> false;
         };
     }
