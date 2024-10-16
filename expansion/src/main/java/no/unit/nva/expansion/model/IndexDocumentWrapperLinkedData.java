@@ -40,16 +40,8 @@ import org.slf4j.LoggerFactory;
 
 public class IndexDocumentWrapperLinkedData {
 
-    public static final String CRISTIN_VERSION = "; version=2023-05-26";
-    public static final String FETCHING_NVI_CANDIDATE_ERROR_MESSAGE =
-        "Could not fetch nvi candidate for publication with identifier: %s";
-    public static final String EXCEPTION = "Exception {}:";
-    public static final String ID = "id";
-    public static final String SCIENTIFIC_INDEX = "scientific-index";
-    public static final String CANDIDATE = "candidate";
-    public static final String PUBLICATION = "publication";
-    public static final String PATH_DELIMITER = "/";
     private static final Logger logger = LoggerFactory.getLogger(IndexDocumentWrapperLinkedData.class);
+    public static final String CRISTIN_VERSION = "; version=2023-05-26";
     private static final String MEDIA_TYPE_JSON_LD_V2 = APPLICATION_JSON_LD.toString() + CRISTIN_VERSION;
     private static final String SOURCE = "source";
     private static final String CONTEXT = "@context";
@@ -65,6 +57,14 @@ public class IndexDocumentWrapperLinkedData {
         + "  }\n"
         + "}\n";
     private static final JsonNode CONTEXT_NODE = attempt(() -> objectMapper.readTree(contextAsString)).get();
+    public static final String FETCHING_NVI_CANDIDATE_ERROR_MESSAGE =
+        "Could not fetch nvi candidate for publication with identifier: %s";
+    public static final String EXCEPTION = "Exception {}:";
+    public static final String ID = "id";
+    public static final String SCIENTIFIC_INDEX = "scientific-index";
+    public static final String CANDIDATE = "candidate";
+    public static final String PUBLICATION = "publication";
+    public static final String PATH_DELIMITER = "/";
     private final RawContentRetriever uriRetriever;
 
     public IndexDocumentWrapperLinkedData(RawContentRetriever uriRetriever) {
@@ -78,19 +78,6 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     //TODO: parallelize
-
-    private static boolean isAcceptableNviResponse(HttpResponse<String> response) {
-        return response.statusCode() / 100 == 2 || response.statusCode() == 404;
-    }
-
-    private static URI fetchNviCandidateUri(String publicationId) {
-        var uri = UriWrapper.fromHost(API_HOST)
-                      .addChild(SCIENTIFIC_INDEX)
-                      .addChild(CANDIDATE)
-                      .addChild(PUBLICATION)
-                      .getUri();
-        return URI.create(String.format("%s/%s", uri, publicationId));
-    }
 
     private List<InputStream> getInputStreams(JsonNode indexDocument) {
         final List<InputStream> inputStreams = new ArrayList<>();
@@ -131,6 +118,10 @@ public class IndexDocumentWrapperLinkedData {
         }
     }
 
+    private static boolean isAcceptableNviResponse(HttpResponse<String> response) {
+        return response.statusCode() / 100 == 2 || response.statusCode() == 404;
+    }
+
     private Optional<HttpResponse<String>> fetchNviCandidate(String publicationId) {
         return attempt(() -> uriRetriever.fetchResponse(fetchNviCandidateUri(publicationId), "application/json"))
                    .orElseThrow();
@@ -138,6 +129,15 @@ public class IndexDocumentWrapperLinkedData {
 
     private NviCandidateResponse toNviCandidateResponse(String value) {
         return attempt(() -> JsonUtils.dtoObjectMapper.readValue(value, NviCandidateResponse.class)).orElseThrow();
+    }
+
+    private static URI fetchNviCandidateUri(String publicationId) {
+        var uri = UriWrapper.fromHost(API_HOST)
+                   .addChild(SCIENTIFIC_INDEX)
+                   .addChild(CANDIDATE)
+                   .addChild(PUBLICATION)
+                   .getUri();
+        return URI.create(String.format("%s/%s", uri, publicationId));
     }
 
     @Deprecated
@@ -155,8 +155,6 @@ public class IndexDocumentWrapperLinkedData {
                        if (response.statusCode() / 100 == 2) {
                            return response.body();
                        } else if (isClientError(response)) {
-                           logger.warn("Client error when fetching funding source: {}. Response body: {}", uri,
-                                       response.body());
                            return FundingSource.withId(uri).toJsonString();
                        } else {
                            throw new RuntimeException("Unexpected response " + response);
