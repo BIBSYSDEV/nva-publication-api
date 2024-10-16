@@ -1983,7 +1983,6 @@ Resources:
 
   CristinEntriesSQSConsumer:
     Type: AWS::Serverless::Function
-    DependsOn: LambdaRole
     Properties:
       CodeUri: cristin-import
       Handler: no.unit.nva.cristin.lambda.CristinEntryEventConsumer::handleRequest
