@@ -246,10 +246,14 @@ class ExpandedResourceTest {
         var publication = randomPublication(AcademicArticle.class);
         var contributor1org = Organization.fromUri(FakeUriResponse.HARD_CODED_LEVEL_3_ORG_URI);
         var contributor1parentOrg = Organization.fromUri(FakeUriResponse.HARD_CODED_LEVEL_2_ORG_URI);
+        var contributor2org = Organization.fromUri(UriWrapper.fromHost(API_HOST)
+                                                       .addChild("cristin/organization/123.1.2.0")
+                                                       .getUri());
         var topLevelOrg = Organization.fromUri(HARD_CODED_TOP_LEVEL_ORG_URI);
 
         var contributor1 = contributorWithOneAffiliation(contributor1org);
-        publication.getEntityDescription().setContributors(List.of(contributor1));
+        var contributor2 = contributorWithOneAffiliation(contributor2org);
+        publication.getEntityDescription().setContributors(List.of(contributor1, contributor2));
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever);
 
         var framedResultNode = fromPublication(fakeUriRetriever, publication).asJsonNode();
@@ -261,7 +265,8 @@ class ExpandedResourceTest {
 
         var expectedOrganizations = Stream.of(contributor1org,
                                               contributor1parentOrg,
-                                              topLevelOrg).map(Organization::getId).map(URI::toString).toArray();
+                                              topLevelOrg,
+                                              contributor2org).map(Organization::getId).map(URI::toString).toArray();
 
         assertThat(actualOrganizations, containsInAnyOrder(expectedOrganizations));
     }
