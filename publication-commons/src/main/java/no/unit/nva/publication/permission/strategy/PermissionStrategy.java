@@ -56,7 +56,7 @@ public abstract class PermissionStrategy {
                     publication.getCuratingInstitutions(),
                     userInstance.getUser(),
                     userTopLevelOrg);
-        return publication.getCuratingInstitutions().stream().anyMatch(org -> org.equals(userTopLevelOrg));
+        return publication.getCuratingInstitutions().stream().anyMatch(org -> org.id().equals(userTopLevelOrg));
     }
 
     protected boolean userIsFromSameInstitutionAsPublication() {

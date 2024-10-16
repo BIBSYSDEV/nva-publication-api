@@ -47,6 +47,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
@@ -634,7 +635,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var publication = TicketTestUtils.createPersistedNonDegreePublication(randomUri(), PUBLISHED, resourceService);
         var curatorName = randomString();
         var requestBody = constructDto(PublishingRequestCase.class);
-        var curatingInstitution = publication.getCuratingInstitutions().iterator().next();
+        var curatingInstitution = publication.getCuratingInstitutions().iterator().next().id();
         var request = createHttpTicketCreationRequest(requestBody, publication.getIdentifier(), curatingInstitution,
                                                       randomUri(), curatorName, MANAGE_PUBLISHING_REQUESTS);
         handler.handleRequest(request, output, CONTEXT);
@@ -671,7 +672,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedNonDegreePublication(randomUri(), status, resourceService);
         var requestBody = constructDto(ticketType);
-        var curatingInstitution = publication.getCuratingInstitutions().iterator().next();
+        var curatingInstitution = publication.getCuratingInstitutions().iterator().next().id();
         var input = createHttpTicketCreationRequest(
             requestBody, publication.getIdentifier(), curatingInstitution, randomUri(), randomString(), accessRight);
         handler.handleRequest(input, output, CONTEXT);
@@ -687,7 +688,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var publication = TicketTestUtils.createPersistedNonDegreePublication(randomUri(), PUBLISHED, resourceService);
         var requestBody = constructDto(ticketType);
 
-        var curatingInstitution = publication.getCuratingInstitutions().iterator().next();
+        var curatingInstitution = publication.getCuratingInstitutions().iterator().next().id();
         var contributorCristinId = publication.getEntityDescription().getContributors().getFirst().getIdentity().getId();
         var request = createHttpTicketCreationRequest(requestBody, publication.getIdentifier(),
                                                       curatingInstitution, contributorCristinId, randomString());
@@ -705,7 +706,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var publication = TicketTestUtils.createPersistedNonDegreePublication(randomUri(), publicationStatus, resourceService);
         var requestBody = constructDto(ticketType);
 
-        var curatingInstitution = publication.getCuratingInstitutions().iterator().next();
+        var curatingInstitution = publication.getCuratingInstitutions().iterator().next().id();
         var request = createHttpTicketCreationRequest(requestBody, publication.getIdentifier(),
                                                       curatingInstitution, randomUri(), randomString(),accessRight);
         handler.handleRequest(request, output, CONTEXT);
@@ -721,7 +722,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var publication = TicketTestUtils.createPersistedDegreePublication(PUBLISHED, resourceService);
         var requestBody = constructDto(ticketType);
 
-        var curatingInstitution = publication.getCuratingInstitutions().iterator().next();
+        var curatingInstitution = publication.getCuratingInstitutions().iterator().next().id();
         var contributorCristinId = publication.getEntityDescription().getContributors().getFirst().getIdentity().getId();
         var request = createHttpTicketCreationRequest(requestBody, publication.getIdentifier(),
                                                       curatingInstitution, contributorCristinId, randomString());
@@ -739,7 +740,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         var publication = TicketTestUtils.createPersistedDegreePublication(publicationStatus, resourceService);
         var requestBody = constructDto(ticketType);
 
-        var curatingInstitution = publication.getCuratingInstitutions().iterator().next();
+        var curatingInstitution = publication.getCuratingInstitutions().iterator().next().id();
         var request = createHttpTicketCreationRequest(requestBody, publication.getIdentifier(),
                                                       curatingInstitution, randomUri(), randomString(),accessRight);
         handler.handleRequest(request, output, CONTEXT);
@@ -787,7 +788,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
         var curatingInstitution = randomUri();
-        publication.setCuratingInstitutions(Set.of(curatingInstitution));
+        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, List.of(randomUri()))));
         resourceService.updatePublication(publication);
         var requestBody = constructDto(PublishingRequestCase.class);
 

@@ -40,6 +40,7 @@ import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ContributorVerificationStatus;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -303,7 +304,7 @@ class PublicationPermissionStrategyTest extends ResourcesLocalTest {
 
         return publication.copy().withEntityDescription(entityDescription)
                    .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
-                   .withCuratingInstitutions(Set.of(topLevelCristinOrgId))
+                   .withCuratingInstitutions(Set.of(new CuratingInstitution(topLevelCristinOrgId, List.of(randomUri()))))
                    .withStatus(PUBLISHED).build();
     }
 

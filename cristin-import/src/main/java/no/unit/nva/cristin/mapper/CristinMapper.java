@@ -41,6 +41,7 @@ import no.unit.nva.cristin.mapper.exhibition.CristinExhibition;
 import no.unit.nva.cristin.mapper.nva.CristinMappingModule;
 import no.unit.nva.cristin.mapper.nva.ReferenceBuilder;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -125,7 +126,7 @@ public class CristinMapper extends CristinMappingModule {
         return publication;
     }
 
-    protected Set<URI> extractCuratingInstitutions(EntityDescription entityDescription) {
+    protected Set<CuratingInstitution> extractCuratingInstitutions(EntityDescription entityDescription) {
         return CuratingInstitutionsUtil.getCuratingInstitutionsCached(entityDescription, cristinUnitsUtil);
     }
 

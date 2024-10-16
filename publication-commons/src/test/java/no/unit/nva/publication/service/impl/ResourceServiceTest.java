@@ -69,6 +69,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
@@ -136,6 +137,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
+import software.amazon.awssdk.services.s3.S3Client;
 
 class ResourceServiceTest extends ResourcesLocalTest {
 
@@ -166,6 +168,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private TicketService ticketService;
     private MessageService messageService;
     private Instant now;
+    private S3Client s3Client;
+    private String cristinUnitsS3Uri;
 
     @BeforeEach
     public void init() {
@@ -938,7 +942,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                               .build();
 
         resource.getEntityDescription().setContributors(List.of(randomContributor(List.of(affiliation))));
-        resource.setCuratingInstitutions(Set.of(topLevelId));
+        resource.setCuratingInstitutions(Set.of(new CuratingInstitution(topLevelId, List.of(randomUri()))));
         var publishedResource = publishResource(createPersistedPublicationWithoutDoi(resource));
 
         var updatedResource = resourceService.updatePublication(publishedResource);
@@ -982,7 +986,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                               .build();
 
         importCandidate.getEntityDescription().setContributors(List.of(randomContributor(List.of(affiliation))));
-        importCandidate.setCuratingInstitutions(Set.of(topLevelId));
+        importCandidate.setCuratingInstitutions(Set.of(new CuratingInstitution(topLevelId, List.of(randomUri()))));
 
         var persistedImportCandidate = resourceService.persistImportCandidate(importCandidate);
 
@@ -1071,7 +1075,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var testAppender = LogUtils.getTestingAppenderForRootLogger();
 
-        resourceService.refreshResources(resources);
+        resourceService.refreshResources(resources, s3Client, cristinUnitsS3Uri);
 
         assertThatFailedBatchScanLogsProperly(testAppender, userResources);
     }

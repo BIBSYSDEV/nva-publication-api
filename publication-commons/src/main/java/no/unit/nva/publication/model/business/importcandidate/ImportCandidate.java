@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.Set;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportDetail;
@@ -249,7 +250,7 @@ public class ImportCandidate extends Publication implements JsonSerializable {
             return this;
         }
 
-        public Builder withCuratingInstitutions(Set<URI> curatingInstitutions) {
+        public Builder withCuratingInstitutions(Set<CuratingInstitution> curatingInstitutions) {
             this.importCandidate.setCuratingInstitutions(curatingInstitutions);
             return this;
         }
