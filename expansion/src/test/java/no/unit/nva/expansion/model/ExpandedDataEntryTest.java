@@ -57,7 +57,6 @@ import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
-import no.unit.nva.model.instancetypes.researchdata.DataManagementPlan;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
@@ -98,6 +97,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
     public static final String TYPE = "type";
     public static final String EXPECTED_TYPE_OF_EXPANDED_RESOURCE_ENTRY = "Publication";
+    public static final Book BOOK_SAMPLE = new Book(null, randomString(), new Publisher(randomUri()), List.of(),
+                                                    Revision.UNREVISED);
 
     private ResourceExpansionService resourceExpansionService;
     private ResourceService resourceService;
@@ -115,7 +116,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
     public static Stream<PublicationContext> importCandidateContextTypeProvider()
         throws InvalidUnconfirmedSeriesException {
-        return Stream.of(new Book(null, randomString(), new Publisher(randomUri()), List.of(), Revision.UNREVISED),
+        return Stream.of(BOOK_SAMPLE,
                          new Report(null, randomString(), null, null, List.of()),
                          new MediaContributionPeriodical(randomUri()));
     }
@@ -139,6 +140,34 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
         assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
         this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService);
+    }
+
+
+
+    @Test
+    void shouldLogErrorWhenResponseFromChannelRegistryIsNotOk() throws JsonProcessingException {
+        final var logger = LogUtils.getTestingAppenderForRootLogger();
+        var importCandidate = randomImportCandidate(BOOK_SAMPLE);
+        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever);
+        var channelUri =
+            ((Publisher)((Book) importCandidate.getEntityDescription().getReference().getPublicationContext())
+                            .getPublisher()).getId();
+        uriRetriever.registerResponse(channelUri, 403, MediaType.ANY_APPLICATION_TYPE, randomString());
+        ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
+        assertThat(logger.getMessages(), containsString("Not Ok response from channel registry"));
+    }
+
+    @Test
+    void shouldLogErrorWhenResponseFromChannelRegistryResponseIsNonsense() throws JsonProcessingException {
+        final var logger = LogUtils.getTestingAppenderForRootLogger();
+        var importCandidate = randomImportCandidate(BOOK_SAMPLE);
+        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever);
+        var channelUri =
+            ((Publisher)((Book) importCandidate.getEntityDescription().getReference().getPublicationContext())
+                            .getPublisher()).getId();
+        uriRetriever.registerResponse(channelUri, 200, MediaType.ANY_APPLICATION_TYPE, randomString());
+        ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
+        assertThat(logger.getMessages(), containsString("Failed to parse channel registry response"));
     }
 
     @Test
