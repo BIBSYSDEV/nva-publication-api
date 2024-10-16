@@ -112,7 +112,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     public static final URI ORGANIZATION =
         URI.create("https://api.dev.nva.aws.unit.no/cristin/person/myCristinId/myOrganization");
-    public static final UserInstance USER = UserInstance.create(new User("12345"), ORGANIZATION);
+    public static final UserInstance USER = UserInstance.create("12345", ORGANIZATION, ORGANIZATION,
+                                                                List.of(), ORGANIZATION);
     public static final ObjectMapper objectMapper = JsonUtils.dtoObjectMapper;
     private static final String FINALIZED_DATE = "finalizedDate";
     private static final String WORKFLOW = "workflow";
