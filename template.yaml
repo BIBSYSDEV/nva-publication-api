@@ -238,6 +238,8 @@ Resources:
       Tags:
         - Key: IncludedInBackup
           Value: 'true'
+        - Key: TemporaryTag
+          Value: 'this_is_a_test_to_trigger_stack_update'
 
   # NB! for compatibility reasons NvaImportCandidatesTable should be a copy of NvaResourcesTable
   NvaImportCandidatesTable:
@@ -313,6 +315,8 @@ Resources:
       Tags:
         - Key: IncludedInBackup
           Value: 'true'
+        - Key: TemporaryTag
+          Value: 'this_is_a_test_to_trigger_stack_update'
 
   #===============================DLOQs===================================================================
 
