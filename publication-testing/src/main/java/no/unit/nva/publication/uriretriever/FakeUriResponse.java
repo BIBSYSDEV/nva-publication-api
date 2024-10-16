@@ -10,6 +10,7 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.commons.json.JsonUtils;
@@ -28,6 +29,7 @@ import no.unit.nva.model.funding.ConfirmedFunding;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 
@@ -64,6 +66,9 @@ public final class FakeUriResponse {
         fakePendingNviResponse(fakeUriRetriever, publication);
         fakeFundingResponses(fakeUriRetriever, publication);
         fakeContextResponses(publication, fakeUriRetriever);
+        if (publication instanceof ImportCandidate importCandidate) {
+            fakeCustomerApiResponse(fakeUriRetriever, importCandidate);
+        }
     }
 
     public static void setupFakeForType(TicketEntry ticket, FakeUriRetriever fakeUriRetriever) {
@@ -99,6 +104,21 @@ public final class FakeUriResponse {
                    .addChild("organization")
                    .addChild(identifier)
                    .getUri();
+    }
+
+    private static void fakeCustomerApiResponse(FakeUriRetriever fakeUriRetriever, ImportCandidate importCandidate) {
+        extractAffiliations(importCandidate).forEach(uri -> createFakeCustomerApiResponse(fakeUriRetriever, uri));
+    }
+
+    private static void createFakeCustomerApiResponse(FakeUriRetriever fakeUriRetriever, URI uri) {
+        fakeUriRetriever.registerResponse(toFetchCustomerByCristinIdUri(uri), 200, MediaType.JSON_UTF_8,
+                                          createCustomerApiResponse());
+    }
+
+    private static URI toFetchCustomerByCristinIdUri(URI uri) {
+        var getCustomerEndpoint = UriWrapper.fromHost(API_HOST).addChild("customer").addChild("cristin").getUri();
+        return URI.create(
+            getCustomerEndpoint + "/" + URLEncoder.encode(uri.toString(), StandardCharsets.UTF_8));
     }
 
     private static void fakeContextResponses(Publication publication, FakeUriRetriever fakeUriRetriever)
@@ -140,16 +160,20 @@ public final class FakeUriResponse {
     }
 
     private static void fakeContributorResponses(Publication publication, FakeUriRetriever fakeUriRetriever) {
-        if (nonNull(publication.getEntityDescription()) && nonNull(
-            publication.getEntityDescription().getContributors())) {
-            publication.getEntityDescription().getContributors().stream()
-                .map(Contributor::getAffiliations)
-                .flatMap(Collection::stream)
-                .map(Organization.class::cast)
-                .map(Organization::getId)
-                .filter(Objects::nonNull)
-                .forEach(i -> createFakeOrganizationStructure(fakeUriRetriever, i));
-        }
+        extractAffiliations(publication).forEach(i -> createFakeOrganizationStructure(fakeUriRetriever, i));
+    }
+
+    private static List<URI> extractAffiliations(Publication publication) {
+        return nonNull(publication.getEntityDescription()) && nonNull(
+            publication.getEntityDescription().getContributors())
+                   ? publication.getEntityDescription().getContributors().stream()
+                         .map(Contributor::getAffiliations)
+                         .flatMap(Collection::stream)
+                         .map(Organization.class::cast)
+                         .map(Organization::getId)
+                         .filter(Objects::nonNull)
+                         .toList()
+                   : List.of();
     }
 
     private static void createFakeOrganizationStructure(FakeUriRetriever fakeUriRetriever, URI uri) {
@@ -361,6 +385,14 @@ public final class FakeUriResponse {
                            "hasPart" : [ ]
                          }
             """.formatted(uri, HARD_CODED_LEVEL_2_ORG_URI, HARD_CODED_LEVEL_3_ORG_URI);
+    }
+
+    private static String createCustomerApiResponse() {
+        return """
+            {
+                "not": "relevant"
+            }
+            """;
     }
 
     private static String createCristinOrganizationResponse(URI uri) {
