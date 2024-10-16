@@ -12,6 +12,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.publication.uriretriever.FakeUriResponse.HARD_CODED_TOP_LEVEL_ORG_URI;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
@@ -223,12 +224,21 @@ class ExpandedResourceTest {
 
     @Test
     void shouldReturnIndexDocumentWithTopLevelOrganizationsWithTreeToRelevantAffiliation() throws Exception {
-        final var publication = randomBookWithConfirmedPublisher();
+        final var publication = randomPublication(AcademicArticle.class);
+        final var affiliationToBeExpanded = FakeUriResponse.HARD_CODED_LEVEL_3_ORG_URI;
+        var contributorAffiliatedToTopLevel = publication.getEntityDescription().getContributors().getFirst().copy()
+                                                  .withAffiliations(
+                                                      List.of(Organization.fromUri(affiliationToBeExpanded))).build();
+
+        publication.getEntityDescription().setContributors(List.of(contributorAffiliatedToTopLevel));
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever);
 
         var framedResultNode = fromPublication(fakeUriRetriever, publication).asJsonNode();
         var topLevelNodes = (ArrayNode) framedResultNode.at(JSON_PTR_TOP_LEVEL_ORGS);
-        var topLevelForExpandedAffiliation = getTopLevel(topLevelNodes, "194.0.0.0");
+        var topLevelForExpandedAffiliation = getTopLevel(topLevelNodes, HARD_CODED_TOP_LEVEL_ORG_URI.toString());
+
+        assertThat(findDeepestNestedSubUnit(topLevelForExpandedAffiliation).at(JSON_PTR_ID).textValue(),
+                   is(equalTo(affiliationToBeExpanded.toString())));
     }
 
     @Test
@@ -236,7 +246,7 @@ class ExpandedResourceTest {
         var publication = randomPublication(AcademicArticle.class);
         var contributor1org = Organization.fromUri(FakeUriResponse.HARD_CODED_LEVEL_3_ORG_URI);
         var contributor1parentOrg = Organization.fromUri(FakeUriResponse.HARD_CODED_LEVEL_2_ORG_URI);
-        var topLevelOrg = Organization.fromUri(FakeUriResponse.HARD_CODED_TOP_LEVEL_ORG_URI);
+        var topLevelOrg = Organization.fromUri(HARD_CODED_TOP_LEVEL_ORG_URI);
 
         var contributor1 = contributorWithOneAffiliation(contributor1org);
         publication.getEntityDescription().setContributors(List.of(contributor1));
@@ -260,7 +270,7 @@ class ExpandedResourceTest {
     void shouldReturnIndexDocumentWithTopLevelOrganizationWithoutHasPartsIfContributorAffiliatedWithTopLevel()
         throws Exception {
         final var publication = randomBookWithConfirmedPublisher();
-        final var affiliationToBeExpanded = FakeUriResponse.HARD_CODED_TOP_LEVEL_ORG_URI;
+        final var affiliationToBeExpanded = HARD_CODED_TOP_LEVEL_ORG_URI;
         var contributorAffiliatedToTopLevel = publication.getEntityDescription().getContributors().getFirst().copy()
                                                   .withAffiliations(
                                                       List.of(Organization.fromUri(affiliationToBeExpanded))).build();
