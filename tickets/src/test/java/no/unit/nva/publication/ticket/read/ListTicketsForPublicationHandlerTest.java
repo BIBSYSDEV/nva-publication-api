@@ -23,9 +23,9 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
@@ -368,7 +368,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     private InputStream curatorWithAccessRightRequestTicketsForPublication(Publication publication,
                                                                            AccessRight[] accessRight)
         throws JsonProcessingException {
-        var customer = publication.getCuratingInstitutions().stream().findFirst().orElseThrow();
+        var customer = publication.getCuratingInstitutions().stream().map(CuratingInstitution::id).findFirst().orElseThrow();
         return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
                    .withPathParameters(constructPathParameters(publication))
                    .withCurrentCustomer(customer)
@@ -379,18 +379,6 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                    .build();
     }
 
-    private InputStream curatorWithAccessRightForPublication(Publication publication,
-                                                             AccessRight[] accessRight)
-        throws JsonProcessingException {
-        return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
-                   .withPathParameters(constructPathParameters(publication))
-                   .withCurrentCustomer(publication.getPublisher().getId())
-                   .withUserName(publication.getResourceOwner().getOwner().getValue())
-                   .withAccessRights(publication.getPublisher().getId(), accessRight)
-                   .withPersonCristinId(randomUri())
-                   .build();
-    }
-
     private void assertThatResponseContainsExpectedTickets(TicketEntry ticket) throws JsonProcessingException {
         var response = GatewayResponse.fromOutputStream(output, TicketCollection.class);
         var body = response.getBodyObject(TicketCollection.class);
@@ -398,7 +386,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                                           .stream()
                                           .map(TicketDtoParser::toTicket)
                                           .map(Entity::getIdentifier)
-                                          .collect(Collectors.toList());
+                                          .toList();
         var expectedIdentifiers = ticket.getIdentifier();
         assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
         assertThat(actualTicketIdentifiers, containsInAnyOrder(expectedIdentifiers));

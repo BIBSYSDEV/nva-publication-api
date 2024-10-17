@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Organization.Builder;
@@ -60,6 +61,8 @@ public final class TicketTestUtils {
 
     private static final Set<PublicationStatus> PUBLISHED_STATUSES = Set.of(PUBLISHED, PUBLISHED_METADATA);
     public static final Random RANDOM = new Random(System.currentTimeMillis());
+    public static final URI CURATING_INSTITUTION_ID = URI.create(
+        "https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
 
     private TicketTestUtils() {
     }
@@ -120,8 +123,17 @@ public final class TicketTestUtils {
                                                                              .forEach(TicketTestUtils::setAffiliation)
         );
         publication.setCuratingInstitutions(
-            Set.of(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0")));
+            Set.of(new CuratingInstitution(CURATING_INSTITUTION_ID, getContributorIds(publication))));
         return persistPublication(resourceService, publication);
+    }
+
+    private static List<URI> getContributorIds(Publication publication) {
+        return publication.getEntityDescription()
+                   .getContributors()
+                   .stream()
+                   .map(Contributor::getIdentity)
+                   .map(Identity::getId)
+                   .toList();
     }
 
     public static Publication createPersistedDegreePublication(PublicationStatus status,
@@ -134,7 +146,7 @@ public final class TicketTestUtils {
                                                                              .forEach(TicketTestUtils::setAffiliation)
         );
         publication.setCuratingInstitutions(
-            Set.of(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0")));
+            Set.of(new CuratingInstitution(CURATING_INSTITUTION_ID, getContributorIds(publication))));
         return persistPublication(resourceService, publication);
     }
 

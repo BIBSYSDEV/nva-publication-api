@@ -2,8 +2,13 @@ package no.sikt.nva.brage.migration.lambda;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.util.List;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Identity;
+import no.unit.nva.model.Identity.Builder;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
@@ -73,6 +78,67 @@ class PublicationComparatorTest {
                                            .build();
         incomingConferenceReport.getEntityDescription().setMainTitle(HEADLINE_STYLE);
         assertTrue(PublicationComparator.publicationsMatch(existingLecture, incomingConferenceReport));
+    }
+
+    @Test
+    void shouldReturnTrueWhenPublicationsHaveContributorsWithTheSameLastName() {
+        var lastName = randomString();
+        var existingPublication = randomPublication(Lecture.class);
+        existingPublication.getEntityDescription().setContributors(List.of(contributorWithLastName(lastName)));
+        var incomingPublication = existingPublication.copy()
+                                      .withEntityDescription(existingPublication.getEntityDescription().copy()
+                                                                 .withContributors(List.of(contributorWithLastName(lastName)))
+                                                                 .build())
+                                          .build();
+
+        assertTrue(PublicationComparator.publicationsMatch(existingPublication, incomingPublication));
+    }
+
+    @Test
+    void shouldReturnFalseWhenPublicationsHaveContributorsWithoutLastNames() {
+        var existingPublication = randomPublication(Lecture.class);
+        existingPublication.getEntityDescription().setContributors(List.of(contributorWithoutLastName()));
+        var incomingPublication = existingPublication.copy()
+                                      .withEntityDescription(existingPublication.getEntityDescription().copy()
+                                                                 .withContributors(List.of(contributorWithoutLastName()))
+                                                                 .build())
+                                      .build();
+
+        assertFalse(PublicationComparator.publicationsMatch(existingPublication, incomingPublication));
+    }
+
+    @Test
+    void shouldReturnFalseWhenPublicationsHaveContributorsWithoutNames() {
+        var existingPublication = randomPublication(Lecture.class);
+        existingPublication.getEntityDescription().setContributors(List.of(contributorWithoutName()));
+        var incomingPublication = existingPublication.copy()
+                                      .withEntityDescription(existingPublication.getEntityDescription().copy()
+                                                                 .withContributors(List.of(contributorWithoutName()))
+                                                                 .build())
+                                      .build();
+
+        assertFalse(PublicationComparator.publicationsMatch(existingPublication, incomingPublication));
+    }
+
+    private static Contributor contributorWithLastName(String lastName) {
+        return new Contributor.Builder()
+                   .withIdentity(identityWithLastName(lastName))
+                   .build();
+    }
+
+    private static Contributor contributorWithoutName() {
+        return new Contributor.Builder().build();
+    }
+
+    private static Contributor contributorWithoutLastName() {
+        var identity = new Builder().withName(randomString()).build();
+        return new Contributor.Builder()
+            .withIdentity(identity)
+            .build();
+    }
+
+    private static Identity identityWithLastName(String lastName) {
+        return new Identity.Builder().withName(randomString() + " " + lastName).build();
     }
 
     private static EntityDescription addEmptyReference(Publication existingPublication) {

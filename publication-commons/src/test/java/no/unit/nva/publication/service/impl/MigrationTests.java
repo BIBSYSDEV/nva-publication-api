@@ -6,10 +6,15 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -25,6 +30,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -40,15 +47,27 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
+import org.mockito.stubbing.Answer;
+import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
 class MigrationTests extends ResourcesLocalTest {
 
     public static final Map<String, AttributeValue> START_FROM_BEGINNING = null;
+    public static final String CRISTIN_UNITS_S3_URI = "s3://some-bucket/some-key";
+    private S3Client s3Client;
     private ResourceService resourceService;
 
     @BeforeEach
     public void init() {
         super.init();
+        this.s3Client = mock(S3Client.class);
+        when(s3Client.utilities()).thenReturn(S3Client.create().utilities());
+        when(s3Client.getObjectAsBytes(ArgumentMatchers.any(GetObjectRequest.class))).thenAnswer(
+            (Answer<ResponseBytes<GetObjectResponse>>) invocationOnMock -> getUnitsResponseBytes());
         this.resourceService = getResourceServiceBuilder().build();
     }
 
@@ -157,6 +176,54 @@ class MigrationTests extends ResourcesLocalTest {
         assertThat(resource.getCuratingInstitutions(), hasSize(0));
     }
 
+    @Test
+    void shouldAddCuratingInstitutionForVerifiedContributors() {
+        var hardCodedIdentifier = new SortableIdentifier("0183892c7413-af720123-d7ae-4a97-a628-a3762faf8438");
+        var publication = createPublicationForOldDoiRequestFormatInResources(hardCodedIdentifier);
+        assertThat(publication.getCuratingInstitutions(), hasSize(0));
+        migrateResources();
+        var allMigratedItems = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
+        var resource = getResourceStream(allMigratedItems)
+                           .findFirst()
+                           .orElseThrow();
+
+        assertThat(resource.getCuratingInstitutions(), hasSize(1));
+        assertThat(resource.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
+                   is(equalTo(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0"))));
+    }
+
+    @Test
+    void shouldAddSingleCuratingInstitutionForMultipleVerifiedContributorsFromTheSameInstitution() {
+        var hardCodedIdentifier = new SortableIdentifier("0183892c7413-af720123-d7ae-4a97-a628-a3762faf8438");
+        var publication = createPublicationForOldDoiRequestFormatInResources(hardCodedIdentifier);
+        assertThat(publication.getCuratingInstitutions(), hasSize(0));
+        migrateResources();
+        var allMigratedItems = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
+        var resource = getResourceStream(allMigratedItems)
+                           .findFirst()
+                           .orElseThrow();
+
+        var contributorIds = publication.getEntityDescription().getContributors().stream()
+                                 .map(Contributor::getIdentity)
+                                 .map(Identity::getId)
+                                 .toList();
+        var curatingInstitution = resource.getCuratingInstitutions().stream().findFirst().orElseThrow();
+
+        assertThat(resource.getCuratingInstitutions(), hasSize(1));
+        assertThat(curatingInstitution.id(),
+                   is(equalTo(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0"))));
+        assertThat(curatingInstitution.contributorCristinIds(),
+                   containsInAnyOrder(contributorIds.toArray()));
+    }
+
+    @Test
+    void shouldNotDoOnlineLookupWhenMigrating() {
+        var hardCodedIdentifier = new SortableIdentifier("0183892c7413-af720123-d7ae-4a97-a628-a3762faf8438");
+        createPublicationForOldDoiRequestFormatInResources(hardCodedIdentifier);
+        migrateResources();
+        verify(uriRetriever, never()).getRawContent(ArgumentMatchers.any(), ArgumentMatchers.any());
+    }
+
     private static Stream<Resource> getResourceStream(List<Map<String, AttributeValue>> allMigratedItems) {
         return allMigratedItems.stream()
                    .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
@@ -196,6 +263,13 @@ class MigrationTests extends ResourcesLocalTest {
 
     private void migrateResources() {
         var scanResources = resourceService.scanResources(1000, START_FROM_BEGINNING, Collections.emptyList());
-        resourceService.refreshResources(scanResources.getDatabaseEntries());
+        resourceService.refreshResources(scanResources.getDatabaseEntries(), s3Client, CRISTIN_UNITS_S3_URI);
+    }
+
+    public static ResponseBytes getUnitsResponseBytes() {
+        var result = IoUtils.stringFromResources(Path.of("cristinUnits/units-norway.json"));
+        var httpResponse = mock(ResponseBytes.class);
+        when(httpResponse.asUtf8String()).thenReturn(result);
+        return httpResponse;
     }
 }

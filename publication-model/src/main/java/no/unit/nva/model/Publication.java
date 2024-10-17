@@ -75,7 +75,7 @@ public class Publication
     private URI duplicateOf;
 
     private List<PublicationNoteBase> publicationNotes;
-    private Set<URI> curatingInstitutions;
+    private Set<CuratingInstitution> curatingInstitutions;
     private List<ImportDetail> importDetails;
 
     public Publication() {
@@ -403,11 +403,11 @@ public class Publication
         return FindableDoiRequirementsValidator.meetsFindableDoiRequirements(this);
     }
 
-    public Set<URI> getCuratingInstitutions() {
+    public Set<CuratingInstitution> getCuratingInstitutions() {
         return nonNull(curatingInstitutions) ? curatingInstitutions : Collections.emptySet();
     }
 
-    public void setCuratingInstitutions(Set<URI> curatingInstitutions) {
+    public void setCuratingInstitutions(Set<CuratingInstitution> curatingInstitutions) {
         this.curatingInstitutions = curatingInstitutions;
     }
 
@@ -561,7 +561,7 @@ public class Publication
             return this;
         }
 
-        public Builder withCuratingInstitutions(Set<URI> curatingInstitutions) {
+        public Builder withCuratingInstitutions(Set<CuratingInstitution> curatingInstitutions) {
             publication.setCuratingInstitutions(curatingInstitutions);
             return this;
         }

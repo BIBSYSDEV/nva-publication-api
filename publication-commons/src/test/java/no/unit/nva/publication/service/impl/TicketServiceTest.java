@@ -47,7 +47,6 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
-import java.net.URI;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
@@ -59,6 +58,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -744,13 +744,13 @@ public class TicketServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void finalizedDateShouldBeSetAfterCreatedDateWhenAutoCompletingTicket() throws ApiGatewayException {
+    void finalizedDateShouldBeEqualCreatedDateWhenAutoCompletingTicket() throws ApiGatewayException {
         var publication = TicketTestUtils.createPersistedPublicationWithUnpublishedFiles(DRAFT, resourceService);
         var ticket = (PublishingRequestCase) PublishingRequestCase.createNewTicket(
             publication, PublishingRequestCase.class, SortableIdentifier::next);
         var completedTicket = ticket.persistAutoComplete(ticketService, publication, new Username(randomString()));
 
-        assertThat(completedTicket.getFinalizedDate(), greaterThan(completedTicket.getCreatedDate()));
+        assertThat(completedTicket.getFinalizedDate(), is(equalTo(completedTicket.getCreatedDate())));
     }
 
     @Test
@@ -914,13 +914,14 @@ public class TicketServiceTest extends ResourcesLocalTest {
         return resourceService.getPublication(persistedPublication);
     }
 
-    private static Set<URI> getCuratingInstitutions(Publication publication) {
+    private static Set<CuratingInstitution> getCuratingInstitutions(Publication publication) {
         return publication.getEntityDescription().getContributors().stream()
                    .map(Contributor::getAffiliations)
                    .flatMap(Collection::stream)
                    .filter(Organization.class::isInstance)
                    .map(Organization.class::cast)
                    .map(Organization::getId)
+                   .map(id -> new CuratingInstitution(id, List.of()))
                    .collect(Collectors.toSet());
     }
 

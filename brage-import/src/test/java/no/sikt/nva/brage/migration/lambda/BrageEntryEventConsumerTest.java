@@ -2212,6 +2212,26 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         assertThat(content, containsString("All fields of all included objects need to be non empty"));
     }
 
+    @Test
+    void shouldPersistIgnoredPublicationErrorWhenImportingStudentThesisFromUio() throws IOException {
+        var customer = "uio";
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
+                                 .withType(TYPE_BACHELOR)
+                                 .withCustomer(new Customer(customer, randomUri()))
+                                 .build();
+        var s3Event = createNewBrageRecordEventForCustomer(brageGenerator.getBrageRecord(), customer);
+        handler.handleRequest(s3Event, CONTEXT);
+
+        var uri = UriWrapper.fromUri(ERROR_BUCKET_PATH)
+                   .addChild(customer)
+                   .addChild(s3Event.getRecords().getFirst().getEventTime().toString(YYYY_MM_DD_HH_FORMAT))
+                   .addChild(IgnoredPublicationException.class.getSimpleName())
+                   .addChild(UriWrapper.fromUri(extractFilename(s3Event)).getLastPathElement())
+            ;
+
+        assertThat(s3Driver.getFile(uri.toS3bucketPath()), is(notNullValue()));
+    }
+
     private static AdditionalIdentifier cristinAdditionalIdentifier(String cristinIdentifier) {
         return new AdditionalIdentifier("Cristin", cristinIdentifier);
     }
@@ -2629,6 +2649,12 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private S3Event createNewBrageRecordEvent(Record brageRecord) throws IOException {
         var recordAsJson = JsonUtils.dtoObjectMapper.writeValueAsString(brageRecord);
         var uri = s3Driver.insertFile(UnixPath.of(NTNU_CUSTOMER_NAME + "/" + randomString()), recordAsJson);
+        return createS3Event(uri);
+    }
+
+    private S3Event createNewBrageRecordEventForCustomer(Record brageRecord, String customer) throws IOException {
+        var recordAsJson = JsonUtils.dtoObjectMapper.writeValueAsString(brageRecord);
+        var uri = s3Driver.insertFile(UnixPath.of(customer, randomString()), recordAsJson);
         return createS3Event(uri);
     }
 

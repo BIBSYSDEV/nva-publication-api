@@ -3,6 +3,8 @@ package no.sikt.nva.brage.migration.lambda;
 import static java.util.Objects.isNull;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
@@ -12,12 +14,12 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.event.Lecture;
 import no.unit.nva.model.instancetypes.report.ConferenceReport;
 import no.unit.nva.model.pages.Pages;
+import nva.commons.core.StringUtils;
 import org.apache.commons.text.similarity.LevenshteinDistance;
 
 public final class PublicationComparator {
 
     public static final int MAX_ACCEPTABLE_TITLE_LEVENSHTEIN_DISTANCE = 10;
-    public static final int MAX_ACCEPTABLE_CONTRIBUTOR_NAME_LEVENSHTEIN_DISTANCE = 5;
     public static final int ALLOWED_PUBLICATION_YEAR_DIFFERENCE = 2;
     private static final LevenshteinDistance LEVENSHTEIN_DISTANCE = LevenshteinDistance.getDefaultInstance();
 
@@ -84,11 +86,11 @@ public final class PublicationComparator {
         if (existingContributors.isEmpty()) {
             return true;
         }
-        return atleasOneContributorMatch(incomingPublication, existingContributors);
+        return atLeastOneContributorLastNameMatch(incomingPublication, existingContributors);
     }
 
-    private static boolean atleasOneContributorMatch(Publication incomingPublication,
-                                                     List<Contributor> existingContributors) {
+    private static boolean atLeastOneContributorLastNameMatch(Publication incomingPublication,
+                                                              List<Contributor> existingContributors) {
         var incomingContributors = incomingPublication.getEntityDescription().getContributors();
         return existingContributors.stream()
                    .flatMap(contributor -> containsContributor(incomingContributors, contributor))
@@ -97,15 +99,21 @@ public final class PublicationComparator {
 
     private static Stream<String> containsContributor(List<Contributor> incomingContributors,
                                                       Contributor contributor) {
-        var name = contributor.getIdentity().getName();
-        return incomingContributors.stream()
-                   .map(Contributor::getIdentity)
+        var lastName = getLastName(contributor);
+        return isNull(lastName)
+                   ? Stream.empty()
+                   : incomingContributors.stream()
+                         .map(PublicationComparator::getLastName)
+                         .filter(Objects::nonNull)
+                         .filter(lastName::equals);
+    }
+
+    private static String getLastName(Contributor contributor) {
+        return Optional.ofNullable(contributor.getIdentity())
                    .map(Identity::getName)
-                   .filter(value -> levenshteinDistanceIsLessThan(
-                       value,
-                       name,
-                       MAX_ACCEPTABLE_CONTRIBUTOR_NAME_LEVENSHTEIN_DISTANCE)
-                   );
+                   .map(name -> name.split(StringUtils.SPACE))
+                   .map(nameArray -> nameArray[nameArray.length - 1])
+                   .orElse(null);
     }
 
     private static boolean levenshteinDistanceIsLessThan(String left, String right, int distance) {

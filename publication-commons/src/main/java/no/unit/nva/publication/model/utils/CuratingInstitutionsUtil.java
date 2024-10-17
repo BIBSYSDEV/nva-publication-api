@@ -1,8 +1,10 @@
 package no.unit.nva.publication.model.utils;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.utils.RdfUtils.getTopLevelOrgUri;
 import java.net.URI;
-import static java.util.Objects.nonNull;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
@@ -10,34 +12,55 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.external.services.RawContentRetriever;
-import no.unit.nva.publication.external.services.UriRetriever;
 import no.unit.nva.publication.utils.CristinUnitsUtil;
 
 public final class CuratingInstitutionsUtil {
     private CuratingInstitutionsUtil() {
     }
 
-    public static Set<URI> getCuratingInstitutionsOnline(Publication publication, RawContentRetriever uriRetriever) {
+    public static Set<CuratingInstitution> getCuratingInstitutionsOnline(Publication publication, RawContentRetriever uriRetriever) {
         return getVerifiedContributors(publication.getEntityDescription())
-                   .flatMap(CuratingInstitutionsUtil::getOrganizationIds)
-                   .collect(Collectors.toSet())
-                   .parallelStream()
-                   .map(orgId -> getTopLevelOrgUri(uriRetriever, orgId))
-                   .filter(Objects::nonNull)
+
+                   .flatMap(contributor -> toCuratingInstitutionOnline(contributor, uriRetriever))
+                   .collect(Collectors.groupingBy(SimpleEntry::getKey,
+                                                  Collectors.mapping(SimpleEntry::getValue, Collectors.toList())))
+                   .entrySet()
+                   .stream()
+                   .map(entry -> new CuratingInstitution(entry.getKey(), entry.getValue()))
                    .collect(Collectors.toSet());
     }
 
-    public static Set<URI> getCuratingInstitutionsCached(EntityDescription entityDescription,
-                                                         CristinUnitsUtil cristinUnitsUtil) {
+    public static Set<CuratingInstitution> getCuratingInstitutionsCached(EntityDescription entityDescription,
+                                                                         CristinUnitsUtil cristinUnitsUtil) {
         return getVerifiedContributors(entityDescription)
-                   .flatMap(CuratingInstitutionsUtil::getOrganizationIds)
-                   .map(cristinUnitsUtil::getTopLevel)
-                   .filter(Objects::nonNull)
+                   .flatMap(contributor -> toCuratingInstitution(contributor, cristinUnitsUtil))
+                   .collect(Collectors.groupingBy(SimpleEntry::getKey,
+                                                  Collectors.mapping(SimpleEntry::getValue, Collectors.toSet())))
+                   .entrySet()
+                   .stream()
+                   .map(entry -> new CuratingInstitution(entry.getKey(), new ArrayList<>(entry.getValue())))
                    .collect(Collectors.toSet());
+    }
+
+    private static Stream<SimpleEntry<URI, URI>> toCuratingInstitution(Contributor contributor,
+                                                                       CristinUnitsUtil cristinUnitsUtil) {
+        return getOrganizationIds(contributor)
+                              .map(cristinUnitsUtil::getTopLevel)
+                              .filter(Objects::nonNull)
+                              .map(id -> new SimpleEntry<>(id, contributor.getIdentity().getId()));
+    }
+
+    private static Stream<SimpleEntry<URI, URI>> toCuratingInstitutionOnline(Contributor contributor,
+                                                                             RawContentRetriever uriRetriever) {
+        return getOrganizationIds(contributor)
+                   .map(orgId -> getTopLevelOrgUri(uriRetriever, orgId))
+                   .filter(Objects::nonNull)
+                   .map(id -> new SimpleEntry<>(id, contributor.getIdentity().getId()));
     }
 
     private static Stream<URI> getOrganizationIds(Contributor contributor) {

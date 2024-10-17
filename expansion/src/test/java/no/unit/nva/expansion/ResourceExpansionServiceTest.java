@@ -83,6 +83,7 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.User;
+import no.unit.nva.publication.model.business.UserClientType;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
@@ -375,7 +376,8 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
     void shouldUseResourceOwnerAffiliationWhenTicketHasNoOwnerAffiliation(Class<? extends TicketEntry> ticketType,
                                                                           PublicationStatus status) throws Exception {
-        var userInstance = new UserInstance(randomString(), randomUri(), randomUri(), randomUri(), null);
+        var userInstance = new UserInstance(randomString(), randomUri(), randomUri(), randomUri(), null,
+                                            UserClientType.EXTERNAL);
         var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, userInstance, resourceService);
         FakeUriResponse.setupFakeForType(publication, fakeUriRetriever);
 

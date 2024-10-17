@@ -22,6 +22,7 @@ import no.unit.nva.model.Approval;
 import no.unit.nva.model.ApprovalStatus;
 import no.unit.nva.model.ApprovalsBody;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.ImportDetail;
@@ -266,7 +267,7 @@ public final class PublicationGenerator {
                    .withAssociatedArtifacts(AssociatedArtifactsGenerator.randomAssociatedArtifacts())
                    .withPublicationNotes(List.of(randomPublicationNote(), randomUnpublishingNote()))
                    .withDuplicateOf(randomUri())
-                   .withCuratingInstitutions(Set.of(randomUri()))
+                   .withCuratingInstitutions(Set.of(new CuratingInstitution(randomUri(), List.of(randomUri()))))
                    .build();
     }
 

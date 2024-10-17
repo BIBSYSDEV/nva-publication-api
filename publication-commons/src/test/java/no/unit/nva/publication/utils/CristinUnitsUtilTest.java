@@ -30,7 +30,7 @@ class CristinUnitsUtilTest {
             (Answer<ResponseBytes<GetObjectResponse>>) invocationOnMock -> getUnitsResponseBytes());
     }
 
-    private static ResponseBytes getUnitsResponseBytes() {
+    public static ResponseBytes getUnitsResponseBytes() {
         var result = IoUtils.stringFromResources(Path.of("cristinUnits/units-norway.json"));
         var httpResponse = mock(ResponseBytes.class);
         when(httpResponse.asUtf8String()).thenReturn(result);

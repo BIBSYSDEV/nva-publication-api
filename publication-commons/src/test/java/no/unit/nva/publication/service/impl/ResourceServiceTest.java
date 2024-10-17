@@ -69,11 +69,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
-import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.ImportSource;
@@ -84,8 +82,11 @@ import no.unit.nva.model.PublicationNote;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
+import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
@@ -136,6 +137,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
+import software.amazon.awssdk.services.s3.S3Client;
 
 class ResourceServiceTest extends ResourcesLocalTest {
 
@@ -166,6 +168,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     private TicketService ticketService;
     private MessageService messageService;
     private Instant now;
+    private S3Client s3Client;
+    private String cristinUnitsS3Uri;
 
     @BeforeEach
     public void init() {
@@ -923,7 +927,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var updatedResource = resourceService.updatePublication(publishedResource);
 
-        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
                    is(equalTo(topLevelId)));
     }
 
@@ -938,13 +942,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
                               .build();
 
         resource.getEntityDescription().setContributors(List.of(randomContributor(List.of(affiliation))));
-        resource.setCuratingInstitutions(Set.of(topLevelId));
+        resource.setCuratingInstitutions(Set.of(new CuratingInstitution(topLevelId, List.of(randomUri()))));
         var publishedResource = publishResource(createPersistedPublicationWithoutDoi(resource));
 
         var updatedResource = resourceService.updatePublication(publishedResource);
 
         verify(uriRetriever, never()).getRawContent(eq(orgId), any());
-        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
                    is(equalTo(topLevelId)));
     }
 
@@ -966,7 +970,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var updatedImportCandidate = resourceService.updateImportCandidate(persistedImportCandidate);
 
-        assertThat(updatedImportCandidate.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+        assertThat(updatedImportCandidate.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
                    is(equalTo(topLevelId)));
     }
 
@@ -982,14 +986,14 @@ class ResourceServiceTest extends ResourcesLocalTest {
                               .build();
 
         importCandidate.getEntityDescription().setContributors(List.of(randomContributor(List.of(affiliation))));
-        importCandidate.setCuratingInstitutions(Set.of(topLevelId));
+        importCandidate.setCuratingInstitutions(Set.of(new CuratingInstitution(topLevelId, List.of(randomUri()))));
 
         var persistedImportCandidate = resourceService.persistImportCandidate(importCandidate);
 
         var updatedImportCandidate = resourceService.updateImportCandidate(persistedImportCandidate);
 
         verify(uriRetriever, never()).getRawContent(eq(orgId), any());
-        assertThat(updatedImportCandidate.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+        assertThat(updatedImportCandidate.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
                    is(equalTo(topLevelId)));
     }
 
@@ -1013,7 +1017,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var updatedResource = resourceService.updatePublication(publication);
 
-        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow(),
+        assertThat(updatedResource.getCuratingInstitutions().stream().findFirst().orElseThrow().id(),
                    is(equalTo(topLevelId)));
     }
 
@@ -1071,7 +1075,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var testAppender = LogUtils.getTestingAppenderForRootLogger();
 
-        resourceService.refreshResources(resources);
+        resourceService.refreshResources(resources, s3Client, cristinUnitsS3Uri);
 
         assertThatFailedBatchScanLogsProperly(testAppender, userResources);
     }

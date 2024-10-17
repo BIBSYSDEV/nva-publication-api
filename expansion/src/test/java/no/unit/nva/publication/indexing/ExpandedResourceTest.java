@@ -4,8 +4,6 @@ import static java.util.Objects.isNull;
 import static java.util.stream.StreamSupport.stream;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
-import static no.unit.nva.model.ContributorVerificationStatus.NOT_VERIFIED;
-import static no.unit.nva.model.ContributorVerificationStatus.VERIFIED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
@@ -55,7 +53,6 @@ import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.utils.PublicationJsonPointers;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
-import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
@@ -171,14 +168,14 @@ class ExpandedResourceTest {
     void shouldReturnIndexDocumentWithContributorsPreviewAndCount() throws Exception {
         var publication = randomPublication(AcademicArticle.class);
 
-        var contributor1 = contributorWithSequenceAndVerificationStatus(1, NOT_VERIFIED);
-        var contributor2 = contributorWithSequenceAndVerificationStatus(2, VERIFIED);
-        var contributor3 = contributorWithSequenceAndVerificationStatus(3, NOT_VERIFIED);
-        var contributor4 = contributorWithSequenceAndVerificationStatus(4, VERIFIED);
+        var contributor1 = contributorWithSequence(1);
+        var contributor2 = contributorWithSequence(2);
+        var contributor3 = contributorWithSequence(3);
+        var contributor4 = contributorWithSequence(4);
 
         var contributors = Arrays.asList(contributor1, contributor2, contributor3, contributor4);
         Collections.shuffle(contributors);
-        var expectedContributors = List.of(contributor2, contributor4, contributor1, contributor3);
+        var expectedContributors = List.of(contributor1, contributor2, contributor3, contributor4);
 
         publication.getEntityDescription().setContributors(contributors);
 
@@ -200,10 +197,9 @@ class ExpandedResourceTest {
     void shouldReturnIndexDocumentWithContributorsPreviewWithNoMoreThan10Contributors() throws Exception {
         var publication = randomPublication();
 
-        var contributors = IntStream.range(0, 20).mapToObj(i ->
-                                                               contributorWithSequenceAndVerificationStatus(
-                                                                   randomInteger(), NOT_VERIFIED)
-        ).toList();
+        var contributors = IntStream.range(0, 20)
+                               .mapToObj(i -> contributorWithSequence(randomInteger()))
+                               .toList();
 
         publication.getEntityDescription().setContributors(contributors);
 
@@ -659,11 +655,9 @@ class ExpandedResourceTest {
                    .build();
     }
 
-    private static Contributor contributorWithSequenceAndVerificationStatus(int sequence,
-                                                                            ContributorVerificationStatus verificationStatus) {
+    private static Contributor contributorWithSequence(int sequence) {
         return new Contributor.Builder().withIdentity(new Identity.Builder().withName(randomString()).build())
                    .withSequence(sequence)
-                   .withIdentity(new Identity.Builder().withVerificationStatus(verificationStatus).build())
                    .build();
     }
 

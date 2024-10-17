@@ -34,6 +34,7 @@ import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
+import static no.unit.nva.testutils.HandlerRequestBuilder.SCOPE_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -115,6 +116,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.ImportSource;
@@ -219,6 +221,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     public static final String PUBLICATION = "publication";
     public static final String MUST_BE_A_VALID_PUBLICATION_API_URI = "must be a valid publication API URI";
     public static final String COMMENT_ON_UNPUBLISHING_REQUEST = "comment";
+    public static final String BACKEND_SCOPE = "https://api.nva.unit.no/scopes/backend";
 
     private final GetExternalClientResponse getExternalClientResponse = mock(GetExternalClientResponse.class);
     final Context context = new FakeContext();
@@ -234,8 +237,11 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private S3Client s3Client;
     private URI customerId;
 
-    public static Stream<Named<AccessRight>> privilegedUserProvider() {
-        return Stream.of(Named.of("Editor", MANAGE_RESOURCES_ALL), Named.of("Curator", MANAGE_RESOURCES_STANDARD));
+    public static Stream<Named<AccessRight[]>> privilegedUserProvider() {
+        return Stream.of(
+            Named.of("Editor", new AccessRight[]{MANAGE_RESOURCES_ALL}),
+            Named.of("Curator", new AccessRight[]{MANAGE_RESOURCES_STANDARD, MANAGE_PUBLISHING_REQUESTS})
+        );
     }
 
     /**
@@ -487,6 +493,31 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(body.getEntityDescription().getMainTitle(),
                    is(equalTo(publicationUpdate.getEntityDescription().getMainTitle())));
     }
+
+    @Test
+    void handlerUpdatesPublicationWhenInputIsValidAndUserIsBackendClient() throws IOException, BadRequestException {
+        publication.setIdentifier(null);
+        var savedPublication = createSamplePublication();
+        var publicationUpdate = updateTitle(savedPublication);
+
+        when(getExternalClientResponse.getCustomerUri())
+            .thenReturn(randomUri());
+        when(getExternalClientResponse.getActingUser())
+            .thenReturn(randomString());
+
+        var event = backendClientUpdatesPublication(publicationUpdate.getIdentifier(), publicationUpdate);
+        updatePublicationHandler.handleRequest(event, output, context);
+
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
+        assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
+
+        final PublicationResponse body = gatewayResponse.getBodyObject(PublicationResponse.class);
+        assertThat(body.getEntityDescription().getMainTitle(),
+                   is(equalTo(publicationUpdate.getEntityDescription().getMainTitle())));
+    }
+
 
     @Test
     @DisplayName("handler Returns BadRequest Response On Missing Path Param")
@@ -818,11 +849,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(updatedPublication, is(equalTo(publicationUpdate)));
     }
 
-    private static Set<URI> mockCuratingInstitutions(ArrayList<Contributor> contributors) {
+    private static Set<CuratingInstitution> mockCuratingInstitutions(ArrayList<Contributor> contributors) {
         return contributors
                    .stream()
                    .map(UpdatePublicationHandlerTest::getAffiliationUriStream)
                    .flatMap(Set::stream)
+                   .map(id -> new CuratingInstitution(id, List.of(randomUri())))
                    .collect(Collectors.toSet());
     }
 
@@ -1202,7 +1234,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @DisplayName("User with access right should be able to unpublish publication with published files")
     @MethodSource("privilegedUserProvider")
     void shouldSetAllPendingAndNewTicketsToNotRelevantExceptUnpublishingTicketWhenCuratorUnpublishesPublicationWithPublishedFiles(
-        AccessRight accessRight)
+        AccessRight... accessRight)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(customerId, PUBLISHED,
                                                                                        resourceService);
@@ -1395,7 +1427,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var publisherUri = publication.getPublisher().getId();
         var inputStream = createUnpublishHandlerRequest(publication, randomString(), publisherUri,
-                                                        AccessRight.MANAGE_RESOURCES_STANDARD);
+                                                        AccessRight.MANAGE_RESOURCES_STANDARD,
+                                                        MANAGE_PUBLISHING_REQUESTS);
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -1442,7 +1475,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                  randomString(),
                                                                  publication.getPublisher().getId(),
                                                                  duplicate,
-                                                                 MANAGE_DEGREE, MANAGE_RESOURCES_STANDARD);
+                                                                 MANAGE_DEGREE, MANAGE_RESOURCES_STANDARD,
+                                                                 MANAGE_PUBLISHING_REQUESTS);
         updatePublicationHandler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         var updatedPublication = resourceService.getPublication(publication);
@@ -1464,7 +1498,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         var inputStream = createUnpublishHandlerRequest(publication, curatorUsername, institutionId,
-                                                        MANAGE_RESOURCES_STANDARD);
+                                                        MANAGE_RESOURCES_STANDARD, MANAGE_PUBLISHING_REQUESTS);
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -1498,7 +1532,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         var publisherUri = publication.getPublisher().getId();
         var request = createUnpublishHandlerRequest(publication, randomString(), publisherUri,
-                                                    MANAGE_DEGREE, MANAGE_RESOURCES_STANDARD);
+                                                    MANAGE_DEGREE, MANAGE_RESOURCES_STANDARD,
+                                                    MANAGE_PUBLISHING_REQUESTS);
         updatePublicationHandler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         var persistedTicket = ticketService.fetchTicketByResourceIdentifier(publication.getPublisher().getId(),
@@ -1587,7 +1622,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var updatedPublication = publication.copy().withAssociatedArtifacts(Collections.emptyList()).build();
         var event = curatorWithAccessRightsUpdatesPublication(updatedPublication, customerId,
                                                               publication.getResourceOwner().getOwnerAffiliation(),
-                                                              MANAGE_RESOURCE_FILES);
+                                                              MANAGE_RESOURCE_FILES, MANAGE_RESOURCES_STANDARD);
 
         updatePublicationHandler.handleRequest(event, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
@@ -1732,7 +1767,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                                        IOException {
         var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
         var curatingInstitution = randomUri();
-        publication.setCuratingInstitutions(Set.of(curatingInstitution));
+        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, List.of(randomUri()))));
         resourceService.unpublishPublication(publication);
         var input = curatorWithAccessRightsRepublishedPublication(publication, randomUri(), curatingInstitution,
                                                                   MANAGE_RESOURCES_ALL);
@@ -1751,7 +1786,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
         var curatingInstitution = randomUri();
-        publication.setCuratingInstitutions(Set.of(curatingInstitution));
+        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, List.of(randomUri()))));
         var input = curatorWithAccessRightsRepublishedPublication(publication, randomUri(), curatingInstitution,
                                                                   MANAGE_RESOURCES_ALL);
 
@@ -2409,6 +2444,23 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         return new HandlerRequestBuilder<Publication>(restApiMapper)
                    .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
                    .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
+                   .withBody(publicationUpdate)
+                   .withTopLevelCristinOrgId(randomUri())
+                   .withPersonCristinId(randomUri())
+                   .withUserName(randomString())
+                   .withCurrentCustomer(randomUri())
+                   .withPathParameters(pathParameters)
+                   .build();
+    }
+
+    private InputStream backendClientUpdatesPublication(SortableIdentifier publicationIdentifier,
+                                                        Publication publicationUpdate)
+        throws JsonProcessingException {
+        var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString());
+        return new HandlerRequestBuilder<Publication>(restApiMapper)
+                   .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
+                   .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
+                   .withAuthorizerClaim(SCOPE_CLAIM, BACKEND_SCOPE)
                    .withBody(publicationUpdate)
                    .withTopLevelCristinOrgId(randomUri())
                    .withPersonCristinId(randomUri())

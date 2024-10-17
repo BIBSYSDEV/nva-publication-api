@@ -59,6 +59,7 @@ import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.model.Customer;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationOperation;
@@ -74,6 +75,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.WiremockHttpClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
+import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.MediaTypes;
@@ -443,7 +445,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var publication = PublicationGenerator.randomPublication();
         publication.setPublisher(createExpectedPublisher(wireMockRuntimeInfo));
         publication.setDuplicateOf(null);
-        publication.setCuratingInstitutions(Set.of(randomUri()));
+        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(RandomDataGenerator.randomUri(), List.of(
+            RandomDataGenerator.randomUri()))));
         var userInstance = UserInstance.fromPublication(publication);
         var publicationIdentifier =
             Resource.fromPublication(publication).persistNew(publicationService, userInstance).getIdentifier();
@@ -508,7 +511,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
                    .withAccessRights(publication.getPublisher().getId(), AccessRight.MANAGE_RESOURCES_ALL)
                    .withPathParameters(pathParameters)
                    .withCurrentCustomer(publication.getPublisher().getId())
-                   .withTopLevelCristinOrgId(publication.getCuratingInstitutions().iterator().next())
+                   .withTopLevelCristinOrgId(publication.getCuratingInstitutions().iterator().next().id())
                    .withUserName(randomString())
                    .withPersonCristinId(randomUri())
                    .build();

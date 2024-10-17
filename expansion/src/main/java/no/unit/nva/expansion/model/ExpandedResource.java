@@ -57,9 +57,6 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     public static final String TYPE = "Publication";
     public static final JsonPointer ENTITY_DESCRIPTION_PTR = JsonPointer.compile("/entityDescription");
     public static final JsonPointer CONTRIBUTORS_PTR = JsonPointer.compile("/entityDescription/contributors");
-    public static final String IDENTITY = "identity";
-    public static final String VERIFICATION_STATUS = "verificationStatus";
-    public static final String VERIFIED = "Verified";
     public static final String CONTRIBUTOR_SEQUENCE = "sequence";
     public static final String LICENSE_FIELD = "license";
     public static final String ASSOCIATED_ARTIFACTS_FIELD = "associatedArtifacts";
@@ -216,7 +213,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         if (!contributors.isMissingNode() && contributors.isArray()) {
             var entityDescription = (ObjectNode) json.at(ENTITY_DESCRIPTION_PTR);
             if (!entityDescription.isMissingNode() && entityDescription.isObject()) {
-                var sortedContributors = sortBySequenceAndPreviewLimit(contributors);
+                var sortedContributors = sortBySequenceAndLimit(contributors);
                 var sortedContributorsArrayNode = new ArrayNode(JsonNodeFactory.instance).addAll(sortedContributors);
 
                 entityDescription.set(CONTRIBUTORS_PREVIEW, sortedContributorsArrayNode);
@@ -224,12 +221,11 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         }
     }
 
-    private static List<JsonNode> sortBySequenceAndPreviewLimit(JsonNode contributors) {
+    private static List<JsonNode> sortBySequenceAndLimit(JsonNode contributors) {
         var contributorsList = new ArrayList<JsonNode>();
         contributors.forEach(contributorsList::add);
         return contributorsList.stream()
                    .sorted(Comparator.comparingInt(contributor -> contributor.get(CONTRIBUTOR_SEQUENCE).asInt()))
-                   .sorted(ExpandedResource::sortContributorByVerifiedFirst)
                    .limit(MAX_CONTRIBUTORS_PREVIEW).toList();
     }
 
@@ -429,28 +425,5 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
 
     private static boolean hasPublicationChannelBookSeriesId(JsonNode root) {
         return isPublicationChannelId(getBookSeriesUriStr(root));
-    }
-
-    private static int sortContributorByVerifiedFirst(JsonNode contributor1, JsonNode contributor2) {
-        var contributor1verification = isContributorVerified(contributor1);
-        var contributor2verification = isContributorVerified(contributor2);
-
-        if (contributor1verification && !contributor2verification) {
-            return -1;
-        }
-
-        if (!contributor1verification && contributor2verification) {
-            return 1;
-        }
-
-        return 0;
-    }
-
-    private static boolean isContributorVerified(JsonNode contributor) {
-        var verificationStatus = contributor.path(IDENTITY).path(VERIFICATION_STATUS);
-        if (verificationStatus.isMissingNode()) {
-            return false;
-        }
-        return VERIFIED.equals(verificationStatus.textValue());
     }
 }

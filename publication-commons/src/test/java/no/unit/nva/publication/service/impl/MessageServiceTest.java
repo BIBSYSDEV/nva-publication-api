@@ -4,7 +4,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.apigateway.AccessRight.MANAGE_PUBLISHING_REQUESTS;
-import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -18,7 +17,6 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.Period;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 import no.unit.nva.model.PublicationStatus;
@@ -43,7 +41,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 class MessageServiceTest extends ResourcesLocalTest {
     
@@ -198,10 +195,6 @@ class MessageServiceTest extends ResourcesLocalTest {
         return UserInstance.create(new User(randomString()), randomUri());
     }
 
-    private UserInstance randomUserInstance(AccessRight accessRight) {
-        return randomUserInstance(accessRight, randomUri());
-    }
-
     private UserInstance randomUserInstance(AccessRight accessRight, URI customerId) {
         return UserInstance.create(randomString(), customerId, randomUri(), List.of(accessRight), randomUri());
     }
@@ -224,7 +217,7 @@ class MessageServiceTest extends ResourcesLocalTest {
     public static Stream<Arguments> ticketTypeAccessRightsProvider() {
         return Stream.of(Arguments.of(DoiRequest.class, MANAGE_DOI),
                          Arguments.of(PublishingRequestCase.class, MANAGE_PUBLISHING_REQUESTS),
-                         Arguments.of(UnpublishRequest.class, MANAGE_RESOURCES_STANDARD),
+                         Arguments.of(UnpublishRequest.class, MANAGE_PUBLISHING_REQUESTS),
                          Arguments.of(GeneralSupportRequest.class, SUPPORT));
     }
 }
