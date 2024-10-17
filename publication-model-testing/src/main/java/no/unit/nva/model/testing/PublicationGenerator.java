@@ -48,12 +48,15 @@ import no.unit.nva.model.funding.MonetaryAmount;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UriWrapper;
 
 @JacocoGenerated
 public final class PublicationGenerator {
 
     private static final BaseFaker FAKER = new BaseFaker();
+    private static final String API_HOST = new Environment().readEnv("API_HOST");
 
     @JacocoGenerated
     private PublicationGenerator() {
@@ -75,20 +78,23 @@ public final class PublicationGenerator {
     }
 
     public static URI randomUri() {
-        String uriString = "https://www.example.org/" + UUID.randomUUID();
-        return URI.create(uriString);
+        return randomUri("https://www.example.org/");
+    }
+
+    public static URI randomUri(String namespace) {
+        return URI.create(namespace + UUID.randomUUID());
     }
 
     public static Publication randomPublication() {
         return randomPublication(randomPublicationInstanceType());
     }
 
-    public static Publication randomNonDegreePublication() {
-        return fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES);
-    }
-
     public static Publication randomPublication(Class<?> publicationInstanceClass) {
         return buildRandomPublicationFromInstance(publicationInstanceClass);
+    }
+
+    public static Publication randomNonDegreePublication() {
+        return fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES);
     }
 
     public static Publication fromInstanceClasses(Class<?>... targetClasses) {
@@ -141,10 +147,9 @@ public final class PublicationGenerator {
 
     public static Funding randomConfirmedFunding() {
         var activeFrom = randomInstant();
-
         return new FundingBuilder()
-                   .withId(randomUri())
-                   .withSource(randomUri())
+                   .withId(randomUriWithPath("verified-funding"))
+                   .withSource(randomUriWithPath("funding-sources"))
                    .withIdentifier(randomString())
                    .withLabels(randomLabels())
                    .withFundingAmount(randomMonetaryAmount())
@@ -153,11 +158,18 @@ public final class PublicationGenerator {
                    .build();
     }
 
+    private static URI randomUriWithPath(String path) {
+        return UriWrapper.fromHost(API_HOST)
+                   .addChild(path)
+                   .addChild(UUID.randomUUID().toString())
+                   .getUri();
+    }
+
     public static Funding randomUnconfirmedFunding() {
         var activeFrom = randomInstant();
 
         return new FundingBuilder()
-                   .withSource(randomUri())
+                   .withSource(randomUriWithPath("funding-sources"))
                    .withIdentifier(randomString())
                    .withLabels(randomLabels())
                    .withFundingAmount(randomMonetaryAmount())
@@ -177,7 +189,7 @@ public final class PublicationGenerator {
 
     public static ResearchProject randomResearchProject() {
         return new ResearchProject.Builder()
-                   .withId(randomUri())
+                   .withId(randomUriWithPath("project"))
                    .withName(randomString())
                    .withApprovals(randomApprovals())
                    .build();
