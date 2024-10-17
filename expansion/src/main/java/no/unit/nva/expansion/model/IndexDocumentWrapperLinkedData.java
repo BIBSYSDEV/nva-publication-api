@@ -13,6 +13,7 @@ import static no.unit.nva.expansion.utils.JsonLdUtils.toJsonString;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
+import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
@@ -65,6 +66,7 @@ public class IndexDocumentWrapperLinkedData {
     public static final String CANDIDATE = "candidate";
     public static final String PUBLICATION = "publication";
     public static final String PATH_DELIMITER = "/";
+    public static final int ONE_HUNDRED = 100;
     private final RawContentRetriever uriRetriever;
 
     public IndexDocumentWrapperLinkedData(RawContentRetriever uriRetriever) {
@@ -110,7 +112,7 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     private JsonNode processNviCandidateResponse(HttpResponse<String> response) {
-        if (response.statusCode() == 404) {
+        if (response.statusCode() == SC_NOT_FOUND) {
             return new ObjectNode(null);
         } else {
             var nviStatus = toNviCandidateResponse(response.body()).toNviStatus();
@@ -119,7 +121,7 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     private static boolean isAcceptableNviResponse(HttpResponse<String> response) {
-        return response.statusCode() / 100 == 2 || response.statusCode() == 404;
+        return response.statusCode() / ONE_HUNDRED == 2 || response.statusCode() == SC_NOT_FOUND;
     }
 
     private Optional<HttpResponse<String>> fetchNviCandidate(String publicationId) {
@@ -152,7 +154,7 @@ public class IndexDocumentWrapperLinkedData {
         return extractUris(fundingNodes(indexDocument), SOURCE).stream()
                    .map(uri -> {
                        var response = fetch(uri);
-                       if (response.statusCode() / 100 == 2) {
+                       if (response.statusCode() / ONE_HUNDRED == 2) {
                            return response.body();
                        } else if (isClientError(response)) {
                            logger.warn("Client error when fetching funding source: {}. Response body: {}", uri,
@@ -166,7 +168,7 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     private boolean isClientError(HttpResponse<String> response) {
-        return response.statusCode() / 100 == 4;
+        return response.statusCode() / ONE_HUNDRED == 4;
     }
 
     @Deprecated
@@ -206,8 +208,8 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     private InputStream processResponse(HttpResponse<String> response) {
-        if (response.statusCode() / 100 == 2) {
-            return IoUtils.stringToStream(response.body());
+        if (response.statusCode() / ONE_HUNDRED == 2) {
+            return stringToStream(response.body());
         }
         throw new RuntimeException("Unexpected response " + response);
     }

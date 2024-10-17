@@ -36,9 +36,10 @@ import nva.commons.core.paths.UriWrapper;
 public final class FakeUriResponse {
 
     private static final String API_HOST = new Environment().readEnv("API_HOST");
-    public static final URI HARD_CODED_TOP_LEVEL_ORG_URI = constructCristinOrgUri("123.0.0.0");
-    public static final URI HARD_CODED_LEVEL_2_ORG_URI = constructCristinOrgUri("123.1.0.0");
-    public static final URI HARD_CODED_LEVEL_3_ORG_URI = constructCristinOrgUri("123.1.1.0");
+    private static final String ORGANIZATION_BASE = "123";
+    public static final URI HARD_CODED_TOP_LEVEL_ORG_URI = constructCristinOrgUri(ORGANIZATION_BASE + ".0.0.0");
+    public static final URI HARD_CODED_LEVEL_2_ORG_URI = constructCristinOrgUri(ORGANIZATION_BASE + ".1.0.0");
+    public static final URI HARD_CODED_LEVEL_3_ORG_URI = constructCristinOrgUri(ORGANIZATION_BASE + ".1.1.0");
     private static final ObjectMapper OBJECT_MAPPER = JsonUtils.dtoObjectMapper;
     private static final String PENDING_NVI_RESPONSE = """
         {
