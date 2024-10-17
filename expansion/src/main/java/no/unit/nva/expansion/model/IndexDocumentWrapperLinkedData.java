@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
 public class IndexDocumentWrapperLinkedData {
 
     private static final Logger logger = LoggerFactory.getLogger(IndexDocumentWrapperLinkedData.class);
-    public static final String CRISTIN_VERSION = "; version=2023-05-26";
+    private static final String CRISTIN_VERSION = "; version=2023-05-26";
     private static final String MEDIA_TYPE_JSON_LD_V2 = APPLICATION_JSON_LD.toString() + CRISTIN_VERSION;
     private static final String SOURCE = "source";
     private static final String CONTEXT = "@context";
@@ -58,16 +58,16 @@ public class IndexDocumentWrapperLinkedData {
         + "  }\n"
         + "}\n";
     private static final JsonNode CONTEXT_NODE = attempt(() -> objectMapper.readTree(contextAsString)).get();
-    public static final String FETCHING_NVI_CANDIDATE_ERROR_MESSAGE =
+    private static final String FETCHING_NVI_CANDIDATE_ERROR_MESSAGE =
         "Could not fetch nvi candidate for publication with identifier: %s";
-    public static final String EXCEPTION = "Exception {}:";
-    public static final String ID = "id";
-    public static final String SCIENTIFIC_INDEX = "scientific-index";
-    public static final String CANDIDATE = "candidate";
-    public static final String PUBLICATION = "publication";
-    public static final String PATH_DELIMITER = "/";
-    public static final int ONE_HUNDRED = 100;
-    public static final int SUCCESS_FAMILY = 2;
+    private static final String EXCEPTION = "Exception {}:";
+    private static final String ID = "id";
+    private static final String SCIENTIFIC_INDEX = "scientific-index";
+    private static final String CANDIDATE = "candidate";
+    private static final String PUBLICATION = "publication";
+    private static final int ONE_HUNDRED = 100;
+    private static final int SUCCESS_FAMILY = 2;
+    private static final int CLIENT_ERROR_FAMILY = 4;
     private final RawContentRetriever uriRetriever;
 
     public IndexDocumentWrapperLinkedData(RawContentRetriever uriRetriever) {
@@ -153,23 +153,23 @@ public class IndexDocumentWrapperLinkedData {
 
     private Collection<String> fetchFundingSources(JsonNode indexDocument) {
         return extractUris(fundingNodes(indexDocument), SOURCE).stream()
-                   .map(uri -> {
-                       var response = fetch(uri);
-                       if (response.statusCode() / ONE_HUNDRED == SUCCESS_FAMILY) {
-                           return response.body();
-                       } else if (isClientError(response)) {
-                           logger.warn("Client error when fetching funding source: {}. Response body: {}", uri,
-                                       response.body());
-                           return FundingSource.withId(uri).toJsonString();
-                       } else {
-                           throw new RuntimeException("Unexpected response " + response);
-                       }
-                   })
+                   .map(uri -> extractResponseBody(uri, fetch(uri)))
                    .toList();
     }
 
+    private String extractResponseBody(URI uri, HttpResponse<String> response) {
+        if (response.statusCode() / ONE_HUNDRED == SUCCESS_FAMILY) {
+            return response.body();
+        } else if (isClientError(response)) {
+            logger.warn("Client error when fetching funding source: {}. Response body: {}", uri, response.body());
+            return FundingSource.withId(uri).toJsonString();
+        } else {
+            throw new RuntimeException("Unexpected response " + response);
+        }
+    }
+
     private boolean isClientError(HttpResponse<String> response) {
-        return response.statusCode() / ONE_HUNDRED == 4;
+        return response.statusCode() / ONE_HUNDRED == CLIENT_ERROR_FAMILY;
     }
 
     @Deprecated
