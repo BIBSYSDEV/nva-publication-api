@@ -237,8 +237,11 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private S3Client s3Client;
     private URI customerId;
 
-    public static Stream<Named<AccessRight>> privilegedUserProvider() {
-        return Stream.of(Named.of("Editor", MANAGE_RESOURCES_ALL), Named.of("Curator", MANAGE_RESOURCES_STANDARD));
+    public static Stream<Named<AccessRight[]>> privilegedUserProvider() {
+        return Stream.of(
+            Named.of("Editor", new AccessRight[]{MANAGE_RESOURCES_ALL}),
+            Named.of("Curator", new AccessRight[]{MANAGE_RESOURCES_STANDARD, MANAGE_PUBLISHING_REQUESTS})
+        );
     }
 
     /**
@@ -1231,7 +1234,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     @DisplayName("User with access right should be able to unpublish publication with published files")
     @MethodSource("privilegedUserProvider")
     void shouldSetAllPendingAndNewTicketsToNotRelevantExceptUnpublishingTicketWhenCuratorUnpublishesPublicationWithPublishedFiles(
-        AccessRight accessRight)
+        AccessRight... accessRight)
         throws ApiGatewayException, IOException {
         var publication = TicketTestUtils.createPersistedPublicationWithPublishedFiles(customerId, PUBLISHED,
                                                                                        resourceService);
@@ -1424,7 +1427,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var publisherUri = publication.getPublisher().getId();
         var inputStream = createUnpublishHandlerRequest(publication, randomString(), publisherUri,
-                                                        AccessRight.MANAGE_RESOURCES_STANDARD);
+                                                        AccessRight.MANAGE_RESOURCES_STANDARD,
+                                                        MANAGE_PUBLISHING_REQUESTS);
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -1471,7 +1475,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                                                                  randomString(),
                                                                  publication.getPublisher().getId(),
                                                                  duplicate,
-                                                                 MANAGE_DEGREE, MANAGE_RESOURCES_STANDARD);
+                                                                 MANAGE_DEGREE, MANAGE_RESOURCES_STANDARD,
+                                                                 MANAGE_PUBLISHING_REQUESTS);
         updatePublicationHandler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         var updatedPublication = resourceService.getPublication(publication);
@@ -1493,7 +1498,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
 
         var inputStream = createUnpublishHandlerRequest(publication, curatorUsername, institutionId,
-                                                        MANAGE_RESOURCES_STANDARD);
+                                                        MANAGE_RESOURCES_STANDARD, MANAGE_PUBLISHING_REQUESTS);
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
@@ -1527,7 +1532,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         var publisherUri = publication.getPublisher().getId();
         var request = createUnpublishHandlerRequest(publication, randomString(), publisherUri,
-                                                    MANAGE_DEGREE, MANAGE_RESOURCES_STANDARD);
+                                                    MANAGE_DEGREE, MANAGE_RESOURCES_STANDARD,
+                                                    MANAGE_PUBLISHING_REQUESTS);
         updatePublicationHandler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         var persistedTicket = ticketService.fetchTicketByResourceIdentifier(publication.getPublisher().getId(),
@@ -1616,7 +1622,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var updatedPublication = publication.copy().withAssociatedArtifacts(Collections.emptyList()).build();
         var event = curatorWithAccessRightsUpdatesPublication(updatedPublication, customerId,
                                                               publication.getResourceOwner().getOwnerAffiliation(),
-                                                              MANAGE_RESOURCE_FILES);
+                                                              MANAGE_RESOURCE_FILES, MANAGE_RESOURCES_STANDARD);
 
         updatePublicationHandler.handleRequest(event, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
