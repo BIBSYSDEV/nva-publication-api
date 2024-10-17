@@ -140,7 +140,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
     @ParameterizedTest()
     @MethodSource("importCandidateContextTypeProvider")
-    void shouldExpandImportCandidateSuccessfully(PublicationContext publicationContext) throws JsonProcessingException {
+    void shouldExpandImportCandidateSuccessfully(PublicationContext publicationContext) {
         var importCandidate = randomImportCandidate(publicationContext);
         FakeUriResponse.setupFakeForType(importCandidate, uriRetriever);
 
@@ -151,7 +151,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
 
     @Test
-    void shouldUseCustomCristinApiCallWhenCristinApiCallIsUsed() throws JsonProcessingException {
+    void shouldExpandImportCandidateCristinOrgWhenAffiliatedWithNvaCustomer() {
         final var logger = LogUtils.getTestingAppenderForRootLogger();
         var importCandidate = randomImportCandidate(BOOK_SAMPLE);
         FakeUriResponse.setupFakeForType(importCandidate, uriRetriever);
@@ -161,7 +161,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                               .filter(Organization.class::isInstance)
                               .map(Organization.class::cast)
                                   .map(Organization::getId))
-                    .forEach(uri -> addResponsesForCristinCustomer(uri));
+                    .forEach(this::addResponsesForCristinCustomer);
         ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
         assertThat(logger.getMessages(), containsString("is nva customer: true"));
     }
@@ -172,7 +172,6 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                                       FakeUriResponse.createCristinOrganizationResponseForTopLevelOrg(uri));
         uriRetriever.registerResponse(toFetchCustomerByCristinIdUri(uri), SC_OK,
                                       MediaType.ANY_APPLICATION_TYPE, "{}");
-        ;
     }
 
     private static URI toFetchCustomerByCristinIdUri(URI topLevelOrganization) {
@@ -190,7 +189,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldLogErrorWhenResponseFromChannelRegistryIsNotOk() throws JsonProcessingException {
+    void shouldLogErrorWhenResponseFromChannelRegistryIsNotOk() {
         final var logger = LogUtils.getTestingAppenderForRootLogger();
         var importCandidate = randomImportCandidate(BOOK_SAMPLE);
         FakeUriResponse.setupFakeForType(importCandidate, uriRetriever);
@@ -203,7 +202,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldLogErrorWhenResponseFromChannelRegistryResponseIsNonsense() throws JsonProcessingException {
+    void shouldLogErrorWhenResponseFromChannelRegistryResponseIsNonsense() {
         final var logger = LogUtils.getTestingAppenderForRootLogger();
         var importCandidate = randomImportCandidate(BOOK_SAMPLE);
         FakeUriResponse.setupFakeForType(importCandidate, uriRetriever);
@@ -216,8 +215,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldExpandImportCandidateJournalSuccessfullyWhenBadResponseFromChannelRegistry()
-        throws JsonProcessingException {
+    void shouldExpandImportCandidateJournalSuccessfullyWhenBadResponseFromChannelRegistry() {
         final var logAppender = LogUtils.getTestingAppender(JournalExpansionServiceImpl.class);
         var journalId = randomUri();
         var journalContext = new Journal(journalId);
@@ -230,13 +228,13 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     }
 
     private void overrideStandardResponseWithNotFoundFromChannelRegistry(ImportCandidate importCandidate,
-                                                                         URI journalId) throws JsonProcessingException {
+                                                                         URI journalId) {
         FakeUriResponse.setupFakeForType(importCandidate, uriRetriever);
         uriRetriever.registerResponse(journalId, SC_NOT_FOUND, MediaType.ANY_APPLICATION_TYPE, "");
     }
 
     @Test
-    void shouldExpandJournalSuccessfullyWhenOkResponseFromChannelRegistry() throws JsonProcessingException {
+    void shouldExpandJournalSuccessfullyWhenOkResponseFromChannelRegistry() {
         var journalId = randomUri();
         var journalContext = new Journal(journalId);
         var importCandidate = randomImportCandidate(journalContext);
@@ -247,7 +245,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldExpandPublisherSuccessfullyWhenBadResponseFromChannelRegistry() throws JsonProcessingException {
+    void shouldExpandPublisherSuccessfullyWhenBadResponseFromChannelRegistry() {
         var publisherId = randomUri();
         var publisher = new Publisher(publisherId);
         var bookContext = new Book(null, null, publisher, null, null);
@@ -281,7 +279,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldExpandPublisherSuccessfullyWhenOkResponseFromChannelRegistry() throws JsonProcessingException {
+    void shouldExpandPublisherSuccessfullyWhenOkResponseFromChannelRegistry() {
         var publisherId = randomUri();
         var publisher = new Publisher(publisherId);
         var bookContext = new Book(null, null, publisher, null, null);
@@ -294,7 +292,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldLogFailureToParseChannelRegistryResponse() throws JsonProcessingException {
+    void shouldLogFailureToParseChannelRegistryResponse() {
         final var logAppender = LogUtils.getTestingAppender(JournalExpansionServiceImpl.class);
         var journalId = randomUri();
         var journalContext = new Journal(journalId);

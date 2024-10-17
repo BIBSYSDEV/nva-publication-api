@@ -103,7 +103,6 @@ public class IndexDocumentWrapperLinkedData {
         var urlEncodedPublicationId = URLEncoder.encode(publicationId, StandardCharsets.UTF_8);
         try {
             return fetchNviCandidate(urlEncodedPublicationId)
-                       .filter(IndexDocumentWrapperLinkedData::isAcceptableNviResponse)
                        .map(this::processNviCandidateResponse)
                        .orElseThrow();
         } catch (Exception e) {
@@ -113,16 +112,14 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     private JsonNode processNviCandidateResponse(HttpResponse<String> response) {
-        if (response.statusCode() == SC_NOT_FOUND) {
-            return new ObjectNode(null);
-        } else {
+        if (response.statusCode() / ONE_HUNDRED == SUCCESS_FAMILY) {
             var nviStatus = toNviCandidateResponse(response.body()).toNviStatus();
             return nviStatus.isReported() ? nviStatus.toJsonNode() : new ObjectNode(null);
+        } else if (response.statusCode() == SC_NOT_FOUND) {
+            return new ObjectNode(null);
+        } else {
+            throw new RuntimeException("Unexpected response " + response);
         }
-    }
-
-    private static boolean isAcceptableNviResponse(HttpResponse<String> response) {
-        return response.statusCode() / ONE_HUNDRED == SUCCESS_FAMILY || response.statusCode() == SC_NOT_FOUND;
     }
 
     private Optional<HttpResponse<String>> fetchNviCandidate(String publicationId) {

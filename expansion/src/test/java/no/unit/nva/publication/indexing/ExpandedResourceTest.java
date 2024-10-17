@@ -17,6 +17,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.AllOf.allOf;
@@ -598,6 +599,34 @@ class ExpandedResourceTest {
         expectedNode.put("parent", SortableIdentifier.fromUri(((Anthology) publicationContext).getId()).toString());
 
         assertThat(actualNode, is(equalTo(expectedNode)));
+    }
+
+    @Test
+    void shouldUseApiVersionWhenLookingUpOrganizations() throws JsonProcessingException {
+        var publication = PublicationGenerator.randomPublication();
+        var uriRetriever = FakeUriRetriever.newInstance();
+        FakeUriResponse.setupFakeForType(publication, uriRetriever);
+        var versionedType = MediaType.parse("application/ld+json; version=2023-05-26");
+        publication.getEntityDescription().getContributors().stream()
+            .map(Contributor::getAffiliations)
+            .flatMap(i -> i.stream().map(Organization.class::cast).map(Organization::getId))
+            .forEach(uri -> {
+                var responseBody = """
+                    {
+                      "@context": "https://bibsysdev.github.io/src/organization-context.json",
+                      "id": "%s",
+                      "labels": {
+                        "en": "Happy duck"
+                      }
+                    }""".formatted(uri);
+                uriRetriever.registerResponse(uri,
+                                              200,
+                                              versionedType,
+                                              responseBody);
+            });
+
+        var actual = ExpandedResource.fromPublication(uriRetriever,publication).toJsonString();
+        assertThat(actual, containsString("Happy duck"));
     }
 
     @ParameterizedTest
