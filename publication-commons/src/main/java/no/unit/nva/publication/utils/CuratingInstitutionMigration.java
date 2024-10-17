@@ -13,7 +13,8 @@ public final class CuratingInstitutionMigration {
     }
 
     public static void migrate(Resource dataEntry, S3Client s3Client, String cristinUnitsS3Uri) {
-        if (dataEntry.getCuratingInstitutions().stream().map(CuratingInstitution::contributorCristinIds).toList().isEmpty()
+        if (dataEntry.getCuratingInstitutions().stream()
+                .map(CuratingInstitution::contributorCristinIds).toList().isEmpty()
             && hasContributors(dataEntry)) {
             dataEntry.setCuratingInstitutions(
                 CuratingInstitutionsUtil.getCuratingInstitutionsCached(

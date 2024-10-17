@@ -22,6 +22,11 @@ public record CuratingInstitution(URI id, List<URI> contributorCristinIds) {
         return new CuratingInstitution(URI.create(id), Collections.emptyList());
     }
 
+    @Override
+    public List<URI> contributorCristinIds() {
+        return nonNull(contributorCristinIds) ? contributorCristinIds : Collections.emptyList();
+    }
+
     private static List<URI> getContributorCristinIds(List<URI> contributorCristinIds) {
         return nonNull(contributorCristinIds) && !contributorCristinIds.isEmpty() ? contributorCristinIds
                    : Collections.emptyList();
