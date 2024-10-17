@@ -344,7 +344,7 @@ public final class FakeUriResponse {
         setUpNviResponse(fakeUriRetriever, 200, publication, getPendingNviResponseString());
     }
 
-    private static String createCristinOrganizationResponseForTopLevelOrg(URI uri) {
+    public static String createCristinOrganizationResponseForTopLevelOrg(URI uri) {
         return """
             {
                            "@context" : "https://bibsysdev.github.io/src/organization-context.json",
