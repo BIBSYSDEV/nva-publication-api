@@ -15,8 +15,6 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
-import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.sqs.model.Message;
 
 public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest, Void> {
@@ -24,10 +22,8 @@ public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest,
     public static final String RECOVERY_QUEUE = new Environment().readEnv("RECOVERY_QUEUE");
     public static final String ID = "id";
     public static final String ENTRIES_PROCEEDED_MESSAGE = "{} entries have been successfully processed";
-    public static final String EMITTING_NEW_EVENT = "Emitting new event";
     public static final String TYPE = "type";
     private static final Logger logger = LoggerFactory.getLogger(RecoveryBatchScanHandler.class);
-    private final EventBridgeClient eventBridgeClient;
     private final QueueClient queueClient;
     private final ResourceService resourceService;
     private final TicketService ticketService;
@@ -36,37 +32,27 @@ public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest,
     @JacocoGenerated
     public RecoveryBatchScanHandler() {
         this(ResourceService.defaultService(), TicketService.defaultService(), MessageService.defaultService(),
-             ResourceQueueClient.defaultResourceQueueClient(RECOVERY_QUEUE), EventBridgeClient.create());
+             ResourceQueueClient.defaultResourceQueueClient(RECOVERY_QUEUE));
     }
 
     public RecoveryBatchScanHandler(ResourceService resourceService, TicketService ticketService,
-                                    MessageService messageService, QueueClient queueClient,
-                                    EventBridgeClient eventBridgeClient) {
+                                    MessageService messageService, QueueClient queueClient) {
         super(RecoveryEventRequest.class);
         this.resourceService = resourceService;
         this.ticketService = ticketService;
         this.messageService = messageService;
         this.queueClient = queueClient;
-        this.eventBridgeClient = eventBridgeClient;
     }
 
     @Override
     protected Void processInput(RecoveryEventRequest recoveryRequest,
                                 AwsEventBridgeEvent<RecoveryEventRequest> awsEventBridgeEvent, Context context) {
 
-        var messages = queueClient.readMessages();
+        var messages = queueClient.readMessages(recoveryRequest.maximumNumberOfMessages());
 
         processMessages(messages);
 
-        if (moreMessagesOnQueue(messages)) {
-            emitNewRecoveryEvent(context);
-        }
-
         return null;
-    }
-
-    private static boolean moreMessagesOnQueue(List<Message> messages) {
-        return !messages.isEmpty();
     }
 
     private static SortableIdentifier extractResourceIdentifier(Message message) {
@@ -100,11 +86,5 @@ public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest,
             default:
                 break;
         }
-    }
-
-    private void emitNewRecoveryEvent(Context context) {
-        var eventEntry = RecoveryEventRequest.createNewEntry(context);
-        eventBridgeClient.putEvents(PutEventsRequest.builder().entries(eventEntry).build());
-        logger.info(EMITTING_NEW_EVENT);
     }
 }
