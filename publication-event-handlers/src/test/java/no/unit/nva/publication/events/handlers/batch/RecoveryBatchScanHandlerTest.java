@@ -1,6 +1,5 @@
 package no.unit.nva.publication.events.handlers.batch;
 
-import static java.util.Objects.nonNull;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
@@ -30,7 +29,6 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
-import no.unit.nva.stubs.FakeEventBridgeClient;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.ioutils.IoUtils;
@@ -48,7 +46,6 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
     private TicketService ticketService;
     private MessageService messageService;
     private FakeSqsClient queueClient;
-    private FakeEventBridgeClient eventBridgeClient;
     private RecoveryBatchScanHandler recoveryBatchScanHandler;
 
     @BeforeEach
@@ -59,9 +56,8 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
         ticketService = getTicketService();
         messageService = getMessageService();
         queueClient = new FakeSqsClient();
-        eventBridgeClient = new FakeEventBridgeClient();
         recoveryBatchScanHandler = new RecoveryBatchScanHandler(resourceService, ticketService, messageService,
-                                                                queueClient, eventBridgeClient);
+                                                                queueClient);
     }
 
     @Test
@@ -137,17 +133,9 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
     private static InputStream createEvent(Integer messagesCount) throws JsonProcessingException {
         var event = new AwsEventBridgeEvent<RecoveryEventRequest>();
         event.setId(randomString());
-        event.setDetail(createRequest(messagesCount));
+        event.setDetail(new RecoveryEventRequest(messagesCount));
         var jsonString = JsonUtils.dtoObjectMapper.writeValueAsString(event);
         return IoUtils.stringToStream(jsonString);
-    }
-
-    private static RecoveryEventRequest createRequest(Integer messagesCount) {
-        var builder = RecoveryEventRequest.builder();
-        if (nonNull(messagesCount)) {
-            builder.withMessagesCount(messagesCount);
-        }
-        return builder.build();
     }
 
     //TODO: Implement recovery for other entity types than publication

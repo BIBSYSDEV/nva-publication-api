@@ -17,13 +17,12 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 @JacocoGenerated
 public final class ResourceQueueClient implements QueueClient {
 
-    public static final int MAXIMUM_NUMBER_OF_MESSAGES = 10;
-    public static final String AWS_REGION = "AWS_REGION";
+    private static final String AWS_REGION = "AWS_REGION";
     private static final int MAX_CONNECTIONS = 10_000;
     private static final long IDLE_TIME = 30;
     private static final long TIMEOUT_TIME = 30;
-    public static final String ALL_MESSAGE_ATTRIBUTES = "All";
-    public static final int WAITING_TIME = 20;
+    private static final String ALL_MESSAGE_ATTRIBUTES = "All";
+    private static final int WAITING_TIME = 20;
     private final SqsClient sqsClient;
     private final String queueUrl;
 
@@ -42,11 +41,11 @@ public final class ResourceQueueClient implements QueueClient {
     }
 
     @Override
-    public List<Message> readMessages() {
+    public List<Message> readMessages(int maximumNumberOfMessages) {
         var receiveMessageRequest = ReceiveMessageRequest.builder()
                                         .queueUrl(queueUrl)
                                         .waitTimeSeconds(WAITING_TIME)
-                                        .maxNumberOfMessages(MAXIMUM_NUMBER_OF_MESSAGES)
+                                        .maxNumberOfMessages(maximumNumberOfMessages)
                                         .messageAttributeNames(ALL_MESSAGE_ATTRIBUTES)
                                         .build();
         return sqsClient.receiveMessage(receiveMessageRequest).messages();
