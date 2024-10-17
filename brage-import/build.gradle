@@ -33,7 +33,7 @@ dependencies {
 
     implementation libs.apache.commons.text
 
-    implementation group: 'com.amazonaws', name: 'aws-java-sdk-s3', version: '1.12.646'
+    implementation group: 'com.amazonaws', name: 'aws-java-sdk-s3', version: '1.12.775'
 
     testImplementation libs.cucumber.java
     testImplementation libs.cucumber.junit
