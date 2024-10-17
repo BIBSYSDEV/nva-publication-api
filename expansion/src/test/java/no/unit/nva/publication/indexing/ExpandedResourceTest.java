@@ -7,7 +7,6 @@ import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.model.ContributorVerificationStatus.NOT_VERIFIED;
 import static no.unit.nva.model.ContributorVerificationStatus.VERIFIED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.model.testing.PublicationGenerator.API_HOST;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
@@ -102,6 +101,7 @@ import no.unit.nva.publication.indexing.verification.FundingResult;
 import no.unit.nva.publication.indexing.verification.PublisherResult;
 import no.unit.nva.publication.uriretriever.FakeUriResponse;
 import no.unit.nva.publication.uriretriever.FakeUriRetriever;
+import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
@@ -130,7 +130,7 @@ class ExpandedResourceTest {
         "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext"
         + "/series/id";
     private static final URI HOST_URI = PublicationServiceConfig.PUBLICATION_HOST_URI;
-
+    private static final String API_HOST = new Environment().readEnv("API_HOST");
     private FakeUriRetriever fakeUriRetriever;
 
     @BeforeEach
