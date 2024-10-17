@@ -4,6 +4,7 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.utils.RdfUtils.getTopLevelOrgUri;
 import java.net.URI;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
@@ -39,10 +40,10 @@ public final class CuratingInstitutionsUtil {
         return getVerifiedContributors(entityDescription)
                    .flatMap(contributor -> toCuratingInstitution(contributor, cristinUnitsUtil))
                    .collect(Collectors.groupingBy(SimpleEntry::getKey,
-                                                  Collectors.mapping(SimpleEntry::getValue, Collectors.toList())))
+                                                  Collectors.mapping(SimpleEntry::getValue, Collectors.toSet())))
                    .entrySet()
                    .stream()
-                   .map(entry -> new CuratingInstitution(entry.getKey(), entry.getValue()))
+                   .map(entry -> new CuratingInstitution(entry.getKey(), new ArrayList<>(entry.getValue())))
                    .collect(Collectors.toSet());
     }
 

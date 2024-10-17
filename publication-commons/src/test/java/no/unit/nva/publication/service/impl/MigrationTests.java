@@ -6,6 +6,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.core.Is.is;
@@ -212,7 +213,7 @@ class MigrationTests extends ResourcesLocalTest {
         assertThat(curatingInstitution.id(),
                    is(equalTo(URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0"))));
         assertThat(curatingInstitution.contributorCristinIds(),
-                   is(equalTo(contributorIds)));
+                   containsInAnyOrder(contributorIds.toArray()));
     }
 
     @Test

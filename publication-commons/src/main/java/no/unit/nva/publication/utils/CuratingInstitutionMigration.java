@@ -1,11 +1,12 @@
 package no.unit.nva.publication.utils;
 
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 import no.unit.nva.model.CuratingInstitution;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
-import no.unit.nva.model.EntityDescription;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public final class CuratingInstitutionMigration {
@@ -14,7 +15,7 @@ public final class CuratingInstitutionMigration {
     }
 
     public static void migrate(Resource dataEntry, S3Client s3Client, String cristinUnitsS3Uri) {
-        if (curatingInstitutionsContainContributors(dataEntry)
+        if (curatingInstitutionsDoesNotContainContributors(dataEntry)
             && hasContributors(dataEntry)) {
             dataEntry.setCuratingInstitutions(
                 CuratingInstitutionsUtil.getCuratingInstitutionsCached(
@@ -23,11 +24,12 @@ public final class CuratingInstitutionMigration {
         }
     }
 
-    private static boolean curatingInstitutionsContainContributors(Resource dataEntry) {
+    private static boolean curatingInstitutionsDoesNotContainContributors(Resource dataEntry) {
         return dataEntry.getCuratingInstitutions().stream()
                    .filter(Objects::nonNull)
                    .map(CuratingInstitution::contributorCristinIds)
                    .filter(Objects::nonNull)
+                   .flatMap(Collection::stream)
                    .toList().isEmpty();
     }
 
