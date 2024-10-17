@@ -30,8 +30,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -740,16 +738,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                     }
                 }
                 """;
-    }
-
-    private URI fetchNviCandidateUri(Publication publication) {
-        var uri = UriWrapper.fromHost(API_HOST)
-                   .addChild("scientific-index")
-                   .addChild("candidate")
-                   .addChild("publication")
-                   .getUri();
-        return URI.create(uri + "/" + URLEncoder.encode(constructExpectedPublicationId(publication).toString(),
-                                                        StandardCharsets.UTF_8));
     }
 
     private TicketEntry createCompletedTicketAndPublishFiles(Publication publication) throws ApiGatewayException {
