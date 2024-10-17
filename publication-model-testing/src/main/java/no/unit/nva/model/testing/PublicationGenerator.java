@@ -56,7 +56,7 @@ import nva.commons.core.paths.UriWrapper;
 public final class PublicationGenerator {
 
     private static final BaseFaker FAKER = new BaseFaker();
-    public static final String API_HOST = new Environment().readEnv("API_HOST");
+    private static final String API_HOST = new Environment().readEnv("API_HOST");
 
     @JacocoGenerated
     private PublicationGenerator() {
