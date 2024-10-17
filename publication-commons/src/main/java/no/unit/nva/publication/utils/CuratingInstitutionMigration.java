@@ -1,6 +1,7 @@
 package no.unit.nva.publication.utils;
 
 import java.util.Optional;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import no.unit.nva.model.EntityDescription;
@@ -12,7 +13,8 @@ public final class CuratingInstitutionMigration {
     }
 
     public static void migrate(Resource dataEntry, S3Client s3Client, String cristinUnitsS3Uri) {
-        if (dataEntry.getCuratingInstitutions().isEmpty() && hasContributors(dataEntry)) {
+        if (dataEntry.getCuratingInstitutions().stream().map(CuratingInstitution::contributorCristinIds).toList().isEmpty()
+            && hasContributors(dataEntry)) {
             dataEntry.setCuratingInstitutions(
                 CuratingInstitutionsUtil.getCuratingInstitutionsCached(
                     dataEntry.toPublication().getEntityDescription(),

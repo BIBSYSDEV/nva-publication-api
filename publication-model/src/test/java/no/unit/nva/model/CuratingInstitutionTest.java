@@ -31,7 +31,7 @@ class CuratingInstitutionTest {
               "curatingInstitutions": [
                 {
                   "id": "https://some.uri/curatingInstitution/1",
-                  "curatedContributors": [
+                  "contributorCristinIds": [
                     "https://some.uri/contributor/1"
                   ]
                 }
