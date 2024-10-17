@@ -31,7 +31,7 @@ import nva.commons.core.paths.UriWrapper;
 @JacocoGenerated
 public final class EntityDescriptionBuilder {
 
-    public static final String API_HOST = new Environment().readEnv("API_HOST");
+    private static final String API_HOST = new Environment().readEnv("API_HOST");
 
     private EntityDescriptionBuilder() {
         // NO-OP
